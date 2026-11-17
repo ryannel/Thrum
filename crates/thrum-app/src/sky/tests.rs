@@ -13,6 +13,49 @@ use thrum_asset_gpu::CookedStats;
 const CAMERA: Camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
 
 #[test]
+fn a_ticking_sky_world_states_its_clock() {
+    use std::time::Duration;
+    use thrum_render::runtime::FrameWorld;
+    let mut world = super::StillWorld {
+        tick_duration: Some(Duration::from_millis(20)),
+        ..super::StillWorld::default()
+    };
+    // 50 Hz, at tick 2 + half an interval. Literal phases include the bound.
+    for (observation_ms, tick, phases) in [
+        (50, 2, [0.5_f32, 1.0, 2.0, 3.0]),
+        (60, 3, [0.0, 0.5, 1.5, 2.5]),
+        (79, 3, [0.95, 1.45, 2.45, 3.5]),
+    ] {
+        let observation = Duration::from_millis(observation_ms);
+        world.advance(observation).expect("scripted observation");
+        assert!(world.is_interpolating());
+        assert_eq!(world.source().tick, tick);
+        assert_eq!(
+            world.tick_due_time(),
+            Some(Duration::from_millis(tick * 20))
+        );
+        for (lead_ms, expected) in [0, 10, 30, 50].into_iter().zip(phases) {
+            let lead = Duration::from_millis(lead_ms);
+            let phase = world.display_phase_at(lead);
+            assert!((phase - expected).abs() < 1e-6);
+            // Preserve the exact expression used before this change.
+            let old_alpha =
+                ((observation + lead).as_secs_f64() / 0.020 - tick as f64).clamp(0.0, 1.0) as f32;
+            assert_eq!(
+                world.presentation_alpha_at(lead).to_bits(),
+                old_alpha.to_bits()
+            );
+            assert_eq!(phase.min(1.0).to_bits(), old_alpha.to_bits());
+        }
+    }
+    let still = super::StillWorld::default();
+    assert!(!still.is_interpolating());
+    assert_eq!(still.tick_due_time(), None);
+    assert_eq!(still.display_phase_at(Duration::from_millis(50)), 1.0);
+    assert_eq!(still.presentation_alpha_at(Duration::ZERO), 1.0);
+}
+
+#[test]
 fn a_game_owns_its_clock_and_the_default_kit_stays_still() {
     use std::time::Duration;
     use thrum_render::runtime::FrameWorld;

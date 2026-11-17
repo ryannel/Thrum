@@ -9,6 +9,7 @@ fn sample(order: u64) -> FrameSample {
         observation: Duration::ZERO,
         presentation_lead: Duration::ZERO,
         clock_interpolating: false,
+        tick_due_time: None,
         platform_target: None,
         lead_status: None,
         tick: order,

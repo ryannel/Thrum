@@ -59,8 +59,10 @@ The engine opportunity clock targets the next 120 Hz opportunity. `Offscreen::st
 with the native actor's shared `display_target_lead` policy (expired target: zero, maximum: 50 ms).
 The offscreen runner reads the world clock once: that observation both measures the lead and advances/observes
 the world. The host stamps `observation_ns`, `presentation_lead_ns`, `display_phase`, `alpha` and
-`clock_interpolating` on each submitted image's sample. The V1 time record also writes `platform_target_ns`
-(the runner's scheduled opportunity target in the world origin) and `lead_status`: `future`, `late`,
+`clock_interpolating` on each submitted image's sample, together with `tick_due_time_ns` while interpolating
+(null otherwise). Observation, platform target and tick due time are host times; lead is a host duration.
+The V1 time record also writes `platform_target_ns`
+(the runner's scheduled opportunity target in the host origin) and `lead_status`: `future`, `late`,
 `invalid` or `clamped`. Untargeted prime/warmup steps declare zero lead and no platform target/status.
 The consumed target is observation plus lead: a future frame consumes the platform target, a late or invalid
 frame consumes its observation, and a clamped frame consumes observation plus 50 ms. The display phase is
@@ -68,6 +70,12 @@ the fraction since the committed tick at that consumed target, capped at one plu
 the phase held to one. When the clock is paused, overloaded, holding or queued, `clock_interpolating` is false
 and both are one; those frames do not describe a consumed target. Endpoint oracle captures likewise give one.
 Counts of lead statuses, bound phases and stopped clocks retain those frames rather than silently dropping them.
+The tick's due time `t_C` gives the span's origin `O = t_C - C * d`, where `d` is the tick duration.
+World display time is `(C - 1 + phase) * d`, or, below the bound, `(C - 1) * d + observation + lead - t_C`.
+It is not a host timestamp: equivalently it is the consumed target less `O` and one tick. Equal origins
+identify one running span; within it display-time differences equal consumed-target differences.
+Across origins subtract the origin difference too, excluding paused/overloaded time and the discarded
+part-tick. Stopped, queued and held frames show `C * d`. Counts retain origin changes as well.
 Opportunity records also retain requests that produced no submitted frame, for example while an optional world
 publication is unavailable. Those requests are distinct from omissions in the submitted-image tap.
 This is an offscreen target policy, not a measured display target or a claim that its alpha equals a window's.

@@ -101,6 +101,9 @@ impl WorldClient {
     pub(super) fn is_interpolating(&self) -> bool {
         self.0.is_interpolating()
     }
+    pub(super) fn tick_due_time(&self) -> Option<Duration> {
+        self.0.tick_due_time()
+    }
 
     pub(super) fn set_controls(&self, axes: [f32; 3]) -> Result<(), String> {
         self.0.set_controls(axes).map_err(|error| error.to_string())

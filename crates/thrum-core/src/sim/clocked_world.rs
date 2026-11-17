@@ -215,6 +215,11 @@ impl<G: WorldGame> ClockedWorld<G> {
         self.clock.display_phase_at(lead)
     }
 
+    /// Host due time of the retained committed tick, when interpolating.
+    pub fn tick_due_time(&self) -> Option<Duration> {
+        self.clock.presentation_sample().tick_due_time()
+    }
+
     /// Time until another authoritative update is due.
     pub fn next_due_in(&self) -> Option<Duration> {
         self.clock.next_due_in()

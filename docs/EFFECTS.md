@@ -16,11 +16,26 @@ The renderer validates dimensions, ranges, storage capabilities and cadence befo
 
 `encode_upload` receives the frame's source epoch, timeline, tick, tick duration, interpolation alpha and
 display phase. The phase comes directly from the world's clock at its consumed target (observation plus lead).
+Observation and consumed target are host times; display time is world time. In a running span, tick `C`
+falls due at host time `t_C`, and the phase is `(observation + lead - t_C) / tick_duration`.
+The frame sample and submitted capture record carry `tick_due_time` while interpolating; effects receive
+no host timestamp. World display time is `(C - 1 + phase) * tick_duration`, equivalently
+`(C - 1) * tick_duration + observation + lead - t_C` below the bound. It is not a host timestamp.
+The origin `t_C - C * tick_duration` is fixed within a span. Starts and resumes begin spans;
+pause and overload end them and discard the elapsed part-tick. Resume is refused until queued work
+commits, then holds at the committed world tick until its first new tick commits. Queued ticks, late
+commits and holds do not move due times. A rewind changes the world's tick, retaining its host due time
+and beginning a span with a different origin. Display time excludes stopped time and discarded fractions;
+across spans its difference is the consumed-target difference less the origin difference.
 While interpolating, presentation time in ticks is `tick - 1 + display_phase`; the phase extends past one up
 to `1 + 50 ms / tick_duration`. Alpha remains the phase held to one. Endpoint-only states and captures give
 one. Sampling never admits a tick. Predict presentation-only quantities from committed state a tick at a time
 by their own step; quantities known only at endpoints keep alpha. See
 [C02](design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world).
+At a stop or queue, display time moves to the committed tick, by at most a tick forward or 50 ms back
+on that tick; subsequent queued commits each add a tick. Draining a queue returns to the same span's
+target. The first interpolating frame after resume advances from the resume's committed tick, never
+back. At the phase bound display time holds at the committed tick plus 50 ms. The first span has no hold.
 The resident world lane shows the newest eligible clock/page pair among the published pair, the pair shown
 and the refused pair retained from an earlier poll. An interpolating pair qualifies when its tick was due
 by the observation; a stopped clock always qualifies. A published pair newer than the one shown becomes

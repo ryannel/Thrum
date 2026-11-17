@@ -26,6 +26,13 @@ fn identity(sample: &FrameSample) {
         sample.display_phase.min(1.0).to_bits()
     );
     if sample.clock_interpolating && sample.display_phase < 4.0 {
+        let expected_due = Duration::from_nanos(
+            (u128::from(sample.tick) * 1_000_000_000)
+                .div_ceil(60)
+                .try_into()
+                .expect("short test"),
+        );
+        assert_eq!(sample.tick_due_time, Some(expected_due));
         // Tick coordinates are exact 1/60; f32 phase costs < 0.01 us here.
         // Allow 2 us, including whole-nanosecond clock target arithmetic.
         let display = (sample.tick as f64 - 1.0 + f64::from(sample.display_phase)) / 60.0;
@@ -35,6 +42,7 @@ fn identity(sample: &FrameSample) {
             "{sample:?}: {display} != {expected}"
         );
     } else if !sample.clock_interpolating {
+        assert_eq!(sample.tick_due_time, None);
         assert_eq!(sample.display_phase, 1.0);
     }
 }

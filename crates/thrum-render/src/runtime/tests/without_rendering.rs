@@ -124,6 +124,9 @@ impl FrameWorld for World {
     fn is_interpolating(&self) -> bool {
         self.clock.presentation_sample().is_interpolating()
     }
+    fn tick_due_time(&self) -> Option<Duration> {
+        self.clock.presentation_sample().tick_due_time()
+    }
 }
 
 async fn host(cap: u32) -> FrameHost<World, StaticScene> {

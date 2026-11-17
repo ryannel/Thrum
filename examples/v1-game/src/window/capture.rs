@@ -79,7 +79,20 @@ impl Trace {
         let mut statuses = [0_u64; 5];
         let mut bound = 0;
         let mut stopped = 0;
+        let mut origin_changes = 0;
+        let mut last_origin: Option<f64> = None;
         for image in &self.images {
+            if let (Some(due), Some(tick)) =
+                (image["tick_due_time_ns"].as_u64(), image["tick"].as_u64())
+            {
+                let origin = due as f64 / 1e9 - tick as f64 / 60.0;
+                if let Some(previous) = last_origin
+                    && (origin - previous).abs() > 2e-9
+                {
+                    origin_changes += 1;
+                }
+                last_origin = Some(origin);
+            }
             let status = match image["lead_status"].as_str() {
                 Some("future") => 0,
                 Some("late") => 1,
@@ -93,7 +106,7 @@ impl Trace {
             bound += u64::from(image["display_phase"].as_f64().is_some_and(|p| p >= 4.0));
         }
         json!({"future":statuses[0],"late":statuses[1],"invalid":statuses[2],
-            "clamped":statuses[3],"untargeted":statuses[4],"bound":bound,"stopped":stopped})
+            "clamped":statuses[3],"untargeted":statuses[4],"bound":bound,"stopped":stopped,"origin_changes":origin_changes})
     }
 
     fn for_route(route: Option<&Value>) -> Result<Self, String> {
@@ -211,6 +224,7 @@ impl Trace {
             "alpha":image.sample.presentation_alpha,"history_epoch":image.history_epoch,
             "observation_ns":image.sample.observation.as_nanos(),
             "display_phase":image.sample.display_phase,"clock_interpolating":image.sample.clock_interpolating,
+            "tick_due_time_ns":image.sample.tick_due_time.map(|t| t.as_nanos()),
             "platform_target_ns":image.sample.platform_target.map(|t| t.as_nanos()),
             "lead_status":image.sample.lead_status.map(|s| format!("{s:?}").to_lowercase()),
             "pixel_source":format!("{:?}",image.pixel_source),"exposure_gpu_words":image.exposure_gpu_words,

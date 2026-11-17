@@ -30,6 +30,7 @@ fn sample(tick: u64) -> FrameSample {
         observation: Duration::ZERO,
         presentation_lead: Duration::ZERO,
         clock_interpolating: false,
+        tick_due_time: None,
         platform_target: None,
         lead_status: None,
         history_identity: [0; 2],
@@ -165,6 +166,9 @@ impl FrameWorld for StaticWorld {
     }
     fn is_interpolating(&self) -> bool {
         false
+    }
+    fn tick_due_time(&self) -> Option<Duration> {
+        None
     }
 }
 

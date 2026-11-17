@@ -318,11 +318,27 @@ impl FrameWorld for StillWorld {
                 .clamp(0.0, 1.0) as f32
         })
     }
-    fn display_phase_at(&self, _: Duration) -> f32 {
-        1.0
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "bounded presentation phase needs only f32 precision"
+    )]
+    fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.tick_duration.map_or(1.0, |step| {
+            ((self.now + lead).as_secs_f64() / step.as_secs_f64() - self.tick as f64)
+                .clamp(0.0, 1.0 + 0.050 / step.as_secs_f64()) as f32
+        })
     }
     fn is_interpolating(&self) -> bool {
-        false
+        self.tick_duration.is_some()
+    }
+    fn tick_due_time(&self) -> Option<Duration> {
+        self.tick_duration.map(|step| {
+            self.now
+                - Duration::from_nanos(
+                    u64::try_from(self.now.as_nanos() % step.as_nanos())
+                        .expect("a sub-tick fraction fits in u64 nanoseconds"),
+                )
+        })
     }
 }
 

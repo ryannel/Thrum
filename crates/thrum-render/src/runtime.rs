@@ -116,6 +116,8 @@ pub trait FrameWorld {
     fn display_phase_at(&self, lead: Duration) -> f32;
     /// Whether this world's retained clock sample consumes a target.
     fn is_interpolating(&self) -> bool;
+    /// Host due time of the retained tick; `None` for endpoint-only clocks.
+    fn tick_due_time(&self) -> Option<Duration>;
 }
 
 /// Game-owned mapping from committed schema to the prepared renderer.
@@ -224,13 +226,15 @@ pub struct FrameSample {
     pub presentation_alpha: f32,
     /// Presentation phase at observation plus lead; may exceed one.
     pub display_phase: f32,
-    /// World-clock timestamp supplied to this drive.
+    /// Host-clock timestamp supplied to this drive.
     pub observation: Duration,
     /// Lead consumed by this frame's clock sample.
     pub presentation_lead: Duration,
     /// False for endpoint-only clock states.
     pub clock_interpolating: bool,
-    /// Runner's requested target in the world-clock origin, when supplied.
+    /// Host due time of this frame's tick, present only while interpolating.
+    pub tick_due_time: Option<Duration>,
+    /// Runner's requested target in the host-clock origin, when supplied.
     pub platform_target: Option<Duration>,
     /// Status measured by the host from the same observation as the lead.
     pub lead_status: Option<crate::frame::TargetLeadStatus>,
@@ -372,6 +376,7 @@ struct SubmitFrame {
     presentation_alpha: f32,
     display_phase: f32,
     clock_interpolating: bool,
+    tick_due_time: Option<Duration>,
 }
 
 struct PreparedSample {
@@ -1341,6 +1346,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             presentation_alpha: self.presentation_alpha(),
             display_phase: self.world.display_phase_at(self.presentation_lead),
             clock_interpolating: self.world.is_interpolating(),
+            tick_due_time: self.world.tick_due_time(),
         })
     }
 
@@ -1463,6 +1469,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 observation: self.observation,
                 presentation_lead: self.presentation_lead,
                 clock_interpolating: frame.clock_interpolating,
+                tick_due_time: frame.tick_due_time,
                 platform_target: self.platform_target,
                 lead_status: self.lead_status,
                 submission_order: 0,

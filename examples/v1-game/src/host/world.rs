@@ -152,6 +152,15 @@ impl WorldPort {
             Self::Starting => unreachable!("world owner is starting"),
         }
     }
+    pub(super) fn tick_due_time(&self) -> Option<Duration> {
+        match self {
+            Self::Inline(driver) => driver.world.tick_due_time(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.tick_due_time(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
     pub(super) fn next_due_in(&self) -> Option<Duration> {
         match self {
             Self::Inline(driver) => driver.next_due_in(),
@@ -271,6 +280,9 @@ impl thrum_render::runtime::FrameWorld for WorldPort {
     }
     fn is_interpolating(&self) -> bool {
         Self::is_interpolating(self)
+    }
+    fn tick_due_time(&self) -> Option<Duration> {
+        Self::tick_due_time(self)
     }
 }
 

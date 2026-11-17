@@ -96,6 +96,22 @@ pub struct ClockSample {
 }
 
 impl ClockSample {
+    /// Host time at which this sample's committed tick fell due, rounded up to
+    /// the next nanosecond. Endpoint-only samples consume no target.
+    /// Sampling is read-only; queued work and lifecycle holds return `None`.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if a sub-tick fraction no longer fits in `u64` nanoseconds.
+    pub fn tick_due_time(self) -> Option<Duration> {
+        self.interpolate.then(|| {
+            let nanos = self.fractional_tick / u128::from(self.tick_hz);
+            self.last_time.saturating_sub(Duration::from_nanos(
+                u64::try_from(nanos).expect("a sub-tick fraction fits in u64 nanoseconds"),
+            ))
+        })
+    }
+
     /// An interpolating sample must not lend an endpoint from after the frame's
     /// observation. Stopped samples consume no target and show their endpoint.
     #[cfg(not(target_arch = "wasm32"))]

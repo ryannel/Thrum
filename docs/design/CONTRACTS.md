@@ -71,6 +71,8 @@ at the clock's start or a resume, at a host time with the world on a tick, and i
 one tick duration apart. A pause or an overload ends it and discards the elapsed part of a tick with the stopped
 time, so the tick a resume finds is due at the resume. A tick set other than by the clock, as by a rewind, takes
 the due time of the tick it replaced. Queued ticks, a late commit and the hold after a resume move no due time.
+Resume is refused until admitted ticks have committed and holds until its first new tick commits.
+The first span has no hold and interpolates immediately.
 The display phase describes the consumed target: the frame's observation plus its bounded lead.
 An interpolating frame's committed endpoint was due no later than its observation. If render-owner preemption
 lets a resident world publish a newer endpoint, the lane shows the newest eligible clock/page pair among

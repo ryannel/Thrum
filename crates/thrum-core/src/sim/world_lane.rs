@@ -537,6 +537,11 @@ impl<T: WorldTask> WorldLane<T> {
     pub fn is_interpolating(&self) -> bool {
         self.snapshot.clock.is_interpolating()
     }
+
+    /// Host due time from the clock/page pair selected by the last poll.
+    pub fn tick_due_time(&self) -> Option<Duration> {
+        self.snapshot.clock.tick_due_time()
+    }
     /// Replace validated continuous controls.
     /// # Errors
     /// Refuses invalid input or a stopped owner.

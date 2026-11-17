@@ -35,11 +35,27 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
         let mut records = Vec::new();
         let mut opportunities = Vec::new();
         let mut counts = [0_usize; 6]; // future, late, invalid, clamped, bound, stopped
-        let mut previous: Option<(f64, f64)> = None;
+        let mut previous: Option<(f64, f64, f64)> = None;
+        let mut last_origin: Option<f64> = None;
+        let mut origin_changes = 0;
+        let mut paused = false;
+        let mut resumed = false;
         let mut held_seen = false;
         let mut preemption_seen = false;
         let callback_interval = Arc::new(Mutex::new(None));
         for _ in 0..256 {
+            if records.len() >= 16 && !paused {
+                driver
+                    .parameters(r#"{"world.paused":true}"#)
+                    .expect("pause control");
+                paused = true;
+            }
+            if records.len() >= 20 && !resumed {
+                driver
+                    .parameters(r#"{"world.paused":false}"#)
+                    .expect("resume control");
+                resumed = true;
+            }
             let opportunity = clock.next_opportunity();
             let target = opportunity.target.saturating_duration_since(origin);
             let held = records.len() >= 12 && !held_seen;
@@ -125,7 +141,22 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 held_seen = true;
             }
             assert_eq!(sample.presentation_alpha, sample.display_phase.min(1.0));
+            let frame_origin = sample
+                .tick_due_time
+                .map(|due| due.as_secs_f64() - sample.tick as f64 / 60.0);
+            if let Some(offset) = frame_origin {
+                if let Some(old) = last_origin
+                    && (offset - old).abs() > 0.000_002
+                {
+                    origin_changes += 1;
+                }
+                last_origin = Some(offset);
+                if !paused {
+                    assert!(offset.abs() < 0.000_002, "initial span starts at zero");
+                }
+            }
             if !sample.clock_interpolating {
+                assert_eq!(sample.tick_due_time, None);
                 counts[5] += 1;
                 assert_eq!(sample.display_phase, 1.0);
                 previous = None;
@@ -135,20 +166,27 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
             } else {
                 let display = (sample.tick as f64 - 1.0 + f64::from(sample.display_phase)) / 60.0;
                 let consumed_seconds = consumed.as_secs_f64();
-                assert!((display - (consumed_seconds - 1.0 / 60.0)).abs() < 0.000_002);
-                if let Some((old_display, old_consumed)) = previous {
+                let offset = frame_origin.expect("interpolating origin");
+                let independent = (sample.tick as f64 - 1.0) / 60.0 + consumed_seconds
+                    - sample.tick_due_time.expect("due time").as_secs_f64();
+                assert!((display - independent).abs() < 0.000_002);
+                if let Some((old_display, old_consumed, old_origin)) = previous
+                    && (offset - old_origin).abs() < 0.000_002
+                {
                     assert!(
                         (display - old_display - (consumed_seconds - old_consumed)).abs()
                             < 0.000_004
                     );
                 }
-                previous = Some((display, consumed_seconds));
+                previous = Some((display, consumed_seconds, offset));
             }
             records.push(serde_json::json!({"opportunity":opportunity.index,"held":held,
                 "platform_target_ns":target.as_nanos(),"observation_ns":sample.observation.as_nanos(),
                 "presentation_lead_ns":sample.presentation_lead.as_nanos(),"lead_status":format!("{status:?}").to_lowercase(),
                 "tick":sample.tick,"display_phase":sample.display_phase,"alpha":sample.presentation_alpha,
                 "clock_interpolating":sample.clock_interpolating,"submission":sample.submission_order,
+                "tick_due_time_ns":sample.tick_due_time.map(|d| d.as_nanos()),
+                "origin_seconds":frame_origin,
                 "pixel_bytes":image.rgba.len(),"render_preemption_ns":preemption.map(|p| p.map(|t| t.as_nanos()))}));
             driver.recycle(image);
             if records.len() == 32 {
@@ -166,6 +204,10 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
         );
         assert!(held_seen && counts[0] > 0 && counts[1] > 0);
         assert!(
+            counts[5] >= 4 && origin_changes >= 1,
+            "capture retained stop and origin change"
+        );
+        assert!(
             records.len() > counts[4] + counts[5],
             "running interpolating world was observed"
         );
@@ -175,7 +217,7 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
         std::fs::create_dir_all(&output).expect("output");
         std::fs::write(output.join("realtime-record.json"), serde_json::to_vec_pretty(&serde_json::json!({
             "mode":"realtime","opportunity_hz":120,"precision_ns":2000,
-            "counts":{"future":counts[0],"late":counts[1],"invalid":counts[2],"clamped":counts[3],"bound":counts[4],"stopped":counts[5]},
+            "counts":{"future":counts[0],"late":counts[1],"invalid":counts[2],"clamped":counts[3],"bound":counts[4],"stopped":counts[5],"origin_changes":origin_changes},
             "opportunities":opportunities,"frames":records})).expect("JSON")).expect("record");
     });
 }

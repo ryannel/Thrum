@@ -92,6 +92,9 @@ impl FrameWorld for World {
     fn is_interpolating(&self) -> bool {
         false
     }
+    fn tick_due_time(&self) -> Option<Duration> {
+        None
+    }
 }
 struct FieldSource;
 impl SceneSource<Page> for FieldSource {
