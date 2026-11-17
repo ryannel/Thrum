@@ -195,6 +195,35 @@
         "by": "plan",
         "task": "Revise CREATOR's design and plan as docs/evidence/CREATOR/design-review.md asks",
         "at": "2026-11-10T23:30:06Z"
+      },
+      "ready_for_review": {
+        "commit": "f79820782c19a1c0d441734cb9e14893e42911d0",
+        "checked": "d4211429179fd525e24770827a011bf722f05e8e",
+        "at": "2026-11-17T01:16:39Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "visible",
+        "usage": {
+          "input": 1915014,
+          "cached": 336903424,
+          "output": 644622,
+          "turns": 18
+        },
+        "session_usage": {
+          "input": 1915014,
+          "cached": 336903424,
+          "output": 644622,
+          "turns": 18
+        }
       }
     }
   },
