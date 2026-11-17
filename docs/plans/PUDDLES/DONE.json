@@ -156,7 +156,7 @@
     {
       "id": "M2",
       "name": "On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -171,8 +171,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -181,8 +181,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m22",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -192,8 +192,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m23",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -202,8 +202,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m24",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -213,8 +213,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m25",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -224,8 +224,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m26",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.11",
@@ -234,8 +234,8 @@
           "ask": "Does the test sum each receiver's cells from the bed, the shelters and the level at the tick's start, reading the mark only to tell held ground from open ground? Would a model that gave the puddle the rain on held ground fail it, at the rain under the percolation rate, though that model's total closes? Would one that passed a puddle's rain through the ground's stores?",
           "target": "mac-metal",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -246,8 +246,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m212",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.13",
@@ -257,8 +257,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m213",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.9",
@@ -267,8 +267,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m29",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.10",
@@ -277,15 +277,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "uncovering-film-is-owed-instead-of-transferred",
-          "item": "M2.11",
-          "repeat": true
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M2-review.md"
         }
       ]
     },

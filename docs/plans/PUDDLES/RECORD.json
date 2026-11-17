@@ -255,7 +255,7 @@
         {
           "verdict": "fail",
           "commit": "ef9ea8b51541c4266d5ea0dc481be7156323f885",
-          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "review": "docs/evidence/PUDDLES/M2-review-3.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -290,6 +290,40 @@
             "turns": 1
           },
           "at": "2026-11-16T20:06:43Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "b607d212f8e2f1eaf0c31884770c8872e4a1f248",
+          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.11": "pass",
+            "M2.12": "pass",
+            "M2.13": "pass",
+            "M2.9": "pass",
+            "M2.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 164070,
+            "cached": 2984192,
+            "output": 7590,
+            "turns": 1
+          },
+          "at": "2026-11-17T03:38:57Z"
         }
       ],
       "authorised": {
@@ -327,6 +361,13 @@
           "cost_usd": 11.800211,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "b607d212f8e2f1eaf0c31884770c8872e4a1f248",
+        "review": "docs/evidence/PUDDLES/M2-review.md",
+        "checked": "a5900b5deb917960fe274ae70f35fe77b9ba0a35",
+        "at": "2026-11-17T03:38:57Z"
       }
     },
     "M3": {
