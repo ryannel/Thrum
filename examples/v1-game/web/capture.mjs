@@ -8,6 +8,7 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
+const exportSlots = scene === 'exit' && query.get('export-slots') === '24' ? 24 : 8;
 const witness = query.get('witness') ?? 'off';
 if (!['day', 'night', 'noon', 'exit'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
@@ -26,7 +27,7 @@ function drain() {
     if (!image) return;
     const metadata = JSON.parse(image.metadata);
     metadata.available_ms = performance.now();
-    if (inflight.size >= 8) {
+    if (inflight.size >= exportSlots) {
       record.export_omissions = (record.export_omissions ?? 0) + 1;
       continue;
     }

@@ -11,13 +11,14 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 // original submitted bytes and metadata, and never create a second frame.
 export function captureReceiver(output, frameBytes, manifest, failed, slow = false) {
   const recordLimit = manifest.record_limit ?? 1024;
+  const exportSlots = manifest.export_slots ?? 8;
   let active = 0, outputBytes = 0;
   const pending = new Set(), writing = new Map(), headers = new Map();
   function receive(request, response) {
     if (!request.url.startsWith('/capture?')) return false;
     let ordinal;
     const work = (async () => {
-      if (request.method !== 'POST' || active >= 8) { request.resume(); response.writeHead(429).end(); return; }
+      if (request.method !== 'POST' || active >= exportSlots) { request.resume(); response.writeHead(429).end(); return; }
       active++; manifest.export_peak = Math.max(manifest.export_peak, active);
       try {
         ordinal = Number(new URL(request.url, 'http://localhost').searchParams.get('ordinal'));

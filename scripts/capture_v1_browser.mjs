@@ -60,7 +60,11 @@ const manifest = { complete: false, target: 'chrome-webgpu', source: args.source
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
-if (args.scene === 'exit') manifest.record_limit = 1800;
+if (args.scene === 'exit') {
+  manifest.record_limit = 1800;
+  manifest.export_slots = 24;
+  manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
+}
 manifest.effect = args.effect;
 manifest.console = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
 const bundle = path.join(output, 'ThrumCapture.app');
@@ -98,7 +102,7 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (args.control === 'loss' && !destroyed) {
