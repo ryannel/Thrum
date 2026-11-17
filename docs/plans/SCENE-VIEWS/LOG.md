@@ -1,5 +1,10 @@
 # SCENE-VIEWS log
 
+- 2026-11-17 M1 integration: `262e0daed` rebases the caster fix onto the mesh-row
+  host relocation. Its shared refresh helper now updates secondary caster mesh
+  records after row switches and arena inheritance. Proofs remain in
+  [the caster record](../../evidence/SCENE-VIEWS/M1/caster-culling/README.md).
+
 - 2026-11-17 M1 review fix: `34b9e3f1a` supplies each secondary cascade's own
   prepared caster compaction on the culled bucket route, using the main kernel.
   Metal regression runs on both recipes preserve off-camera casters, remove
