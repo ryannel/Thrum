@@ -1670,7 +1670,7 @@
         },
         {
           "id": "M16.11",
-          "statement": "The weather state holds the haze's Ångström exponent beside the clear air's visual range, 0 by default, held between 0 and 2, moving toward its target like any parameter, and the cloud selection hands it with the visual range to `ATMOSPHERE`'s haze input. Moving it changes no answer of the point query, no visual range and no column the weather map holds.",
+          "statement": "The weather state holds the haze's \u00c5ngstr\u00f6m exponent beside the clear air's visual range, 0 by default, held between 0 and 2, moving toward its target like any parameter, and the cloud selection hands it with the visual range to `ATMOSPHERE`'s haze input. Moving it changes no answer of the point query, no visual range and no column the weather map holds.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test haze_kind",
           "ask": "Does the test step a state whose exponent moves while every other parameter is held, and compare the query's answers and the visual range bit for bit with a state whose exponent is fixed? Does the selection pass the state's exponent, and not a constant, to the haze input?",
           "target": "mac-metal",
