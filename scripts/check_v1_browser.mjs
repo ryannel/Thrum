@@ -1708,14 +1708,25 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
       const frame = game.next_submitted_image();
       if (frame) {
         game.end_submitted_capture();
-        return { metadata: JSON.parse(frame.metadata), bytes: frame.pixels.toBase64(),
+        window.exitFixedPixels = frame.pixels;
+        return { metadata: JSON.parse(frame.metadata), byteLength: frame.pixels.length,
           width: document.querySelector('canvas').width, height: document.querySelector('canvas').height };
       }
     `), `${mode} fixed submitted image`);
-    const pixels = Buffer.from(frame.bytes, 'base64');
-    if (!frame.metadata.surface_presented || frame.metadata.source_tick !== exit.tick || pixels.length !== frame.width * frame.height * 4) {
+    if (!frame.metadata.surface_presented || frame.metadata.source_tick !== exit.tick || frame.byteLength !== frame.width * frame.height * 4) {
       throw new Error(`${mode}: wrong submitted frame identity ${JSON.stringify(frame.metadata)}`);
     }
+    // Keep each DevTools reply below its message limit. Retain those exact
+    // bytes from one render submission across all chunks.
+    const pixels = Buffer.alloc(frame.byteLength);
+    for (let offset = 0; offset < pixels.length; offset += 256 * 1024) {
+      const end = Math.min(pixels.length, offset + 256 * 1024);
+      const value = await game.invoke('return window.exitFixedPixels.subarray(args[0],args[1]).toBase64();', [offset, end]);
+      const bytes = Buffer.from(value, 'base64');
+      if (bytes.length !== end - offset) throw new Error(`${mode}: truncated submitted image chunk`);
+      bytes.copy(pixels, offset);
+    }
+    await game.invoke('delete window.exitFixedPixels;');
     const name = `${mode}.rgba8`;
     await fs.writeFile(path.join(output, name), pixels);
     submitted = { file: name, sha256: sha(pixels), mode: 'fixed', width: frame.width, height: frame.height, ...frame.metadata };
