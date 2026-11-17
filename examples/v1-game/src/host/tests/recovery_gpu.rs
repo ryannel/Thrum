@@ -385,6 +385,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
                 reconstruction: thrum_render::synthetic::Reconstruction::Off,
                 diagnostic_clouds: false,
                 content: crate::GameContent::Field,
+                exit_entities: crate::ExitEntities::Draw,
                 camera_culling: thrum_render::synthetic::CullMode::Frustum,
                 valley_stars: false,
                 route_overlay: crate::RouteOverlay::Off,

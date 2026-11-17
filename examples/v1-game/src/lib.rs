@@ -40,8 +40,8 @@ pub use content::{CloudQualityError, apply_cloud_quality, attach_cooked_scene, s
 #[doc(hidden)]
 pub use host::field_in_view_share;
 pub use host::{
-    AdvancedFrame, DriveReport, EncodedFrame, FrameConfig, FrameHost, FrameSample, GameSetup,
-    MeshRowSource, SurfaceOutput,
+    AdvancedFrame, DriveReport, EncodedFrame, ExitEntities, FrameConfig, FrameHost, FrameSample,
+    GameSetup, MeshRowSource, SurfaceOutput,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use host::{ThreadedFrameHost, WorldControls};

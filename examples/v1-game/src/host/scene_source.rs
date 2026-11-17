@@ -397,7 +397,8 @@ impl GameScene {
         Self {
             cloud_input: None,
             content: setup.content,
-            omit_exit_props: setup.content == GameContent::Exit && setup.hide_exit_entities,
+            omit_exit_props: setup.content == GameContent::Exit
+                && setup.exit_entities == crate::ExitEntities::Omit,
             valley_stars: setup.content != GameContent::Field && setup.valley_stars,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,

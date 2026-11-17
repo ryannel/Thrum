@@ -50,6 +50,16 @@ impl From<bool> for MeshRowSource {
     }
 }
 
+/// Visual selection for the exit scene's entity population.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ExitEntities {
+    /// Draw the populated scene.
+    #[default]
+    Draw,
+    /// Diagnostic comparison with the same store and no drawn entities.
+    Omit,
+}
+
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GameSetup {
@@ -68,7 +78,7 @@ pub struct GameSetup {
     /// The grid or the dense flythrough field.
     pub content: GameContent,
     /// Draw the exit terrain and sample objects with its entity population suppressed.
-    pub hide_exit_entities: bool,
+    pub exit_entities: ExitEntities,
     /// How the camera's opaque draw is culled; Direct draws every instance.
     pub camera_culling: CullMode,
     /// Prepare the authored valley's star field. Ignored for the flythrough field.
@@ -92,7 +102,7 @@ impl Default for GameSetup {
             display_overlay: DisplayOverlay::Off,
             diagnostic_clouds: false,
             content: GameContent::Grid,
-            hide_exit_entities: false,
+            exit_entities: ExitEntities::Draw,
             camera_culling: CullMode::Direct,
             valley_stars: false,
             route_overlay: RouteOverlay::Off,

@@ -188,6 +188,7 @@ pub async fn create_field_game(
             cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             content: crate::GameContent::Field,
+            exit_entities: crate::ExitEntities::Draw,
             cooked_mesh_rows: crate::host::MeshRowSource::Code,
             diagnostic_clouds: false,
             camera_culling,
