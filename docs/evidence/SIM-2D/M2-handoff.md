@@ -22,9 +22,11 @@ JavaScript syntax check pass. `./dev check` passed before the rebase. The final
 merge runs the gate on integrated work. The lead reported the other item checks
 passing; do not repeat them merely because of the rebase.
 
-Two current background jobs measure the integrated source at `119bd20ab`:
+The background jobs measure the integrated source at `119bd20ab`:
 
-- `20261117-010823-22751` writes `tmp/sim2d/M2-costs-mac-metal.json`.
+- `20261117-010823-22751` passed. Its complete Mac record and passing validation
+  receipt are retained at the standard M2 paths. The two repeats contain 24 rows,
+  warmed calls allocate zero, and the performance notes contain the new measurements.
 - `20261117-010823-22761` writes `tmp/sim2d/M2-costs-chrome-webgpu.json`.
 
 Use the build script's `wait <job> --timeout 50 --lines 5` or `jobs` to collect
@@ -33,10 +35,11 @@ them. The script is
 The jobs take their own device locks. Earlier direct-tool measurements were
 stopped after a harness change or the core rebase; none is accepted evidence.
 
-When both jobs pass, retain their complete records at the matching
+When the remaining Chrome job passes, retain its complete record at the matching
 `docs/evidence/SIM-2D/M2/costs-<target>.json` paths. The `costs --target <target>`
 validator must pass for both, with receipts retained at the existing validation
-paths. Refresh the current measurements in `M2/performance.md` and `M2.md`, keeping
+paths. The Mac validator already passes. Refresh the Chrome measurements in
+`M2/performance.md` and `M2.md`, keeping
 the historical investigation and every tripwire. Add at most eight lines to the
 module log. Commit the evidence and merge through the script. The milestone stays
 `in_progress`; end with `DONE` only after `MERGED`.

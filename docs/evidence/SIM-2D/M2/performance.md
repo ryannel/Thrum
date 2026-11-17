@@ -3,49 +3,54 @@
 ## Refreshed Mac CPU measurements
 
 The [current Mac record](costs-mac-metal.json) contains two complete release runs at
-`d24658b33cd994512dbe0c36a3daa5b44eeb356c`, source key
-`bdcda83e5678dc917bd65c8ff9d7fa5a665867de5186d38c7f7ca0e1825c0e44`.
+`119bd20ab17438e0bab5a5c5bfb52b695e835b74`, source key
+`a8df10ea68a72e0b109e9f934951d7cd1dcf2809395fbba59c195c0b44d8b8c3`.
 The [source/completeness validator passes](cost-validation-mac-metal.json). All 24 rows
 retain their load brackets, M1 comparators and second-repeat comparators. Warmed build
 and all five query calls again observe zero allocations. No count or time gates success.
 
 | Crowd bodies | M1 tick / index, ms | Refresh repeat 1 tick / index, ms | Refresh repeat 2 tick / index, ms |
 |---|---:|---:|---:|
-| 2,000 | 0.523417 / 0.026042 | 0.738042 / 0.090708 | 0.727167 / 0.090958 |
-| 5,000 | 1.232208 / 0.075708 | 1.964041 / 0.242250 | 1.682000 / 0.239709 |
-| 10,000 | 8.068417 / 0.165792 | 10.133542 / 0.493292 | 9.696083 / 0.477250 |
+| 2,000 | 0.523417 / 0.026042 | 0.747584 / 0.091209 | 0.718209 / 0.089458 |
+| 5,000 | 1.232208 / 0.075708 | 1.675750 / 0.242000 | 1.627875 / 0.236750 |
+| 10,000 | 8.068417 / 0.165792 | 9.852000 / 0.479458 | 9.640208 / 0.475709 |
 
-Five rows trip the M1 quarter-regression flag: serial Crowd at 2,000 and 5,000 in
-both repeats, and 10,000 in repeat 1. Their accepted neighbour counts equal M1's.
-Index increases are 65, 164–167 and 311–328 microseconds at the three sizes. The
+Four rows trip the M1 quarter-regression flag: serial Crowd at 2,000 and 5,000 in
+both repeats, by 32.1–42.8%. Their accepted neighbour counts equal M1's.
+Index increases are 63–65, 161–166 and 310–314 microseconds at the three sizes. The
 eight-pass canonical ordering, shared shape predicate and conservative-bound work
 described in the initial investigation below remain unchanged. That investigation
 locates these paths, without assigning causal percentages to the tick increase.
 
-The 10,000-body flag is 25.6% over M1 in repeat 1 and 20.2% in repeat 2. At 5,000,
-the tick changes by 16.8% between repeats while the separate index measurement
-changes by about 1%. First-repeat Crowd load brackets are 31.5–34.4 at one minute;
-second-repeat brackets are 7.9–18.0. This supports contention as a contributor to
-repeat variation, not a measurement of its causal share. Full-run one-minute loads
-range from 7.88 to 42.23. These remain shared-host baselines.
+The 10,000-body ticks are 22.1% and 19.5% above M1, below the quarter tripwire.
+Crowd serial medians agree within 4.1% between repeats. Full-run one-minute load
+brackets range from 6.03 to 22.14. These remain shared-host baselines, with no
+measurement of contention's causal share. The native executable is byte-identical
+to the previous refresh at `d24658b33`; the harness and integrated source manifest
+have new identities. Earlier records keep their original provenance in Git.
 
 The four scaling flags are serial 5,000-body rows of both traces in both repeats,
 at the same 4,096-to-16,384 table-capacity step explained below. No row trips the
-clock flag or the chronological quarter-slower flag. Parallel is retained whichever
-way it performs: the first 2,000-body Mixed row costs 1.121 ms versus 0.797 ms serial;
-the second costs 0.594 ms versus 0.731 ms serial. This does not establish a quiet-host crossover.
+clock flag or the chronological quarter-slower flag. Every current forced-parallel
+row is faster than its matching serial row. Mixed at 2,000 is 0.360–0.372 ms
+parallel versus 0.717–0.743 ms serial. The previous `d24658b33` refresh recorded
+1.121 ms parallel versus 0.797 ms serial for this row in repeat one, and 0.594 ms
+versus 0.731 ms in repeat two. Those source-tagged measurements remain in Git;
+the current improvement does not establish a quiet-host crossover.
 
-At 10,000 bodies, serial tick medians span 9.696–10.134 ms and forced-parallel
-medians 2.267–2.468 ms. Eight-tick replay spans 81.073–110.682 ms serial and
-20.945–62.386 ms parallel. The larger replay spread remains visible for SESSION.
-This refresh binds the changed clock/presentation source; it does not isolate a
-timing effect caused by those source changes.
+At 10,000 bodies, serial tick medians span 9.640–9.878 ms and forced-parallel
+medians 1.952–2.107 ms. Eight-tick replay spans 80.279–83.075 ms serial and
+15.733–17.240 ms parallel. All full-trace index, digest, neighbour and replay
+measurements remain in the record. This refresh binds the Chrome queue repair
+and upstream core world-lane source; it does not isolate a timing effect from them.
 
-## Refreshed Chrome Wasm measurements
+## Earlier Chrome Wasm measurements
 
-The [current Chrome record](costs-chrome-webgpu.json) contains two complete release
-runs at the same `d24658b33` commit and source key as the refreshed Mac record.
-Its [source/completeness validator passes](cost-validation-chrome-webgpu.json).
+The [Chrome record](costs-chrome-webgpu.json) below contains two complete release
+runs at `d24658b33`, source key
+`bdcda83e5678dc917bd65c8ff9d7fa5a665867de5186d38c7f7ca0e1825c0e44`.
+Its [source/completeness validation](cost-validation-chrome-webgpu.json) passed at
+that source checkpoint. The recovery note records the ongoing replacement campaign.
 
 | Crowd bodies | M1 tick / index, ms | Refresh repeat 1 tick / index, ms | Refresh repeat 2 tick / index, ms |
 |---|---:|---:|---:|
