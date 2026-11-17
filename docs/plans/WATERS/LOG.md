@@ -425,3 +425,8 @@
   pass, including independent hold/commit expectations, a hitch and device replacement, with no validation faults.
   [Resume proof](../../evidence/WATERS/M3-resume.md) records exact source/Wasm identity and numerical bounds.
   The passed visual judgments remain scoped to their retained captures; physical cadence remains unqualified.
+- 2026-11-17 M3's resume correction merged at `e5de7027e` after the full project gate passed.
+  [Fresh submitted output](../../evidence/WATERS/M3-resume-visual.md) matches all retained Chrome and portable
+  Metal fixed pixels exactly. All 53 consecutive Chrome pan crops were inspected, with zero capture omissions.
+  A 99.9 ms page callback gap and 116.6 ms submission gap are recorded separately from field continuity;
+  neither this capture-ON run nor its page clock qualifies physical cadence.
