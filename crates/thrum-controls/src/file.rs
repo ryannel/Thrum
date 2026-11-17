@@ -38,9 +38,7 @@ impl Controls {
     /// Refuses text that is not a JSON object; nothing is applied.
     pub fn apply_file(&mut self, json: &str) -> Result<FileReport, ControlError> {
         let entries: serde_json::Map<String, serde_json::Value> = serde_json::from_str(json)
-            .map_err(|error| {
-                ControlError::InvalidFile(format!("is not a JSON object ({error})"))
-            })?;
+            .map_err(|error| ControlError::InvalidFile(std::sync::Arc::new(error)))?;
         let mut report = FileReport::default();
         for (key, value) in entries {
             match self.apply_entry(&key, &value) {

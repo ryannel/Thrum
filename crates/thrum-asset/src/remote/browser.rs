@@ -28,8 +28,8 @@ extern "C" {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BrowserFetch;
 
-fn transport(error: &JsValue) -> AssetError {
-    AssetError::Transport(error.as_string().unwrap_or_else(|| format!("{error:?}")))
+fn transport(value: JsValue) -> AssetError {
+    AssetError::BrowserTransport(crate::BrowserTransportError::Rejected(value))
 }
 
 impl Fetch for BrowserFetch {
@@ -37,14 +37,11 @@ impl Fetch for BrowserFetch {
         // `fetch` starts the request now; the future only waits for it.
         let started = JsFuture::from(global_fetch(url));
         async move {
-            let response: FetchResponse = started
-                .await
-                .map_err(|error| transport(&error))?
-                .unchecked_into();
+            let response: FetchResponse = started.await.map_err(transport)?.unchecked_into();
             let status = response.status();
             let buffer = JsFuture::from(response.array_buffer())
                 .await
-                .map_err(|error| transport(&error))?;
+                .map_err(transport)?;
             let view = js_sys::Uint8Array::new(&buffer);
             let body = ProductBytes::fill(view.length() as usize, |bytes| view.copy_to(bytes));
             Ok(FetchReply { status, body })

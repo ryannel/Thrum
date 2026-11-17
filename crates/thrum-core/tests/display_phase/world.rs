@@ -9,7 +9,7 @@ struct Game(u64);
 impl WorldGame for Game {
     type Control = ();
     type Page = u64;
-    type Error = &'static str;
+    type Error = std::convert::Infallible;
     fn validate_control((): ()) -> Result<(), Self::Error> {
         Ok(())
     }

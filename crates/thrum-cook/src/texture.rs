@@ -10,6 +10,9 @@ use thrum_asset::{Ktx2Format, Profile};
 use crate::CookError;
 use crate::write::ktx2;
 
+#[cfg(test)]
+mod tests;
+
 /// Encoder effort; the dev loop favours latency, release builds favour quality.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Quality {
@@ -32,7 +35,7 @@ pub(crate) fn cook_texture(
     quality: Quality,
 ) -> Result<Vec<u8>, CookError> {
     let image = image::load_from_memory(bytes)
-        .map_err(|error| CookError::Source(error.to_string()))?
+        .map_err(CookError::ImageImport)?
         .to_rgba8();
     let (width, height) = image.dimensions();
     if profile != Profile::Portable {
@@ -276,7 +279,6 @@ fn compress_astc(
             .with_block_size(astcenc_rs::Extents::new(4, 4))
             .build()
             .and_then(|config| astcenc_rs::Context::with_threads(1, config))
-            .map_err(|error| CookError::Source(format!("ASTC encoder: {error:?}")))
     };
     let row_bytes = width as usize * 4;
     let strips: Vec<(u32, &[u8])> = rgba
@@ -288,14 +290,14 @@ fn compress_astc(
         .map_init(configure, |context, (rows, data)| {
             let context = context
                 .as_mut()
-                .map_err(|error| CookError::Source(error.to_string()))?;
+                .map_err(|code| CookError::TextureEncode(crate::TextureEncodeError::Astc(*code)))?;
             let image = astcenc_rs::Image {
                 extents: astcenc_rs::Extents::new(width, *rows),
                 data: vec![*data],
             };
             context
                 .compress(&image, astcenc_rs::Swizzle::rgba())
-                .map_err(|error| CookError::Source(format!("ASTC encoder: {error:?}")))
+                .map_err(|code| CookError::TextureEncode(crate::TextureEncodeError::Astc(code)))
         })
         .collect();
     let mut out = Vec::with_capacity(

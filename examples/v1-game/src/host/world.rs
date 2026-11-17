@@ -507,15 +507,49 @@ impl GameWorld {
     }
 }
 
+#[derive(Debug)]
+pub(super) enum GameWorldError {
+    Controls(thrum_core::sim::InputFrameError),
+    Admission(thrum_core::sim::InputFrameError),
+    Simulation {
+        operation: &'static str,
+        source: SimError,
+    },
+    Exhausted(&'static str),
+    Reconstruction(String),
+}
+
+impl std::fmt::Display for GameWorldError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Controls(error) => write!(f, "local controls: {error}"),
+            Self::Admission(error) => write!(f, "local input admission: {error:?}"),
+            Self::Simulation { operation, source } => write!(f, "{operation}: {source:?}"),
+            Self::Exhausted(what) => write!(f, "{what} exhausted"),
+            Self::Reconstruction(message) => f.write_str(message),
+        }
+    }
+}
+
+impl std::error::Error for GameWorldError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Controls(error) | Self::Admission(error) => Some(error),
+            Self::Simulation { source, .. } => Some(source),
+            _ => None,
+        }
+    }
+}
+
 impl WorldGame for GameWorld {
     type Control = [f32; 3];
     type Page = PublishedPage;
-    type Error = String;
+    type Error = GameWorldError;
 
     fn validate_control(control: Self::Control) -> Result<(), Self::Error> {
         scene::control_frame(scene::LOCAL_PEER, control, 0, 0)
             .validate_axes()
-            .map_err(|error| format!("local controls: {error:?}"))
+            .map_err(GameWorldError::Controls)
     }
 
     fn same_control(left: Self::Control, right: Self::Control) -> bool {
@@ -545,11 +579,11 @@ impl WorldGame for GameWorld {
                 .sim
                 .tick()
                 .checked_add(1)
-                .ok_or("input tick exhausted")?;
+                .ok_or(GameWorldError::Exhausted("input tick"))?;
             let next_sequence = self
                 .input_sequence
                 .checked_add(1)
-                .ok_or("input sequence exhausted")?;
+                .ok_or(GameWorldError::Exhausted("input sequence"))?;
             let frame = scene::control_frame(
                 scene::LOCAL_PEER,
                 self.desired_axes,
@@ -558,19 +592,22 @@ impl WorldGame for GameWorld {
             );
             self.sim
                 .admit_frame(frame)
-                .map_err(|error| format!("local input admission: {error:?}"))?;
+                .map_err(GameWorldError::Admission)?;
             self.admitted_axes = self.desired_axes;
             self.input_sequence = next_sequence;
         }
         let commands =
             if self.route_overlay == scene::RouteOverlay::Reconstruction && self.sim.tick() == 59 {
-                scene::reconstruction_spawn(&self.sim)?
+                scene::reconstruction_spawn(&self.sim).map_err(GameWorldError::Reconstruction)?
             } else {
                 Vec::new()
             };
         self.sim
             .step(&commands)
-            .map_err(|error| format!("simulation step: {error:?}"))?;
+            .map_err(|source| GameWorldError::Simulation {
+                operation: "simulation step",
+                source,
+            })?;
         let skipped_publication = !self.sim.has_current_page();
         let projected_changes = if skipped_publication {
             0
@@ -578,7 +615,10 @@ impl WorldGame for GameWorld {
             let page = self
                 .sim
                 .published_page()
-                .map_err(|error| format!("world page: {error:?}"))?;
+                .map_err(|source| GameWorldError::Simulation {
+                    operation: "world page",
+                    source,
+                })?;
             // capture owns baseline handling as well as ordinary deltas.
             self.projections
                 .as_mut()
@@ -592,7 +632,10 @@ impl WorldGame for GameWorld {
 
     fn recover_publication(&mut self) -> Result<Option<usize>, Self::Error> {
         self.recover_page()
-            .map_err(|error| format!("world page: {error:?}"))
+            .map_err(|source| GameWorldError::Simulation {
+                operation: "world page",
+                source,
+            })
     }
 
     fn publication(&mut self) -> Result<Option<WorldPublication<Self::Page>>, Self::Error> {
@@ -608,7 +651,10 @@ impl WorldGame for GameWorld {
                 page,
             })),
             Err(SimError::PublicationBusy) => Ok(None),
-            Err(error) => Err(format!("world page: {error:?}")),
+            Err(source) => Err(GameWorldError::Simulation {
+                operation: "world page",
+                source,
+            }),
         }
     }
 

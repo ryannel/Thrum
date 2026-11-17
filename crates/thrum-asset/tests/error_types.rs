@@ -8,6 +8,13 @@ fn assert_error<T: Error>() {}
 #[test]
 fn public_errors_implement_error() {
     assert_error::<AssetError>();
+    #[cfg(target_arch = "wasm32")]
+    assert_error::<thrum_asset::BrowserTransportError>();
+}
+
+#[cfg(target_arch = "wasm32")]
+mod error_types {
+    mod browser;
 }
 
 #[test]

@@ -1,5 +1,22 @@
 use std::{fmt, path::PathBuf};
 
+/// A native texture encoder refusal. The upstream ASTC code has no `Error` or `Display`
+/// implementation, so this adapter retains its typed code without stringifying it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextureEncodeError {
+    /// Inspect the code, repair the configuration/input or select another profile.
+    Astc(astcenc_rs::Error),
+}
+
+impl fmt::Display for TextureEncodeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Astc(code) => write!(f, "ASTC encoder refused: {code:?}"),
+        }
+    }
+}
+impl std::error::Error for TextureEncodeError {}
+
 /// An origin cannot be admitted to the development server's allow list.
 #[derive(Debug, PartialEq, Eq)]
 pub enum OriginError {

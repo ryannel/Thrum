@@ -1,7 +1,7 @@
 //! Public error inventory and wrapped-source contract.
 
 use std::error::Error;
-use thrum_cook::{CookError, OriginError, TripwireError};
+use thrum_cook::{CookError, OriginError, TextureEncodeError, TripwireError};
 
 fn assert_error<T: Error>() {}
 
@@ -10,6 +10,7 @@ fn public_errors_implement_error() {
     assert_error::<CookError>();
     assert_error::<OriginError>();
     assert_error::<TripwireError>();
+    assert_error::<TextureEncodeError>();
 }
 
 #[test]

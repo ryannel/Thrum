@@ -129,6 +129,42 @@ pub enum SimError {
     InvalidEdit,
 }
 
+impl std::fmt::Display for SimError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidConfig => f.write_str("Invalid V1 game configuration"),
+            Self::Capacity => f.write_str("Entity or peer capacity exhausted"),
+            Self::DuplicateId => {
+                f.write_str("Stable identity already active or repeated in a command batch")
+            }
+            Self::InvalidHandle => {
+                f.write_str("A checked handle is stale, retired or from another epoch")
+            }
+            Self::NonFinite => f.write_str("Authored or derived number is nonfinite"),
+            Self::ConflictingCommands => {
+                f.write_str("Two resolve edits target the same field or overlap destruction")
+            }
+            Self::InvalidOwnership => f.write_str("Peer binding is absent, stale or mismatched"),
+            Self::InvalidInput => {
+                f.write_str("A replacement retained input fails V1 admission or identity checks")
+            }
+            Self::AlreadyStarted => f.write_str("Initial seeding is closed"),
+            Self::TickExhausted => f.write_str("The fixed tick cannot advance without wrapping"),
+            Self::PublicationBusy => {
+                f.write_str("Every page in the engine publication ring is leased")
+            }
+            Self::InvalidSnapshot => {
+                f.write_str("Replay capture belongs to a different authority or schema")
+            }
+            Self::InvalidEdit => {
+                f.write_str("Engine preflight rejected a game-authored typed edit batch")
+            }
+        }
+    }
+}
+
+impl std::error::Error for SimError {}
+
 /// Copied V1 game fields behind one checked handle.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ComponentView {

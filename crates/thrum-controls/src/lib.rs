@@ -159,7 +159,7 @@ impl Spec {
 }
 
 /// A refused declaration or edit. Each message names the control, the cause and a next step.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub enum ControlError {
     /// The key is empty, too long, not lowercase `a-z0-9_.`, or starts/ends with a dot.
     InvalidKey(String),
@@ -186,7 +186,8 @@ pub enum ControlError {
         cause: String,
     },
     /// A parameter file is not a JSON object of keys to values.
-    InvalidFile(String),
+    /// Clones share the original parser error; equality compares that source's identity.
+    InvalidFile(std::sync::Arc<serde_json::Error>),
     /// An edit named a control ID this model never declared (for example one from another model).
     UnknownId(usize),
 }
@@ -226,7 +227,7 @@ impl fmt::Display for ControlError {
             Self::InvalidValue { key, cause } => write!(f, "control {key:?}: {cause}"),
             Self::InvalidFile(cause) => write!(
                 f,
-                "parameter file {cause}; write one JSON object of control keys to display values, \
+                "parameter file is not a JSON object ({cause}); write one JSON object of control keys to display values, \
                  such as {{\"sky.solar_time\": 18.5}}"
             ),
             Self::UnknownId(index) => write!(
@@ -237,7 +238,46 @@ impl fmt::Display for ControlError {
     }
 }
 
-impl std::error::Error for ControlError {}
+impl std::error::Error for ControlError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidFile(error) => Some(error.as_ref()),
+            _ => None,
+        }
+    }
+}
+
+// Parser failures are opaque: equality uses the retained source's identity, which cloning
+// preserves. Other refusals continue to compare their structured declaration/edit data.
+impl PartialEq for ControlError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::InvalidKey(a), Self::InvalidKey(b))
+            | (Self::DuplicateKey(a), Self::DuplicateKey(b))
+            | (Self::InvalidLabel(a), Self::InvalidLabel(b))
+            | (Self::InvalidRange(a), Self::InvalidRange(b)) => a == b,
+            (Self::TooMany, Self::TooMany) => true,
+            (
+                Self::UnknownKey {
+                    key: a,
+                    suggestion: x,
+                },
+                Self::UnknownKey {
+                    key: b,
+                    suggestion: y,
+                },
+            ) => a == b && x == y,
+            (Self::InvalidValue { key: a, cause: x }, Self::InvalidValue { key: b, cause: y }) => {
+                a == b && x == y
+            }
+            (Self::InvalidFile(a), Self::InvalidFile(b)) => std::sync::Arc::ptr_eq(a, b),
+            (Self::UnknownId(a), Self::UnknownId(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for ControlError {}
 
 /// The game's declared controls and their current values.
 ///

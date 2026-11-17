@@ -22,8 +22,8 @@ pub trait WorldTask: Send + 'static {
     type Control: Copy + Send + Sync + 'static;
     /// Immutable publication lease.
     type Page: Clone + Send + Sync + 'static;
-    /// Game's authority failure; the lane retains its display text in a fault.
-    type Error: fmt::Display + Send + 'static;
+    /// Game's authority failure, retained intact across the worker and cloned fault handles.
+    type Error: std::error::Error + Send + Sync + 'static;
 
     /// Validate a control before it enters the mailbox.
     /// # Errors
@@ -89,13 +89,15 @@ pub enum WorldLaneFault {
     /// Native thread could not start.
     Start(Arc<std::io::Error>),
     /// The authoritative task failed.
-    Task(Arc<str>),
+    Task(Arc<dyn std::error::Error + Send + Sync>),
     /// A control was rejected before entering the mailbox.
-    InvalidControl(Arc<str>),
+    InvalidControl(Arc<dyn std::error::Error + Send + Sync>),
+    /// Publish the initial endpoint before starting the resident lane.
+    MissingPublication,
     /// A lifecycle request or its unconsumed reply still occupies the slot.
     Busy,
     /// A lifecycle operation was refused; authority remains available.
-    Lifecycle(Arc<str>),
+    Lifecycle(Arc<dyn std::error::Error + Send + Sync>),
     /// The fixed clock refused elapsed work.
     Overload(u64),
     /// The world owner stopped.
@@ -110,6 +112,7 @@ impl fmt::Display for WorldLaneFault {
             Self::Start(error) => write!(formatter, "world lane start: {error}"),
             Self::Task(error) => write!(formatter, "world owner: {error}"),
             Self::InvalidControl(error) => write!(formatter, "world control: {error}"),
+            Self::MissingPublication => formatter.write_str("initial publication unavailable; publish the endpoint before starting the world lane"),
             Self::Busy => formatter.write_str("world lifecycle request or reply is pending"),
             Self::Lifecycle(error) => write!(formatter, "world lifecycle: {error}"),
             Self::Overload(refused) => {
@@ -125,6 +128,9 @@ impl std::error::Error for WorldLaneFault {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Start(error) => Some(error.as_ref()),
+            Self::Task(error) | Self::InvalidControl(error) | Self::Lifecycle(error) => {
+                Some(error.as_ref())
+            }
             _ => None,
         }
     }
@@ -267,7 +273,7 @@ impl<T: WorldTask> WorldLaneControls<T> {
     /// Refuses invalid input or a stopped owner.
     pub fn set(&self, control: T::Control) -> Result<(), WorldLaneFault> {
         T::validate_control(control)
-            .map_err(|error| WorldLaneFault::InvalidControl(Arc::from(error.to_string())))?;
+            .map_err(|error| WorldLaneFault::InvalidControl(Arc::new(error)))?;
         let mut state = self
             .shared
             .state
@@ -338,15 +344,15 @@ impl<T: WorldTask> WorldLane<T> {
         wake: impl Fn() + Send + 'static,
     ) -> Result<(Self, WorldLaneControls<T>), WorldLaneFault> {
         T::validate_control(initial_control)
-            .map_err(|error| WorldLaneFault::InvalidControl(Arc::from(error.to_string())))?;
+            .map_err(|error| WorldLaneFault::InvalidControl(Arc::new(error)))?;
         task.apply_control(initial_control)
-            .map_err(|error| WorldLaneFault::Task(Arc::from(error.to_string())))?;
+            .map_err(|error| WorldLaneFault::Task(Arc::new(error)))?;
         let initial = task
             .initial()
-            .map_err(|error| WorldLaneFault::Task(Arc::from(error.to_string())))?;
+            .map_err(|error| WorldLaneFault::Task(Arc::new(error)))?;
         let page = initial
             .publication
-            .ok_or_else(|| WorldLaneFault::Task(Arc::from("initial publication unavailable")))?;
+            .ok_or(WorldLaneFault::MissingPublication)?;
         let snapshot = Snapshot {
             epoch: initial.epoch,
             tick: initial.tick,
@@ -592,7 +598,7 @@ fn run_world<T: WorldTask>(
         };
         if sequence != applied_controls {
             task.apply_control(control)
-                .map_err(|error| WorldLaneFault::Task(Arc::from(error.to_string())))?;
+                .map_err(|error| WorldLaneFault::Task(Arc::new(error)))?;
             applied_controls = sequence;
         }
         let sampled_now = origin.elapsed();
@@ -604,12 +610,12 @@ fn run_world<T: WorldTask>(
             Some(WorldLifecycle::Resume) => task
                 .resume(sampled_now)
                 .err()
-                .map(|error| WorldLaneFault::Lifecycle(Arc::from(error.to_string()))),
+                .map(|error| WorldLaneFault::Lifecycle(Arc::new(error))),
             None => None,
         };
         let update = task
             .advance(sampled_now)
-            .map_err(|error| WorldLaneFault::Task(Arc::from(error.to_string())))?;
+            .map_err(|error| WorldLaneFault::Task(Arc::new(error)))?;
         let deadline =
             sampled_now.saturating_add(update.next_due.unwrap_or(Duration::from_millis(100)));
         let mut state = shared.state.lock().map_err(|_| WorldLaneFault::Poisoned)?;

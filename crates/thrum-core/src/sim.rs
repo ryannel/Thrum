@@ -12,6 +12,8 @@ mod runtime;
 mod schedule;
 mod snapshot;
 mod snapshot_ring;
+#[cfg(test)]
+mod tests;
 mod transaction;
 mod undo;
 #[cfg(not(target_arch = "wasm32"))]

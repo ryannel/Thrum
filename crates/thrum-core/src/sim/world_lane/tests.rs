@@ -1,5 +1,7 @@
 mod lifecycle;
 
+use crate::sim::tests::TestError;
+
 use std::{
     sync::{
         Arc,
@@ -56,10 +58,12 @@ impl ScriptedWorld {
 impl WorldTask for ScriptedWorld {
     type Control = u32;
     type Page = u64;
-    type Error = &'static str;
+    type Error = TestError;
 
     fn validate_control(control: Self::Control) -> Result<(), Self::Error> {
-        (control <= 1).then_some(()).ok_or("invalid control")
+        (control <= 1)
+            .then_some(())
+            .ok_or(TestError("invalid control"))
     }
 
     fn same_control(left: Self::Control, right: Self::Control) -> bool {
@@ -83,11 +87,13 @@ impl WorldTask for ScriptedWorld {
         if self.clock.state() == crate::ClockState::Active {
             return Ok(());
         }
-        self.clock.resume(now).map_err(|_| "resume refused")
+        self.clock
+            .resume(now)
+            .map_err(|_| TestError("resume refused"))
     }
 
     fn advance(&mut self, _now: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
-        let publication = match self.steps.recv().map_err(|_| "script ended")? {
+        let publication = match self.steps.recv().map_err(|_| TestError("script ended"))? {
             Step::Publish(publish) => publish,
             Step::Panic => panic!("scripted world failed outside its mailbox lock"),
         };

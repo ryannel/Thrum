@@ -34,8 +34,8 @@ struct Vertex {
 
 /// Source files a glTF reads besides itself (external buffers), relative to its directory.
 pub(crate) fn external_buffers(gltf_bytes: &[u8]) -> Result<Vec<String>, CookError> {
-    let document =
-        gltf::Gltf::from_slice(gltf_bytes).map_err(|error| CookError::Source(error.to_string()))?;
+    let document = gltf::Gltf::from_slice(gltf_bytes)
+        .map_err(|source| CookError::MeshImport { path: None, source })?;
     Ok(document
         .buffers()
         .filter_map(|buffer| match buffer.source() {
@@ -47,7 +47,10 @@ pub(crate) fn external_buffers(gltf_bytes: &[u8]) -> Result<Vec<String>, CookErr
 
 /// Cook a glTF or GLB file into a meshlet mesh container.
 pub(crate) fn cook(path: &Path) -> Result<Vec<u8>, CookError> {
-    let source = |error: gltf::Error| CookError::Source(format!("{}: {error}", path.display()));
+    let source = |source: gltf::Error| CookError::MeshImport {
+        path: Some(path.into()),
+        source,
+    };
     let document = gltf::Gltf::open(path).map_err(source)?;
     let buffers =
         gltf::import_buffers(&document, path.parent(), document.blob.clone()).map_err(source)?;
@@ -365,6 +368,47 @@ fn encode(built: &Built) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn mesh_imports_keep_the_original_parser_and_file_errors() {
+        use std::error::Error;
+        let parse = super::external_buffers(b"{").expect_err("invalid glTF");
+        assert!(matches!(
+            parse,
+            crate::CookError::MeshImport { path: None, .. }
+        ));
+        assert!(parse.source().expect("glTF parser").is::<gltf::Error>());
+
+        let root = std::env::temp_dir().join(format!("thrum-mesh-error-{}", std::process::id()));
+        std::fs::create_dir_all(&root).expect("fixture directory");
+        let path = root.join("absent.gltf");
+        let file = cook(&path).expect_err("missing glTF");
+        assert!(
+            matches!(&file, crate::CookError::MeshImport { path: Some(actual), .. } if actual == &path)
+        );
+        let source = file
+            .source()
+            .expect("glTF importer")
+            .downcast_ref::<gltf::Error>()
+            .expect("original glTF error");
+        assert!(
+            matches!(source, gltf::Error::Io(error) if error.kind() == std::io::ErrorKind::NotFound)
+        );
+        std::fs::write(
+            &path,
+            r#"{"asset":{"version":"2.0"},"buffers":[{"uri":"missing.bin","byteLength":4}]}"#,
+        )
+        .expect("glTF with missing external buffer");
+        let buffers = cook(&path).expect_err("external glTF buffer missing");
+        let source = buffers
+            .source()
+            .expect("buffer importer source")
+            .downcast_ref::<gltf::Error>()
+            .expect("original glTF buffer error");
+        assert!(
+            matches!(source, gltf::Error::Io(error) if error.kind() == std::io::ErrorKind::NotFound)
+        );
+        std::fs::remove_dir_all(root).expect("fixture cleanup");
+    }
     use std::path::Path;
 
     use thrum_asset::{MeshProduct, ProductBytes};

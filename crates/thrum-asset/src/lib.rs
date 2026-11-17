@@ -32,6 +32,8 @@ mod store;
 
 pub use bytes::ProductBytes;
 pub use error::AssetError;
+#[cfg(target_arch = "wasm32")]
+pub use error::BrowserTransportError;
 pub use hash::ContentHash;
 pub use head::Head;
 pub use ktx2::{Ktx2, Ktx2Format, Ktx2Level};

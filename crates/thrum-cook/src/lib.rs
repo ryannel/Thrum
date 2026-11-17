@@ -8,7 +8,7 @@
 //! filesystem events, and [`DevServer`] serves the store to browsers and remote devices.
 
 mod error;
-pub use error::{OriginError, TripwireError};
+pub use error::{OriginError, TextureEncodeError, TripwireError};
 mod cas;
 mod cooker;
 pub mod demo;
@@ -38,6 +38,17 @@ pub enum CookError {
     Io(std::io::Error),
     /// A source file could not be imported.
     Source(String),
+    /// A mesh source could not be parsed or its buffers imported.
+    MeshImport {
+        /// Source path when the import is from a file rather than planned bytes.
+        path: Option<std::path::PathBuf>,
+        /// Original glTF parser or importer failure.
+        source: gltf::Error,
+    },
+    /// An authored texture could not be decoded.
+    ImageImport(image::ImageError),
+    /// A texture encoder refused its configuration or input.
+    TextureEncode(TextureEncodeError),
     /// A cooked product failed runtime validation.
     Product(thrum_asset::AssetError),
     /// The filesystem watcher failed.
@@ -57,6 +68,15 @@ impl fmt::Display for CookError {
             }
             Self::Io(error) => write!(f, "cook I/O failed: {error}"),
             Self::Source(reason) => write!(f, "source import failed: {reason}"),
+            Self::MeshImport { path, source } => {
+                if let Some(path) = path {
+                    write!(f, "source import failed: {}: {source}", path.display())
+                } else {
+                    write!(f, "source import failed: {source}")
+                }
+            }
+            Self::ImageImport(source) => write!(f, "source image import failed: {source}"),
+            Self::TextureEncode(source) => write!(f, "texture encode failed: {source}"),
             Self::Product(error) => write!(f, "cooked product refused: {error}"),
             Self::Watch(reason) => write!(f, "watcher failed: {reason}"),
             Self::WatchDisconnected => {
@@ -73,6 +93,9 @@ impl std::error::Error for CookError {
             Self::Io(error) => Some(error),
             Self::Product(error) => Some(error),
             Self::Watch(error) => Some(error),
+            Self::MeshImport { source, .. } => Some(source),
+            Self::ImageImport(error) => Some(error),
+            Self::TextureEncode(error) => Some(error),
             _ => None,
         }
     }

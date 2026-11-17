@@ -1,5 +1,10 @@
 //! Public error inventory and wrapped-source contract.
 
+#[cfg(not(target_arch = "wasm32"))]
+mod error_types {
+    mod lane;
+}
+
 use std::error::Error;
 use thrum_core::{ClockError, sim::*};
 

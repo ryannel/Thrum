@@ -306,7 +306,7 @@ where
     G: WorldGame + Send + 'static,
     G::Control: 'static,
     G::Page: 'static,
-    G::Error: 'static,
+    G::Error: std::error::Error + Send + Sync + 'static,
 {
     type Control = G::Control;
     type Page = G::Page;

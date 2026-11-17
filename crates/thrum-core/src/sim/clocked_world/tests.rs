@@ -1,3 +1,4 @@
+use crate::sim::tests::TestError;
 use std::{num::NonZeroU32, time::Duration};
 
 use crate::{ClockConfig, ClockError, WorldEpoch, sim::SnapshotId};
@@ -29,10 +30,12 @@ struct Game {
 impl WorldGame for Game {
     type Control = u32;
     type Page = u64;
-    type Error = &'static str;
+    type Error = TestError;
 
     fn validate_control(control: Self::Control) -> Result<(), Self::Error> {
-        (control <= 1).then_some(()).ok_or("invalid control")
+        (control <= 1)
+            .then_some(())
+            .ok_or(TestError("invalid control"))
     }
 
     fn same_control(left: Self::Control, right: Self::Control) -> bool {
@@ -59,7 +62,7 @@ impl WorldGame for Game {
         self.attempts += 1;
         if self.fail_next {
             self.fail_next = false;
-            return Err("retry tick");
+            return Err(TestError("retry tick"));
         }
         self.tick += 1;
         if !self.publication_busy {
@@ -75,7 +78,7 @@ impl WorldGame for Game {
         self.recovery_calls += 1;
         match std::mem::take(&mut self.recovery) {
             Recovery::Idle => Ok(None),
-            Recovery::Refuse => Err("publication recovery failed"),
+            Recovery::Refuse => Err(TestError("publication recovery failed")),
             Recovery::Ready(changes) => {
                 self.publication_busy = false;
                 self.publication_tick = self.tick;
@@ -123,7 +126,10 @@ fn failed_tick_remains_queued_and_prior_commits_are_not_repeated() {
     );
     world.game_mut().fail_next = true;
     let fault = world.advance(Duration::from_millis(300));
-    assert!(matches!(fault, Err(ClockedWorldError::Game("retry tick"))));
+    assert!(matches!(
+        fault,
+        Err(ClockedWorldError::Game(TestError("retry tick")))
+    ));
     assert_eq!(world.game().tick, 2);
     assert_eq!(world.game().attempts, 3);
     let recovered = world.advance(Duration::from_millis(300)).expect("retry");
@@ -248,7 +254,9 @@ fn recovery_failure_does_not_repeat_previously_committed_ticks() {
     );
     assert!(matches!(
         world.advance(Duration::from_millis(200)),
-        Err(ClockedWorldError::Game("publication recovery failed"))
+        Err(ClockedWorldError::Game(TestError(
+            "publication recovery failed"
+        )))
     ));
     assert_eq!((world.game().tick, world.game().attempts), (2, 2));
     let retried = world
@@ -266,7 +274,7 @@ fn invalid_controls_are_refused_before_game_control_replacement() {
     let mut world = world(Game::default(), 2);
     assert!(matches!(
         world.set_controls(9),
-        Err(ClockedWorldError::Game("invalid control"))
+        Err(ClockedWorldError::Game(TestError("invalid control")))
     ));
     assert_eq!(world.game().control_applications, 0);
     world.set_controls(1).expect("valid replacement");

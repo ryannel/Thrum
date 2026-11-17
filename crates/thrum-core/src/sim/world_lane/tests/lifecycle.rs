@@ -28,10 +28,12 @@ struct Game {
 impl WorldGame for Game {
     type Control = u32;
     type Page = u64;
-    type Error = &'static str;
+    type Error = TestError;
 
     fn validate_control(control: u32) -> Result<(), Self::Error> {
-        (control <= 1).then_some(()).ok_or("invalid control")
+        (control <= 1)
+            .then_some(())
+            .ok_or(TestError("invalid control"))
     }
 
     fn same_control(left: u32, right: u32) -> bool {
@@ -57,11 +59,15 @@ impl WorldGame for Game {
         self.observed.lock().expect("observer").attempts += 1;
         let next = self.tick + 1;
         if next <= self.gated_ticks {
-            self.entered.send(next).map_err(|_| "observer closed")?;
-            self.release.recv().map_err(|_| "release closed")?;
+            self.entered
+                .send(next)
+                .map_err(|_| TestError("observer closed"))?;
+            self.release
+                .recv()
+                .map_err(|_| TestError("release closed"))?;
         }
         if self.fail_tick == Some(next) {
-            return Err("failed tick");
+            return Err(TestError("failed tick"));
         }
         let mut observed = self.observed.lock().expect("observer");
         let control = observed.control;
