@@ -1,5 +1,12 @@
 # SCENE-VIEWS log
 
+- 2026-11-17 M1 resumed closeout: fetched origin and rebased; the branch was current.
+  The shared full exact-images verifier passed on `40de2f151` on its retry.
+  The script reports `COVERED` for merged implementation `d24658b33`, resolving
+  the previous M1.10 blocker. No engine code, reference or comparison changed.
+  [The proof](../../evidence/SCENE-VIEWS/M1/vertical/README.md) records the covering
+  run; all fourteen builder results remain pass for the lead's merged checks.
+
 - 2026-11-16 M1.10 follow-up: the shared exact-images run passed on the merged
   `d24658b33`, then failed on `f41ebc97b` with the same native binary, Wasm,
   cooked root and baseline content key. The intervening changes are plans and
