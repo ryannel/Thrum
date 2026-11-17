@@ -296,10 +296,10 @@
       "id": "M4",
       "name": "A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one",
       "depends_on": [],
-      "failed_reviews": 1,
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before M4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
       "items": [
         {
@@ -310,8 +310,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -321,8 +321,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -331,10 +331,10 @@
           "ask": "Does the test work each frame's expected display time out from its own observations and leads, state the precision it holds them to, and read the phase from the effect time a contribution received? Is its delayed frame observed before a tick that the world has committed by the time the frame polls, so that the newest tick would fail it? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -345,8 +345,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -355,8 +355,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -365,14 +365,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         }
       ],
       "findings": [
         {
-          "name": "zero_lead_frame_selection_changes",
+          "name": "resumed_clock_time_identity",
           "item": "M4.2",
+          "different": "Previous finding concerned delayed zero-lead pair selection; this concerns the time-coordinate offset after ordinary pause/resume on a synchronous clock.",
           "repeat": false
         }
       ]

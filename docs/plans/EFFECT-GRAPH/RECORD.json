@@ -267,7 +267,7 @@
         {
           "verdict": "fail",
           "commit": "38a04faa106062fdc582d5564e624bc6f8d140bc",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review-1.md",
           "items": {
             "M4.1": "pass",
             "M4.2": "fail",
@@ -298,6 +298,43 @@
             "turns": 1
           },
           "at": "2026-11-16T17:28:49Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "591e8ae7814f2339c596a55101f6f4142eed40de",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.6": "pass",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "pass",
+            "M4.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "resumed_clock_time_identity",
+              "item": "M4.2",
+              "different": "Previous finding concerned delayed zero-lead pair selection; this concerns the time-coordinate offset after ordinary pause/resume on a synchronous clock.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 158421,
+            "cached": 3343872,
+            "output": 8151,
+            "turns": 1
+          },
+          "at": "2026-11-17T00:19:03Z"
         }
       ],
       "authorised": {
