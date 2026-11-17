@@ -341,6 +341,32 @@
         "by": "plan",
         "task": "CULLING M3 review (docs/evidence/CULLING/M3-review.md) failed M3.7 and M3.8 as 'full-refresh smoothness unjudged', citin",
         "at": "2026-11-17T02:56:04Z"
+      },
+      "ready_for_review": {
+        "commit": "cabbb65d59c11887d8eb5a65796371ce5cc351f1",
+        "checked": "6b00f90b070b92a29d9f7b8fe3a82b2fe754df65",
+        "at": "2026-11-17T05:06:42Z",
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 335311,
+          "cached": 36094592,
+          "output": 35322,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 2420116,
+          "cached": 377971968,
+          "output": 927408,
+          "turns": 15
+        }
       }
     }
   },
