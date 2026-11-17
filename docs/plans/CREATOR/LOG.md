@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-17 Reclaimed M3.1, M3.2, M3.3 and M3.5 on `b8c8e71bd`.
+  Replayed the lead's 43-line ziggurat at two settings on Mac Metal and
+  hardware Chrome. Inspected all four native mistakes and passed ten saves.
+  Updated G6 to cite the ziggurat and distinguish earlier window evidence.
+  [Evidence](../../evidence/CREATOR/M3.md) and [handoff](../../evidence/CREATOR/M3-handoff.md).
+
 - 2026-11-17 Retained the lead's independent fresh Opus 5.5 ziggurat exercise on
   `e5de7027e70b`: 43 game lines, own mesh, Mac offscreen and live hardware Chrome.
   Assessed workspace and zero-frame friction; clarified public setup, registration,

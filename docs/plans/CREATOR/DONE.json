@@ -164,20 +164,20 @@
           "statement": "Using only README.md, the creator guide and the starter's README, an agent that has not opened crates/ or any other design document builds a new small scene (not the starter, stones, the sunset or the lighthouse) with lit ground, sky, one cooked mesh of its own, a camera and one slider; it runs on the Mac and in Chrome in about 100 game lines with zero engine game types.",
           "inspect": "The fresh agent is a separate session the lead commissioned for this item, never the builder and not you; you need not be fresh. Its record is the lead-commissioned folder the builder cites, docs/evidence/CREATOR/m3/fresh-lead/ or a later fresh-lead-<date>/. From the record: did the agent stay within the three documents and what they tell a creator to run, copy or edit, and did any step need crates/ or another design document? Such a step fails the item. Does the retained scene meet the statement, counting game lines by the starter README's method, and does it name an engine item that the three documents and the starter folder don't show? Then run that scene yourself from the reviewed checkout, offscreen on the Mac and in Chrome, at two values of its slider: does each frame draw the ground, sky and mesh, and does the slider change the view? If a command, file or key the agent used has changed in the three documents or the scene commands since the record's commit, give could_not_judge and name it, so the lead commissions a new run.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/m3/fresh-lead/README.md; docs/evidence/CREATOR/m3/reclaim/README.md#ziggurat",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.2",
           "statement": "README.md, the creator guide and the starter's README, read alone, give every command, file and key a creator needs for a Mac and a Chrome scene: assets and placements, controls, the parameter file, the material hook, the web form and the profiler.",
           "ask": "Read only those three documents. Is any step missing, out of date against the commands as they run today, or dependent on reading engine source?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/m3/reclaim/README.md#creator-documentation",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.3",
@@ -186,10 +186,10 @@
           "lock": "gpu",
           "inspect": "Make each mistake in a copy of the starter and capture the report line and the offscreen frame after it. Does each message name the object, the cause and a next step, and does the last good scene stay drawn?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/m3/reclaim/README.md#native-diagnostics; docs/evidence/CREATOR/m3/reclaim/native-check.json; docs/evidence/CREATOR/m3/reclaim/native-inspection.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.4",
@@ -210,10 +210,10 @@
           "statement": "The maturity ledger's G6 rows state implementation, correctness, visuals and device separately for Mac and Chrome, and the build plan's G6 line links the evidence and lists what stays unbuilt: the clipping and cascade overlays and parameter files as a cooked product.",
           "ask": "Do the ledger rows and the build plan line match what this module's evidence shows, with nothing claimed for iOS or a physical device?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M3.md; docs/design/maturity.json; docs/plans/BRIEF.md#active-gate-order-and-budgets",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 4,
