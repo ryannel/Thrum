@@ -277,7 +277,7 @@
         {
           "verdict": "fail",
           "commit": "0543f431045ef08bea38da3754b2a133b3e9564d",
-          "review": "docs/evidence/RIVERS/M3-review.md",
+          "review": "docs/evidence/RIVERS/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -311,6 +311,43 @@
             "turns": 1
           },
           "at": "2026-11-17T00:20:04Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "52a8da2809c45fad9dea7ce50d45a5335a2fe2e2",
+          "review": "docs/evidence/RIVERS/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.8": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "rejected river changes existing map support",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 155208,
+            "cached": 3367808,
+            "output": 8470,
+            "turns": 1
+          },
+          "at": "2026-11-17T03:36:12Z"
         }
       ],
       "authorised": {
