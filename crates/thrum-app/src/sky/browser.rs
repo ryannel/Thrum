@@ -34,9 +34,12 @@ pub(super) fn feed() -> Result<RemoteFeed, String> {
 
 impl WebWorld for StillWorld {
     fn pause(&mut self) -> Result<(), String> {
+        self.paused = true;
         Ok(())
     }
-    fn resume_after_drain(&mut self, _now: Duration) -> Result<(), String> {
+    fn resume_after_drain(&mut self, now: Duration) -> Result<(), String> {
+        self.wall_now = now.max(self.wall_now);
+        self.paused = false;
         Ok(())
     }
 }
@@ -134,6 +137,37 @@ pub async fn create_scene(
 
 #[wasm_bindgen]
 impl BrowserScene {
+    /// Start replacement of a lost graphics device, preserving the scene and clock.
+    /// # Errors
+    /// Refuses a healthy device or an already pending replacement.
+    pub fn recover_graphics(&mut self) -> Result<(), JsValue> {
+        self.shell.request_graphics_recovery().map_err(js)
+    }
+
+    /// Device generation and the most recently submitted frame's interpolation clock.
+    pub fn frame_info(&self) -> String {
+        let status = self.shell.status();
+        let sample = self.shell.samples().last();
+        format!(
+            "generation={} recovered={} presented={} tick={} alpha={} submission={}",
+            status.generation,
+            status.recovered,
+            status.presented,
+            sample.map_or(0, |s| s.tick),
+            sample.map_or(0.0, |s| s.presentation_alpha),
+            sample.map_or(0, |s| s.submission_order),
+        )
+    }
+    /// Number of submitted images omitted by the bounded observer.
+    pub fn capture_omissions(&self) -> u32 {
+        u32::try_from(self.shell.host().submitted_capture_omissions()).unwrap_or(u32::MAX)
+    }
+    /// Drain GPU completion callbacks without advancing the scene clock.
+    /// # Errors
+    /// Reports a device polling fault.
+    pub fn frame_ready(&mut self) -> Result<bool, JsValue> {
+        self.shell.poll_completed().map_err(js)
+    }
     /// The scene title declared by its creator.
     pub fn title(&self) -> String {
         self.config.window_title.to_owned()
@@ -145,7 +179,11 @@ impl BrowserScene {
     pub fn frame(&mut self, now: f64) -> Result<(), JsValue> {
         self.shell.update_profiler(&mut self.game.controls, false);
         if let Some(sky) = self.game.update().0 {
-            self.shell.source_mut().sky = sky;
+            if sky.temporal_inputs {
+                self.shell.continuous_source_mut().sky = sky;
+            } else {
+                self.shell.source_mut().sky = sky;
+            }
         }
         self.game.poll_reload();
         self.shell.frame(now).map_err(js)
@@ -212,8 +250,11 @@ impl BrowserScene {
     /// Current content generation and every fresh refusal, for the page's live status.
     pub fn report(&mut self) -> String {
         if let Some(fault) = self.shell.graphics_fault() {
+            if self.shell.recovering() {
+                return "Replacing graphics device; the scene and clock are retained".into();
+            }
             return format!(
-                "Graphics device unavailable: {fault}; reload this page to create a new device"
+                "Graphics device unavailable: {fault}; use Recover graphics to create a new device"
             );
         }
         let content = self.game.poll_status();
@@ -252,7 +293,15 @@ impl BrowserScene {
     /// # Errors
     /// Reports asset, input, clock or graphics failures with their cause.
     pub fn begin_capture(&mut self) -> Result<(), JsValue> {
-        self.shell.begin_submitted_capture(1).map_err(js)
+        self.shell
+            .begin_submitted_capture_with_limits(
+                1,
+                thrum_render::runtime::CaptureLimits {
+                    byte_allowance: 256 * 1024 * 1024,
+                    ..Default::default()
+                },
+            )
+            .map_err(js)
     }
     /// One submitted image's pixels, with its source identity recorded separately.
     /// # Errors
@@ -262,6 +311,17 @@ impl BrowserScene {
             return Ok(JsValue::NULL);
         };
         let value = js_sys::Object::new();
+        js_sys::Reflect::set(
+            &value,
+            &js("frame"),
+            &js(format!(
+                "tick={} alpha={} submission={} observation={:.9}",
+                image.sample.tick,
+                image.sample.presentation_alpha,
+                image.sample.submission_order,
+                image.sample.observation.as_secs_f64()
+            )),
+        )?;
         js_sys::Reflect::set(
             &value,
             &js("rgba"),

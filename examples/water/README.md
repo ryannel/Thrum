@@ -5,6 +5,16 @@ the engine's sky. The game selects its own 60 Hz world, trade wind, longer swell
 The panel controls the Sun, camera height and bearing, and the sea's stage. The float is a lighting
 reference; physical floating bodies land in WATERS M5.
 
+`./dev scene examples/water --web` serves the same scene and cooked float in Chrome with WebGPU.
+The page pauses its world while hidden. If the graphics device is lost, **Recover graphics**
+rebuilds its GPU resources while retaining the scene, controls and clock.
+`node scripts/check_water_browser.mjs --case first-frame` compares the submitted sea fields
+with the f64 model; `--case frames` also covers interpolation, repeats, visibility, a hitch
+and device replacement. Run either under the orchestrate script's Chrome lock.
+The `fixed` and `realtime` cases save submitted 2560×1440 images and source/time records;
+their page callback intervals describe the page clock, not physical display cadence.
+`THRUM_WATER_OUTPUT` selects a new scratch folder under `tmp/waters-M3/`.
+
 `thrum-water` owns one contribution containing the ambient wave passes and the after-opaque surface.
 It takes the level from the shared CPU map at each frame boundary and borrows all lighting and exposure
 from the scene. It holds no example presets or cooked content. This first surface supports a sea;
@@ -28,6 +38,8 @@ with time records and an encoded review movie. Its bounded three-second capture 
 reserve and a 6 GiB raw-spool allowance; these are observer resources, absent from ordinary frames.
 Neither route
 captures the desktop or proves physical display cadence.
+
+For a portable Metal comparison, set `THRUM_WATER_RECIPE=portable` on the fixed capture.
 
 `python3 scripts/water_cost.py record --scene first-frame`, also under the GPU lock, records the
 paired capture-off run. `check` takes a fresh measurement and validates the committed record;

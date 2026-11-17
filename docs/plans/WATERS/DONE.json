@@ -425,7 +425,7 @@
     {
       "id": "M3",
       "name": "The same sea draws in Chrome from one command",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -438,8 +438,8 @@
           "check": "node scripts/check_water_browser.mjs --case first-frame",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M3.md"
         },
         {
           "id": "M3.2",
@@ -447,8 +447,8 @@
           "check": "node scripts/check_water_browser.mjs --case frames",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M3.md"
         },
         {
           "id": "M3.3",
@@ -475,8 +475,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     },

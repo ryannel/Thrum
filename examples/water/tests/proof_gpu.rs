@@ -27,12 +27,18 @@ fn driver() {
         .expect("record");
         return;
     }
-    let mut fixture = support::Fixture::new([2560, 1440]);
+    let mut fixture = if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
+        support::Fixture::antialiased([2560, 1440])
+    } else {
+        support::Fixture::new([2560, 1440])
+    };
     for index in 0..8 {
         fixture.frame(f64::from(index) / 120.0);
     }
     let report = fixture.report.lock().expect("report").clone();
     let mut result = json!({"schema":1,"target":"mac-metal","mode":mode,"extent":fixture.extent,"vertices":report.vertices,"resources":report.resources});
+    result["recipe"] =
+        json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
     result["camera"] = json!({"focus_xz":water_scene::CAMERA_FOCUS,"eye_at_2m_along_wind":water_scene::camera_position(2.0,90.0),"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP,"orbit_radius":"24m at 2m height, 40m at 40m height; bearing orbits the focus"});
     result["commit"] = json!(
         std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_| "working tree diagnostic".into())

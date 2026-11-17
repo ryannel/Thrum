@@ -412,3 +412,7 @@
   Rebuilt and captured that merged source: all six fixed views are pixel-identical to the fresh-opinion
   candidate; the final bounded pan has 101 frames and zero omissions. [Selected proof](../../evidence/WATERS/M2-r1.md)
   records source comparisons, recovery and inspection. Independent review and physical cadence remain separate.
+- 2026-11-17 Built M3's Chrome route, hidden-world clock, graphics recovery and bounded submitted-output tools.
+  Hardware Chrome passes the first-frame and seven-checkpoint CPU-oracle trace, including real tab visibility
+  and destruction/replacement of its device, with no validation faults. [Numerical proof](../../evidence/WATERS/M3.md)
+  keeps these target results separate from the fixed/motion inspections recorded after integration.

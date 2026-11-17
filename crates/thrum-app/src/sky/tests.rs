@@ -100,6 +100,27 @@ fn a_game_owns_its_clock_and_the_default_kit_stays_still() {
     assert_eq!(world.source().tick, 2);
 }
 
+#[test]
+fn a_hidden_ticking_kit_world_keeps_its_phase_and_resumes_in_the_wall_clock() {
+    use std::time::Duration;
+    use thrum_render::runtime::FrameWorld;
+    let mut world = super::StillWorld {
+        tick_duration: Some(Duration::from_millis(20)),
+        ..super::StillWorld::default()
+    };
+    world.advance(Duration::from_millis(50)).expect("visible");
+    world.paused = true;
+    world.advance(Duration::from_secs(5)).expect("hidden");
+    assert_eq!(world.source().tick, 2);
+    assert_eq!(world.presentation_alpha_at(Duration::ZERO), 0.5);
+    world.wall_now = Duration::from_secs(6);
+    world.paused = false;
+    world.advance(Duration::from_millis(6010)).expect("shown");
+    assert_eq!(world.source().tick, 3);
+    assert_eq!(world.presentation_alpha_at(Duration::ZERO), 0.0);
+    assert_eq!(world.tick_due_time(), Some(Duration::from_millis(6010)));
+}
+
 fn sky(elevation: f32, azimuth: f32) -> Sky {
     Sky {
         exposure_compensation_ev: 0.0,

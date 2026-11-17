@@ -168,6 +168,7 @@ pub fn build_paired(
         },
     )
     .with_ground(None)
+    .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
     let game = if draw_water {
         game.with_contribution(Box::new(water), || thrum_app::sky::ContentStatus::Drawn(1))

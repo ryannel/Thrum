@@ -1,0 +1,238 @@
+#!/usr/bin/env node
+// The documented scene command, hardware Chrome, and the actual submitted field/output taps.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {spawn, execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import zlib from 'node:zlib';
+import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
+
+const mode = process.argv[process.argv.indexOf('--case') + 1];
+if (!['first-frame','frames','fixed','realtime'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime');
+const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
+await fs.mkdir(output,{recursive:true});
+const delay = ms => new Promise(r=>setTimeout(r,ms));
+const assert = (ok,text) => {if(!ok) throw Error(text);};
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+async function until(fn,label,timeout=180000) {
+  const end=Date.now()+timeout;
+  while(Date.now()<end) {const v=await fn(); if(v)return v; await delay(50);}
+  throw Error(`Timed out: ${label}`);
+}
+class Cdp {
+  constructor(socket) {
+    this.socket=socket; this.next=0; this.pending=new Map(); this.faults=[];
+    socket.onmessage=({data})=>{
+      const p=JSON.parse(data), pending=this.pending.get(p.id);
+      if(pending) {this.pending.delete(p.id);clearTimeout(pending.timer);p.error?pending.reject(Error(JSON.stringify(p.error))):pending.resolve(p.result);}
+      if(p.method==='Runtime.exceptionThrown')this.faults.push(p.params);
+      if(p.method==='Runtime.consoleAPICalled'&&p.params.type==='error')this.faults.push(p.params.args.map(a=>a.value??a.description).join(' '));
+    };
+    socket.onclose=event=>{for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(Error(`CDP closed ${event.code}: ${event.reason}`));}this.pending.clear();};
+  }
+  call(method,params={},sessionId) {
+    return new Promise((resolve,reject)=>{
+      const id=++this.next, timer=setTimeout(()=>reject(Error(`CDP timeout ${method}`)),120000);
+      this.pending.set(id,{resolve,reject,timer});this.socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
+    });
+  }
+}
+function png(rgba,width,height) {
+  const chunk=(name,data)=>{
+    const body=Buffer.concat([Buffer.from(name),data]);let crc=~0;
+    for(const b of body){crc^=b;for(let k=0;k<8;k++)crc=crc&1?(crc>>>1)^0xedb88320:crc>>>1;}
+    const out=Buffer.alloc(body.length+8);out.writeUInt32BE(data.length);body.copy(out,4);out.writeUInt32BE(~crc>>>0,body.length+4);return out;
+  };
+  const header=Buffer.alloc(13);header.writeUInt32BE(width);header.writeUInt32BE(height,4);header[8]=8;header[9]=6;
+  const rows=Buffer.concat(Array.from({length:height},(_,y)=>Buffer.concat([Buffer.from([0]),rgba.subarray(y*width*4,(y+1)*width*4)])));
+  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',zlib.deflateSync(rows)),chunk('IEND',Buffer.alloc(0))]);
+}
+// This observer only appends copies to the ordinary frame encoder. No field shader is replaced.
+const observer = `
+  globalThis.__devices=[];globalThis.__buffers={};globalThis.__faults=[];
+  globalThis.__manual=true;globalThis.__callback=null;
+  const raf=window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame=cb=>__manual?(__callback=cb,1):raf(cb);
+  const request=GPUAdapter.prototype.requestDevice;
+  GPUAdapter.prototype.requestDevice=async function(...args){
+    const d=await request.apply(this,args);__devices.push(d);
+    d.addEventListener('uncapturederror',e=>__faults.push(String(e.error.message)));
+    return d;
+  };
+  const create=GPUDevice.prototype.createBuffer;
+  GPUDevice.prototype.createBuffer=function(desc){
+    if(desc.label==='sea parameters')desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
+    const b=create.call(this,desc);if(desc.label?.startsWith('sea '))__buffers[desc.label]=b;return b;
+  };
+  const begin=GPUCommandEncoder.prototype.beginComputePass;
+  GPUCommandEncoder.prototype.beginComputePass=function(desc){
+    if(desc?.label?.includes('sea long waves'))this.__sea=true;
+    return begin.call(this,desc);
+  };
+  const finish=GPUCommandEncoder.prototype.finish;
+  GPUCommandEncoder.prototype.finish=function(...args){
+    if(globalThis.__probeNext&&this.__sea){
+      __probeNext=false;globalThis.__readbacks=[];
+      for(const name of ['sea parameters','sea long field','sea cascades']){
+        const src=__buffers[name],d=__devices.at(-1);
+        const b=d.createBuffer({size:src.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+        this.copyBufferToBuffer(src,0,b,0,src.size);__readbacks.push(b);
+      }
+    }
+    return finish.apply(this,args);
+  };
+  globalThis.__readFields=async()=>{
+    const result=[];
+    for(const [i,b] of __readbacks.entries()){
+      await b.mapAsync(GPUMapMode.READ);const a=new Float32Array(b.getMappedRange());
+      if(i===0)result.push(Array.from(a));
+      else if(i===1)result.push(Array.from({length:64},(_,j)=>{
+        const level=j%8,pixel=(j*4051+137)%16384;
+        return {level,pixel,value:Array.from(a.slice((4096+level*16384+pixel)*12,(4096+level*16384+pixel)*12+12))};
+      }));
+      else result.push(Array.from({length:3},(_,band)=>Array.from({length:32},(_,j)=>{
+        const pixel=(j*4051+137)%65536;return Array.from(a.slice((band*65536+pixel)*12,(band*65536+pixel)*12+12));
+      })));
+      b.unmap();b.destroy();
+    }
+    return result;
+  };
+`;
+const log=await fs.open(path.join(output,'command.log'),'w');
+const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output},stdio:['ignore',log.fd,log.fd],detached:true});
+let chrome,cdp,sid,failure;
+const result={mode,command:'./dev scene examples/water --web',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),target:'chrome-webgpu',output,frames:[]};
+result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
+result.source_sha256={};
+for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
+try {
+  const url=await until(async()=>/SCENE_URL=(\S+)/.exec(await fs.readFile(path.join(output,'command.log'),'utf8'))?.[1],'scene URL',600000);
+  const wasm=await fs.readFile(path.join(output,'web/scene_bg.wasm'));result.wasm=hash(wasm);
+  const profile=path.join(output,'chrome-profile');await fs.mkdir(profile);
+  const chromeLog=await fs.open(path.join(output,'chrome.log'),'w');
+  chrome=spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',[`--user-data-dir=${profile}`,'--headless=new','--remote-debugging-port=0','--no-first-run','--no-default-browser-check','--window-size=2560,1600','about:blank'],{stdio:['ignore',chromeLog.fd,chromeLog.fd]});
+  const endpoint=await until(async()=>{try{return(await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).trim().split('\n');}catch{return null;}},'Chrome port');
+  const socket=new WebSocket(`ws://127.0.0.1:${endpoint[0]}${endpoint[1]}`);await new Promise((r,j)=>{socket.onopen=r;socket.onerror=j;});cdp=new Cdp(socket);
+  result.gpu=(await cdp.call('SystemInfo.getInfo')).gpu;result.browser=await cdp.call('Browser.getVersion');
+  assert(/Apple M3 Max/.test(JSON.stringify(result.gpu.devices))&&!/swiftshader|software/i.test(JSON.stringify(result.gpu.devices))&&result.gpu.featureStatus.webgpu==='enabled','hardware WebGPU required');
+  const {targetId}=await cdp.call('Target.createTarget',{url:'about:blank'});sid=(await cdp.call('Target.attachToTarget',{targetId,flatten:true})).sessionId;
+  const evaluate=async expression=>{const r=await cdp.call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true},sid);if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
+  const pixels=async expression=>{
+    const size=await evaluate(`${expression}.length`),chunks=[];
+    for(let offset=0;offset<size;offset+=1024*1024){
+      const data=await evaluate(`(()=>{const p=${expression}.subarray(${offset},${offset+1024*1024});let bytes='';for(let i=0;i<p.length;i+=8192)bytes+=String.fromCharCode(...p.subarray(i,i+8192));return btoa(bytes);})()`);
+      chunks.push(Buffer.from(data,'base64'));
+    }
+    return Buffer.concat(chunks);
+  };
+  await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
+  await installWasmReceipt(cdp,sid);
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
+  await cdp.call('Page.navigate',{url},sid);
+  await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
+  result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
+  let now=0;
+  const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
+  const capture=async(name,delta=1000/120,probe=false)=>{
+    await until(()=>evaluate('game.frame_ready()'),'free frame slot');
+    await evaluate('game.begin_capture()');if(probe)await evaluate('__probeNext=true');
+    await drive(delta);
+    const image=await until(()=>evaluate('(()=>{const v=game.capture();if(!v)return null;globalThis.__capturePixels=v.rgba;return {identity:v.identity,frame:v.frame};})()'),'submitted image');
+    await evaluate('game.end_capture()');
+    const rgba=await pixels('__capturePixels');
+    assert(image.identity.includes('presented=true'),'checkpoint was not the submitted surface frame');
+    assert(rgba.length===2560*1440*4,'capture extent differs');
+    const file=name+'.png';await fs.writeFile(path.join(output,file),png(rgba,2560,1440));
+    const info=Object.fromEntries(image.frame.split(' ').map(p=>p.split('=')).map(([k,v])=>[k,Number(v)]));
+    const record={name,file,...image,...info,sha256_rgba:hash(rgba)};
+    if(probe){
+      const [params,long,cascades]=await evaluate('__readFields()');
+      const anchor=await evaluate('JSON.parse(game.controls_json()).controls.filter(c=>c.key.startsWith("camera.")).map(c=>[c.key,c.value])');
+      const controls=Object.fromEntries(anchor),h=controls['camera.height'],bearing=controls['camera.bearing']*Math.PI/180;
+      const radius=24+(h-2)*16/38,eye=[Math.fround(132-Math.sin(bearing)*radius),Math.fround(32+Math.cos(bearing)*radius)];
+      const points=long.map(({level,pixel})=>{const p=params.slice(12+level*4,16+level*4);return [eye[0]+p[0]+(pixel%128+0.5)*p[2],eye[1]+p[1]+(Math.floor(pixel/128)+0.5)*p[2],p[3]];});
+      const time=Math.max(0,(info.tick-1+info.alpha)*(1/60));
+      const oracle=JSON.parse(execFileSync('target/release/examples/field_oracle',[],{input:JSON.stringify({time,long:points}),maxBuffer:8<<20}));
+      let height=0,slope=0;const bands=[0,0,0];
+      long.forEach(({value},i)=>{height=Math.max(height,Math.abs(value[1]-oracle.long[i].displacement[1]));for(let a=0;a<2;a++)slope=Math.max(slope,Math.abs(value[4+a]-oracle.long[i].slope[a]));});
+      cascades.forEach((samples,b)=>samples.forEach((value,i)=>{for(let a=0;a<3;a++)for(const [offset,key]of [[0,'displacement'],[8,'velocity']])bands[b]=Math.max(bands[b],Math.abs(value[offset+a]-oracle.cascades[b].samples[i][key][a])/oracle.cascades[b].rms);}));
+      record.fields={time,height,slope,cascade_error_per_rms:bands,long_points:points.length,cascade_points_per_band:32,clock_word:params[0]};
+      assert(height<0.002&&slope<0.002,`long field mismatch ${JSON.stringify(record.fields)}`);
+      assert(bands.every(v=>v<0.0004),`cascade mismatch ${JSON.stringify(record.fields)}`);
+    }
+    result.frames.push(record);return record;
+  };
+  for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
+  if(mode==='first-frame'||mode==='frames'){
+    const rustc=execFileSync('rustup',['which','--toolchain','1.99.1','rustc'],{encoding:'utf8'}).trim();
+    execFileSync('rustup',['run','1.99.1','cargo','build','--release','--locked','--offline','-p','water-scene','--example','field_oracle'],{stdio:'inherit',env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}});
+    await capture('first',0,true);
+    if(mode==='frames'){
+      await capture('between',1000/240,true);await capture('repeat',0,true);await capture('next',1000/120,true);
+      // Real tab visibility events enter the normal page listener. Only their wall-clock
+      // input is controlled, keeping this scripted trace in the same origin as frame().
+      await evaluate(`globalThis.__clock=${now};Object.defineProperty(performance,'now',{configurable:true,value:()=>__clock})`);
+      const other=await cdp.call('Target.createTarget',{url:'about:blank'});
+      await cdp.call('Target.activateTarget',{targetId:other.targetId});
+      await until(()=>evaluate('document.hidden'),'tab hidden');
+      await drive(5000);await evaluate(`__clock=${now}`);
+      await cdp.call('Target.activateTarget',{targetId});
+      await until(()=>evaluate('!document.hidden'),'tab shown');
+      result.visibility='Real tab switch and visibilitychange listener; scripted performance.now at the two events';
+      await cdp.call('Target.closeTarget',{targetId:other.targetId});
+      await evaluate('delete performance.now');
+      await capture('shown',1000/240,true);await capture('hitch',1500,true);
+      await evaluate('__devices.at(-1).destroy()');await delay(100);await drive(5);
+      await evaluate('game.recover_graphics()');
+      await until(async()=>{await drive(5);await delay(100);return /recovered=1/.test(await evaluate('game.frame_info()'));},'recovered device');
+      for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'replacement frame slot');await drive(1000/120);await delay(30);}
+      await capture('recovered',1000/240,true);result.recovery=await evaluate('game.frame_info()');
+      assert(result.frames[1].tick===result.frames[2].tick&&result.frames[1].alpha===result.frames[2].alpha,'repeat changed the model clock');
+      assert(result.frames[4].tick-result.frames[3].tick<=1,'hidden page admitted elapsed ticks');
+    }
+  } else if(mode==='fixed'){
+    for(const [name,height,bearing]of [['noon-2-along',2,90],['noon-2-across',2,0],['noon-40-along',40,90],['noon-40-across',40,0]]){
+      await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify({'camera.height':height,'camera.bearing':bearing,'sun.elevation':60}))})`);
+      await capture(name,10000-now);
+    }
+  } else {
+    // Page's own RAF timestamps drive the ordinary scene loop; each image is the frame it submitted.
+    await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;
+      globalThis.__opportunities=0;const presented=()=>Number(/presented=(\\d+)/.exec(game.frame_info())[1]);
+      globalThis.__firstPresented=presented();globalThis.__expected=0;
+      const collect=()=>{let image;while((image=game.capture())){if(__motion.length>=120)throw Error('motion export reached its 120-image allowance');__motion.push(image);}};
+      const drain=()=>{collect();if(__motion.length===__expected){__motionDone=true;return;}setTimeout(drain,5);};
+      const loop=timestamp=>{
+        __start??=timestamp;const elapsed=timestamp-__start;
+        __intervals.push(timestamp);collect();
+        game.edit_control('camera.bearing',90+elapsed*0.012);
+        game.frame(${now}+elapsed);__opportunities++;
+        if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
+        if(elapsed<1000)requestAnimationFrame(loop);else {__expected=presented()-__firstPresented;drain();}
+      };game.begin_capture();__manual=false;requestAnimationFrame(loop);`);
+    await until(()=>evaluate('__motionDone'),'realtime pan');
+    const count=await evaluate('__motion.length');
+    for(let i=0;i<count;i++){
+      const image=await evaluate(`({identity:__motion[${i}].identity,frame:__motion[${i}].frame})`),rgba=await pixels(`__motion[${i}].rgba`);
+      image.elapsed=Number(/observation=([0-9.]+)/.exec(image.frame)[1])-now/1000;
+      const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,2560,1440));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
+    }
+    const timestamps=await evaluate('__intervals');result.callback_intervals_ms=timestamps.slice(1).map((v,i)=>v-timestamps[i]);
+    result.omissions=await evaluate('game.capture_omissions()');await evaluate('game.end_capture()');
+    assert(result.omissions===0,'motion contains omissions');
+    const ids=result.frames.map(f=>Number(/submission=([0-9]+)/.exec(f.frame)[1]));
+    assert(ids.length>1&&ids.every((v,i)=>i===0||v===ids[i-1]+1),'submitted motion IDs are not contiguous');
+    assert(result.frames.every(f=>f.identity.includes('presented=true')),'motion contains an unpresented source');
+    result.export_allowance_bytes=120*2560*1440*4;
+    result.clock_scope='Page requestAnimationFrame timestamps; observer ON, export after the interval. Neither display swaps nor physical cadence.';
+  }
+  result.faults=[...cdp.faults,...await evaluate('__faults')];assert(result.faults.length===0,JSON.stringify(result.faults));
+  assert(!(await evaluate('document.querySelector("#problems").textContent')),'page reports a problem');
+  result.passed=true;
+}catch(error){failure=error;result.passed=false;result.error=String(error);}
+finally{
+  if(cdp){try{await cdp.call('Browser.close');}catch{}cdp.socket.close();}chrome?.kill();
+  try{process.kill(-command.pid,'SIGTERM');}catch{}await log.close();
+  await fs.writeFile(path.join(output,'run.json'),JSON.stringify(result,null,2)+'\n');
+}
+console.log(JSON.stringify({passed:result.passed,output,error:result.error}));if(failure)process.exitCode=1;

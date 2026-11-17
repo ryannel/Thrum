@@ -1,18 +1,32 @@
 //! Browser access to the renderer-owned submitted-output tap.
 use super::{WebShell, WebWorld};
-use thrum_render::runtime::{SceneSource, SubmittedImage};
+use thrum_render::runtime::{FrameError, SceneSource, SubmittedImage};
 
 impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     /// Begin a bounded submitted-output session on the healthy canvas device.
     /// # Errors
     /// Refuses a lost device, an active session or a resource allocation failure.
     pub fn begin_submitted_capture(&mut self, session: u64) -> Result<(), String> {
+        self.begin_submitted_capture_with_limits(
+            session,
+            thrum_render::runtime::CaptureLimits::default(),
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    /// Begin a submitted-output session with an explicit bounded observer allowance.
+    /// # Errors
+    /// Refuses loss, an active session or limits too small for the canvas extent.
+    pub fn begin_submitted_capture_with_limits(
+        &mut self,
+        session: u64,
+        limits: thrum_render::runtime::CaptureLimits,
+    ) -> Result<(), FrameError> {
         if self.graphics.is_lost() {
-            return Err("graphics device is lost".to_owned());
+            return Err(FrameError::InvalidState("graphics device is lost"));
         }
         self.host
-            .enable_submitted_capture(session)
-            .map_err(|e| e.to_string())
+            .enable_submitted_capture_with_limits(session, limits)
     }
 
     /// Begin scene-linear capture through the same bounded submitted-image tap.

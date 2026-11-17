@@ -245,6 +245,8 @@ pub enum ContentStatus {
 pub struct StillWorld {
     tick_duration: Option<Duration>,
     now: Duration,
+    wall_now: Duration,
+    paused: bool,
     tick: u64,
 }
 
@@ -283,7 +285,11 @@ impl FrameWorld for StillWorld {
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
         let previous = self.tick;
         if let Some(step) = self.tick_duration {
-            self.now = now.max(self.now);
+            let wall_now = now.max(self.wall_now);
+            if !self.paused {
+                self.now += wall_now.saturating_sub(self.wall_now);
+            }
+            self.wall_now = wall_now;
             self.tick = u64::try_from(self.now.as_nanos() / step.as_nanos()).unwrap_or(u64::MAX);
         }
         Ok(WorldAdvance {
@@ -333,7 +339,7 @@ impl FrameWorld for StillWorld {
     }
     fn tick_due_time(&self) -> Option<Duration> {
         self.tick_duration.map(|step| {
-            self.now.saturating_sub(Duration::from_nanos(
+            self.wall_now.saturating_sub(Duration::from_nanos(
                 u64::try_from(self.now.as_nanos() % step.as_nanos())
                     .expect("a sub-tick fraction fits in u64 nanoseconds"),
             ))

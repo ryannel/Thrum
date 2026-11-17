@@ -12,6 +12,11 @@ try {
   const query = new URLSearchParams(location.search);
   const game = await create_scene(canvas, query.get('store') ?? config.store);
   window.game = game;
+  const recover = document.querySelector('#recover');
+  recover.addEventListener('click', () => {
+    try { game.recover_graphics(); recover.hidden = true; }
+    catch (error) { report(error); }
+  });
   document.title = game.title();
   const view = mountControls(document.querySelector('#controls'), game.controls_json(), {
     edit: (key, value) => game.edit_control(key, value),
@@ -35,6 +40,7 @@ try {
     try {
       game.frame(now);
       const nextStatus = game.report();
+      recover.hidden = !nextStatus.startsWith('Graphics device unavailable:');
       if (status.textContent !== nextStatus) status.textContent = nextStatus;
       view.refresh();
       requestAnimationFrame(frame);
