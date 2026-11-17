@@ -749,7 +749,8 @@ jointly by one owner; the aerial product is already that owner's, so the joint i
 ### What this replaces
 
 - **The air's profile is fixed.** The aerosol is a constant written into the shaders, a visual range of about
-  244 km. It becomes an input, so the weather can thicken and thin the haze.
+  244 km, grey in every band, with one phase. It becomes an input of two numbers, so the weather can thicken
+  and thin the haze and set its kind.
 - **The aerial product is clear air in a 32³ volume.** In a scene that declares the view volume it is the joint
   transport of air, haze and a provider's medium, at a finer grain near the camera. A scene that does not
   declare it keeps the 32³ product, bit for bit.
@@ -769,7 +770,7 @@ jointly by one owner; the aerial product is already that owner's, so the joint i
 
 | Cue | Where it must hold | Plausible wrong substitute, and what rejects it |
 |---|---|---|
-| V1 Haze: the land fades with distance into the sky's colour, over a range the weather sets | Clear-air visual range 3 to 300 km; noon to twilight; Mac and Chrome | A tint by depth. Rejected by the sky and the farthest land meeting without a line at every range |
+| V1 Haze: the land fades with distance into the sky's colour, over a range and in a kind the weather sets | Clear-air visual range 3 to 300 km; Ångström exponent 0 to 2; noon to twilight; Mac and Chrome | A tint by depth. Rejected by the sky and the farthest land meeting without a line at every range |
 | V2 Shafts: sunlight stands in the haze below ridges, props and broken cloud | Low Sun and noon; visual range 8 to 60 km; within the shadow cascades and under a registered Sun-path optical depth | A screen-space streak from the Sun's disc. Rejected by shafts that stay when the Sun is off screen and that meet the lit ground beneath them |
 | V3 A medium near the camera: the land fades into fog by depth, surfaces inside lose their sunlight by the fog between them and the Sun, the sky, the Sun's disc and stars dim through it, and the camera passes in and out | A provider's medium of visual range 30 m to 10 km, from the camera to the provider's handover | A fog composed over the finished frame by depth. Rejected by a slab integrated jointly with the air against the reference, and by a shadow that weakens inside the fog |
 | V4 Steady: nothing crawls, trails or flickers as the camera pans, walks or the Sun moves, and a cut is whole in its first frame | Pan, walk, time scrub, cut; a mover through the fog's edge | Heavy history that hides noise while the camera is still. Rejected frame by frame in the walk and behind the mover |
@@ -805,11 +806,35 @@ aerial product, the shaders, the passes and the frames are today's. With it the 
 volume, and the lent "aerial `(T,S)` to a point" keeps its arguments, units and support: any reader gets the
 joint transport.
 
-**The air's haze is an input.** The air profile takes the aerosol's amount at the ground, with today's value as
-the default. The charts that depend on it (transmittance, multiple scattering, the sky view, the night profile)
-follow a change within a lag the profile declares; at the default their bytes are today's. Changing the amount
-is a recomputation of contents, like the Sun moving, and does not move the environment epoch. A weather provider
-supplies the amount; without one a scene sets it.
+**The air's haze is an input, by amount and by kind.** The air profile takes two numbers for its aerosol at the
+ground: its **amount**, as the extinction at 550 nm, and its **kind**, as an Ångström exponent `α` from 0 to 2.
+In each of the eight bands the aerosol's extinction and scattering are the amount's times `(λ / 550 nm)^−α`;
+the single-scattering albedo, the phase and the height profile are today's and do not change with either. The
+visual range is defined at 550 nm, so it depends on the amount alone. The defaults are today's values, about
+244 km and `α = 0`, the grey aerosol the shaders hold now. The charts that depend on the aerosol
+(transmittance, multiple scattering, the sky view, the night profile) follow a change of either number within a
+lag the profile declares; at the defaults their bytes are today's. Changing either is a recomputation of
+contents, like the Sun moving, and does not move the environment epoch. A weather provider supplies both;
+without one a scene sets them.
+
+What the kind does was measured before M7 was built, with the module's own f64 reference sky in all orders of
+scattering ([the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md)). At a fixed visual range,
+`α = 1.3` against 0 moves the sky's colour near the horizon by a CIEDE2000 difference of 4 to 6 in 20 km haze and 6 to
+12 in 3 km with the Sun at 10°, and distant land by 5 to 7 in 3 km; at noon by 2 or less, except at the zenith.
+Grey haze at a low Sun is lit mostly by the blue sky and reads blue-grey; fine haze reddens the Sun's long path
+through it and reads neutral to warm. So the kind is what turns a low Sun's murk from grey-blue to the warm haze of
+dry, fine aerosol or smoke, which an amount alone cannot. It does not, in general, make dry haze bluer, as the
+thesis review that raised it supposed. A type chosen from a list (continental, maritime, smoke) was rejected: it
+steps where the weather moves smoothly, and it ties the albedo and the phase to the exponent without a measurement
+that they show. A tint in three channels was rejected because the weather knows a particle size and not a colour,
+and the air has eight bands. The albedo and the phase can join the same input later if a milestone measures a need.
+
+The kind thickens the air in the short bands: at `α = 1.3` the 429 nm band of a 3 km haze holds 1.38 times
+the aerosol of the 550 nm one. On the grid part III proposes, 64 slices with 48 inside 500 m, that band's
+in-scatter is 1.22 times [the ceiling](#numerical-acceptance-for-the-view-volume); 64 slices with 40 inside
+500 m are at 0.54 of it there and at most 0.27 in grey haze from 244 to 3 km, and 80 slices with 48 inside
+are at 0.31 and 0.16 (the check's part B). The builder chooses the grid; one that passes grey haze alone is
+not enough.
 
 **The grid.** Cells aligned to the view frustum: tiles of pixels across, slices in distance. Most slices lie
 inside the provider's handover distance, where condensate is; the rest carry air and haze to 32 km. The sizes

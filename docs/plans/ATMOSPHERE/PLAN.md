@@ -17,6 +17,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
 - Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
 - Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.
+- Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. [The check of 17 November](../../evidence/ATMOSPHERE/haze-kind-check.md) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
 - Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -67,7 +68,7 @@ what has landed.
 Read [Closing G3s](DESIGN.md#closing-g3s) first. Record the commit M6 starts from before changing anything:
 M6.5 reruns it beside the final build.
 
-## M7 Haze thickens from crisp air to murk under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
+## M7 Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
 
 Read [The view volume](DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) first. The aerial
 producer is `crates/thrum-render/src/atmosphere/aerial.wgsl` with `AERIAL_EXTENT` in `gpu.rs`; the aerosol's
@@ -79,7 +80,10 @@ builds rulings 1 to 4 in these same files; integrate on top of what has landed, 
 present make sure the volume does not take it. Record M7.1's base before changing anything. M7.3's ceiling is
 [the design's](DESIGN.md#numerical-acceptance-for-the-view-volume): a miss you cannot close ends `BLOCKED`, never
 a wider bound. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
-terminal pair. `scripts/view_volume.py` is created here.
+terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
+the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
+[the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III's grid of 64 slices with 48 inside 500 m misses M7.3's
+3 km case at an exponent of 1.3; the design names two grids that pass it.
 
 ## M8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
 

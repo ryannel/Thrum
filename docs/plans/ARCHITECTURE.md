@@ -258,7 +258,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and, in a scene without the view volume, one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:M8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
 | Ordered medium segments `(T,S)` and the reflection provider. Condensate is split along a view ray by distance, at a handover: nearer, it is in `ATMOSPHERE`'s view volume, integrated jointly with the air; beyond, it is the trace's segment, which stops at the scene's depth and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). The two shares sum to one. Water composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `WATERS` precedes `CLOUDS` in a scene's contribution list | `WATERS`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [WATERS](WATERS/DESIGN.md#optics) |
 | **View volume and medium coefficients**: a scene may declare the view volume, and then the lent aerial `(T,S)` to a point is the joint transport of air, haze and a provider's medium near the camera, with the same arguments and units. A provider writes three coefficients (extinction, a solar kernel that already holds its own optical depth and phase, an ambient source) at the sample points the volume names, weighted by its near weight; `ATMOSPHERE` multiplies the kernel by its Sun light and the scene's shadow, sums with the air and integrates once. A ray that leaves the volume takes its terminal pair once: the sky behind it becomes `R·L + ΔS`, and stars and a disc drawn by itself are multiplied by `R` alone. A scene that declares none is unchanged | `ATMOSPHERE:M7` (the volume, with air and haze), `ATMOSPHERE:M8` (a medium) → every reader of the lent aerial operation; `CLOUDS:M14` provides the medium | C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera), [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud), [rulings 6 to 8](#seam-rulings-for-clouds) |
-| **The air's haze**: the aerosol's amount, as the clear air's visual range. The weather state holds it; `ATMOSPHERE` takes it as an input of its air profile and recomputes its charts, with today's constant as the default | `CLOUDS:M13` (the state), `ATMOSPHERE:M7` (the input) → `ATMOSPHERE`'s charts | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) |
+| **The air's haze**: the aerosol's amount, as the clear air's visual range, and its kind, as an Ångström exponent. The weather state holds both; `ATMOSPHERE` takes them as inputs of its air profile and recomputes its charts, with today's constant and an exponent of 0 as the defaults | `CLOUDS:M13` (the range), `CLOUDS:M16` (the exponent), `ATMOSPHERE:M7` (the inputs) → `ATMOSPHERE`'s charts | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) |
 | **Surface field**: the height of the ground and the level of any water, on a grid, which a game gives the weather as data so that mist can pool in hollows and fog can keep to water. The engine never reads terrain meshes or the water map for it | games → `CLOUDS` | [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud) |
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
 | **Content publication**: one cooked generation changes through every reader a scene has (the placement set, each lease, each cooked mesh row) in one submitted frame. The scene's residency owns it: each reader prepares under its own bound without showing, the publication is ready when the slowest reader is, a ready publication is not superseded, and one a reader cannot take is refused for all. This is C05's qualified visual preview for cooked products; C05 is unchanged | `CONTENT-LOOP:M1` (placements and leases), `CONTENT-LOOP:M2` (rows) → `CULLING`'s route, lease consumers (`SEA`, `CLOUDS`), games | C05, [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) |
@@ -668,8 +668,11 @@ large, has its own inspections and must leave the V1 scene untouched:
    upper cloud dims a receiver in the band once. The factor is continuous at the band's top, where the
    band's value is the 2D field's, and mixes to the 2D field's across the band's border. Only the view
    volume's cells read the land's blocking; no surface does.
-8. **The air's haze is an input** (`ATMOSPHERE` M7), with today's constant as its default and no change of
-   epoch when it moves.
+8. **The air's haze is an input** (`ATMOSPHERE` M7) of two numbers: its amount, as the clear air's visual
+   range, and its kind, as an Ångström exponent from 0 to 2. The defaults are today's constant and an exponent of
+   0, today's grey aerosol, so a scene that sets neither draws as before, and neither number moves the epoch when
+   it moves. The weather state holds both (`CLOUDS` M13 the range, M16 the exponent); `ATMOSPHERE` turns them into
+   the aerosol in each band ([its design](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera)).
 
 Once built, rulings 1 to 4 belong to `ATMOSPHERE`: later work there keeps their tests passing. Rulings 6 to 8
 are its own from the start. `CONTENT-LOOP`'s
@@ -1117,7 +1120,7 @@ state has two kinds, each with one owner.
 
 | Kind of state | Owner | Why there |
 |---|---|---|
-| What is in the air and where: cloud, fog and mist as one condensate, the amount of haze, wind, and the weather state a game steps | `CLOUDS` | Fog is cloud at the ground. One field gives one density, one optical depth toward the Sun, one light model and one headless query, so a deck can come down onto the hills and a game can ask how far it can see |
+| What is in the air and where: cloud, fog and mist as one condensate, the amount and kind of haze, wind, and the weather state a game steps | `CLOUDS` | Fog is cloud at the ground. One field gives one density, one optical depth toward the Sun, one light model and one headless query, so a deck can come down onto the hills and a game can ask how far it can see |
 | What light does in the air: the gases and the aerosol's optics, the charts, the sky, and the transport from the camera to any point and from the Sun to any receiver | `ATMOSPHERE` | Near the camera fog overlaps the air, which C08 requires one owner to integrate jointly, and every surface already reads that owner's aerial product |
 | The surface field and the fog table | The game | Content, like the type table |
 
@@ -2405,3 +2408,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   main-branch check failed four times at realtime motion arms under other modules' GPU tests. A realtime capture
   may now wait for its readback ring instead of dropping, and an incomplete Mac capture exits 75. M3's builder
   edits `APPLE-TILE`'s matrices and `BASELINE-GUARD`'s verifier under that ruling; neither module's items change.
+- 2026-11-17 [Ruling 8 for `CLOUDS`](#seam-rulings-for-clouds) and the air's-haze interface now carry the
+  haze's kind, an Ångström exponent, beside its amount, after `ATMOSPHERE`'s f64 reference sky showed the
+  colour it gives visible at a low Sun in haze of 20 and 3 km
+  ([the check](../evidence/ATMOSPHERE/haze-kind-check.md)). The weather state holds it (`CLOUDS` M16) and
+  `ATMOSPHERE` M7 applies it; the default, 0, is today's grey aerosol, so no scene and no exact baseline changes.
+  No contract changed.

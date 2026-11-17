@@ -366,3 +366,7 @@
   control adds local formation/dissolution evidence. The loaded first pair and its steps remain
   retained. [Evidence](../../evidence/CLOUDS/M2-display-phase-captures/README.md) keeps complete
   sources, per-frame target/travel tables and sampled-image limits; no physical cadence claim.
+- 2026-11-17 Ruling 8 now passes the haze's kind with its amount: the weather state holds an Ångström exponent
+  beside the clear air's visual range, default 0, and the cloud selection hands both to `ATMOSPHERE`'s haze
+  input ([ATMOSPHERE's check](../../evidence/ATMOSPHERE/haze-kind-check.md)). M16.4 gains the exponent's
+  control and M16 gains M16.11. The visual range, the query and every built item are unchanged.

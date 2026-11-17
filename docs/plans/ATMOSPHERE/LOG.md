@@ -580,3 +580,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   shared evidence store with verified recovery. [Results and complete outputs](../../evidence/ATMOSPHERE/M9-resume.md)
   distinguish the repaired storage failure from passing target runs. Independent
   solar accuracy and the sea-level look remain unqualified.
+- **2026-11-17 — The haze gains a kind before M7.** The lead's task: "M7 makes haze a weather input, but only
+  its amount ... check whether the colour change is visible in the existing reference sky at about 20 km and
+  3 km visual range; if it isn't, drop the idea and record why." The module's f64 reference sky, run in all
+  orders in the engine's eight bands, found an Ångström exponent of 1.3 against 0 visible at a 10° Sun and
+  small at noon ([the check](../../evidence/ATMOSPHERE/haze-kind-check.md)). The air's haze input became two
+  numbers, amount and Ångström exponent, defaulting to today's grey aerosol; M7's name and M7.2, M7.3 and M7.6
+  were written again, and the design records that the kind needs a finer far grid at 3 km. `CLOUDS`' ruling 8
+  and M16 changed with it; no contract changed. The design needs a review before M7 is built.

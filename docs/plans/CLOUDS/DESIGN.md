@@ -833,10 +833,14 @@ near the camera and this module's trace beyond it.
   takes its amount from the ground cooling and the state's **moisture** parameter through a smooth threshold;
   any other row takes the amount the game sets. So mist forms after dusk, lies deepest at dawn and burns off,
   and a cloudy or windy night has none (part III). The constants are the profile's.
-- **Haze.** The weather state holds the **visual range of the clear air**, 3 to 300 km. It is aerosol, not
-  condensate, and `ATMOSPHERE` owns what the air does with it
-  ([ruling 8](#what-clouds-asks-of-other-modules)); the model turns the range into the aerosol extinction that
-  module takes.
+- **Haze.** The weather state holds the **visual range of the clear air**, 3 to 300 km, and the haze's
+  **Ångström exponent**, 0 to 2, which says how the aerosol's extinction falls with wavelength: 0 is grey, as
+  large, wet particles are, and 1 to 1.5 is dry, fine haze or smoke. Both move toward their targets like any
+  parameter, and the exponent's default is 0. Haze is aerosol, not condensate, and `ATMOSPHERE` owns what the air
+  does with it ([ruling 8](#what-clouds-asks-of-other-modules)); the model turns the range into the aerosol
+  extinction at 550 nm that module takes, and passes the exponent as it is. The visual range is defined at
+  550 nm, so the exponent does not change it or any answer of the query. Tying the exponent to the state's
+  moisture is the game's choice; the model does not tie them.
 - **The query.** A point query also answers, for any world point at any height: the condensate's extinction in
   m⁻¹, the visual range there (3.912 over the extinction of condensate and haze together), and through the
   model's f64 reference the optical depth between any two points, which is the integral of that extinction
@@ -1128,7 +1132,7 @@ From `ground_revision_proof.py`, run on 14 November after
 | The weather field, its state and step, the density function, the f64 references | `thrum-cloud-model` (this module), no GPU dependency |
 | The weather map, noise, the Sun's path in both bands, the layer and its history, the overlay, placed-volume sampling, the medium coefficients it writes for the view volume | `thrum-clouds` (this module), an effect on `EFFECT-GRAPH`'s seam |
 | The view volume: its grid, its history, the joint integration of air, haze and condensate near the camera, and the lent aerial operation that reads it | `ATMOSPHERE` |
-| The air's haze: how much aerosol, as a visual range | The weather state; `ATMOSPHERE` owns what the air does with it |
+| The air's haze: how much aerosol, as a visual range, and what kind, as an Ångström exponent | The weather state; `ATMOSPHERE` owns what the air does with them |
 | The surface field (ground heights and water levels) and the fog table | The game, like the type table |
 | The committed weather state, with any directed shapes | The game's world; it travels in the tick page |
 | Presets, the type table, looks, the library and its placement data, controls | The game (`examples/v1-game` behind its cloud selection; `examples/water` behind its own); never in engine crates or their tests |
@@ -1186,7 +1190,8 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its M7 and M8, and this mo
    air's before integration.
 7. **The Sun-path optical depth has a ground band** (`ATMOSPHERE` M8), which holds the whole path to the Sun
    and is read at the receiver's own position in place of the cloud band's value, never added to it.
-8. **The air's haze is an input** (`ATMOSPHERE` M7): the aerosol's amount, which the weather state supplies.
+8. **The air's haze is an input** (`ATMOSPHERE` M7): the aerosol's amount and its kind, an Ångström exponent,
+   which the weather state supplies.
 
 9. **The display phase** (`EFFECT-GRAPH` M4): where a frame's consumed target lies between the last two committed
    ticks or past the newest, bounded at 50 ms, with the frame's observation, lead, lead status and tick's due
