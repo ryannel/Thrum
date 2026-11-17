@@ -93,6 +93,10 @@ def run(args, engine=ROOT):
             game = detached / args.game
             if not (game / "Cargo.toml").is_file():
                 raise ValueError(f"game has no Cargo.toml: {args.game}")
+            # Standalone games join the staging workspace. Seed its lockfile
+            # from the game's; games with their own workspace use their own.
+            if (game / "Cargo.lock").is_file():
+                shutil.copyfile(game / "Cargo.lock", stage / "Cargo.lock")
             errors = shape_rules.external_boundary(game, engine)
             if errors:
                 print("\n".join(errors), file=sys.stderr)
