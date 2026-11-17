@@ -7,6 +7,7 @@
   previously undiscovered sea inventory; all eight inventories now run and pass 18 cases.
   The real fetch/body rejection test passes in Wasm under Node, and native/web Clippy pass.
   [Updated M4 evidence](../../evidence/REVIEW-ENGINE/M4/README.md) records sources and limits.
+  A compiler-cache panic is bypassed for the merge retry; five unchanged phase tests pass cold.
 
 - 2026-11-17 M4 gives public string-error boundaries domain enums, completes Error/Display
   implementations and wrapped sources, and renames core's input error to InputFrameError.
