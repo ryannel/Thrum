@@ -1,5 +1,13 @@
 # REVIEW-ENGINE log
 
+- 2026-11-17 M4 continuation fixes the review's lost causes in control JSON, glTF/image
+  imports and resident task/control/lifecycle faults; foreign ASTC codes and browser
+  rejection values also remain typed and retrievable. On `539d698d1`, 115 native unit
+  tests pass and the unchanged review probe reports a source. `6b0da6bbe` registers the
+  previously undiscovered sea inventory; all eight inventories now run and pass 18 cases.
+  The real fetch/body rejection test passes in Wasm under Node, and native/web Clippy pass.
+  [Updated M4 evidence](../../evidence/REVIEW-ENGINE/M4/README.md) records sources and limits.
+
 - 2026-11-17 M4 gives public string-error boundaries domain enums, completes Error/Display
   implementations and wrapped sources, and renames core's input error to InputFrameError.
   On `e5011dd13`, the zero-string rule and all eight error inventories pass on the Mac;
