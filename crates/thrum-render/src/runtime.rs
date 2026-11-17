@@ -919,7 +919,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let view = frame.view.with_history_reset(true);
         let previous = std::mem::replace(&mut self.scene.view, view);
         replacement.prepared.inherit_submitted_view(&self.prepared);
+        let mut inherited_rows = false;
         let refreshed: Result<(), FrameError> = (|| {
+            inherited_rows = replacement
+                .prepared
+                .inherit_mesh_rows(&mut self.prepared, queue)
+                .map_err(|error| FrameError::Gpu(format!("replacement mesh rows: {error:?}")))?;
             replacement
                 .prepared
                 .synchronize_history(queue, authority.epoch, authority.timeline);
@@ -945,6 +950,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Ok(())
         })();
         self.scene.view = previous;
+        if refreshed.is_err() && inherited_rows {
+            replacement.prepared.swap_mesh_rows(&mut self.prepared);
+        }
         refreshed?;
         Ok(view)
     }

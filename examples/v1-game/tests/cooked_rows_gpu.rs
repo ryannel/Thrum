@@ -623,6 +623,8 @@ fn refusal_keeps_the_whole_publication_then_recovers_resizes_and_replaces_device
 fn conversion_preserves_product_geometry_and_named_admission() {
     let root = Scratch::new("conversion");
     let cook = config(root.path());
+    demo::write_mirrored_grid_gltf(&cook.source.join("meshes"), "terrain", 8, 0.25)
+        .expect("varied authored normals");
     Cooker::open(cook.clone())
         .expect("cooker")
         .cook_all()
@@ -638,6 +640,7 @@ fn conversion_preserves_product_geometry_and_named_admission() {
     let product = MeshProduct::open(store.map(&hash).expect("mapping")).expect("product");
     let geometry = thrum_asset_gpu::rows::mesh_row(&product, 128 << 20).expect("convert");
     assert_eq!(geometry.mesh().indices, product.indices());
+    let mut directions = std::collections::BTreeSet::new();
     for ((vertex, position), attributes) in geometry
         .mesh()
         .vertices
@@ -647,8 +650,38 @@ fn conversion_preserves_product_geometry_and_named_admission() {
     {
         assert_eq!(&vertex.position, position);
         assert_eq!(vertex.uv, attributes.uv);
-        assert!((glam::Vec3::from_array(vertex.normal).length() - 1.0).abs() < 1e-6);
+        directions.insert(attributes.normal_oct);
+        // Independent double-precision octahedral unfolding oracle. Unlike the
+        // production decoder's correction term, unfold the lower diamond by
+        // exchanging its absolute coordinates, then normalize in f64.
+        let [x, y] = attributes
+            .normal_oct
+            .map(|v| (f64::from(v) / 32767.0).max(-1.0));
+        let z = 1.0 - x.abs() - y.abs();
+        let (x, y) = if z < 0.0 {
+            ((1.0 - y.abs()).copysign(x), (1.0 - x.abs()).copysign(y))
+        } else {
+            (x, y)
+        };
+        let length = (x * x + y * y + z * z).sqrt();
+        let expected = [x / length, y / length, z / length];
+        let error = vertex
+            .normal
+            .iter()
+            .zip(expected)
+            .map(|(actual, expected)| (f64::from(*actual) - expected).powi(2))
+            .sum::<f64>()
+            .sqrt();
+        assert!(
+            error < 1e-6,
+            "decoded normal differs: {:?} / {expected:?}",
+            vertex.normal
+        );
     }
+    assert!(
+        directions.len() > 8,
+        "fixture must reject a constant unit normal"
+    );
     let good = geometry.mesh().clone();
     let mut bad = good.clone();
     bad.vertices[0].position[0] = f32::NAN;
@@ -783,5 +816,247 @@ fn edited_rows_equal_fresh_game_in_every_culling_mode() {
                 }
             }
         }
+    });
+}
+
+fn environment(revision: u8) -> thrum_content_runtime::EnvironmentProduct {
+    let (x, y) = if revision.is_multiple_of(2) {
+        (0.6, 0.8)
+    } else {
+        (0.0, 1.0)
+    };
+    let values = thrum_content_runtime::EnvironmentValues::from_numbers([
+        x, y, 0.0, 100_000.0, 1.0, 1.0, 1.0, 0.00465, 100.0, 100.0, 100.0, 1.0, 1.0, 1.0,
+    ])
+    .expect("environment");
+    thrum_content_runtime::EnvironmentProduct::new(
+        thrum_content_runtime::EnvironmentProductRevision::from_bytes([revision; 32]),
+        values,
+    )
+}
+
+async fn environment_reference(
+    cook: &CookConfig,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    caps: &DeviceCapabilities,
+    mode: CullMode,
+    product: thrum_content_runtime::EnvironmentProduct,
+) -> Vec<u8> {
+    let (mut fresh, stats) = host(cook, device, queue, caps, mode, true, None).await;
+    settle(&mut fresh, &stats, generation(cook));
+    let mut candidate = fresh
+        .visual_prepare_inputs()
+        .prepare(product)
+        .await
+        .expect("fresh environment");
+    assert!(
+        fresh
+            .publish_environment(&mut candidate)
+            .expect("fresh publish")
+    );
+    fresh.capture_pixels().expect("fresh environment frame")
+}
+
+#[test]
+fn visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows() {
+    let Some(gpu) = thrum_test_support::gpu("row visual rebuilds", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    pollster::block_on(async {
+        for mode in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
+            // 0: partial write; 1: ready; 2: discarded switch; 3: a candidate
+            // prepared before the edit, then published after the edit committed.
+            for phase in 0..4 {
+                let root = Scratch::new(&format!("visual-{mode:?}-{phase}"));
+                let cook = config(root.path());
+                let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+                cooker.cook_all().expect("initial cook");
+                let product = environment(if phase == 0 || phase == 2 { 2 } else { 1 });
+                let old = Box::pin(environment_reference(
+                    &cook, &device, &queue, &caps, mode, product,
+                ))
+                .await;
+                let (mut live, stats) = host(&cook, &device, &queue, &caps, mode, true, None).await;
+                settle(&mut live, &stats, generation(&cook));
+                let updates = live.cooked_rows().expect("rows").updates();
+                let mut candidate = if phase == 3 {
+                    Some(
+                        live.visual_prepare_inputs()
+                            .prepare(product)
+                            .await
+                            .expect("early candidate"),
+                    )
+                } else {
+                    None
+                };
+                let next = edit(&cook, &mut cooker, 256, 1.4);
+                staged(&stats, next);
+                let deadline = Instant::now() + Duration::from_secs(90);
+                loop {
+                    let status = updates.status(next);
+                    let reached = match phase {
+                        0 => {
+                            status
+                                == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Writing)
+                                && updates.report().last_write_bytes != 0
+                        }
+                        1 | 2 => {
+                            status == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready)
+                        }
+                        _ => {
+                            status
+                                == Some(
+                                    thrum_render::synthetic::mesh_rows::MeshRowStatus::Committed,
+                                )
+                        }
+                    };
+                    if reached {
+                        break;
+                    }
+                    live.capture_pixels().expect("pre-rebuild frame");
+                    assert!(
+                        Instant::now() < deadline,
+                        "rebuild stage {phase} never reached"
+                    );
+                }
+                if phase == 2 {
+                    live.advance(Duration::from_millis(16))
+                        .expect("advance")
+                        .encode_scene()
+                        .expect("discard switch")
+                        .skip();
+                }
+                let before_status = updates.status(next);
+                let before_bytes = updates.report().submitted_bytes;
+                let mut candidate = match candidate.take() {
+                    Some(candidate) => candidate,
+                    None => live
+                        .visual_prepare_inputs()
+                        .prepare(product)
+                        .await
+                        .expect("candidate"),
+                };
+                assert!(live.publish_environment(&mut candidate).expect("publish"));
+                assert_eq!(
+                    updates.status(next),
+                    before_status,
+                    "preparation belongs to the retained arena"
+                );
+                assert_eq!(
+                    updates.report().submitted_bytes,
+                    before_bytes,
+                    "rebuild must not rewrite row geometry"
+                );
+                let new = Box::pin(environment_reference(
+                    &cook, &device, &queue, &caps, mode, product,
+                ))
+                .await;
+                assert_ne!(old, new, "fixture must expose changed geometry");
+                only_old_or_new(&mut live, &stats, next, &old, &new);
+                assert_eq!(live.capture_pixels().expect("following frame"), new);
+                assert_eq!(live.capture_pixels().expect("persistent frame"), new);
+
+                // The inherited allocator and retirement state must also support
+                // the next replacement after the rebuilt scene has published.
+                let shrink = edit(&cook, &mut cooker, 4, 0.07);
+                let smaller = Box::pin(environment_reference(
+                    &cook, &device, &queue, &caps, mode, product,
+                ))
+                .await;
+                only_old_or_new(&mut live, &stats, shrink, &new, &smaller);
+                assert_eq!(live.capture_pixels().expect("shrunk frame"), smaller);
+                eprintln!(
+                    "visual row rebuild: {mode:?}, phase={phase}, exact old/new and subsequent shrink passed"
+                );
+            }
+        }
+    });
+}
+
+#[test]
+fn a_device_candidate_prepared_before_a_row_commit_is_refused_without_changing_the_host() {
+    let Some(gpu) =
+        thrum_test_support::gpu("stale device row snapshot", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    pollster::block_on(async {
+        let root = Scratch::new("stale-device-rows");
+        let cook = config(root.path());
+        let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+        cooker.cook_all().expect("initial cook");
+        let (mut live, stats) = host(
+            &cook,
+            &device,
+            &queue,
+            &caps,
+            CullMode::Occlusion,
+            true,
+            None,
+        )
+        .await;
+        let old = settle(&mut live, &stats, generation(&cook));
+        let replacement_gpu = gpu.fresh_adapter();
+        let (replacement, replacement_queue) = replacement_gpu.device(
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        );
+        let replacement_caps =
+            DeviceCapabilities::capture(&replacement_gpu.adapter, &replacement, 2);
+        let surface = Some(thrum_render::present::SurfaceProfile {
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            extent: EXTENT,
+        });
+        let mut stale = live
+            .device_prepare_inputs()
+            .expect("inputs")
+            .prepare(&replacement_caps, &replacement_queue, surface)
+            .await
+            .expect("early candidate");
+        let next = edit(&cook, &mut cooker, 16, 0.8);
+        let current = settle(&mut live, &stats, next);
+        assert_ne!(old, current);
+        let error = live
+            .publish_device(&mut stale)
+            .expect_err("stale geometry must not replace current rows");
+        assert!(error.to_string().contains("stale mesh rows"), "{error}");
+        assert_eq!(
+            live.capture_pixels().expect("healthy host after refusal"),
+            current
+        );
+        let mut newest = live
+            .device_prepare_inputs()
+            .expect("newest inputs")
+            .prepare(&replacement_caps, &replacement_queue, surface)
+            .await
+            .expect("current candidate");
+        live.publish_device(&mut newest)
+            .expect("publish current rows");
+        let (mut fresh, fresh_stats) = host(
+            &cook,
+            &replacement,
+            &replacement_queue,
+            &replacement_caps,
+            CullMode::Occlusion,
+            true,
+            None,
+        )
+        .await;
+        assert_eq!(
+            settle(&mut live, &stats, next),
+            settle(&mut fresh, &fresh_stats, next)
+        );
     });
 }

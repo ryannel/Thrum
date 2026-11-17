@@ -68,6 +68,20 @@ pub(in crate::synthetic) struct LiveRows {
 }
 
 impl LiveRows {
+    pub(in crate::synthetic) fn same_reader(&self, other: &Self) -> bool {
+        self.updates == other.updates
+    }
+
+    pub(in crate::synthetic) fn same_geometry(&self, other: &Self) -> bool {
+        self.same_reader(other)
+            && self.current.len() == other.current.len()
+            && self
+                .current
+                .iter()
+                .zip(&other.current)
+                .all(|(a, b)| Arc::ptr_eq(a, b))
+    }
+
     pub(in crate::synthetic) fn observe(&self, elapsed: std::time::Duration) {
         if let Ok(mut state) = self.updates.0.lock() {
             let report = &mut state.report;

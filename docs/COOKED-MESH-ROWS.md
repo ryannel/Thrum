@@ -21,6 +21,14 @@ Every reader switches in its next frame; a discarded frame retries the same swit
 old geometry. The first history-advancing frame after a switch resets reconstruction, including when a capture
 committed the switch first. Missing or invalid products and arena refusals retain the previous publication whole.
 
+Same-device visual replacements retain the live arena together with its allocations, write cursor and pending
+switch. At publication the host refreshes the new scene's draw ranges, caster bounds, culling tables and vertex
+bindings against that arena. This also applies to detached extent candidates and candidates prepared before a
+later row edit commits. Preparing a candidate does not change the active reader's readiness.
+A replacement-device candidate cannot inherit buffers. If a row committed after its CPU snapshot was prepared,
+publication refuses that stale candidate and leaves the active host intact; take fresh `device_prepare_inputs`
+and prepare again. Device reconstruction otherwise retains the newest committed CPU geometry as before.
+
 Live arenas reserve two buffers up front, each bounded by the device's storage-binding limit; ordinary selections
 retain their existing allocation path. On the portable Metal profile this reserves 268,435,424 payload bytes.
 `MeshRows::with_binding_limit` selects a smaller scene capacity before preparation. Initial rows, replacements

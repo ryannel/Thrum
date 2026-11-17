@@ -12,6 +12,8 @@ pub(super) const PASS_NAME: &str = "synthetic transform history";
 const WORKGROUP: u32 = 64;
 
 pub(super) struct TransformHistory {
+    read_layout: wgpu::BindGroupLayout,
+    buffers: [wgpu::Buffer; 2],
     read_groups: [wgpu::BindGroup; 2],
     write_groups: [wgpu::BindGroup; 2],
     serial_buffer: wgpu::Buffer,
@@ -65,30 +67,14 @@ impl TransformHistory {
                 uniform_layout(2, SERIAL_BYTES, wgpu::ShaderStages::COMPUTE),
             ],
         });
-        let read_groups = std::array::from_fn(|side| {
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("synthetic instance and previous transform"),
-                layout: instance_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: instances.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: buffers[side].as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: serial_buffer.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: mesh_vertices.as_entire_binding(),
-                    },
-                ],
-            })
-        });
+        let read_groups = read_groups(
+            device,
+            instance_layout,
+            instances,
+            &buffers,
+            &serial_buffer,
+            mesh_vertices,
+        );
         let write_groups = std::array::from_fn(|side| {
             device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("synthetic history publisher"),
@@ -127,6 +113,8 @@ impl TransformHistory {
             cache: None,
         });
         let history = Self {
+            read_layout: instance_layout.clone(),
+            buffers,
             read_groups,
             write_groups,
             serial_buffer,
@@ -140,6 +128,23 @@ impl TransformHistory {
         };
         history.write_serials(queue, false);
         history
+    }
+
+    /// Keep this candidate's history/instance buffers, but sample the inherited arena.
+    pub(super) fn rebind_mesh_vertices(
+        &mut self,
+        device: &crate::runtime::DeviceSite,
+        instances: &wgpu::Buffer,
+        vertices: &wgpu::Buffer,
+    ) {
+        self.read_groups = read_groups(
+            device,
+            &self.read_layout,
+            instances,
+            &self.buffers,
+            &self.serial_buffer,
+            vertices,
+        );
     }
 
     pub(super) fn candidate_identity(&self, reset: bool) -> [u64; 2] {
@@ -238,6 +243,40 @@ impl TransformHistory {
         self.submitted_serial = self.next_serial;
         self.next_serial = self.next_serial.wrapping_add(1).max(1);
     }
+}
+
+fn read_groups(
+    device: &crate::runtime::DeviceSite,
+    layout: &wgpu::BindGroupLayout,
+    instances: &wgpu::Buffer,
+    buffers: &[wgpu::Buffer; 2],
+    serial: &wgpu::Buffer,
+    vertices: &wgpu::Buffer,
+) -> [wgpu::BindGroup; 2] {
+    std::array::from_fn(|side| {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("synthetic instance and previous transform"),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: instances.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: buffers[side].as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: serial.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: vertices.as_entire_binding(),
+                },
+            ],
+        })
+    })
 }
 
 #[cfg(test)]

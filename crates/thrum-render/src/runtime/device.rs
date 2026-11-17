@@ -204,6 +204,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
+        if !scene.prepared.has_current_mesh_rows(&self.prepared) {
+            return Err(FrameError::InvalidState(
+                "stale mesh rows in device replacement",
+            ));
+        }
         let view = self.refresh_replacement(
             scene,
             &candidate.queue,
