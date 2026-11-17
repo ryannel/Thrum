@@ -293,6 +293,35 @@
         "by": "plan",
         "task": "The design review of CULLING at docs/evidence/CULLING/design-review.md asked for changes. Resolve its 1 Must Fix finding",
         "at": "2026-11-16T11:51:09Z"
+      },
+      "ready_for_review": {
+        "commit": "d24ded771f37d99b188fc652aceaf1b5a82b7dae",
+        "checked": "0543f431045ef08bea38da3754b2a133b3e9564d",
+        "at": "2026-11-17T00:33:05Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 2084805,
+          "cached": 341877376,
+          "output": 892086,
+          "turns": 13
+        },
+        "session_usage": {
+          "input": 2084805,
+          "cached": 341877376,
+          "output": 892086,
+          "turns": 13
+        }
       }
     }
   },
