@@ -1,5 +1,12 @@
 # REVIEW-ENGINE log
 
+- 2026-11-17 M3 continuation confirmed the shared exact-images pass on `40de2f151a22`,
+  which contains all final M3 source. The run took two attempts and is marked flaky:
+  Chrome identity ordinal 107 failed first; the full verifier passed on the second.
+  Retained run and verifier records confirm all Mac comparisons and four 481-record Chrome sets.
+  All six builder results remain pass, with M3 left in_progress for the lead's script.
+  [M3 evidence](../../evidence/REVIEW-ENGINE/M3/README.md) records the covered commit and limits.
+
 - 2026-11-16 M3 continuation diagnosed the shared verifier failure as incomplete motion capture:
   the retained failing arm has 129 ring omissions, zero writer omissions and no pixel mismatch.
   Concurrent GPU tests are recorded; contention is suspected, not established as the cause.
