@@ -34,12 +34,11 @@ pub(super) fn feed() -> Result<RemoteFeed, String> {
 
 impl WebWorld for StillWorld {
     fn pause(&mut self) -> Result<(), String> {
-        self.paused = true;
+        StillWorld::pause(self);
         Ok(())
     }
     fn resume_after_drain(&mut self, now: Duration) -> Result<(), String> {
-        self.wall_now = now.max(self.wall_now);
-        self.paused = false;
+        self.resume(now);
         Ok(())
     }
 }

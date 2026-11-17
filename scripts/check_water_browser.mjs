@@ -168,7 +168,7 @@ try {
     execFileSync('rustup',['run','1.99.1','cargo','build','--release','--locked','--offline','-p','water-scene','--example','field_oracle'],{stdio:'inherit',env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}});
     await capture('first',0,true);
     if(mode==='frames'){
-      await capture('between',1000/240,true);await capture('repeat',0,true);await capture('next',1000/120,true);
+      await capture('between',1000/240,true);await capture('repeat',0,true);const beforeHide=await capture('next',1000/120,true);
       // Real tab visibility events enter the normal page listener. Only their wall-clock
       // input is controlled, keeping this scripted trace in the same origin as frame().
       await evaluate(`globalThis.__clock=${now};Object.defineProperty(performance,'now',{configurable:true,value:()=>__clock})`);
@@ -181,14 +181,26 @@ try {
       result.visibility='Real tab switch and visibilitychange listener; scripted performance.now at the two events';
       await cdp.call('Target.closeTarget',{targetId:other.targetId});
       await evaluate('delete performance.now');
-      await capture('shown',1000/240,true);await capture('hitch',1500,true);
+      // C02 oracle: discard the old partial tick, then hold the committed endpoint
+      // for a fresh full interval. These expectations do not use submitted alpha.
+      const heldTime=beforeHide.tick/60;
+      for(const [name,delta]of [['shown',1000/240],['shown-repeat',0],['shown-held',1000/120]]){
+        const frame=await capture(name,delta,true);
+        frame.expected_clock={tick:beforeHide.tick,alpha:1,display_time:heldTime};
+        assert(frame.tick===beforeHide.tick&&frame.alpha===1,`${name}: resume must hold the committed endpoint`);
+        assert(Math.abs(frame.fields.time-heldTime)<1e-9,`${name}: held display time differs`);
+      }
+      const committed=await capture('shown-commit',1000/120,true);
+      committed.expected_clock={tick:beforeHide.tick+1,alpha:0.25,display_time:(beforeHide.tick+0.25)/60};
+      assert(committed.tick===beforeHide.tick+1&&Math.abs(committed.alpha-0.25)<1e-5,'resume did not start a fresh full tick interval');
+      assert(Math.abs(committed.fields.time-committed.expected_clock.display_time)<1e-7,'resumed display time differs from independent lifecycle oracle');
+      await capture('hitch',1500,true);
       await evaluate('__devices.at(-1).destroy()');await delay(100);await drive(5);
       await evaluate('game.recover_graphics()');
       await until(async()=>{await drive(5);await delay(100);return /recovered=1/.test(await evaluate('game.frame_info()'));},'recovered device');
       for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'replacement frame slot');await drive(1000/120);await delay(30);}
       await capture('recovered',1000/240,true);result.recovery=await evaluate('game.frame_info()');
       assert(result.frames[1].tick===result.frames[2].tick&&result.frames[1].alpha===result.frames[2].alpha,'repeat changed the model clock');
-      assert(result.frames[4].tick-result.frames[3].tick<=1,'hidden page admitted elapsed ticks');
     }
   } else if(mode==='fixed'){
     for(const [name,height,bearing]of [['noon-2-along',2,90],['noon-2-across',2,0],['noon-40-along',40,90],['noon-40-across',40,0]]){

@@ -247,7 +247,29 @@ pub struct StillWorld {
     now: Duration,
     wall_now: Duration,
     paused: bool,
+    presentation_hold: bool,
     tick: u64,
+}
+
+impl StillWorld {
+    /// Stop the clock, discarding its partial tick and holding the committed endpoint.
+    pub fn pause(&mut self) {
+        self.paused = true;
+        self.presentation_hold = true;
+        if let Some(step) = self.tick_duration {
+            self.now -= Duration::from_nanos(
+                u64::try_from(self.now.as_nanos() % step.as_nanos())
+                    .expect("a sub-tick fraction fits in u64 nanoseconds"),
+            );
+        }
+    }
+
+    /// Start a new wall-time span, holding until its first full tick commits.
+    pub fn resume(&mut self, now: Duration) {
+        self.wall_now = now.max(self.wall_now);
+        self.paused = false;
+        self.presentation_hold = true;
+    }
 }
 
 /// Invalid fixed clock configuration for a kit scene.
@@ -291,6 +313,9 @@ impl FrameWorld for StillWorld {
             }
             self.wall_now = wall_now;
             self.tick = u64::try_from(self.now.as_nanos() / step.as_nanos()).unwrap_or(u64::MAX);
+            if self.tick > previous {
+                self.presentation_hold = false;
+            }
         }
         Ok(WorldAdvance {
             tick: self.tick,
@@ -319,6 +344,9 @@ impl FrameWorld for StillWorld {
         reason = "the interpolation fraction is clamped to zero through one"
     )]
     fn presentation_alpha_at(&self, lead: Duration) -> f32 {
+        if !self.is_interpolating() {
+            return 1.0;
+        }
         self.tick_duration.map_or(1.0, |step| {
             ((self.now + lead).as_secs_f64() / step.as_secs_f64() - self.tick as f64)
                 .clamp(0.0, 1.0) as f32
@@ -329,15 +357,21 @@ impl FrameWorld for StillWorld {
         reason = "bounded presentation phase needs only f32 precision"
     )]
     fn display_phase_at(&self, lead: Duration) -> f32 {
+        if !self.is_interpolating() {
+            return 1.0;
+        }
         self.tick_duration.map_or(1.0, |step| {
             ((self.now + lead).as_secs_f64() / step.as_secs_f64() - self.tick as f64)
                 .clamp(0.0, 1.0 + 0.050 / step.as_secs_f64()) as f32
         })
     }
     fn is_interpolating(&self) -> bool {
-        self.tick_duration.is_some()
+        self.tick_duration.is_some() && !self.paused && !self.presentation_hold
     }
     fn tick_due_time(&self) -> Option<Duration> {
+        if self.paused {
+            return None;
+        }
         self.tick_duration.map(|step| {
             self.wall_now.saturating_sub(Duration::from_nanos(
                 u64::try_from(self.now.as_nanos() % step.as_nanos())

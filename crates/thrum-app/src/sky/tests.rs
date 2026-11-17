@@ -101,7 +101,7 @@ fn a_game_owns_its_clock_and_the_default_kit_stays_still() {
 }
 
 #[test]
-fn a_hidden_ticking_kit_world_keeps_its_phase_and_resumes_in_the_wall_clock() {
+fn a_hidden_ticking_kit_world_discards_the_partial_tick_and_holds_until_commit() {
     use std::time::Duration;
     use thrum_render::runtime::FrameWorld;
     let mut world = super::StillWorld {
@@ -109,16 +109,31 @@ fn a_hidden_ticking_kit_world_keeps_its_phase_and_resumes_in_the_wall_clock() {
         ..super::StillWorld::default()
     };
     world.advance(Duration::from_millis(50)).expect("visible");
-    world.paused = true;
+    world.pause();
     world.advance(Duration::from_secs(5)).expect("hidden");
     assert_eq!(world.source().tick, 2);
-    assert_eq!(world.presentation_alpha_at(Duration::ZERO), 0.5);
-    world.wall_now = Duration::from_secs(6);
-    world.paused = false;
-    world.advance(Duration::from_millis(6010)).expect("shown");
+    assert_eq!(world.tick_due_time(), None);
+    for lead in [Duration::ZERO, Duration::from_millis(50)] {
+        assert_eq!(world.presentation_alpha_at(lead), 1.0);
+        assert_eq!(world.display_phase_at(lead), 1.0);
+    }
+    assert!(!world.is_interpolating());
+    world.resume(Duration::from_secs(6));
+    for millis in [6000, 6005, 6010, 6019] {
+        world.advance(Duration::from_millis(millis)).expect("shown");
+        assert_eq!(world.source().tick, 2);
+        assert!(!world.is_interpolating());
+        assert_eq!(world.presentation_alpha_at(Duration::ZERO), 1.0);
+        assert_eq!(world.display_phase_at(Duration::from_millis(50)), 1.0);
+        assert_eq!(world.tick_due_time(), Some(Duration::from_secs(6)));
+    }
+    world
+        .advance(Duration::from_millis(6020))
+        .expect("new commit");
     assert_eq!(world.source().tick, 3);
+    assert!(world.is_interpolating());
     assert_eq!(world.presentation_alpha_at(Duration::ZERO), 0.0);
-    assert_eq!(world.tick_due_time(), Some(Duration::from_millis(6010)));
+    assert_eq!(world.tick_due_time(), Some(Duration::from_millis(6020)));
 }
 
 fn sky(elevation: f32, azimuth: f32) -> Sky {
