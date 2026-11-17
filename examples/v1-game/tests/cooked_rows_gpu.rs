@@ -245,6 +245,92 @@ fn a_recreated_store_with_the_same_generation_replaces_its_rows() {
 }
 
 #[test]
+fn repeated_products_keep_each_initial_row_identity_without_overlap_space() {
+    let Some(gpu) = thrum_test_support::gpu("repeated row products", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    pollster::block_on(async {
+        let root = Scratch::new("repeated-products");
+        let cook = config(root.path());
+        Cooker::open(cook.clone())
+            .expect("cooker")
+            .cook_all()
+            .expect("cook");
+        // These rows fit, but there is no room to redundantly copy either terrain row.
+        let rows = CookedRows::from_store(
+            &AssetStore::new(&cook.store),
+            ["meshes/terrain", "meshes/terrain", "meshes/third"]
+                .map(str::to_owned)
+                .to_vec(),
+            12 << 10,
+        )
+        .expect("compact rows");
+        let updates = rows.updates();
+        let mut live = FrameHost::new_with_rows(
+            &device,
+            &queue,
+            &caps,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
+            GameSetup {
+                field_meshes: true,
+                camera_culling: CullMode::Occlusion,
+                ..GameSetup::default()
+            },
+            Some(rows.clone()),
+        )
+        .await
+        .expect("compact scene");
+        let mut config = CookedConfig::new(cook.store.clone(), Vec::new());
+        config.rows = Some(rows);
+        let assets = CookedAssets::new(config).expect("residency");
+        let stats = assets.stats();
+        live.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        live.pause().expect("pause");
+        let first = generation(&cook);
+        let reference = settle(&mut live, &stats, first);
+        assert_eq!(
+            updates.report().submitted_bytes,
+            0,
+            "initial rows were redundantly uploaded"
+        );
+        let replacement_gpu = gpu.fresh_adapter();
+        let (replacement, replacement_queue) = replacement_gpu.device(
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        );
+        let replacement_caps =
+            DeviceCapabilities::capture(&replacement_gpu.adapter, &replacement, 2);
+        let mut candidate = live
+            .device_prepare_inputs()
+            .expect("retained rows")
+            .prepare(&replacement_caps, &replacement_queue, None)
+            .await
+            .expect("new device");
+        live.publish_device(&mut candidate).expect("publish");
+        assert_eq!(settle(&mut live, &stats, first), reference);
+        assert_eq!(
+            stats.lock().expect("stats").drawn_device_generation,
+            Some(2)
+        );
+        assert_eq!(
+            updates.report().submitted_bytes,
+            0,
+            "reconstruction lost a repeated product's row identity"
+        );
+    });
+}
+
+#[test]
 fn supersession_discarded_protected_switch_and_retired_space_reuse() {
     let Some(gpu) =
         thrum_test_support::gpu("row supersession and reuse", Some(wgpu::Backend::Metal))

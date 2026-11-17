@@ -502,17 +502,22 @@ impl Loader {
             products: Vec::new(),
         };
         if let Some(rows) = &self.config.rows {
-            let retained: HashMap<_, _> = rows
+            let shown = rows
                 .shown
                 .lock()
-                .map(|shown| shown.iter().cloned().collect())
+                .map(|shown| shown.clone())
                 .unwrap_or_default();
-            for name in &rows.names {
+            let retained: HashMap<_, _> = shown.iter().cloned().collect();
+            for (index, name) in rows.names.iter().enumerate() {
                 let hash = source
                     .resolve(name, &[Profile::Portable])
                     .ok_or_else(|| format!("mesh row {name}: missing product"))?
                     .product;
-                let geometry = if let Some(geometry) =
+                let geometry = if let Some((_, geometry)) =
+                    shown.get(index).filter(|(previous, _)| *previous == hash)
+                {
+                    geometry.clone()
+                } else if let Some(geometry) =
                     confirmed.rows.get(&hash).or_else(|| retained.get(&hash))
                 {
                     geometry.clone()
