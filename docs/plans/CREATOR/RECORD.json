@@ -341,6 +341,32 @@
         "by": "plan",
         "task": "CREATOR M3 has failed review four times, three of them on the same finding: M3.1's fresh-reader proof can't be done by t",
         "at": "2026-11-17T19:27:07Z"
+      },
+      "ready_for_review": {
+        "commit": "978c0a639ab5ec14543dd6f0da033f53f3f3eb2e",
+        "checked": "978c0a639ab5ec14543dd6f0da033f53f3f3eb2e",
+        "at": "2026-11-17T23:10:17Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "visible",
+        "usage": {
+          "input": 331385,
+          "cached": 52717696,
+          "output": 53520,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 331385,
+          "cached": 52717696,
+          "output": 53520,
+          "turns": 3
+        }
       }
     }
   },
