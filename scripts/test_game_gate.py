@@ -20,11 +20,18 @@ class GameGate(unittest.TestCase):
         self.root = Path(self.directory.name).resolve()
         self.engine = self.root / "thrum"
         self.games = self.root / "thrum-games"
-        self.write(self.engine / "Cargo.toml", '[workspace]\nmembers=["crates/engine"]\nresolver="2"\n')
+        self.write(self.engine / "Cargo.toml", '[workspace]\nmembers=["crates/*", "examples/demo"]\nresolver="2"\n')
         self.write(self.engine / "crates/engine/Cargo.toml", '[package]\nname="engine"\nversion="0.1.0"\nedition="2021"\n')
         self.write(self.engine / "crates/engine/src/lib.rs", 'pub fn identity() -> u8 { 1 }\n')
+        for folder, name in (("crates/thrum-fixtures", "thrum-fixtures"),
+                             ("crates/thrum-test-support", "thrum-test-support"),
+                             ("examples/demo", "demo")):
+            self.write(self.engine / folder / "Cargo.toml", f'[package]\nname="{name}"\nversion="0.1.0"\nedition="2021"\n')
+            self.write(self.engine / folder / "src/lib.rs", "")
         self.write(self.engine / ".config/architecture.toml", '''[packages.engine]
 manifest="crates/engine/Cargo.toml"
+[packages.demo]
+manifest="examples/demo/Cargo.toml"
 [packages.thrum-fixtures]
 manifest="crates/thrum-fixtures/Cargo.toml"
 test_role="fixtures"
