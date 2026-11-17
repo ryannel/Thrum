@@ -444,6 +444,13 @@ impl FrameHost {
     pub fn pipeline_creation_count(&self) -> Option<u64> {
         self.inner.pipeline_creation_count()
     }
+    /// Existing generation ledger, including object deltas and pipeline events.
+    /// This diagnostic does not introduce another creation authority.
+    #[cfg(feature = "draw-probe")]
+    #[must_use]
+    pub fn creation_report(&self) -> runtime::CreationReport {
+        self.inner.creation_report()
+    }
     /// Inspect the renderer's prepared variant storage and resident texture bytes.
     #[must_use]
     pub fn storage_report(&self) -> String {

@@ -31,6 +31,10 @@ mod buckets;
 pub(crate) mod camera_culling;
 mod cluster;
 mod cluster_gpu;
+#[cfg(feature = "creation-counters")]
+mod cluster_probe;
+#[cfg(feature = "creation-counters")]
+pub use cluster_probe::LightListProbe;
 mod contributed;
 mod display;
 mod exposure;

@@ -30,11 +30,20 @@ async fn run() -> Result<(), String> {
         })
         .await
         .map_err(|error| error.to_string())?;
+    let width = std::env::var("APPLE_TILE_RESIDENCY_WIDTH")
+        .unwrap_or_else(|_| "1280".to_owned())
+        .parse::<u32>()
+        .map_err(|e| e.to_string())?;
+    let height = std::env::var("APPLE_TILE_RESIDENCY_HEIGHT")
+        .unwrap_or_else(|_| "720".to_owned())
+        .parse::<u32>()
+        .map_err(|e| e.to_string())?;
+    let extent = [width, height];
     let config = FrameConfig {
-        render_extent: [1280, 720],
+        render_extent: extent,
         surface: Some(SurfaceProfile {
             format: wgpu::TextureFormat::Bgra8Unorm,
-            extent: [1280, 720],
+            extent,
         }),
     };
     let portable = DeviceCapabilities::capture(&adapter, &device, 1)

@@ -1,5 +1,11 @@
 # APPLE-TILE log
 
+- 2026-11-17 M12's first implementation checkpoint merged as `47989904d` through the full repository gate.
+  Added optional actual light-list readback, omission controls and a cooked simulator lifecycle movie.
+  The final cost bench includes the engine present consumer and the existing generation creation ledger.
+  Scoped native/Wasm Clippy and structure checks pass; preliminary thermal runs are descriptive, unpromoted.
+  Final merged target proofs and the attended D12.3 access requirement remain in the [M12 record](../../evidence/APPLE-TILE/M12/README.md).
+
 - 2026-11-17 M12 adds a paired integrated recipe cost bench using the existing GPU gate and game facade.
   The 10,000-entity smoke produces 1,500 movers and unchanged 288,000-byte updates with zero pending frames.
   Both extents, A/A/alternating order, visibility, tap OFF/ON and sustained thermal/load arms are scripted.

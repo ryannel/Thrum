@@ -4,6 +4,10 @@
 //! facade keeps the game's controls, cooked valley, material reloads, capture slot and report.
 
 mod environment;
+#[cfg(feature = "draw-probe")]
+mod light_probe;
+#[cfg(feature = "draw-probe")]
+pub use light_probe::{BrowserLightProbe, create_light_list_probe};
 mod submitted_capture;
 
 use std::{
@@ -332,12 +336,16 @@ pub async fn create_route_game(
     reconstruction: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
+    #[cfg(not(feature = "draw-probe"))]
+    let valley_stars = true;
+    #[cfg(feature = "draw-probe")]
+    let valley_stars = overlay != crate::RouteOverlay::StarsOff;
     canvas.set_width(extent[0]);
     canvas.set_height(extent[1]);
     create_game(
         canvas,
         crate::GameSetup {
-            valley_stars: true,
+            valley_stars,
             reconstruction: if reconstruction.unwrap_or(false) {
                 thrum_render::synthetic::Reconstruction::Taau
             } else {

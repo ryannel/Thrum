@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import runpy
+import signal
 import shutil
 import subprocess
 import sys
@@ -34,7 +35,10 @@ def main():
     parser.add_argument('--lifecycle', action='store_true')
     parser.add_argument('--rotation', action='store_true')
     parser.add_argument('--visuals', action='store_true', help='held views and sampled pan; function only')
+    parser.add_argument('--record-lifecycle', action='store_true', help='with --lifecycle, retain simctl video of surface/background/device recovery')
     args = parser.parse_args()
+    if args.record_lifecycle and (not args.lifecycle or args.visuals):
+        parser.error('--record-lifecycle requires --lifecycle and excludes --visuals')
     os.chdir(ROOT)
     if REPORT_ENV not in os.environ:
         launch(sys.argv[1:], args.output)
@@ -44,6 +48,7 @@ def main():
     report = {'target': 'ios-sim', 'scope': 'simulator function only', 'commands': [], 'samples': []}
     report.update(harness_pid=os.getpid(), launcher_pid=os.getppid())
     device = None
+    lifecycle_video = None
 
     def run(command, env=None, timeout=180):
         print(' '.join(command), flush=True)
@@ -146,6 +151,14 @@ def main():
             route['rotate'].__globals__['extent_proof'] = lambda s: original_extent_proof(s, selected_fov)
             if args.lifecycle:
                 before = read()
+                if args.record_lifecycle:
+                    lifecycle_video, video_started = route['record']('cooked-lifecycle')
+                    surface_before = read()
+                    surface_after = route['replace'](surface_before)
+                    if not healthy(surface_after):
+                        raise RuntimeError('cooked surface replacement did not retain the set')
+                    report['surface_replacement'] = {'before': surface_before, 'after': surface_after}
+                    before = surface_after
                 original_snapshot = route['background'].__globals__['snapshot']
                 def checked_snapshot(name, state, **kwargs):
                     if name.endswith('-background'):
@@ -171,6 +184,20 @@ def main():
                 if int(after['lost_empty_submits']) or int(after['recover_failed']):
                     raise RuntimeError('loss submission or failed recovery')
                 report['lifecycle'] = {'before': before, 'after': after}
+                if lifecycle_video:
+                    stopped = time.monotonic()
+                    lifecycle_video.send_signal(signal.SIGINT)
+                    lifecycle_video.wait(timeout=30)
+                    lifecycle_video = None
+                    movie = out / 'route/cooked-lifecycle.mp4'
+                    probe = json.loads(run(['ffprobe', '-v', 'error', '-count_frames', '-show_streams',
+                                            '-show_format', '-of', 'json', str(movie)]))
+                    report['lifecycle_video'] = {'record_command_started_monotonic': video_started,
+                        'stop_requested_monotonic': stopped, 'file': str(movie.relative_to(out)),
+                        'sha256': hashlib.sha256(movie.read_bytes()).hexdigest(), 'ffprobe': probe,
+                        'scope': 'simctl compositor function/UI only; movie PTS has no engine-submission identity; state counters bracket surface/background/device events; no speed, cadence, submitted temporal or physical-device qualification'}
+                    run(['ffmpeg', '-v', 'error', '-i', str(movie), '-vf', 'fps=4,scale=300:-1,tile=4x4',
+                         '-fps_mode', 'vfr', str(out / 'lifecycle-inspection-%02d.png')])
             if args.rotation:
                 run(['examples/v1-game-ios/ios/build-uitest.sh'], env, 300)
                 before = read()
@@ -235,6 +262,9 @@ def main():
         report['failure'] = str(error)
         raise
     finally:
+        if lifecycle_video and lifecycle_video.poll() is None:
+            lifecycle_video.send_signal(signal.SIGINT)
+            lifecycle_video.wait(timeout=30)
         if device:
             subprocess.run(['xcrun', 'simctl', 'terminate', device, 'org.thrum.v1'], capture_output=True, timeout=30)
             run(['xcrun', 'simctl', 'shutdown', device])

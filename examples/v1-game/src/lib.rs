@@ -29,8 +29,10 @@ pub use browser::{
     BrowserGame, CookedValley, create_browser_game, create_field_game, create_route_game,
     fetch_cooked_valley, qualify_effect_after_opaque, qualify_effect_state, qualify_lent_products,
 };
+#[cfg(all(target_arch = "wasm32", feature = "draw-probe"))]
+pub use browser::{BrowserLightProbe, create_light_list_probe};
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
-#[cfg(feature = "draw-probe")]
+#[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
 pub use content::attach_cooked_scene_with_probe;
 #[cfg(not(target_arch = "wasm32"))]
 pub use content::{attach_cooked_scene, selected_setup};

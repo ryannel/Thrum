@@ -98,6 +98,12 @@ pub enum RouteOverlay {
     Unmirrored,
     /// The proof overlay with the retuned light at zero intensity.
     LightOff,
+    /// Diagnostic control: omit only the overlay's mirrored instance.
+    #[cfg(feature = "draw-probe")]
+    MirrorOmit,
+    /// Diagnostic control: retain the overlay but omit the night star catalogue.
+    #[cfg(feature = "draw-probe")]
+    StarsOff,
 }
 
 impl GameContent {
@@ -312,7 +318,7 @@ pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage)
     extract_rows::<false>(extractor, snapshot)
 }
 
-#[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+#[cfg(feature = "draw-probe")]
 pub(crate) fn extract_without_mirror(
     extractor: &mut RenderExtractor,
     snapshot: &PublishedPage,

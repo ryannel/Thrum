@@ -744,6 +744,17 @@
           "ios": "no new target qualification; prior pinned simulator compilation remains function/build evidence only"
         },
         "evidence": "../evidence/APPLE-TILE/M11/README.md"
+      },
+      "M12": {
+        "implementation": "integrated recipe cost bench and optional read-only light-list/omission and simulator-video diagnostics; existing renderer mechanisms remain unchanged",
+        "functional_validation": "target campaign in progress; preliminary 60 ordinary and 20 native plus 20 twin cost arms complete; final merged ordinary exact, browser light-list/omission and cooked simulator evidence remains owed",
+        "experienced_quality": "final target inspection remains owed; attended OS-window function requires owner-supplied access",
+        "platform_performance": {
+          "mac": "preliminary descriptive shared-load rows only; no promotion, MetalFX, physical replay traffic or panel cadence qualification",
+          "browser": "no performance claim; final exact and diagnostic target proofs remain owed",
+          "ios": "simulator function only; final cooked lifecycle/rotation proof remains owed; no submitted runtime motion, speed or physical-device qualification"
+        },
+        "evidence": "../evidence/APPLE-TILE/M12/README.md"
       }
     },
     "G4_apple_presentation": {

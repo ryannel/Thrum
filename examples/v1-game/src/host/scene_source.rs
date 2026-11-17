@@ -293,6 +293,15 @@ fn native_witness_selection() -> thrum_render::synthetic::NativeWitness {
     }
 }
 
+#[cfg(feature = "draw-probe")]
+fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
+    #[cfg(not(target_arch = "wasm32"))]
+    if std::env::var("THRUM_G3T_OVERLAY_CONTROL").as_deref() == Ok("mirror-omit") {
+        return true;
+    }
+    overlay == scene::RouteOverlay::MirrorOmit
+}
+
 pub(crate) struct GameScene {
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     native_witness: thrum_render::synthetic::NativeWitness,
@@ -309,7 +318,7 @@ pub(crate) struct GameScene {
     camera: Option<SceneCamera>,
     route_overlay: scene::RouteOverlay,
     route: Option<CameraRoute>,
-    #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+    #[cfg(feature = "draw-probe")]
     omit_mirror: bool,
 }
 impl GameScene {
@@ -403,8 +412,8 @@ impl GameScene {
             camera: None,
             route_overlay: setup.route_overlay,
             route: None,
-            #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
-            omit_mirror: std::env::var("THRUM_G3T_OVERLAY_CONTROL").as_deref() == Ok("mirror-omit"),
+            #[cfg(feature = "draw-probe")]
+            omit_mirror: omit_mirror(setup.route_overlay),
         }
     }
     pub(super) fn scene(extent: [u32; 2], setup: GameSetup) -> Result<SyntheticScene, String> {
@@ -575,7 +584,7 @@ impl SceneSource<PublishedPage> for GameScene {
         {
             debug_assert!(false, "cloud publication: {error}");
         }
-        #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+        #[cfg(feature = "draw-probe")]
         if self.omit_mirror {
             return scene::extract_without_mirror(into, page);
         }
@@ -877,7 +886,7 @@ mod tests {
             camera: Some(camera),
             route_overlay: scene::RouteOverlay::Off,
             route: None,
-            #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+            #[cfg(feature = "draw-probe")]
             omit_mirror: false,
         };
         let first = policy
