@@ -296,6 +296,37 @@
         "by": "plan",
         "task": "The design review of PUDDLES at docs/evidence/PUDDLES/design-review.md asked for changes. Resolve its 1 Must Fix finding",
         "at": "2026-11-17T01:24:34Z"
+      },
+      "ready_for_review": {
+        "commit": "e0aa14198582ab6213b8dadd4ef0194154e969d6",
+        "checked": "a5900b5deb917960fe274ae70f35fe77b9ba0a35",
+        "at": "2026-11-17T03:34:12Z",
+        "reused": [
+          "M2.12",
+          "M2.13"
+        ],
+        "host": "claude",
+        "model": "claude-fable-5-2",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-fable-5-2"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 346522,
+          "cached": 10738855,
+          "output": 102725,
+          "cost_usd": 11.800211,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 346522,
+          "cached": 10738855,
+          "output": 102725,
+          "cost_usd": 11.800211,
+          "turns": 2
+        }
       }
     },
     "M3": {
