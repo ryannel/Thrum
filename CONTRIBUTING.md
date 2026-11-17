@@ -5,6 +5,9 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 
 The Bash `./dev` launcher defaults to an empty `RUSTC_WRAPPER`, overriding machine-wide Cargo wrapper configuration.
 Set `RUSTC_WRAPPER` explicitly when opting into a compiler wrapper for a particular invocation.
+Both launchers set `CARGO_INCREMENTAL=0` for `check`, including the xtask build and its child Cargo
+commands. The pinned compiler has failed verification with unstable incremental trait-obligation
+fingerprints after revision changes; the gate therefore does not reuse that query cache.
 
 | Command | What it does |
 | --- | --- |

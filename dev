@@ -7,6 +7,11 @@ export PATH="$(dirname -- "$thrum_rustc"):$PATH"
 # Keep machine-wide Cargo wrappers opt-in for this reproducible launcher.
 # An explicitly supplied RUSTC_WRAPPER still takes precedence.
 export RUSTC_WRAPPER="${RUSTC_WRAPPER-}"
+# Verification must not reuse rustc's incremental query cache: the pinned compiler can
+# ICE with unstable trait-obligation fingerprints after a checkout changes revision.
+if [[ "${1:-}" == check ]]; then
+  export CARGO_INCREMENTAL=0
+fi
 if [[ "${1:-}" == check && "$(uname -s)" == Darwin ]]; then
   export THRUM_REQUIRE_GPU=1
 fi
