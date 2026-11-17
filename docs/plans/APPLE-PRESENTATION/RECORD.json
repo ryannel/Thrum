@@ -254,7 +254,49 @@
     },
     "M3": {
       "definitions": "518fe030e7f998afee811c45fb24bdbe88017443e19e9fc8d986df0767b85a1f",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "06df50992199386232c4332d10c093e38f581a8b",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
+          "items": {
+            "D3.1": "pass",
+            "D3.2": "pass",
+            "D3.3": "could_not_judge",
+            "D3.3c": "could_not_judge",
+            "D3.4": "pass",
+            "D3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "mac-motion-playback-not-observed",
+              "item": "D3.3",
+              "repeat": false
+            },
+            {
+              "name": "chrome-motion-playback-not-observed",
+              "item": "D3.3c",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "visible",
+          "usage": {
+            "input": 276025,
+            "cached": 15725056,
+            "output": 30226,
+            "turns": 1
+          },
+          "at": "2026-11-17T22:09:44Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks",

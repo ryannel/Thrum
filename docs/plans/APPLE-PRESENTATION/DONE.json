@@ -180,8 +180,8 @@
           "ask": "Is the reconstructor resolved from the registry with TAAU as the portable default, and does its output enter only through the pre-tone input APPLE-TILE M3 delivered, with no second tone or exposure step?",
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/selected/README.md#route-execution",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -192,8 +192,8 @@
           "ask": "Read the reconstruction arm. Is the reference accumulated by a separate mode from the TAAU path it judges, with the held state checked and not assumed? Is the difference the design's CIEDE2000 over the whole frame without masks, against the bound the design states? Does a deliberately broken TAAU (history disabled) fail?",
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/selected/README.md#still-reference-and-camera-cut",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -201,20 +201,20 @@
           "statement": "On the Mac, motion sequences show no ghosting or crawl: pans and translating lights, a reveal behind a moving prop, a spawn, a held-camera star field with no shimmer, and a time-of-day scrub with no brightness lag.",
           "inspect": "Capture each of the five sequences with the Mac real-time engine capture, TAAU on, and the same sequences with it off. Watch each at 1x and check native-size crops of trailing edges, the revealed background, the spawned object's first frames, individual stars, and the sky during the scrub. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m3/selected/README.md#motion-on-mac-and-chrome",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "could_not_judge",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D3.3c",
           "statement": "In Chrome the same five sequences show no ghosting, crawl, shimmer or brightness lag.",
           "inspect": "Capture the five sequences with Chrome real-time capture, TAAU on and off, and judge the same crops. Note any sequence where Chrome differs from the Mac.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m3/selected/README.md#motion-on-mac-and-chrome",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "could_not_judge",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D3.4",
@@ -224,8 +224,8 @@
           "ask": "Does the cut arm compare the post-cut frame with an independently reset render, and does a control with the reset suppressed fail?",
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/selected/README.md#still-reference-and-camera-cut",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -234,19 +234,31 @@
           "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, and is it kept from being read as the 1080p figure the design estimates?",
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/selected/README.md#moving-route-timing",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
         "APPLE-TILE:M3"
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words."
+      "status": "in_progress",
+      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
+      "findings": [
+        {
+          "name": "mac-motion-playback-not-observed",
+          "item": "D3.3",
+          "repeat": false
+        },
+        {
+          "name": "chrome-motion-playback-not-observed",
+          "item": "D3.3c",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M4",
