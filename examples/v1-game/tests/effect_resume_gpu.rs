@@ -183,10 +183,15 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             let mut first_origin: Option<f64> = None;
             let mut interpolating = 0;
             let mut submitted = 0;
-            for i in 0..128 {
+            let mut attempts = 0;
+            let deadline = Instant::now() + Duration::from_secs(60);
+            // A dropped opportunity does not wait for GPU completion. Give the
+            // world owner time to publish instead of exhausting a tight retry cap.
+            while submitted < 24 && Instant::now() < deadline {
                 let observation = origin.elapsed();
                 std::thread::sleep(Duration::from_millis(gap_ms));
-                host.set_presentation_lead(Duration::from_millis([0, 10, 50][i % 3]));
+                host.set_presentation_lead(Duration::from_millis([0, 10, 50][attempts % 3]));
+                attempts += 1;
                 let report = host
                     .drive(observation, Some(&surface))
                     .expect("resumed resident frame");
@@ -198,6 +203,7 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
                     records.push(serde_json::json!({"mode":"threaded","gap_ms":gap_ms,
                         "observation_ns":observation.as_nanos(),"submitted":false,
                         "tick":report.tick,"dropped_view":report.dropped_view}));
+                    std::thread::sleep(Duration::from_millis(1));
                     continue;
                 }
                 submitted += 1;
@@ -227,13 +233,11 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
                     "observation_ns":s.observation.as_nanos(),"lead_ns":s.presentation_lead.as_nanos(),
                     "phase":s.display_phase,"alpha":s.presentation_alpha,"interpolating":s.clock_interpolating}));
                 std::thread::sleep(Duration::from_millis(8));
-                if submitted == 24 {
-                    break;
-                }
             }
             assert!(
                 interpolating > 0 && submitted == 24,
-                "bounded submitted-frame coverage"
+                "bounded submitted-frame coverage: gap_ms={gap_ms}, attempts={attempts}, \
+                 submitted={submitted}, interpolating={interpolating}"
             );
         }
         let output =
