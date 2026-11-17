@@ -2,6 +2,70 @@
   "schema": 1,
   "entries": [
     {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/pan-off/native-1.png",
+      "size": 2470065,
+      "sha256": "00dd350ef1ffcccd7fab2f0a8dd88aaea33d6795774a4ec6d775e5f02ef0e84d",
+      "date": "2026-11-17T22:32:52.983942+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/pan-off/preview-1x.mp4",
+      "size": 2784708,
+      "sha256": "2700c59c53894c8e430d768b5089085011a0ef45daf46245be27b4cbe0c296b3",
+      "date": "2026-11-17T22:32:53.234016+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/pan-taau/native-1.png",
+      "size": 2307974,
+      "sha256": "6f796237a30caca90aeb4e04c27b7e46bffaf10e9096e5a37c9f33e03c83f08c",
+      "date": "2026-11-17T22:32:53.427891+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/pan-taau/preview-1x.mp4",
+      "size": 2145478,
+      "sha256": "3f55ee5be0a406394a9d09a65e7179c4cfe86903a2145ff8db53f2679413de98",
+      "date": "2026-11-17T22:32:53.764058+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/reveal-taau/native-1.png",
+      "size": 2145623,
+      "sha256": "b48dc28572d0c5ded1b1c23378e53edaaa66e5735aa7c4902a8b5ca8a3efbfb4",
+      "date": "2026-11-17T22:32:53.893720+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/reveal-taau/native-2.png",
+      "size": 2155101,
+      "sha256": "842db936c20fd46d90ed07c6e08c3817006fc9cc769c1f7317d866865c67d669",
+      "date": "2026-11-17T22:32:54.036056+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/scrub-off/preview-1x.mp4",
+      "size": 3010401,
+      "sha256": "c630ed13a6aa8d531bf8eae04391df97503653112bda34d2314189df680fc809",
+      "date": "2026-11-17T22:32:54.172726+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-PRESENTATION/M3-review/mac/scrub-taau/preview-1x.mp4",
+      "size": 3299708,
+      "sha256": "71e670099c29aaedbfc97fe75d2237e039c288575f12dcf6f0b129ed371093a5",
+      "date": "2026-11-17T22:32:54.300155+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/APPLE-PRESENTATION/m1-mf1/day-ref/frame-0090.png",
       "size": 2737614,
