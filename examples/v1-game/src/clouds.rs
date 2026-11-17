@@ -38,10 +38,10 @@ pub fn shade_config() -> ShadeConfig {
             Type {
                 base: 1600.0,
                 depth: [1100.0, 3000.0],
-                liquid_water: 0.0001,
+                liquid_water: 0.0004,
                 droplet_radius: 0.000_012,
                 deck: 0.0,
-                profile: [0.15, 0.45],
+                profile: [0.08, 0.45],
             },
         ],
         weather: WeatherProfile {
