@@ -230,3 +230,10 @@
   M4.2 identity error after resume for leads 0, 10 and 50 ms. No GPU qualification was repeated.
   No implementation or criteria changed; M4.2 remains open pending the time-origin contract decision.
   [Rewritten handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) records the reproduction and next action.
+- 2026-11-17 Implemented the reviewed timing model: clock-sample due times now reach every world adapter,
+  completed frame and capture record; the ticking sky states its own phase with bitwise unchanged alpha.
+  The clock's phase, alpha, authority and refused-pair selection are unchanged. Three span tests, five
+  phase tests, the sky regression and all three Mac Metal checks pass. Submitted lifecycle arms retain
+  22 omitted delayed opportunities and validate 24 submitted frames per threaded arm; capture records
+  include a stop, resume and origin change. [Proof and identities](../../evidence/EFFECT-GRAPH/M4-proof.md).
+  Numerical Mac correctness is separate from visuals, device speed, consumer prediction and panel cadence.
