@@ -19,6 +19,22 @@ RETAINED = ROOT / "examples/crowd-2d/retained/crowd.txt"
 MIXED = ROOT / "examples/crowd-2d/retained/mixed.txt"
 VECTORS = ROOT / "crates/thrum-core/src/profile/vectors.json"
 SIZES = [(2000, 3600), (5000, 3600), (10000, 36000)]
+PACKAGE = "crowd-2d"
+RUNNER = "crowd-2d-run"
+
+
+def registration(package=None):
+    """Game-owned trace inputs and runner; engine tooling knows no game schema."""
+    name = package or PACKAGE
+    registry = tomllib.loads((ROOT / ".config/architecture.toml").read_text())["packages"]
+    entry = registry.get(name, {})
+    if not entry.get("rule_package") or "conformance" not in entry:
+        raise ValueError(f"{name}: not a registered rule package with conformance inputs")
+    config = entry["conformance"]
+    runner = config["runner"]
+    if runner not in registry or name not in registry[runner]["allowed_workspace_dependencies"]:
+        raise ValueError(f"{name}: runner must be registered and depend on the rule package")
+    return config
 
 
 def command(args):
@@ -89,7 +105,7 @@ def source_inputs():
     """Portable, inspectable inputs of the package-scoped runner build."""
     metadata = json.loads(command(["rustup", "run", "1.99.1", "cargo", "metadata", "--locked", "--offline", "--format-version", "1"]))
     packages = {p["id"]: p for p in metadata["packages"]}
-    tree = command(["rustup", "run", "1.99.1", "cargo", "tree", "--locked", "--offline", "-p", "crowd-2d-run",
+    tree = command(["rustup", "run", "1.99.1", "cargo", "tree", "--locked", "--offline", "-p", RUNNER,
                     "--target", "all", "--edges", "normal,build", "--prefix", "depth", "--no-dedupe", "--format", "|{p}|{f}"])
     selected, graph = runner_graph(tree, packages)
     identities = {(packages[p]["name"], packages[p]["version"], packages[p]["source"]) for p in selected}
@@ -111,7 +127,7 @@ def source_key(inputs=None):
 
 
 def build(target, debug=False):
-    args = ["rustup", "run", "1.99.1", "cargo", "build", "--locked", "--offline", "-p", "crowd-2d-run"]
+    args = ["rustup", "run", "1.99.1", "cargo", "build", "--locked", "--offline", "-p", RUNNER]
     if not debug:
         args.append("--release")
     triple = {"ios-sim": "aarch64-apple-ios-sim", "chrome-webgpu": "wasm32-unknown-unknown"}.get(target)
@@ -124,10 +140,10 @@ def build(target, debug=False):
     if target == "chrome-webgpu":
         web = SCRATCH / "web"
         web.mkdir(parents=True, exist_ok=True)
-        wasm = ROOT / "target" / triple / profile / "crowd_2d_run.wasm"
+        wasm = ROOT / "target" / triple / profile / (RUNNER.replace("-", "_") + ".wasm")
         subprocess.run([str(Path.home() / ".cargo/bin/wasm-bindgen"), "--target", "web", "--out-dir", str(web), str(wasm)], check=True)
         return web, wasm
-    binary = ROOT / "target" / (triple or "") / profile / "crowd-2d-run"
+    binary = ROOT / "target" / (triple or "") / profile / RUNNER
     return binary, binary
 
 
@@ -177,7 +193,7 @@ class Runner:
             return [self.invoke(method, args) for method, args in requests]
         packet = json.loads(device_command("chrome", ["node", "scripts/sim2d_browser.mjs", self.program,
                             json.dumps([{"method": method, "args": args, "omitTimeline": omit_timeline}
-                                        for method, args in requests])]))
+                                        for method, args in requests]), RUNNER.replace("-", "_")]))
         self.user_agent = packet["userAgent"]
         self.isolated = packet["crossOriginIsolated"]
         if len(packet["result"]) != len(requests):
@@ -210,7 +226,7 @@ def compare(row, retained):
     assert row["ticks"] == expected["ticks"], "trace length"
     assert row["fold"] == expected["fold"], f"timeline fold differs at {row['bodies']}"
     assert row["checkpoints"] == expected["checkpoints"], "checkpoint digest differs"
-    for field in ["reused", "hits", "rewinds", "changed_rewinds"]:
+    for field in registration()["witnesses"]:
         assert row[field] > 0, f"missing {field} witness"
     if row["wire"]:
         assert row["changed_axes"] > 0, "wire route did not change any axis"
@@ -253,23 +269,25 @@ def retain_mixed():
 
 
 def run(target, parallel=False):
+    config = registration()
     measured_source = source_key()
     runner = Runner(target)
     requests = [("vectors", [])]
-    for mixed in [False, True]:
+    for trace in config["traces"]:
+        mixed = trace["variant"]
         requests.extend(("trace", [count, ticks, False, False, False, mixed, parallel]) for count, ticks in SIZES)
-        requests.append(("trace", [2000, 3600, False, True, False, mixed, parallel]))
+        requests.append(("trace", [*SIZES[0], False, True, False, mixed, parallel]))
     results = iter(runner.invoke_many(requests, omit_timeline=True))
-    assert next(results) == json.loads(VECTORS.read_text()), "profile vectors differ"
+    assert next(results) == json.loads((ROOT / config["vectors"]).read_text()), "profile vectors differ"
     rows = []
-    for mixed in [False, True]:
-        retained = references(MIXED if mixed else RETAINED)
+    for trace in config["traces"]:
+        mixed = trace["variant"]
+        retained = references(ROOT / trace["retained"])
         for count, ticks in SIZES:
             row = next(results)
             compare(row, retained)
-            if mixed:
-                assert row["oversize"] > 0 and row["capsule_hits"] > 0
-                assert row["swept_only_hits"] > 0
+            for field in trace["witnesses"]:
+                assert row[field] > 0, f"missing {field} witness"
             if parallel:
                 assert row["parallel_chunks"] > 0, "steering did not dispatch native chunks"
             row.pop("timeline", None)
@@ -280,9 +298,9 @@ def run(target, parallel=False):
         rows.append(wire)
     if target == "mac-metal":
         debug = Runner(target, debug=True)
-        for mixed in [False, True]:
-            row = debug.invoke("trace", [2000, 3600, False, False, False, mixed, False])
-            compare(row, references(MIXED if mixed else RETAINED))
+        for trace in config["traces"]:
+            row = debug.invoke("trace", [*SIZES[0], False, False, False, trace["variant"], False])
+            compare(row, references(ROOT / trace["retained"]))
             row.pop("timeline")
             row["build"] = "debug"
             rows.append(row)
@@ -295,11 +313,36 @@ def control(target):
         raise ValueError("The discriminating control target is Chrome")
     mac = Runner("mac-metal")
     chrome = Runner(target)
-    a = mac.invoke("conformance", [2000, 240, False, False, True])
-    b = chrome.invoke("conformance", [2000, 240, False, False, True])
+    config = registration()["control"]
+    request = [config["bodies"], config["ticks"], False, False, True]
+    a = mac.invoke("conformance", request)
+    b = chrome.invoke("conformance", request)
     assert a["fold"] != b["fold"], "platform sine control stopped discriminating"
     first = next(index + 1 for index, pair in enumerate(zip(a["timeline"], b["timeline"])) if pair[0] != pair[1])
     return {"mac_fold": a["fold"], "chrome_fold": b["fold"], "first_differing_tick": first, "user_agent": chrome.user_agent}
+
+
+def record_trace(trace_name, destination):
+    """Record a new package's straight timeline; never overwrite retained truth."""
+    config = registration()
+    trace = next((entry for entry in config["traces"] if entry["name"] == trace_name), None)
+    if trace is None:
+        raise ValueError(f"unknown trace {trace_name!r}")
+    retained_paths = {ROOT / entry["retained"] for entry in config["traces"]}
+    if destination.resolve() in {path.resolve() for path in retained_paths} or destination.exists():
+        raise ValueError("record to a new candidate file, then review and promote it explicitly")
+    runner = Runner("mac-metal")
+    lines = ["# Straight corrected run: " + json.dumps(identity(), sort_keys=True)]
+    for count, ticks in SIZES:
+        row = runner.invoke("trace", [count, ticks, True, False, False, trace["variant"], False])
+        assert row["rewinds"] == 0 and len(row["timeline"]) == ticks
+        lines.append(f"fold {count} {ticks} {row['fold']}")
+        lines.extend(f"checkpoint {count} {tick} {digest}" for tick, digest in row["checkpoints"])
+        if count == SIZES[0][0]:
+            lines.extend(f"slice {count} {tick} {digest}" for tick, digest in enumerate(row["timeline"][:240], 1))
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text("\n".join(lines) + "\n")
+    return {"candidate": str(destination)}
 
 
 def allocation_counts():
@@ -434,14 +477,28 @@ def costs(target):
 
 
 def main():
+    global PACKAGE, RUNNER, SIZES
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["retain", "retain-mixed", "run", "control", "measure", "costs"])
+    parser.add_argument("action", choices=["retain", "retain-mixed", "record", "run", "control", "measure", "costs"])
+    parser.add_argument("--trace", help="registered trace to record")
     parser.add_argument("--parallel", action="store_true")
+    parser.add_argument("--package", default="crowd-2d", help="registered deterministic rule package")
     parser.add_argument("--target", choices=["mac-metal", "chrome-webgpu", "ios-sim"], default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    PACKAGE = args.package
+    config = registration()
+    RUNNER = config["runner"]
+    SIZES = [tuple(size) for size in config["sizes"]]
+    if PACKAGE != "crowd-2d" and args.action not in ["record", "run", "control"]:
+        parser.error("retention and historical cost commands belong to crowd-2d; use run for other registered packages")
     SCRATCH.mkdir(parents=True, exist_ok=True)
-    record = {"action": args.action, "target": args.target, **identity()}
+    if args.action == "record":
+        if not args.trace or not args.output:
+            parser.error("record requires --trace and --output for a new candidate file")
+        print(json.dumps(record_trace(args.trace, args.output)))
+        return
+    record = {"action": args.action, "target": args.target, "package": PACKAGE, **identity()}
     protected = [ROOT / f"docs/evidence/SIM-2D/{milestone}/costs-{target}.json"
                  for milestone in ["M1", "M2"] for target in ["mac-metal", "chrome-webgpu"]]
     if args.action != "measure" and args.output and args.output.resolve() in protected:

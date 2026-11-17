@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createServer } from 'node:http';
 
-const [webRoot, requestJson] = process.argv.slice(2);
+const [webRoot, requestJson, moduleName = 'crowd_2d_run'] = process.argv.slice(2);
 const request = JSON.parse(requestJson);
 const scratch = await fs.mkdtemp(path.resolve('tmp/sim2d/chrome-'));
 const server = createServer(async (req, res) => {
@@ -62,7 +62,7 @@ try {
     pending.set(id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
   });
-  const url = `http://127.0.0.1:${server.address().port}/crowd_2d_run.js`;
+  const url = `http://127.0.0.1:${server.address().port}/${moduleName}.js`;
   await call('Page.enable', {});
   await call('Page.navigate', { url: new URL('/', url).href });
   await pageLoaded;

@@ -1,5 +1,8 @@
 # Building a game with this engine
 
+For authoritative 2D games, [portable rules](../SIM2D-RULES.md) documents the working
+number profile, spatial queries, package guard and three-target trace runner.
+
 Creator guide, updated 14 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
 first slice; [What G6 built](#what-g6-built) says what runs today. Everything else here is design intent, not a
 working SDK or settled syntax. The

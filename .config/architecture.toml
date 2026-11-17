@@ -23,6 +23,21 @@ manifest = "examples/crowd-2d/Cargo.toml"
 rule_package = true
 allowed_workspace_dependencies = ["thrum-core", "thrum-sim2d"]
 
+[packages.crowd-2d.conformance]
+runner = "crowd-2d-run"
+sizes = [[2000, 3600], [5000, 3600], [10000, 36000]]
+vectors = "crates/thrum-core/src/profile/vectors.json"
+witnesses = ["reused", "hits", "rewinds", "changed_rewinds"]
+traces = [
+    { name = "crowd", retained = "examples/crowd-2d/retained/crowd.txt", variant = false, witnesses = [] },
+    { name = "mixed", retained = "examples/crowd-2d/retained/mixed.txt", variant = true, witnesses = ["oversize", "capsule_hits", "swept_only_hits"] },
+]
+
+[packages.crowd-2d.conformance.control]
+name = "platform-sine"
+bodies = 2000
+ticks = 240
+
 [packages.crowd-2d-run]
 manifest = "examples/crowd-2d-run/Cargo.toml"
 allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]

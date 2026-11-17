@@ -357,6 +357,8 @@ fn main() -> TaskResult {
             }
         }
         "check" => {
+            python(&["scripts/sim2d_profile.py", "check"])?;
+            python(&["scripts/sim2d_profile.py", "controls"])?;
             python(&["scripts/exact_baselines.py", "guard"])?;
             python(&["scripts/test_exact_baselines.py"])?;
             python(&["scripts/repo_check.py"])?;

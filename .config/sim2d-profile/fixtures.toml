@@ -1,0 +1,130 @@
+baseline = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { value + Number::ONE }
+'''
+
+[cases.arithmetic]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { let _raw = 1.0_f32 * 2.0_f32; value + Number::ONE }
+'''
+diagnostic = "floating-point arithmetic"
+
+[cases.method]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { let _raw = 1.0_f32.sin(); value + Number::ONE }
+'''
+diagnostic = "raw float method"
+
+[cases.container]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { let _map = std::collections::HashMap::<u32,u32>::new(); value + Number::ONE }
+'''
+diagnostic = "unordered container"
+
+[cases.clock]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { let _time = std::time::Instant::now(); value + Number::ONE }
+'''
+diagnostic = "clock"
+
+[cases.thread]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { let _thread = std::thread::spawn(|| ()); value + Number::ONE }
+'''
+diagnostic = "thread"
+
+[cases.environment]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { let _env = std::env::var("PROFILE_CONTROL"); value + Number::ONE }
+'''
+diagnostic = "environment read"
+
+[cases.dependency]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { value + Number::ONE }
+'''
+diagnostic = "outside dependency"
+
+[cases.suppression]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+#[allow(clippy::float_arithmetic)]
+pub fn rule(value: Number) -> Number { value + Number::ONE }
+'''
+diagnostic = "suppressed lint"
+
+[cases.configuration]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { value + Number::ONE }
+'''
+diagnostic = "missing profile configuration"
+
+[cases.usize]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub usize);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { value + Number::ONE }
+'''
+diagnostic = "no method named `encode`"
+
+[cases.float]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub f32);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number { value + Number::ONE }
+'''
+diagnostic = "no method named `encode`"

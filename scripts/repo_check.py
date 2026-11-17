@@ -15,6 +15,7 @@ from urllib.parse import unquote, urlsplit
 from design_hashes import check_hashes
 import shape_rules
 import evidence_store
+import sim2d_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]*\]\(([^)\n]+)\)")
@@ -341,6 +342,11 @@ def main():
     errors += check_maturity(ledger)
     errors += check_hashes(ROOT, ledger)
     policy = tomllib.loads((ROOT / ".config/architecture.toml").read_text(encoding="utf-8"))
+    rule_packages = {name for name, entry in policy["packages"].items() if entry.get("rule_package")}
+    for name in rule_packages:
+        manifest = ROOT / policy["packages"][name]["manifest"]
+        errors += [f"{name}: {error}" for error in sim2d_profile.configuration_errors(
+            manifest.parent, tomllib.loads(manifest.read_text()), {"thrum-core", "thrum-sim2d", *rule_packages})]
     # Explicit rustup avoids silently using an unrelated standalone Cargo installation.
     channel = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
     output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, encoding="utf-8")

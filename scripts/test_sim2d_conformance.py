@@ -8,7 +8,51 @@ from io import StringIO
 from copy import deepcopy
 from unittest.mock import patch
 
-from sim2d_conformance import ROOT, Runner, SIZES, build_settings, last_comparable, load_cost_record, main, measure, run, runner_graph
+from sim2d_conformance import ROOT, Runner, SIZES, build_settings, control, last_comparable, load_cost_record, main, measure, record_trace, registration, run, runner_graph
+
+
+class RegisteredRules(unittest.TestCase):
+    def test_other_rules_choose_traces_sizes_vectors_and_witnesses(self):
+        config = {"runner": "other-run", "sizes": [[3, 9]], "vectors": "other-vectors.json",
+                  "witnesses": ["changed_rewinds"], "traces": [
+                      {"name": "other", "retained": "other-retained.txt", "variant": False,
+                       "witnesses": ["other_hits"]}]}
+        runner = unittest.mock.Mock()
+        runner.artifact_hash, runner.device, runner.user_agent = "artifact", None, "Chrome"
+        runner.invoke_many.return_value = [[17], {"other_hits": 2}, {"wire": True}]
+        with patch("sim2d_conformance.registration", return_value=config), \
+                patch("sim2d_conformance.SIZES", [(3, 9)]), \
+                patch("sim2d_conformance.Runner", return_value=runner), \
+                patch("sim2d_conformance.source_key", return_value="source"), \
+                patch("sim2d_conformance.references", return_value={}) as retained, \
+                patch("sim2d_conformance.compare"), \
+                patch.object(Path, "read_text", return_value="[17]"):
+            result = run("chrome-webgpu")
+        self.assertEqual(len(result["rows"]), 2)
+        self.assertEqual(runner.invoke_many.call_args.args[0], [
+            ("vectors", []), ("trace", [3, 9, False, False, False, False, False]),
+            ("trace", [3, 9, False, True, False, False, False])])
+        retained.assert_called_once_with(ROOT / "other-retained.txt")
+
+    def test_control_uses_registered_adapter_and_counts(self):
+        mac, chrome = unittest.mock.Mock(), unittest.mock.Mock()
+        mac.invoke.return_value = {"fold": "a", "timeline": ["a"]}
+        chrome.invoke.return_value = {"fold": "b", "timeline": ["b"]}
+        chrome.user_agent = "Chrome"
+        with patch("sim2d_conformance.registration", return_value={"control": {"bodies": 7, "ticks": 1}}), \
+                patch("sim2d_conformance.Runner", side_effect=[mac, chrome]):
+            result = control("chrome-webgpu")
+        mac.invoke.assert_called_once_with("conformance", [7, 1, False, False, True])
+        chrome.invoke.assert_called_once_with("conformance", [7, 1, False, False, True])
+        self.assertEqual(result["first_differing_tick"], 1)
+
+    def test_record_cannot_overwrite_retained_reference(self):
+        with self.assertRaisesRegex(ValueError, "candidate"):
+            record_trace("crowd", ROOT / "examples/crowd-2d/retained/crowd.txt")
+
+    def test_non_rule_package_cannot_select_a_runner(self):
+        with self.assertRaisesRegex(ValueError, "registered rule package"):
+            registration("thrum-core")
 
 
 class BrowserBatch(unittest.TestCase):
@@ -30,7 +74,7 @@ class BrowserBatch(unittest.TestCase):
         device.assert_called_once()
         resource, command = device.call_args.args
         self.assertEqual(resource, "chrome")
-        requests = json.loads(command[-1])
+        requests = json.loads(command[-2])
         self.assertEqual(requests[0], {"method": "vectors", "args": [], "omitTimeline": True})
         self.assertTrue(all(request["omitTimeline"] for request in requests))
         expected = []
