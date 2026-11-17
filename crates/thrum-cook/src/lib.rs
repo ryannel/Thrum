@@ -7,6 +7,8 @@
 //! new manifest is published by atomically replacing `HEAD`. [`watch`] drives cycles from
 //! filesystem events, and [`DevServer`] serves the store to browsers and remote devices.
 
+mod error;
+pub use error::{OriginError, TripwireError};
 mod cas;
 mod cooker;
 pub mod demo;
@@ -30,6 +32,8 @@ pub use watch::{DEBOUNCE, MAX_BATCH, WatchEvent, watch};
 /// Failure of the cooker itself. Per-asset failures are reported in [`CookReport::failed`].
 #[derive(Debug)]
 pub enum CookError {
+    /// Retry the source on the next sweep; it changed after planning.
+    SourceChanged,
     /// Filesystem failure.
     Io(std::io::Error),
     /// A source file could not be imported.
@@ -37,7 +41,9 @@ pub enum CookError {
     /// A cooked product failed runtime validation.
     Product(thrum_asset::AssetError),
     /// The filesystem watcher failed.
-    Watch(String),
+    Watch(notify::Error),
+    /// The filesystem event stream ended; restart the watcher.
+    WatchDisconnected,
     /// A profile cannot represent this source, so the asset publishes without that profile's
     /// product and loaders select its portable one.
     Refused(String),
@@ -46,16 +52,31 @@ pub enum CookError {
 impl fmt::Display for CookError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::SourceChanged => {
+                f.write_str("source changed during cook; retry on the next sweep")
+            }
             Self::Io(error) => write!(f, "cook I/O failed: {error}"),
             Self::Source(reason) => write!(f, "source import failed: {reason}"),
             Self::Product(error) => write!(f, "cooked product refused: {error}"),
             Self::Watch(reason) => write!(f, "watcher failed: {reason}"),
+            Self::WatchDisconnected => {
+                f.write_str("watcher event stream disconnected; restart the watcher")
+            }
             Self::Refused(reason) => write!(f, "profile refused: {reason}"),
         }
     }
 }
 
-impl std::error::Error for CookError {}
+impl std::error::Error for CookError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(error) => Some(error),
+            Self::Product(error) => Some(error),
+            Self::Watch(error) => Some(error),
+            _ => None,
+        }
+    }
+}
 
 impl From<std::io::Error> for CookError {
     fn from(error: std::io::Error) -> Self {

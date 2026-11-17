@@ -525,7 +525,8 @@ impl<G: Game + 'static> App<G> {
             Some(Box::new(move || {
                 let _ = panel_wake.send_event(UserEvent::ControlsEdited);
             })),
-        )?;
+        )
+        .map_err(|error| error.to_string())?;
         panel.show(None);
         self.panel = Some(panel);
         self.display_link = Some(ViewDisplayLink::start(

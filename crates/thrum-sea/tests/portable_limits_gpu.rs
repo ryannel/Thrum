@@ -13,28 +13,27 @@ fn default_webgpu_limits_and_named_profile_refusals() {
                 transform_size: 512,
                 ..Default::default()
             },
-            "transform_size",
+            thrum_sea::ProfileField::TransformSize,
         ),
         (
             thrum_sea::Profile {
                 cascades: 4,
                 ..Default::default()
             },
-            "cascades",
+            thrum_sea::ProfileField::Cascades,
         ),
         (
             thrum_sea::Profile {
                 cache_levels: 9,
                 ..Default::default()
             },
-            "cache_levels",
+            thrum_sea::ProfileField::CacheLevels,
         ),
     ] {
         assert!(
             thrum_sea::Ambient::new(&site, profile)
                 .err()
-                .unwrap()
-                .contains(name)
+                .is_some_and(|error| matches!(error, thrum_sea::AmbientError::UnsupportedProfile(field) if field == name))
         );
     }
     let Some(gpu) = thrum_test_support::gpu(
@@ -55,7 +54,13 @@ fn default_webgpu_limits_and_named_profile_refusals() {
         .err()
         .expect("refusal before shader preparation");
     assert!(
-        error.contains("max_storage_buffers_per_shader_stage"),
+        matches!(
+            error,
+            thrum_sea::AmbientError::DeviceLimit {
+                limit: "max_storage_buffers_per_shader_stage",
+                ..
+            }
+        ),
         "{error}"
     );
 }

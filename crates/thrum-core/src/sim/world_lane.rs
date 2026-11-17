@@ -87,7 +87,7 @@ enum LifecycleSlot {
 #[derive(Clone, Debug)]
 pub enum WorldLaneFault {
     /// Native thread could not start.
-    Start(Arc<str>),
+    Start(Arc<std::io::Error>),
     /// The authoritative task failed.
     Task(Arc<str>),
     /// A control was rejected before entering the mailbox.
@@ -121,7 +121,14 @@ impl fmt::Display for WorldLaneFault {
     }
 }
 
-impl std::error::Error for WorldLaneFault {}
+impl std::error::Error for WorldLaneFault {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Start(error) => Some(error.as_ref()),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 struct Snapshot {
@@ -388,7 +395,7 @@ impl<T: WorldTask> WorldLane<T> {
                     state.fault = Some(error);
                 }
             })
-            .map_err(|error| WorldLaneFault::Start(Arc::from(error.to_string())))?;
+            .map_err(|error| WorldLaneFault::Start(Arc::new(error)))?;
         let lane = Self {
             shared,
             controls: controls.clone(),

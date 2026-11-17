@@ -22,7 +22,7 @@ pub use clocked_world::{
     WorldUpdate,
 };
 pub use history::{HistoryError, HistoryGame, RuntimeHistory};
-pub use input::{ControlBinding, FrameError, InputFrame};
+pub use input::{ControlBinding, InputFrame, InputFrameError};
 pub use publication::{PublicationChanges, PublicationPage};
 pub use registered_world::{ChunkedVisit, EntityWriter, RegisteredWorldError};
 pub use runtime::{

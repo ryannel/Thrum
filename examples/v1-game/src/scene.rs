@@ -389,7 +389,7 @@ fn extract_rows<const OMIT_MIRROR: bool>(
 
 #[cfg(test)]
 mod tests {
-    use thrum_core::{PeerId, StableId, sim::FrameError};
+    use thrum_core::{PeerId, StableId, sim::InputFrameError};
     use thrum_render::{
         extract::{RenderExtractor, SourceTick},
         synthetic::SyntheticScene,
@@ -676,7 +676,7 @@ mod tests {
         });
         assert_eq!(
             sim.admit_frame(control_frame(PeerId(4), [2.0, 0.0, 0.0], 1, 1)),
-            Err(FrameError::InvalidAxis)
+            Err(InputFrameError::InvalidAxis)
         );
         for (index, axis) in axes.into_iter().enumerate() {
             sim.admit_frame(control_frame(
@@ -689,7 +689,7 @@ mod tests {
         }
         assert_eq!(
             sim.admit_frame(control_frame(PeerId(1), [0.0; 3], 1, 2)),
-            Err(FrameError::PendingFrame)
+            Err(InputFrameError::PendingFrame)
         );
         assert_eq!(sim.step(&[]).expect("one committed tick").tick, 1);
         for (index, axis) in axes.into_iter().enumerate() {
@@ -708,7 +708,7 @@ mod tests {
         }
         assert_eq!(
             sim.admit_frame(control_frame(PeerId(1), [0.0; 3], 2, 1)),
-            Err(FrameError::StaleSequence)
+            Err(InputFrameError::StaleSequence)
         );
         sim.admit_frame(control_frame(PeerId(1), [0.0; 3], 2, 2))
             .expect("release first actor");

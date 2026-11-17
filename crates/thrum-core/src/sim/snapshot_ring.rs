@@ -142,6 +142,13 @@ impl<'a> DirtyPage<'a> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PublicationBusy;
 
+impl std::fmt::Display for PublicationBusy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("all publication pages are leased; release a page and retry")
+    }
+}
+impl std::error::Error for PublicationBusy {}
+
 /// Bounded pool of reusable committed pages. A capture mutates only an unleased
 /// page, then publishes it atomically as the latest endpoint. Dirty sidecars
 /// retain each page's changes separately from the last-publication change union.

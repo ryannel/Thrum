@@ -4,7 +4,7 @@ use std::num::NonZeroUsize;
 
 use thrum_core::{
     PeerId,
-    sim::{ControlBinding, FrameError, InputFrame},
+    sim::{ControlBinding, InputFrame, InputFrameError},
 };
 
 /// Refusal before a future frame enters the timing window.
@@ -21,7 +21,7 @@ pub enum FutureInputError {
     /// An axis is nonfinite or outside [-1, 1].
     InvalidAxis,
     /// The game-owned action validator refused before slot reservation.
-    InvalidPayload(FrameError),
+    InvalidPayload(InputFrameError),
     /// The target tick has already committed.
     Late,
     /// The target tick exceeds the configured future horizon.
@@ -36,6 +36,50 @@ pub enum FutureInputError {
     Undrained,
     /// A reconnect did not advance the connection incarnation.
     StaleConnection,
+}
+
+impl std::fmt::Display for FutureInputError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DuplicatePeer => {
+                f.write_str("The same peer was registered twice at construction")
+            }
+            Self::UnknownPeer => f.write_str("The named peer has no timing window"),
+            Self::WrongConnection => {
+                f.write_str("The connection incarnation is not the current binding")
+            }
+            Self::WrongActor => f.write_str("The actor does not match the current binding"),
+            Self::InvalidAxis => f.write_str("An axis is nonfinite or outside [-1, 1]"),
+            Self::InvalidPayload(error) => write!(
+                f,
+                "The game-owned action validator refused before slot reservation: {error}"
+            ),
+            Self::Late => f.write_str("The target tick has already committed"),
+            Self::TooEarly => f.write_str("The target tick exceeds the configured future horizon"),
+            Self::ConflictingFrame => {
+                f.write_str("Another frame already owns this peer and target tick")
+            }
+            Self::OccupiedSlot => {
+                f.write_str("A still-retained frame occupies the same physical slot")
+            }
+            Self::WrongCommit => f.write_str("A committed tick was advanced out of order"),
+            Self::Undrained => {
+                f.write_str("A due frame has not been handed to the W1 admission owner")
+            }
+            Self::StaleConnection => {
+                f.write_str("A reconnect did not advance the connection incarnation")
+            }
+        }
+    }
+}
+
+impl std::error::Error for FutureInputError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidPayload(error) => Some(error),
+            _ => None,
+        }
+    }
 }
 
 /// Idempotent result of staging an owned frame.
@@ -120,7 +164,7 @@ impl<A: PartialEq> FutureInputWindow<A> {
     pub fn stage(
         &mut self,
         frame: InputFrame<A>,
-        validate_actions: impl FnOnce(&InputFrame<A>) -> Result<(), FrameError>,
+        validate_actions: impl FnOnce(&InputFrame<A>) -> Result<(), InputFrameError>,
     ) -> Result<StageResult, FutureInputError> {
         frame
             .validate_axes()

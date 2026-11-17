@@ -113,6 +113,31 @@ pub enum EnvelopeError {
     HelloIdentity,
 }
 
+impl std::fmt::Display for EnvelopeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Length => f.write_str(
+                "Header bytes are absent or payload length differs from the declaration",
+            ),
+            Self::MessageTooLarge => f.write_str("Complete application message exceeds 64 KiB"),
+            Self::DestinationTooSmall => {
+                f.write_str("Destination cannot hold the complete message")
+            }
+            Self::Magic => f.write_str("The four-byte `ENG1` magic is absent"),
+            Self::Version => f.write_str("Protocol major is not one"),
+            Self::ReservedKind => {
+                f.write_str("Kind is outside the fourteen selected first-version values")
+            }
+            Self::ReservedField => f.write_str("Flags or reserved header bytes are nonzero"),
+            Self::HelloIdentity => {
+                f.write_str("Initial Hello carries a nonzero identity, sequence, tick or ACK")
+            }
+        }
+    }
+}
+
+impl std::error::Error for EnvelopeError {}
+
 fn total_len(payload_len: usize) -> Result<usize, EnvelopeError> {
     let total = HEADER_BYTES
         .checked_add(payload_len)

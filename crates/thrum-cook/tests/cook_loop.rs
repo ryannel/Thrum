@@ -449,7 +449,9 @@ fn only_one_cooker_may_write_a_store() {
     let fixture = Fixture::new();
     let _first = Cooker::open(fixture.config()).expect("open");
     let second = Cooker::open(fixture.config());
-    assert!(second.is_err_and(|error| error.to_string().contains("locked")));
+    assert!(
+        matches!(second, Err(thrum_cook::CookError::Io(error)) if error.kind() == std::io::ErrorKind::WouldBlock)
+    );
 }
 
 #[test]

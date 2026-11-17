@@ -1,5 +1,8 @@
 //! Compile-time opt-in draw qualification controls. Ordinary builds omit this module.
 
+mod error;
+pub use error::DrawProbeError;
+
 /// Probe-only command selection, supplied explicitly before attaching the contribution.
 #[derive(Clone, Debug)]
 pub enum Probe {
@@ -10,11 +13,11 @@ pub enum Probe {
 }
 
 impl Probe {
-    pub(crate) fn validate(&self, placements: usize) -> Result<(), String> {
+    pub(crate) fn validate(&self, placements: usize) -> Result<(), DrawProbeError> {
         match self {
             Self::Reference(commands) => {
                 if commands.len() != placements {
-                    return Err("reference placement coverage mismatch".into());
+                    return Err(DrawProbeError::PlacementCoverage);
                 }
                 for placement in commands {
                     let mut next = 0;
@@ -25,20 +28,20 @@ impl Probe {
                             || base != 0
                             || instance != 0
                         {
-                            return Err("reference must cover contiguous triangle ranges with base vertex zero and one instance".into());
+                            return Err(DrawProbeError::InvalidCommands);
                         }
                         next = next
                             .checked_add(count)
-                            .ok_or("reference index range overflow")?;
+                            .ok_or(DrawProbeError::RangeOverflow)?;
                     }
                     if next == 0 {
-                        return Err("empty reference placement".into());
+                        return Err(DrawProbeError::InvalidCommands);
                     }
                 }
                 Ok(())
             }
             Self::Omit(index) if *index < placements => Ok(()),
-            Self::Omit(_) => Err("omitted placement is out of range".into()),
+            Self::Omit(_) => Err(DrawProbeError::PlacementOutOfRange),
         }
     }
 
@@ -116,37 +119,36 @@ pub fn reference_commands(
     store: &std::path::Path,
     meshes: &[String],
     partitioned: bool,
-) -> Result<Vec<Vec<[u32; 5]>>, String> {
+) -> Result<Vec<Vec<[u32; 5]>>, DrawProbeError> {
     use thrum_asset::{AssetStore, MeshProduct, Profile};
     let store = AssetStore::new(store);
-    let head = store
-        .read_head()
-        .map_err(|e| e.to_string())?
-        .ok_or("missing reference store HEAD")?;
-    let manifest = store.load_manifest(&head).map_err(|e| e.to_string())?;
+    let head = store.read_head()?.ok_or(DrawProbeError::MissingHead)?;
+    let manifest = store.load_manifest(&head)?;
     meshes
         .iter()
         .map(|name| {
             let entry = manifest
                 .resolve(name, &[Profile::Portable])
-                .ok_or_else(|| format!("missing reference mesh {name}"))?;
-            let mesh = MeshProduct::open(store.map(&entry.product).map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-            mesh.validate_references().map_err(|e| e.to_string())?;
+                .ok_or_else(|| DrawProbeError::MissingMesh(name.clone()))?;
+            let mesh = MeshProduct::open(store.map(&entry.product)?)?;
+            mesh.validate_references()?;
             let mut first: u32 = 0;
             let mut commands = Vec::new();
             for meshlet in mesh.meshlets() {
                 let count = meshlet
                     .triangle_count
                     .checked_mul(3)
-                    .ok_or("reference triangle overflow")?;
+                    .ok_or(DrawProbeError::RangeOverflow)?;
                 commands.push([count, 1, first, 0, 0]);
-                first = first.checked_add(count).ok_or("reference range overflow")?;
+                first = first
+                    .checked_add(count)
+                    .ok_or(DrawProbeError::RangeOverflow)?;
             }
             if first != mesh.meta().index_count
-                || usize::try_from(first).map_err(|e| e.to_string())? != mesh.indices().len()
+                || usize::try_from(first).map_err(|_| DrawProbeError::RangeOverflow)?
+                    != mesh.indices().len()
             {
-                return Err(format!("incomplete reference coverage for {name}"));
+                return Err(DrawProbeError::IncompleteCoverage(name.clone()));
             }
             if partitioned {
                 Ok(commands)

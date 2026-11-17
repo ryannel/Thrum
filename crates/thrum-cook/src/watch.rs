@@ -58,12 +58,12 @@ pub fn watch(
         // The receiver only disappears when watching stops.
         sender.send(event).ok();
     })
-    .map_err(|error| CookError::Watch(error.to_string()))?;
+    .map_err(CookError::Watch)?;
     // FSEvents reports canonical paths (for example /private/var for /var).
     let root = source.canonicalize()?;
     watcher
         .watch(&root, RecursiveMode::Recursive)
-        .map_err(|error| CookError::Watch(error.to_string()))?;
+        .map_err(CookError::Watch)?;
     run_cycles(cooker, &root, stop, &receiver, Some(SWEEP_FLOOR), on_cycle).map(|_| ())
 }
 
@@ -88,7 +88,7 @@ fn run_cycles(
             Ok(event) => Some(event),
             Err(mpsc::RecvTimeoutError::Timeout) => None,
             Err(mpsc::RecvTimeoutError::Disconnected) => {
-                return Err(CookError::Watch("event stream disconnected".into()));
+                return Err(CookError::WatchDisconnected);
             }
         };
         if let Some(event) = event {

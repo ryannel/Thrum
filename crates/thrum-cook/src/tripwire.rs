@@ -270,7 +270,12 @@ pub fn this_run(metrics: Vec<(String, f64)>) -> Run {
 /// # Errors
 /// The run regressed (the message names every metric over its limit), or the history could
 /// not be appended.
-pub fn gate(path: &Path, run: &Run, rules: &[Rule], record: bool) -> Result<String, String> {
+pub fn gate(
+    path: &Path,
+    run: &Run,
+    rules: &[Rule],
+    record: bool,
+) -> Result<String, crate::TripwireError> {
     let verdict = check(&load_history(path), run, rules);
     let mut report = format!(
         "tripwires ({}, load {:.1} on {} CPUs, {}):\n",
@@ -289,10 +294,14 @@ pub fn gate(path: &Path, run: &Run, rules: &[Rule], record: bool) -> Result<Stri
         }
     }
     if !verdict.regressions.is_empty() {
-        return Err(report);
+        return Err(crate::TripwireError::Regression { report });
     }
     if record {
-        append(path, run).map_err(|error| format!("{report}history not appended: {error}"))?;
+        append(path, run).map_err(|source| crate::TripwireError::History {
+            path: path.into(),
+            report: report.clone(),
+            source,
+        })?;
         report.push_str("  recorded\n");
     }
     Ok(report)

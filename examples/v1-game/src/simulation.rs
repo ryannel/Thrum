@@ -13,8 +13,8 @@ use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
-        ExecutionMode, FrameError, GameRuntime, InputFrame, RegisteredSystem, RegisteredWorldError,
-        RuntimeCapture, RuntimeError, Stage, SystemId, SystemSpec, TickError,
+        ExecutionMode, GameRuntime, InputFrame, InputFrameError, RegisteredSystem,
+        RegisteredWorldError, RuntimeCapture, RuntimeError, Stage, SystemId, SystemSpec, TickError,
     },
 };
 
@@ -563,7 +563,10 @@ impl Simulation {
     /// # Errors
     ///
     /// The action count or payload fails V1 admission.
-    pub fn validate_frame_actions(&self, frame: &InputFrame<SimAction>) -> Result<(), FrameError> {
+    pub fn validate_frame_actions(
+        &self,
+        frame: &InputFrame<SimAction>,
+    ) -> Result<(), InputFrameError> {
         validate_frame_actions(&self.rules.config, frame)
     }
 
@@ -572,14 +575,14 @@ impl Simulation {
     /// # Errors
     ///
     /// Input identity, timing, sequence, axes, actions or control binding fails.
-    pub fn admit_frame(&mut self, frame: InputFrame<SimAction>) -> Result<(), FrameError> {
+    pub fn admit_frame(&mut self, frame: InputFrame<SimAction>) -> Result<(), InputFrameError> {
         validate_frame(&self.runtime, &self.rules, &frame)?;
         let peer = self
             .rules
             .peers
             .iter_mut()
             .find(|peer| peer.binding.peer == frame.origin.peer)
-            .ok_or(FrameError::UnknownPeer)?;
+            .ok_or(InputFrameError::UnknownPeer)?;
         peer.last_sequence = Some(frame.origin.sequence);
         peer.pending = Some(frame);
         Ok(())
@@ -625,9 +628,9 @@ impl Simulation {
 fn validate_frame_actions(
     config: &SimConfig,
     frame: &InputFrame<SimAction>,
-) -> Result<(), FrameError> {
+) -> Result<(), InputFrameError> {
     if frame.actions.len() > config.actions_per_frame {
-        return Err(FrameError::TooManyActions);
+        return Err(InputFrameError::TooManyActions);
     }
     for (axis, &held) in frame.axes.iter().enumerate() {
         let mut speed = f64::from(held) * config.movement_speed;
@@ -635,11 +638,11 @@ fn validate_frame_actions(
             if let SimAction::Impulse(values) = action {
                 let impulse = values[axis];
                 if !impulse.is_finite() || impulse.abs() > MAX_CONTROL_SPEED {
-                    return Err(FrameError::InvalidAction);
+                    return Err(InputFrameError::InvalidAction);
                 }
                 speed += impulse;
                 if !speed.is_finite() || speed.abs() > MAX_CONTROL_SPEED {
-                    return Err(FrameError::InvalidAction);
+                    return Err(InputFrameError::InvalidAction);
                 }
             }
         }
@@ -651,34 +654,34 @@ fn validate_frame(
     runtime: &GameRuntime<Rules>,
     rules: &Rules,
     frame: &InputFrame<SimAction>,
-) -> Result<(), FrameError> {
+) -> Result<(), InputFrameError> {
     frame.validate_axes()?;
     validate_frame_actions(&rules.config, frame)?;
     let peer = rules
         .peers
         .iter()
         .find(|peer| peer.binding.peer == frame.origin.peer)
-        .ok_or(FrameError::UnknownPeer)?;
+        .ok_or(InputFrameError::UnknownPeer)?;
     if peer.binding.connection_epoch != frame.origin.connection_epoch {
-        return Err(FrameError::WrongConnection);
+        return Err(InputFrameError::WrongConnection);
     }
     if peer.binding.actor != frame.actor {
-        return Err(FrameError::WrongActor);
+        return Err(InputFrameError::WrongActor);
     }
     if !peer.active {
-        return Err(FrameError::InvalidControl);
+        return Err(InputFrameError::InvalidControl);
     }
     if runtime.tick().checked_add(1) != Some(frame.tick) {
-        return Err(FrameError::WrongTick);
+        return Err(InputFrameError::WrongTick);
     }
     if peer
         .last_sequence
         .is_some_and(|last| frame.origin.sequence <= last)
     {
-        return Err(FrameError::StaleSequence);
+        return Err(InputFrameError::StaleSequence);
     }
     if peer.pending.is_some() {
-        return Err(FrameError::PendingFrame);
+        return Err(InputFrameError::PendingFrame);
     }
     if runtime
         .read()
@@ -686,7 +689,7 @@ fn validate_frame(
         .ok()
         != Some(peer.binding)
     {
-        return Err(FrameError::InvalidControl);
+        return Err(InputFrameError::InvalidControl);
     }
     Ok(())
 }

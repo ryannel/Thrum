@@ -1,3 +1,4 @@
+use crate::AmbientError;
 use crate::{
     Ambient, MAX_QUERIES, PIXELS, UploadBytes, records,
     spec::{BufferKey, MAX_LONG},
@@ -22,7 +23,7 @@ pub(super) fn frame(
     time: f64,
     anchor: [f64; 2],
     queries: &[[f64; 2]],
-) -> Result<(), String> {
+) -> Result<(), AmbientError> {
     let changed = !sea.modes_initialized
         || spectrum
             .cascades
@@ -156,21 +157,19 @@ fn validate(
     anchor: [f64; 2],
     queries: &[[f64; 2]],
     changed: bool,
-) -> Result<(), String> {
+) -> Result<(), AmbientError> {
     if !time.is_finite()
         || anchor.iter().any(|v| !v.is_finite() || v.abs() > 1e12)
         || queries.len() > MAX_QUERIES as usize
         || queries.iter().flatten().any(|v| !v.is_finite())
         || spectrum.long.len() > MAX_LONG
     {
-        return Err(
-            "sea upload: finite time/anchor, <=192 components and <=4096 queries required".into(),
-        );
+        return Err(AmbientError::InvalidUpload);
     }
     let steepness = thrum_sea_model::contraction_bound(&spectrum.long, sea.profile.choppiness)
-        .map_err(|error| format!("sea long waves: {error:?}"))?;
+        .map_err(AmbientError::LongWaves)?;
     if !steepness.is_finite() || steepness >= crate::LONG_WAVE_CONTRACTION_LIMIT {
-        return Err("sea long waves: contraction bound must be below 0.9".into());
+        return Err(AmbientError::NonContractive);
     }
     for band in spectrum.cascades.iter().filter(|_| changed) {
         if !band.length().is_finite()
@@ -181,7 +180,7 @@ fn validate(
                     || c.wave_vector.iter().any(|v| !v.is_finite())
             })
         {
-            return Err("sea cascade: invalid physical input".into());
+            return Err(AmbientError::InvalidCascade);
         }
         for c in band.components() {
             let lattice = c.wave_vector.map(|k| (k * band.length() / TAU).round());
@@ -190,7 +189,7 @@ fn validate(
                 .any(|v| v.abs() >= f64::from(crate::TRANSFORM_SIZE / 2))
                 || lattice == [0.0, 0.0]
             {
-                return Err("sea cascade: transform_size lattice limit".into());
+                return Err(AmbientError::OutsideLattice);
             }
         }
     }
@@ -200,13 +199,13 @@ fn validate(
             || !c.frequency().is_finite()
             || c.frequency() == 0.0
     }) {
-        return Err("sea long waves: invalid component".into());
+        return Err(AmbientError::InvalidLongWave);
     }
     if queries
         .iter()
         .any(|p| (p[0] - anchor[0]).abs() > 8192.0 || (p[1] - anchor[1]).abs() > 8192.0)
     {
-        return Err("sea queries: local support exceeds 8192 metres".into());
+        return Err(AmbientError::QueryOutsideSupport);
     }
     Ok(())
 }

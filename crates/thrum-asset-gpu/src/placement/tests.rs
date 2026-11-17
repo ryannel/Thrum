@@ -31,37 +31,40 @@ fn built_placements_are_rigid_and_compose_in_call_order() {
 fn non_rigid_transforms_are_refused_by_name_and_cause() {
     let mut stretched = rock();
     stretched.transform[1][1] = 3.0;
-    let message = stretched.check(4).unwrap_err().to_string();
-    assert!(
-        message.contains("mesh placement 4 (\"meshes/rock\")"),
-        "{message}"
-    );
-    assert!(message.contains("unevenly (X 1, Y 3, Z 1)"), "{message}");
-    assert!(message.contains(".scale"), "{message}");
+    let error = stretched.check(4).unwrap_err();
+    assert_eq!(error.index, 4);
+    assert_eq!(error.mesh, "meshes/rock");
+    assert_eq!(error.fault, PlacementFault::Stretched([1.0, 3.0, 1.0]));
 
     let mut mirrored = rock();
     mirrored.transform[0][0] = -1.0;
-    assert_eq!(mirrored.check(0).unwrap_err().fault, Fault::Mirrored);
+    assert_eq!(
+        mirrored.check(0).unwrap_err().fault,
+        PlacementFault::Mirrored
+    );
     assert_eq!(
         rock().scale(-1.0).check(0).unwrap_err().fault,
-        Fault::Mirrored
+        PlacementFault::Mirrored
     );
     assert!(matches!(
         rock().scale(0.0).check(0).unwrap_err().fault,
-        Fault::Flattened(_)
+        PlacementFault::Flattened(_)
     ));
 
     let mut sheared = rock();
     sheared.transform[1][0] = 0.5;
     sheared.transform[1][1] = (1.0_f32 - 0.25).sqrt();
-    assert_eq!(sheared.check(0).unwrap_err().fault, Fault::Sheared);
+    assert_eq!(sheared.check(0).unwrap_err().fault, PlacementFault::Sheared);
 
     let mut projective = rock();
     projective.transform[0][3] = 0.1;
-    assert_eq!(projective.check(0).unwrap_err().fault, Fault::Projective);
+    assert_eq!(
+        projective.check(0).unwrap_err().fault,
+        PlacementFault::Projective
+    );
     assert_eq!(
         rock().at([f32::NAN, 0.0, 0.0]).check(0).unwrap_err().fault,
-        Fault::NotFinite
+        PlacementFault::NotFinite
     );
     // A zero axis cannot name a turn; the builder refuses it where it is written (below).
 }
@@ -71,21 +74,10 @@ fn finite_transforms_too_large_to_derive_from_are_refused() {
     // Axes of 1e20 square to 1e40, past f32: in f32 the lengths, the tolerance and the
     // determinant all overflow and NaN comparisons admitted this matrix.
     let huge = rock().scale(1e20);
-    let message = huge.check(2).unwrap_err().to_string();
-    assert!(
-        message.contains("mesh placement 2 (\"meshes/rock\")"),
-        "{message}"
-    );
-    assert!(
-        message.contains(
-            "scales the mesh by 100000000000000000000, outside the supported 0.0001–10000"
-        ),
-        "{message}"
-    );
-    assert!(
-        message.contains("resize the mesh in its source file"),
-        "{message}"
-    );
+    let error = huge.check(2).unwrap_err();
+    assert_eq!(error.index, 2);
+    assert_eq!(error.mesh, "meshes/rock");
+    assert_eq!(error.fault, PlacementFault::ScaleOutOfRange(1e20));
 
     // The largest finite values, unevenly: lengths overflow f32, and the stretch must still show.
     let mut extreme = rock();
@@ -94,26 +86,21 @@ fn finite_transforms_too_large_to_derive_from_are_refused() {
     extreme.transform[2][2] = f32::MAX / 2.0;
     assert!(matches!(
         extreme.check(0).unwrap_err().fault,
-        Fault::Stretched(_)
+        PlacementFault::Stretched(_)
     ));
     let mut extreme_shear = rock().scale(f32::MAX);
     extreme_shear.transform[1][0] = f32::MAX;
     assert!(matches!(
         extreme_shear.check(0).unwrap_err().fault,
-        Fault::Stretched(_) | Fault::Sheared
+        PlacementFault::Stretched(_) | PlacementFault::Sheared
     ));
 
     assert_eq!(
         rock().scale(1e-6).check(0).unwrap_err().fault,
-        Fault::ScaleOutOfRange(1e-6)
+        PlacementFault::ScaleOutOfRange(1e-6)
     );
     let far = rock().at([0.0, 0.0, -3e6]).check(1).unwrap_err();
-    assert_eq!(far.fault, Fault::TooFar([0.0, 0.0, -3e6]));
-    assert!(
-        far.to_string()
-            .contains("more than 1000000 m from the world origin"),
-        "{far}"
-    );
+    assert_eq!(far.fault, PlacementFault::TooFar([0.0, 0.0, -3e6]));
 
     // The edges of the accepted range still draw.
     for placement in [
@@ -170,19 +157,15 @@ fn a_turn_that_names_no_rotation_is_refused_by_name() {
             .rotate_degrees(axis, degrees)
             .scale(2.0);
         let error = placement.check(4).unwrap_err();
-        assert!(matches!(error.fault, Fault::NoTurn(..)), "{error}");
-        let message = error.to_string();
-        assert!(
-            message.starts_with("mesh placement 4 (\"meshes/rock\") turns"),
-            "{message}"
-        );
-        assert!(message.contains("nonzero, finite axis"), "{message}");
+        assert!(matches!(error.fault, PlacementFault::NoTurn(..)), "{error}");
+        assert_eq!(error.index, 4);
+        assert_eq!(error.mesh, "meshes/rock");
     }
     // A bad yaw from a game's input is refused the same way, not unwound.
     let yawed = rock().yaw_degrees(f32::INFINITY);
     assert!(matches!(
         yawed.check(0).unwrap_err().fault,
-        Fault::NoTurn(..)
+        PlacementFault::NoTurn(..)
     ));
 }
 

@@ -61,9 +61,10 @@ use thrum_render::contribution::{
 
 pub use lease::{LeaseRequest, LentProduct, LentSet, ProductLease};
 pub use material::{
-    MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload, ReloadTiming,
+    MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReadError, MaterialReload,
+    ReloadTiming,
 };
-pub use placement::{MeshPlacement, PlacementError};
+pub use placement::{MeshPlacement, PlacementError, PlacementFault};
 pub use staging::{COPY_UNIT, STAGING_CHUNKS};
 
 /// ABI revision 2 metallic-roughness factors of one mesh placement. The default is a matte
@@ -580,10 +581,13 @@ impl CookedAssets {
     /// # Errors
     /// Refuses mismatched placement coverage or a control attached after preparation.
     #[cfg(feature = "draw-probe")]
-    pub fn with_draw_probe(mut self, probe: draw_probe::Probe) -> Result<Self, String> {
+    pub fn with_draw_probe(
+        mut self,
+        probe: draw_probe::Probe,
+    ) -> Result<Self, draw_probe::DrawProbeError> {
         probe.validate(self.config.meshes.len())?;
         if self.live.is_some() {
-            return Err("draw probe must precede preparation".into());
+            return Err(draw_probe::DrawProbeError::AlreadyPrepared);
         }
         self.draw_probe = Some(probe);
         Ok(self)

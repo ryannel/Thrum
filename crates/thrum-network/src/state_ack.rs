@@ -26,6 +26,19 @@ pub enum AckError {
     Identity,
 }
 
+impl std::fmt::Display for AckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Length => {
+                f.write_str("Payload is not exactly twenty-four bytes or output is too small")
+            }
+            Self::Identity => f.write_str("An image or interest incarnation identity is zero"),
+        }
+    }
+}
+
+impl std::error::Error for AckError {}
+
 fn valid(ack: StateAck) -> bool {
     ack.scope.interest_generation != 0 && ack.image_id != 0 && ack.tick != 0
 }

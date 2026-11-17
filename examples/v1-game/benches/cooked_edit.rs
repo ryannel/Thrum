@@ -144,7 +144,11 @@ fn main() {
         .join("../../docs/evidence/integration/tripwires/g5-cooked-edit.tsv");
     let record = std::env::var_os("THRUM_TRIPWIRES_RECORD").is_some();
     let verdict = tripwire::gate(&history, &tripwire::this_run(metrics), RULES, record);
-    report.push_str(verdict.as_ref().map_or_else(|error| error, |ok| ok));
+    report.push_str(
+        &verdict
+            .as_ref()
+            .map_or_else(ToString::to_string, Clone::clone),
+    );
     #[expect(clippy::print_stderr, reason = "a bench reports to its terminal")]
     {
         eprint!("{report}");

@@ -469,12 +469,7 @@ impl Cooker {
         // The action key names the hashed input bytes; a product cooked from anything else would
         // poison the persistent action cache. Single-file sources are cooked from bytes checked
         // against their hash; multi-file meshes are re-verified after the importer reads them.
-        let changed = || {
-            CookError::Io(std::io::Error::new(
-                std::io::ErrorKind::Interrupted,
-                "source changed during cook; it is retried on the next sweep",
-            ))
-        };
+        let changed = || CookError::SourceChanged;
         let read_verified = || -> Result<Vec<u8>, CookError> {
             let bytes = std::fs::read(&job.source)?;
             if ContentHash::of(&bytes) == job.inputs[0].1 {
@@ -730,7 +725,7 @@ mod tests {
         // The save lands after the scan hashed the old bytes and before the cooker reads them.
         crate::demo::write_checker_png(&source.join("a.png"), 16, [0, 0, 200]).expect("edit");
         let error = cooker.run(&jobs[0]).expect_err("stale key");
-        assert!(error.to_string().contains("changed during cook"), "{error}");
+        assert!(matches!(error, CookError::SourceChanged), "{error}");
         drop(cooker);
         std::fs::remove_dir_all(&root).ok();
     }

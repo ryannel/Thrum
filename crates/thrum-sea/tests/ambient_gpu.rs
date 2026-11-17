@@ -63,7 +63,7 @@ fn compressed_crests_converge_on_native_and_portable_profiles() {
         let mut encoder = h
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        assert!(
+        assert!(matches!(
             h.sea
                 .upload(
                     &h.queue,
@@ -73,9 +73,9 @@ fn compressed_crests_converge_on_native_and_portable_profiles() {
                     support::ANCHOR,
                     &points
                 )
-                .expect_err("the contraction boundary stays excluded")
-                .contains("contraction")
-        );
+                .expect_err("the contraction boundary stays excluded"),
+            thrum_sea::AmbientError::NonContractive
+        ));
         // The previous 24-iteration cap visibly misstates the slope near this
         // compressed crest. This is an independent scalar negative control.
         let point = 0.05;

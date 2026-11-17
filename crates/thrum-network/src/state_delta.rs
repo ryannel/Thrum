@@ -45,6 +45,36 @@ pub enum DeltaError {
     MessageTooLarge,
 }
 
+impl std::fmt::Display for DeltaError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Schema => f.write_str("Schema ID, field count or field width is invalid"),
+            Self::FieldRange => {
+                f.write_str("An authoritative field does not fit its declared bits or range")
+            }
+            Self::DestinationTooSmall => f.write_str("Output cannot hold a complete packet"),
+            Self::Truncated => f.write_str("Input ended before a declared field"),
+            Self::TrailingBytes => f.write_str("Input has bytes after its final actor"),
+            Self::Varint => f.write_str("A varint overflows or is not shortest-form"),
+            Self::Padding => f.write_str("Reserved or record-end padding bits are nonzero"),
+            Self::ActorOrder => {
+                f.write_str("Actor IDs repeat, regress or differ from the named base image")
+            }
+            Self::Base => {
+                f.write_str("Packet scope, base image, sample identity or sample tick is invalid")
+            }
+            Self::Mode => {
+                f.write_str("A mode or record count is unsupported by this first delta codec")
+            }
+            Self::MessageTooLarge => {
+                f.write_str("The group exceeds the complete 8 KiB application-message limit")
+            }
+        }
+    }
+}
+
+impl std::error::Error for DeltaError {}
+
 /// Game-owned quantized projection. The engine controls bit widths, mask and
 /// canonical framing; the game maps checked field ordinals to typed values.
 /// A schema declaration is pinned by the session protocol hash.

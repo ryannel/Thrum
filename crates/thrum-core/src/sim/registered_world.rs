@@ -566,14 +566,38 @@ pub enum RegisteredWorldError {
 /// Human-readable refusal at the registered-world boundary.
 impl std::fmt::Display for RegisteredWorldError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Self::NonFinite { schema, slot } = self {
-            return write!(
+        match self {
+            Self::NonFinite { schema, slot } => write!(
                 f,
                 "component {} at slot {slot} would store a non-finite profile number",
                 schema.0
-            );
+            ),
+            Self::Capacity => {
+                f.write_str("Capacity is outside the slot address range or no free slot remains")
+            }
+            Self::DuplicateId => f.write_str("Stable identity already belongs to a live entity"),
+            Self::InvalidHandle => {
+                f.write_str("A handle is stale, retired or from another world epoch")
+            }
+            Self::UnregisteredComponent => {
+                f.write_str("A game attempted to use a type absent from setup registration")
+            }
+            Self::DuplicateComponent => {
+                f.write_str("A spawn attempted to add a component type twice")
+            }
+            Self::MissingComponent => {
+                f.write_str("The checked entity does not contain this registered component")
+            }
+            Self::SnapshotMismatch => {
+                f.write_str("Capture and receiver have different generations, capacity or schema")
+            }
+            Self::WrongRuntime => {
+                f.write_str("A typed access token belongs to another compiled runtime")
+            }
+            Self::WrongSystem => {
+                f.write_str("A prepared read belongs to another compiled system callback")
+            }
         }
-        write!(f, "{self:?}")
     }
 }
 

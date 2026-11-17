@@ -614,7 +614,7 @@ impl SkyGame {
             };
             let game = game.with_reload(
                 move || {
-                    reload.request(MaterialHook::read(&path)?);
+                    reload.request(MaterialHook::read(&path).map_err(|error| error.to_string())?);
                     Ok(())
                 },
                 report,

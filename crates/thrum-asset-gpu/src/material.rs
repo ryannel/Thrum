@@ -43,6 +43,8 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
+mod error;
+pub use error::MaterialReadError;
 use thrum_render::contribution::{SceneSurface, material_hook_point};
 
 /// The glue function that wraps the scene's material hook point.
@@ -63,13 +65,16 @@ impl MaterialHook {
     /// # Errors
     /// The file cannot be read as UTF-8 text.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn read(path: &std::path::Path) -> Result<Self, String> {
+    pub fn read(path: &std::path::Path) -> Result<Self, MaterialReadError> {
         std::fs::read_to_string(path)
             .map(|source| Self {
                 name: path.display().to_string(),
                 source,
             })
-            .map_err(|error| format!("{}: {error}", path.display()))
+            .map_err(|source| MaterialReadError::Io {
+                path: path.into(),
+                source,
+            })
     }
 }
 
@@ -270,10 +275,11 @@ struct Combined {
 
 /// The scene source with its material hook point wrapped by the glue, followed by the cooked
 /// entries, the glue and the hook.
-fn combine(scene_source: &str, hook: &str) -> Result<Combined, String> {
-    let point = material_hook_point(scene_source).map_err(|error| {
-        format!("{error}; the cooked material hook does not support this scene shader")
-    })?;
+fn combine(
+    scene_source: &str,
+    hook: &str,
+) -> Result<Combined, thrum_render::contribution::HookPointError> {
+    let point = material_hook_point(scene_source)?;
     let mut text = format!(
         "{}{WRAPPER}({}, input){}",
         &scene_source[..point.start],
@@ -438,7 +444,9 @@ impl Candidate {
                 file: candidate.hook.name.clone(),
                 line: 0,
                 column: 0,
-                message,
+                message: format!(
+                    "{message}; the cooked material hook does not support this scene shader"
+                ),
             }),
         }
         candidate.prepare = start.elapsed();
@@ -1309,26 +1317,22 @@ mod tests {
         let Err(missing) = combine("fn shade() {}", "") else {
             panic!("no hook point");
         };
-        assert_eq!(
-            missing,
-            "the scene shader has no `scene material read` hook point; \
-             the cooked material hook does not support this scene shader"
-        );
+        assert_eq!(missing, thrum_render::contribution::HookPointError::Missing);
         let Err(repeated) = combine(&format!("{point} {point}"), "") else {
             panic!("two hook points");
         };
-        assert!(
-            repeated.starts_with(
-                "the scene shader has 2 `scene material read` hook points where exactly one is required"
-            ),
-            "{repeated}"
+        assert_eq!(
+            repeated,
+            thrum_render::contribution::HookPointError::Duplicate(2)
         );
     }
 
     /// A hook refused because `scene` has no single hook point.
     fn refused_by_scene(scene: &str, serial: u64, target: (u64, u64)) -> Candidate {
         let mut refused = candidate(serial, target, true);
-        refused.refused[0].message = combine(scene, "").err().expect("refused");
+        let error = combine(scene, "").err().expect("refused");
+        refused.refused[0].message =
+            format!("{error}; the cooked material hook does not support this scene shader");
         refused
     }
 

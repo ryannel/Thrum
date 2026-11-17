@@ -56,6 +56,31 @@ pub enum RegistrationError {
     DuplicateActivityPartition,
 }
 
+impl std::fmt::Display for RegistrationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DuplicateType => f.write_str("This Rust component type is already registered"),
+            Self::DuplicateSchema => {
+                f.write_str("This stable schema identity belongs to another component type")
+            }
+            Self::UnregisteredType => f.write_str(
+                "Publication selection names a component type absent from the catalogue",
+            ),
+            Self::DuplicatePublication => {
+                f.write_str("This component already has a publication policy")
+            }
+            Self::NotIndexed => {
+                f.write_str("This component is not backed by a maintained activity predicate")
+            }
+            Self::DuplicateActivityPartition => {
+                f.write_str("A storage activity partition was already selected")
+            }
+        }
+    }
+}
+
+impl std::error::Error for RegistrationError {}
+
 impl ComponentRegistry {
     /// Register a portable component with canonical encoding and finite-value validation.
     ///
@@ -326,6 +351,24 @@ pub enum ScheduleError {
     /// Explicit edges or conflict ordering form a cycle.
     Cycle,
 }
+
+impl std::fmt::Display for ScheduleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownComponent => {
+                f.write_str("A system names a component not registered for this game")
+            }
+            Self::DuplicateSystem => f.write_str("Registration identities must be unique"),
+            Self::UnknownDependency => f.write_str("Explicit predecessor is absent"),
+            Self::BackwardStage => {
+                f.write_str("An explicit edge contradicts input → simulate → resolve → publish")
+            }
+            Self::Cycle => f.write_str("Explicit edges or conflict ordering form a cycle"),
+        }
+    }
+}
+
+impl std::error::Error for ScheduleError {}
 
 /// Validated deterministic schedule. Setup allocates O(systems²) edges and
 /// retains conflict-free dependency batches; serial execution walks a flat

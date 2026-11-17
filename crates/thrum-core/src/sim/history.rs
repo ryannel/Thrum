@@ -55,6 +55,37 @@ pub enum HistoryError<E> {
     Tick(TickError<E>),
 }
 
+impl<E: std::fmt::Display> std::fmt::Display for HistoryError<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Diverged => f.write_str(
+                "The runtime endpoint or game resource configuration changed externally",
+            ),
+            Self::OutsideWindow => {
+                f.write_str("The requested number of ticks exceeds the retained undo window")
+            }
+            Self::Runtime(error) => write!(
+                f,
+                "Runtime rewind validation refused the operation: {error}"
+            ),
+            Self::Tick(error) => write!(
+                f,
+                "Game preparation or the ordinary tick refused the operation: {error}"
+            ),
+        }
+    }
+}
+
+impl<E: std::error::Error + 'static> std::error::Error for HistoryError<E> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Runtime(error) => Some(error),
+            Self::Tick(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
 struct ReplayTick<R> {
     tick: u64,
     record: R,

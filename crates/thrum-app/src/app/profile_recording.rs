@@ -67,7 +67,8 @@ impl Recording {
         {
             let png = panel
                 .ok_or("profiler recording needs a panel")?
-                .render_png()?;
+                .render_png()
+                .map_err(|error| error.to_string())?;
             std::fs::write(self.directory.join(format!("{label}.png")), png)
                 .map_err(|e| e.to_string())?;
             std::fs::remove_file(request).map_err(|e| e.to_string())?;

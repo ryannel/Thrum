@@ -70,7 +70,9 @@ impl AllowedOrigins {
     ///
     /// # Errors
     /// Names the first origin that is not of that form.
-    pub fn parse<S: AsRef<str>>(origins: impl IntoIterator<Item = S>) -> Result<Self, String> {
+    pub fn parse<S: AsRef<str>>(
+        origins: impl IntoIterator<Item = S>,
+    ) -> Result<Self, crate::OriginError> {
         let mut allowed = Vec::new();
         for origin in origins {
             let origin = origin.as_ref();
@@ -103,10 +105,7 @@ impl AllowedOrigins {
                     && port.parse::<u16>().is_ok()
             });
             if !host_ok || !port_ok {
-                return Err(format!(
-                    "allowed origin `{origin}` must be http://host[:port] or https://host[:port], \
-                     exactly as the page's Origin header (no path or trailing slash)"
-                ));
+                return Err(crate::OriginError::InvalidOrigin(origin.into()));
             }
             // Browsers omit the scheme's default port from `Origin`.
             let origin = origin.to_ascii_lowercase();
@@ -436,7 +435,7 @@ mod tests {
             "*",
         ] {
             let error = AllowedOrigins::parse([bad]).expect_err(bad);
-            assert!(error.contains(bad), "{error}");
+            assert_eq!(error, crate::OriginError::InvalidOrigin(bad.into()));
         }
     }
 }

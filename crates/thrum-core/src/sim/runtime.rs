@@ -274,6 +274,44 @@ pub enum RuntimeError {
     WrongCapture,
 }
 
+impl std::fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::World(error) => write!(
+                f,
+                "A component or identity operation failed without changing committed state: {error}"
+            ),
+            Self::Schedule(error) => write!(
+                f,
+                "System declarations could not form a valid schedule: {error}"
+            ),
+            Self::UndeclaredAccess => {
+                f.write_str("A query or edit was requested without declared component access")
+            }
+            Self::AlreadyStarted => {
+                f.write_str("Initial seeding was attempted after publication or the first tick")
+            }
+            Self::RuntimeExhausted => {
+                f.write_str("This process exhausted unique runtime access-token generations")
+            }
+            Self::NoCommittedTick => f.write_str("No committed tick exists for a one-tick delta"),
+            Self::WrongCapture => {
+                f.write_str("The replay capture belongs to another runtime instance")
+            }
+        }
+    }
+}
+
+impl std::error::Error for RuntimeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::World(error) => Some(error),
+            Self::Schedule(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
 impl From<RegisteredWorldError> for RuntimeError {
     fn from(error: RegisteredWorldError) -> Self {
         Self::World(error)
@@ -293,6 +331,38 @@ pub enum TickError<E> {
     Game(E),
     /// Engine preflight rejected a typed candidate edit batch.
     Edit(EditError),
+}
+
+impl<E: std::fmt::Display> std::fmt::Display for TickError<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::TickExhausted => f.write_str("The tick counter cannot advance without wrapping"),
+            Self::RevisionExhausted => {
+                f.write_str("The committed endpoint revision cannot advance without wrapping")
+            }
+            Self::BaselineRequired => {
+                f.write_str("Tick-zero seed membership must be published before ticking")
+            }
+            Self::Game(error) => write!(
+                f,
+                "Game-owned validation refused the candidate before any commit: {error}"
+            ),
+            Self::Edit(error) => write!(
+                f,
+                "Engine preflight rejected a typed candidate edit batch: {error}"
+            ),
+        }
+    }
+}
+
+impl<E: std::error::Error + 'static> std::error::Error for TickError<E> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Game(error) => Some(error),
+            Self::Edit(error) => Some(error),
+            _ => None,
+        }
+    }
 }
 
 /// Game-owned rules for one registered authority. Preparation receives only

@@ -125,7 +125,11 @@ fn main() {
         .join("../../docs/evidence/integration/tripwires/cooked-loader-edit-to-visible.tsv");
     let record = std::env::var_os("THRUM_TRIPWIRES_RECORD").is_some();
     let verdict = tripwire::gate(&history, &tripwire::this_run(metrics), RULES, record);
-    report.push_str(verdict.as_ref().map_or_else(|error| error, |ok| ok));
+    report.push_str(
+        &verdict
+            .as_ref()
+            .map_or_else(ToString::to_string, Clone::clone),
+    );
     std::io::stdout().write_all(report.as_bytes()).ok();
     if let Some(path) = std::env::var_os("THRUM_G5_BENCH_OUT") {
         std::fs::write(path, &report).expect("write report");

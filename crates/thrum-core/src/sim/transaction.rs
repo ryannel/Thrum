@@ -119,6 +119,39 @@ pub enum EditError {
     Capacity,
 }
 
+impl std::fmt::Display for EditError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::World(error) => write!(
+                f,
+                "A checked identity, bundle or component preflight failed: {error}"
+            ),
+            Self::WrongRuntime => {
+                f.write_str("An access token belongs to another compiled runtime")
+            }
+            Self::WrongSystem => {
+                f.write_str("A callback emitted an edit using another system's declared capability")
+            }
+            Self::Conflict => f.write_str("Two edits target the same field or structural handle"),
+            Self::WrongValueType => {
+                f.write_str("An edit's accessor returned a value of another registered type")
+            }
+            Self::Capacity => {
+                f.write_str("Spawn count exceeds slots returned by validated despawns")
+            }
+        }
+    }
+}
+
+impl std::error::Error for EditError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::World(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
 fn present<T: Send + Sync + 'static>(world: &RegisteredWorld, component: usize, slot: u32) -> bool {
     world.present_at::<T>(component, slot)
 }

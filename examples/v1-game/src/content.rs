@@ -145,7 +145,9 @@ pub fn attach_cooked_scene_with_probe(
     probe: Option<thrum_asset_gpu::draw_probe::Probe>,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     attach_selected(host, |assets| match probe {
-        Some(probe) => assets.with_draw_probe(probe),
+        Some(probe) => assets
+            .with_draw_probe(probe)
+            .map_err(|error| error.to_string()),
         None => Ok(assets),
     })
 }

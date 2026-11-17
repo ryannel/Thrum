@@ -1,3 +1,4 @@
+use crate::AmbientError;
 use crate::{Ambient, CacheLevel, LEVELS, Profile, records, spec};
 use std::collections::BTreeMap;
 use thrum_render::runtime::DeviceSite;
@@ -11,45 +12,65 @@ pub(super) fn sizes() -> Vec<u64> {
     spec::resources().iter().map(|r| r.size).collect()
 }
 
-pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, String> {
+pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, AmbientError> {
     if profile.transform_size != crate::TRANSFORM_SIZE {
-        return Err("sea transform_size: supported value is 256".into());
+        return Err(AmbientError::UnsupportedProfile(
+            crate::ProfileField::TransformSize,
+        ));
     }
     if profile.cascades != spec::CASCADES {
-        return Err("sea cascades: supported value is 3".into());
+        return Err(AmbientError::UnsupportedProfile(
+            crate::ProfileField::Cascades,
+        ));
     }
     if profile.cache_levels != LEVELS {
-        return Err("sea cache_levels: supported value is 8".into());
+        return Err(AmbientError::UnsupportedProfile(
+            crate::ProfileField::CacheLevels,
+        ));
     }
     if !profile.choppiness.is_finite() || !(0.0..=4.0).contains(&profile.choppiness) {
-        return Err("sea choppiness: expected finite 0..=4".into());
+        return Err(AmbientError::UnsupportedProfile(
+            crate::ProfileField::Choppiness,
+        ));
     }
     let limits = device.limits();
     let resources = spec::resources();
     for resource in &resources {
         if resource.size > limits.max_buffer_size {
-            return Err(format!("{}: max_buffer_size", resource.name));
+            return Err(AmbientError::DeviceLimit {
+                resource: resource.name.clone(),
+                limit: "max_buffer_size",
+            });
         }
         if resource.usage.contains(wgpu::BufferUsages::STORAGE)
             && resource.size > limits.max_storage_buffer_binding_size
         {
-            return Err(format!(
-                "{}: max_storage_buffer_binding_size",
-                resource.name
-            ));
+            return Err(AmbientError::DeviceLimit {
+                resource: resource.name.clone(),
+                limit: "max_storage_buffer_binding_size",
+            });
         }
     }
     // Keep SEA's admitted portable envelope, though each pass now binds only what it uses.
     if limits.max_storage_buffers_per_shader_stage < 8 {
-        return Err("sea: max_storage_buffers_per_shader_stage requires 8".into());
+        return Err(AmbientError::DeviceLimit {
+            resource: "FFT".into(),
+            limit: "max_storage_buffers_per_shader_stage",
+        });
     }
     if limits.max_compute_workgroup_storage_size < 2048 {
-        return Err("sea FFT: max_compute_workgroup_storage_size requires 2048".into());
+        return Err(AmbientError::DeviceLimit {
+            resource: "FFT".into(),
+            limit: "max_compute_workgroup_storage_size",
+        });
     }
     if limits.max_compute_invocations_per_workgroup < crate::TRANSFORM_SIZE
         || limits.max_compute_workgroup_size_x < crate::TRANSFORM_SIZE
     {
-        return Err("sea FFT: max_compute_invocations_per_workgroup and max_compute_workgroup_size_x require 256".into());
+        return Err(AmbientError::DeviceLimit {
+            resource: "FFT".into(),
+            limit: "max_compute_workgroup_size",
+        });
     }
     let mut buffers = BTreeMap::new();
     for resource in resources {
@@ -66,7 +87,7 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
             buffer
                 .slice(..)
                 .get_mapped_range_mut()
-                .map_err(|e| format!("sea mip mapping: {e}"))?
+                .map_err(AmbientError::Mapping)?
                 .copy_from_slice(bytemuck::bytes_of(&record));
             buffer.unmap();
         }

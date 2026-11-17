@@ -10,7 +10,7 @@ use std::{
 
 use thrum_core::{
     ActorId, Origin, PeerId, StableId, WorldEpoch,
-    sim::{ExecutionMode, FrameError, InputFrame},
+    sim::{ExecutionMode, InputFrame, InputFrameError},
 };
 use v1_game::simulation::{
     Command, ComponentEntity, Ownership, Position, PublishedPage, SimAction, SimConfig, SimError,
@@ -1223,7 +1223,7 @@ fn admission_rejects_finite_motion_beyond_game_speed_limit_without_consuming_seq
     frame.actions.push(SimAction::Impulse([600.0, 0.0, 0.0]));
     assert_eq!(
         sim.admit_frame(frame.clone()),
-        Err(FrameError::InvalidAction)
+        Err(InputFrameError::InvalidAction)
     );
     assert_eq!(sim.tick(), 0);
     assert_eq!(

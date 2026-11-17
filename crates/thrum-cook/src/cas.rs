@@ -50,9 +50,10 @@ impl Cas {
             .write(true)
             .open(store.root().join("LOCK"))?;
         lock.try_lock().map_err(|error| match error {
-            fs::TryLockError::WouldBlock => {
-                std::io::Error::other("store is locked by another cooker")
-            }
+            fs::TryLockError::WouldBlock => std::io::Error::new(
+                std::io::ErrorKind::WouldBlock,
+                "store is locked by another cooker",
+            ),
             fs::TryLockError::Error(error) => error,
         })?;
         let epoch = Self::epoch_of(&store)?;

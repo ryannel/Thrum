@@ -38,7 +38,8 @@ impl Prepared {
 }
 pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepared, String> {
     let device = surface.device;
-    let ambient = thrum_sea::Ambient::new(device, profile.waves)?;
+    let ambient =
+        thrum_sea::Ambient::new(device, profile.waves).map_err(|error| error.to_string())?;
     let environment = surface
         .environment_products()
         .ok_or("water needs the scene's physical environment")?;

@@ -35,13 +35,13 @@ impl<A, const AXES: usize> InputFrame<A, AXES> {
     /// # Errors
     ///
     /// A movement axis is nonfinite or outside the normalized range [-1, 1].
-    pub fn validate_axes(&self) -> Result<(), FrameError> {
+    pub fn validate_axes(&self) -> Result<(), InputFrameError> {
         if self
             .axes
             .iter()
             .any(|axis| !axis.is_finite() || axis.abs() > 1.0)
         {
-            Err(FrameError::InvalidAxis)
+            Err(InputFrameError::InvalidAxis)
         } else {
             Ok(())
         }
@@ -61,7 +61,7 @@ pub struct ControlBinding {
 
 /// Input admission failure. Refusal changes neither sequence nor held controls.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum FrameError {
+pub enum InputFrameError {
     /// A normalized axis is nonfinite or outside [-1, 1].
     InvalidAxis,
     /// An action carries nonfinite numeric input.
@@ -83,3 +83,34 @@ pub enum FrameError {
     /// The registered controlled entity is stale or its ownership changed.
     InvalidControl,
 }
+
+impl std::fmt::Display for InputFrameError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidAxis => f.write_str("A normalized axis is nonfinite or outside [-1, 1]"),
+            Self::InvalidAction => f.write_str("An action carries nonfinite numeric input"),
+            Self::UnknownPeer => f.write_str("The peer is not registered for this authority"),
+            Self::WrongConnection => {
+                f.write_str("Connection generation does not match registration")
+            }
+            Self::WrongActor => f.write_str("Controlled actor does not match registration"),
+            Self::WrongTick => {
+                f.write_str("The frame is late or farther ahead than the next fixed tick")
+            }
+            Self::StaleSequence => {
+                f.write_str("Sequence is not strictly greater than the last admitted sequence")
+            }
+            Self::PendingFrame => {
+                f.write_str("This peer already has a complete admitted frame for the next tick")
+            }
+            Self::TooManyActions => {
+                f.write_str("The configured per-frame action count was exceeded")
+            }
+            Self::InvalidControl => {
+                f.write_str("The registered controlled entity is stale or its ownership changed")
+            }
+        }
+    }
+}
+
+impl std::error::Error for InputFrameError {}

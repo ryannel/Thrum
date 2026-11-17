@@ -56,6 +56,24 @@ pub enum ClockError {
     PendingTicks,
 }
 
+impl std::fmt::Display for ClockError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidConfig => f.write_str("A safety limit exceeds the finite queue"),
+            Self::AlreadyActive => {
+                f.write_str("A running clock cannot reset its wall-time origin through resume")
+            }
+            Self::NonMonotonicTime => f.write_str("Platform timestamp moved backwards"),
+            Self::TimeOverflow => f.write_str("A timestamp/rate product cannot be represented"),
+            Self::PendingTicks => {
+                f.write_str("Pending updates must complete before a new wall-time origin begins")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ClockError {}
+
 /// Account of one host call. A retryable `step_error` retains the failed tick;
 /// the host must terminate on a game-contract fault.
 #[derive(Debug)]

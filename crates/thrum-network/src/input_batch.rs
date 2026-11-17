@@ -44,6 +44,35 @@ pub enum InputCodecError {
     WrongActor,
 }
 
+impl std::fmt::Display for InputCodecError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RecordCount => f.write_str("A batch has zero or more than eight records"),
+            Self::ActionCount => f.write_str("A record declares more than eight actions"),
+            Self::ActionTooLarge => f.write_str("A declared action exceeds 256 bytes"),
+            Self::InvalidAxis => {
+                f.write_str("An axis is nonfinite or outside [-1, 1], or uses reserved wire -32768")
+            }
+            Self::Truncated => f.write_str("Encoded bytes end before a declared field or action"),
+            Self::TrailingBytes => f.write_str("Bytes remain after the final declared record"),
+            Self::PayloadTooLarge => {
+                f.write_str("Payload exceeds the complete 64 KiB application-message bound")
+            }
+            Self::DestinationTooSmall => {
+                f.write_str("Caller-provided output cannot hold the complete batch")
+            }
+            Self::InvalidAction => {
+                f.write_str("A game schema, value or exact action length was refused")
+            }
+            Self::WrongActor => {
+                f.write_str("Session actor mapping does not match the authenticated binding")
+            }
+        }
+    }
+}
+
+impl std::error::Error for InputCodecError {}
+
 /// Borrowed, structurally checked game action.
 #[derive(Clone, Copy, Debug)]
 pub struct ActionView<'a> {

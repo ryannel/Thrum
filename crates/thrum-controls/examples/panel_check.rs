@@ -43,9 +43,13 @@ fn main() -> Result<(), String> {
     let caption = controls
         .text("scene.caption", "Caption", "Dusk")
         .map_err(error)?;
-    let mut panel = MacPanel::new(&controls, "Thrum demo", None)?;
-    std::fs::write(output.join("panel-initial.png"), panel.render_png()?)
-        .map_err(|error| error.to_string())?;
+    let mut panel =
+        MacPanel::new(&controls, "Thrum demo", None).map_err(|error| error.to_string())?;
+    std::fs::write(
+        output.join("panel-initial.png"),
+        panel.render_png().map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
     // A person drags solar time to 18:29 and yaw past its end, and presses Pause.
     let moved = [
         panel.simulate(time.id(), 18.48),
@@ -56,8 +60,11 @@ fn main() -> Result<(), String> {
     // The game then publishes a new reading, as it would after a frame.
     controls.show(sun, (-2.0_f32).to_radians());
     panel.sync(&controls);
-    std::fs::write(output.join("panel-edited.png"), panel.render_png()?)
-        .map_err(|error| error.to_string())?;
+    std::fs::write(
+        output.join("panel-edited.png"),
+        panel.render_png().map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
     let report = format!(
         "{{\"moved\":{moved:?},\"applied\":{applied},\"solar_time\":\"{}\",\"yaw\":\"{}\",\"paused\":{},\"clamped_edits\":{}}}",
         controls.formatted(time.id()),

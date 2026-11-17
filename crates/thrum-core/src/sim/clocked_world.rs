@@ -140,7 +140,7 @@ pub enum ClockedWorldError<E> {
 impl<E: fmt::Display> fmt::Display for ClockedWorldError<E> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Clock(error) => write!(formatter, "world clock: {error:?}"),
+            Self::Clock(error) => write!(formatter, "world clock: {error}"),
             Self::Game(error) => write!(formatter, "world game: {error}"),
         }
     }
@@ -149,7 +149,7 @@ impl<E: fmt::Display> fmt::Display for ClockedWorldError<E> {
 impl<E: std::error::Error + 'static> std::error::Error for ClockedWorldError<E> {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Clock(_) => None,
+            Self::Clock(error) => Some(error),
             Self::Game(error) => Some(error),
         }
     }

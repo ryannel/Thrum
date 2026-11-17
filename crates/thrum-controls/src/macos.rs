@@ -5,6 +5,8 @@
 //! owner applies queued edits to the model with [`MacPanel::apply_edits`] and refreshes
 //! widgets from the model with [`MacPanel::sync`], both from its event loop.
 
+mod error;
+pub use error::PanelError;
 use std::cell::RefCell;
 
 use objc2::{
@@ -113,9 +115,8 @@ impl MacPanel {
         controls: &Controls,
         title: &str,
         wake: Option<Box<dyn Fn()>>,
-    ) -> Result<Self, String> {
-        let mtm = MainThreadMarker::new()
-            .ok_or("the control panel must be built on AppKit's main thread")?;
+    ) -> Result<Self, PanelError> {
+        let mtm = MainThreadMarker::new().ok_or(PanelError::MainThreadRequired)?;
         let target = PanelTarget::new(
             TargetIvars {
                 edits: RefCell::new(Vec::new()),
@@ -310,11 +311,8 @@ impl MacPanel {
     ///
     /// # Errors
     /// Returns a failure when the panel has no content view or `AppKit` cannot encode it.
-    pub fn render_png(&self) -> Result<Vec<u8>, String> {
-        let content = self
-            .panel
-            .contentView()
-            .ok_or("the panel has no content view")?;
+    pub fn render_png(&self) -> Result<Vec<u8>, PanelError> {
+        let content = self.panel.contentView().ok_or(PanelError::MissingContent)?;
         content.layoutSubtreeIfNeeded();
         // The frame view draws the HUD material and title; the content view alone is
         // transparent with light text.
@@ -329,7 +327,7 @@ impl MacPanel {
         let bounds = view.bounds();
         let bitmap = view
             .bitmapImageRepForCachingDisplayInRect(bounds)
-            .ok_or("AppKit could not allocate a bitmap for the panel")?;
+            .ok_or(PanelError::BitmapUnavailable)?;
         view.cacheDisplayInRect_toBitmapImageRep(bounds, &bitmap);
         let properties = NSDictionary::new();
         #[expect(
@@ -340,9 +338,7 @@ impl MacPanel {
         let png = unsafe {
             bitmap.representationUsingType_properties(NSBitmapImageFileType::PNG, &properties)
         };
-        Ok(png
-            .ok_or("AppKit could not encode the panel as PNG")?
-            .to_vec())
+        Ok(png.ok_or(PanelError::PngUnavailable)?.to_vec())
     }
 
     /// Show values that changed in `controls` since this panel last looked, whether a

@@ -4,7 +4,7 @@ use std::num::NonZeroUsize;
 
 use thrum_core::{
     ActorId, Origin, PeerId,
-    sim::{ControlBinding, FrameError, InputFrame},
+    sim::{ControlBinding, InputFrame, InputFrameError},
 };
 use thrum_network::future_input::{FutureInputError, FutureInputWindow, StageResult};
 
@@ -129,8 +129,12 @@ fn invalid_identity_axes_and_reconnect_do_not_replace_a_future_frame() {
         Err(FutureInputError::InvalidAxis)
     );
     assert_eq!(
-        window.stage(frame(1, 7, 6, 3, 1.0), |_| Err(FrameError::InvalidAction)),
-        Err(FutureInputError::InvalidPayload(FrameError::InvalidAction))
+        window.stage(frame(1, 7, 6, 3, 1.0), |_| Err(
+            InputFrameError::InvalidAction
+        )),
+        Err(FutureInputError::InvalidPayload(
+            InputFrameError::InvalidAction
+        ))
     );
     assert_eq!(
         stage(&mut window, frame(1, 7, 6, 3, 1.0)),

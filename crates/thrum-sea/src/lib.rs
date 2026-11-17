@@ -1,6 +1,8 @@
 //! Reconstructible, every-frame wind waves. No clock, submission or ambient history is owned here.
 //! A water contribution can embed [`Ambient`], append [`Ambient::graph`], stage an upload,
 //! then forward each named simulate callback to [`Ambient::encode_pass`].
+mod error;
+pub use error::{AmbientError, ProfileField};
 mod filtered;
 mod prepare;
 /// Host record reflection metadata for shader tooling.
@@ -265,7 +267,7 @@ impl Ambient {
     pub fn new(
         device: &thrum_render::runtime::DeviceSite,
         profile: Profile,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, AmbientError> {
         prepare::new(device, profile)
     }
 
@@ -376,7 +378,7 @@ impl Ambient {
         time: f64,
         anchor: [f64; 2],
         queries: &[[f64; 2]],
-    ) -> Result<(), String> {
+    ) -> Result<(), AmbientError> {
         upload::frame(self, queue, encoder, spectrum, time, anchor, queries)
     }
 }

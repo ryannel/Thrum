@@ -162,14 +162,14 @@ impl MeshPlacement {
             })
         };
         if let Some((axis, degrees)) = self.refused_turn {
-            return refuse(Fault::NoTurn(axis, degrees));
+            return refuse(PlacementFault::NoTurn(axis, degrees));
         }
         let matrix = glam::Mat4::from_cols_array_2d(&self.transform);
         if !matrix.is_finite() {
-            return refuse(Fault::NotFinite);
+            return refuse(PlacementFault::NotFinite);
         }
         if matrix.row(3) != glam::Vec4::W {
-            return refuse(Fault::Projective);
+            return refuse(PlacementFault::Projective);
         }
         // Every product and sum of finite `f32` values is finite in `f64`, so these lengths, dot
         // products and the determinant cannot overflow into infinity or NaN and slip past a
@@ -180,32 +180,32 @@ impl MeshPlacement {
         let smallest = lengths.into_iter().fold(f64::INFINITY, f64::min);
         let scales = lengths.map(reported);
         if !above(smallest, f64::from(f32::EPSILON)) {
-            return refuse(Fault::Flattened(scales));
+            return refuse(PlacementFault::Flattened(scales));
         }
         if !at_most(largest - smallest, RIGID_TOLERANCE * largest) {
-            return refuse(Fault::Stretched(scales));
+            return refuse(PlacementFault::Stretched(scales));
         }
         let skew = [(0, 1), (0, 2), (1, 2)]
             .into_iter()
             .map(|(a, b)| dot(axes[a], axes[b]).abs())
             .fold(0.0_f64, f64::max);
         if !at_most(skew, RIGID_TOLERANCE * largest * largest) {
-            return refuse(Fault::Sheared);
+            return refuse(PlacementFault::Sheared);
         }
         if !above(dot(cross(axes[0], axes[1]), axes[2]), 0.0) {
-            return refuse(Fault::Mirrored);
+            return refuse(PlacementFault::Mirrored);
         }
         // Compared at the precision the scale was written in, so `.scale(1e-4)` is accepted.
         if !SCALE_RANGE.contains(&reported(largest)) {
-            return refuse(Fault::ScaleOutOfRange(reported(largest)));
+            return refuse(PlacementFault::ScaleOutOfRange(reported(largest)));
         }
         let origin = matrix.w_axis.truncate();
         if !wide(origin).iter().all(|value| value.abs() <= MAX_DISTANCE) {
-            return refuse(Fault::TooFar(origin.to_array()));
+            return refuse(PlacementFault::TooFar(origin.to_array()));
         }
         // Within those bounds the inverse is finite; this guards the derived transform itself.
         if !matrix.inverse().is_finite() {
-            return refuse(Fault::NotInvertible);
+            return refuse(PlacementFault::NotInvertible);
         }
         Ok(())
     }
@@ -215,22 +215,36 @@ impl MeshPlacement {
 /// the cause and the fix.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlacementError {
-    index: usize,
-    mesh: String,
-    fault: Fault,
+    /// Ordinal in the supplied placement list.
+    pub index: usize,
+    /// Manifest name of the placed mesh.
+    pub mesh: String,
+    /// Typed reason the transform was refused.
+    pub fault: PlacementFault,
 }
 
+/// Transform correction required before a cooked mesh can be placed.
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum Fault {
+pub enum PlacementFault {
+    /// Supply a finite nonzero rotation axis and finite angle.
     NoTurn([f32; 3], f32),
+    /// Supply finite transform elements.
     NotFinite,
+    /// Supply an affine transform.
     Projective,
+    /// Supply nonzero axis lengths.
     Flattened([f32; 3]),
+    /// Use one uniform scale on all axes.
     Stretched([f32; 3]),
+    /// Use orthogonal rotation axes.
     Sheared,
+    /// Use a positive scale and orientation.
     Mirrored,
+    /// Resize the source mesh or use a scale within the supported range.
     ScaleOutOfRange(f32),
+    /// Move the placement inside the supported world extent.
     TooFar([f32; 3]),
+    /// Supply an invertible rigid transform.
     NotInvertible,
 }
 
@@ -286,7 +300,7 @@ impl fmt::Display for PlacementError {
         let Self { index, mesh, fault } = self;
         write!(f, "mesh placement {index} ({mesh:?}) ")?;
         match fault {
-            Fault::NoTurn(axis, degrees) => {
+            PlacementFault::NoTurn(axis, degrees) => {
                 return write!(
                     f,
                     "turns {degrees}° about the axis {axis:?}, which names no rotation; give \
@@ -294,15 +308,19 @@ impl fmt::Display for PlacementError {
                      finite angle)"
                 );
             }
-            Fault::NotFinite => f.write_str("has a NaN or infinite transform value"),
-            Fault::Projective => f.write_str("has a bottom transform row other than 0, 0, 0, 1"),
-            Fault::Flattened([x, y, z]) => write!(f, "scales its axes to zero ({x}, {y}, {z})"),
-            Fault::Stretched([x, y, z]) => {
+            PlacementFault::NotFinite => f.write_str("has a NaN or infinite transform value"),
+            PlacementFault::Projective => {
+                f.write_str("has a bottom transform row other than 0, 0, 0, 1")
+            }
+            PlacementFault::Flattened([x, y, z]) => {
+                write!(f, "scales its axes to zero ({x}, {y}, {z})")
+            }
+            PlacementFault::Stretched([x, y, z]) => {
                 write!(f, "scales its axes unevenly (X {x}, Y {y}, Z {z})")
             }
-            Fault::Sheared => f.write_str("shears: its axes are not at right angles"),
-            Fault::Mirrored => f.write_str("mirrors the mesh (a negative scale)"),
-            Fault::ScaleOutOfRange(scale) => {
+            PlacementFault::Sheared => f.write_str("shears: its axes are not at right angles"),
+            PlacementFault::Mirrored => f.write_str("mirrors the mesh (a negative scale)"),
+            PlacementFault::ScaleOutOfRange(scale) => {
                 return write!(
                     f,
                     "scales the mesh by {scale}, outside the supported {}–{}; resize the mesh \
@@ -311,7 +329,7 @@ impl fmt::Display for PlacementError {
                     SCALE_RANGE.end()
                 );
             }
-            Fault::TooFar([x, y, z]) => {
+            PlacementFault::TooFar([x, y, z]) => {
                 return write!(
                     f,
                     "places its origin at ({x}, {y}, {z}), more than {MAX_DISTANCE} m from the \
@@ -319,7 +337,9 @@ impl fmt::Display for PlacementError {
                      the origin, where positions keep their precision"
                 );
             }
-            Fault::NotInvertible => f.write_str("has a transform with no representable inverse"),
+            PlacementFault::NotInvertible => {
+                f.write_str("has a transform with no representable inverse")
+            }
         }?;
         f.write_str(
             "; cooked meshes need a rigid transform with one uniform positive scale, because \

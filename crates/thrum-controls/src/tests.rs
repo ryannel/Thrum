@@ -92,13 +92,25 @@ fn people_edits_snap_clamp_and_count() {
 fn people_edits_of_the_wrong_kind_are_explained() {
     let (mut controls, time, paused, title, sun) = demo();
     let before = controls.revision();
-    let message = |result: Result<bool, ControlError>| result.unwrap_err().to_string();
-    assert!(message(controls.edit_value(time.id(), Value::Flag(true))).contains("is a slider"));
-    assert!(message(controls.edit_display(paused.id(), 1.0)).contains("is a toggle"));
-    assert!(message(controls.edit_value(sun.id(), Value::Text("x".into()))).contains("readout"));
-    assert!(
-        message(controls.edit_value(title.id(), Value::Text("a\nb".into()))).contains("one line")
-    );
+    for (result, key) in [
+        (
+            controls.edit_value(time.id(), Value::Flag(true)),
+            "sky.solar_time",
+        ),
+        (controls.edit_display(paused.id(), 1.0), "world.paused"),
+        (
+            controls.edit_value(sun.id(), Value::Text("x".into())),
+            "sky.sun_elevation",
+        ),
+        (
+            controls.edit_value(title.id(), Value::Text("a\nb".into())),
+            "demo.title",
+        ),
+    ] {
+        assert!(
+            matches!(result, Err(ControlError::InvalidValue { key: actual, .. }) if actual == key)
+        );
+    }
     assert_eq!(controls.revision(), before, "refused edits change nothing");
 }
 
@@ -120,11 +132,7 @@ fn people_edits_with_another_models_id_are_refused() {
         small.edit_display(foreign, 1.0),
         small.edit_value(foreign, Value::Flag(true)),
     ] {
-        let message = result.unwrap_err().to_string();
-        assert!(
-            message.contains("control ID 5 is not declared"),
-            "{message}"
-        );
+        assert_eq!(result, Err(ControlError::UnknownId(5)));
     }
     assert_eq!(small.revision(), before, "refused edits change nothing");
 }
@@ -163,19 +171,15 @@ fn parameter_files_apply_valid_entries_and_explain_the_rest() {
     assert!((controls.get(time) - 18.5 / 24.0).abs() < 1e-5);
     assert!(controls.is_on(paused));
     assert_eq!(controls.text_of(title), "Dusk");
-    let messages: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
-    assert_eq!(messages.len(), 3, "{messages:?}");
-    assert!(
-        messages[0].contains("did you mean \"sky.solar_time\""),
-        "{}",
-        messages[0]
-    );
-    assert!(messages[1].contains("readout"), "{}", messages[1]);
-    assert!(
-        messages[2].contains("did you mean \"world.paused\""),
-        "{}",
-        messages[2]
-    );
+    assert_eq!(report.problems.len(), 3);
+    assert!(matches!(&report.problems[0],
+        ControlError::UnknownKey { key, suggestion: Some(suggestion) }
+        if key == "sky.solar_tim" && suggestion == "sky.solar_time"));
+    assert!(matches!(&report.problems[1],
+        ControlError::InvalidValue { key, .. } if key == "sky.sun_elevation"));
+    assert!(matches!(&report.problems[2],
+        ControlError::UnknownKey { key, suggestion: Some(suggestion) }
+        if key == "world.paused2" && suggestion == "world.paused"));
     let again = controls.apply_file(r#"{"sky.solar_time": 18.5}"#).unwrap();
     assert_eq!((again.changed, again.unchanged), (0, 1));
     assert!(matches!(
