@@ -55,7 +55,8 @@ async fn run() -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     let store = PathBuf::from(std::env::var("THRUM_ASSET_STORE").map_err(|e| e.to_string())?);
     let reference =
-        thrum_asset_gpu::draw_probe::reference_commands(&store, &names, mode == "partitioned")?;
+        thrum_asset_gpu::draw_probe::reference_commands(&store, &names, mode == "partitioned")
+            .map_err(|error| error.to_string())?;
     let probe = match mode.as_str() {
         "production" => None,
         "reference" | "partitioned" => Some(thrum_asset_gpu::draw_probe::Probe::Reference(
