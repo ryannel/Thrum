@@ -21,7 +21,8 @@ pub const REACHES: [f64; 3] = [1.0, 0.5, 0.25];
 /// metres of water.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GroundClass {
-    /// Rate at which the pores take water until they are full. At least the percolation.
+    /// Rate at which the pores take water until they are full. It may be under the
+    /// percolation rate: such ground films while its pores fill and not after.
     pub soak: f64,
     /// Rate at which full pores pass water on down, a named sink.
     pub percolation: f64,
@@ -74,11 +75,6 @@ impl GroundClass {
         ];
         if all.iter().any(|v| !v.is_finite() || *v < 0.0) {
             return Err(RainError::Input("negative or nonfinite ground class"));
-        }
-        if self.soak < self.percolation {
-            return Err(RainError::Input(
-                "a ground class soaks slower than it percolates",
-            ));
         }
         if self.steepest <= 0.0 || self.share >= 1.0 || self.porosity > 1.0 {
             return Err(RainError::Input(

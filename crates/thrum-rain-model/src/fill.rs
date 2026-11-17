@@ -27,7 +27,7 @@ pub struct Account {
     pub rain: f64,
     /// Withheld by the canopy: its named sink.
     pub canopy: f64,
-    /// Gone down into bare ground.
+    /// Gone down into ground no water stands on: open ground and held ground.
     pub ground: f64,
     /// Gone down through puddles' beds.
     pub percolated: f64,
@@ -57,12 +57,25 @@ impl Account {
     }
 }
 
-/// The stores' reading of one hollow's ground, cubic metres: full pores under its cover
-/// and each uncovered cell's store water at its reach.
-fn hollow_reading(tree: &Tree, l: usize, cover: f64, pores: f64, vol: &[f64; 3], area: f64) -> f64 {
-    let (n, w) = tree.catchment.band(l, f64::NEG_INFINITY, cover);
-    let (_, all) = tree.catchment.band(l, f64::NEG_INFINITY, f64::INFINITY);
-    pores * n as f64 * area + (0..3).map(|r| (all[r] - w[r]) * area * vol[r]).sum::<f64>()
+/// The stores' reading of one catchment's open ground, cubic metres: each cell at or
+/// above `mark` at its reach's store water.
+fn open_reading(tree: &Tree, l: usize, mark: f64, vol: &[f64; 3], area: f64) -> f64 {
+    let (_, w) = tree.catchment.band(l, mark, f64::INFINITY);
+    (0..3).map(|r| w[r] * area * vol[r]).sum::<f64>()
+}
+
+/// What a square metre of held ground does with a tick's rain on it, metres: into its
+/// share of the pores under the mark, down, and runoff. The step a class's store takes,
+/// with no relief.
+fn held_take(class: &GroundClass, water: f64, room: f64, dt: f64) -> [f64; 3] {
+    let perc = class.percolation / 1000.0 * dt;
+    let (take, into) = if room > 0.0 {
+        let take = water.min(class.soak / 1000.0 * dt).min(room + perc);
+        (take, take.min(room))
+    } else {
+        (water.min(perc), 0.0)
+    };
+    [into, take - into, water - take]
 }
 
 /// What one hollow's catchment gained in a tick, cubic metres.
@@ -70,22 +83,42 @@ fn hollow_reading(tree: &Tree, l: usize, cover: f64, pores: f64, vol: &[f64; 3],
 pub struct LeafGain {
     /// Rain that fell on this hollow's water, by the exposure there.
     pub on_water: f64,
-    /// Rain on this hollow's bare ground that ran off to its puddle.
+    /// Rain on this hollow's open ground that ran off to its puddle.
     pub runoff: f64,
     /// Withheld by the canopy over this hollow's cells.
     pub canopy: f64,
-    /// Gone down into this hollow's bare ground.
+    /// Gone down into this hollow's open ground.
     pub ground: f64,
-    /// Dried from this hollow's uncovered ground.
+    /// Dried from this hollow's open ground.
     pub ground_dried: f64,
-    /// Surface water that joined this hollow's puddle as it rose over ground.
+    /// Rain on this hollow's held ground, by the exposure at the ground: the three
+    /// entries below.
+    pub on_held: f64,
+    /// Held ground's rain its share of the pores under the mark took.
+    pub held_into: f64,
+    /// Held ground's rain that went down, a named sink.
+    pub held_down: f64,
+    /// Held ground's rain that ran off to the puddle.
+    pub held_runoff: f64,
+    /// Surface water that joined this hollow's puddle as its mark rose over ground.
     pub joined: f64,
-    /// Water this hollow's puddle gave to fill the pores of ground it rose over.
-    pub filled: f64,
-    /// Surface water this hollow's puddle left on ground it fell from.
+    /// Pore water that joined the pores under the mark as it rose over ground.
+    pub under: f64,
+    /// Surface water this hollow's puddle left on ground its mark fell from.
     pub left: f64,
-    /// What full pores held beyond the class's fill on ground the puddle left.
+    /// Water the puddle gave to bring that ground's pores up to the class's fill.
+    pub topped: f64,
+    /// What that ground's share of the pores under the mark held beyond the class's fill.
     pub soaked: f64,
+    /// What the puddle lacked to hand over the ground between its level and this
+    /// hollow's mark: above nothing, the hollow holds that ground and nothing moved.
+    pub short: f64,
+    /// What the bed under this hollow's water took from the puddle.
+    pub bed: f64,
+    /// The part of the bed's take the pores under the mark kept; the rest went down.
+    pub into: f64,
+    /// Dried from the puddle's water over this hollow.
+    pub dried: f64,
 }
 
 /// One tick's receivers, each by itself, cubic metres. Reused from tick to tick.
@@ -107,18 +140,19 @@ pub struct TickReport {
     pub partings: u32,
 }
 
-/// The rain state a game keeps in its world: a volume for each puddle, the level that
-/// last set which ground each hollow's water covers, a damp band above each hollow's
-/// waterline, and the account. The ground's stores are the game's [`GroundStores`].
+/// The rain state a game keeps in its world: a volume for each puddle; for each hollow
+/// its mark, the water in the pores under the mark and a damp band above its waterline;
+/// and the account. The ground's stores are the game's [`GroundStores`]. Nothing here
+/// stands for water not yet delivered.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RainState {
     pub(crate) tick: u64,
     pub(crate) volume: Vec<f64>,
     pub(crate) active: Vec<bool>,
     pub(crate) account: Account,
-    pub(crate) cover: Vec<f64>,
+    pub(crate) mark: Vec<f64>,
     pub(crate) band: Vec<f64>,
-    pub(crate) owed: Vec<f64>,
+    pub(crate) under: Vec<f64>,
     pub(crate) ground_tick: Option<u64>,
 }
 
@@ -139,25 +173,24 @@ impl RainState {
             volume: vec![0.0; n],
             active: (0..n).map(|k| k < h).collect(),
             account: Account::default(),
-            cover: (0..h).map(|k| tree.nodes[k].lower).collect(),
+            mark: (0..h).map(|k| tree.nodes[k].lower).collect(),
             band: vec![0.0; h],
-            owed: vec![0.0; h],
+            under: vec![0.0; h],
             ground_tick: None,
         }
     }
 
-    /// The level that last set which ground each hollow's water covers: ground below it
-    /// is under water and its pores are full; the rest is open ground.
-    pub fn cover_levels(&self) -> &[f64] {
-        &self.cover
+    /// Each hollow's mark, a height: its ground below the mark is in the hollow's
+    /// account and not the class's stores'. Ground between the puddle's level and the mark
+    /// is held ground. A mark never says where water stands; the level does.
+    pub fn marks(&self) -> &[f64] {
+        &self.mark
     }
 
-    /// Water each hollow's ground is owed, cubic metres: pore room under the water and
-    /// surface water on ground the water left that the hollow's puddle has not yet had
-    /// the water to pay. The stores' reading of that ground holds this much less, and the
-    /// puddle pays it before it stands; [`Self::ground_held`] counts it.
-    pub fn owed(&self) -> &[f64] {
-        &self.owed
+    /// Water in the pores of each hollow's ground under its mark, cubic metres, spread
+    /// evenly over that ground.
+    pub fn pores_under(&self) -> &[f64] {
+        &self.under
     }
 
     /// Height of the damp band above each hollow's waterline, metres.
@@ -166,8 +199,9 @@ impl RainState {
     }
 
     /// The wetness at a point (x, y, z) on a hollows body's ground: full pores and no
-    /// film under a puddle; elsewhere the class's stores read at the point, with the damp
-    /// band above its hollow's waterline. None off the body.
+    /// film under a puddle; on held ground the fill of the pores under its hollow's mark
+    /// and no film; elsewhere the class's stores read at the point. Ground above a
+    /// waterline takes the damp band. None off the body.
     #[expect(
         clippy::too_many_arguments,
         reason = "the wetness function's fields and the state"
@@ -210,13 +244,28 @@ impl RainState {
                 cover: 0.0,
             });
         }
-        let band = self.band[label as usize];
-        Some(base.with_band(crate::band_fill(point[1] - level, band)))
+        let l = label as usize;
+        let fill = crate::band_fill(point[1] - level, self.band[l]);
+        if g.heights()[i] < self.mark[l] {
+            let pores = ground.classes[class].pores
+                * tree.catchment.band(l, f64::NEG_INFINITY, self.mark[l]).0 as f64
+                * g.spacing().powi(2);
+            let held = crate::Wetness {
+                pores: if pores > 0.0 {
+                    (self.under[l] / pores).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                },
+                surface: 0.0,
+                cover: 0.0,
+            };
+            return Some(held.with_band(fill));
+        }
+        Some(base.with_band(fill))
     }
 
     /// Cubic metres the ground of the body holds: the class's stores over its open
-    /// cells, read at each one's exposure, and full pores under water, less what the
-    /// hollows owe their ground.
+    /// ground, read at each cell's exposure, and the pores under every mark.
     pub fn ground_held(&self, tree: &Tree, ground: &GroundStores, class: usize) -> f64 {
         let c = ground.classes[class];
         let area = tree.ground().spacing().powi(2);
@@ -225,11 +274,11 @@ impl RainState {
         (0..h)
             .map(|l| self.hollow_ground(tree, ground, class, l))
             .sum::<f64>()
-            + hollow_reading(tree, h, f64::NEG_INFINITY, c.pores, &vol, area)
+            + open_reading(tree, h, f64::NEG_INFINITY, &vol, area)
     }
 
-    /// Cubic metres the ground draining to one hollow holds: the stores' reading of it
-    /// less what the hollow owes it. Never less than none.
+    /// Cubic metres the ground draining to one hollow holds: the stores' reading of its
+    /// open ground and the pores under its mark.
     pub fn hollow_ground(
         &self,
         tree: &Tree,
@@ -240,7 +289,7 @@ impl RainState {
         let c = ground.classes[class];
         let area = tree.ground().spacing().powi(2);
         let vol: [f64; 3] = std::array::from_fn(|r| ground.stores[class][r].water(c.pores));
-        hollow_reading(tree, hollow, self.cover[hollow], c.pores, &vol, area) - self.owed[hollow]
+        open_reading(tree, hollow, self.mark[hollow], &vol, area) + self.under[hollow]
     }
 
     /// Ticks stepped.
@@ -419,19 +468,54 @@ impl RainState {
         };
         report.hollows.clear();
         report.hollows.resize(h, LeafGain::default());
-        // Water that rose over ground or left it since the last tick changes receiver.
+        // The tick's footprints are those of its start: water stands where the level then
+        // is above the bed.
         let start: Vec<f64> = (0..h)
             .map(|l| self.level(tree, self.holder(tree, id(l))))
             .collect();
         if let Some(stores) = stores {
-            self.cover_changes(tree, &start, &class, &stores, area, report);
+            self.move_marks(tree, &start, &class, &stores, area, report);
+        } else {
+            self.mark.clone_from(&start);
         }
-        self.cover.clone_from(&start);
-        // Each hollow's level at the start of the tick sets which of its cells are covered.
-        let levels = &self.cover;
+        // Rain goes to what it hits: water below the level at the tick's start, held
+        // ground from there up to the mark, open ground above the mark.
+        let (marks, under) = (&self.mark, &self.under);
+        let levels = &start;
         let gather = |l: usize| {
             let g = tree.catchment.gather(l, levels[l], fall, bare, area);
-            leaf(g, &flows, bare.is_some())
+            if bare.is_some() {
+                return leaf(g, &flows, true);
+            }
+            let (_, w) = tree.catchment.band(l, marks[l], f64::INFINITY);
+            let mut out = leaf(
+                Gathered {
+                    weights: w.map(|v| v * area),
+                    ..g
+                },
+                &flows,
+                false,
+            );
+            if marks[l] > levels[l] {
+                // Held ground's pores are its share, by area, of the pores under the mark.
+                let below = tree.catchment.band(l, f64::NEG_INFINITY, marks[l]).0 as f64;
+                let room = (class.pores * below * area - under[l]).max(0.0) / (below * area);
+                let (open, shaded) = tree.catchment.exposures(l, levels[l], marks[l]);
+                let mut add = |e: f64, cells: f64| {
+                    let [into, down, runoff] = held_take(&class, e * fall, room, dt);
+                    out.on_held += e * fall * cells * area;
+                    out.held_into += into * cells * area;
+                    out.held_down += down * cells * area;
+                    out.held_runoff += runoff * cells * area;
+                };
+                if open > 0 {
+                    add(1.0, f64::from(open));
+                }
+                for e in shaded {
+                    add(e, 1.0);
+                }
+            }
+            out
         };
         let chunk = h.div_ceil(threads).max(1);
         std::thread::scope(|scope| {
@@ -450,6 +534,10 @@ impl RainState {
                         out.canopy = g.canopy;
                         out.ground = g.ground;
                         out.ground_dried = g.ground_dried;
+                        out.on_held = g.on_held;
+                        out.held_into = g.held_into;
+                        out.held_down = g.held_down;
+                        out.held_runoff = g.held_runoff;
                     }
                 };
                 if threads == 1 || rest.is_empty() {
@@ -469,27 +557,6 @@ impl RainState {
             on_water: 0.0,
             ..edge
         };
-        // A hollow that owes its ground water holds less than the stores' reading of it,
-        // so its ground's drying and percolation take only the share of the reading that
-        // is water, and the debt fades by the rest: the ground never holds less than none.
-        if let Some(stores) = stores {
-            let vol: [f64; 3] = std::array::from_fn(|r| stores[r].water(class.pores));
-            for (l, g) in report.hollows.iter_mut().enumerate() {
-                if self.owed[l] <= 0.0 {
-                    continue;
-                }
-                let reading = hollow_reading(tree, l, self.cover[l], class.pores, &vol, area);
-                let short = if reading > 0.0 {
-                    (self.owed[l] / reading).min(1.0)
-                } else {
-                    1.0
-                };
-                let loss = g.ground + g.ground_dried;
-                self.owed[l] = (self.owed[l] - loss * short).max(0.0);
-                g.ground *= 1.0 - short;
-                g.ground_dried *= 1.0 - short;
-            }
-        }
         let a = &mut self.account;
         a.rain += fall * area * tree.ground().heights().len() as f64;
         a.canopy += edge.canopy;
@@ -499,12 +566,18 @@ impl RainState {
         for l in 0..h {
             let g = report.hollows[l];
             self.account.canopy += g.canopy;
-            self.account.ground += g.ground;
+            self.account.ground += g.ground + g.held_down;
             self.account.ground_dried += g.ground_dried;
+            self.under[l] += g.held_into;
             let k = self.holder(tree, id(l));
-            self.volume[k as usize] += g.on_water + g.runoff;
+            self.volume[k as usize] += g.on_water + g.runoff + g.held_runoff;
         }
-        self.lose(tree, rain.drying / 1000.0 * dt, soak, report);
+        let dry = rain.drying / 1000.0 * dt;
+        if stores.is_some() {
+            self.lose_to_beds(tree, dry, &class, dt, area, report);
+        } else {
+            self.lose(tree, dry, soak, report);
+        }
         self.settle(tree, report);
         self.account.edge += report.edge_spill;
         // Each hollow's damp band follows the fall of its level over the tick.
@@ -525,17 +598,19 @@ impl RainState {
         Ok(())
     }
 
-    /// Ground water rose over or left since the cover was last set: covered ground's
-    /// surface water joins the puddle and the puddle fills its pores; ground the water
-    /// leaves takes the class's state, the puddle leaves its surface water there, and
-    /// what the full pores held beyond the class's fill is soaked. What a puddle has not
-    /// the water to pay is owed by its hollow, paid first from the puddle's water as it
-    /// comes, and pores still owed hold nothing to soak when the water leaves them.
+    /// Each hollow's mark against its puddle's level at the tick's start. Ground a level
+    /// has risen over goes under the mark: its surface water joins the puddle and its
+    /// pore water the pores under the mark. Ground a level has fallen from is due back to
+    /// the stores in its class's state: its pore water from its share, by area, of the
+    /// pores under the mark, what the share holds beyond the class's fill counted as
+    /// soaked, and what it lacks, with the class's surface water, from the puddle. A
+    /// puddle that holds less keeps the ground: nothing moves and the mark stays. Hollows
+    /// that share a puddle draw on it in their order.
     #[expect(
         clippy::float_cmp,
-        reason = "only a level that moved at all changes the cover"
+        reason = "only a level that differs at all from the mark moves ground"
     )]
-    fn cover_changes(
+    fn move_marks(
         &mut self,
         tree: &Tree,
         now: &[f64],
@@ -545,47 +620,104 @@ impl RainState {
         report: &mut TickReport,
     ) {
         for (l, &new) in now.iter().enumerate() {
-            let old = self.cover[l];
+            let old = self.mark[l];
             if old == new {
                 continue;
             }
             let (n, w) = tree.catchment.band(l, old.min(new), old.max(new));
-            if n == 0 {
-                continue;
-            }
             let surface: f64 = (0..3).map(|r| w[r] * stores[r].surface).sum::<f64>() * area;
-            let filled: f64 = (0..3).map(|r| w[r] * stores[r].fill).sum::<f64>();
-            let room = class.pores * (n as f64 - filled) * area;
+            let pore: f64 = (0..3).map(|r| w[r] * stores[r].fill).sum::<f64>() * class.pores * area;
             let k = self.holder(tree, id(l)) as usize;
             let g = &mut report.hollows[l];
             if new > old {
-                g.joined += surface;
                 self.volume[k] += surface;
-                self.owed[l] += room;
-            } else {
-                let forgiven = self.owed[l].min(room);
-                self.owed[l] -= forgiven;
-                g.soaked += room - forgiven;
-                self.account.soaked += room - forgiven;
-                let left = surface.min(self.volume[k]);
-                self.volume[k] -= left;
-                g.left += left;
-                self.owed[l] += surface - left;
+                self.under[l] += pore;
+                g.joined = surface;
+                g.under = pore;
+            } else if n > 0 {
+                let below = tree.catchment.band(l, f64::NEG_INFINITY, old).0;
+                let share = self.under[l] * n as f64 / below as f64;
+                let topped = (pore - share).max(0.0);
+                let need = surface + topped;
+                if self.volume[k] < need {
+                    g.short = need - self.volume[k];
+                    continue;
+                }
+                self.volume[k] -= need;
+                self.under[l] = if n == below {
+                    0.0
+                } else {
+                    self.under[l] - share
+                };
+                g.left = surface;
+                g.topped = topped;
+                g.soaked = (share - pore).max(0.0);
+                self.account.soaked += g.soaked;
             }
-        }
-        // Each hollow's puddle pays what its ground is owed from the water it has.
-        for (l, g) in report.hollows.iter_mut().enumerate() {
-            if self.owed[l] > 0.0 {
-                let k = self.holder(tree, id(l)) as usize;
-                let pay = self.owed[l].min(self.volume[k]);
-                self.volume[k] -= pay;
-                self.owed[l] -= pay;
-                g.filled += pay;
-            }
+            self.mark[l] = new;
         }
     }
 
-    /// Drying and percolation from each puddle's water surface after the tick's rain.
+    /// Drying and the beds' take from each puddle's water surface after the tick's rain
+    /// and runoff. In each hollow the bed takes the class's soak rate over the water there
+    /// while the pores under the mark have room, of which they keep what they have room
+    /// for and the rest goes down, at no more than the percolation rate; over full pores,
+    /// and on ground with none, it takes the percolation rate. A puddle that holds less
+    /// than the tick's drying and take gives each its share of what it holds and is empty.
+    fn lose_to_beds(
+        &mut self,
+        tree: &Tree,
+        dry: f64,
+        class: &GroundClass,
+        dt: f64,
+        area: f64,
+        report: &mut TickReport,
+    ) {
+        let (soak, perc) = (class.soak / 1000.0 * dt, class.percolation / 1000.0 * dt);
+        let h = report.hollows.len();
+        let mut want = vec![0.0; self.volume.len()];
+        let holders: Vec<usize> = (0..h).map(|l| self.holder(tree, id(l)) as usize).collect();
+        for (l, &k) in holders.iter().enumerate() {
+            let v = self.volume[k];
+            if v <= 0.0 {
+                continue;
+            }
+            let level = tree.level(id(k), v);
+            let surface = tree.catchment.band(l, f64::NEG_INFINITY, level).0 as f64 * area;
+            let below = tree.catchment.band(l, f64::NEG_INFINITY, self.mark[l]).0 as f64;
+            let room = (class.pores * below * area - self.under[l]).max(0.0);
+            let take = if room > 0.0 {
+                (soak * surface).min(room + perc * surface)
+            } else {
+                perc * surface
+            };
+            let g = &mut report.hollows[l];
+            g.bed = take;
+            g.into = take.min(room);
+            g.dried = dry * surface;
+            want[k] += g.dried + take;
+        }
+        for (l, &k) in holders.iter().enumerate() {
+            let g = &mut report.hollows[l];
+            if want[k] > self.volume[k] {
+                let share = self.volume[k] / want[k];
+                g.bed *= share;
+                g.into *= share;
+                g.dried *= share;
+            }
+            self.under[l] += g.into;
+            report.dried += g.dried;
+            report.percolated += g.bed - g.into;
+        }
+        for (v, w) in self.volume.iter_mut().zip(want) {
+            *v = if w >= *v { 0.0 } else { *v - w };
+        }
+        self.account.dried += report.dried;
+        self.account.percolated += report.percolated;
+    }
+
+    /// Drying and percolation from each puddle's water surface after the tick's rain, on
+    /// ground of a stateless class.
     fn lose(&mut self, tree: &Tree, dry: f64, soak: f64, report: &mut TickReport) {
         if dry + soak <= 0.0 {
             return;
@@ -686,7 +818,7 @@ impl RainState {
 }
 
 /// One catchment's gains: by the cells' own take on stateless ground, or from the
-/// stores' flows at the uncovered cells' weights.
+/// stores' flows at the open cells' weights.
 fn leaf(g: Gathered, flows: &[Flow; 3], bare: bool) -> LeafGain {
     let mut out = LeafGain {
         on_water: g.water,

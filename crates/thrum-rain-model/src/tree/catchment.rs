@@ -32,7 +32,7 @@ pub(crate) struct Gathered {
     pub(crate) water: f64,
     pub(crate) runoff: f64,
     pub(crate) ground: f64,
-    /// Uncovered cells' summed weights on the stored reaches, times the cell's area.
+    /// Open cells' summed weights on the stored reaches, times the cell's area.
     pub(crate) weights: [f64; 3],
 }
 
@@ -174,6 +174,35 @@ impl Catchment {
             }
         }
         (j - i, weights)
+    }
+
+    /// The cells of a catchment with ground at or above `lo` and below `hi`, for a sum
+    /// that is not linear in exposure: how many stand under open sky, and each other
+    /// cell's exposure at the ground.
+    pub(crate) fn exposures(
+        &self,
+        slot: usize,
+        lo: f64,
+        hi: f64,
+    ) -> (u32, impl Iterator<Item = f64> + '_) {
+        let (s, e) = (self.start[slot] as usize, self.start[slot + 1] as usize);
+        let z = &self.z[s..e];
+        let (i, j) = (
+            z.partition_point(|&v| v < lo),
+            z.partition_point(|&v| v < hi)
+                .max(z.partition_point(|&v| v < lo)),
+        );
+        let open = |m: usize| if m == 0 { 0 } else { self.open[s + m - 1] };
+        let (a, b) = (
+            self.shaded_start[slot] as usize,
+            self.shaded_start[slot + 1] as usize,
+        );
+        let from = a + self.shaded[a..b].partition_point(|&(pos, _)| (pos as usize) < i);
+        let to = a + self.shaded[a..b].partition_point(|&(pos, _)| (pos as usize) < j);
+        (
+            open(j) - open(i),
+            (from..to).map(|c| self.steps[self.shaded[c].1 as usize].1),
+        )
     }
 }
 

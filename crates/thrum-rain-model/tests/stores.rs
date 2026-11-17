@@ -1,7 +1,7 @@
 //! M2.1: the ground's two stores step with the tick for each class and reach. Every
 //! expected time and fill is worked out here from the class's rates, as parts 5 and 8 of
 //! the design proofs work them, and not read from the model; and the water account closes
-//! with the stores and the covering and uncovering transfers in it.
+//! with the stores, the marks' transfers and the pores under the marks in it.
 pub mod support;
 use support::{design_bed, mm_h};
 use thrum_rain_model::{
@@ -207,12 +207,129 @@ fn every_class_steps_each_reach_by_its_share_of_the_rain() {
     let e = |r| stores.store(EARTH, r).fill;
     assert!(e(0) >= e(1) && e(1) > e(2), "{} {} {}", e(0), e(1), e(2));
     assert!(GroundStores::new(&[table()[0]; 9]).is_err());
-    assert!(GroundStores::new(&[class(5.0, 10.0, 1.0, 1.0)]).is_err());
 }
 
-/// M1.4's account, with a class that stores water: each tick the test sums what the
-/// ground holds cell by cell, from the stores, the cover levels and the canopy, and
-/// closes rain against the puddles, the ground and every sink.
+/// Ground that percolates 15 mm/h and soaks 5, with 3 mm of pores and 0.5 mm of relief,
+/// under 10 mm/h: while its pores fill it takes only the soak rate, so a film stands, 5 mm/h
+/// of it up to the relief; once they are full it passes the rain and the film down. The
+/// times are the rates': the relief full at 0.5 mm over 5 mm/h, the pores at 3 mm over
+/// 5 mm/h, and the film gone 0.5 mm over (15 - 10) mm/h after that.
+#[test]
+fn ground_that_percolates_faster_than_it_soaks_films_while_its_pores_fill() {
+    let c = class(5.0, 15.0, 3.0, 0.5);
+    let rain = Rain {
+        flux: mm_h(10.0),
+        drying: 0.0,
+    };
+    let mut stores = GroundStores::new(&[c]).expect("valid test case");
+    let relief_full = c.relief * 1000.0 / (rain.flux - c.soak);
+    let full = c.pores * 1000.0 / c.soak;
+    let gone = full + c.relief * 1000.0 / (c.percolation - rain.flux);
+    assert_eq!((relief_full, full, gone), (360.0, 2160.0, 2520.0));
+    for t in 1..=7200 {
+        stores.step(rain, 1.0).expect("valid test case");
+        let s = stores.store(0, 0);
+        let t = f64::from(t);
+        if t < full - 2.0 {
+            let film = ((rain.flux - c.soak) / 1000.0 * t).min(c.relief);
+            assert!(
+                (s.surface - film).abs() < 1e-15,
+                "film {} at {t} s",
+                s.surface
+            );
+            assert!((s.fill - c.soak / 1000.0 * t / c.pores).abs() < 1e-12);
+            assert!(s.surface > 0.0);
+        }
+        if t > full + 2.0 {
+            assert_eq!(s.fill, 1.0);
+        }
+        if t > full + 2.0 && t < gone - 2.0 {
+            assert!(
+                s.surface > 0.0 && s.surface < c.relief,
+                "the film goes down at {t} s"
+            );
+        }
+        if t > gone + 2.0 {
+            assert_eq!(s.surface, 0.0, "no film over full pores at {t} s");
+        }
+    }
+    // Soak and percolation both at least the rain: no film through two hours, with the
+    // percolation the greater.
+    let mut stores = GroundStores::new(&[class(10.0, 15.0, 3.0, 0.5)]).expect("valid test case");
+    for t in 0..7200 {
+        stores.step(rain, 1.0).expect("valid test case");
+        assert_eq!(stores.store(0, 0).surface, 0.0, "at {t} s");
+    }
+}
+
+/// The floor of M2's third review: 8 by 8 level cells of 5 cm inside a rim 4 cm high.
+fn floor() -> (Tree, Vec<f64>) {
+    let n = 10;
+    let heights: Vec<f64> = (0..n * n)
+        .map(|i| {
+            if i % n == 0 || i % n == n - 1 || i / n == 0 || i / n == n - 1 {
+                0.04
+            } else {
+                0.0
+            }
+        })
+        .collect();
+    let bed = thrum_rain_model::Ground::new([0.0, 0.0], 0.05, [n, n], heights.clone())
+        .expect("valid test case");
+    let tree = Tree::prepare(&bed, &Canopy::open(), &Profile::default()).expect("valid test case");
+    (tree, heights)
+}
+
+/// The test's own sum of what a body's ground holds: each open cell, at or above its
+/// hollow's mark or draining over the edge, from the stores at its exposure, and the pores
+/// under every mark.
+fn ground_water(
+    tree: &Tree,
+    exposure: &[f64],
+    state: &RainState,
+    ground: &GroundStores,
+    c: &GroundClass,
+) -> f64 {
+    let g = tree.ground();
+    let area = g.spacing() * g.spacing();
+    let marks = state.marks();
+    let mut sum: f64 = state.pores_under().iter().sum();
+    for (i, &z) in g.heights().iter().enumerate() {
+        let l = tree.labels()[i];
+        if l != NO_HOLLOW && z < marks[l as usize] {
+            continue;
+        }
+        let e = exposure[i];
+        let s = |r: usize| ground.store(0, r).water(c.pores);
+        let v = if e >= 0.5 {
+            s(1) + (s(0) - s(1)) * (e - 0.5) / 0.5
+        } else if e >= 0.25 {
+            s(2) + (s(1) - s(2)) * (e - 0.25) / 0.25
+        } else {
+            s(2) * e / 0.25
+        };
+        sum += v * area;
+    }
+    sum
+}
+
+/// What an account case found.
+struct Totals {
+    worst: f64,
+    merges: u32,
+    partings: u32,
+    /// Summed entries: film joined, pore water under, film left, topped up, soaked, the
+    /// beds' take into pores, and rain on held ground.
+    entries: [f64; 7],
+    held_ticks: u32,
+    account: thrum_rain_model::Account,
+}
+
+/// M1.4's account, with a class that stores water, on the design's bed under a crown:
+/// each tick the test sums what the ground holds cell by cell and closes rain against the
+/// puddles, the ground and every sink. Rain is the only source: what is held and sunk
+/// never grows in a tick by more than the tick's rain. No pores under a mark hold less
+/// than none or more than they have room for.
 fn account_case(classes: [GroundClass; 1]) -> Totals {
     let bed = design_bed();
     let crown = Shelter {
@@ -238,32 +355,9 @@ fn account_case(classes: [GroundClass; 1]) -> Totals {
     let mut ground = GroundStores::new(&classes).expect("valid test case");
     let mut state = RainState::new(&tree);
     let mut report = TickReport::default();
-    // The test's own sum of what the ground holds.
-    let held = |state: &RainState, ground: &GroundStores| {
-        let cover = state.cover_levels();
-        let mut sum = 0.0;
-        for (i, &z) in g.heights().iter().enumerate() {
-            let l = tree.labels()[i];
-            if l != NO_HOLLOW && z < cover[l as usize] {
-                sum += c.pores * area;
-                continue;
-            }
-            let e = exposure[i];
-            let s = |r: usize| ground.store(0, r).water(c.pores);
-            let v = if e >= 0.5 {
-                s(1) + (s(0) - s(1)) * (e - 0.5) / 0.5
-            } else if e >= 0.25 {
-                s(2) + (s(1) - s(2)) * (e - 0.25) / 0.25
-            } else {
-                s(2) * e / 0.25
-            };
-            sum += v * area;
-        }
-        sum
-    };
-    let (mut worst, mut merges, mut partings) = (0.0_f64, 0, 0);
-    let (mut joined, mut filled, mut left, mut soaked) = (0.0, 0.0, 0.0, 0.0);
-    let mut most_owed: f64 = 0.0;
+    let (mut worst, mut merges, mut partings, mut held_ticks) = (0.0_f64, 0, 0, 0);
+    let mut entries = [0.0; 7];
+    let mut there = 0.0;
     for t in 0..10_000 {
         let rain = match t {
             0..2600 => Rain {
@@ -283,109 +377,94 @@ fn account_case(classes: [GroundClass; 1]) -> Totals {
                 drying: mm_h(60.0),
             },
         };
+        let sunk = state.account().sinks();
         state
             .step_with(&tree, rain, &ground, 0, 1.0, 1, &mut report)
             .expect("valid test case");
         ground.step(rain, 1.0).expect("valid test case");
         merges += report.merges;
         partings += report.partings;
+        let mut held = false;
         for h in &report.hollows {
-            joined += h.joined;
-            filled += h.filled;
-            left += h.left;
-            soaked += h.soaked;
+            for (sum, v) in entries.iter_mut().zip([
+                h.joined, h.under, h.left, h.topped, h.soaked, h.into, h.on_held,
+            ]) {
+                *sum += v;
+            }
+            held |= h.short > 0.0;
         }
+        held_ticks += u32::from(held);
         let a = state.account();
-        let sinks =
-            a.canopy + a.ground + a.percolated + a.dried + a.edge + a.ground_dried + a.soaked;
-        // Ground the hollows owe holds that much less than the stores' reading of it.
-        let owed: f64 = state.owed().iter().sum();
-        let now = state.held() + held(&state, &ground) - owed;
-        let residual = (a.rain + a.initial - now - sinks).abs() / a.rain;
-        worst = worst.max(residual);
-        // No hollow's ground holds less than none.
-        for l in 0..tree.hollow_count() {
+        let own = ground_water(&tree, &exposure, &state, &ground, &c);
+        assert!((own - state.ground_held(&tree, &ground, 0)).abs() <= 1e-12 * a.rain);
+        let now = state.held() + own;
+        worst = worst.max((a.rain + a.initial - now - a.sinks()).abs() / a.rain);
+        let fell = rain.flux / 1000.0 * area * g.heights().len() as f64;
+        assert!(
+            now + a.sinks() - sunk <= there + fell + 1e-12 * a.rain,
+            "water made at {t} s"
+        );
+        there = now;
+        for (l, &u) in state.pores_under().iter().enumerate() {
+            let cells = g
+                .heights()
+                .iter()
+                .zip(tree.labels())
+                .filter(|&(&z, &label)| label as usize == l && z < state.marks()[l])
+                .count();
             assert!(
-                state.hollow_ground(&tree, &ground, 0, l) >= -1e-15 * a.rain,
-                "hollow {l} at {t} s"
+                u >= 0.0 && u <= c.pores * cells as f64 * area * (1.0 + 1e-9) + 1e-18,
+                "pores under hollow {l}'s mark at {t} s: {u:e}"
             );
         }
-        most_owed = most_owed.max(owed);
     }
     Totals {
         worst,
         merges,
         partings,
-        entries: [joined, filled, left, soaked],
-        most_owed,
+        entries,
+        held_ticks,
         account: *state.account(),
     }
 }
 
-/// What an account case found.
-struct Totals {
-    worst: f64,
-    merges: u32,
-    partings: u32,
-    entries: [f64; 4],
-    most_owed: f64,
-    account: thrum_rain_model::Account,
-}
-
 #[test]
-fn the_account_closes_with_the_stores_and_the_transfers() {
-    let Totals {
-        worst,
-        merges,
-        partings,
-        entries: [joined, filled, left, soaked],
-        most_owed,
-        account: a,
-    } = account_case([class(20.0, 1.0, 1.0, 0.6)]);
+fn the_account_closes_with_the_stores_and_the_marks_transfers() {
+    let t = account_case([class(20.0, 1.0, 1.0, 0.6)]);
+    let [joined, under, left, topped, soaked, into, on_held] = t.entries;
     println!(
-        "worst residual {worst:e}; merges {merges}, partings {partings}; joined {joined:e}, filled {filled:e}, left {left:e}, soaked {soaked:e}; most owed {most_owed:e}"
+        "worst residual {:e}; merges {}, partings {}; joined {joined:e}, pore water under {under:e}, left {left:e}, topped up {topped:e}, soaked {soaked:e}, beds into pores {into:e}; held in {} ticks, rain on held ground {on_held:e}",
+        t.worst, t.merges, t.partings, t.held_ticks
     );
-    assert!(worst < 1e-9, "worst residual {worst:e}");
-    assert!(merges > 0 && partings > 0);
-    assert!(joined > 0.0 && filled > 0.0 && left > 0.0 && soaked > 0.0);
+    assert!(t.worst < 1e-9, "worst residual {:e}", t.worst);
+    assert!(t.merges > 0 && t.partings > 0);
+    assert!(joined > 0.0 && under > 0.0 && left > 0.0 && soaked > 0.0 && into > 0.0);
+    let a = t.account;
     assert!(a.ground_dried > 0.0 && a.canopy > 0.0 && a.edge > 0.0);
 }
 
-/// The same account under the crown and through merges and partings, on ground whose
-/// pores hold more than the first runoff brings: hollows owe their ground, and no
-/// hollow's ground holds less than none.
+/// The same account on ground whose pores hold more than the first runoff brings and
+/// soak slowly, through merges and partings: the pores under the puddles fill at the soak
+/// rate and nothing is owed.
 #[test]
-fn the_account_closes_when_hollows_owe_their_ground() {
+fn the_account_closes_on_ground_with_deep_slow_pores() {
     let t = account_case([class(5.0, 0.0, 2.0, 0.1)]);
     println!(
-        "worst residual {:e}; merges {}, partings {}; most owed {:e} m3",
-        t.worst, t.merges, t.partings, t.most_owed
+        "worst residual {:e}; merges {}, partings {}; beds into pores {:e} m3; held in {} ticks",
+        t.worst, t.merges, t.partings, t.entries[5], t.held_ticks
     );
-    assert!(t.worst < 1e-9 && t.most_owed > 0.0 && t.merges > 0 && t.partings > 0);
+    assert!(t.worst < 1e-9 && t.merges > 0 && t.partings > 0 && t.entries[5] > 0.0);
 }
 
-/// The review's case: from dry, a shower on a flat floor of 8 by 8 cells inside a rim
-/// 4 cm high, at a 60 Hz step. The ground has 3 mm of pores that soak at 1 mm/h, 0.1 mm
-/// of relief and no percolation; the rain is 10 mm/h with drying off. The runoff that
-/// first reaches the floor covers all of it with far less water than its pores' room. No
-/// water is made: the puddle, the ground less what the hollow owes, and the sinks hold the
-/// rain, every tick, within 1e-9 of it; and they never hold more than has fallen.
+/// The first review's case: from dry, a shower on the flat floor at a 60 Hz step. The
+/// ground has 3 mm of pores that soak at 1 mm/h, 0.1 mm of relief and no percolation; the
+/// rain is 10 mm/h with drying off. No water is made: the puddle, the ground and the sinks
+/// hold the rain, every tick, within 1e-9 of it. After 120 s the floor's 64 cells have
+/// taken 0.16 m2 of the rain: 0.1 mm of it stood as film and joined the puddle, and the
+/// pores have taken 1 mm/h, first from the rain and then under the puddle.
 #[test]
 fn a_shower_on_a_dry_flat_floor_makes_no_water() {
-    let n = 10;
-    let heights: Vec<f64> = (0..n * n)
-        .map(|i| {
-            if i % n == 0 || i % n == n - 1 || i / n == 0 || i / n == n - 1 {
-                0.04
-            } else {
-                0.0
-            }
-        })
-        .collect();
-    let cell = 0.05;
-    let bed = thrum_rain_model::Ground::new([0.0, 0.0], cell, [n, n], heights.clone())
-        .expect("valid test case");
-    let tree = Tree::prepare(&bed, &Canopy::open(), &Profile::default()).expect("valid test case");
+    let (tree, _) = floor();
     let c = class(1.0, 0.0, 3.0, 0.1);
     let mut ground = GroundStores::new(&[c]).expect("valid test case");
     let mut state = RainState::new(&tree);
@@ -395,68 +474,44 @@ fn a_shower_on_a_dry_flat_floor_makes_no_water() {
         drying: 0.0,
     };
     let dt = 1.0 / 60.0;
-    let a = cell * cell;
-    let (mut worst, mut most, mut soaked) = (0.0_f64, 0.0_f64, 0.0);
-    let mut covered = 0;
-    for _ in 0..20_000 {
+    let exposure = vec![1.0; 100];
+    let mut worst = 0.0_f64;
+    for _ in 0..7200 {
         state
             .step_with(&tree, rain, &ground, 0, dt, 1, &mut report)
             .expect("valid test case");
         ground.step(rain, dt).expect("valid test case");
-        // The test's own ground: covered floor holds full pores, the rest the store's
-        // water, less what the hollow owes.
-        let cover = state.cover_levels()[0];
-        let s = ground.store(0, 0);
-        let mut own = 0.0;
-        for (i, &z) in heights.iter().enumerate() {
-            let under = tree.labels()[i] == 0 && z < cover;
-            covered += usize::from(under);
-            own += a * if under { c.pores } else { s.water(c.pores) };
-        }
-        own -= state.owed()[0];
+        let own = ground_water(&tree, &exposure, &state, &ground, &c);
         assert!((own - state.ground_held(&tree, &ground, 0)).abs() < 1e-15);
         let acc = state.account();
         let held = state.held() + own;
         worst = worst.max((acc.rain + acc.initial - held - acc.sinks()).abs() / acc.rain);
         assert!(held + acc.sinks() <= acc.rain * (1.0 + 1e-9), "water made");
-        most = most.max(state.owed()[0]);
-        soaked = acc.soaked;
     }
+    let floor_area = 64.0 * 0.05 * 0.05;
+    let fell = mm_h(10.0) / 1000.0 * 120.0 * floor_area;
+    let soaked = mm_h(1.0) / 1000.0 * 120.0 * floor_area;
     println!(
-        "worst residual {worst:e}; most owed {:.4} l; soaked {:.4} l; cell-ticks covered {covered}",
-        most * 1e3,
-        soaked * 1e3
+        "worst residual {worst:e}; of {fell:.4e} m3 on the floor the puddle holds {:.4e} and the pores under it {:.4e}",
+        state.held(),
+        state.pores_under()[0]
     );
     assert!(worst < 1e-9, "worst residual {worst:e}");
-    assert!(
-        covered > 0 && most > 0.0,
-        "the floor is covered short of water"
-    );
+    // The floor's rain is in its puddle and its pores, to within a tick's worth.
+    let tick = mm_h(10.0) / 1000.0 * dt * floor_area;
+    assert!((state.held() + state.pores_under()[0] - fell).abs() <= 2.0 * tick);
+    assert!((state.pores_under()[0] - soaked).abs() <= 2.0 * tick);
 }
 
-/// The second review's cases: from dry, a short shower at 60 mm/h on the flat floor, then
-/// drying at 20 mm/h for three hours with no shower to follow, for two soak rates, two
-/// reliefs and three showers. Every tick the puddle, what each hollow's ground holds and
-/// what it owes are never less than none, a tick's sinks never take more than the water
-/// there was at its start and the tick's rain, the account closes, and by the end the
-/// ground is dry, nothing is owed, and the sinks hold all the rain.
+/// The third review's cases: from dry, a shower at 60 mm/h on the flat floor, then drying
+/// at 20 mm/h for three hours, for two soak rates, two reliefs and three showers. Every
+/// tick the puddle, the pores under the mark and the ground hold no less than none, a
+/// tick's sinks never take more than the water there was at its start and the tick's
+/// rain, and the account closes; by the end the ground is dry and the sinks hold all the
+/// rain.
 #[test]
 fn a_short_shower_then_drying_never_spends_water_that_is_not_there() {
-    let n = 10;
-    let heights: Vec<f64> = (0..n * n)
-        .map(|i| {
-            if i % n == 0 || i % n == n - 1 || i / n == 0 || i / n == n - 1 {
-                0.04
-            } else {
-                0.0
-            }
-        })
-        .collect();
-    let cell = 0.05;
-    let bed =
-        thrum_rain_model::Ground::new([0.0, 0.0], cell, [n, n], heights).expect("valid test case");
-    let tree = Tree::prepare(&bed, &Canopy::open(), &Profile::default()).expect("valid test case");
-    let mut owing_cases = 0;
+    let (tree, _) = floor();
     for soak in [1.0, 30.0] {
         for relief in [0.1, 3.0] {
             for shower in [50, 150, 500] {
@@ -464,7 +519,7 @@ fn a_short_shower_then_drying_never_spends_water_that_is_not_there() {
                 let mut ground = GroundStores::new(&[c]).expect("valid test case");
                 let mut state = RainState::new(&tree);
                 let mut report = TickReport::default();
-                let (mut worst, mut most) = (0.0_f64, 0.0_f64);
+                let mut worst = 0.0_f64;
                 let mut there = 0.0;
                 for t in 0..(shower + 3 * 3600) {
                     let rain = if t < shower {
@@ -484,42 +539,37 @@ fn a_short_shower_then_drying_never_spends_water_that_is_not_there() {
                         .expect("valid test case");
                     ground.step(rain, 1.0).expect("valid test case");
                     let a = state.account();
-                    let fell = rain.flux / 1000.0 * (n * n) as f64 * cell * cell;
+                    let fell = rain.flux / 1000.0 * 100.0 * 0.05 * 0.05;
                     let case = format!("soak {soak}, relief {relief}, shower {shower} s, at {t} s");
                     assert!(
                         a.sinks() - before <= there + fell + 1e-15,
                         "sinks took water not there: {case}"
                     );
                     for l in 0..tree.hollow_count() {
+                        assert!(state.pores_under()[l] >= 0.0, "{case}");
                         assert!(
-                            state.hollow_ground(&tree, &ground, 0, l) >= -1e-18,
+                            state.hollow_ground(&tree, &ground, 0, l) >= 0.0,
                             "negative ground: {case}"
                         );
-                        assert!(state.owed()[l] >= 0.0);
                     }
                     let held = state.held() + state.ground_held(&tree, &ground, 0);
-                    assert!(state.held() >= 0.0 && held >= -1e-18, "{case}");
+                    assert!(state.held() >= 0.0, "{case}");
                     worst = worst.max((a.rain - held - a.sinks()).abs() / a.rain);
-                    most = most.max(state.owed().iter().sum());
                     there = held;
                 }
                 let a = state.account();
-                let owed: f64 = state.owed().iter().sum();
                 println!(
-                    "soak {soak} mm/h, relief {relief} mm, shower {shower} s: worst residual {worst:.1e}, most owed {:.4} l; after drying ground {:.1e} of the rain, owed {owed:.1e} m3",
-                    most * 1e3,
+                    "soak {soak} mm/h, relief {relief} mm, shower {shower} s: worst residual {worst:.1e}; after drying ground {:.1e} of the rain",
                     state.ground_held(&tree, &ground, 0) / a.rain
                 );
                 assert!(worst < 1e-9);
-                assert!(state.held() == 0.0 && owed <= 1e-9 * a.rain);
+                assert_eq!(state.held(), 0.0);
                 assert!(
                     state.ground_held(&tree, &ground, 0) < 1e-6 * a.rain,
                     "the ground dries"
                 );
                 assert!((a.sinks() - a.rain).abs() < 1e-6 * a.rain);
-                owing_cases += usize::from(most > 0.0);
             }
         }
     }
-    assert!(owing_cases >= 4, "{owing_cases} cases owed water");
 }

@@ -44,6 +44,9 @@ fn run(levels: impl Iterator<Item = f64>, drying: f64, rim: f64) -> Vec<f64> {
 
 #[test]
 fn a_steady_fall_leaves_a_band_of_its_rate_times_the_pores_over_the_drying() {
+    // A tick is under 0.02 of the pore capacity over the drying rate, the range in which
+    // the band settles within 2% of the steady value.
+    assert!(k() * DT < 0.02);
     for fall in [1.0e-3 / 600.0, 20.0e-3 / 600.0] {
         let bands = run((0..5000).map(|t| -fall * f64::from(t)), drying(), 1.0);
         let steady = fall / k();
@@ -70,6 +73,11 @@ fn a_rise_leaves_none_a_stop_halves_it_and_without_drying_it_stays() {
     // A rise takes from the band, down to nothing.
     assert!((band_step(2e-3, 0.0, 0.5e-3, DT, 0.0, PORES, 1.0) - 1.5e-3).abs() < 1e-18);
     assert_eq!(band_step(2e-3, 0.0, 3e-3, DT, 0.0, PORES, 1.0), 0.0);
+    // A rise as high as the band leaves none, and a smaller one the rest less a tick's
+    // drying.
+    assert_eq!(band_step(2e-3, 0.0, 2e-3, DT, drying(), PORES, 1.0), 0.0);
+    let rest = band_step(2e-3, 0.0, 0.5e-3, DT, drying(), PORES, 1.0);
+    assert!((rest - 1.5e-3 * (-k() * DT).exp()).abs() < 1e-18);
     // When the level stops falling, the band halves in ln 2 times the pores over the
     // drying.
     let fall = 1e-5;

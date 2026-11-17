@@ -2,13 +2,13 @@
 //! against its tree when read back.
 use crate::{Account, RainError, RainState, Tree};
 
-const MAGIC: &[u8; 8] = b"THRRAIN2";
+const MAGIC: &[u8; 8] = b"THRRAIN3";
 
 impl RainState {
     /// The state's bytes. Decoding them gives the same state, and encoding that the same
     /// bytes.
     pub fn encode(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(41 + self.volume.len() * 9 + 80 + self.cover.len() * 16);
+        let mut out = Vec::with_capacity(41 + self.volume.len() * 9 + 80 + self.mark.len() * 16);
         out.extend_from_slice(MAGIC);
         out.extend_from_slice(&self.tick.to_le_bytes());
         out.extend_from_slice(&(self.volume.len() as u64).to_le_bytes());
@@ -29,9 +29,9 @@ impl RainState {
             a.soaked,
         ]
         .into_iter()
-        .chain(self.cover.iter().copied())
+        .chain(self.mark.iter().copied())
         .chain(self.band.iter().copied())
-        .chain(self.owed.iter().copied())
+        .chain(self.under.iter().copied())
         {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -86,10 +86,10 @@ impl RainState {
             soaked: f()?,
         };
         let h = tree.hollow_count();
-        let mut cover = Vec::with_capacity(h);
+        let mut mark = Vec::with_capacity(h);
         let mut band = Vec::with_capacity(h);
         for _ in 0..h {
-            cover.push(r.f64()?);
+            mark.push(r.f64()?);
         }
         for _ in 0..h {
             let m = r.f64()?;
@@ -98,16 +98,16 @@ impl RainState {
             }
             band.push(m);
         }
-        let mut owed = Vec::with_capacity(h);
+        let mut under = Vec::with_capacity(h);
         for _ in 0..h {
             let m = r.f64()?;
             if !m.is_finite() || m < 0.0 {
-                return Err(RainError::State("invalid owed water"));
+                return Err(RainError::State("invalid pore water under a mark"));
             }
-            owed.push(m);
+            under.push(m);
         }
-        if cover.iter().any(|v| !v.is_finite()) {
-            return Err(RainError::State("invalid cover level"));
+        if mark.iter().any(|v| !v.is_finite()) {
+            return Err(RainError::State("invalid mark"));
         }
         let ground_tick = match r.take(1)?[0] {
             0 => None,
@@ -134,9 +134,9 @@ impl RainState {
             volume,
             active,
             account,
-            cover,
+            mark,
             band,
-            owed,
+            under,
             ground_tick,
         })
     }
