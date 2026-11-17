@@ -427,3 +427,11 @@
   exercises both completion orders, fresh-device capture/history reset and prepared-twin rejection.
   Existing exact/realtime renderer evidence keeps its original build identities;
   renderer/provider/capture source trees are unchanged. No new speed or physical-device claim.
+
+- 2026-11-17 M12 retains the integrated campaign on merged `aedbe55ede8d`:
+  60 ordinary/20 native/20 twin cost arms, ten-minute thermal windows per recipe,
+  native exact diagnostics, Chrome exact/motion/omission/light-list proof and cooked
+  simulator lifecycle/rotation. [Record](../../evidence/APPLE-TILE/M12/README.md).
+  D12.1, D12.2, D12.4, D12.5 and D12.6 pass builder inspection; no path is promoted.
+  D12.3's final attended Mac window proof needs owner-supplied access;
+  [handoff](../../evidence/APPLE-TILE/M12-handoff.md) preserves the remaining work.

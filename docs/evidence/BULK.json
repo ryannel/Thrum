@@ -1138,6 +1138,630 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-final-proof.tar.gz",
+      "size": 39053195,
+      "sha256": "94980c80cacda0b5e0d4ef0e2c807a7adba61ecff5c7a309cd1a7619863dd5be",
+      "date": "2026-11-17T06:52:17.926597+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-fixed-day-scene-linear-frames.tar",
+      "size": 1832632320,
+      "sha256": "634b7d8c33b88ab112a65f29de816bd157ec5708c73d0a9778235374b2ec4ae4",
+      "date": "2026-11-17T06:52:22.728783+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-fixed-day-sdr-frames.tar",
+      "size": 601098240,
+      "sha256": "d89cee9454dbdbbc8707ce9f7b8466c44db6109d6c50397415618bea1c073df5",
+      "date": "2026-11-17T06:52:36.913461+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-fixed-night-scene-linear-frames.tar",
+      "size": 1499064320,
+      "sha256": "785b3568aae2607316c30b5d7163be0511059721e71023c815034ef858fa4169",
+      "date": "2026-11-17T06:52:42.857475+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-fixed-night-sdr-frames.tar",
+      "size": 357191680,
+      "sha256": "a1967379fa57b1a88278b5688bf94057f4dc0422b7c5b6976eb0cef034ccdae3",
+      "date": "2026-11-17T06:52:51.256752+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-light-off-frames.tar",
+      "size": 597207040,
+      "sha256": "419068df953213e903af5ca406578b268f0f4231c7ebfee42ef694d1517fbea8",
+      "date": "2026-11-17T06:52:57.703162+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-mirror-omit-frames.tar",
+      "size": 601067520,
+      "sha256": "3a9d0feece6fd03cd0ff1c2e29a2816faf7762179062e74924bc5b16fb0a2d33",
+      "date": "2026-11-17T06:53:02.466781+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-realtime-day-sdr-frames.tar",
+      "size": 597340160,
+      "sha256": "9366dd34483d82098b9917adf2ff10a96d08073201cc36a6259c6a294189c9a5",
+      "date": "2026-11-17T06:53:05.711347+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-realtime-night-sdr-frames.tar",
+      "size": 344483840,
+      "sha256": "338d2a4e09640f0d24122367b4b80fb3c9e8af70110111a7e409547e70c3e6f6",
+      "date": "2026-11-17T06:53:10.439554+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/chrome-stars-off-frames.tar",
+      "size": 353505280,
+      "sha256": "e3feeb3edd307ede0b0fe3bdb1030be117b8a3728cd140e7cf007c8ccc13cac9",
+      "date": "2026-11-17T06:53:12.425410+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/integrated-native-proof.tar.gz",
+      "size": 1175069,
+      "sha256": "790e4797243c73798c4ee45987611db9d1b83600dacf8f9e1a9270625ea27521",
+      "date": "2026-11-17T06:49:34.499919+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/integrated-paired-proof.tar.gz",
+      "size": 2939051,
+      "sha256": "655df039457f538ead7ad854dd4f6a8188864fc603becee2a609df095907754e",
+      "date": "2026-11-17T06:49:34.314455+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/integrated-sustained-proof.tar.gz",
+      "size": 40961013,
+      "sha256": "7e1cd79e3cdd410c5c7eecf87812c45bf93dafd20c9c6a6ecb98b3503afefe53",
+      "date": "2026-11-17T06:49:35.553499+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/integrated-twin-proof.tar.gz",
+      "size": 1005817,
+      "sha256": "b82380a2930d0c6e470eff555b377ce534e8b213cf6b318613e36e0f47d05c33",
+      "date": "2026-11-17T06:49:34.686762+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/ios-lifecycle-proof.tar.gz",
+      "size": 103986937,
+      "sha256": "61fb4a1a464bbe1650d0d0b04de2a3e09827647571339bc67bc85420191bd61f",
+      "date": "2026-11-17T06:53:15.620212+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/ios-visuals-proof.tar.gz",
+      "size": 208438113,
+      "sha256": "73f9ef5d807ec3a1c5d9189e63150b1575c1540881da53bed93530d74b46e3af",
+      "date": "2026-11-17T06:53:19.405237+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/light-lists-final-proof.tar.gz",
+      "size": 3904,
+      "sha256": "d9823846d8407279cb2f6d51db5d631b80aef234d068d4455138e00eb9b32ebb",
+      "date": "2026-11-17T06:53:13.780560+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic-proof.tar.gz",
+      "size": 380177354,
+      "sha256": "098e4eedced0d3113c4bb06fd90842bdea4bb383ca835bd511944d215a62d268",
+      "date": "2026-11-17T06:51:56.905925+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-native-history-metal/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:49:59.515266+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-native-history-wgsl/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:50:07.007935+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-native-output-metal/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:50:14.002331+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-native-output-wgsl/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:50:18.955658+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-scene-linear-metal/frames.zst",
+      "size": 1527527304,
+      "sha256": "16cb8963fb0afdc2ff468365fb1742c43decc7ac8a61416adbe2ba1754d1f81e",
+      "date": "2026-11-17T06:50:26.831513+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-scene-linear-wgsl/frames.zst",
+      "size": 1527527304,
+      "sha256": "16cb8963fb0afdc2ff468365fb1742c43decc7ac8a61416adbe2ba1754d1f81e",
+      "date": "2026-11-17T06:50:33.119958+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-sdr-metal/frames.zst",
+      "size": 573740993,
+      "sha256": "95a4810535cf2f393b33194696c944ea097602abc727a3648d5dcf3855b3d7c0",
+      "date": "2026-11-17T06:50:38.011289+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-fixed-sdr-wgsl/frames.zst",
+      "size": 573740993,
+      "sha256": "95a4810535cf2f393b33194696c944ea097602abc727a3648d5dcf3855b3d7c0",
+      "date": "2026-11-17T06:50:40.067538+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-realtime-native/frames.zst",
+      "size": 918954840,
+      "sha256": "d59af5f3b7825d0e28bdb463af8734dc78e454268faa2512d5af1bbc66ecf4e6",
+      "date": "2026-11-17T06:50:42.406889+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-native-history-metal/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:50:45.193005+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-native-history-wgsl/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:50:45.357114+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-native-output-metal/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:50:45.516209+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-native-output-wgsl/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:50:45.687519+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-scene-linear-metal/frames.zst",
+      "size": 7083552,
+      "sha256": "1f296d38a027c12564cc1b83ba2b2fb9a8dcbf4f60b56a558f631faf71a72e5b",
+      "date": "2026-11-17T06:50:45.855013+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-scene-linear-wgsl/frames.zst",
+      "size": 7083552,
+      "sha256": "1f296d38a027c12564cc1b83ba2b2fb9a8dcbf4f60b56a558f631faf71a72e5b",
+      "date": "2026-11-17T06:50:46.011353+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-sdr-metal/frames.zst",
+      "size": 2444079,
+      "sha256": "776a136526889fcaf2e7909737ab392477c353b876b4392672f5dd890be3e8f9",
+      "date": "2026-11-17T06:50:46.172181+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/apple-tile-still-sdr-wgsl/frames.zst",
+      "size": 2444079,
+      "sha256": "776a136526889fcaf2e7909737ab392477c353b876b4392672f5dd890be3e8f9",
+      "date": "2026-11-17T06:50:46.336171+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-native-history-metal/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:50:47.357606+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-native-history-wgsl/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:50:53.416954+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-native-output-metal/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:51:02.195283+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-native-output-wgsl/frames.zst",
+      "size": 1497218535,
+      "sha256": "7a308f430cdaaf7c24fb29bf1a1413de0224dea2f900a6e184c53df763c3fade",
+      "date": "2026-11-17T06:51:10.757168+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-scene-linear-metal/frames.zst",
+      "size": 1527527304,
+      "sha256": "16cb8963fb0afdc2ff468365fb1742c43decc7ac8a61416adbe2ba1754d1f81e",
+      "date": "2026-11-17T06:51:19.169538+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-scene-linear-wgsl/frames.zst",
+      "size": 1527527304,
+      "sha256": "16cb8963fb0afdc2ff468365fb1742c43decc7ac8a61416adbe2ba1754d1f81e",
+      "date": "2026-11-17T06:51:30.082346+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-sdr-metal/frames.zst",
+      "size": 573740993,
+      "sha256": "95a4810535cf2f393b33194696c944ea097602abc727a3648d5dcf3855b3d7c0",
+      "date": "2026-11-17T06:51:35.547776+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-fixed-sdr-wgsl/frames.zst",
+      "size": 573740993,
+      "sha256": "95a4810535cf2f393b33194696c944ea097602abc727a3648d5dcf3855b3d7c0",
+      "date": "2026-11-17T06:51:38.704425+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-realtime-native/frames.zst",
+      "size": 1402929716,
+      "sha256": "eefa32d8807cca178e36800c99ef560cfe3d1210028e648a381f5d7f74345ea9",
+      "date": "2026-11-17T06:51:41.740136+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-native-history-metal/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:51:48.400821+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-native-history-wgsl/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:51:48.553866+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-native-output-metal/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:51:48.705728+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-native-output-wgsl/frames.zst",
+      "size": 7083559,
+      "sha256": "c618d94ad59e4fc40228ad98c11a96aa2bf813f0cd8dc39819ab40b7b4849f94",
+      "date": "2026-11-17T06:51:48.853868+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-scene-linear-metal/frames.zst",
+      "size": 7083552,
+      "sha256": "1f296d38a027c12564cc1b83ba2b2fb9a8dcbf4f60b56a558f631faf71a72e5b",
+      "date": "2026-11-17T06:51:48.998112+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-scene-linear-wgsl/frames.zst",
+      "size": 7083552,
+      "sha256": "1f296d38a027c12564cc1b83ba2b2fb9a8dcbf4f60b56a558f631faf71a72e5b",
+      "date": "2026-11-17T06:51:49.150193+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-sdr-metal/frames.zst",
+      "size": 2444079,
+      "sha256": "776a136526889fcaf2e7909737ab392477c353b876b4392672f5dd890be3e8f9",
+      "date": "2026-11-17T06:51:49.294994+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-diagnostic/portable-still-sdr-wgsl/frames.zst",
+      "size": 2444079,
+      "sha256": "776a136526889fcaf2e7909737ab392477c353b876b4392672f5dd890be3e8f9",
+      "date": "2026-11-17T06:51:49.428270+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact-proof.tar.gz",
+      "size": 376432657,
+      "sha256": "3e9491c61df15d207630c67d3bba2fddb756721699678b88a0c0de3e529f1f92",
+      "date": "2026-11-17T06:49:55.865006+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/apple-tile-night-linear/frames.zst",
+      "size": 5083435,
+      "sha256": "6190ef856d7639cfca1b0c91f76910e5409fcb43db44d425ba268ca79d8cee34",
+      "date": "2026-11-17T06:49:35.818182+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/apple-tile-night-sdr/frames.zst",
+      "size": 1238416,
+      "sha256": "348c83a2d052ac6a8c6896ef75259b626deb7d0f7c85de2152659b0e69dd233e",
+      "date": "2026-11-17T06:49:35.972414+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/apple-tile-route-motion/frames.zst",
+      "size": 1243830840,
+      "sha256": "76dd22e7f6a54d5bbe85edf7fb512f1b40218a10f6f71a11bce4ec6cc732cf29",
+      "date": "2026-11-17T06:49:37.187311+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/apple-tile-sun-linear/frames.zst",
+      "size": 8884251,
+      "sha256": "dfddcb6591b8f258856a0710e749396e5c53439f217752da59968ee2ce000fe1",
+      "date": "2026-11-17T06:49:42.114505+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/apple-tile-sun-sdr/frames.zst",
+      "size": 2648723,
+      "sha256": "e8a1be172d83e788c5e7614108a13dac5b52296c703e3b425b85f8d5b58e0f78",
+      "date": "2026-11-17T06:49:42.264966+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/apple-tile-variants-motion/frames.zst",
+      "size": 310239742,
+      "sha256": "19c8209cbe2d23f924dc0a5cfdb83dfaa291a2a5d8349ec0bfc3df3ef4164dd8",
+      "date": "2026-11-17T06:49:42.608510+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/portable-night-linear/frames.zst",
+      "size": 5083435,
+      "sha256": "6190ef856d7639cfca1b0c91f76910e5409fcb43db44d425ba268ca79d8cee34",
+      "date": "2026-11-17T06:49:43.520206+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/portable-night-sdr/frames.zst",
+      "size": 1238416,
+      "sha256": "348c83a2d052ac6a8c6896ef75259b626deb7d0f7c85de2152659b0e69dd233e",
+      "date": "2026-11-17T06:49:43.672971+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/portable-route-motion/frames.zst",
+      "size": 771733707,
+      "sha256": "27c06c8b14a2ed081c44f284ab69e5631705c096a11fcd65bb5f5d217498edca",
+      "date": "2026-11-17T06:49:44.528445+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/portable-sun-linear/frames.zst",
+      "size": 8884251,
+      "sha256": "dfddcb6591b8f258856a0710e749396e5c53439f217752da59968ee2ce000fe1",
+      "date": "2026-11-17T06:49:46.947429+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/portable-sun-sdr/frames.zst",
+      "size": 2648723,
+      "sha256": "e8a1be172d83e788c5e7614108a13dac5b52296c703e3b425b85f8d5b58e0f78",
+      "date": "2026-11-17T06:49:47.103591+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-exact/portable-variants-motion/frames.zst",
+      "size": 208315046,
+      "sha256": "75367f7af13b6461e853c67b523668b0a922972fc1abc497dc02b1ce0826f7a9",
+      "date": "2026-11-17T06:49:47.361482+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-surface-motion-proof.tar.gz",
+      "size": 153972110,
+      "sha256": "c1a66d053360952dd58108baacf74a442a1626c20adb684f63e70662f4cef415",
+      "date": "2026-11-17T06:52:16.581147+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-surface-motion/apple-tile-render-stall-motion/frames.zst",
+      "size": 437172235,
+      "sha256": "9187cb5ea6f1ec201c80a598be0623f7e3ab1fa09f73ab05782f57a582b4f34c",
+      "date": "2026-11-17T06:51:57.967539+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-surface-motion/apple-tile-route-motion/frames.zst",
+      "size": 1188806321,
+      "sha256": "15cf28b1272f510f4a864eb6174d945699fbf38ccd313f1b30b1edb4d3fbcdb7",
+      "date": "2026-11-17T06:52:00.057873+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-surface-motion/portable-render-stall-motion/frames.zst",
+      "size": 378035082,
+      "sha256": "8c82c617a272dabcbcc7b445f236f7fe26e001c54552de4c8d6116654475301f",
+      "date": "2026-11-17T06:52:05.328488+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/native-surface-motion/portable-route-motion/frames.zst",
+      "size": 1193041525,
+      "sha256": "c4de85117ac8a5d9beb759304bce456ff8c2c326b0e8291e323845569a5a628c",
+      "date": "2026-11-17T06:52:07.041501+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-apple-tile-off-proof.tar.gz",
+      "size": 167731,
+      "sha256": "99ea7b24de68691a3bc5f5379c212fd5fa3aff3a1fc643ac59e319a416a032c8",
+      "date": "2026-11-17T06:53:22.650597+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-apple-tile-off/frames.zst",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "date": "2026-11-17T06:53:22.491674+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-apple-tile-pan-proof.tar.gz",
+      "size": 228464,
+      "sha256": "24b5c595710cb6f98b4bf08ea7da5262b327204b5eef69c8a504d10f46c480a4",
+      "date": "2026-11-17T06:53:25.773709+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-apple-tile-pan/frames.zst",
+      "size": 578405453,
+      "sha256": "8b351a2eb396acc5cf68432f3e27c03ca48bda58f8edc74d4f547dc851e846f0",
+      "date": "2026-11-17T06:53:23.163886+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-portable-off-proof.tar.gz",
+      "size": 164539,
+      "sha256": "903fccf52632bc7a33a5b9f0a13ed4bafa07695237df29bf516df06d1e470d5a",
+      "date": "2026-11-17T06:53:20.212806+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-portable-off/frames.zst",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "date": "2026-11-17T06:53:20.071686+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-portable-pan-proof.tar.gz",
+      "size": 228099,
+      "sha256": "630fcb69d982c1b7df4d69971159de2d15659dcff69e9fda701c92be3882850d",
+      "date": "2026-11-17T06:53:22.353751+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/bulk/observer-portable-pan/frames.zst",
+      "size": 559083223,
+      "sha256": "8188854395195be57dfedacd56f3c98d3f780b78ecf947a3164e09dedce4eaaf",
+      "date": "2026-11-17T06:53:20.739694+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/APPLE-TILE/M3-resume/apple-tile-render-stall/png/000255.png",
       "size": 2606027,
