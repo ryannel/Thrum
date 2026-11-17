@@ -195,7 +195,7 @@ def assemble(parts):
 
 def scrub():
     stems = []
-    for index in range(6):
+    for index in range(5):
         angle = index * 2.399963229728653
         dx, dz = math.cos(angle), math.sin(angle)
         height = (.88, .71, .54)[index % 3]
@@ -203,15 +203,24 @@ def scrub():
 
         def stem(x, y, z):
             t = (y + 1) * .5
-            return .23 * x + dx * (lean * t + .08), height * t - .022, .23 * z + dz * (lean * t + .08)
+            return .23 * x + dx * (lean * t + .055), height * t - .078, .23 * z + dz * (lean * t + .055)
 
         stems.append(lobe(4, 2, stem))
+    # A broad root crown intersects the triangle at the anchor, so the
+    # individual angled stems appear joined even in grazing light.
+    stems.append(lobe(4, 2, lambda x, y, z: (.33*x, .20*y + .04, .30*z)))
     return stems
 
 
 def cactus():
+    def trunk(x, y, z):
+        # Move the lower ring down to grade. The buried cap gives the upright
+        # trunk a wide, clearly cut silhouette at the ground.
+        height = 1.18*y + .68 if y > -.5 else .42*(y+.5) + .09
+        return .26*x, height, .25*z
+
     return [
-        lobe(4, 3, lambda x, y, z: (.22*x, .93*y + .91, .23*z)),
+        lobe(4, 3, trunk),
         lobe(4, 3, lambda x, y, z: (.15*x - .42*math.sqrt((y+1)*.5), .54*y + .93, .14*z)),
         lobe(4, 3, lambda x, y, z: (.14*x + .40*math.sqrt((y+1)*.5), .45*y + 1.09, .15*z)),
     ]
@@ -243,7 +252,7 @@ def write_props(output):
         [lobe(8, 4, lambda x, y, z: (.86*x + .13*y, (y+.82)*.63-.055, .77*z), rock=True)],
         scrub(),
         cactus(),
-        [lobe(8, 4, lambda x, y, z: (.43*x + .21*y, (y+.82)*1.03-.047, .5*z), rock=True)],
+        [lobe(8, 4, lambda x, y, z: (.43*x + .21*(y+.82), (y+.82)*1.03-.047, .5*z), rock=True)],
         balloon(),
     )
     material = {'baseColorFactor': [1, 1, 1, 1], 'metallicFactor': 0, 'roughnessFactor': .9}
@@ -252,6 +261,30 @@ def write_props(output):
         assert len(mesh[-1]) <= TRIANGLE_CAP
         result = generate.write_mesh(name, mesh, material)
         print(f'{name}: {result["triangles"]} triangles')
+
+
+def verify_footing(entities, terrain):
+    meshes = []
+    for name in MESH_NAMES[:-1]:
+        doc = json.loads((EXIT / f'{name}.gltf').read_text())
+        primitive = doc['meshes'][0]['primitives'][0]
+        accessor = doc['accessors'][primitive['attributes']['POSITION']]
+        view = doc['bufferViews'][accessor['bufferView']]
+        assert accessor['componentType'] == 5126 and 'byteStride' not in view
+        start = view.get('byteOffset', 0) + accessor.get('byteOffset', 0)
+        pixels = (EXIT / doc['buffers'][view['buffer']]['uri']).read_bytes()
+        meshes.append(list(struct.iter_unpack('<3f', pixels[start:start + 12 * accessor['count']])))
+    for index, (mesh, _, x, y, z, turn, scale) in enumerate(entities[COUNTS[1]:], COUNTS[1]):
+        angle, scale = struct.unpack('<ff', struct.pack('<ff', turn, scale))
+        sin, cos = math.sin(angle), math.cos(angle)
+        vertices = meshes[mesh]
+        clearance = []
+        for vx, vy, vz in vertices:
+            gx = x + scale * (cos * vx + sin * vz)
+            gz = z + scale * (cos * vz - sin * vx)
+            clearance.append(y + scale * vy - terrain.height(gx, gz))
+        assert min(clearance) <= .0002, (index, 'mesh above the terrain')
+        assert max(clearance) >= .5 * scale * max(v[1] for v in vertices), (index, 'mesh buried')
 
 
 def main():
@@ -277,8 +310,10 @@ def main():
         destination.write_bytes(layout_bytes(layout))
     sampled, bounded = verify_layout(json.loads(destination.read_bytes()), terrain, keys)
     assert destination.read_bytes() == layout_bytes(layout), 'exit layout does not regenerate byte for byte'
+    verify_footing(layout['entities'], terrain)
     print(f'{COUNTS[0]} entities, {COUNTS[1]} loops, minimum sampled terrain clearance {sampled:.2f} m, '
           f'continuous lower bound {bounded:.2f} m')
+    print(f'{COUNTS[0] - COUNTS[1]} still props intersect the terrain below their exposed tops')
 
 
 if __name__ == '__main__':
