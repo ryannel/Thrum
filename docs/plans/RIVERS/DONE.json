@@ -220,7 +220,7 @@
     {
       "id": "M3",
       "name": "On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -318,7 +318,17 @@
           "item": "M3.2",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "main must pass `python3 scripts/repo_check.py` again, by committing the seven files that `docs/evidence/CULLING/M3-review-1.md` links to or removing those links, after which `merge` from this worktree finishes M3.",
+        "work": {
+          "commit": "52fde77ba1c47e6f2f52655b5d93a4b631d07dc2",
+          "branch": "build/rivers",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/RIVERS/M3-handoff.md"
+      }
     },
     {
       "id": "M4",
