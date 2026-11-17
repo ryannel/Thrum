@@ -17,6 +17,9 @@ but no general engine runtime exists yet; future SDK commands in design document
   [visual review and human steering](docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering). Owner digests
   are asynchronous: never wait for a reply to a progress report. Stop to ask only for direction changes, spending,
   publishing or irreversible actions, and continue with unblocked work meanwhile.
+- The Mac's display sleeps when idle, and screen capture, window recording and Computer Use stall while it is
+  asleep. Before work that needs the screen, wake it and hold it awake for that work only, for example by running
+  the command under `caffeinate -d -i`. You don't need to ask; let it sleep again afterwards.
 - If work is delegated, name the model and effort (medium by default) and give the delegate the shared contracts, file
   ownership, affected consumers and completion criteria. Integrate and verify the combined result sequentially.
 - Local commits are verified checkpoints. The owner authorises pushing verified checkpoints to `main`, as
