@@ -39,7 +39,7 @@ web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement"] }
 cc = "=1.10.0"
 
 [dev-dependencies]
-thrum-test-support = { path = "../thrum-test-support" }
+thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 
 [lints]
 workspace = true

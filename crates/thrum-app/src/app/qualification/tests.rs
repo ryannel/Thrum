@@ -15,6 +15,7 @@ use thrum_render::{
     runtime::{DriveReport, FrameConfig, SceneFrame, SurfaceOutput},
     synthetic::{FrameLighting, NativeWitness, SyntheticLight, SyntheticScene, SyntheticView},
 };
+use thrum_test_support::{Profile, Restriction};
 
 struct NativeScene;
 impl SceneSource<SourceTick> for NativeScene {
@@ -103,21 +104,15 @@ fn output(device: &wgpu::Device, surface: SurfaceProfile) -> wgpu::TextureView {
 }
 
 async fn recover_observer(
-    instance: &wgpu::Instance,
     host: &mut FrameHost<StillWorld, NativeScene>,
     observer: &mut Observer,
     surface: SurfaceProfile,
 ) {
     let inputs = host.device_prepare_inputs().unwrap();
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .unwrap();
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .unwrap();
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, 8);
+    let gpu =
+        thrum_test_support::gpu("Mac observer replacement", Some(wgpu::Backend::Metal)).unwrap();
+    let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
+    let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 8);
     let watch = DeviceWatch::register(&device, 8, |_| {});
     let mut prepared = inputs
         .prepare(&capabilities, &queue, Some(surface))
@@ -175,11 +170,7 @@ fn metal_observer_preserves_and_discovers_native_loss_in_platform_reply() {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = gpu
-            .adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 7);
         let watch = DeviceWatch::register(&device, 7, |_| {
             panic!("native completion must not require a wgpu loss callback")
@@ -268,7 +259,7 @@ fn metal_observer_preserves_and_discovers_native_loss_in_platform_reply() {
                     observer.replace(&mut host),
                     Err(FrameError::NativeCommandBuffer { generation: 7 })
                 ));
-                recover_observer(&gpu.instance, &mut host, &mut observer, surface).await;
+                recover_observer(&mut host, &mut observer, surface).await;
             }
             observer
                 .writer
