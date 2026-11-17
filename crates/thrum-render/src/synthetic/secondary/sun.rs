@@ -4,17 +4,62 @@ use super::{
     Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, Pass, PassScope, PipelineKey,
     RenderError, ResourceDescriptor, ResourceId, ResourceScope, SceneContext,
 };
-use crate::synthetic::shadow;
+use crate::synthetic::{history_gpu, shadow};
+use crate::visibility::casters::{CasterCulling, CasterInputs};
 
 pub(super) const PASS: &str = "secondary view Sun cascade";
+const CULL_PASS: &str = "secondary view Sun caster cull";
 pub(super) struct Sun {
     pub(super) prepared: shadow::ShadowPrepared,
     pub(super) target: shadow::ShadowTarget<2>,
     texture: wgpu::Texture,
+    pub(super) culling: Option<(CasterCulling, Vec<wgpu::BindGroup>)>,
 }
 
 impl Sun {
-    pub(super) fn new(world: &shadow::ShadowPrepared, device: &crate::runtime::DeviceSite) -> Self {
+    pub(super) fn new(
+        world: &shadow::ShadowPrepared,
+        scene: &super::PreparedSynthetic,
+        queue: &wgpu::Queue,
+    ) -> Result<Self, RenderError> {
+        let device = scene.capabilities.device();
+        let prepared = world.secondary(device);
+        let culling = match (&scene.bucket_route, &scene.visibility) {
+            (Some(route), Some(_)) => {
+                let mut culling = CasterCulling::new(
+                    device,
+                    queue,
+                    &super::super::camera_culling::mesh_records(&scene.mesh_arena)?,
+                    route.shape()?,
+                    &CasterInputs {
+                        instances: scene.instance_upload.buffer(),
+                        serials: scene.history.serial_buffer(),
+                        members: route.member_inputs(),
+                        views: prepared.caster_views().into_iter().take(2).collect(),
+                    },
+                );
+                culling.set_member_groups(route.groups());
+                let groups = culling
+                    .lists()
+                    .map(|(list, _)| {
+                        device.create_bind_group(&wgpu::BindGroupDescriptor {
+                            label: Some(CULL_PASS),
+                            layout: prepared.member_layout().expect("bucket caster layout"),
+                            entries: &[wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                                    buffer: list,
+                                    offset: 0,
+                                    size: wgpu::BufferSize::new(culling.segment_bytes()),
+                                }),
+                            }],
+                        })
+                    })
+                    .collect();
+                Some((culling, groups))
+            }
+            _ => None,
+        };
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some(PASS),
             size: wgpu::Extent3d {
@@ -29,11 +74,12 @@ impl Sun {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
-        Self {
-            prepared: world.secondary(device),
+        Ok(Self {
+            prepared,
             target: shadow::ShadowTarget::new(&texture),
             texture,
-        }
+            culling,
+        })
     }
 
     pub(super) fn append(
@@ -59,20 +105,67 @@ impl Sun {
             },
             imported,
         )?;
-        for layer in 0..2_u32 {
-            let matrix = graph.resource(
+        let matrices = (0..2)
+            .map(|_| {
+                graph.resource(
+                    ResourceDescriptor::Buffer {
+                        bytes: shadow::CASTER_VIEW_RANGE,
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    },
+                    imported,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let lists = if let Some((culling, _)) = &self.culling {
+            let mut accesses = shared.to_vec();
+            accesses.extend(matrices.iter().map(|matrix| {
+                Access::new(
+                    matrix.clone(),
+                    0..shadow::CASTER_VIEW_RANGE,
+                    AccessKind::UniformRead,
+                )
+            }));
+            let serials = graph.resource(
                 ResourceDescriptor::Buffer {
-                    bytes: shadow::CASTER_VIEW_RANGE,
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    bytes: history_gpu::SERIAL_BYTES,
+                    usage: wgpu::BufferUsages::UNIFORM,
                 },
                 imported,
             )?;
+            accesses.push(Access::new(
+                serials,
+                0..history_gpu::SERIAL_BYTES,
+                AccessKind::UniformRead,
+            ));
+            culling.append_mesh_read(graph, &mut accesses)?;
+            let ids = culling.append_outputs(graph, &mut accesses)?;
+            let cull_key = PipelineKey {
+                role: key.role + 6,
+                ..key
+            };
+            keys.insert(cull_key);
+            graph.pass(Pass {
+                name: format!("{CULL_PASS} {index}"),
+                scope: PassScope::View(index as u64 + 2),
+                pipeline: Some(cull_key),
+                accesses,
+                external_side_effect: false,
+            });
+            Some(ids)
+        } else {
+            None
+        };
+        for (layer, matrix) in (0..2_u32).zip(matrices) {
             let key = PipelineKey {
                 role: key.role + 3 + layer,
                 ..key
             };
             keys.insert(key);
             let mut accesses = shared.to_vec();
+            if let Some(ids) = &lists {
+                let (culling, _) = self.culling.as_ref().expect("declared cull lists");
+                accesses.extend(culling.list_reads(&ids.lists[layer as usize]));
+            }
             accesses.extend([
                 Access::new(
                     matrix,
@@ -113,6 +206,43 @@ impl Sun {
 }
 
 impl SceneContext<'_> {
+    pub(super) fn secondary_casters(
+        &mut self,
+        index: usize,
+        pass: &CompiledPass,
+    ) -> Result<(), RenderError> {
+        let scene = self.prepared;
+        let slot = &scene.secondary[index];
+        let Some(request) = slot.handle.asked().filter(|request| request.cascades != 0) else {
+            return Ok(());
+        };
+        let sun = slot.sun.as_ref().ok_or(RenderError::GraphPassMismatch)?;
+        sun.prepared.write_secondary(
+            scene
+                .shadow
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?,
+            &request.camera,
+            (request.cascades, request.shadow_reach),
+            self.contribution
+                .as_deref()
+                .and_then(crate::contribution::SceneContribution::shadow_bounds),
+        )?;
+        sun.culling
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .0
+            .encode_range(
+                self.encoder,
+                self.generation,
+                pass,
+                self.timings.as_deref_mut(),
+                usize::from(request.cascades == 1)..2,
+            )?
+            .then_some(())
+            .ok_or(RenderError::GraphPassMismatch)
+    }
+
     pub(super) fn secondary_sun(
         &mut self,
         index: usize,
@@ -158,7 +288,17 @@ impl SceneContext<'_> {
             indices: &arena.indices,
             two_sided: prepared.instance_upload.two_sided_count() != 0,
             members: prepared.shadow_members.as_ref(),
-            culled: None,
+            culled: match &sun.culling {
+                Some((culling, groups)) => Some((
+                    &groups[layer],
+                    culling
+                        .lists()
+                        .nth(layer)
+                        .ok_or(RenderError::GraphPassMismatch)?
+                        .1,
+                )),
+                None => None,
+            },
             draws: prepared
                 .bucket_route
                 .as_ref()

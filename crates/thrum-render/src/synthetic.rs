@@ -2092,6 +2092,9 @@ impl PreparedSynthetic {
             if let Some((culling, _)) = &mut self.caster_culling {
                 culling.set_member_groups(route.groups());
             }
+            for slot in &mut self.secondary {
+                slot.set_caster_member_groups(route.groups());
+            }
         }
         Ok(report)
     }

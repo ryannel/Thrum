@@ -3,7 +3,7 @@
 use super::*;
 use crate::synthetic::{CaptureSource, InstanceRecord};
 
-fn box_instance(slot: u32, center: [f32; 3], half: [f32; 3]) -> InstanceRecord {
+pub(super) fn box_instance(slot: u32, center: [f32; 3], half: [f32; 3]) -> InstanceRecord {
     let mut instance = InstanceRecord::identity(slot, 0);
     for axis in 0..3 {
         instance.current[axis][axis] = half[axis];

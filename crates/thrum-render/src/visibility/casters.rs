@@ -209,6 +209,24 @@ impl CasterCulling {
         self.lists.iter().map(|list| (&list.visible, &list.args))
     }
 
+    /// The prepared bounds and draw ranges used by the caster test.
+    pub(crate) fn append_mesh_read(
+        &self,
+        graph: &mut FrameGraph,
+        accesses: &mut Vec<Access>,
+    ) -> Result<(), GraphError> {
+        let bytes = self.meshes.size();
+        let resource = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes,
+                usage: wgpu::BufferUsages::STORAGE,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access::new(resource, 0..bytes, AccessKind::StorageRead));
+        Ok(())
+    }
+
     /// Declare every list's outputs into `accesses`, the compaction pass's
     /// own, and return their identities for the Sun passes' reads.
     pub(crate) fn append_outputs(
@@ -284,11 +302,23 @@ impl CasterCulling {
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<bool, TimingError> {
+        self.encode_range(encoder, generation, compiled, timings, 0..self.lists.len())
+    }
+
+    /// Record only the requested cascades; a one-cascade view uses the far fit.
+    pub(crate) fn encode_range(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        generation: u64,
+        compiled: &CompiledPass,
+        timings: Option<&mut GpuTimings>,
+        range: std::ops::Range<usize>,
+    ) -> Result<bool, TimingError> {
         let Some(mut pass) = compiled.begin_compute(encoder, generation, timings)? else {
             return Ok(false);
         };
         let groups = self.groups.max(1);
-        for list in &self.lists {
+        for list in &self.lists[range] {
             pass.set_bind_group(0, &list.group, &[]);
             pass.set_pipeline(&self.count);
             pass.dispatch_workgroups(groups, 1, 1);

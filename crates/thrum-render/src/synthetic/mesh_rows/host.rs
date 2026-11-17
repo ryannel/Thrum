@@ -29,6 +29,9 @@ impl PreparedSynthetic {
         if let Some((culling, _)) = self.caster_culling.as_ref() {
             culling.update_meshes(queue, &records);
         }
+        for slot in &self.secondary {
+            slot.update_caster_meshes(queue, &records);
+        }
         Ok(())
     }
 

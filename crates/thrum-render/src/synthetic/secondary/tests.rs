@@ -3,6 +3,7 @@ use super::*;
 use crate::contribution::{ContributionFrame, ContributionPasses, SceneContribution, SceneSurface};
 use crate::synthetic::{OffscreenTarget, SyntheticLight, SyntheticScene};
 mod aerial;
+mod casters;
 mod limits;
 mod panels;
 mod sun;

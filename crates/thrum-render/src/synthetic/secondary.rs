@@ -23,7 +23,7 @@ use std::{
 pub(super) const PASS: &str = "secondary view opaque";
 pub(super) const PREFIX: &str = "secondary view ";
 const ROLE_BASE: u32 = 5000;
-const STAGES: u32 = 6;
+const STAGES: u32 = 7;
 const RECORD_BYTES: u64 = size_of::<SecondaryViewRecord>() as u64;
 mod lighting;
 mod sun;
@@ -46,13 +46,16 @@ pub(super) enum Stage {
     SunNear,
     SunFar,
     Visibility,
+    Casters,
 }
 
 impl Stage {
     pub(super) fn kind(self) -> crate::graph::PassKind {
         match self {
             Self::Opaque | Self::SunNear | Self::SunFar => crate::graph::PassKind::Render,
-            Self::Clusters | Self::Aerial | Self::Visibility => crate::graph::PassKind::Compute,
+            Self::Clusters | Self::Aerial | Self::Visibility | Self::Casters => {
+                crate::graph::PassKind::Compute
+            }
         }
     }
 }
@@ -194,7 +197,7 @@ impl PreparedSynthetic {
         }
         let mut inputs = accesses.to_vec();
         if self.bucket_route.is_some() && self.visibility.is_some() {
-            inputs.extend(route.first().cloned());
+            inputs.extend_from_slice(route);
         }
         inputs
     }
@@ -418,7 +421,9 @@ impl SecondaryPrepared {
             sun: prepared
                 .shadow
                 .as_ref()
-                .map(|world| sun::Sun::new(world, device)),
+                .map(|world| sun::Sun::new(world, prepared, queue))
+                .transpose()
+                .map_err(|_| SecondaryViewError::RecordLimit)?,
             culling,
         })
     }
@@ -647,6 +652,22 @@ impl SecondaryPrepared {
 }
 
 impl SecondaryPrepared {
+    pub(super) fn update_caster_meshes(
+        &self,
+        queue: &wgpu::Queue,
+        meshes: &[crate::visibility::MeshRecord],
+    ) {
+        if let Some((culling, _)) = self.sun.as_ref().and_then(|sun| sun.culling.as_ref()) {
+            culling.update_meshes(queue, meshes);
+        }
+    }
+
+    pub(super) fn set_caster_member_groups(&mut self, groups: u32) {
+        if let Some((culling, _)) = self.sun.as_mut().and_then(|sun| sun.culling.as_mut()) {
+            culling.set_member_groups(groups);
+        }
+    }
+
     pub(super) fn surface<'a>(
         &'a self,
         index: usize,
@@ -673,6 +694,7 @@ impl SecondaryPrepared {
             + u32::from(self.aerial.is_some())
             + 2 * u32::from(self.sun.is_some())
             + u32::from(self.culling.is_some())
+            + u32::from(self.sun.as_ref().is_some_and(|sun| sun.culling.is_some()))
     }
 
     fn camera(prepared: &PreparedSynthetic, request: &SecondaryViewRequest) -> SyntheticView {
@@ -728,6 +750,7 @@ impl SceneContext<'_> {
     ) -> Result<(), RenderError> {
         match stage {
             Stage::Opaque => self.secondary(index, compiled),
+            Stage::Casters => self.secondary_casters(index, compiled),
             Stage::Visibility => {
                 let prepared = self.prepared;
                 let slot = &prepared.secondary[index];
@@ -925,7 +948,8 @@ pub(super) fn index(key: PipelineKey, count: usize) -> Option<(usize, Stage)> {
         2 => Stage::Aerial,
         3 => Stage::SunNear,
         4 => Stage::SunFar,
-        _ => Stage::Visibility,
+        5 => Stage::Visibility,
+        _ => Stage::Casters,
     };
     (index < count).then_some((index, stage))
 }

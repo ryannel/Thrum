@@ -168,6 +168,15 @@ fn declarations_and_asks_leave_the_default_shader_and_main_frame_unchanged() {
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.sun_shadows = true;
+        scene.camera_culling = thrum_render::synthetic::CullMode::Frustum;
+        scene.meshes = Some(std::sync::Arc::new(
+            thrum_render::synthetic::SyntheticMeshes {
+                updates: None,
+                meshes: Vec::new(),
+                slots: vec![thrum_render::synthetic::SyntheticMeshChoice::Cube],
+            },
+        ));
         scene.view = camera(0.0, 2.0);
         scene.materials[0].base_rgba = [0.0, 0.0, 0.0, 1.0];
         scene.materials[0].emissive_cutoff = [1024.0, 512.0, 256.0, 0.0];
@@ -275,6 +284,13 @@ fn declarations_and_asks_leave_the_default_shader_and_main_frame_unchanged() {
                 names.is_empty(),
                 request.is_none(),
                 "only asked slots have timings: {names:?}"
+            );
+            assert_eq!(
+                names
+                    .iter()
+                    .any(|name| name.starts_with("secondary view Sun caster cull")),
+                request.is_some(),
+                "only an asked view compacts casters: {names:?}"
             );
             assert_eq!(
                 before,
