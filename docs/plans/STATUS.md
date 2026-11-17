@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-10 of 33 modules done · 14 in progress · 9 to come
+11 of 33 modules done · 13 in progress · 9 to come
 
 ### Needs you now
 
@@ -263,7 +263,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): Ready for Review · [plan](CREATOR/PLAN.md) · [latest review](../evidence/CREATOR/M3-review.md)
 - ATMOSPHERE's design: Design Ready for Review · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome (SHOWCASE M5): Not Started · [plan](SHOWCASE/PLAN.md)
 - WATERS's design: Design Changes Requested · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
@@ -278,6 +277,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3), 17 Nov · [review](../evidence/CREATOR/M3-review.md)
 - A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged (SCENE-VIEWS M1), 17 Nov · [review](../evidence/SCENE-VIEWS/M1-review.md)
 - An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome (CONTENT-LOOP M2), 17 Nov · [review](../evidence/CONTENT-LOOP/M2-review.md)
 - Cloud shade crosses the valley in step with the weather, with no cloud drawn (CLOUDS M2), 17 Nov · [review](../evidence/CLOUDS/M2-review.md)
@@ -342,7 +342,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 16 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
-| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · Ready for Review |
+| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Done 17 Nov |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 12 · Blocked: Needs Human Feedback |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 | Design Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
@@ -366,7 +366,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | M4 of 5 · In Progress |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | Waiting: On Dependency, HOST:M1, GAME-SPLIT:M2, APPLE-PRESENTATION:M3 |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
-| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Waiting: On Dependency, CREATOR:M3, APPLE-PRESENTATION:M3 |
+| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion, each kept as a default only where it measures no slower than the portable path | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | Design Changes Requested |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, kept as a default only if it measures faster | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Design Changes Requested |
