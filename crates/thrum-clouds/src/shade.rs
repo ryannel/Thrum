@@ -4,7 +4,8 @@ use thrum_cloud_model::{Field, Profile, State, Type};
 use thrum_render::{
     atmosphere::SunOpticalDepth,
     contribution::{
-        ContributionFrame, ContributionPasses, EffectGraph, SceneContribution, SceneSurface,
+        ContributionFrame, ContributionPasses, EffectGraph, QualityError, QualityInvalidation,
+        QualityKnob, QualitySettings, SceneContribution, SceneSurface,
     },
 };
 
@@ -35,9 +36,14 @@ struct Mailbox {
     state: Option<Arc<State>>,
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
     resources: Vec<(String, u64)>,
+    sky: Option<crate::SkyProducts>,
 }
 
 impl WeatherInput {
+    /// Optional readback handles for the latest submitted visible layer.
+    pub fn sky_products(&self) -> Option<crate::SkyProducts> {
+        self.0.lock().ok()?.sky.clone()
+    }
     /// Publish the weather lease from the same page the scene extracts.
     /// # Errors
     /// Refuses an unavailable mailbox.
@@ -64,6 +70,7 @@ impl WeatherInput {
 /// Weather and cloud shade, optionally extended with [`Self::with_sky`].
 /// The default owns no visible layer; neither capability owns a clock.
 pub struct Shade {
+    quality: Option<QualitySettings>,
     sky: Option<crate::SkyProfile>,
     config: ShadeConfig,
     input: WeatherInput,
@@ -87,6 +94,7 @@ impl Shade {
     pub fn new(config: ShadeConfig) -> Result<Self, Error> {
         Field::new(config.seed, config.model, config.types.clone()).map_err(Error::Model)?;
         Ok(Self {
+            quality: None,
             sky: None,
             config,
             input: WeatherInput::default(),
@@ -101,10 +109,31 @@ impl Shade {
         self.input.clone()
     }
     /// Add the visible Sky capability. Shadow-only scenes allocate none of it.
-    #[must_use]
-    pub fn with_sky(mut self, profile: crate::SkyProfile) -> Self {
+    /// # Errors
+    /// Refuses unsupported refresh or local-light sample counts.
+    pub fn with_sky(mut self, profile: crate::SkyProfile) -> Result<Self, Error> {
+        if ![1, 2, 4].contains(&profile.refresh_stride) || profile.light_samples > 3 {
+            return Err(Error::Unsupported("Sky refresh or local-light samples"));
+        }
+        self.quality = Some(
+            QualitySettings::new(vec![
+                QualityKnob {
+                    name: "cloud refresh exponent".into(),
+                    value: profile.refresh_stride.trailing_zeros(),
+                    range: 0..=2,
+                    invalidation: QualityInvalidation::EffectHistory,
+                },
+                QualityKnob {
+                    name: "cloud local light samples".into(),
+                    value: profile.light_samples,
+                    range: 0..=3,
+                    invalidation: QualityInvalidation::EffectHistory,
+                },
+            ])
+            .map_err(|_| Error::Unsupported("Sky quality declaration"))?,
+        );
         self.sky = Some(profile);
-        self
+        Ok(self)
     }
     /// Share the extractor mailbox when composing this effect with another contribution.
     #[must_use]
@@ -125,6 +154,35 @@ impl Shade {
 }
 
 impl SceneContribution for Shade {
+    fn quality_knobs(&self) -> Vec<QualityKnob> {
+        self.quality
+            .as_ref()
+            .map_or_else(Vec::new, |q| q.knobs().to_vec())
+    }
+    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
+        self.quality
+            .as_mut()
+            .ok_or_else(|| QualityError::UnknownKnob { name: name.into() })?
+            .set(name, value)
+    }
+    fn commit_quality_knobs(&mut self) -> QualityInvalidation {
+        let Some(quality) = &mut self.quality else {
+            return QualityInvalidation::None;
+        };
+        let invalidation = quality.commit();
+        if invalidation != QualityInvalidation::None {
+            let stride = 1 << quality.knobs()[0].value;
+            let light_samples = quality.knobs()[1].value;
+            if let Some(profile) = &mut self.sky {
+                profile.refresh_stride = stride;
+                profile.light_samples = light_samples;
+            }
+            if let Some(layer) = self.gpu.as_mut().and_then(|gpu| gpu.sky.as_mut()) {
+                layer.set_quality(stride, light_samples);
+            }
+        }
+        invalidation
+    }
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
             upload: true,
@@ -173,6 +231,11 @@ impl SceneContribution for Shade {
         )
         .map_err(|e| e.to_string())?;
         sun.rebuild(surface.generation, 1);
+        let sky = self
+            .sky
+            .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
+            .transpose()
+            .map_err(|e| e.to_string())?;
         let mut resources: Vec<_> = weather
             .textures()
             .iter()
@@ -199,6 +262,9 @@ impl SceneContribution for Shade {
                 .enumerate()
                 .map(|(i, b)| (format!("cloud buffer {i}"), b.size())),
         );
+        if let Some(layer) = &sky {
+            resources.extend(layer.resource_bytes());
+        }
         self.input
             .0
             .lock()
@@ -210,11 +276,6 @@ impl SceneContribution for Shade {
             .map_err(|_| "cloud mailbox unavailable")?
             .ground = Some((sun.ground().clone(), sun.mapping().clone()));
         self.generation = surface.generation;
-        let sky = self
-            .sky
-            .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
-            .transpose()
-            .map_err(|e| e.to_string())?;
         self.gpu = Some(Box::new(Prepared {
             sky,
             weather,
@@ -276,8 +337,11 @@ impl SceneContribution for Shade {
             self.dropped += 1;
         } else {
             self.valid_recording = true;
-            if let Some(sky) = &gpu.sky {
-                sky.upload(&gpu.weather, &state, frame);
+            if let Some(sky) = &mut gpu.sky
+                && sky.upload(&gpu.weather, &state, frame).is_err()
+            {
+                self.valid_recording = false;
+                self.dropped += 1;
             }
         }
     }
@@ -313,28 +377,31 @@ impl SceneContribution for Shade {
     fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
     fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
     fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
+    fn after_opaque_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
+        index != 2 || !frame.time.capture
+    }
     fn encode_after_opaque(
         &mut self,
-        _index: usize,
+        index: usize,
         pass: &mut wgpu::ComputePass<'_>,
         frame: &ContributionFrame,
     ) {
         if self.valid_recording
-            && let Some(sky) = self.gpu.as_ref().and_then(|gpu| gpu.sky.as_ref())
+            && let Some(sky) = self.gpu.as_mut().and_then(|gpu| gpu.sky.as_mut())
         {
-            sky.encode(pass, frame);
+            sky.encode(index, pass, frame);
         }
     }
     fn draw_after_opaque(
         &self,
         _index: usize,
         pass: &mut wgpu::RenderPass<'_>,
-        _frame: &ContributionFrame,
+        frame: &ContributionFrame,
     ) {
         if self.valid_recording
             && let Some(sky) = self.gpu.as_ref().and_then(|gpu| gpu.sky.as_ref())
         {
-            sky.draw(pass);
+            sky.draw(pass, frame);
         }
     }
     fn submitted(&mut self, _history_advanced: bool) {
@@ -343,6 +410,12 @@ impl SceneContribution for Shade {
         {
             gpu.weather.submitted();
             gpu.sun.submitted();
+            if let Some(sky) = &mut gpu.sky {
+                sky.submitted();
+                if let Ok(mut input) = self.input.0.lock() {
+                    input.sky = Some(sky.products());
+                }
+            }
         }
     }
 }

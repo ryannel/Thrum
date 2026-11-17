@@ -285,7 +285,7 @@ target_cost = "Already transitive in the locked workspace; one direct thrum-core
 [external_dependencies.glam]
 requirement = "=0.33.12"
 license = "MIT OR Apache-2.0"
-purpose = "Checked right-handed WebGPU perspective view construction and per-view clustered light bounds for V1"
+purpose = "Checked right-handed WebGPU perspective views, clustered light bounds and cloud raster-history reprojection"
 target_cost = "Minimal std/f32 profile with no optional integration dependencies; camera preparation cost and native, Wasm and iOS simulator compile checked separately"
 
 [external_dependencies.winit]

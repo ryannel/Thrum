@@ -73,6 +73,9 @@ pub struct WeatherMap {
 }
 
 impl WeatherMap {
+    pub(crate) fn types(&self) -> &[Type] {
+        &self.types
+    }
     pub(crate) fn uniforms(&self) -> &[wgpu::Buffer] {
         &self.uniforms
     }

@@ -1,7 +1,3 @@
-struct CloudParams {
-    weather:array<vec4<f32>,4>, physical:vec4<f32>, erosion:vec4<f32>,
-    drift:vec4<f32>, heights:vec4<f32>, settings:vec4<u32>,
-}
 @group(2) @binding(0) var<uniform> cloud:CloudParams;
 @group(2) @binding(1) var columns:texture_2d_array<f32>;
 @group(2) @binding(2) var optical:texture_2d_array<f32>;
@@ -25,7 +21,8 @@ fn cloud_noise(point:vec3<f32>,scale:f32,stream:u32)->f32 {
     var n=0.0;
     for(var x=0;x<=1;x++){for(var y=0;y<=1;y++){for(var z=0;z<=1;z++){
         let w=select(vec3(1.0)-f,f,vec3<bool>(x!=0,y!=0,z!=0));
-        n+=w.x*w.y*w.z*cloud_hash(u32(lo.x+x),u32(lo.y+y),u32(lo.z+z),stream);
+        let base=select(cloud.noise.zw,cloud.noise.xy,stream==40u);
+        n+=w.x*w.y*w.z*cloud_hash(base.x+u32(lo.x+x),u32(lo.y+y),base.y+u32(lo.z+z),stream);
     }}}return n;
 }
 fn cloud_bilinear(field:texture_2d_array<f32>,coordinate:vec2<f32>,level:i32)->vec4<f32> {
@@ -55,13 +52,12 @@ fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     if sigma<=0.0 || cloud.physical.x<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let signal=min(1.0,sigma/cloud.physical.x);
     let shape=mix(cloud_noise(point,200.0,40u),0.5,clamp((footprint-100.0)/300.0,0.0,1.0));
-    let detail=mix(cloud_noise(point,50.0,41u),cloud.physical.z,clamp(footprint/100.0,0.0,1.0));
+    let detail=mix(cloud_noise(point,25.0,41u),cloud.physical.z,clamp(footprint/50.0,0.0,1.0));
     let threshold=cloud.physical.y*shape;
     let shaped=max(0.0,(signal-threshold)/(1.0-threshold));
     let eroded=max(0.0,shaped-cloud.physical.y*detail*(1.0-shaped));
     return sigma*min(1.0,eroded/signal);
 }
-fn cloud_hg(c:f32,g:f32)->f32 {return (1.0-g*g)/(4.0*PI*pow(1.0+g*g-2.0*g*c,1.5));}
 
 fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32)->f32 {
     let count=textureNumLayers(field)*4u;
@@ -87,11 +83,14 @@ fn cloud_sun_tau(world:vec3<f32>)->f32 {
 @compute @workgroup_size(8,8)
 fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let size=textureDimensions(transport);if any(id.xy>=size) {return;}
+    let stride=cloud.temporal.z;
+    let offset=vec2(cloud.temporal.y%stride,cloud.temporal.y/stride);
+    if cloud.temporal.w==0u && any(id.xy%stride!=offset) {return;}
     let uv=(vec2<f32>(id.xy)+0.5)/vec2<f32>(size);
-    let clip=atmosphere.inverse_view_projection*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
+    let clip=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let camera=atmosphere.camera_altitude.xyz;let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
-    var radiance=vec3(0.0);var transmission=1.0;var weighted=0.0;var opacity=0.0;
+    var radiance=vec3(0.0);var transmission=1.0;var optical_depth=0.0;var weighted=0.0;var opacity=0.0;
     var begin=0.0;var end=cloud.heights.w;
     if abs(ray.y)>1e-7 {
         let a=(cloud.heights.x-camera.y)/ray.y;let b=(cloud.heights.y-camera.y)/ray.y;
@@ -101,18 +100,15 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let pixel=vec2<i32>(uv*vec2<f32>(textureDimensions(scene_depth)));
     let depth=textureLoad(scene_depth,pixel,0);
     if depth>0.0 {
-        let hit=atmosphere.inverse_view_projection*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),depth,1.0);
+        let hit=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),depth,1.0);
         end=min(end,length(hit.xyz/hit.w-camera));
     }
-    let cosine=dot(ray,atmosphere.sun_lux.xyz);
-    let phase=vec4(cloud_hg(cosine,0.85),cloud_hg(cosine,0.43),cloud_hg(cosine,0.215),cloud_hg(cosine,0.1075));
-    let weights=vec4(0.7,0.2,0.07,0.03);let branches=vec4(1.0,0.5,0.25,0.125);
-    let up=environment_diffuse(vec3(0.0,1.0,0.0))/PI;
-    let down=environment_diffuse(vec3(0.0,-1.0,0.0))/PI;
+    let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
-    var distance=begin;
+    var distance=begin;var samples=0u;
     for(var i=0u;i<768u && distance<end && transmission>0.001;i++) {
+        samples+=1u;
         let step=min(end-distance,max(cloud.heights.z,distance*0.002));
         let at=distance+step*0.5;let point=air_camera+ray*at;
         let column=cloud_column(point);
@@ -131,10 +127,11 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                     tau=local+cloud_sun_tau(world+sun*reach);
                 }
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-                let ambient=up/(1.0+0.1125*column.y)+down/(1.0+0.1125*column.z);
-                let source=solar*dot(weights*phase,exp(-branches*tau))+ambient;
-                let step_t=exp(-sigma*step);let amount=transmission*(1.0-step_t);
-                radiance+=amount*source;weighted+=amount*at;opacity+=amount;transmission*=step_t;
+                let source=cloud_source(solar,phase,tau,column.yz);
+                let segment=cloud_beer(sigma,sigma*source,step);
+                let amount=transmission*cloud_removed(segment.optical_depth);
+                let combined=cloud_then(CloudTransport(radiance,transmission,optical_depth),segment);
+                radiance=combined.scattering;weighted+=amount*at;opacity+=amount;transmission=combined.transmittance;optical_depth=combined.optical_depth;
             }
         }
         distance+=step;
@@ -142,9 +139,10 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let front_distance=weighted/max(opacity,1e-10);
     if opacity>0.0 {
         let aerial=environment_aerial(camera+ray*front_distance,uv);
-        radiance=(aerial.transmission*radiance+opacity*aerial.scatter)*environment_storage_scale();
+        radiance=cloud_with_air(CloudTransport(radiance,transmission,optical_depth),aerial.transmission,aerial.scatter).scattering;
     }
+    radiance*=environment_storage_scale();
     textureStore(transport,vec2<i32>(id.xy),vec4(radiance,transmission));
     // Distances are kilometres to remain representable in fp16.
-    textureStore(front,vec2<i32>(id.xy),vec4(front_distance*0.001,opacity,0.0,0.0));
+    textureStore(front,vec2<i32>(id.xy),vec4(front_distance*0.001,opacity,f32(samples),1.0));
 }

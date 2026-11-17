@@ -4,7 +4,7 @@ mod shade;
 mod sun_path;
 mod weather;
 
-pub use layer::SkyProfile;
+pub use layer::{SkyProducts, SkyProfile};
 pub use shade::{Shade, ShadeConfig, WeatherInput};
 pub use sun_path::{SunLevel, SunPath, SunProfile};
 pub use weather::{RowStamp, WeatherMap, WeatherProfile};

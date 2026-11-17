@@ -3123,6 +3123,7 @@ name = "thrum-clouds"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "glam",
  "pollster",
  "thrum-cloud-model",
  "thrum-render",

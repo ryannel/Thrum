@@ -446,6 +446,34 @@ impl ThreadedFrameHost {
 }
 
 impl FrameHost {
+    /// Optional submitted cloud transport and lighting products for inspection.
+    pub fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts> {
+        self.cloud_input.as_ref()?.sky_products()
+    }
+    /// Inspect the prepared scene graph without encoding another frame.
+    /// # Errors
+    /// Refuses a target during an incomplete scene transition.
+    pub fn scene_graph(&self) -> Result<thrum_render::graph::CompiledGraph, runtime::FrameError> {
+        self.inner.scene_graph()
+    }
+    /// Read-only temporal inputs of the latest in-flight submitted frame.
+    pub fn submitted_temporal_witness(&self) -> Option<&wgpu::Texture> {
+        self.inner.submitted_temporal_witness()
+    }
+    /// Discover the attached effects' runtime quality controls.
+    pub fn quality_knobs(&self) -> Vec<thrum_render::contribution::QualityKnob> {
+        self.inner.quality_knobs()
+    }
+    /// Stage a quality change for the next frame boundary.
+    /// # Errors
+    /// Refuses unknown names and values outside the declared range.
+    pub fn set_quality_knob(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Result<(), thrum_render::contribution::QualityError> {
+        self.inner.set_quality_knob(name, value)
+    }
     /// Current Weather and Shade product, for optional GPU inspection.
     pub fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
         self.cloud_input.as_ref()?.ground_product()
@@ -585,6 +613,7 @@ impl FrameHost {
                 extent: config.render_extent,
                 step: 30.0,
                 light_samples: 3,
+                refresh_stride: 2,
             });
         let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Off {
             WorldDriver::new(setup.content, setup.route_overlay)?
@@ -601,7 +630,7 @@ impl FrameHost {
             let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
                 .map_err(|e| e.to_string())?;
             Some(if let Some(profile) = cloud_sky {
-                shade.with_sky(profile)
+                shade.with_sky(profile).map_err(|e| e.to_string())?
             } else {
                 shade
             })
@@ -808,7 +837,7 @@ impl FrameHost {
                 .map_err(|e| e.to_string())?
                 .with_input(input.clone());
             let shade = if let Some(profile) = self.cloud_sky {
-                shade.with_sky(profile)
+                shade.with_sky(profile).map_err(|e| e.to_string())?
             } else {
                 shade
             };

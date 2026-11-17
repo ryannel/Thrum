@@ -18,6 +18,7 @@ impl Layer {
             || !profile.step.is_finite()
             || profile.step <= 0.0
             || profile.light_samples > 3
+            || ![1, 2, 4].contains(&profile.refresh_stride)
         {
             return Err(Error::Unsupported("cloud layer extent or march controls"));
         }
@@ -31,6 +32,7 @@ impl Layer {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let lighting = super::light::Lighting::new(surface, weather, &environment)?;
         let textures = std::array::from_fn(|_| {
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("cloud layer transport"),
@@ -88,6 +90,8 @@ impl Layer {
                 texture_entry(5, false),
                 texture_entry(6, false),
                 texture_entry(7, false),
+                super::light::storage_entry(9, true),
+                super::light::storage_entry(10, true),
                 wgpu::BindGroupLayoutEntry {
                     binding: 8,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -132,6 +136,14 @@ impl Layer {
             binding: 8,
             resource: sun.mapping().as_entire_binding(),
         });
+        entries.push(wgpu::BindGroupEntry {
+            binding: 9,
+            resource: lighting.phase.as_entire_binding(),
+        });
+        entries.push(wgpu::BindGroupEntry {
+            binding: 10,
+            resource: lighting.ambient.as_entire_binding(),
+        });
         let trace_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(TRACE),
             layout: &trace_layout,
@@ -147,9 +159,12 @@ impl Layer {
             label: Some(TRACE),
             source: wgpu::ShaderSource::Wgsl(
                 format!(
-                    "{}\n{}",
+                    "{}\n{}\n{}\n{}\n{}",
                     environment.shader_source,
-                    include_str!("../layer.wgsl")
+                    include_str!("params.wgsl"),
+                    include_str!("../layer.wgsl"),
+                    super::light::shader(),
+                    include_str!("transport.wgsl"),
                 )
                 .into(),
             ),
@@ -162,7 +177,7 @@ impl Layer {
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
-        let (compose, compose_group) = compose(
+        let (compose, compose_group, compose_layout) = compose(
             surface,
             &params,
             &textures,
@@ -170,9 +185,15 @@ impl Layer {
             texture_entry,
             &input,
         );
+        let temporal = super::temporal::Temporal::new(surface, &params, &textures, &compose_layout);
         Ok(Self {
             profile,
             environment,
+            lighting,
+            temporal,
+            committed: None,
+            pending: None,
+            ordinal: 0,
             params,
             queue: surface.queue.clone(),
             textures,
@@ -191,7 +212,7 @@ fn compose(
     uniform_entry: wgpu::BindGroupLayoutEntry,
     texture_entry: impl Fn(u32, bool) -> wgpu::BindGroupLayoutEntry,
     input: &wgpu::BindGroupLayout,
-) -> (wgpu::RenderPipeline, wgpu::BindGroup) {
+) -> (wgpu::RenderPipeline, wgpu::BindGroup, wgpu::BindGroupLayout) {
     let device = surface.device;
     let mut sampled = [texture_entry(1, false), texture_entry(2, false)];
     for entry in &mut sampled {
@@ -237,9 +258,17 @@ fn compose(
     });
     let compose_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(COMPOSE),
-        source: wgpu::ShaderSource::Wgsl(include_str!("compose.wgsl").into()),
+        source: wgpu::ShaderSource::Wgsl(
+            format!(
+                "{}\n{}\n{}",
+                include_str!("params.wgsl"),
+                include_str!("view.wgsl"),
+                include_str!("compose.wgsl")
+            )
+            .into(),
+        ),
     });
-    let targets = surface.color_formats.map(|format| {
+    let mut targets = surface.color_formats.map(|format| {
         Some(wgpu::ColorTargetState {
             format,
             blend: Some(wgpu::BlendState {
@@ -253,6 +282,26 @@ fn compose(
             write_mask: wgpu::ColorWrites::ALL,
         })
     });
+    if let Some(motion) = &mut targets[1] {
+        motion.blend = Some(wgpu::BlendState {
+            color: wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::SrcAlpha,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
+            },
+            alpha: wgpu::BlendComponent::REPLACE,
+        });
+    }
+    if let Some(reactive) = &mut targets[2] {
+        reactive.blend = Some(wgpu::BlendState {
+            color: wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Max,
+            },
+            alpha: wgpu::BlendComponent::REPLACE,
+        });
+    }
     let compose = device.render(&wgpu::RenderPipelineDescriptor {
         label: Some(COMPOSE),
         layout: Some(&compose_pipeline_layout),
@@ -274,5 +323,5 @@ fn compose(
         multiview_mask: None,
         cache: None,
     });
-    (compose, compose_group)
+    (compose, compose_group, compose_layout)
 }

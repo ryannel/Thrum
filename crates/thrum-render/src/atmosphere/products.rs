@@ -153,15 +153,22 @@ pub(super) fn create_with_far(
     });
     EnvironmentProducts {
         layout,
-        shader_source: format!(
-            "const ENVIRONMENT_FAR_AERIAL: bool = {far_aerial};\n{}",
-            library()
-        ),
+        shader_source: library(far_aerial),
         groups,
     }
 }
 
-fn library() -> String {
+fn library(far_aerial: bool) -> String {
+    let products = format!(
+        "{}{}{}",
+        include_str!("products.wgsl"),
+        if far_aerial {
+            include_str!("products_aerial_far.wgsl")
+        } else {
+            include_str!("products_aerial.wgsl")
+        },
+        include_str!("products_reflection.wgsl")
+    );
     // Reuse the receiver Sun and cumulative aerial arithmetic verbatim. Only
     // the resource declarations and active-frame name differ in this group.
     let sun = include_str!("../synthetic_sun.wgsl")
@@ -187,7 +194,7 @@ fn library() -> String {
         include_str!("geometry.wgsl"),
         include_str!("common.wgsl"),
         include_str!("irradiance.wgsl"),
-        include_str!("products.wgsl"),
+        products,
         sun,
         sample,
         decode.replace("aerial_frame", "atmosphere"),

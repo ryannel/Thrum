@@ -8,6 +8,9 @@ description = "Weather and Sun-path GPU products on the scene effect graph"
 autotests = false
 
 [[test]]
+name = "transport_gpu"
+
+[[test]]
 name = "weather_map_gpu"
 
 [[test]]
@@ -27,6 +30,7 @@ thrum-cloud-model = { path = "../thrum-cloud-model" }
 thrum-render = { path = "../thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
+glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 pollster = "=1.0.1"
