@@ -10,16 +10,17 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 ## Open for the human
 
 - Assumption: the owner's "it should start from first principles" (14 November) governs.
-- Assumption: "taking into account mist / fog" and "top quality atmosphere" (the owner, 14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its M7 and M8, after G3s closes) and this module's trace beyond. It adds M13 to M16 and three items to M11, and replaces the assumption that the camera and all geometry stay below the cloud base.
+- Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its M7 and M8, after G3s closes) and this module's trace beyond. It adds M13 to M16 and three items to M11.
 - Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops M13.4 and M16.1.
-- Assumption: "low cloud the camera can enter" includes coming out above it on a summit. The camera stays 2 to 40 m over the ground; flying is not planned. Only a layered deck on the hills is inspected.
+- Assumption: "low cloud the camera can enter" includes coming out above it on a summit. The camera stays 2 to 40 m over the ground. Only a layered deck on the hills is inspected.
 - Assumption: a headless game asking whether it can see through a placed cloud gets a marked estimate unless it gives the cloud's voxels.
 - Assumption: "a flexible set of cloud capabilities" is taken up: shade, the visible sky, the world's light, shapes and ground condensate are each left out by a scene at no cost.
 - Assumption: a scene with no visible sky that wants the shade of cooked shapes keeps their volumes loaded (27 MiB).
-- Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this; it costs M1.12, M6.9 and M6.10.
+- Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this; it costs M6.9 and M6.10.
 - Assumption: cloud light takes its first-order phase from the droplets, so the sky will differ from Broadsides' accepted stills near the Sun.
-- Assumption: for light scattered many times, "state of the art" means the most accurate method that runs in a frame, a flux solution held to photon transport, not the octaves shipped engines tune by eye. No gain exists to brighten or dim a cloud.
-- Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; its terms if Thrum's source is published are the owner's. Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
+- Assumption: for light scattered many times the design keeps its flux solution as a starting point, because it brightens a cloud with nothing tuned. Under the owner's bar of 17 November nothing holds it to photon transport, and a builder may tune it by eye.
+- Assumption: the lowered bar keeps tests where a game reads the weather (the GPU's map against the CPU query) and on the frame contract, and drops every test of how light was computed.
+- Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
 - Assumption: "bring that across when it makes sense" (13 November) means milestones start when their dependencies are Done, which can be before G7.
 - Assumption: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged.
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
@@ -42,12 +43,12 @@ Ruling 2 is built in `ATMOSPHERE`'s aerial lookup. Write the trace over
 [the interval a ray marches](DESIGN.md#the-visible-layer), though here that interval is the cloud band. The
 work so far is on branch `build/clouds` at `fa4eabb9d`, with
 [its handoff](../../evidence/CLOUDS/M3-handoff.md). Its trace, Sun-path reconstruction, capture routes and
-photon reference stand. Its light is the four fixed orders, which [cloud light](DESIGN.md#cloud-light) now
-replaces, held as [numerical acceptance](DESIGN.md#numerical-acceptance-for-cloud-light) says. Pass M3.13 and
-then M3.14 before taking a look, so that a look judges the design's term. In `thrum-cloud-model` leave
-`Orders` and `medium.rs` as they are: M14.13 moves them. A type's droplet and water are the game's to tune for
-the look; the term has nothing to tune. After three looks under the new term that fail the same cue of M3.1
-to M3.3, record them in the log and end `BLOCKED`; looks taken under the four orders do not count. A frame
+photon reference stand. Its light is the four fixed orders, which made the clouds too dark;
+[cloud light](DESIGN.md#cloud-light) replaces them in the shader. Build the term, take a look, and tune by eye
+against M3.1 to M3.3 as [the bar](DESIGN.md#how-the-module-is-proved) allows: no item compares the shader with
+the model or with photons. In `thrum-cloud-model` leave `Orders` and `medium.rs` as they are:
+M14.13 removes them. After three looks under the new term that fail the same cue of M3.1 to M3.3, record them
+in the log and end `BLOCKED`; looks taken under the four orders do not count. A frame
 over the refresh interval is investigated with the design's first risk's remedies and does not stop the
 milestone.
 
@@ -90,7 +91,7 @@ are not this milestone's to fix.
 `ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this milestone writes the medium
 coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
 in the volume itself goes to `ATMOSPHERE`'s log. M13 built the model's solar kernel from the four fixed
-orders; M14.13 moves it to cloud light's Sun term. After three looks that fail
+orders; M14.13 removes them, and the kernel the view volume takes is the trace's own shader function. After three looks that fail
 the same cue of M14.5 or M14.6, record them in the log and end `BLOCKED`.
 
 ## M15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it

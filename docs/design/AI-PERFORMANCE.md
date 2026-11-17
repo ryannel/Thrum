@@ -31,7 +31,16 @@ This replaces numeric performance admission gates during feature construction, i
    fix confirmed causes while other building continues. Benchmarks inform development; their targets do not block it.
 3. **Tune in a dedicated performance phase.** Once enough engine and demo content exists, profile whole frames on
    real devices, including Mac and iPhone when available, and set targets from that data. That is the AI performance
-   push. Correctness, oracle tolerances, lifecycle and agent visual review remain delivery requirements now.
+   push. Correctness where a failure is silent and costly, lifecycle and agent visual review remain delivery
+   requirements now.
+
+**Owner decision, 17 November 2026: "Ok let's lower the bar."** The aim is the most plausible result as fast as
+possible, not physical accuracy. For rendering and visual work, speed and look are the two things judged: speed by
+these tripwires, look against an inspection list at the bar of shipped high-end games. A tolerance against a
+physical or `f64` reference is no longer a delivery requirement there; the reference is a diagnostic. Prefer the
+cheaper mechanism when two reach the same look. A tripwire record passes on its check, and is reviewed by question
+only in a module's last milestone. [ORCHESTRATE.md](../../ORCHESTRATE.md#what-is-proved-and-how-hard) carries the
+rules.
 
 Specialized internals, generated code, SIMD, incremental work and accelerated recipes remain welcome when justified.
 Keep public boundaries small, invariants clear, portable fallbacks working and safety checks intact. Claim measured
@@ -73,8 +82,8 @@ uncontrolled factors. The register is the maturity ledger's `technique_register`
 * why it would not scale with human authors, for example per-family kernels, exhaustive variant search or
   autotuned parameters kept current by agents.
 
-Pending and unqualified entries are allowed; they make no speed or reproduction claim. Paper reproduction still
-requires reference views and an independent oracle. If a measured win disappears, retire that claim and investigate
+Pending and unqualified entries are allowed; they make no speed or reproduction claim. A claim to reproduce a
+paper still needs reference views and an independent check; using a technique for its look needs neither. If a measured win disappears, retire that claim and investigate
 the regression; do not automatically remove a useful functional path.
 
 ### The cost account in each owning design
@@ -117,7 +126,7 @@ Continue through the meaningful opportunities within its scope and resources. St
 boundary, when remaining gain is unsupported or below uncertainty, or when further variants cost more than their
 useful benefit. Record why and what would reopen the decision. No endless search or spending is implied.
 
-Functional delivery requires preserved semantics, stability, lifecycle and required visuals. Performance claims need
+Functional delivery requires preserved semantics, stability, lifecycle and the look its inspection list asks for. Performance claims need
 evidence, but benchmarks are tripwires during feature construction. Later campaigns use the deeper workflow below.
 
 **Where a timing is taken (15 November 2026).** Builders share one machine, and a lock keeps out only the runs

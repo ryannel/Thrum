@@ -588,3 +588,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   numbers, amount and Ångström exponent, defaulting to today's grey aerosol; M7's name and M7.2, M7.3 and M7.6
   were written again, and the design records that the kind needs a finer far grid at 3 km. `CLOUDS`' ruling 8
   and M16 changed with it; no contract changed. The design needs a review before M7 is built.
+
+- 2026-11-17 Human: "Ok let's lower the bar." The most plausible result as fast as possible, not physical accuracy; references become
+  diagnostics. Plan: dropped M6.3 (the referees run in the workspace check and no longer forbid a deliberate fix) and M7.3 (the
+  volume against an f64 quadrature). M7.2, M7.13 and M8.1 keep their contracts (bytes at the defaults, the terminal pair once, a
+  medium counted once) without a ceiling. M7.10's record passes on its check. The design's view-volume acceptance is now
+  [how the view volume is proved](DESIGN.md#how-the-view-volume-is-proved). No item of a Done milestone changed.

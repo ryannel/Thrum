@@ -420,3 +420,10 @@
   written again; M3.13, M3.14 and M14.13 are new; M2's note shrinks to its review. M1.8's and M13.7's clauses on the orders stand as
   built until M14.13 removes `Orders`: rewording them would send two Done milestones back through build and review for no change
   in what is built. The design needs a review before M3 resumes.
+
+- 2026-11-17 Human: "Ok let's lower the bar." Thrum is a game engine: the most plausible result as fast as possible, not physical
+  accuracy; references become diagnostics. Plan: [how the module is proved](DESIGN.md#how-the-module-is-proved) replaces both numerical
+  acceptance sections. Dropped M3.13, M3.14, M5.1, M5.5, M15.2 and M15.3. Rewritten without reference bounds: M3.5, M3.6, M3.8, M4.1,
+  M6.2, M6.9, M7.6, M12.4, M14.2 to M14.4, M14.13, M15.1 and M15.4. Eleven cost records pass on their check alone. The Sun term stays
+  as a starting point a builder may tune by eye. Design review MF1 is answered by a boundary weight: the view boundary is off inside
+  the handover for both integrators and fades in beyond it, so near and far fog take one source. No item of a Done milestone changed.

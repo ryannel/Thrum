@@ -167,11 +167,21 @@ image quality, and no visual review substitutes for device measurement.
 Agents can read images, so visual review is part of agent work. The owner steers direction and taste without becoming
 a checkpoint, and a report never pauses building.
 
+**Owner decision, 17 November 2026: "Ok let's lower the bar."** Thrum is a game engine, and the aim is the most
+plausible result as fast as possible, not physical accuracy. Rendering and visual work passes when it looks as good
+as shipped high-end games, judged against the milestone's inspection list, and runs fast, with performance as
+tripwires. A physical or `f64` reference is a diagnostic for output that looks wrong, never a pass mark. Exact
+image baselines guard against unintended change and do not block a deliberate shader change. Correctness proofs
+stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked
+formats, and contracts between modules. Proof is proportional to risk: a fix round or a tripwire record does not
+get the review weight of new rendering work. [ORCHESTRATE.md](../../ORCHESTRATE.md#what-is-proved-and-how-hard)
+carries the rules for planners, builders and reviewers.
+
 | Layer | Who and when | Blocking? |
 | --- | --- | --- |
-| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Where a portable recipe or ground-truth oracle exists, bound the difference with a perceptual metric such as FLIP; that is a correctness oracle. Golden captures are regression tripwires. These catch broken output; they don't judge the look. | Yes, for that change |
+| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Golden captures are regression tripwires against unintended change; a deliberate shader change refreshes them. A comparison with a reference render or a physical model is a diagnostic for output that looks wrong, not a gate. These catch broken output; they don't judge the look. | Yes, for broken output and unintended change |
 | Inspection list | The planner writes each visual milestone's inspection list in its done-when file: observable qualities checked in the running game, with the bar set in words by shipped high-end games of the same kind. There are no target images to match. The generator checks its own captures against the list. | Shapes the milestone |
-| Evaluator | A clean-context `/review-milestone` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
+| Evaluator | A clean-context `/review-milestone` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. New rendering work gets the whole list; a fix round is judged on what failed and what the fix touched. | Yes, the milestone closes on its pass |
 | Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
 Every later visual milestone plans evidence through [T2 capture](../plans/T2-CAPTURE/DESIGN.md): exact submitted engine

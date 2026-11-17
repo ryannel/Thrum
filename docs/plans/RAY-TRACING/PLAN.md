@@ -21,6 +21,7 @@ that work on this Mac.
 - Assumption: a material's alpha does not cut a hole in a shadow. It does not today either.
 - Assumption: these milestones take a builder only when no V1 milestone can start. Their order among the other work that is off the exit (water, clouds, the 2D engine, the review's fixes) is the lead's to choose.
 - Assumption: wgpu's ray tracing is marked experimental. A fault in wgpu that Thrum cannot work around stops the milestone until `APPLE-PRESENTATION` M10 brings a pinned copy of wgpu's Metal backend, and nothing is reported upstream without the owner.
+- Assumption: under the owner's bar of 17 November, soft shadows and ambient occlusion are judged by eye alone. The ray oracle stays for hit and miss, which have one right answer.
 
 ## M1 On the Mac, a ray cast into the moving 10,000-entity scene hits what a CPU reference says it should, in every frame
 
@@ -36,7 +37,7 @@ Ruling 6 is built here. `sun_visibility` and `local_radiance` are in `synthetic.
 
 ## M4 Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge
 
-Start with M4.1, because the estimator must be right before its look is judged. The FidelityFX Shadow Denoiser's source may be ported, with its licence recorded under `docs/provenance`. `synthetic/after_opaque.rs` and `history_gpu.rs` show a pass after opaque geometry and a history that only a submitted frame commits. If `APPLE-PRESENTATION` M4 has landed, the history follows its extent transitions; if not, its builder keeps M4.6's test passing.
+The FidelityFX Shadow Denoiser's source may be ported, with its licence recorded under `docs/provenance`. `synthetic/after_opaque.rs` and `history_gpu.rs` show a pass after opaque geometry and a history that only a submitted frame commits. If `APPLE-PRESENTATION` M4 has landed, the history follows its extent transitions; if not, its builder keeps M4.6's test passing.
 
 ## M5 Props and terrain are grounded: sky light is dimmed in creases and where things stand close together
 

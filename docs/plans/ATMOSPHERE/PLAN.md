@@ -11,7 +11,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: M9 is built now, ahead of M6 and TAAU, and is held by numbers and by where the retained images moved. Its look on a real sea is judged in `WATERS` M2, which now waits for it.
 - Assumption: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6.
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
-- Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan.
+- Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference, and under the owner's bar of 17 November no accuracy campaign is planned. The referees P1–P11 stay in the workspace check as regression guards, which a deliberate fix may update; the handoff rows H1–H5 stay as the contract other modules read through.
 - Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step, because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image, and M6 judges by eye whether a step shows.
 - Assumption: "top quality atmosphere" (the owner, 14 November) gives this module two milestones after G3s closes, M7 and M8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume.
 - Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
@@ -77,19 +77,17 @@ files, one of which splits solar in-scatter by the surface's shadow, which the v
 volume's history uses `EFFECT-GRAPH`'s state kinds, as `examples/v1-game/src/effect` does. The control and the scene's declaration go behind a selection in `examples/v1-game` that is off by
 default; that game is `SHOWCASE`'s, so leave its generator, routes and exit configuration alone. `CLOUDS`
 builds rulings 1 to 4 in these same files; integrate on top of what has landed, and if its haze scale is
-present make sure the volume does not take it. Record M7.1's base before changing anything. M7.3's ceiling is
-[the design's](DESIGN.md#numerical-acceptance-for-the-view-volume): a miss you cannot close ends `BLOCKED`, never
-a wider bound. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
+present make sure the volume does not take it. Record M7.1's base before changing anything.
+[The look decides](DESIGN.md#how-the-view-volume-is-proved): the f64 quadrature is there to find the cause of a
+picture that looks wrong, and no item compares the volume with it. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
 terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
 the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
-[the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III's grid of 64 slices with 48 inside 500 m misses M7.3's
-3 km case at an exponent of 1.3; the design names two grids that pass it.
+[the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
 
 ## M8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
 
 The cloud-factor function and its field are in `crates/thrum-render/src/atmosphere/cloud.rs` and `cloud.wgsl`,
 and the labelled test cloud field in `examples/v1-game/src/host/scene_source/cloud.rs`; the test medium sits
-beside it and is replaced by `CLOUDS` M14. The joint reference is written here, in
-`scripts/reference/atmosphere/`, apart from the shader. What a provider's coefficients mean is in
+beside it and is replaced by `CLOUDS` M14. What a provider's coefficients mean is in
 [CLOUDS' design](../CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud). If a forward pipeline cannot take the ground band inside
 WebGPU's sampled-texture limit, write the proposal in the log and end `BLOCKED`.

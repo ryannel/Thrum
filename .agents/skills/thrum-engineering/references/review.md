@@ -3,10 +3,31 @@
 What a Thrum reviewer checks, beyond what `/review-milestone` covers. The owner-graded verdicts are in
 `docs/design/GRADED-EXAMPLES.md`. They are the best guide to how strict to be.
 
-Contents: [Design reviews](#design-reviews) · [Code reviews](#code-reviews) ·
+Contents: [The bar and the weight of a review](#the-bar-and-the-weight-of-a-review) ·
+[Design reviews](#design-reviews) · [Code reviews](#code-reviews) ·
 [Checks the script already ran](#checks-the-script-already-ran) · [Visual reviews](#visual-reviews) ·
 [Performance claims](#performance-claims) ·
 [Calibration: failures this engine has already paid for](#calibration-failures-this-engine-has-already-paid-for)
+
+## The bar and the weight of a review
+
+The owner's bar (17 November 2026, in `ORCHESTRATE.md`): rendering and visual work passes when it looks as good as
+a shipped high-end game against its inspection list and runs fast. Judge to that bar.
+
+- **A reference is a diagnostic, not a finding.** That a shader, a light model or a GPU product differs from a
+  physical or `f64` reference is not a Must Fix. It becomes one only when the difference shows as a failed
+  inspection item, breaks a contract between modules, or changes what a query answers a game. Don't ask a design
+  or a milestone for a reference, a ceiling or a measured bound for how something looks.
+- **A deliberate change to an exact image is not a regression.** It needs the refresh record, not a model that
+  justifies the new pixels.
+- **Keep full rigour where a failure is silent and costly:** networking and transport, simulation determinism,
+  cooked formats, and the contracts between modules.
+- **Weigh the review by the risk.** New rendering work gets the whole inspection list. A fix round is judged on
+  the items that failed and on what the fix touched; pass the rest from the earlier review unless the fix could
+  have moved them. A tripwire record is judged by its check, and by a question only in a module's last milestone.
+  A design re-review after a change of bar or of proof reads the changed parts against the brief.
+- **A Must Fix is something a player, a game maker or another module would meet.** Paperwork that could be
+  tidier is a Suggestion.
 
 ## Design reviews
 
@@ -20,7 +41,7 @@ An explicit, safe deferral is not an omission.
 
 For each defining cue, ask:
 - **Can the mechanism produce it across the operating range?** A numerical reproduction of the core maths often
-  settles this quickly.
+  settles this quickly. Ask whether the cue would read on screen, not whether the numbers match physics.
 - **Is a modern alternative missing?**
 - **Is the method heavy or dated by design?**
 

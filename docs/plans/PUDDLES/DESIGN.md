@@ -26,7 +26,7 @@ and the same on the island and in the V1 valley behind a selection, in Chrome to
 
 | User | Needs | What that requires of the design |
 |---|---|---|
-| A teaching demo, often in Chrome: a shower over a yard, puddles that grow and join, rings from the rain, the ground drying afterward | Rain water that is right as well as good-looking, with only the parts the demo shows | Mechanisms with an oracle; every part optional, at no cost when left out |
+| A teaching demo, often in Chrome: a shower over a yard, puddles that grow and join, rings from the rain, the ground drying afterward | Rain water that looks right, with only the parts the demo shows | Mechanisms with an oracle; every part optional, at no cost when left out |
 | A game | Wet ground, puddles and their depth the same on every machine and whatever the camera does | Water held as game state on the CPU, stepped with the tick; one query for all water |
 | `WATERS` | Rain water that needs no second surface, optics, foam or query | A puddle is data in the map; rings are wave layers and interaction waves; a film is the film it already draws |
 | The forward pass | Wet surfaces without a second lighting model | One function a surface reads before it is lit, composed as the cloud factor is |
@@ -495,7 +495,7 @@ splash's crown and jet are not waves and are not drawn.
 ### Rings from a footfall
 
 A profile may name a **fine interaction level** ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-puddles)),
-built in M8, after `WATERS:M6` has built the interaction reference it extends:
+built in M8, after `WATERS:M6` has built the interaction step it extends:
 256² cells of 2 cm, a window 5.12 m across round the body the game names, with `WATERS`' operator, regions,
 border and sources, and
 
@@ -603,8 +603,8 @@ What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
 
 | State | Owner |
 |---|---|
-| The tree of hollows and its preparation, the fill step and its account, the canopy grid and exposure, the ground's stores and the wetness function, the wet look's reference, the ring response and its tables, the rain state | `thrum-rain-model` (this module), on `thrum-water-model`, no GPU dependency |
-| The hollows kind in the map's function; the rain bands in the surface model's sum; the fine level in the interaction reference | Files this module adds to `thrum-water-model`, and its changes there under [rulings 1 to 3](../ARCHITECTURE.md#seam-rulings-for-puddles) |
+| The tree of hollows and its preparation, the fill step and its account, the canopy grid and exposure, the ground's stores and the wetness function, the ring response and its tables, the rain state | `thrum-rain-model` (this module), on `thrum-water-model`, no GPU dependency |
+| The hollows kind in the map's function; the rain bands in the surface model's sum | Files this module adds to `thrum-water-model`, and its changes there under [rulings 1 to 3](../ARCHITECTURE.md#seam-rulings-for-puddles) |
 | Hollows in the map on the GPU and their tiles; the rain bands' passes; the fine level; the film over standing water; the mirror's bands; the wetness provider and its tables | Files this module adds to `thrum-water` and `thrum-sea`, and its changes there under rulings 1 to 4 and 8 |
 | The wetness read in the forward surface | The scene's shader and the cooked material, under ruling 5 |
 | The map, the surface, optics, the query, interaction waves, the film, mirror views and their lookup | `WATERS`, `SCENE-VIEWS`; the bands of a hollows body under ruling 8 |
@@ -727,13 +727,14 @@ dependencies. In addition:
   `docs/evidence/PUDDLES/PROVENANCE.md`; none is expected, and Barnes's code is not copied.
 - **Other modules' files.** A change inside a file another module wrote is one a ruling names, behind a
   declaration no existing scene makes. Anything else it needs is a proposal in this module's log.
-- **Bounds.** Parts 1 to 11 are the source of the bounds in M1, M2 and M8. A bound on the GPU is measured
-  first, on this Mac, and then asserted, with its date and commit in the record, and it is accepted only if
-  it is no more than a tenth of the difference a named wrong evaluator makes on the same case, which the
-  test also measures: for M4.1, bands evaluated half a tick late and bands that ignore the rate history; for
-  M8.3, the deep operator in place of the ladder; for M5.2, wetness that ignores slope and wetness that
-  reads the open store everywhere. A measured difference that fails this has a cause to find. It is not the
-  bound.
+- **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,
+  and it holds here: M3 to M8 pass on their look and their speed. What a game reads stays tested against the
+  CPU models at a tolerance each test states: the puddles in the map (M3.3), the rain bands at the display's
+  time (M4.1) and the wetness function (M5.2). Each of those tests also runs a named wrong evaluator and shows
+  it miss: for M4.1, bands evaluated half a tick late and bands that ignore the rate history; for M5.2, wetness
+  that ignores slope and wetness that reads the open store everywhere. The wet look, a ring's shape and the
+  fine level's waves are judged by eye, with no f64 reference required and no bound measured first. Parts 1 to
+  11 are the source of the bounds M1 and M2 were proved with.
 - **Receivers.** The account's total and the receivers are separate proofs. A test of a receiver sets a
   case where the total would close under the wrong assignment too, and checks that receiver's gain alone.
   It finds each receiver's cells from the bed, the shelters and the water's level at the tick's start. It

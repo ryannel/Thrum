@@ -4,9 +4,11 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 `/build`). This file holds what's specific to Thrum.
 
 - **Purpose:** [the brief](docs/plans/BRIEF.md): purpose, the V1 exit and the gates.
-- **Quality bar:** would pass in a shipped high-end game of this kind, named per milestone, e.g. sea and wakes as in
-  Sea of Thieves, skies as in Red Dead Redemption 2, smooth at the display's full refresh. Judged in words against
-  inspection items, never against target images.
+- **Quality bar:** looks as good as a shipped high-end game of this kind, named per milestone, e.g. sea and wakes as
+  in Sea of Thieves, skies as in Red Dead Redemption 2, and runs fast, smooth at the display's full refresh. Judged in
+  words against an agent-written inspection list, never against target images or a physical reference.
+  [What is proved, and how hard](#what-is-proved-and-how-hard) says what that asks of a plan, a build and a review.
+  *(owner, 17 Nov 2026: "Ok let's lower the bar.")*
 - **Plans:** docs/plans
 - **Evidence:** docs/evidence  *(loop)*
 - **Graded examples:** docs/design/GRADED-EXAMPLES.md  *(loop: past verdicts the owner agreed with or overturned)*
@@ -75,6 +77,36 @@ Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on
   sitting, and the lead keeps the others paused until the milestone is Ready for Review.
 
 Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
+
+## What is proved, and how hard
+
+Owner decision, 17 November 2026: "Ok let's lower the bar." Thrum is a game engine. The aim is the most plausible
+result as fast as possible, not physical accuracy. Planners write items to these rules, builders prove to them and
+reviewers judge by them.
+
+- **Rendering and visual work passes on look and speed.** The look is judged in the running game against the
+  milestone's inspection list and its shipped-game bar. Speed is a tripwire record: no budget is invented.
+- **A physical or f64 reference is a diagnostic.** Use one when output looks wrong, to find the cause. No item
+  holds a shader, a GPU product or a light model to a reference within a bound, and a plan never asks a builder
+  to measure a bound first and then assert it. A miss against a reference is not a finding. A builder may tune
+  by eye where the list fails, and says in the evidence what was changed.
+- **An exact image baseline guards against a change nobody meant.** A deliberate shader change refreshes the
+  references in its own landing, under [the refresh procedure](CONTRIBUTING.md#exact-image-baselines-and-the-reference-guard),
+  and no review asks it to justify
+  the new pixels by a model.
+- **Correctness proofs stay where a failure is silent and costly.** Those are networking and transport; simulation
+  determinism; asset and cooked formats; and the contracts between modules, which are the frame contract's
+  outputs, one owner for each kind of state, lifecycle through pauses, hitches and a replaced device, a capability
+  left out costing nothing, and what a query answers a game. GPU state that a game or another module reads through
+  a CPU query (where water lies, where cloud stands) is tested against that query at a tolerance the test states.
+  Output that must equal a simple statement of itself, such as a sprite's texels or a culled image against the
+  unculled one, is a regression guard and stays.
+- **Proof is proportional to risk.** New rendering work gets a full inspection. A fix round is reviewed on what
+  the last review found and what the fix touched. A tripwire record passes on its check alone, with a reviewer's
+  question only in a module's last milestone, where the qualified numbers are taken. An evidence item that costs
+  more than the fault it would catch is not written.
+
+A milestone that was In Progress or Ready for Review on 17 November 2026 keeps the items it was approved with.
 
 ## Rules
 - **Exclusive resources:** simulator (the one booted iPhone simulator; an `ios-sim` check takes it)

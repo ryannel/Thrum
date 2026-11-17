@@ -134,9 +134,11 @@ GPU intersection is in 32-bit floats, so a ray that passes within a band of a tr
 side. A test derives that band from the spacing of 32-bit floats at the scene's largest coordinate, does not
 judge rays inside it, and records what share it skipped. Every other ray must agree exactly on hit or miss.
 
-Hard shadows are judged by the oracle. Soft shadows and ambient occlusion are filtered estimates: their
-automated proofs are the estimator's mean against the reference's fraction at points that hold still, and their
-look is judged by inspection.
+Hard shadows are judged by the oracle, because whether a ray is blocked is a fact about the scene's geometry
+with one answer. Soft shadows and ambient occlusion are filtered estimates, and under
+[the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026 they are judged by
+inspection alone: no item compares the estimator's mean with a reference fraction. The oracle stays the
+diagnostic for a penumbra or an occlusion that looks wrong.
 
 ## Mechanisms
 

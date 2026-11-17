@@ -71,7 +71,6 @@
           "id": "M1.6",
           "statement": "The structure's cost is on record with the machine's load: resident bytes, the first build, and each frame's rebuild as CPU time and as GPU time, at 10,000 entities with 1,500 movers and at the field's 100,513 instances. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py structure",
-          "ask": "Is the record taken on this milestone's build with the load beside it, and is the GPU time of the rebuild kept apart from the CPU time to set instances and record it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -159,7 +158,6 @@
           "id": "M2.6",
           "statement": "The valley's structures are on record with the machine's load: resident bytes, the build time of each mesh structure against its triangle count, and the GPU time an edit's rebuild adds to its frame. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py valley",
-          "ask": "Does the record let a reader say what an edit to the valley's largest mesh costs the frame that builds it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -278,7 +276,6 @@
           "id": "M3.9",
           "statement": "Paired rows on the valley's route are on record with the machine's load, for `Maps` and for `Traced` with and without lamp shadows: the whole frame and each pass by name, with the cascade passes' absence under `Traced` shown. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py shadows",
-          "ask": "Are the rows paired and interleaved on this milestone's build, with the load beside them?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -308,18 +305,6 @@
       ],
       "quality_bar": "Soft ray-traced Sun shadows as Cyberpunk 2077 and Shadow of the Tomb Raider ship them: sharp where a caster touches, wider with distance, with no grain at rest and no trail in motion at normal speed.",
       "items": [
-        {
-          "id": "M4.1",
-          "statement": "At surface points that hold still under a still Sun, the soft visibility settles to the fraction of the Sun's disc that reference rays across the disc see from the point, within the spread the record derives from the number of samples the history holds: fully lit, fully shadowed, in penumbrae about 2 cm, 1 m and 25 m wide, and with half the disc behind a ridge.",
-          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_soft_shadow_gpu",
-          "ask": "Is the allowed spread derived from the history's sample count and stated, and not chosen to pass? Would a filter that blurred a sharp contact edge, or a disc of the wrong angular size, fail?",
-          "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
         {
           "id": "M4.2",
           "statement": "A shadow's edge is sharp where its caster touches the receiver and widens with the caster's distance as the Sun's angular size sets it: at a prop's base, under a balloon, and from a ridge at a low Sun.",
@@ -385,7 +370,6 @@
           "id": "M4.8",
           "statement": "Paired rows on the valley's route are on record with the machine's load, with the penumbra on and off: the whole frame, the visibility pass's trace and filter by name, and the inline rays traced where history was missing. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py soft",
-          "ask": "Are the rows paired and interleaved on this milestone's build, with the load beside them?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -412,18 +396,6 @@
       "depends_on": [],
       "quality_bar": "Ray-traced ambient occlusion as Metro Exodus Enhanced Edition and Cyberpunk 2077 show it: contact darkening that belongs to the scene, with no halo at a silhouette and nothing that depends on what is on screen.",
       "items": [
-        {
-          "id": "M5.1",
-          "statement": "At surface points that hold still, the occlusion settles to the share of cosine-weighted reference rays, no longer than the scene's radius, that reach the sky unblocked, within the spread the record derives from the history's sample count: on open ground, at the foot of a wall, in a crease, under a prop, and beside an occluder that stands outside the camera's view.",
-          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_occlusion_gpu",
-          "ask": "Is the allowed spread derived from the history's sample count and stated? Does the off-screen occluder darken its receiver as much as it does on screen?",
-          "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
         {
           "id": "M5.2",
           "statement": "The value multiplies the diffuse and the reflected sky light, with the material's own occlusion, and nothing else: with the Sun and lamps as the only light it changes no pixel.",
@@ -466,7 +438,6 @@
           "id": "M5.6",
           "statement": "Paired rows on the valley's route are on record with the machine's load, with ambient occlusion off, at half extent and at full: the whole frame and the visibility pass by name. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py ambient",
-          "ask": "Are the rows paired and interleaved on this milestone's build, with the load beside them?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

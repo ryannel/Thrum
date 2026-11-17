@@ -13,14 +13,15 @@ restated where they bind. Revised again on 14 November for the atmosphere as a w
 [what that replaces](#judged-again-for-the-whole-atmosphere) is listed. Revised once more that day after the
 review of that revision: [a stop at every pixel's depth and the air in parts](#the-visible-layer), the frames
 of a ground row and the headless query, and
-[ceilings that decide](#numerical-acceptance-for-ground-condensate). Revised 16 November 2026:
+the yardstick its proofs quote. Revised 16 November 2026:
 [drift is taken at the display phase](#time-drift-at-the-displays-time-evolution-on-the-tick), which
 `EFFECT-GRAPH` M4 provides. Revised again that day after that revision's review (finding MF1;
 `git show f1076615a:docs/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
 tick at a time by the step's own arithmetic, and the phase describes the target the clock consumes.
 Revised 17 November 2026 after [M3's handoff](../../evidence/CLOUDS/M3-handoff.md): the Sun term of
-[cloud light](#cloud-light) is a beam and a diffuse solution held to photon transport, in place of four fixed
-orders.
+[cloud light](#cloud-light) is a beam and a diffuse solution, in place of four fixed orders. Revised that day
+for [the owner's bar](#how-the-module-is-proved): the look and the speed decide, references are diagnostics, and
+near and far fog [share one Sun term](#condensate-that-meets-the-ground-mist-fog-and-low-cloud).
 
 ## The request
 
@@ -65,6 +66,15 @@ The lead's planning task of 16 November 2026, after M2's builder ended `BLOCKED 
 > CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared
 > display-time interface change before M2.7's uneven 60× shade motion can be completed.
 
+The owner, 17 November 2026, through the lead:
+
+> Ok let's lower the bar.
+
+The lead's task with it: Thrum is a game engine; the aim is the most plausible result as fast as possible, not
+physical accuracy. Rendering passes when it looks as good as shipped high-end games against an agent-written
+inspection list and runs fast. Physical or f64 references stop being pass/fail gates and stay as diagnostic tools.
+[How the module is proved](#how-the-module-is-proved) applies it.
+
 The lead's reading, recorded as [assumptions](PLAN.md#open-for-the-human): the owner's last words govern; the
 design of 13 November, [the brief](BRIEF.md) of 10 November and the port decision describe the Broadsides
 approach and are inputs to judge, not constraints; Broadsides code, shaders and assets may be copied and reused
@@ -92,7 +102,7 @@ A reusable engine sky. Thrum's first outlet is teaching demos on the owner's web
 
 | User | Needs | What that requires of the design |
 |---|---|---|
-| A teaching demo, often in Chrome: a sunset, how weather changes a landscape's light, later how a cloud forms | A sky that is right as well as good-looking, composed for the shot, under a visitor's sliders, with only the parts the demo shows | Mechanisms with an oracle; light from the droplets' own optics; a cloud the demo can place; every part beyond the weather optional, at no cost when left out |
+| A teaching demo, often in Chrome: a sunset, how weather changes a landscape's light, later how a cloud forms | A sky that looks right, composed for the shot, under a visitor's sliders, with only the parts the demo shows | Mechanisms that follow their real inputs; light from the droplets' own optics; a cloud the demo can place; every part beyond the weather optional, at no cost when left out |
 | The showcase on this Mac | Skies at the bar of shipped games, smooth at the display's refresh | The work a ray does bounded by design; drift shown at the display's time |
 | A game | Weather it can read with no graphics device, the same on every device, and shade on a world that may show no sky at all | One deterministic field with a CPU query; one weather profile on every recipe; shade as a capability by itself |
 | `WATERS` and `ATMOSPHERE` | Sunlight dimmed once, and clouds in ambient light and reflections | No private sky, exposure or reconstruction; one optical depth |
@@ -594,10 +604,14 @@ A sample's scattered radiance, integrated over its step with Frostbite's equatio
 
 The Sun's light at a sample is in two parts that between them hold it all, once. The **beam** still travels
 nearly as the Sun's rays do. The **diffuse** light has been scattered until it has forgotten them. Both are
-closed forms of optical depths the trace already holds, so multiple scattering costs no density read, and
-photon transport is the oracle for both (parts XII to XVI of [the proofs](#check-that-it-can-work)). Nothing
-in the term is a weight, a gain or a look: a game changes how its clouds are lit through a type's droplet and
-its water, which are the phase and the density.
+closed forms of optical depths the trace already holds, so multiple scattering costs no density read. The term
+was chosen because it gives a cloud its brightness with nothing tuned: against photon transport it is typically
+a factor of 1.35 out on a box's faces, where the four orders it replaces are 40 times too dark (parts XII to
+XVI of [the proofs](#check-that-it-can-work)). It is the starting point, not a pass mark. A game changes how its
+clouds are lit through a type's droplet and its water, which are the phase and the density. A builder whose
+clouds fail the inspection list may also adjust the term's constants by eye (the level margin, the floor on
+`c₀`, the boundary depth, the beam's lobe), keeps one term for every consumer, and says in the evidence what
+changed. No item holds the shader to the equations below, to the model or to photons.
 
 - **Sun.** `E_sun` is the lent Sun light at a world position: the true Sun through the air, with no cloud factor.
   It is evaluated at the layer's base and top on each ray and interpolated by height, so a tall cloud's top
@@ -665,7 +679,7 @@ its water, which are the phase and the density.
   I₁  = 3μ/(4π) · (T − E)
   c   = ω · n                    ℓ = (X + 4/3)/π             v = (1 − g)·tau_view
   d   = x if c > 0, else X − x
-  q   = clamp(1 − v·|c|/d, 0, 1), and 0 where d is 0
+  q   = B · clamp(1 − v·|c|/d, 0, 1), and 0 where d is 0
   a   = q·exp(−(2/3)·v/ℓ)
   S_diffuse = max(0, (1 − a·ℓ/(2/3 + ℓ))·(I₀ − g·I₁·c) + g·I₀·a·(2/3)/(2/3 + ℓ))
   ```
@@ -690,7 +704,12 @@ its water, which are the phase and the density.
   from above or below it is 0 at every sample. Where it entered anywhere else, `q` rises to 1, and the light
   is lowered toward its value at a free boundary, over a depth `ℓ` that the column's own depth sets, with the
   outward flow toward the eye added at a mean cosine of 2/3. Without it the flanks of the three larger boxes
-  of part XV are 1.4 to 3.3 times transport; with it, 0.9 to 1.2.
+  of part XV are 1.4 to 3.3 times transport; with it, 0.9 to 1.2. `B` is the **boundary weight**, a function of
+  the sample's distance from the camera alone: 0 out to the end of
+  [the handover's ramp](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), rising smoothly to 1 at twice
+  that distance. Inside the ramp's end the camera may stand in the medium, where a boundary at the eye is wrong,
+  and two integrators draw one bank, so there the term has no view boundary for either. Every heaped cloud is
+  beyond twice that distance and takes the whole of it.
 - **How far it holds.** In a level layer the reflected share is within 0.017 of transport from a 45° Sun up
   and within 0.05 from 4° to 20° at depths of 2 and more, and low wherever it is more than 0.01 out (part XII). Radiance by direction is
   within 0.62 to 1.18 of transport at 45° and 90° from a depth of 8, and 0.47 to 1.34 at a depth of 2; the
@@ -788,7 +807,7 @@ ray through one cloud is one part.
 
 One part for a whole ray is the approximation this replaces. Its error grows with the air's optical depth
 between the condensate nearest the camera and the furthest: for a thin bank at 600 m with a thick one at 5 km
-behind it, the near one in shadow, it is 2.6 times [the ceiling](#numerical-acceptance-for-ground-condensate)
+behind it, the near one in shadow, it is 2.6 times [the ceiling](#how-the-module-is-proved)
 in haze of 8 km and 2.1 times at 20 km. With the part bound at 0.25 the same rays, a deep bank and thin mist to
 the horizon are all within a quarter of the ceiling, in haze from 3 to 244 km (part X).
 
@@ -979,14 +998,16 @@ near the camera and this module's trace beyond it.
   that ([rulings 6 and 7](#what-clouds-asks-of-other-modules)). Each frame this module writes, for every cell
   of that volume, at the jittered point the volume names, three **medium coefficients**: the extinction `σ`;
   the solar kernel `σ · (S_beam + S_diffuse)`, which is [cloud light](#cloud-light)'s Sun term without the
-  Sun, taken with no view boundary (`q` is 0), because the camera stands in the medium the volume holds, and
-  with its depths from the ground band, which holds the whole path, and from the condensate above the point;
+  Sun, from the one shader function the trace calls, at the boundary weight of the cell's distance, which is 0
+  everywhere in the volume, and with its depths from the ground band, which holds the whole path, and from the
+  condensate above the point;
   and the ambient source, cloud light's ambient term. Each is multiplied by the **near
   weight**. `ATMOSPHERE` multiplies the kernel by its Sun light at the point and by the scene's shadow there,
   adds the air's own coefficients and integrates once. This module never integrates the near field, and
   `ATMOSPHERE` never evaluates a density, a phase or a self-shadow.
 - **Beyond it: the trace.** The trace marches every condensate, ground sources included, weighted by the **far
-  weight**, lit by cloud light with the surface visibility on its Sun term, stopping at the scene's depth with
+  weight**, lit by cloud light at the boundary weight of each sample's distance, so inside the ramp it evaluates
+  the same source as the view volume, with the surface visibility on its Sun term, stopping at the scene's depth with
   [a stop at every pixel's depth](#the-visible-layer) and taking the air in parts. A far bank is then drawn at
   the layer's grain, a texel for every four pixels, where the view volume's cells are sixteen pixels across.
 - **The handover.** The near weight is 1 from the camera to the start of a ramp and falls to 0 at its end; the
@@ -994,7 +1015,11 @@ near the camera and this module's trace beyond it.
   Two integrators that each take a share of one extinction compose as ordered segments to the exact
   transmittance, and to the in-scatter within 0.002 for a ramp twice that long in part I's uniform medium.
   The in-scatter's error depends on what stands in the ramp: a bank that fills a 300 to 500 m ramp is 0.011
-  in 0.65 (`ATMOSPHERE`'s design review), and M15.2 measures one. The distance is short
+  in 0.65 (`ATMOSPHERE`'s design review). That holds because both integrators take one source there: with a
+  view boundary in the trace alone, a bank brightened by up to 19% as it crossed the ramp
+  ([the review of 17 November](../../evidence/CLOUDS/design-review.md), finding MF1), which the boundary weight
+  removes. Beyond the ramp the boundary comes in over a distance as long as the ramp's end, in the one
+  integrator, so nothing steps. M15.4 judges the handover by eye, with a bank walked through it. The distance is short
   for three reasons: fog thick enough to hide the land is all inside it; every heaped cloud base is beyond it,
   so no cumulus is ever drawn at the volume's cell size; and a low deck overhead is featureless at that range.
 - **The world's light.** The [sky overlay](#the-sky-the-world-sees) traces every condensate from the camera, so
@@ -1040,8 +1065,8 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
   are read from the capability record and refused at preparation when exceeded. Levels are array layers or
   packed regions so the trace stays inside sixteen sampled textures with the lent environment group.
 - **Recipes.** Both recipes run the portable kernels first. An Apple-tile variant (f16 arithmetic, compute in
-  place of a fragment pass or the reverse) is promoted only by a paired measured win with the same output within
-  the conformance bounds.
+  place of a fragment pass or the reverse) is promoted only by a paired measured win with no visible difference
+  in the same views.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: the trace's
   refresh fraction, the layer's scale, step length and sample cap, local light samples, the Sun's path cadence
   per level, weather map cadence, overlay cadence, placed range, the ground band's cadence and the medium coefficients' cadence. The handover
@@ -1050,72 +1075,43 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
   weather map holds or what a query returns; the placed range changes only the map's presentation values, the
   slot and the volume form's weight, and through them which form of a placed cell is drawn and shaded.
 
-### Numerical acceptance for ground condensate
+<a id="numerical-acceptance-for-ground-condensate"></a>
+<a id="numerical-acceptance-for-cloud-light"></a>
 
-M13.6, M13.7, M14.2 to M14.4 and M15.1 to M15.3 each compare a product with an f64 reference written apart from
-it. What decides and what is recorded are kept apart, as
-[`ATMOSPHERE` keeps them for its view volume](../ATMOSPHERE/DESIGN.md#numerical-acceptance-for-the-view-volume),
-and the ceiling has that module's form, so the two integrators of one medium are held alike.
+### How the module is proved
 
-- **The ceiling decides.** At every probe a quantity is within `0.05 × expected + 0.005 × F` of its reference.
-  `F` is 1 for a transmittance; for any other quantity it is the largest expected value among the case's
-  probes. The ceiling is fixed here, before any build measures anything. A gain error of a tenth fails it, and
-  so does an extinction counted twice: 0.135 where 0.368 is expected is 0.233 out against a ceiling of 0.023.
-- **A product on a grid places an edge within a node.** The ground band and the weather map hold values at
-  nodes. For them a probe passes when the product is within the ceiling of the reference's value somewhere
-  within one node's spacing of the probe, along each of the product's axes. At the probe itself part X's band
-  is outside the plain ceiling at 1, 6 and 16 of 400 probes at a 30°, 10° and 4° Sun, all at the foot of a
-  bank's shade; with a node's allowance it is outside at none.
-- **A wrong substitute fails in the same test.** Each item names its substitutes below. The test runs each
-  through the same assertion, in a case chosen so that it lies outside the ceiling, and shows it fail. A
-  substitute that passes there means the test proves nothing.
-- **The measurement is a record.** The worst and the RMS error are written beside the planner's figures. They
-  decide nothing.
-- **A miss is a plan change.** If a product the builder believes correct misses the ceiling, the builder
-  records where and by how much and ends `BLOCKED`. The ceiling is not widened in a build, and no bound an
-  earlier milestone measured stands in for it.
+The owner's bar of 17 November 2026 ([the request](#the-request), and
+[the project settings](../../../ORCHESTRATE.md#what-is-proved-and-how-hard)) decides what an item may ask.
 
-| Item | Held to | Wrong substitutes that must fail | Where they do, from part X unless said |
-|---|---|---|---|
-| M13.6, the ground band on the CPU | The model's Sun-path reference, with a node's allowance | A level-layer rule; the band's value counted twice | The level rule at 24 and 54 of 400 probes at a 10° and a 4° Sun, beside the bank on its far side from the Sun. At 30° it is inside, so 30° alone proves nothing. Counted twice: 184 probes at 30° |
-| M13.7, the handover on the CPU | One integration of the whole ray | Both shares taken whole; the far share not dimmed by the near | Transmittance 0.12 out against 0.012. In-scatter 0.39 out against 0.047 under uniform light and 0.12 against 0.036 with a shadow edge in the ramp, where the design's is 0.011 |
-| M14.2, ground condensate on the GPU | The model at world points after a travel, with a node's allowance | A shore mask that the map holds and drifts | The row's whole extinction inland of the margin, where zero is expected (part VIII) |
-| M14.3, the ground band on the GPU | As M13.6 | The cloud band's value added again; a level-layer rule | An upper cloud of optical depth ln 2 gives 0.25 for 0.5 (`ATMOSPHERE`'s part I); the level rule as in M13.6 |
-| M14.4, the medium coefficients | The model's references at the volume's sample points | A kernel without the medium's own optical depth toward the Sun; an extinction without the near weight | In a bank whose Sun path is 1 or more, the beam is 1.6 times out; inside the ramp the extinction is out by the far share |
-| M15.1, the stops | The model's pair at each pixel's own depth | The nearest and farthest stops blended to the pixel's depth, as pairs and as optical depth | Transmittance 0.77 and 0.67 where the two banks give 0.30 and 1.00 (part VII) |
-| M15.2, the handover on the GPU | The model for the whole ray | The far share not dimmed by the near | As M13.7 |
-| M15.3, the far air | A joint integration of air, haze and condensate | The segment as one part; the segment with no air in front of it | One part: 2.6 times the ceiling at 8 km for two banks with the near one in shadow. No air: 3 to 6 times at 8 km. At 60 km and clearer both are inside, so those hazes prove nothing |
+- **The look decides.** Each cue is judged in the running game against its milestone's inspection list, at the
+  bar of the skies and mists of Red Dead Redemption 2 and Horizon Forbidden West. Cloud light, the ground band,
+  the medium coefficients, the stops, the handover and the far air are all judged this way: by what a sky, a
+  bank, a ridge line and a walk through the handover look like.
+- **Speed is a tripwire.** The paired cost records and their wires are in [the cost account](#cost-account). A
+  record passes on its check; a reviewer reads the records once, in M12.
+- **References are diagnostics.** `thrum-cloud-model`'s f64 marches, the retained Python references and the
+  proof scripts stay in the repository. A builder whose picture looks wrong compares against them to find the
+  cause. No item holds a GPU product or the Sun term to one within a bound, no milestone measures a bound first
+  and then asserts it, and a miss against a reference neither fails an item nor ends `BLOCKED`.
+- **What a game reads is tested.** The weather field is the game's: it is deterministic, and its CPU query is
+  what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
+  tolerance the test states: cloud and mist stand where the query has them and not where it is clear (M2, M4.1,
+  M6.2, M6.9, M7.6, M14.2).
+- **Contracts are tested.** The frame contract's motion, reactive coverage and history (M3.4, M15.7); air and
+  condensate composed once (M3.6, M14.3); one optical depth for every receiver, with the same bytes with
+  visible clouds off (M3.8, M6.12, M8.9); a capability left out costing nothing; state through pauses, hitches
+  and a replaced device; and no retained image moved.
+- **A wrong substitute still fails.** Where a test names a plausible wrong version, such as a shore mask that
+  drifts or a cloud band's value counted twice, it runs that version through the same assertion and shows it
+  fail.
+- **Milestones already Done stand as built.** M1, M2 and M13 were proved against f64 references and the
+  yardstick below, and their tests stay in `./dev check` as regression guards. A builder who changes a model on
+  purpose updates its test's expected values in the same landing.
 
-### Numerical acceptance for cloud light
-
-M3.13, M3.14 and M5.1 hold [cloud light](#cloud-light)'s Sun term in three steps, each against something
-written apart from what it tests. What decides and what is recorded are kept apart, as above.
-
-- **The model is the design's term.** `thrum-cloud-model` gives the beam and the diffuse source in f64. At the
-  sixteen probes of part XVI, which
-  [`multiple_scattering_proof.py`](../../evidence/CLOUDS/design-proof/multiple_scattering_proof.py) prints from
-  its own statement of the term, each is within one part in 10⁹ of the printed value, and the droplet's four
-  numbers are within one part in 10⁶. A term that differs from the design anywhere the probes reach fails
-  here, whatever it looks like.
-- **The term is held to photons.** For a level layer at Sun elevations of 10°, 20°, 45°, 60° and 90° and
-  optical depths of 2, 8, 32 and 128, the share of the Sun's flux the model's column returns, `1 − T`, is
-  within 0.025 of photon transport at 45° and above and within 0.06 at 10° and 20°. Part XII measured at most
-  0.017 and 0.043 there, with a standard error under 0.002. The photon reference is retained in
-  `scripts/reference/cloud/`, follows at least 100,000 photons a case until every one has left, reads no
-  engine kernel, and is held to its own single-scattering integral.
-- **A wrong substitute fails in the same test.** The four fixed orders, as the flux of their radiance: 0.05
-  where 0.58 is expected at 45° and a depth of 16. A lit plane taken square to the Sun in a level layer: 0.38
-  for 0.51 at 10° and a depth of 2, and 0.37 for 0.41 at 45° and 8. The column's exponent without the forward
-  share: 0.02 for 0.09 at 60° and a depth of 2.
-- **The GPU is held to the model.** The trace's kernel gives the model's beam and diffuse source at probes
-  that cover part XVI's cases, and a level slab marched by the trace's own kernels gives the model's radiance
-  toward the eye from above and from below, each within a bound M3 measures first in f32 and then asserts. The
-  four fixed orders fail the slab's assertion.
-- **What is recorded decides nothing.** Radiance by direction (part XIII), the light near the Sun (part XIV)
-  and the faces of a box (part XV) are the planner's figures for how far the term is from transport where no
-  closed form constrains it. No item asserts them, and a build does not tune toward them.
-- **A miss is a plan change.** If a term the builder believes is the design's misses the probes or the
-  ceiling, the builder records where and by how much and ends `BLOCKED`. Neither is widened in a build.
+**The yardstick the proofs quote.** Where [Check that it can work](#check-that-it-can-work) and the sections
+above say "the ceiling", they mean `0.05 × expected + 0.005 × F` at a probe, with `F` 1 for a transmittance and
+otherwise the largest expected value among the case's probes. The planner used it to compare mechanisms, and
+M13's tests assert it. It decides nothing in a milestone that is not yet Done.
 
 ### Check that it can work
 
@@ -1249,7 +1245,7 @@ From `ground_revision_proof.py`, run on 14 November after
 - **IX, the query.** The review's two shapes of one footprint: with voxels, extinctions of 0.03 and 0 at 15 m
   and level sight lines of 0.0498 and 1; from the footprint, one column form for both, 0.0176 and 0.172, whose
   whole column is the footprint's 0.5 and which is zero above the shape.
-- **X, ceilings.** The figures in [numerical acceptance](#numerical-acceptance-for-ground-condensate): the
+- **X, ceilings.** Measured with [the yardstick](#how-the-module-is-proved): the
   ground band with a node's allowance, the handover with a bank across a 300 to 500 m ramp, and the far air in
   one part and in parts bounded at 0.5 and 0.25, over hazes of 3, 8, 20, 60 and 244 km, two sources and four
   rays. One part is at worst 2.6 times the ceiling, a bound of 0.5 is 0.93 of it and a bound of 0.25 a quarter.
@@ -1420,8 +1416,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 3. **The reconstructed layer ghosts or crawls.** Early sign: M3's pan. Fallback: refresh every texel every
    frame at a lower layer scale, which removes the layer's history from the picture.
 4. **Low-Sun relief is lost in the summed product**, or its coarse density shades an eroded edge visibly
-   differently from the cloud that is drawn. Early sign: M3's record of the two densities' Sun paths, and M5's
-   low-Sun stills against the oracle. Fallback: more local samples at low Sun, or a finer near level. The same
+   differently from the cloud that is drawn. Early sign: M3's and M5's low-Sun stills. Fallback: more local samples at low Sun, or a finer near level. The same
    holds for a placed shape, whose shade edge the product places within one column's width (part H): M6's
    record and its stills of a shape's shade are the early sign.
 5. **`ATMOSPHERE`'s products resist the overlay**, because their storage is relative to the Sun. Early sign:
@@ -1444,14 +1439,15 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
    out of turn. The fixes, in order: a tighter stop tolerance for a ghost; for cost, a coarser layer where
    stops end on surfaces. Never a stop filled from a neighbour or blended between two depths.
 11. **Far mist in thick haze takes its air wrongly**, as a bank too bright or too blue against the land behind
-   it. Early sign: M15.3's record against the ceiling. The fix is a smaller part bound, never one part for the
+   it. Early sign: M15.4's stills in thick haze. The fix is a smaller part bound, never one part for the
    ray.
 12. **The lit plane mottles or the view boundary shows.** The plane compares the map's column above a sample
    with the eroded cloud toward the Sun, and the two disagree at an eroded edge; the boundary term turns on
    where a view ray enters between the lit plane and the far one. Early sign: M3's stills, as blotches on a
    sunlit top or a seam along a cloud's shoulder, and M5's at a low Sun, where the plane's cosine ranges
    furthest. The fixes, in order: a deeper level margin than 2; a `tau_up` taken from the same coarse density
-   as the product. A planner makes either from the record. Never a gain, a second light or fixed orders.
+   as the product, or the term's constants adjusted by eye. The builder makes them and records what changed.
+   Never a second light or a return to fixed orders.
 13. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
@@ -1470,7 +1466,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   it, and never build against it. A file may be copied or translated where it does what this design states, on
   the owner's words of 14 November. Each copied or translated file is listed in
   `docs/evidence/CLOUDS/PROVENANCE.md` with its source commit and path, goes through review like any other code,
-  and meets this module's oracles and items: a verdict it passed in Broadsides is not a verdict here. Material
+  and meets this module's items: a verdict it passed in Broadsides is not a verdict here. Material
   that came into Broadsides from elsewhere keeps its own licence, recorded with it, and nothing GPL or
   share-alike is copied. The cloud library is read from Git LFS without changing the Broadsides checkout, and its
   licence record is copied beside it.
@@ -1479,34 +1475,30 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** The ledger's `E1.clouds` row is kept current from M2, with implementation, correctness, visuals
   and device apart.
-- **Ceilings.** The items of M13 to M15 that name the design's ceiling are held to
-  [numerical acceptance for ground condensate](#numerical-acceptance-for-ground-condensate). A miss ends
-  `BLOCKED`; a build never widens the ceiling or measures its own.
-- **Cloud light.** M3.13, M3.14 and M5.1 are held to
-  [numerical acceptance for cloud light](#numerical-acceptance-for-cloud-light). The Sun term has no weight or
-  gain to tune: a look is tuned through a type's droplet and water, in the game's type table.
+- **The bar.** [How the module is proved](#how-the-module-is-proved) governs every milestone not yet Done.
+  A builder tunes the look against the inspection list, with a fresh opinion, and records what it changed. A
+  reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
+  end `BLOCKED`.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
 | What does the trace cost at 2560×1440 against the refresh interval, and at which refresh fraction and local sample count? | M3 records; M12 records again at the showcase's extent on both recipes |
-| How far is the coarse density's Sun path from the full density's at an eroded edge, on the GPU? | M3 records it beside the design proof's 0.001 RMS |
 | What do the weather map and the Sun's path cost at 8× and at 60×, where their ages are held in weather time? | M2 records |
-| What tolerance does the GPU weather map meet against the CPU field on Metal and in Chrome? | M2 and M4 measure first, then assert the recorded bound |
+| What tolerance does the GPU weather map meet against the CPU field on Metal and in Chrome? | M2 measured and asserts it; M4 holds Chrome to the same test |
 | How many sampled textures does the lent environment group use in the trace? | M3 counts against the record |
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
-| How far is the GPU's Sun term from the model's in f32, and the march of a lit slab from the model's radiance? | M3 measures first, then asserts the recorded bound |
+| Does the Sun term give clouds their brightness and relief with nothing tuned, and if not, which constant moves? | M3's stills, then M5's at a low Sun; the builder records any constant it changed |
 | Does the lit plane hold steady where the map's column and the eroded cloud disagree? | M3's stills, then M5's at a low Sun |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | M1 measures first, beside part G's 1,025 |
-| How far is the product over a placed shape from the volume's own Sun path, at its edges and inside it, on the GPU? | M6 measures first, beside part H's figures |
 | Does the incident-light meter already see cloud shade? | M8 reads the code and measures |
 | Can the scene's residency take the library as a second source folder? | M6; if not, the proposal goes to `CONTENT-LOOP`'s log |
 | Is an Apple-tile kernel variant a measured win? | M12 |
 | How wide a datum window pools mist as the valley's relief wants? | M13 sets the profile's value on the valley's heights; M14 judges it |
 | What do the ground band and the medium coefficients cost, on the Mac and in Chrome? | M14 records |
-| How far is the far segment's air from a joint integration, in haze of 8, 20 and 60 km? | M15.3 records it against the ceiling, beside part X's quarter of it at a part bound of 0.25 |
+| Does a far bank sit in the land's haze at visual ranges of 8 and 60 km? | M15.4's stills |
 | What stop tolerance keeps a surface's own stop through a walk and rejects its neighbour's, and how many texels does a pan trace out of turn? | M15 sets the profile's value and records the count |
 | Does the handover show at 300 to 500 m, and at what ramp? | M15 |
 | Can `examples/water` give a surface field from its water map without a change to `WATERS`? | M11; if not, the proposal goes to `WATERS`' log |

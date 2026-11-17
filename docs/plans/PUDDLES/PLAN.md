@@ -21,6 +21,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: in the V1 valley rain sits behind a selection that is off by default, so the exit scene is unchanged, and it waits for the populated valley (`SHOWCASE` M5).
 - Assumption: this module builds inside `WATERS`' crates and the forward shader under eight rulings, and four of them replace what `WATERS`' design expected: a puddle is not a lake with a seed point, a raindrop is not an impulse record, the shore's film is also drawn on wet paving, and a yard of puddles is mirrored at several heights.
 - Assumption: the module closes only after `WATERS` has its mirror view, its look in motion and its light under water (M14, M10 and M16), because a puddle that mirrors only what is on screen is below the bar.
+- Assumption: the owner's bar of 17 November applies as in `WATERS`: puddles, rain bands and wetness stay tested against the model, and the wet look and rings are judged by eye.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 on the island and the showcase's extent in the valley, and no timing figure decides an item (brief decision 3).
 
 ## M1 On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry: done
@@ -38,15 +39,15 @@ The island's ground, bodies, `scripts/water_cost.py` and `scripts/check_water_br
 
 ## M4 Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops
 
-The rain bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. Measure M4.1's bound first, with the two wrong evaluators the design's [Bounds](DESIGN.md#proof-and-builder-handoff) name, then assert it. The schedule's count and the moments of the drops below the cut are the two values to tune against M4.4 and M4.5; record both.
+The rain bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. M4.1's test states its own tolerance. The schedule's count and the moments of the drops below the cut are the two values to tune against M4.4 and M4.5; record both.
 
 ## M8 A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill
 
-Built after M4 and before M5. Ruling 2 extends the interaction reference and step `WATERS` M6 built, in `thrum-water-model` and `thrum-water`; leave its tests as they are. Part 6 gives M8.1's bounds; measure M8.3's first, against the deep operator. The game names the walking marker as the body the interaction windows follow.
+Built after M4 and before M5. Ruling 2 extends the interaction step `WATERS` M6 built, in `thrum-water`; leave its tests as they are. The game names the walking marker as the body the interaction windows follow.
 
 ## M5 The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last
 
-Ruling 5 edits `thrum-render`'s `synthetic/scene_source.rs` and `synthetic.wgsl` and `thrum-asset-gpu`'s material, which other modules own; compose the read as `compose_with_cloud` composes the cloud factor, and leave the text of a scene with no provider as it is. `WATERS` M16 adds a water factor to the same shader; whichever lands second integrates. Measure M5.2's bound first, against its two wrong evaluators. Each class's `p` and the film's roughness are the values to tune against M5.5 and M5.6; record them.
+Ruling 5 edits `thrum-render`'s `synthetic/scene_source.rs` and `synthetic.wgsl` and `thrum-asset-gpu`'s material, which other modules own; compose the read as `compose_with_cloud` composes the cloud factor, and leave the text of a scene with no provider as it is. `WATERS` M16 adds a water factor to the same shader; whichever lands second integrates. M5.2's test states its own tolerance. Each class's `p` and the film's roughness are the values to tune against M5.5 and M5.6; record them.
 
 ## M6 In the V1 valley, behind a selection, a shower darkens the desert floor and its rocks and leaves puddles in a patch of ground, and with the selection off the exit scene is what it was
 

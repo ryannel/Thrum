@@ -640,8 +640,11 @@ dependencies. In addition:
   `docs/evidence/RIVERS/PROVENANCE.md`; none is expected.
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.
-- **Bounds.** Parts 1 to 10 are the source of the bounds in M1 to M3 and M6.10. A bound on the GPU is measured
-  first, on this Mac, and then asserted, with its date and commit in the record.
+- **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,
+  and it holds here: M4 to M7 pass on their look and their speed, what a game reads (the river in the map and
+  the query) is tested against `thrum-water-model` at the tolerance `WATERS` M4.1's test states, and the sheet,
+  the flow bands and the river's caustics are not held to an f64 reference or to a bound measured first. Parts
+  1 to 10 are the source of the bounds M1 to M3 were proved with and of M6.10's carriage figures.
 - **Maturity.** A ledger row for `E1.rivers` is added in M4 and kept current.
 
 ## Open questions

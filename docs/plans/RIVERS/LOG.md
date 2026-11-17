@@ -113,3 +113,8 @@
 - 2026-11-17 M3 after its second review ([evidence](../../evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was)).
   Fixed: a river refused for its banks left the map with support from the refused sample; `add_river` now rebuilds before that error.
   Verified: the review's probe as a test, 3,721 answers unchanged after two kinds of refusal; it fails at 167 without the fix.
+
+- 2026-11-17 Human: "Ok let's lower the bar." The most plausible result as fast as possible, not physical accuracy; references become
+  diagnostics. Plan: M5.1, M6.1, M6.2, M6.3, M6.10, M7.5 and M7.11 are rewritten without a bound measured first or an f64 reference, and
+  M6.3 and M6.10 no longer run `thrum-water-model`'s interaction test, which `WATERS` M6 no longer builds. M4.3 names the tolerance
+  `WATERS` M4.1's test states. Three cost records pass on their check alone. No item of a Done milestone changed.

@@ -317,7 +317,7 @@
         },
         {
           "id": "M3.3",
-          "statement": "Ruling 1 is built on the GPU. For a bed the test makes, at five fills that include the ticks before and after a merge, the body, level, bed and depth the GPU's map gives at 4,096 scattered points and along every puddle's waterline are `thrum-water-model`'s, within the bound `WATERS` M4.1 recorded. A scene with no hollows body compiles to the shader text, passes and storage it had before this milestone.",
+          "statement": "Ruling 1 is built on the GPU. For a bed the test makes, at five fills that include the ticks before and after a merge, the body, level, bed and depth the GPU's map gives at 4,096 scattered points and along every puddle's waterline are `thrum-water-model`'s, at the tolerance `WATERS` M4.1's test states. A scene with no hollows body compiles to the shader text, passes and storage it had before this milestone.",
           "check": "cargo test --locked --offline -p thrum-water --features thrum-render/creation-counters --test hollows_gpu",
           "ask": "Is a hollows body reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU reads one level for the whole body?",
           "lock": "gpu",
@@ -329,7 +329,7 @@
         },
         {
           "id": "M3.4",
-          "statement": "Each puddle is drawn level and whole. Seen from above, each pixel's water or ground is what the CPU model gives for that place, except within a cell of a waterline; the depth the water writes over each puddle is its level within M4.1's bound; and no triangle of the surface joins two levels over water.",
+          "statement": "Each puddle is drawn level and whole. Seen from above, each pixel's water or ground is what the CPU model gives for that place, except within a cell of a waterline; the depth the water writes over each puddle is its level at the tolerance `WATERS` M4.1's test states; and no triangle of the surface joins two levels over water.",
           "check": "cargo test --locked --offline -p water-scene --test puddles_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -387,7 +387,6 @@
           "id": "M3.10",
           "statement": "With the yard in view at three fills the paired cost record is taken at 2560x1440, beside the island's record, with the puddle tiles' vertices and pixels, the bytes of the hollows' textures and the yard's preparation time. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-puddles && python3 scripts/rain_cost.py check --scene yard",
-          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -427,9 +426,9 @@
       "items": [
         {
           "id": "M4.1",
-          "statement": "Ruling 3 is built on the GPU. The two rain bands, evaluated at the display's time, differ from `thrum-water-model`'s at three times, one of them 0.4 s after the rain stops, by no more than the bound this milestone first measures and records. That bound is no more than a tenth of the difference the same test measures for bands evaluated half a tick late and for bands that ignore the rate history. A repeated frame at one time draws the same bands, and a capture at a tick draws that tick's, from its history. A scene without the capability compiles to the shader text, passes and storage it had before.",
+          "statement": "Ruling 3 is built on the GPU. The two rain bands, evaluated at the display's time, agree with `thrum-water-model`'s at three times, one of them 0.4 s after the rain stops, at a tolerance the test states, which bands evaluated half a tick late and bands that ignore the rate history both miss. A repeated frame at one time draws the same bands, and a capture at a tick draws that tick's, from its history. A scene without the capability compiles to the shader text, passes and storage it had before.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
-          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit, beside the two wrong evaluators' differences? Do the bands keep any texture from one frame to the next?",
+          "ask": "Do the bands keep any texture from one frame to the next?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -441,15 +440,6 @@
           "id": "M4.2",
           "statement": "The bands' gain is the model's. Under the roof the drawn surface carries no ring and in the open it carries them; a ring on 2 mm of water is the depth response's share of one on a deep puddle; the lake and the sea carry them; and the rings counted over a patch follow the rain at 2, 10 and 50 mm/h. The passes run while any tick of the last second held rain and not after: 0.4 s after the rain stops the surface still carries the rings born before it, and from a second after it the passes do not run and the surface is what it is with no rain.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
-          "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
-        },
-        {
-          "id": "M4.3",
-          "statement": "A ring is water's own wave on the GPU: with one drop scheduled, the edge of the calm water inside its rings and its highest crest stand where the reference puts them 0.4 s and 0.8 s after, within the bound M4.1 recorded and a texel.",
-          "check": "cargo test --locked --offline -p water-scene --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -507,7 +497,6 @@
           "id": "M4.10",
           "statement": "With rain at 50 mm/h on the yard and the lake, the paired cost record is taken again at 2560x1440, beside M3's, with the CPU time of labelling regions as the puddles fill. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-rings",
-          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -538,29 +527,10 @@
       "quality_bar": "Rings from a step in a puddle as on the street puddles of The Last of Us Part II, and past them in that each ring is the water's own wave: round, crossing at the speed the depth gives and slower in the shallower puddle, dying at the edge, and stopped exactly by a dry sill.",
       "items": [
         {
-          "id": "M8.1",
-          "statement": "Ruling 2 is built on the CPU: the interaction reference takes a fine level with a ladder of 5, 10, 20, 40, 80 and 160 mm, the deep operator from 320 mm, and surface tension in its frequency. Over waves of 8 cm to 1 m on uniform depths from 5 mm to deep and midway between ladder depths, a step of one tick and of two has a phase speed within 3% of the true speed, never grows, and loses under 0.5% of a wave's height a second at one tick and under 3% at two. A frame more than two ticks ahead takes two steps and counts the rest as dropped. With a fine level the near level holds no wave under 1 m; with none, the reference's answers are the same to the bit.",
-          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level && cargo test --locked --offline -p thrum-water-model --test interaction",
-          "ask": "Does the test show steps of eight ticks failing the loss, as part 6 of the design proof does? Were `WATERS`' interaction tests left as they were?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M8.2",
-          "statement": "On the fine level a footfall's rings cross 30 mm of water at the speed that depth gives within 5%, and slower on 10 mm. With two puddles a dry sill apart, a ring raised in one leaves the other exactly at rest. After the two merge, the same height and potential are still in the level, and a ring then crosses the drowned sill.",
-          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
-        },
-        {
           "id": "M8.3",
-          "statement": "Ruling 2 is built on the GPU. The fine level follows the reference for a scripted set of footfalls within the bound this milestone first measures and records, and that bound is no more than a tenth of the difference the same test measures with the deep operator in place of the ladder. A ring raised in one puddle leaves the next exactly at rest across a dry sill and crosses it once the two have merged; and `WATERS`' interaction tests pass unchanged with the fine level in the profile and without it.",
+          "statement": "Ruling 2 is built on the GPU. On the fine level a footfall's rings cross 30 mm of water faster than 10 mm and never grow, and a frame more than two ticks ahead takes two steps and counts the rest as dropped. A ring raised in one puddle leaves the next exactly at rest across a dry sill and crosses it once the two have merged, with the height and potential the level held before the merge still in it. `WATERS`' interaction tests pass unchanged with the fine level in the profile and without it.",
           "check": "cargo test --locked --offline -p thrum-water --test fine_level_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
-          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit, beside the wrong evaluator's difference? Does the fine level take one tick at a time and never more than two in a frame?",
+          "ask": "Does the fine level take one tick at a time and never more than two in a frame?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -579,16 +549,6 @@
           "review": ""
         },
         {
-          "id": "M8.5",
-          "statement": "`WATERS`' conformance harness, run over a hollows body with rain bands and a fine level, reports nothing for the model against itself.",
-          "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
           "id": "M8.6",
           "statement": "In Chrome a footfall's rings cross a puddle and stop at a dry sill.",
           "check": "node scripts/check_water_browser.mjs --case rain-footfall",
@@ -604,7 +564,6 @@
           "statement": "With the marker walking through the yard's puddles in rain at 10 mm/h, the paired cost record is taken again at 2560x1440, beside M4's, with the count of regions and solves in the fine level's step. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-footfall",
           "lock": "gpu",
-          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -647,9 +606,8 @@
         },
         {
           "id": "M5.2",
-          "statement": "On the GPU the wetness function is the model's: at 4,096 scattered points of a scene the test makes, with a roof's edge, a crown under a roof, a slope, a wall, a puddle's margin and a shore among them, the pores' fill and the surface water differ from `thrum-rain-model`'s by no more than the bound this milestone first measures and records. That bound is no more than a tenth of the difference the same test measures for wetness that ignores slope and for wetness that reads the open store everywhere.",
+          "statement": "On the GPU the wetness function follows the model: at 4,096 scattered points of a scene the test makes, with a roof's edge, a crown under a roof, a slope, a wall, a puddle's margin and a shore among them, the pores' fill and the surface water agree with `thrum-rain-model`'s at a tolerance the test states, which wetness that ignores slope and wetness that reads the open store everywhere both miss.",
           "check": "cargo test --locked --offline -p thrum-water --test wetness_gpu",
-          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit, beside the two wrong evaluators' differences?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -659,7 +617,7 @@
         },
         {
           "id": "M5.3",
-          "statement": "The wet look is the reference's. Matte panels of albedo 0.1, 0.4 and 0.8 with full pores store the reference's colour within a half-float step, a metal panel stores what it did dry, a panel under the roof stores what it did dry, and a wet panel's roughness is lower. This holds for an entity's material and for a cooked placement.",
+          "statement": "The wet look reaches every surface by one rule. Matte panels of albedo 0.1, 0.4 and 0.8 with full pores are each darker than they were dry, a metal panel stores what it did dry, a panel under the roof stores what it did dry, and a wet panel's roughness is lower. This holds for an entity's material and for a cooked placement.",
           "check": "cargo test --locked --offline -p water-scene --test wet_look_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -723,7 +681,6 @@
           "id": "M5.9",
           "statement": "With the yard soaked and filling the view the paired cost record is taken again at 2560x1440, beside M4's, with the forward pass's time with the provider and without it, and the sampled textures the forward stage and the surface use against the capability record on the Mac and in Chrome. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-ground",
-          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -767,7 +724,7 @@
         },
         {
           "id": "M6.2",
-          "statement": "In the valley the wetness on the cooked terrain and on entity rows is the model's within M5.2's bound, and the patch's puddles are the model's within the bound `WATERS` M4.1 recorded.",
+          "statement": "In the valley the wetness on the cooked terrain and on entity rows agrees with the model at M5.2's tolerance, and the patch's puddles with the model at the tolerance `WATERS` M4.1's test states.",
           "check": "cargo test --locked --offline -p v1-game --test rain_valley_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -801,7 +758,6 @@
           "id": "M6.5",
           "statement": "With the selection on and the valley soaked, a paired cost record of the valley is taken at the showcase's extent, with the selection off as its pair. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/rain_cost.py check --scene valley",
-          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

@@ -17,8 +17,9 @@ full-resolution copies, redundant transforms or a CPU–GPU round trip to reach 
 finished, and a look that exists only at seconds per frame is a reference, not a product.
 
 Specialised internals are welcome when their benefit is real and checkable: generated code, compact layouts,
-precomputation, incremental work and target-specific paths. Keep their invariants, validity, fallback and an
-independent oracle explicit. Accelerated paths come from the capability registry, keep a portable fallback, and are
+precomputation, incremental work and target-specific paths. Keep their invariants, validity and fallback explicit,
+with a comparison against the portable path that shows the output is the same to the eye, or exactly where it is
+meant to be exact. Accelerated paths come from the capability registry, keep a portable fallback, and are
 promoted only by a measured win. Record each named technique and its source in the technique register
 (`AI-PERFORMANCE.md#technique-register`).
 

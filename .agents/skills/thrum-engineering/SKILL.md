@@ -36,7 +36,7 @@ side effect of a fix.
 | `crates/thrum-asset` | Cooked product format and loading: mapped, validated, content-addressed |
 | `crates/thrum-asset-gpu` | GPU residency for cooked products: staged uploads, meshlet culling, the cooked-mesh draw |
 | `crates/thrum-cook` | Authoring-only cooker, cache, watcher and dev server. Never a runtime dependency |
-| `crates/thrum-sea-model`, `thrum-cloud-model` | CPU models and oracles in `f64`, with no graphics dependency |
+| `crates/thrum-sea-model`, `thrum-cloud-model` | CPU models in `f64`, with no graphics dependency: what a game queries headless, and a diagnostic for the GPU paths |
 | `crates/thrum-sea` | The GPU sea, on the scene effect graph |
 | `crates/thrum-app` | Platform shells: the native macOS window and render thread, the browser WebGPU shell, the sky kit |
 | `crates/thrum-controls`, `thrum-network`, `thrum-content-runtime` | Demo controls, network codecs, small checked runtime products |
@@ -100,6 +100,13 @@ game reaches the engine through public APIs, and the engine reaches a game only 
 portable recipe and never limits native. Accelerated paths are selected from the capability registry, keep a
 portable fallback that the same tests exercise, and are promoted only by a measured win
 (`docs/design/decisions/HARDWARE-NATIVE-ENGINE.md`).
+
+**Plausible and fast, proved in proportion.** The owner's bar (17 November 2026, in `ORCHESTRATE.md`) is the most
+plausible result as fast as possible, not physical accuracy. Rendering and visual work passes when it looks as
+good as a shipped high-end game against its inspection list and runs fast. A physical or `f64` reference is a
+diagnostic for output that looks wrong, never a pass mark. Correctness is proved where a failure is silent and
+costly: networking, simulation determinism, cooked formats and the contracts between modules. Match the weight of
+a proof to the risk it covers.
 
 **Cost is designed, then measured.** The owner's policy is best-practice decisions up front, tripwires while
 building, tuning later. Don't invent numeric budget gates. Per-frame and per-tick code reuses its buffers, uploads

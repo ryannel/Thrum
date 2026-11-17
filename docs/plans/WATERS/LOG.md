@@ -440,3 +440,10 @@
   Chrome first-frame and lifecycle checks pass, and `clock_spans` executes without the compiler panic.
   The builder's full gate reached later GPU tests before its 600-second limit; the merge gate proves integration.
   [Compiler-cache evidence](../../evidence/WATERS/M3-compiler-cache.md) separates these results and limits.
+
+- 2026-11-17 Human: "Ok let's lower the bar." The most plausible result as fast as possible, not physical accuracy; references become
+  diagnostics. Plan, for M4 onward (M3, Ready for Review, is untouched): dropped M6.1, M6.2, M7.1, M7.16, M8.8, M15.2 and M16.3, which
+  held CPU references and optics equations to closed forms. Rewritten without reference bounds: M4.1, M4.10, M6.3, M6.7, M6.11, M6.13,
+  M7.2, M7.11, M7.13, M7.15, M9.1, M9.2, M13.1, M13.10, M14.1, M15.7, M16.1, M16.2, M16.4 and M11.4. Kept: the map, the long waves
+  and the body query against the model, the frame contract and lifecycle. Ten cost records pass on their check alone. The design's
+  handoff states the bar. No item of a Done milestone changed.

@@ -261,18 +261,6 @@
           "builder_result": "open"
         },
         {
-          "id": "M6.3",
-          "statement": "On Metal, on the final build, the preserved referees P1-P11 and the handoff rows H1-H5 of the design's numerical acceptance table pass against the production producers with no reference, case or bound changed since M5, and the all-orders solar grid still reports all 198 rows.",
-          "check": "./dev check",
-          "lock": "gpu",
-          "ask": "Did any reference, case, bound or test in the numerical acceptance table change in this milestone? If one did, is the change justified by the model and not by the image? Does any referee run a test-only variant of a producer instead of the production one?",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
           "id": "M6.4",
           "statement": "In Chrome on hardware WebGPU, on the final build, the handoff rows H1-H5 pass at their declared bounds.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
@@ -331,22 +319,10 @@
         },
         {
           "id": "M7.2",
-          "statement": "The air's aerosol is an input of the air profile in two numbers: its amount, as the extinction at 550 nm, and its kind, as an \u00c5ngstr\u00f6m exponent from 0 to 2. At the defaults, today's amount and an exponent of 0, every chart holds the bytes it held before. At two other amounts, one of them also with an exponent of 1.3, the lent Sun light and the transmittance chart meet P1's and P2's bounds against the f64 quadrature evaluated with that aerosol in each band; the charts follow a change of either number within the lag the profile declares; and a change of either does not move the environment epoch.",
+          "statement": "The air's aerosol is an input of the air profile in two numbers: its amount, as the extinction at 550 nm, and its kind, as an \u00c5ngstr\u00f6m exponent from 0 to 2. At the defaults, today's amount and an exponent of 0, every chart holds the bytes it held before. At another amount the lent Sun light and the transmittance chart change with it, and at an exponent of 1.3 the bands take different aerosol, so a profile that gives every band the 550 nm aerosol fails the test. The charts follow a change of either number within the lag the profile declares, and a change of either does not move the environment epoch.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test air_state_gpu",
           "lock": "gpu",
-          "ask": "Did any existing reference, case, bound or test in the numerical acceptance table change? None may. Is the reference the existing f64 quadrature with its aerosol set band by band, and not the shader's own integrator? Does the test show a profile that gives every band the 550 nm aerosol failing the exponent-1.3 case?",
-          "target": "mac-metal",
-          "evidence": "",
-          "verdict": "",
-          "review": "",
-          "builder_result": "open"
-        },
-        {
-          "id": "M7.3",
-          "statement": "With the view volume and no medium, the lent aerial transport to a point, read from the settled volume, is within the design's ceiling of an f64 quadrature of the air along that ray, in each channel: transmittance within 0.05 \u00d7 expected + 0.005, and solar in-scatter within 0.05 \u00d7 expected + 0.005 \u00d7 the reference's in-scatter at 32 km on that ray, each plus one stored step. It holds at the default haze, at visual ranges of 20 km and 3 km, and at 3 km with an \u00c5ngstr\u00f6m exponent of 1.3, at P10's Sun elevations, at points from 5 m to beyond 32 km on level, climbing and descending rays, and, from observers 3 m, 40 m and 245 m above the model's ground, at points on the ground itself and on lines 0.05\u00b0 and 0.2\u00b0 above the horizon. Its night part still meets P5. The worst error at each haze is on record beside the 32-layer product's against the same reference; the record decides nothing.",
-          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test view_volume_air_gpu",
-          "lock": "gpu",
-          "ask": "Is the reference an f64 quadrature written apart from the shader, with the Sun's light from the existing direct-light quadrature and not from the volume's own cells? Does the test show a volume whose in-scatter is scaled by 1.1 failing? Is the ceiling the design's, unchanged?",
+          "ask": "Did any existing reference, case, bound or test in the numerical acceptance table change? None may: the defaults draw as before.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -367,9 +343,9 @@
         },
         {
           "id": "M7.13",
-          "statement": "A ray that leaves the volume takes the volume's terminal pair once. With no provider `R` is exactly 1. Where nothing shadows a ray's air, `\u0394S` is exactly 0 and the sky's radiance is the clear sky's to the bit. Where a cascade occluder or the registered Sun-path optical depth shadows the near air, the sky pixel is the clear sky's radiance plus the reference's `\u0394S`, which is negative, within M7.3's in-scatter ceiling.",
+          "statement": "A ray that leaves the volume takes the volume's terminal pair once. With no provider `R` is exactly 1. Where nothing shadows a ray's air, `\u0394S` is exactly 0 and the sky's radiance is the clear sky's to the bit. Where a cascade occluder or the registered Sun-path optical depth shadows the near air, the sky pixel is dimmer than the clear sky's and never brighter.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_sky_gpu",
-          "ask": "Is the expected `\u0394S` the f64 difference of the shadowed and the unshadowed near in-scatter, written apart from the shader, and would a sky left as the clear sky fail the shadowed case?",
+          "ask": "Would a sky left as the clear sky fail the shadowed case?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -433,7 +409,6 @@
           "statement": "The view volume's cost is on record: on the Mac and in Chrome, a paired record of the valley with the view volume and without gives the whole frame, each added pass's GPU time by name, the grid chosen and the bytes of each resource. A visible hitch, a pass about 25% over its last comparable record, or a cost that grows faster than the grid has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/view_volume.py cost --scene haze",
           "lock": "gpu",
-          "ask": "Is the record paired, with load and order, on this milestone's work, and is the Chrome record beside it? Does it say which grid sizes were tried and what the look lost or kept at each?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -473,10 +448,10 @@
       "items": [
         {
           "id": "M8.1",
-          "statement": "The view volume integrates a provider's medium coefficients jointly with the air. For a uniform slab of known extinction, solar kernel and ambient source standing in the air inside the provider's ramp, at visual ranges of 30 m, 150 m and 2 km, the lent aerial transport to points before, inside and beyond the slab, each a cell or more from its faces, is within the design's ceiling of the retained joint reference (transmittance within 0.05 \u00d7 expected + 0.005; in-scatter within 0.05 \u00d7 expected + 0.005 \u00d7 the reference's in-scatter at 32 km on that ray; each plus one stored step), with the grid's slices as they are and with twice as many. The coefficients are summed with the air's before integration: for a slab of 2 km visual range in haze of 3 km, composing the slab's own pair with the air's pair, in either order, misses that ceiling by more than twice, and the test shows both failing.",
+          "statement": "The view volume integrates a provider's medium coefficients with the air, each counted once. For a uniform slab of known extinction, solar kernel and ambient source standing in the air inside the provider's ramp, at visual ranges of 30 m, 150 m and 2 km, the lent transmittance to a point beyond the slab is the air's times the slab's, at a tolerance the test states, with the grid's slices as they are and with twice as many, and a slab in sunlight adds light on the ray. A volume that applies the slab twice, or the air twice, fails the test.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_medium_gpu",
           "lock": "gpu",
-          "ask": "Is the joint reference `scripts/reference/atmosphere/joint_reference.py` or an f64 evaluation written apart from the shader? Do both wrong compositions fail on the named case, and is the ceiling the design's, unchanged?",
+          "ask": "Does the test show both wrong compositions fail, and is the coefficients' sum with the air's taken before integration, not after?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

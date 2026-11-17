@@ -48,8 +48,8 @@ For every defining cue, show that the chosen mechanism produces it across the op
 depends on it. A short CPU script of the core equations is often the cheapest decisive evidence. Check that:
 
 - the behaviour holds as speed, scale and lighting change, not only at the demo point;
-- each amplitude comes from physical inputs (mass, draft, velocity, depth, optical density), not a hand-set gain or a
-  constant that changes with grid resolution;
+- each amplitude follows its real inputs (mass, draft, velocity, depth, optical density) across the range, and
+  no constant changes with grid resolution. A constant tuned by eye is fine when it holds across the range;
 - boundaries reflect, absorb or hand off, and don't wrap or vanish;
 - it composes with the module's other regimes (swell plus wake, procedural plus baked clouds) instead of replacing
   them;
@@ -57,11 +57,21 @@ depends on it. A short CPU script of the core equations is often the cheapest de
 
 A cue the mechanism can't produce is a design defect. Change the mechanism; don't plan to tune it in later.
 
+This is a check that the mechanism can make the cue, not a pass mark for the build. The bar is the most plausible
+result as fast as possible (`ORCHESTRATE.md`, 17 November 2026). So a design names no numerical acceptance for
+rendering: no ceiling against an `f64` or photon reference, no bound a milestone measures first and then asserts,
+no rule that a miss ends `BLOCKED`. Pick the cheapest mechanism that reaches the shipped-game look, and say which
+terms a builder may tune by eye. Numerical proof belongs to what a game or another module reads and to the
+contracts between modules.
+
 ## What the design covers
 
 - **Purpose and scope:** what the module is for, its consumers, what is commissioned now and what is deferred.
 - **Cues:** each one with its operating range, where it must read, and the shipped-game bar it is judged against,
   stated in words.
+- **Proof:** for each cue, the inspection that judges it and the tripwire that records its cost. For each
+  contract with another module or with a game's queries, the test that holds it. Weigh each proof against the
+  fault it would catch.
 - **Techniques and evidence:** the account above.
 - **The system as it runs:**
   - state and owners;

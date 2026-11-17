@@ -23,8 +23,12 @@ the product.
 - **If the game can't host the milestone yet, making it able to is part of the work.** For example, there might be
   no sea for a shadow over water. Add the scene through public APIs, and use simple labelled stand-ins for
   neighbours that don't exist. A change that would alter another module's design goes to `/plan-module`.
-- **Drive behaviour with its real inputs.** A correct solver fed invented inputs, or an amplitude set by a
-  hand-tuned gain, still gives the wrong experience. An authored effect is fine when its role and limits are stated.
+- **Drive behaviour with its real inputs.** A wake follows the boat's speed and a cloud's shade follows the cloud.
+  Tune by eye where the inspection list fails: a tuned constant is fine when it holds across the milestone's
+  range and the evidence says what was changed. An authored effect is fine when its role and limits are stated.
+- **A reference is a diagnostic.** When output looks wrong, compare it with a physical or `f64` reference to find
+  the cause. Don't build a reference, measure a bound or write a conformance record that no item asks for, and
+  don't end `BLOCKED` because a shader misses a reference: the look and the tripwires decide.
 - **Test the joins.** Faults hide at transitions between representations, bands and levels of detail, not inside
   each part.
 - **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
@@ -91,8 +95,9 @@ gates only done-when items about pacing.
 - **Attended runs check first, then lock.** Before a run that needs the console unlocked or the panel awake,
   check both. If either fails, end `BLOCKED needs_access` at once. Never wait for a person while holding a lock:
   one check held the GPU for over 30 minutes that way.
-- **Exact references and comparisons** have registry pins checked by the CPU-only reference guard in
-  `./dev check`. A planned refresh regenerates and commits references, runs `verify --full` under `gpu`,
+- **Exact references and comparisons** guard against a change nobody meant. A shader change you mean to make
+  refreshes them in its own landing and needs no other justification. They have registry pins checked by the
+  CPU-only reference guard in `./dev check`. A planned refresh regenerates and commits references, runs `verify --full` under `gpu`,
   then commits updated pins and refreshes before merging everything in one landing. The guard prints pins
   computed from HEAD; a refresh names a module-list anchor, module and milestone. Comparison edits and
   added or redefined baselines also update pins and refreshes. A planner retiring a baseline moves its
@@ -103,7 +108,8 @@ gates only done-when items about pacing.
 - **Status** goes in `docs/design/maturity.json`, with implementation, correctness, visuals and device recorded
   separately. A check passing doesn't move any of them.
 - **Evidence** is at most one page per milestone, linked from the done-when items. Bulk output follows
-  `docs/ASSET-LIFECYCLE.md`.
+  `docs/ASSET-LIFECYCLE.md`. A fix round adds what the fix changed, not a second full set. A tripwire record is
+  the record its check reads, with the load on the machine, and nothing more.
 
 ## What to deliver
 

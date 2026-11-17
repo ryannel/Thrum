@@ -156,3 +156,9 @@
   the account closes to 1.7e-13 on the design's bed. `owed` is gone, and a class may percolate faster than it
   soaks. All rain-model tests pass; clippy clean. [Evidence](../../evidence/PUDDLES/M2-evidence.md). Suspected:
   nothing else reads the saved rain state, whose format changed (`THRRAIN3`).
+
+- 2026-11-17 Human: "Ok let's lower the bar." The most plausible result as fast as possible, not physical accuracy; references become
+  diagnostics. Plan: dropped M4.3, M8.1, M8.2 and M8.5 (a ring's place and the fine level's CPU reference). M4.1 and M5.2 keep the
+  GPU against the model with a tolerance the test states and their wrong evaluators; M3.3, M3.4 and M6.2 name `WATERS` M4.1's
+  tolerance; M5.3 and M8.3 state the look's rule without a reference. Five cost records pass on their check alone. No item of a Done
+  milestone changed.

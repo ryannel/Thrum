@@ -17,6 +17,15 @@ shared sky, Sun, light-transmittance and environment-reflection products."
 [The air at the ground](#the-air-at-the-ground) governs M9, added the same day. M9 is built before M6: it
 corrects the aerial product where the view meets the ground, which every scene at sea level shows.
 
+**The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
+plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (M6, M7 and M8) the
+look and the speed decide: each is judged against its inspection list at the bar of shipped games, with cost as
+tripwire records. An f64 reference is a diagnostic for a picture that looks wrong, and none is a pass mark.
+[Closing G3s](#closing-g3s) and [How the view volume is proved](#how-the-view-volume-is-proved) apply it; the
+[project settings](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) hold the rule. The numerical acceptance
+tables below record how M1 to M5 and M9 were proved, and their tests stay in the workspace check as regression
+guards.
+
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
 unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
 [Closing G3s](#closing-g3s) governs M6. Both were revised on 10 November after
@@ -594,7 +603,7 @@ in f64, in single scattering, with the engine's molecules and aerosol in one ban
   1 to 30 km away, at every camera tilt. `Hold` is 3.4% to 6.2% low toward a low Sun, where most of the
   in-scatter is the aerosol's forward peak and the aerosol's scale height is close to the height one row
   spans at 30 km.
-- **IV.3, by field of view.** As a share of [the view volume's ceiling](#numerical-acceptance-for-the-view-volume):
+- **IV.3, by field of view.** As a share of [the view volume's yardstick](#how-the-view-volume-is-proved):
   at most 0.08 at 30° to 60° and 0.28 at 90° for Suns 2° up and higher; 0.31 and 0.93 with the Sun 0.5° up
   dead ahead. The figures against the product's own column along the line are the same to two places: what
   remains is the blend of rows, and no part of it is the quadrature along the line.
@@ -697,12 +706,14 @@ Sun is behind it; missing object shadows at sunrise; shadow acne at low Sun; a h
 steps in the sky gradient and twilight colour. The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
-**What keeps it honest.** The preserved referees P1–P11 and the handoff rows H1–H5 of
-[the numerical acceptance](#numerical-acceptance) still pass on the final build: all of them on Metal in the
-workspace check, and H1–H5 in Chrome. No reference, case or bound may change in M6 to make a picture pass, so a
-fix that pleases the eye cannot move a qualified product off its model. This is preservation. It does not newly
-qualify the solar sky or solar aerial transport against an all-orders reference; the ledger names that as open.
-Twilight colour is covered numerically by the one row of P11 and otherwise judged by eye in the scrub.
+**What guards the products.** The preserved referees P1–P11 and the handoff rows H1–H5 of
+[the numerical acceptance](#numerical-acceptance) run in the workspace check, as they have since M5, and M6 adds
+no item for them. H1–H5 are the contract other modules read the sky through, and stay as they are. P1–P11 are
+regression guards: they catch a product that moved when nobody meant it to. A fix the inspection list needs may
+move a product on purpose; the builder then updates that referee's expected values in the same landing and says
+so in the log, and no review asks for a model that justifies the new values. The solar sky and solar aerial
+transport are not qualified against an all-orders reference, and under the owner's bar no such campaign is
+planned.
 
 **Cost.** Whole-frame and atmosphere pass costs on the route are measured on the final build and, in the same
 session and configuration (extent, TAAU on, load class, order alternated), on the commit M6 started from. That
@@ -831,7 +842,7 @@ and the air has eight bands. The albedo and the phase can join the same input la
 
 The kind thickens the air in the short bands: at `α = 1.3` the 429 nm band of a 3 km haze holds 1.38 times
 the aerosol of the 550 nm one. On the grid part III proposes, 64 slices with 48 inside 500 m, that band's
-in-scatter is 1.22 times [the ceiling](#numerical-acceptance-for-the-view-volume); 64 slices with 40 inside
+in-scatter is 1.22 times [the yardstick](#how-the-view-volume-is-proved); 64 slices with 40 inside
 500 m are at 0.54 of it there and at most 0.27 in grey haze from 244 to 3 km, and 80 slices with 48 inside
 are at 0.31 and 0.16 (the check's part B). The builder chooses the grid; one that passes grey haze alone is
 not enough.
@@ -918,7 +929,7 @@ history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
   sky would keep haze the land beside it has lost.
 - **III, the grid as a quadrature.** Against a fine quadrature of the same air, with visual ranges from 244 km
   to 3 km, on level, climbing and descending rays to 31 km: 64 slices with 48 inside 500 m are within 0.0043
-  in transmittance and 3.4% in in-scatter, at most 0.62 of [the ceiling below](#numerical-acceptance-for-the-view-volume).
+  in transmittance and 3.4% in in-scatter, at most 0.62 of [the yardstick below](#how-the-view-volume-is-proved).
   32 slices with 24 inside 500 m pass in clear air and miss the ceiling in haze of 20 km and thicker, because
   a linear blend of transmittance across a far cell is too coarse there; with 16 of the 32 beyond 500 m they
   pass. Blending optical depth in place of transmittance brings the transmittance inside the ceiling and
@@ -928,35 +939,34 @@ history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
 `CLOUDS`' design proof ([part I](../../evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a
 medium split by a near weight composes with the far part to the exact transmittance. Its in-scatter is an
 approximation whose size depends on what stands in the ramp: 0.002 in that proof's uniform medium, and 0.011
-in 0.65 for a bank that occupies a 300 to 500 m ramp (the design review's case). `CLOUDS` M15.2 measures it on
-a bank across the ramp. Unrun: the look, the history's steadiness and the cost, which M7 sees first.
+in 0.65 for a bank that occupies a 300 to 500 m ramp (the design review's case). `CLOUDS` M15.4 judges the
+handover by eye, with a bank walked through the ramp. Unrun: the look, the history's steadiness and the cost, which M7 sees first.
 
-### Numerical acceptance for the view volume
+<a id="numerical-acceptance-for-the-view-volume"></a>
 
-M7.3 and M8.1 compare the settled volume with an f64 reference written apart from the shader: a quadrature of
-the same equation along the ray, with the air's coefficients from the profile, the Sun's light from the
-existing f64 direct-light quadrature, and the multiple-scattering source from the read-back chart. What decides
-and what is recorded are kept apart.
+### How the view volume is proved
 
-- **The ceiling decides.** Per channel, at every probe: transmittance within `0.05 × expected + 0.005`, and
-  solar in-scatter within `0.05 × expected + 0.005 × F`, where `F` is the reference's in-scatter at 32 km on
-  that ray; each plus `Q`, one stored step, as [the handoff](#numerical-acceptance) defines it. This is P2's
-  bound, the one this module already holds its lent Sun light to, so the joint product is held no looser than
-  the light that feeds it. A gain error of a tenth fails it. The night part keeps P5.
-- **The measurement is a record.** The worst error at each haze is written beside the 32-layer product's
-  against the same reference at the same probes. It decides nothing.
-- **A miss is a plan change.** If a volume the builder believes correct misses the ceiling at a grid a recipe
-  ships, the builder records where and by how much and ends `BLOCKED`. The ceiling is not widened in the build.
-  Part III says what to expect and what the remedies are.
-- **Near the ground.** M7.3's probes include points on the model's ground and on lines 0.05° and 0.2° above
-  the horizon, from observers 3 m, 40 m and 245 m up, so the ceiling holds the volume where its rows pass
-  under the ground.
-- **At a medium's face** the volume resolves the medium to a cell, so M8.1's probes stand a cell or more from
-  its slab's faces.
-- **The wrong composition** M8.1 rejects is the slab's own pair composed with the air's pair, in either order.
-  It differs from the joint answer only where the two media overlap at like strength, so the test names such
-  a case: a slab of 2 km visual range in haze of 3 km, where the two wrong orders are off by 32% and 26%
-  (part III). In haze of 20 km with a 150 m slab they are inside the ceiling and prove nothing.
+Under [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) the view volume passes on its look and
+its speed.
+
+- **The look decides.** Haze from crisp air to murk, shafts below ridges and broken cloud, and a bank of fog
+  the camera walks into are judged in the running valley against M7's and M8's inspection lists, on the Mac and
+  in Chrome.
+- **Speed is a tripwire.** M7.10's and M8.9's paired records, as [Cost](#cost-2) says.
+- **Contracts are tested.** At the defaults every chart holds the bytes it held, and a scene without the
+  volume composes what it did (M7.1, M7.2). The volume's history follows the frame contract (M7.5). A ray that
+  leaves the volume takes its terminal pair once, and with nothing in the way the sky is the clear sky's to the
+  bit (M7.13, M8.2). A provider's medium is counted once with the air: the transmittance beyond a slab is the
+  air's times the slab's, and a volume that applies either twice fails (M8.1).
+- **The f64 quadrature is a diagnostic.** The reference in `atmosphere/gpu/tests/reference/` and the proof
+  scripts stay. A builder whose haze bands, steps or sits too bright compares the volume with them to find the
+  cause, and part III says which grids to expect trouble from. No item holds the volume to the quadrature, and
+  a difference from it neither fails an item nor ends `BLOCKED`.
+
+**The yardstick the proofs quote.** Where [Check that it can work](#check-that-it-can-work-2) says "the ceiling",
+it means, per channel at a probe, transmittance within `0.05 × expected + 0.005` and solar in-scatter within
+`0.05 × expected + 0.005 × F`, with `F` the reference's in-scatter at 32 km on that ray. The planner used it to
+choose the grid. It decides nothing in a build.
 
 ### Risks
 
@@ -968,7 +978,7 @@ and what is recorded are kept apart.
 | The night profile cannot follow a moving haze | Preparing it for a new amount takes longer than the declared lag | Freezing the haze at night without saying so. If preparation is too slow, M7 records it and the proposal for a prepared set of amounts goes to the log |
 | Chrome's sampled-texture limit | Pipeline creation fails with a ground band and a medium registered | Dropping a texture silently |
 | The grid is too coarse for a fog's edge on terrain | Tiles show where fog meets a slope | Blurring the fog |
-| The far cells are too thick for the haze | M7.3 misses its ceiling at far probes in haze of 20 km or thicker | Widening the ceiling. More slices beyond the handover, or a blend of optical depth, are the remedies |
+| The far cells are too thick for the haze | Far land in haze of 20 km or thicker bands, steps or sits too bright in M7's stills | A longer history that smears it. More slices beyond the handover, or a blend of optical depth, are the remedies |
 | The sky keeps haze the land has lost | A line where shadowed land meets the sky; no shaft against the sky | Holding `ΔS` at 0 when no medium is registered |
 
 ### Cost

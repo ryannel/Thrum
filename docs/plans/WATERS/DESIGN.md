@@ -3,7 +3,9 @@
 14 November 2026, revised the same day for surf, mirrored scenery and the view from under water, again for
 light under water, after the review of those revisions for
 [a lake's own waves](#surf-the-shore-transform-and-the-breaker), and after the review of that for
-[the highest surface under a crest](#bodies-and-the-query), which is now a cut of the sheet.
+[the highest surface under a crest](#bodies-and-the-query), which is now a cut of the sheet. Revised 17 November
+2026 for the owner's bar: [the look and the speed decide](#proof-and-builder-handoff), and references are
+diagnostics.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -56,7 +58,7 @@ gives each verdict.
 
 | User | Needs | What that requires of the design |
 |---|---|---|
-| A teaching demo, often in Chrome: a sunset over the sea, a lake under hills, a stream into a pond, rings from a dropped stone | Water that is right as well as good-looking, at the display's refresh, with only the parts the demo shows | Mechanisms with an oracle; every part beyond still open water optional, at no cost when left out |
+| A teaching demo, often in Chrome: a sunset over the sea, a lake under hills, a stream into a pond, rings from a dropped stone | Water that looks right, at the display's refresh, with only the parts the demo shows | Mechanisms with an oracle; every part beyond still open water optional, at no cost when left out |
 | A game | Things that float, drift with a current and feel a wake, on any water, with the same forces whatever the camera or the device does | One physical profile on every recipe; forces from the water's own state; one query for all water |
 | `CLOUDS` and `ATMOSPHERE` | A surface lit by the one sky and shaded once | No private sky, exposure or reconstruction |
 | The planners of `RIVERS` and `PUDDLES` | A place for running water and rain water that needs no second surface, optics, foam or query | Every body is data for one map; the seams are proved here on stand-ins |
@@ -1528,7 +1530,8 @@ net on the bed shows, shafts do not. The meter's depth takes the wave field and 
   stage are read from the capability record and refused at preparation when exceeded. Levels and endpoints are
   array layers so the surface pass stays inside sixteen sampled textures.
 - **Recipes.** Both recipes run the portable kernels first. An Apple-tile variant (f16 working precision, a
-  different transform layout) is promoted only by a paired measured win with the oracle still inside tolerance.
+  different transform layout) is promoted only by a paired measured win with no visible difference in the same
+  views and the body query's tests still passing.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: surface mesh
   density; field-cache reach; the cadence of the field cache and of cascades below the profile's smallest force
   wavelength; foam cadence and level size; reflection steps, reach, slope allowance and mirror limit; the count of mirror views and their extent; the gather's resolution and the sight depth; the caustic window's size and cell, its count of rungs and its cadence; the shafts' steps and resolution. A layer evaluated less
@@ -1652,7 +1655,7 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 | State | Owner |
 |---|---|
 | Spectrum, components, cascades and their f64 evaluators; the wave field's GPU passes | `SEA`: `thrum-sea-model`, `thrum-sea`. After `SEA`'s last milestone is Done they are this module's to extend, with their tests kept passing |
-| The map and its function, joins, shore margins and what preparation refuses; gains and the swash depth; the shore transform's lags and exposures and the breaker section; the labels of a window's regions; the f64 surface model, the interaction and foam references, the conformance model | `thrum-water-model` (this module), no GPU dependency |
+| The map and its function, joins, shore margins and what preparation refuses; gains and the swash depth; the shore transform's lags and exposures and the breaker section; the labels of a window's regions; the f64 surface model and the conformance model | `thrum-water-model` (this module), no GPU dependency. An f64 reference of the interaction waves or the foam is a diagnostic a builder may add, and is not required |
 | The map on the GPU, the surface from both sides, optics, the mirror lookup, the view from under water, the caustic field and its Sun-path factor, shafts, interaction waves, foam, the query ring | `thrum-water` (this module), one effect on `EFFECT-GRAPH`'s seam, which declares the wave field's passes with its own |
 | Mirror views: the second draw of the scene, its culling, light, air and targets | `SCENE-VIEWS` |
 | Body declarations, the bed, presets, water types, the craft and floats, hull footprints, foam pattern, body integration, controls | The example scene `examples/water` (package `water-scene`); never in engine crates or their tests |
@@ -1869,6 +1872,18 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 
 ## Proof and builder handoff
 
+- **The bar.** The owner, 17 November 2026: "Ok let's lower the bar." Thrum is a game engine, and the aim is the
+  most plausible result as fast as possible, not physical accuracy ([the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard)).
+  For every milestone not yet Done, water passes on its look, judged against the milestone's inspection list at
+  the bar of Sea of Thieves and the shipped games each milestone names, and on its speed, as cost records.
+  What a game reads stays tested: the map, the long waves and the body query against `thrum-water-model`, at a
+  tolerance each test states, because a float must sit on the water that is drawn and answer the same on every
+  device. So do the contracts: the frame contract's depth, motion and reactive coverage; state through pauses,
+  hitches and a replaced device; no wave across dry ground; a capability left out costing nothing. How light,
+  foam, wakes, caustics and shafts are computed is not held to an f64 reference, a closed form or a bound
+  measured first. The equations in the sections above are the mechanism to build and a builder's diagnostic
+  when a look is wrong; a builder may tune their constants by eye and records what changed. M1, M2, M3 and M12
+  stand as they were proved.
 - **Targets.** `mac-metal` on both recipes and `chrome-webgpu`. `ios-sim` is not a target. Chrome checks need a
   browser launch outside the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
   Never substitute a Mac result.
@@ -1896,7 +1911,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   `docs/evidence/WATERS/PROVENANCE.md` with its source commit and path. The owner's words of 14 November cover
   what Broadsides' authors wrote. Material in Broadsides that came from elsewhere keeps its own licence, which is
   recorded with it, and none that is GPL or share-alike is copied. A copied kernel is held to this module's
-  oracles and items like any other code. Scheduling, allocation and host glue are written for Thrum's seam.
+  items like any other code. Scheduling, allocation and host glue are written for Thrum's seam.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** A ledger row for `E1.water` is added in M2 and kept current, with implementation, correctness,
   visuals and device apart.
@@ -1908,11 +1923,11 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | What does the surface pass cost against the refresh interval, with the map and several bodies? | M2 and M4 record it; M11 records it at the showcase extent on both recipes. Tuning is the later performance phase |
 | Do the two endpoints of interaction waves and foam serve `EFFECT-GRAPH`'s cadence rules as built? | M6; a failure is a proposal there |
 | What do the gather and the rays cost where they fill the view? | M8 records it |
-| What tolerance do the map, the interaction waves and the foam meet against their f64 references on Metal and in Chrome? | M4, M6 and M7 measure first, then assert the recorded bound |
+| What tolerance does the map meet against the model on Metal and in Chrome? | M4.1's test states it, small beside what a float or a waterline would show |
 | Does a beach read as a beach with a swash and no surf, and its foam as carried by the uprush alone? | M4 and M7, for a profile without surf; [risks 12 and 17](#risks) |
 | Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | M13; [risk 20](#risks) |
 | What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | M12 and M13 record it; the cell is the knob |
-| What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | M12 records preparation; M13 measures first, then asserts the recorded bound |
+| What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | M12 records preparation; M13.1's test states the tolerance, small beside a breaking wave's height |
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; M14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in M16 |
 | What do the caustic field and the shafts cost, and how many rungs does the look need? | M16 records it; [risk 25](#risks) |
