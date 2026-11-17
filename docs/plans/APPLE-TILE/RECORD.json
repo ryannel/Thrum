@@ -466,7 +466,41 @@
     },
     "M11": {
       "definitions": "3e35fe0b1eb719be5c57bddb462add2199a6ee96e72b1cbec8e174611f4ee48a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ce4b9786d61bd164cbba1ff45ef6b063dd1bea02",
+          "review": "docs/evidence/APPLE-TILE/M11-review.md",
+          "items": {
+            "D11.1": "pass",
+            "D11.2": "fail",
+            "D11.3": "pass"
+          },
+          "findings": [
+            {
+              "name": "native-loss-overwritten-by-observer",
+              "item": "D11.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 196913,
+            "cached": 11478784,
+            "output": 25036,
+            "turns": 1
+          },
+          "at": "2026-11-17T01:33:15Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
