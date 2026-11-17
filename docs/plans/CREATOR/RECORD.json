@@ -190,7 +190,43 @@
     },
     "M3": {
       "definitions": "e7e495526569864fd5943c3b46943c8f46e481e97217b146e90f45b3c000a0bd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c9ac2c63a2d9512190ac7aa9b38fc8f2174709a1",
+          "review": "docs/evidence/CREATOR/M3-review.md",
+          "items": {
+            "M3.1": "could_not_judge",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "fresh-review reading order was violated",
+              "item": "M3.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "visible",
+          "usage": {
+            "input": 518302,
+            "cached": 12004992,
+            "output": 18150,
+            "turns": 1
+          },
+          "at": "2026-11-17T01:36:15Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise CREATOR's design and plan as docs/evidence/CREATOR/design-review.md asks",
