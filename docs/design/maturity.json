@@ -932,11 +932,11 @@
       },
       "M4": {
         "implementation": "The Mac game prepares at the starting window backing extent, and callers name offscreen extents. Chrome sizes the backing grid from CSS and device pixel ratio and rebuilds its scene grid between frames. iOS retains the oriented-grid path and its existing surface lease.",
-        "functional_validation": "D4.1 passes all six real-window still arms on Mac Metal. D4.2 passes both rotations and matches engine attachments, viewport and drawable on the iPhone 18 Pro simulator. Chrome target execution is pending.",
+        "functional_validation": "D4.1 passes all six real-window still arms on Mac Metal. D4.2 passes both rotations and matches engine attachments, viewport and drawable on the iPhone 18 Pro simulator. D4.3 passes on hardware Chrome WebGPU at DPR 1 and 2, with a fresh history predecessor only at the first new-grid frame.",
         "experienced_quality": "The simulator's settled full frames and native-size grid crops show coverage to all edges and the individual grid cells without the previous enlargement pattern. Mac submitted coordinate pixels match at all six settled sizes.",
         "platform_performance": {
           "mac": "Live resize timing and presentation cadence are pending.",
-          "browser": "Resize preparation duration is recorded by the shell as a diagnostic.",
+          "browser": "The page timer recorded 3 ms for resize preparation in each DPR arm under shared load. Diagnostic function evidence.",
           "ios": "Simulator function only."
         },
         "evidence": "../evidence/APPLE-PRESENTATION/m4/README.md",
