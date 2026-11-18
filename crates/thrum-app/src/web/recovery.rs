@@ -107,7 +107,7 @@ impl Replacement {
         }
         if self.configured_extent != Some(extent) {
             self.prepared
-                .resize_surface(extent)
+                .resize_scene_surface(extent)
                 .map_err(|error| error.to_string())?;
             self.gpu.config.width = extent[0];
             self.gpu.config.height = extent[1];

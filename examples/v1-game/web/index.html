@@ -71,11 +71,29 @@
           canvas.width = width;
           canvas.height = height;
         }
+        const fixedGrid = sprites || (exit && probe.has("measure")) || probe.has("resize-probe");
+        let backingDirty = true;
+        let lastDpr;
+        if (!fixedGrid) {
+          new ResizeObserver(() => { backingDirty = true; }).observe(canvas);
+        }
+        const syncBackingSize = () => {
+          const dpr = devicePixelRatio;
+          if (fixedGrid || (!backingDirty && lastDpr === dpr)) return;
+          lastDpr = dpr;
+          backingDirty = false;
+          const bounds = canvas.getBoundingClientRect();
+          const width = Math.round(bounds.width * dpr);
+          const height = Math.round(bounds.height * dpr);
+          if (canvas.width !== width) canvas.width = width;
+          if (canvas.height !== height) canvas.height = height;
+        };
         if (exit && (!cooked || probe.has("field"))) throw new Error("The exit scene requires a cooked store");
         if (exit && probe.has("measure")) {
           canvas.width = 1920;
           canvas.height = 1080;
         }
+        syncBackingSize();
         const scale = Number(probe.get("scale") ?? 2);
         if (sprites && (!Number.isInteger(scale) || scale < 1 || scale > 6)) {
           throw new Error("Sprite scale must be an integer from 1 to 6");
@@ -85,6 +103,9 @@
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit);
+        if (probe.has("extent-probe")) {
+          window.thrumExtentReport = () => JSON.parse(game.route_report(0));
+        }
         if (probe.has("diagnostic-clouds")) {
           const label = document.createElement("p");
           label.textContent = "Diagnostic cloud-shade stand-in, drifting at 160 m/s east and 40 m/s south.";
@@ -283,6 +304,7 @@
           rafId = 0;
           if (document.hidden || simulatedHidden || stopped) return;
           try {
+            syncBackingSize();
             game.frame(time);
             controls.refresh();
             pollMaterial();

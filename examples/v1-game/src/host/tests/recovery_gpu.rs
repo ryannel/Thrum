@@ -104,7 +104,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             &old.capabilities,
             FrameConfig {
                 surface: Some(surface()),
-                ..FrameConfig::default()
+                render_extent: [640, 360],
             },
         )
         .await
@@ -311,7 +311,7 @@ fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
             &old.capabilities,
             FrameConfig {
                 surface: Some(surface()),
-                ..FrameConfig::default()
+                render_extent: [640, 360],
             },
         )
         .await
@@ -380,7 +380,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             &old.capabilities,
             FrameConfig {
                 surface: Some(surface()),
-                ..FrameConfig::default()
+                render_extent: [640, 360],
             },
             crate::GameSetup {
                 sprite_scale: None,

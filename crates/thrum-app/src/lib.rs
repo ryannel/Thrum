@@ -31,7 +31,10 @@ pub mod web;
 mod web_clock;
 
 #[cfg(target_os = "macos")]
-pub use app::{REPORT_VARIABLE, run, run_until_closed};
+pub use app::{
+    ExtentWindow, REPORT_VARIABLE, WindowExtentCapture, run, run_until_closed,
+    run_with_extent_capture,
+};
 #[cfg(target_os = "macos")]
 pub use game::{Edits, Game, Gpu, KeyResponse, Prepared, WorldLink};
 /// Physical key codes delivered to [`Game::key`].

@@ -92,7 +92,7 @@ fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cel
                     &device,
                     &queue,
                     &capabilities,
-                    FrameConfig::default(),
+                    FrameConfig::offscreen([640, 360]),
                     GameSetup {
                         sprite_scale: None,
                         cooked_mesh_rows: v1_game::MeshRowSource::Code,

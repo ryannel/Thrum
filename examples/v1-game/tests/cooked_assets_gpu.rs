@@ -177,7 +177,7 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(path: CookedDr
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("prepared game scene");
@@ -306,7 +306,7 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path: Co
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("prepared game scene");
@@ -460,7 +460,7 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads_case(path: CookedDrawPath) 
                 format: wgpu::TextureFormat::Bgra8Unorm,
                 extent: EXTENT,
             }),
-            ..FrameConfig::default()
+            render_extent: [640, 360],
         };
         let mut hosts = Vec::new();
         for _ in 0..2 {
@@ -626,7 +626,7 @@ fn presenting() -> FrameConfig {
             format: wgpu::TextureFormat::Bgra8Unorm,
             extent: EXTENT,
         }),
-        ..FrameConfig::default()
+        render_extent: [640, 360],
     }
 }
 
@@ -994,7 +994,7 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path: CookedDrawPa
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("game");
@@ -1161,7 +1161,7 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(path: CookedDrawPath) {
                 &device,
                 &queue,
                 &capabilities,
-                FrameConfig::default(),
+                FrameConfig::offscreen([640, 360]),
             )
             .await
             .expect("prepared game scene");
@@ -1226,7 +1226,7 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path: CookedDrawPa
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("prepared game scene");
@@ -1545,7 +1545,7 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(pat
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("game");
@@ -1621,7 +1621,7 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path:
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("prepared game scene");
@@ -1686,7 +1686,7 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(path: Cooked
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("prepared game scene");
@@ -1750,7 +1750,7 @@ fn adapter_less_public_host_selects_direct() {
         .expect("cook");
     pollster::block_on(async {
         let (device, queue, _) = game_device(CookedDrawPath::Indirect).await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("public host");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("assets");

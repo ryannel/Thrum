@@ -11,6 +11,8 @@ mod qualification_signpost;
 mod recovery;
 mod render_actor;
 
+pub use qualification::{ExtentWindow, WindowExtentCapture};
+
 use std::{
     sync::{
         Arc,
@@ -76,6 +78,7 @@ enum UserEvent {
 }
 
 struct App<G: Game> {
+    extent_capture: Option<WindowExtentCapture>,
     config: Config,
     wake: EventLoopProxy<UserEvent>,
     display_link: Option<ViewDisplayLink>,
@@ -167,6 +170,7 @@ impl<G: Game + 'static> App<G> {
         let retain_limit = target_frames.is_none().then_some(RETAINED_PROFILES);
         let reserved = target_frames.unwrap_or(RETAINED_PROFILES / 8);
         Self {
+            extent_capture: None,
             config,
             wake,
             display_link: None,
@@ -459,18 +463,23 @@ impl<G: Game + 'static> App<G> {
         event_loop: &ActiveEventLoop,
         wake: &EventLoopProxy<UserEvent>,
     ) -> Result<(), String> {
+        let attributes = self.extent_capture.as_ref().map_or_else(
+            || {
+                Window::default_attributes().with_inner_size(winit::dpi::PhysicalSize::new(
+                    self.config.window_size[0],
+                    self.config.window_size[1],
+                ))
+            },
+            WindowExtentCapture::attributes,
+        );
         let window = Arc::new(
             event_loop
-                .create_window(
-                    Window::default_attributes()
-                        .with_title(self.config.window_title)
-                        .with_inner_size(winit::dpi::PhysicalSize::new(
-                            self.config.window_size[0],
-                            self.config.window_size[1],
-                        )),
-                )
+                .create_window(attributes.with_title(self.config.window_title))
                 .map_err(|error| format!("window: {error}"))?,
         );
+        if let Some(capture) = &self.extent_capture {
+            capture.prepare_window(&window)?;
+        }
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
         let instance = wgpu::Instance::new(descriptor);
@@ -557,6 +566,7 @@ impl<G: Game + 'static> App<G> {
             Arc::clone(&self.render_stopped),
             self.origin,
             wake,
+            self.extent_capture.take().map(|capture| capture.output),
         )?);
         // Baseline the watched files before the first load, so no later save is missed.
         self.watch = self.start_watch(wake);
@@ -1405,7 +1415,18 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
 pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
-    run_with(config, false, game);
+    run_with(config, false, None, game);
+}
+
+/// Run the ordinary window and retain one submitted image with its extent witnesses.
+/// # Panics
+/// If the platform refuses to create the event loop, as on a second call in one process.
+pub fn run_with_extent_capture<G: Game + 'static>(
+    config: Config,
+    capture: WindowExtentCapture,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    run_with(config, false, Some(capture), game);
 }
 
 /// Run `game` in one window until the person closes it. Closing the window is success. Setting
@@ -1420,7 +1441,7 @@ pub fn run_until_closed<G: Game + 'static>(
     config: Config,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, true, game);
+    run_with(config, true, None, game);
 }
 
 /// Environment variable that asks [`run_until_closed`] for the frames report: set it to `1`.
@@ -1438,6 +1459,7 @@ pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
 fn run_with<G: Game + 'static>(
     config: Config,
     until_closed: bool,
+    extent_capture: Option<WindowExtentCapture>,
     game: impl FnOnce() -> Result<G, String>,
 ) {
     let target_frames = match frame_limit(
@@ -1461,6 +1483,7 @@ fn run_with<G: Game + 'static>(
             std::process::exit(2);
         }
     };
+    app.extent_capture = extent_capture;
     app.timing_policy =
         if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
             TimingPolicy::Report

@@ -149,6 +149,7 @@ struct Actor<G: Game> {
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
     observer: Option<super::qualification::Observer>,
+    extent_capture: Option<super::qualification::ExtentCapture>,
     profile_minimum: u64,
     profile_revision: u64,
 }
@@ -167,14 +168,19 @@ pub(super) fn start<G: Game + 'static>(
     stopped: Arc<AtomicBool>,
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
+    extent_output: Option<std::path::PathBuf>,
 ) -> Result<RenderWorker<G>, String> {
     const {
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
     }
     let signal = wake.clone();
     let observer = super::qualification::Observer::start(&mut host, origin)?;
+    let extent_capture = extent_output
+        .map(|output| super::qualification::ExtentCapture::start(&mut host, output))
+        .transpose()?;
     let mut actor = Actor::<G> {
         observer,
+        extent_capture,
         profile_minimum: 0,
         profile_revision: 0,
         host,
@@ -257,6 +263,16 @@ impl<G: Game> Actor<G> {
             RenderJob::Finish => RenderOutcome::Finish(self.finish()),
         };
         reply.collect_observer(&self.gpu.watch, &mut self.host, self.observer.as_mut());
+        if matches!(reply.outcome, RenderOutcome::Frame(Ok(_)))
+            && let Some(capture) = &self.extent_capture
+        {
+            let recipe = format!("{:?}", self.gpu.capabilities.recipe());
+            match capture.collect(&mut self.host, &recipe) {
+                Ok(true) => self.extent_capture = None,
+                Ok(false) => {}
+                Err(error) => reply.outcome = frame_failure(error, self.gpu.watch.is_lost()),
+            }
+        }
         reply.device_generation = self.gpu.watch.generation;
         reply.profile_minimum = self.profile_minimum;
         reply.profile_revision = self.profile_revision;
@@ -376,6 +392,11 @@ impl<G: Game> Actor<G> {
             reply.surface_status = SurfaceStatus::NeedsReconfigure;
             return Ok(encoded.skip());
         }
+        let extent_witness = self.extent_capture.as_ref().and_then(|_| {
+            encoded
+                .frame_extent()
+                .map(|extent| (extent, [frame.texture.width(), frame.texture.height()]))
+        });
         let view = frame.texture.create_view(&TextureViewDescriptor::default());
         let output = SurfaceOutput {
             view: &view,
@@ -386,6 +407,11 @@ impl<G: Game> Actor<G> {
         if report.surface_presented {
             self.gpu.queue.present(frame);
             reply.surface_status = SurfaceStatus::Presented;
+            if let Some((extent, drawable)) = extent_witness
+                && let Some(capture) = &mut self.extent_capture
+            {
+                capture.frame(extent, drawable);
+            }
         } else {
             reply.surface_status = SurfaceStatus::Unavailable;
         }

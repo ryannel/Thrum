@@ -34,6 +34,7 @@ fn sample(tick: u64) -> FrameSample {
         platform_target: None,
         lead_status: None,
         history_identity: [0; 2],
+        render_extent: [64; 2],
         submission_order: tick,
         completed_ticks: 1,
         queued_ticks: 0,
@@ -239,7 +240,7 @@ fn lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submi
             &queue,
             FrameConfig {
                 surface: Some(device::surface()),
-                ..FrameConfig::default()
+                render_extent: [640, 360],
             },
             world,
             StaticScene::default(),
@@ -333,7 +334,7 @@ async fn prepared_host() -> FrameHost<StaticWorld, StaticScene> {
     FrameHost::new(
         &capabilities,
         &queue,
-        FrameConfig::default(),
+        FrameConfig::offscreen([640, 360]),
         StaticWorld {
             authority: source,
             publication: source,

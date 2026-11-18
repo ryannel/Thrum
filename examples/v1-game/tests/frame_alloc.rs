@@ -93,11 +93,11 @@ fn late_surface_submit_reports_main_thread_allocation_cost() {
             &device,
             &queue,
             v1_game::FrameConfig {
+                render_extent: extent,
                 surface: Some(SurfaceProfile {
                     format: wgpu::TextureFormat::Bgra8Unorm,
                     extent,
                 }),
-                ..Default::default()
             },
         )
         .await
@@ -202,11 +202,11 @@ fn autonomous_world_and_render_callback_report_warm_allocations() {
             &device,
             &queue,
             v1_game::FrameConfig {
+                render_extent: extent,
                 surface: Some(SurfaceProfile {
                     format: wgpu::TextureFormat::Bgra8Unorm,
                     extent,
                 }),
-                ..Default::default()
             },
         )
         .await

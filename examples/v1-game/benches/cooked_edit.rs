@@ -273,7 +273,7 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
             &device,
             &queue,
             &capabilities,
-            FrameConfig::default(),
+            FrameConfig::offscreen([640, 360]),
         )
         .await
         .expect("game");

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd -- "$(dirname -- "$0")/../../.."
+if [[ "${1:-}" == "--extent" && "$#" -eq 1 ]]; then
+    export THRUM_V1_ROWS=extent
+elif [[ "$#" -ne 0 ]]; then
+    echo "usage: $0 [--extent]" >&2
+    exit 2
+fi
 
 # Function check only. Simulator CPU and GPU timings are never gate evidence.
 #

@@ -71,7 +71,7 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
             })
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("host");
         let mut assets = v1_game::cooked::cooked_config(config.store.clone());

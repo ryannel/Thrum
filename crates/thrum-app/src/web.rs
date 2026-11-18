@@ -69,6 +69,8 @@ pub struct WebStatus {
     pub format: wgpu::TextureFormat,
     /// The configured canvas extent.
     pub extent: [u32; 2],
+    /// Time spent preparing the most recent new canvas grid between frames.
+    pub resize_prepare: Option<Duration>,
     /// Admitted visible animation callbacks.
     pub callbacks: u64,
     /// Surface presentation calls, not physical displayed frames.
@@ -109,6 +111,7 @@ pub struct WebShell<W: WebWorld, V: SceneSource<W::Page>> {
     overload_events: u64,
     refused_ticks: u64,
     needs_reconfigure: bool,
+    resize_prepare: Option<Duration>,
     samples: Vec<FrameSample>,
     profile: crate::profile::ProfileWindow,
     profile_minimum: u64,
@@ -180,6 +183,7 @@ where
         overload_events: 0,
         refused_ticks: 0,
         needs_reconfigure: false,
+        resize_prepare: None,
         samples: Vec::with_capacity(SAMPLES),
         profile: crate::profile::ProfileWindow::new(),
         profile_minimum: 0,
@@ -276,13 +280,24 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             && extent[1] > 0
             && self.host.pending_frames() == 0
         {
+            let start = js_sys::Date::now();
+            if resize
+                && !self
+                    .host
+                    .resize_scene_surface(extent)
+                    .map_err(|error| error.to_string())?
+            {
+                return Err("canvas resize deferred with a free target ring".to_owned());
+            }
             self.config.width = extent[0];
             self.config.height = extent[1];
             configure_surface(&self.surface, &self.device, &self.config)
                 .map_err(|error| error.to_string())?;
-            self.host
-                .resize_surface(extent)
-                .map_err(|error| error.to_string())?;
+            if resize {
+                self.resize_prepare = Some(Duration::from_secs_f64(
+                    (js_sys::Date::now() - start).max(0.0) / 1000.0,
+                ));
+            }
             self.needs_reconfigure = false;
             resize = false;
         }
@@ -503,6 +518,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             adapter_name: self.adapter_name.clone(),
             format: self.config.format,
             extent: [self.config.width, self.config.height],
+            resize_prepare: self.resize_prepare,
             callbacks: self.callbacks,
             presented: self.presented,
             unavailable: self.unavailable,

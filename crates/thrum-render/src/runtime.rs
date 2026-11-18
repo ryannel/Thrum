@@ -55,7 +55,6 @@ pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
 pub use visual::{PreparedVisual, VisualPrepareInputs};
 
-const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
 pub(crate) const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
 
@@ -298,6 +297,8 @@ pub struct FrameSample {
     pub submission_order: u64,
     /// Candidate and predecessor serials packed from the submitted transform state.
     pub history_identity: [u64; 2],
+    /// Pixel extent of the scene target used by this submission.
+    pub render_extent: [u32; 2],
     /// Committed updates served in this host call, including catch-up work.
     pub completed_ticks: u32,
     /// Due updates still queued after this call.
@@ -442,10 +443,11 @@ pub struct FrameConfig {
     pub surface: Option<SurfaceProfile>,
 }
 
-impl Default for FrameConfig {
-    fn default() -> Self {
+impl FrameConfig {
+    /// Render without a surface at the caller's explicit pixel extent.
+    pub const fn offscreen(render_extent: [u32; 2]) -> Self {
         Self {
-            render_extent: DEFAULT_RENDER_EXTENT,
+            render_extent,
             surface: None,
         }
     }
@@ -1884,6 +1886,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 lead_status: self.lead_status,
                 submission_order: 0,
                 history_identity: self.prepared.history_identity(),
+                render_extent: self.render_extent,
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,
                 tick_cpu: frame.tick_cpu,

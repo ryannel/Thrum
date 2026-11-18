@@ -20,7 +20,7 @@ fn presenting() -> FrameConfig {
             format: wgpu::TextureFormat::Bgra8Unorm,
             extent: [640, 360],
         }),
-        ..FrameConfig::default()
+        render_extent: [640, 360],
     }
 }
 
