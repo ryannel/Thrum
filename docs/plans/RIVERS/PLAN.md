@@ -39,7 +39,7 @@ The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/
 
 ## M5 On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream
 
-The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against M5.4 and M5.5; record both. M5.10's expected answer comes from the band evaluator M3 left in `thrum-water-model` (`flow.rs`), and its tolerance from the query test `WATERS` M5 wrote.
+The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against M5.4 and M5.5; record both. M5.10's expected answer comes from the band evaluator M3 left in `thrum-water-model` (`flow.rs`), and its tolerance from the query test `WATERS` M5 wrote. The query dispatch and the cascades' cadence are `WATERS`'; [a query's demand](DESIGN.md#the-flows-own-waves) adds only when the flow bands' own producer runs, and M5.6 tests it.
 
 ## M6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
 

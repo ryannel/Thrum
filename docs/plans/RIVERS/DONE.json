@@ -513,8 +513,9 @@
         },
         {
           "id": "M5.6",
-          "statement": "The flow bands' cadence is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation. Lowering it changes no query answer.",
+          "statement": "The flow bands' cadence is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation, and neither it nor the camera changes a query answer. Over a scripted run of tick frames and repeat frames, with M5.10's points posted over the windless riffle every tick, the answers the mailbox returns for each use tick are the same to the bit with the bands evaluated every frame and at their lowest cadence, and with the camera at the riffle and with every river outside every view's reach. At the lowest cadence the bands' producer reports not run on every frame the cadence skips, except a frame that answers a point posted over a river.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
+          "ask": "Does the test read the answers from the game's mailbox, in the scene where M5.10 holds them to the model, so that equality carries M5.10's proof to every cadence and camera? Would it fail if a frame the cadence skips answered from the field last written, and if the bands stopped when the river left the view? Does it show the producer skipped at the lowest cadence, so the equality does not come from running every frame?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

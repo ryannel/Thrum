@@ -123,3 +123,6 @@
   tolerance. M6.10 is rewritten so a ring on blended water must keep half its energy and move with that water, with the half from
   [part 12](../../evidence/RIVERS/design-proof/README.md) (88.7% at worst); its limits and bit identity move to M6.11. The design's
   open question on the wave share and ruling 5 no longer assign a measured bound or an f64 reference of the ladder.
+- 2026-11-18 Design review of the revision: [changes requested](../../evidence/RIVERS/design-review.md), one Must Fix. Design: a
+  query's demand runs the flow bands on the frame that answers, whatever the cadence and the camera. Plan: M5.6 is rewritten. The
+  Suggestion on part 12's 88.7% is taken. [What changed and why](../../evidence/RIVERS/design-replan-2026-11-18.md).

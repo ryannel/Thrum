@@ -466,7 +466,9 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
    field gains two layers the wind does not fill, of the cascades' kind, generated only where a scene's profile
    names them. A chart's row holds a gain for each, which may be any size the depth limit allows, and every
    other body's is zero. Every reader of the wave layers, the game's query among them, reads them through the
-   one sum, with the rules a cascade has. `WATERS:M16`'s caustic field reads them too; whichever of it and
+   one sum, with the rules a cascade has. Their cadence is a knob for the display alone: on a frame whose
+   query dispatch holds a point over a chart with a flow gain they are evaluated at that frame's `t`, whatever
+   the cadence and the camera, so no query answer changes with either. `WATERS:M16`'s caustic field reads them too; whichever of it and
    `RIVERS` M5 lands second makes
    that so.
 4. **Births from a chart's loss and at a plunge** (`RIVERS` M5 and M6; the foam's births in `thrum-water`), by

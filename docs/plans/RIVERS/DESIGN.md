@@ -370,6 +370,28 @@ fixed point in a 1.1 m/s current at up to 18 rad/s, so brought two ticks forward
 fifth of its height, which is millimetres. The band's shortest waves are not followed to the phase, and hold
 little of its height.
 
+**The query's demand.** That needs the bands evaluated at the `t` of the frame that answers, and the bands'
+producer is one a cadence may skip. A skipped producer leaves the field it last wrote, which the display
+carries forward by its rate of change with its slopes held. A game must not read that: at a crest the held
+rate is nothing, so one tick on the carried wave still has its whole height, where the 18 rad/s wave above
+has 95.5% of it and is falling, and brought on to the use tick the two answers part further. So the producer
+runs on a frame when either reader asks:
+
+- **the display**, at the bands' cadence, while a chart that holds a flow gain is inside a view's reach;
+- **the query**, on every frame whose dispatch holds a posted point over a chart that holds a flow gain,
+  whatever the cadence and wherever the camera is. The scene decides it on the CPU from the tick page's
+  points, before `simulate`. Its test may ask when it need not, as a point anywhere in such a chart's
+  rectangle does, and never fails to ask.
+
+The producer writes the whole field from `t` alone and runs before the dispatch, so every dispatch that reads
+a flow band reads it as evaluated at its own frame's `t`. An answer is then the same to the bit at any cadence
+and with the camera anywhere, the river out of every view included, and M5.6 holds the mailbox to that. There
+is still one field: an evaluation the query asked for is the display's newest too, and the display carries on
+from it. What a lower cadence saves is the frames no dispatch needs: all of those it skips while no posted
+point is on a river, and the repeat frames between ticks while one is. It is `EFFECT-GRAPH`'s
+[skippable pass](../EFFECT-GRAPH/DESIGN.md#cadence), which runs or not by a runtime value, so nothing is asked
+of that module.
+
 `c` is the one constant of the look. It starts at 2, between the turbulent energy at a channel's surface (0.65)
 and a bed of cobbles, and is tuned once against R2's inspection, between 1 and 4.
 
@@ -487,12 +509,16 @@ and three currents on the bend's tangents hold every cell.
 
 **A ring survives the blend.** The blend is a blur: a cell that mixes copies carried at different currents
 spreads its waves by the distance those copies part in one step. Part 12 takes it from the step's own
-multiplier, in plan, for a ring 0.5 m wide on water every cell of which is blended. After 5 s in steps of 1
-tick the ring keeps 93.6% of its energy midway between 0.2 and 1.5 m/s on a straight reach, and never less
-than 88.7% round a 90° bend carried by rest and three tangent currents, at any speed from the pool's to the
-riffle's. So a ring that passes through blended water softens and is still a ring, and M6.10 fails a step
-that leaves less than half. Steps of 8 ticks blur more: 5 s of nothing but such steps would keep 50% to 72%
-on that bend. A hitch gives one such step, and no item asserts its energy.
+multiplier, in plan, for a ring 0.5 m wide. Each run gives every cell the one current and the one set of
+weights, and the figure is the share of the ring's height energy left after 5 s, against the same ring
+carried at one current. In steps of 1 tick the ring keeps 93.6% midway between 0.2 and 1.5 m/s on a straight
+reach. For a 90° bend carried by rest and three tangent currents, the runs sampled are five speeds from the
+pool's to the riffle's at headings every 5° round the turn, and the least kept among them is 88.7%. So a ring
+on blended water softens and is still a ring, and M6.10 fails a step that leaves less than half. Steps of 8
+ticks blur more: 5 s of nothing but such steps would keep 50% to 72% in the same runs. A hitch gives one such
+step, and no item asserts its energy. A ring that travels through weights that change from cell to cell, as
+on a real bend, is a different calculation, which part 12 does not make: M6.10's ring on the bend is its
+first run here.
 
 The ladder is built in `thrum-water`'s interaction step. An f64 reference of it in `thrum-water-model` is a
 diagnostic a builder may add, as [`WATERS` says of its own step](../WATERS/DESIGN.md#the-system-as-it-runs),
@@ -528,7 +554,8 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 - **Limits are inputs.** The flow bands are layers of the cascades' arrays and the samples layers of a chart's,
   counted against the capability record at preparation.
 - **Knobs**, in `EFFECT-GRAPH`'s list with a declared invalidation: the flow bands' cadence, and the sheet's
-  spacing along its path. Neither changes what a query returns.
+  spacing along its path. Neither changes what a query returns: the cadence is the display's, and
+  [a query's demand](#the-flows-own-waves) runs the bands whatever it is set to.
 
 ### Check that it can work
 
@@ -540,7 +567,10 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 - **R2.** Part 2 gives the chop's size along a section from the law. That two bands at those sizes, carried by
   the current, read as a riffle and not as a small sea is unrun; M5 is the first look ([risk 2](#risks)). Carriage
   by two cross-faded samples is Uncharted 4's, and `WATERS` M9 measures it.
-- **R3.** The current is the map's and the query is `WATERS`'. Unrun here.
+- **R3.** The current is the map's and the query is `WATERS`'. Unrun here. That a float's answer over a riffle
+  does not change with the bands' cadence or the camera follows from the schedule alone: the bands are a
+  function of `t`, and [a query's demand](#the-flows-own-waves) evaluates them on the frame that answers. M5.6
+  is the first run.
 - **R4.** Parts 2 and 6 put the loss at the ledge, the chute and the rock. How much foam that power makes with
   the shallows' constant is unrun; M5 records it.
 - **R5.** Part 4 is arithmetic, and a section for the depth at a lip. The sheet's look is unrun; M6 is the
@@ -551,7 +581,8 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   tests them.
 - **R8.** Part 7 is arithmetic on part 2's flow. Part 9 steps two ring sets at once on a pool and a riffle in
   one region, in section. Part 11 is the span of the carriage currents round a bend, and part 12 what the
-  blend costs a ring, in plan, from the step's multiplier. The ladder stepped in plan and on the GPU is
+  blend costs a ring's height energy, in plan, from the step's multiplier, with one set of weights in every
+  cell. The ladder stepped in plan and on the GPU, and a ring crossing weights that change along a bend, are
   unrun; M6.10 is the first.
 - **What the looks cover.** The island's fall is about 4 m, and M6 judges it from 2 m to 200 m at three
   gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (M2.4)
@@ -570,8 +601,9 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 | Sky, Sun, air, the lent Sun visibility | `ATMOSPHERE` |
 
 **A frame, in order**, for what a river adds to [`WATERS`' frame](../WATERS/DESIGN.md#the-system-as-it-runs).
-`upload` takes the gauges with the page's stages. `simulate`, every frame: the flow bands at `t`, with the
-cascades. `simulate`, on a frame that advances the tick: births from loss with the foam's births; the plunges'
+`upload` takes the gauges with the page's stages. `simulate`, with the cascades and before the query's
+dispatch: the flow bands at `t`, on a frame the display's cadence or
+[a query's demand](#the-flows-own-waves) asks for them. `simulate`, on a frame that advances the tick: births from loss with the foam's births; the plunges'
 births and impulses; the interaction step with each region's current ladder. `after-opaque`: the sheets, then
 the water's gather and surface as before.
 
@@ -617,7 +649,7 @@ Estimates, unmeasured.
 | The solve | Prepared, once for each flow sample | Wet cells times steps. A 350 m stream 4 m wide at 0.25 m cells is 22,400 wet cells and about 24,000 steps: 540 million cell updates a sample (part 5) | Tens of seconds a sample on one core; M1 records it. Each cell's own time step saves a third; a filled start and a coarser grid first save little in a section |
 | A river file | Loaded at preparation | For each reach: its rectangle's cells × samples × 7 values at 16 bits. A 300 m by 30 m reach at 0.25 m cells with 6 samples is about 12 MiB | Cutting a winding river into more reaches is the remedy where a rectangle is mostly ground |
 | Samples in the map | Every read of a chart with more than one sample | Two layers in place of one, and the wetting gauge | Three reads on river pixels; none elsewhere |
-| Flow bands | Frame, while a river is inside the field's reach | Two transforms of 256² and their mips | About half the cascades' cost again; two more layer reads in the surface where a gain is not zero |
+| Flow bands | Frame, at their cadence while a chart with a flow gain is inside a view's reach; and every frame that answers a query point over such a chart, wherever the camera is | Two transforms of 256² and their mips | About half the cascades' cost again; two more layer reads in the surface where a gain is not zero. With a float on a river the cadence saves only repeat frames, half the frames at a 60 Hz tick and 120 Hz |
 | Births from loss | Tick | One read of the chart's loss in the foam's births | Inside the foam's pass |
 | Sheets | Frame, while a fall is in view | A lip's cells × up to 32 points; the sheet's pixels, blended | Small beside the surface; M6 records it |
 | Plunges | Tick | A record and a birth for each segment | Negligible |
@@ -669,7 +701,8 @@ dependencies. In addition:
 - **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,
   and it holds here: M4 to M7 pass on their look and their speed, and what a game reads is tested against
   `thrum-water-model`: the river in the map and the query at the tolerance `WATERS` M4.1's test states, and
-  the flow bands in the query's answers (M5.10) at the one `WATERS` M5.1's test states. The look of the sheet,
+  the flow bands in the query's answers (M5.10) at the one `WATERS` M5.1's test states, the same to the bit
+  at any cadence and camera (M5.6). The look of the sheet,
   the flow bands and the river's caustics is not held to an f64 reference or to a bound measured first, and
   nor are the rings: M6.10 compares the step with itself. Parts 1 to 10 are the source of the bounds M1 to M3
   were proved with and of M6.10's carriage figures, and part 12 of its half.
