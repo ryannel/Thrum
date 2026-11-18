@@ -8,6 +8,7 @@ use crate::material::MeshSurface;
 const GROUP: u32 = 4;
 const RUN: u32 = 64;
 const STAGES: wgpu::ShaderStages = wgpu::ShaderStages::TASK.union(wgpu::ShaderStages::MESH);
+const NO_REJECTION_REPORT: &str = "fn cooked_report_rejection(_reason: u32) {}";
 
 pub(crate) fn prepare(
     surface: &SceneSurface<'_>,
@@ -170,7 +171,14 @@ impl Layout {
         source: &str,
         mesh_entry: &str,
     ) -> wgpu::RenderPipeline {
-        let report = self.rejection_source();
+        let report = NO_REJECTION_REPORT;
+        #[cfg(feature = "draw-probe")]
+        let report = if self.rejections.is_some() {
+            "@group(4) @binding(7) var<storage, read_write> counts: array<atomic<u32>, 7>;
+             fn cooked_report_rejection(reason: u32) { atomicAdd(&counts[reason], 1u); }"
+        } else {
+            report
+        };
         let shader = format!(
             "enable wgpu_mesh_shader;\n{source}\n{}\n{}\n{report}",
             include_str!("meshlet_cull.wgsl"),
@@ -205,15 +213,6 @@ impl Layout {
             multiview: None,
             cache: None,
         })
-    }
-
-    fn rejection_source(&self) -> &'static str {
-        #[cfg(feature = "draw-probe")]
-        if self.rejections.is_some() {
-            return "@group(4) @binding(7) var<storage, read_write> counts: array<atomic<u32>, 7>;
-                    fn cooked_report_rejection(reason: u32) { atomicAdd(&counts[reason], 1u); }";
-        }
-        "fn cooked_report_rejection(_reason: u32) {}"
     }
 
     pub(crate) fn bind(
