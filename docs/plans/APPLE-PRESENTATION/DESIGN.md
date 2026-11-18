@@ -793,7 +793,15 @@ noise threshold and labels. Additions:
   *The temporal-input witness*: one fixture read by the Mac tests and the Chrome case, with values taken from
   submitted frames.
 - **Motion review.** Pans, translating lights, reveals behind a moving prop, a spawn, a time-of-day scrub and a cut,
-  recorded as sequences and judged by agent review. Each review states that it watched motion.
+  recorded as sequences and judged by agents: the builder's evidence and the reviewer's verdict, with no human
+  observer (owner, 18 November 2026: "agents can judge"). An agent reads frames and does not perceive playback. So
+  where an item says to watch a sequence, in motion or at 1x, it reads the captured frames in their captured order
+  and timing, none retimed or dropped, as runs of consecutive frames at native size across each cue. A defect
+  counts when those frames show it: a copy or trail of a moving thing that stays behind it from frame to frame,
+  pixels on a still feature that visibly change between consecutive frames, or brightness that trails the
+  comparison capture at the same captured time. Each review says which frames it read for each cue, and that is
+  its statement that it watched motion. Frame pacing is separate: where an item claims smoothness or no hitch,
+  that is read from the capture's time records.
 - **Display overrides.** The only display is the built-in XDR panel (3456×2234, potential headroom 16). Rows for SDR
   displays, refresh changes and display moves use forced overrides of the display record, labelled as such. A
   physical external-display row is owed.
