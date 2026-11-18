@@ -57,6 +57,20 @@
     "interpretation": "Functional gates govern; quiet figures remain history. Investigate visible hitches, >~25% comparable regression or unexpected growth; no iPhone result."
   },
   "v1_slices": {
+    "RAY_TRACING_M1": {
+      "implementation": "Opt-in named ray-query device request and a scene-local structure over arena entities. Mesh structures read the draw buffers and the scene structure is rebuilt from the frame's interpolated draw poses.",
+      "functional_validation": "Metal builder checks passed device admission and fallback, geometry membership, moving poses, device replacement, discarded recording and no-demand byte parity.",
+      "experienced_quality": "Structure diagnostics only. Rendered ray effects begin in later milestones.",
+      "platform_performance": {
+        "mac_apple_tile": "Contended isolated structure timings and incremental residency at 10,000 and 100,513 slots on the 30-core GPU M3 Max. No performance qualification.",
+        "browser": "No ray structure run.",
+        "ios": "Physical iPhone owed. No ray structure run."
+      },
+      "evidence": [
+        "../evidence/RAY-TRACING/M1/README.md",
+        "../evidence/RAY-TRACING/M1/structure-cost.json"
+      ]
+    },
     "SCENE_VIEWS": {
       "implementation": "Prepared contribution-owned secondary slots, per-frame camera and clip requests, separate entity and cooked visibility, Sun cascades, local-light clusters and aerial products, and same-frame colour, depth and record reads. The mirror pool composes two air stretches and declares five runtime quality controls.",
       "functional_validation": "M1 and M2 were independently reviewed on Metal, including stored-format equality, slot lifetime and absence, view-local light and shadow products, direct and indirect cooked draws, and composition from main-view marker colours. M3 exercises both knob endpoints on both Metal recipes with actual main draw-buffer equality and a pool-footprint image comparison. Chrome WebGPU matches its own main draw for entities and cooked placements to zero stored colour and depth steps, and passes both marker exposures.",

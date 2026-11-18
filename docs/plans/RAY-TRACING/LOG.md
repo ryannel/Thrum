@@ -55,3 +55,8 @@
   method and cooked draw path, and the `Maps` arm names Apple tile (M6.1). Also brought into step with
   ruling 7 as `MESH-SHADING`'s third review left it: the GPU figure is the timed-pass span, with the queued
   transfers outside it disclosed (M3.10, M4.9, M5.7, M6.1). The design review is owed.
+- 2026-11-18 Built the named device request and scene-owned entity structure. Mesh structures share arena
+  geometry and the scene build follows the accepted draw rows at the frame's alpha. Verified M1.1–M1.6
+  on Apple tile Metal at `e0fb4a93a`, with an exact no-demand comparison to the pre-change renderer.
+  The contended field-count CPU rebuild was 9.804 ms median, with finish and submit the larger share.
+  [Proofs and tripwire investigation](../../evidence/RAY-TRACING/M1/README.md).

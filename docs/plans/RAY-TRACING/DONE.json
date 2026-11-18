@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
@@ -20,8 +20,8 @@
           "ask": "Do the Mac window, the capture runner and the test gate each make their device through the registry's one function, so that the retry exists in one place, with every decision taken from adapter facts and no test of platform, backend or adapter name?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
           "verdict": "",
           "review": ""
         },
@@ -32,8 +32,8 @@
           "ask": "Would a structure that held an inactive slot, lacked a mirrored one, or placed a scaled one at unit size fail this test?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
           "verdict": "",
           "review": ""
         },
@@ -44,8 +44,8 @@
           "ask": "Would a structure built from the committed pose in place of the interpolated one, or one frame late, fail this test?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
           "verdict": "",
           "review": ""
         },
@@ -55,8 +55,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_structure_lifecycle_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
           "verdict": "",
           "review": ""
         },
@@ -66,8 +66,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_structure_absent_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
           "verdict": "",
           "review": ""
         },
@@ -77,8 +77,8 @@
           "check": "python3 scripts/ray_tracing_cost.py structure",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md#structure-cost-and-tripwires",
           "verdict": "",
           "review": ""
         },
@@ -87,8 +87,8 @@
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
