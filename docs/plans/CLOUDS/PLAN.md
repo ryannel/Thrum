@@ -39,19 +39,16 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 
-The work is on `build/clouds` at `6c696409396a`, unmerged; read its handoff with
-`git show 6c696409396a:docs/evidence/CLOUDS/M3-handoff.md`. Its trace, [cloud light](DESIGN.md#cloud-light),
-far-plane compose, full refresh and capture routes stand. Its stills, sequences and cost record are of the
-dome: retake them once the form is settled. What remains is the cloud's form.
-[Turrets](DESIGN.md#one-weather-field-in-the-air-frame) go in the column, which `Field::column` and
-`weather.wgsl` compute as one dome a cell, by one rule on [every map level](DESIGN.md#the-weather-map).
-[The shape noise](DESIGN.md#one-density-in-m¹) becomes a billow volume, where `Field::noise` and `cloud_noise`
-in `layer.wgsl` hash value noise at each sample. M1's and M2's tests in `./dev check` hold the query, the map
-and the Sun's path to one another: move their expected values and probe points with the form, and keep what
-they assert (M3.15). Tune by eye against M3.1 to M3.3. If the level band stays, [risk 12](DESIGN.md#risks)
-says what to do first. Looks under one dome a cell do not count: after three looks under turrets that fail
-one cue, log them and end `BLOCKED`. A frame over the refresh interval takes the first risk's remedies and
-stops nothing. Leave `Orders` and `medium.rs` alone: M14.13 removes them.
+The work is on `build/clouds` at `f38c7d77ad24`, unmerged; read its handoff with
+`git show f38c7d77ad24:docs/evidence/CLOUDS/M3-handoff.md`. Its turrets, billow volume, trace, compose, capture
+routes and the checks that handoff lists stand. What remains is [the lit plane](DESIGN.md#cloud-light), which
+drew the bright underside and the dark stripe: [the controls](../../evidence/CLOUDS/M3-plane/README.md) hold
+the cause, and a probe of the rule as modes 20 to 22. `cloud_solar_source` in `layer/scattering.wgsl` infers
+the plane from `above`, which `cloud_coarse_above` in `layer.wgsl` reads from three columns a sample: both
+go, and the plane comes from the type's turn. The form and the plane are then settled. One capture pass with
+the rule in covers every inspected item and the cost record; only the turn is left to tune by eye, against
+M3.1 to M3.3. Looks under the inferred plane do not count. A frame over the refresh interval takes the first
+risk's remedies and stops nothing. Leave `Orders` and `medium.rs` alone: M14.13 removes them.
 
 ## M4 The same sky and the same shade draw in Chrome
 

@@ -492,7 +492,7 @@
           "id": "M3.3",
           "statement": "Clouds are lit only by the engine's sky and Sun. Sunlit sides are bright, bases are darker and never black, and a cloud and the land under it sit in one light and one exposure. Terrain hides cloud along a clean edge.",
           "inspect": "In the noon stills, and in one at a 15\u00b0 Sun, judge a cloud against the terrain below it and a ridge line against cloud, whole and in native-size crops.",
-          "ask": "Does the cloud shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own? Is its Sun the identity's true Sun and not the apparent surface light?",
+          "ask": "Does the cloud shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own? Is its Sun the identity's true Sun and not the apparent surface light? Is the diffuse light's plane set by the type alone, one direction for a whole cloud, with no depth above a sample read to find it?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

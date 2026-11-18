@@ -460,3 +460,10 @@
   is corrected and holds both cases; its turret figures moved to 0.090 and 0.243. M3.15 is new. The review listed no Suggestions; of
   MF1's two routes the point column was taken, since an area value needs a second rule and a new M2 test. No interface or Done item
   changed. The design needs a review.
+
+- 2026-11-18 Plan, answering M3's second block (`needs_context`: three turret looks kept a bright toward-Sun underside under a dark
+  stripe; work on `build/clouds` at `f38c7d77ad24`, unmerged). Of the lead's two routes, the cause was named and the cue stays in M3:
+  controls on Metal put it in the lit plane inferred at each sample. Decided: [the type sets the plane](DESIGN.md#cloud-light), level
+  for a layered type and halfway to the Sun for a heaped one, with no depth read for it.
+  [The record](../../evidence/CLOUDS/M3-plane/README.md#the-decision) holds the figures, the routes not taken and what it costs.
+  Risk 12 is written again, and M3.3's question gains the plane. No interface or Done item changed. The design needs a review.

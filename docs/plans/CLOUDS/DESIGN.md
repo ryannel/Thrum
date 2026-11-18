@@ -363,9 +363,11 @@ modules; its algorithm is left as it is. [The handoff](#proof-and-builder-handof
 interval there, M3 tries the remedies in [risk 1](#risks) that its record points at and records what each did,
 and building goes on; whether the layer's extent or the light model should then change is a planner's decision
 from that record, never a stop for a builder. If M5 shows the summed Sun-path product cannot carry low-Sun
-relief, its near level is refined or the local samples grow, here first. If stills show the diffuse light
-wrong in a cloud in a way the box of part XV did not, the lit plane and the view boundary are where a planner
-corrects it, from the record; a gain, a second light and fixed orders are never the correction. If a game needs hashed shapes and
+relief, its near level is refined or the local samples grow, here first. M3's stills showed the diffuse light
+wrong in a cloud of heaps in a way the box of part XV did not, and [the lit plane](#cloud-light) was corrected
+for it from [the controls](../../evidence/CLOUDS/M3-plane/README.md) (part XIX). If stills show it wrong again,
+the plane's turn and the view boundary are where a planner corrects it, from the record; a gain, a second
+light, fixed orders and a plane read from a sample's depths are never the correction. If a game needs hashed shapes and
 directed ones in one sky, the map's texel gains a second slot; nothing else moves. If a game wants the shade of
 shapes with no volume in memory, a profile that shades every placed cell through its column form is the path
 already built for a lease that is not resident: a different, approximate shade (part H), and a choice a game
@@ -682,12 +684,11 @@ The Sun's light at a sample is in two parts that between them hold it all, once.
 nearly as the Sun's rays do. The **diffuse** light has been scattered until it has forgotten them. Both are
 closed forms of optical depths the trace already holds, so multiple scattering costs no density read. The term
 was chosen because it gives a cloud its brightness with nothing tuned: against photon transport it is typically
-a factor of 1.35 out on a box's faces, where the four orders it replaces are 40 times too dark (parts XII to
-XVI of [the proofs](#check-that-it-can-work)). It is the starting point, not a pass mark. A game changes how its
+a factor of 1.75 out on a box's faces, where the four orders it replaces are 40 times too dark (parts XII to
+XVI and XIX of [the proofs](#check-that-it-can-work)). It is the starting point, not a pass mark. A game changes how its
 clouds are lit through a type's droplet and its water, which are the phase and the density. A builder whose
-clouds fail the inspection list may also adjust the term's constants by eye (the level margin, the floor on
-`c₀`, the boundary depth, the beam's lobe), keeps one term for every consumer, and says in the evidence what
-changed. No item holds the shader to the equations below, to the model or to photons.
+clouds fail the inspection list may also adjust the term's constants by eye (the plane's turn, the boundary
+depth, the beam's lobe), keeps one term for every consumer, and says in the evidence what changed. No item holds the shader to the equations below, to the model or to photons.
 
 - **Sun.** `E_sun` is the lent Sun light at a world position: the true Sun through the air, with no cloud factor.
   It is evaluated at the layer's base and top on each ray and interpolated by height, so a tall cloud's top
@@ -725,11 +726,11 @@ changed. No item holds the shader to the equations below, to the model or to pho
 - **What a sample knows.** `tau_sun`, the optical depth toward the Sun, as
   [self-shadow](#the-suns-path-one-optical-depth-product) reads it. `tau_col`, the whole depth of that Sun
   column through the layer: the product's last slice at the same column, and never less than `tau_sun`.
-  `tau_up`, the vertical optical depth of the coarse density above the sample, from the weather map's column.
   `tau_view`, the optical depth of the condensate a march has itself crossed before the sample, which it
-  holds as its transmittance; only the view boundary reads it. `μ₀` and `c₀`, the sine and cosine of the
-  path direction's elevation, with `c₀`
-  never under 0.3. `ω`, the unit vector from the sample toward the eye.
+  holds as its transmittance; only the view boundary reads it. `s`, the path direction, a unit vector toward
+  the Sun, and `μ₀`, the sine of its elevation. `ω`, the unit vector from the sample toward the eye. `h`, the
+  **plane's turn**: half the type's share of cells, so 0 for a layered type and ½ for a heaped one, and 0 for
+  ground condensate. The Sun term reads no depth but these three.
 - **The beam.**
   `S_beam = P₁(θ)·exp(−b₁·tau_sun) + HG(θ, g·g_B)·max(0, exp(−(1 − f)·tau_sun) − exp(−b₁·tau_sun))`, with
   `b₁ = max(w, 1 − f)`. The droplet's narrow lobe turns light by under a degree, so light that has met only
@@ -745,9 +746,8 @@ changed. No item holds the shader to the equations below, to the model or to pho
   scaling and the escape function of a thick layer, taken along the sample's Sun column:
 
   ```
-  r   = (tau_up + 2) / (tau_sun + 2/μ₀)
-  cot = (r − μ₀) / c₀            s = 1/√(1 + cot²)
-  μ   = min(1, r·s)              n = cot·s·(level, toward the Sun) + s·(up)
+  n   = ((1 − h)·up + h·s) / |(1 − h)·up + h·s|
+  μ   = n · s
   x   = (1 − g)·μ·tau_sun        X = (1 − g)·μ·tau_col
   E   = exp(−(1 − f)·tau_sun)    E_col = exp(−(1 − f)·tau_col)
   K   = (3/7)·(1 + 2μ)
@@ -767,21 +767,29 @@ changed. No item holds the shader to the equations below, to the model or to pho
   side, which is why a base is darker and never black. `I₁` is its net flow, and `−g·I₁·c` is why a face seen
   square on is brighter than one seen at a graze.
 - **The lit plane.** A column knows how deep it is, not which way its surface faces, and the Sun's flux on a
-  surface goes as the cosine between them. `r` compares the cloud above the sample with the cloud between it
-  and the Sun, and `μ` and `n` are the plane both depths would have. In a level layer `r` is `μ₀`, the plane
-  is level and `μ` is the layer's own cosine, exactly. Where the Sun reaches the sample through the cloud's
-  side, `r` is larger, the plane turns toward the Sun, and `μ` reaches 1 where it faces it: the side of a
-  cumulus at a 15° Sun takes nearly four times the light of a level top. Where the Sun's path is longer than the
-  cloud above would give, the plane turns away and darkens. The 2 is an optical depth: nearer a boundary than
-  that the two depths are too small to compare, so the plane is level there. The floor on `c₀` keeps a plane
-  under a Sun near the zenith, where the two depths lie along one line and tell nothing apart.
+  surface goes as the cosine between them. The plane is set by the type and is one direction for the whole
+  cloud: its normal `n` is turned from straight up toward the Sun by the plane's turn. A layered type's plane
+  is level and `μ` is `μ₀`, which is a level layer exactly, so an overcast sky darkens as the Sun sinks. A
+  heaped type's plane lies halfway between up and the Sun: a heap presents its top and its Sun-facing side
+  together, so at a 15° Sun it takes three times the light of a level top, and its sunlit sides stay bright
+  through the day. A type between the two turns its plane by its share of cells, and the weather state ramps
+  a type, so the plane never changes across a cloud or in a step. This is how shipped clouds are lit: by the
+  optical depth toward the Sun, with no surface found in the volume, so a sample's light falls smoothly from
+  the lit side of its Sun column to the far side whatever the cloud's shape.
+  No depth sets the plane. The first design inferred it at each sample, from the cloud above the sample
+  against the cloud between it and the Sun. In a cloud of heaps those two depths say where the gaps are, not
+  which way a surface faces: along a base the column overhead is deep and the path to the Sun slips between
+  heaps, so the plane turned to face the Sun, and across the face above it the plane turned away.
+  [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) put its bright lip under a dark stripe there, at
+  2.2 to 1 in solar diffuse alone, and 1.2 to 1 with the plane held level. On a uniform box the inferred plane is the
+  closer of the two (part XIX), and no sky is made of boxes.
 - **The view boundary.** A column is unbounded sideways and a cloud is not. Every surface the eye sees is a
   boundary, and at a boundary diffuse light falls and flows outward. Where the view ray entered through the
   lit plane or the far one, the column's own solution already ends there, and `q` is 0: in a level layer seen
   from above or below it is 0 at every sample. Where it entered anywhere else, `q` rises to 1, and the light
   is lowered toward its value at a free boundary, over a depth `ℓ` that the column's own depth sets, with the
   outward flow toward the eye added at a mean cosine of 2/3. Without it the flanks of the three larger boxes
-  of part XV are 1.4 to 3.3 times transport; with it, 0.9 to 1.2. `B` is the **boundary weight**, a function of
+  of part XV were 1.4 to 3.3 times transport under the inferred plane; with it, 0.9 to 1.2. `B` is the **boundary weight**, a function of
   the sample's distance from the camera alone: 0 out to the end of
   [the handover's ramp](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), rising smoothly to 1 at twice
   that distance. Every heaped cloud is beyond twice that distance and takes the whole of it. A profile without
@@ -807,8 +815,11 @@ changed. No item holds the shader to the equations below, to the model or to pho
   within 0.62 to 1.18 of transport at 45° and 90° from a depth of 8, and 0.47 to 1.34 at a depth of 2; the
   top of a layer under a 10° Sun, seen at a graze, is 0.56 to 0.58, and face on 1.6 to 2.7. The flux of the radiance
   the term renders is 0.91 to 1.10 of the Sun's (part XIII). Over the faces of uniform boxes 12 to 120 optical
-  depths across, at a Sun of 6° to 70°, it is 0.62 to 2.35 of transport and typically a factor of 1.35 out;
-  the four orders this replaces are typically 40 times too dark there, and octaves at halves 14 (part XV).
+  depths across, at a Sun of 6° to 70°, with a heaped type's plane it is 0.55 to 5.27 of transport and
+  typically a factor of 1.75 out: 1.48 at Suns of 45° and 70°, and furthest out on the far side at Suns of
+  15° and 6°, which it draws 1.6 to 5.3 times too bright (part XIX). The plane inferred at each sample was
+  typically 1.35 out on those boxes; the four orders this replaces are typically 40 times too dark there, and
+  octaves at halves 14 (part XV).
   Inside 2° of the Sun through cloud of depth 8 it is 1.5 times too bright, because the narrow lobe's own
   widening is left out.
 - **Once a ray.** A ray has one angle `θ` to the Sun's centre, so both phases are one evaluation a ray: a read
@@ -1091,10 +1102,10 @@ near the camera and this module's trace beyond it.
   of that volume, at the jittered point the volume names, three **medium coefficients**: the extinction `σ`;
   the solar kernel `σ · (S_beam + S_diffuse)`, which is [cloud light](#cloud-light)'s Sun term without the
   Sun; and the ambient source, cloud light's ambient term. The kernel comes from the one shader function the
-  trace calls, with the inputs the trace gives a sample at that point: `tau_sun`, `tau_col` and `tau_up`
+  trace calls, with the inputs the trace gives a sample at that point: `tau_sun` and `tau_col`
   through one shader function for the depths at a world point, which reads the Sun's path (the ground band,
-  which holds the whole path, below its top and the cloud band above) and the condensate above the point; the
-  path direction; and the direction from the point to the camera. The boundary weight is 0 wherever the near
+  which holds the whole path, below its top and the cloud band above); the plane's turn, which is 0 for
+  ground condensate; the path direction; and the direction from the point to the camera. The boundary weight is 0 wherever the near
   weight is above 0, so the pass gives no view depth and needs none. Each is multiplied by the **near
   weight**. `ATMOSPHERE` multiplies the kernel by its Sun light at the point and by the scene's shadow there,
   adds the air's own coefficients and integrates once. This module never integrates the near field, and
@@ -1390,12 +1401,13 @@ The model in it is [cloud light](#cloud-light)'s Sun term, written apart from an
   a tenth to a quarter of transport. The four fixed orders are at most 0.23 and typically 40 times too dark; octaves at
   halves at most 0.68 and typically 14. The largest excess left is the far side at a 6° Sun and the base under
   a 70° Sun, both dim faces, at about twice transport.
-- **XVI, probes.** The term's value at sixteen stated inputs, for an implementation to reproduce, and the
-  level layer's identities: the lit plane is level and its cosine is the sine of the Sun's elevation, to nine
-  places.
-- **Unrun:** the term in a cloud whose density is not uniform, where the map's column and the eroded cloud
-  disagree; a droplet other than 24 µm; the disc-averaged phase in place of the point Sun's; ground
-  condensate, whose three depths M14 takes from the ground band. M3's and M5's stills see the first.
+- **XVI, probes.** The term's value at sixteen stated inputs, and the level layer's identities: the lit plane
+  is level and its cosine is the sine of the Sun's elevation, to nine places. The probes are of the plane
+  inferred at each sample, as parts XV and XVII drew it; part XIX holds the plane the design now has, and
+  part XVII's cases are level layers, where the two planes are one.
+- **Unrun:** a droplet other than 24 µm; the disc-averaged phase in place of the point Sun's; ground
+  condensate, whose depths M14 takes from the ground band. The term in a cloud whose density is not uniform
+  was unrun here and M3's stills saw it: part XIX.
 
 From `handover_light_proof.py`, run on 18 November against finding MF1 of
 [the review of 17 November](../../evidence/CLOUDS/design-review.md), on its bank and wider cases. Each case is
@@ -1443,9 +1455,29 @@ silhouette across its width, both scaled to 1.
   cloudy at 0.1275 of points with a mean thickness of 99.22 m; at the 3,600 centres of 1,600 m texels, 0.1308
   and 99.23 m. Cloud lies somewhere in 0.33 of those texels, and 0.60 of them have a clear centre. The
   review's two texels are stored as the query answers at their centres: clear, and 154.75 m thick.
-- **Unrun:** the engine's light on the new form, so the level band across M3's clouds is not explained here;
-  the detail noise; a view from the ground; motion; the far level's clouds as drawn. M3.1 and M3.2 judge those
-  in the engine.
+- **Unrun:** the engine's light on the new form, which part XIX takes up; the detail noise; a view from the
+  ground; motion; the far level's clouds as drawn. M3.1 and M3.2 judge those in the engine.
+
+From [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) on Metal and `lit_plane_proof.py`, both of 18
+November, after M3 stopped a second time, on a bright underside under a dark stripe toward the noon Sun
+(`git show f38c7d77ad24:docs/evidence/CLOUDS/M3-handoff.md`).
+
+- **XIX, the lit plane.** *On turrets, in the engine.* The toward-Sun still drawn one light term at a time:
+  the lip over the face above it is 1.8 to 1 as built, 1.1 in the beam, 0.9 in the ambient light and 2.2 in
+  solar diffuse; 2.2 still with the view boundary off, 1.7 with the flow term off, and 1.2 with the plane
+  held level. Drawn as colour, the two depths the plane was inferred from are a deep column overhead and a
+  short path to the Sun along the base, and the reverse across the face, so the inferred plane faced the Sun
+  below and turned from it above. With one plane for the cloud the whole light is 1.1 to 1, level, halfway
+  or facing the Sun. At a 15° Sun the level plane leaves every cloud flat and grey,
+  and the halfway and facing planes keep bright sunlit sides over darker bases.
+  *On part XV's boxes, against its photons.* Over the 64 faces the inferred plane is typically a factor of
+  1.35 out, a level one 2.29, one facing the Sun 2.02 and one halfway 1.75. At Suns of 70° and 45° the three
+  held planes are 1.48 to 1.52. At 15° and 6° the level plane's Sun-facing side is 0.09 to 0.49 of
+  transport, and the halfway plane's is 0.64 to 1.54 with a far side at 1.6 to 5.3. A box is the inferred
+  plane's best case. Halfway is the heaped type's plane because it is the nearest of the held planes on the
+  boxes and loses nothing on the turrets.
+- **Unrun:** a still from the built rule; a layered type; the far side of a turreted cloud at a low Sun,
+  which M5.3 judges; cost, which falls by the vertical reads the inferred plane took and M3.9 records.
 
 ## The system as it runs
 
@@ -1620,16 +1652,18 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 11. **Far mist in thick haze takes its air wrongly**, as a bank too bright or too blue against the land behind
    it. Early sign: M15.4's stills in thick haze. The fix is a smaller part bound, never one part for the
    ray.
-12. **The lit plane mottles or the view boundary shows.** The plane compares the map's column above a sample
-   with the eroded cloud toward the Sun, and the two disagree at an eroded edge; the boundary term turns on
-   where a view ray enters between the lit plane and the far one. Early sign: M3's stills, as blotches on a
-   sunlit top or a seam along a cloud's shoulder, and M5's at a low Sun, where the plane's cosine ranges
-   furthest. The fixes, in order: a deeper level margin than 2; a `tau_up` taken from the same coarse density
-   as the product, or the term's constants adjusted by eye. The builder makes them and records what changed.
-   Never a second light or a return to fixed orders. M3's domes also showed a level dark band low in each
-   cloud, its cause not found. The light's vertical depths come from the map's column by height, and under one
-   dome a cell every column had the same profile, so the band may go with the dome. If it stays on turrets,
-   the first step is to draw each light term alone and see which one holds it, before any constant moves.
+12. **The type's plane lights a cloud too evenly, or the view boundary shows.** A plane held for the whole
+   cloud cannot darken a far side as a plane turned away from the Sun did: on part XIX's boxes the far side
+   at a Sun of 15° and lower is 1.6 to 5.3 times transport, and at noon the Sun side and the far side are
+   nearer each other than photons leave them. Early sign: M3's noon stills, as a cloud that reads flat, and
+   M5's at a low Sun, as a far side nearly as bright as the lit one. The boundary term turns on where a view
+   ray enters between the lit plane and the far one, and would show as a seam along a cloud's shoulder. The
+   fixes, in order: the plane's turn, by eye, for the type; the boundary depth; the type's water, which
+   deepens the Sun column. The builder makes them and records what changed. If a low-Sun far side still fails
+   M5's list, draw each light term alone first, as [M3's controls](../../evidence/CLOUDS/M3-plane/README.md)
+   did, and log which one holds it. Never a second light, a return to fixed orders, or a plane read from a
+   sample's depths: that plane drew M3's bright lip under a dark stripe on turrets, and is the likely cause
+   of the level dark band on its domes before them.
 13. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
@@ -1672,7 +1706,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 | How many sampled textures does the lent environment group use in the trace? | M3 counts against the record |
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
 | Does the Sun term give clouds their brightness and relief with nothing tuned, and if not, which constant moves? | M3's stills, then M5's at a low Sun; the builder records any constant it changed |
-| Does the lit plane hold steady where the map's column and the eroded cloud disagree? | M3's stills, then M5's at a low Sun |
+| Does a far side at a low Sun stay dark enough under a plane held for the whole cloud? | M5's stills at a 10° and a 4° Sun |
 | Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | M7's time-lapse |
 | Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | M3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
