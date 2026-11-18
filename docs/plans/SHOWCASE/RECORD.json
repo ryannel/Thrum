@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "f90bd8767d977c78e88dd1398143bbd334ca36f2",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": "docs/evidence/SHOWCASE/M5-review-1.md",
           "items": {
             "M5.1": "pass",
             "M5.2": "pass",
@@ -71,6 +71,48 @@
             "turns": 1
           },
           "at": "2026-11-18T00:40:07Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "72a02e04c061b2cfd99bc327bff1be49d916cf6d",
+          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "items": {
+            "M5.1": "pass",
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "pass",
+            "M5.5": "pass",
+            "M5.6": "pass",
+            "M5.7": "pass",
+            "M5.8": "pass",
+            "M5.9": "fail",
+            "M5.10": "pass",
+            "M5.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Chrome fixed flythrough loses the route\u2019s presentation phase",
+              "item": "M5.9",
+              "different": "The earlier finding concerned a wall-clock stall. Every active submission here advances one tick, but samples phase zero instead of the designed half tick.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 188074,
+            "cached": 9427456,
+            "output": 19054,
+            "turns": 1
+          },
+          "at": "2026-11-18T19:06:19Z"
         }
       ],
       "authorised": {
