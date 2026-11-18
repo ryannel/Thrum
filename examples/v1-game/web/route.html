@@ -109,7 +109,8 @@
         };
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
-        let nextSample = 0;
+        // Exit residency submits at tick zero before the half-phase route driver starts.
+        let nextSample = exit ? 1 : 0;
         let frames = 0;
         record.slot_waits = 0;
         record.slot_wait_max_ms = 0;
