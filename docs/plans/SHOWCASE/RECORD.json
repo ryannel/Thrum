@@ -25,7 +25,7 @@
   },
   "milestones": {
     "M5": {
-      "definitions": "b234dd70d4011d398611b0c9e47beae0eb3f25a370213aabc994beac6ebbb719",
+      "definitions": "92ebdd835303714a81b4a4d78889647de7d40b72d8df210de29485629a701e72",
       "reviews": [
         {
           "verdict": "fail",
@@ -75,8 +75,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findi",
-        "at": "2026-11-18T10:38:55Z"
+        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 1 Must Fix findi",
+        "at": "2026-11-18T11:29:07Z"
       }
     },
     "M6": {
@@ -138,11 +138,15 @@
     {
       "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-18T10:38:55Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 1 Must Fix finding (MF3, M5.11's digest omits the launcher and capture scripts) in the design and the plan, with the smallest change that closes it. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T11:29:07Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T10:38:55Z"
+    "at": "2026-11-18T11:29:07Z"
   },
   "design_history": [
     {
