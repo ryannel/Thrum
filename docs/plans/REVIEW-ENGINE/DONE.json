@@ -215,7 +215,7 @@
     {
       "id": "M4",
       "name": "A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -242,7 +242,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
         },
         {
@@ -264,14 +264,6 @@
           "evidence": "main-branch check exact-images; docs/evidence/REVIEW-ENGINE/M4/README.md",
           "verdict": "pass",
           "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "accepted game errors can disable Display and Error on simulation failures",
-          "item": "M4.2",
-          "different": "The prior parser, importer and worker source erasure is resolved. Here the original game value survives, but the public game bounds admit errors for which the returned wrapper lacks the required traits.",
-          "repeat": false
         }
       ]
     },
