@@ -26,7 +26,54 @@
   "milestones": {
     "M1": {
       "definitions": "47d362dccd28a28d302abf3bb53a81122e534891c55e8a74b629fbdd9cadc648",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "97165c84d0b5813077371a4a8610b5425fe78b40",
+          "review": "docs/evidence/RAY-TRACING/M1-review.md",
+          "items": {
+            "M1.1": "fail",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "fail",
+            "M1.6": "pass",
+            "M1.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Portable structure request allocates and builds ray structures",
+              "item": "M1.5",
+              "repeat": false
+            },
+            {
+              "name": "Shared native test gate bypasses registry device admission",
+              "item": "M1.1",
+              "repeat": false
+            },
+            {
+              "name": "Sky headless device error breaks existing public matches",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 99302,
+            "cached": 1281408,
+            "output": 4958,
+            "turns": 1
+          },
+          "at": "2026-11-18T09:35:56Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",
