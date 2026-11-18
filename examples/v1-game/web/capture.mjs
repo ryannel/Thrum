@@ -196,6 +196,8 @@ try {
     record.actions.push({ kind: 'withhold readback collection', start_ms: start, end_ms: withholdUntil });
   }
   const duration = (route.keys.at(-1).tick + 121) * 1000 / 60;
+  const fixedExitPhaseMs = scene === 'exit' && mode === 'fixed'
+    ? (route.phase[0] / route.phase[1]) * 1000 / 60 : 0;
   let ordinal = 0;
   let acted = false;
   let released = false;
@@ -228,7 +230,9 @@ try {
       record.actions.push({kind:'solar-scrub',frame_ms:timestamp,solar_hours:solar});
     }
     if (!released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
-      game.set_paused(false, timestamp);
+      // Resume clears the clock fraction. Put the fixed exit route's origin
+      // between the last held callback and this sample to restore its phase.
+      game.set_paused(false, timestamp - fixedExitPhaseMs);
       record.hold_release = { page_ms: performance.now(), frame_ms: timestamp };
       released = true;
     }

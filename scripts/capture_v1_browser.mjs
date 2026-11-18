@@ -160,6 +160,15 @@ try {
       if (record.final_report.presented - record.initial_report.presented !== manifest.records.length) throw new Error('Submission tail or head missing');
       const ids = manifest.records.map(row => row.submission_id);
       if (!ids.length || ids.some((id, i) => i > 0 && id !== ids[i - 1] + 1)) throw new Error('Noncontiguous submission IDs');
+      if (args.scene === 'exit' && args.mode === 'fixed') {
+        const first = route.origin_tick;
+        const last = first + route.keys.at(-1).tick;
+        const active = manifest.records.filter(row => row.source_tick >= first && row.source_tick <= last);
+        const phase = route.phase[0] / route.phase[1];
+        if (active[0]?.source_tick !== first || active.at(-1)?.source_tick !== last) throw new Error('Fixed exit capture missed a route endpoint');
+        const wrongPhase = active.find(row => !Number.isFinite(row.alpha) || Math.abs(row.alpha - phase) > 1e-6);
+        if (wrongPhase) throw new Error(`Fixed exit tick ${wrongPhase.source_tick} submitted phase ${wrongPhase.alpha}, expected ${phase}`);
+      }
       if (record.final_report.timestamp_clamps || (record.final_report.overload_events && args.control !== 'stall')) throw new Error('Runtime clamped/overloaded');
       if (args.control === 'resize' && new Set(manifest.records.map(row => row.presenter_generation)).size < 2) throw new Error('Resize did not change presenter generation');
       const spoolFrame = rawSpool && Buffer.allocUnsafe(frameBytes);
