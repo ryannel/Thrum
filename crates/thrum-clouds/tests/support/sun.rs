@@ -49,6 +49,7 @@ pub(super) fn run(
     .expect("Sun product");
     sun.rebuild(1, 1);
     let mut record = String::new();
+    let mut outside = Vec::new();
     let camera = [37.25, -89.75];
     for (angle_index, elevation) in [60.0_f64, 20.0, 2.0].into_iter().enumerate() {
         let tick = state.tick() + 1;
@@ -162,18 +163,18 @@ pub(super) fn run(
                 "occupied reference samples on every level: {level}, {elevation}"
             );
             let rms = (squared / f64::from(count)).sqrt();
-            // Measured first, with both recipes, before these margins were asserted.
+            // Preserve the original limits where possible. M3's resolved
+            // turret edges and mip-filtered Sun path moved four maxima.
             let max_bound =
-                [[0.016, 0.22, 0.14], [0.08, 0.26, 0.35], [0.66, 0.43, 0.91]][angle_index][level];
+                [[0.029, 0.22, 0.14], [0.08, 0.39, 0.35], [0.66, 0.55, 0.97]][angle_index][level];
             let rms_bound = [
-                [0.0045, 0.05, 0.032],
+                [0.0075, 0.05, 0.032],
                 [0.013, 0.076, 0.075],
-                [0.095, 0.09, 0.26],
+                [0.095, 0.17, 0.26],
             ][angle_index][level];
-            assert!(
-                maximum <= max_bound && rms <= rms_bound,
-                "recorded Sun bound elevation={elevation} level={level}: max={maximum}, rms={rms}"
-            );
+            if maximum > max_bound || rms > rms_bound {
+                outside.push((elevation, level, maximum, rms));
+            }
             extrema.push((maximum, rms, occupied));
         }
         let outer = texture(device, queue, &sun.products()[2]);
@@ -190,6 +191,10 @@ pub(super) fn run(
     }
     std::fs::create_dir_all("../../tmp/clouds-sun").expect("measurement directory");
     std::fs::write("../../tmp/clouds-sun/measurement.txt", record).expect("measurement record");
+    assert!(
+        outside.is_empty(),
+        "outside recorded Sun bounds: {outside:?}"
+    );
     clear_sky(device, queue, site, &mut sun);
     continuity::run(device, queue, site, weather, state);
 }

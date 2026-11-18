@@ -59,6 +59,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
             },
         )
         .expect("map");
+        assert!(map.profile().texels[3] > profile.turret_pitch * 2.0);
         map.rebuild(1, 1);
         let mut state = State::new(
             Parameters {
@@ -73,6 +74,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
         .expect("state");
         state.step(1, 86400.0).expect("day of travel");
         let mut largest = [0.0_f64; 6];
+        let mut first_counts = [0; 2];
         let saved = state.clone();
         for index in 0..12u64 {
             if index == 5 {
@@ -121,8 +123,11 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
             queue.submit([encoder.finish()]);
             map.submitted();
             let outputs = read(&device, &queue, map.textures());
+            let counts = coarsest_centres(&outputs[0], &outputs[1]);
+            if index == 0 {
+                first_counts = counts;
+            }
             for (level, origin) in origins.iter().enumerate() {
-                let mut clear_and_cloudy = [0usize; 2];
                 for y in 0..256 {
                     let stamp = map.row_stamps()[level][y];
                     assert!(
@@ -152,7 +157,6 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
                             f32::from_bits(words(1, 0)),
                             f32::from_bits(words(1, 1)),
                         ];
-                        clear_and_cloudy[usize::from(actual[2] > 0.0)] += 1;
                         for j in 0..6 {
                             largest[j] = largest[j].max((f64::from(actual[j]) - values[j]).abs());
                         }
@@ -199,16 +203,6 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
                         }
                     }
                 }
-                if level + 1 == origins.len() {
-                    assert!(map.profile().texels[level] > profile.turret_pitch * 2.0);
-                    assert!(
-                        clear_and_cloudy.into_iter().all(|n| n > 0),
-                        "{clear_and_cloudy:?}"
-                    );
-                    if index == 0 {
-                        println!("coarsest level clear/cloudy texel centres: {clear_and_cloudy:?}");
-                    }
-                }
             }
             let mut repeated =
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -225,7 +219,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
         }
         replacement(&device, &queue, &mut map, &state, portable);
         let record = format!(
-            "adapter={:?}; portable={portable}; weather maximum errors [base,top,coverage,type,age,tau]={largest:?}",
+            "adapter={:?}; portable={portable}; coarsest clear/cloudy centres={first_counts:?}; weather maximum errors [base,top,coverage,type,age,tau]={largest:?}",
             adapter.get_info()
         );
         std::fs::create_dir_all("../../tmp/clouds-weather").expect("measurement directory");
@@ -246,6 +240,26 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
             );
         }
     });
+}
+
+fn coarsest_centres(columns: &[u32], optical: &[u32]) -> [usize; 2] {
+    let last = columns.len() - 256 * 256 * 4;
+    let mut counts = [0; 2];
+    let mut occupied_turrets = 0;
+    for (column, path) in columns[last..]
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(optical[last..].as_chunks::<4>().0)
+    {
+        counts[usize::from(f32::from_bits(column[2]) > 0.0)] += 1;
+        occupied_turrets += usize::from(f32::from_bits(path[0]) > 0.0);
+    }
+    assert!(
+        counts.into_iter().all(|n| n > 0) && occupied_turrets > 0,
+        "{counts:?}, {occupied_turrets} turrets"
+    );
+    counts
 }
 
 fn filled(
