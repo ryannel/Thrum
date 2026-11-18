@@ -11,6 +11,31 @@ fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
 }
 fn tail_gain(row: SurfaceRow) -> f32 { return row.gains.w; }
 
+fn optical_weights(t: f32) -> vec4<f32> {
+    let t2 = t * t;
+    let t3 = t2 * t;
+    return vec4(-t + 2.0*t2 - t3, 2.0 - 5.0*t2 + 3.0*t3,
+                t + 4.0*t2 - 3.0*t3, -t2 + t3) * 0.5;
+}
+
+fn optical_bed(cell: Cell) -> f32 {
+    // Interpolate the bed across cell edges for appearance. The map's
+    // bilinear bed still owns wave support and opaque depth cuts the line.
+    let last = vec2<i32>(map.size_count_sea.xy) - vec2(1);
+    let wx = optical_weights(cell.uv.x);
+    let wz = optical_weights(cell.uv.y);
+    var rows: vec4<f32>;
+    for (var z = 0; z < 4; z++) {
+        var heights: vec4<f32>;
+        for (var x = 0; x < 4; x++) {
+            let at = clamp(cell.corners[0] + vec2(x - 1, z - 1), vec2(0), last);
+            heights[x] = textureLoad(bed_map, at, 0, 0).x;
+        }
+        rows[z] = dot(heights, wx);
+    }
+    return dot(rows, wz);
+}
+
 fn surface_opacity(row: SurfaceRow, world: vec3<f32>) -> f32 {
     // Blend the optically thin edge with the already rendered ground at the
     // same pixel. The displaced sheet still writes scene depth.
@@ -19,7 +44,7 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>) -> f32 {
     // Ownership stays at rest. Thin-sheet appearance uses the bed directly
     // under the displaced point, where the opaque depth actually cuts it.
     let ground = map_cell(world.xz);
-    if ground.inside { depth = world.y - ground.bed; }
+    if ground.inside { depth = world.y - optical_bed(ground); }
     // Leave the optical edge visible at the opaque depth intersection, with
     // the bed still showing through the first part of the shallows.
     return mix(0.28, 1.0, smoothstep(0.0, 0.065, depth));
