@@ -459,7 +459,7 @@
     {
       "id": "M3",
       "name": "Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -474,7 +474,7 @@
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, looking toward, across and away from the Sun, from 2 m and from 40 m, and one pair taken 40 m apart. Judge each frame whole, and the pair for clouds that shift against one another.",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
