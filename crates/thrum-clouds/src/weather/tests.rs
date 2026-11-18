@@ -93,6 +93,7 @@ fn shader_validates_and_uniform_offsets_match_rust() {
         std::mem::offset_of!(Uniform, vertical),
         std::mem::offset_of!(Uniform, noise),
         std::mem::offset_of!(Uniform, rows),
+        std::mem::offset_of!(Uniform, turret),
     ];
     assert_eq!(members.len(), offsets.len());
     for (member, offset) in members.iter().zip(offsets) {
