@@ -121,7 +121,7 @@ fn run(fail: bool) -> [Option<u64>; 4] {
             .filter(|(_, owner, _)| *owner == assigned)
             .collect::<Vec<_>>();
         if fail {
-            assert_eq!(own, []);
+            assert_eq!(own.first(), None);
         } else {
             assert_eq!(
                 own,

@@ -26,6 +26,7 @@ fn bursts_underruns_and_behind_have_distinct_positions() {
     let mut stalls = Vec::new();
     let mut windows = Vec::new();
     for (pause, follow) in [(30_000, 160_000), (130_000, 350_000), (1_050_000, 400_000)] {
+        let first_frame = frames.len();
         let start = fixture.now;
         fixture.memory.stall(true);
         while fixture.now < start + pause {
@@ -36,6 +37,11 @@ fn bursts_underruns_and_behind_have_distinct_positions() {
             sample(&mut fixture, &mut frames, &mut stalls);
         }
         windows.push((start, fixture.now));
+        assert!(
+            frames[first_frame..]
+                .windows(2)
+                .any(|pair| pair[1].held >= pair[0].held + 2)
+        );
     }
     assert!(
         assert_motion(&frames, &windows, f64::from(fixture.settings.tick_us)).is_ok(),
