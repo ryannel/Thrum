@@ -21,8 +21,7 @@ use thrum_water::{
 
 const EXTENT: [u32; 2] = [96, 64];
 
-#[test]
-fn mailbox_samples_the_gale_at_its_use_tick() {
+fn metal() -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let gpu =
         thrum_test_support::gpu("water body query", Some(wgpu::Backend::Metal)).expect("mac-metal");
     let (device, queue) = gpu.device(
@@ -30,6 +29,15 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
         &thrum_test_support::Restriction::default(),
     );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    (device, queue, caps)
+}
+
+fn query_host(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    caps: &DeviceCapabilities,
+    clock: Clock,
+) -> (FrameHost<Clock, Source>, wgpu::TextureView) {
     let target = device
         .create_texture(&wgpu::TextureDescriptor {
             label: Some("query scene output"),
@@ -46,10 +54,6 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
             view_formats: &[],
         })
         .create_view(&wgpu::TextureViewDescriptor::default());
-    let surface = SurfaceOutput {
-        view: &target,
-        extent: EXTENT,
-    };
     let scene = SyntheticScene::grid(1).expect("fixture");
     let view = SyntheticView::perspective(
         [-8.0, 4.0, 0.0],
@@ -64,9 +68,9 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     let lighting = FrameLighting::Atmosphere(
         AtmosphereFrame::new([0.3, 0.93, 0.2], 100_000.0, [1.0; 3], 55.0, 1).expect("noon"),
     );
-    let mut host = pollster::block_on(FrameHost::new(
-        &caps,
-        &queue,
+    let host = pollster::block_on(FrameHost::new(
+        caps,
+        queue,
         FrameConfig {
             render_extent: EXTENT,
             surface: Some(SurfaceProfile {
@@ -74,12 +78,23 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
                 extent: EXTENT,
             }),
         },
-        Clock::default(),
+        clock,
         Source { view, lighting },
         scene,
         1.0,
     ))
     .expect("frame host");
+    (host, target)
+}
+
+#[test]
+fn mailbox_samples_the_gale_at_its_use_tick() {
+    let (device, queue, caps) = metal();
+    let (mut host, target) = query_host(&device, &queue, &caps, Clock::default());
+    let surface = SurfaceOutput {
+        view: &target,
+        extent: EXTENT,
+    };
     let map = Arc::new(Mutex::new(swash_gpu::beach(0.7)));
     let mut spectrum = Spectrum::build(&Forcing {
         wind_speed: 25.0,
@@ -203,17 +218,18 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     assert_eq!(mailbox.stats().blocking_reads, 0);
     drop(domain);
     check_delay(&mut host, &device, &surface, &mailbox, step);
-    while host.poll_completed().expect("retire gale frames").is_some() {}
-    check_chart_ticks(&mut host, &device, &surface, step);
 }
 
-fn check_chart_ticks(
-    host: &mut FrameHost<Clock, Source>,
-    device: &wgpu::Device,
-    output: &SurfaceOutput<'_>,
-    step: Duration,
-) {
+#[test]
+fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     use thrum_water_model::{Bed, BodyKind, Chart, Map, Stage};
+    let (device, queue, caps) = metal();
+    let (mut host, target) = query_host(&device, &queue, &caps, Clock::interpolating());
+    let output = SurfaceOutput {
+        view: &target,
+        extent: EXTENT,
+    };
+    let step = Duration::from_nanos(16_666_667);
     let footprint: Vec<_> = (0..25)
         .map(|i| (1..=3).contains(&(i % 5)) && (1..=3).contains(&(i / 5)))
         .collect();
@@ -293,7 +309,7 @@ fn check_chart_ticks(
     );
     assert_eq!(mailbox.stats().dispatches, 0);
     assert!(
-        host.drive(8 * step + step / 4, Some(output))
+        host.drive(8 * step + step / 4, Some(&output))
             .expect("submit")
             .submitted
     );
@@ -343,10 +359,12 @@ fn check_chart_ticks(
         .expect("stage at tick 9");
     mailbox.post(9, request(10));
     assert!(
-        host.drive(9 * step + step / 4, Some(output))
+        host.drive(9 * step + step / 4, Some(&output))
             .expect("quarter-alpha stage frame")
             .submitted
     );
+    let submitted = host.last_submitted_clock().expect("stage submission");
+    assert!((submitted.presentation_alpha - 0.25).abs() < 0.001);
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("stage result");

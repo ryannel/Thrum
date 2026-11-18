@@ -30,6 +30,17 @@ const MAP_TOLERANCE_METRES: f64 = 0.00004;
 #[derive(Default)]
 pub(crate) struct Clock {
     tick: u64,
+    interpolate: bool,
+}
+
+#[allow(dead_code, reason = "the query integration test imports this fixture")]
+impl Clock {
+    pub(crate) fn interpolating() -> Self {
+        Self {
+            tick: 0,
+            interpolate: true,
+        }
+    }
 }
 
 impl FrameWorld for Clock {
@@ -74,14 +85,19 @@ impl FrameWorld for Clock {
             page: self.source(),
         })
     }
-    fn presentation_alpha_at(&self, _: Duration) -> f32 {
-        1.0
+    fn presentation_alpha_at(&self, now: Duration) -> f32 {
+        if self.interpolate {
+            let step = self.tick_duration().as_nanos();
+            (now.as_nanos() % step) as f32 / step as f32
+        } else {
+            1.0
+        }
     }
-    fn display_phase_at(&self, _: Duration) -> f32 {
-        1.0
+    fn display_phase_at(&self, now: Duration) -> f32 {
+        self.presentation_alpha_at(now)
     }
     fn is_interpolating(&self) -> bool {
-        false
+        self.interpolate
     }
     fn tick_due_time(&self) -> Option<Duration> {
         None
