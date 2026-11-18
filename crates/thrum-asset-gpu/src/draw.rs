@@ -1,7 +1,7 @@
 //! Generation-bound pipelines and per-set bind groups for drawing cooked products in the scene.
 
 use thrum_render::contribution::{
-    ContributionFrame, SceneShadowSurface, SceneSurface, ShadowBounds,
+    ContributionFrame, SceneShadowSurface, SceneSurface, SecondaryShadowCascade, ShadowBounds,
 };
 
 use std::cell::Cell;
@@ -127,7 +127,7 @@ struct BoundMesh {
     meshlets: u32,
     vertex: [wgpu::Buffer; 2],
     indices: wgpu::Buffer,
-    shadow_indices: u32,
+    caster_bounds: Option<ShadowBounds>,
 }
 
 struct IndirectMesh {
@@ -522,15 +522,15 @@ impl Pipelines {
                     })
                     .collect();
                 let (scale, _, _) = model.to_scale_rotation_translation();
-                let shadow_indices = if self.shadow.is_some()
+                let caster_bounds = if self.shadow.is_some()
                     && mesh.index_count != 0
                     && let Some((min, max)) = mesh.caster_box
                     && let Some(bounds) = world_caster_bounds(model, min, max)
                 {
                     shadow_bounds = Some(shadow_bounds.map_or(bounds, |all| all.union(bounds)));
-                    mesh.index_count
+                    Some(bounds)
                 } else {
-                    0
+                    None
                 };
                 BoundMesh {
                     #[cfg(feature = "draw-probe")]
@@ -548,7 +548,7 @@ impl Pipelines {
                     meshlets: mesh.meshlet_count,
                     vertex: [mesh.positions.clone(), mesh.attributes.clone()],
                     indices: mesh.indices.clone(),
-                    shadow_indices,
+                    caster_bounds,
                 }
             })
             .collect();
@@ -721,25 +721,29 @@ impl Pipelines {
     }
 
     pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
-        Self::draw_casters(bound, pass, self.shadow.as_ref());
+        Self::draw_casters(bound, pass, self.shadow.as_ref(), None);
     }
 
     fn draw_casters(
         bound: &Bound,
         pass: &mut wgpu::RenderPass<'_>,
         pipeline: Option<&wgpu::RenderPipeline>,
+        cascade: Option<SecondaryShadowCascade>,
     ) {
         let Some(pipeline) = pipeline else { return };
         pass.set_pipeline(pipeline);
         for mesh in &bound.meshes {
-            if mesh.shadow_indices == 0 {
+            if !mesh
+                .caster_bounds
+                .is_some_and(|bounds| cascade.is_none_or(|cascade| cascade.overlaps(bounds)))
+            {
                 continue;
             }
             pass.set_vertex_buffer(0, mesh.vertex[0].slice(..));
             pass.set_vertex_buffer(1, mesh.instance.slice(..));
             pass.set_index_buffer(mesh.indices.slice(..), wgpu::IndexFormat::Uint32);
             // Camera meshlet culling cannot determine visibility from the Sun.
-            pass.draw_indexed(0..mesh.shadow_indices, 0, 0..1);
+            pass.draw_indexed(0..mesh.index_count, 0, 0..1);
         }
     }
 

@@ -239,6 +239,37 @@ impl ShadowBounds {
     }
 }
 
+/// The fitted light volume of one secondary Sun pass.
+#[derive(Clone, Copy)]
+pub struct SecondaryShadowCascade {
+    planes: [glam::Vec4; 6],
+}
+
+impl SecondaryShadowCascade {
+    pub(crate) fn new(matrix: glam::Mat4) -> Self {
+        let [x, y, z, w] = std::array::from_fn(|row| matrix.row(row));
+        Self {
+            planes: [w + x, w - x, w + y, w - y, z, w - z],
+        }
+    }
+
+    /// Conservatively test world bounds against the cascade's clip volume.
+    /// Casters outside the camera frustum can still overlap this volume.
+    #[must_use]
+    pub fn overlaps(&self, bounds: ShadowBounds) -> bool {
+        let magnitude = glam::Vec3::from_array(bounds.min)
+            .abs()
+            .max(glam::Vec3::from_array(bounds.max).abs());
+        !self.planes.iter().any(|plane| {
+            let (_, high) = bounds.depth_interval(plane.truncate().to_array());
+            // Keep boxes at the clip boundary despite CPU/GPU rounding.
+            let guard =
+                16.0 * f32::EPSILON * (magnitude.dot(plane.truncate().abs()) + plane.w.abs() + 1.0);
+            high + plane.w < -guard
+        })
+    }
+}
+
 /// Per-frame camera facts a contribution may need on the CPU (for example to cull).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ContributionFrame {
@@ -295,7 +326,13 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     fn draw_secondary(&self, _index: usize, _pass: &mut wgpu::RenderPass<'_>) {}
     /// Draw this view's Sun casters with its caster view at group 0 and the
     /// scene's instance/history group 1 bound. Only opted-in producers run.
-    fn draw_secondary_shadow(&self, _index: usize, _pass: &mut wgpu::RenderPass<'_>) {}
+    fn draw_secondary_shadow(
+        &self,
+        _index: usize,
+        _cascade: SecondaryShadowCascade,
+        _pass: &mut wgpu::RenderPass<'_>,
+    ) {
+    }
     /// Fixed slot declarations for this contribution. These are admitted and
     /// prepared before `rebuild`; their handles are on `SceneSurface`.
     /// Returning no slots retains the original shaders, resources and graph.

@@ -21,6 +21,7 @@ mod panel;
 const SIDE: u32 = 65;
 const CENTER: [usize; 2] = [32; 2];
 const LEVEL: f32 = 50.0;
+const FOV: f32 = 20.0;
 const LUMINANCE: f32 = 40.0;
 const POOL: PoolPlane = PoolPlane {
     level: LEVEL,
@@ -61,6 +62,36 @@ struct Panel {
     center: Vec3,
     half: Vec3,
     radiance: f32,
+}
+
+impl Panel {
+    #[expect(clippy::print_stderr, reason = "record the measured main-frame margin")]
+    fn assert_above_frame(self, view: Camera) {
+        let eye = Vec3::from_array(view.position);
+        let forward = (Vec3::from_array(view.target) - eye).normalize();
+        let right = forward.cross(Vec3::Y).normalize();
+        let up = right.cross(forward);
+        let top = (view.vertical_fov_degrees.to_radians() * 0.5).tan();
+        let margin = [-1.0, 1.0]
+            .into_iter()
+            .map(|sign| {
+                // Both vertices on this row have the same projected height.
+                let corner = self.center + Vec3::Z * self.half.z + Vec3::Y * sign * self.half.y;
+                let offset = corner - eye;
+                let depth = offset.dot(forward);
+                assert!(depth > 0.0, "marker is in front of the camera");
+                offset.dot(up) / (depth * top) - 1.0
+            })
+            .fold(f32::INFINITY, f32::min);
+        assert!(
+            margin > 0.0,
+            "entire marker must project above the main frame: {margin}"
+        );
+        eprintln!(
+            "marker={} lowest edge is {margin} NDC above the main frame",
+            self.radiance
+        );
+    }
 }
 
 struct Image {
@@ -324,16 +355,16 @@ fn the_pool_composes_both_stretches_once() {
     let crossing = Vec3::new(0.0, LEVEL, 0.0);
     let eye = crossing + Vec3::new(0.0, ray.y, -ray.z) * 30.0;
     let virtual_eye = crossing - ray * 30.0;
-    let main = Camera::look_at(eye.to_array(), crossing.to_array(), 60.0);
+    let main = Camera::look_at(eye.to_array(), crossing.to_array(), FOV);
     let reference = Camera::look_at(
         crossing.to_array(),
         (crossing + ray * 100.0).to_array(),
-        60.0,
+        FOV,
     );
     let mirror = Camera::look_at(
         virtual_eye.to_array(),
         (crossing + ray * 100.0).to_array(),
-        60.0,
+        FOV,
     );
     let swatch = Panel {
         center: crossing - Vec3::Y * 0.0625,
@@ -345,6 +376,9 @@ fn the_pool_composes_both_stretches_once() {
         half: Vec3::new(10.0, 10.0, 0.0625),
         radiance,
     });
+    for marker in mixed {
+        marker.assert_above_frame(main);
+    }
     let mut scales = Vec::new();
     for exposure in [6.0, 2.0] {
         let black = fixture.draw(main, swatch, exposure, None);

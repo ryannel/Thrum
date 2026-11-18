@@ -1,7 +1,7 @@
 //! One independent meshlet argument stream per prepared secondary view.
 
 use thrum_render::contribution::{
-    SceneSurface, SecondaryView, SecondaryViewFrame, SecondaryViewRecord,
+    SceneSurface, SecondaryShadowCascade, SecondaryView, SecondaryViewFrame, SecondaryViewRecord,
 };
 
 use super::{
@@ -155,8 +155,14 @@ impl Pipelines {
         bound: &Bound,
         pass: &mut wgpu::RenderPass<'_>,
         index: usize,
+        cascade: SecondaryShadowCascade,
     ) {
-        Self::draw_casters(bound, pass, self.secondary_shadows[index].as_ref());
+        Self::draw_casters(
+            bound,
+            pass,
+            self.secondary_shadows[index].as_ref(),
+            Some(cascade),
+        );
     }
 }
 

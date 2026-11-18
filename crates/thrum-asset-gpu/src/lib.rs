@@ -56,7 +56,8 @@ use web_time::Instant;
 
 use thrum_asset::{Ktx2Format, Profile, RemoteGeneration};
 use thrum_render::contribution::{
-    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
+    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SecondaryShadowCascade,
+    ShadowBounds,
 };
 
 pub use lease::{LeaseRequest, LentProduct, LentSet, ProductLease};
@@ -793,11 +794,16 @@ impl SceneContribution for CookedAssets {
         }
     }
 
-    fn draw_secondary_shadow(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+    fn draw_secondary_shadow(
+        &self,
+        index: usize,
+        cascade: SecondaryShadowCascade,
+        pass: &mut wgpu::RenderPass<'_>,
+    ) {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            live.pipelines.draw_view_shadow(bound, pass, index);
+            live.pipelines.draw_view_shadow(bound, pass, index, cascade);
         }
     }
 

@@ -9,7 +9,9 @@ use wgpu::util::DeviceExt;
 
 use super::view::{Projection, SyntheticView};
 use super::{InstanceRecord, RenderError};
-use crate::contribution::{SceneContribution, SceneShadowSurface, ShadowBounds};
+use crate::contribution::{
+    SceneContribution, SceneShadowSurface, SecondaryShadowCascade, ShadowBounds,
+};
 use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
@@ -116,7 +118,7 @@ pub(super) struct CasterDraw {
 #[derive(Clone, Copy)]
 pub(super) enum CasterContribution<'a> {
     Main(&'a dyn SceneContribution),
-    Secondary(&'a dyn SceneContribution, usize),
+    Secondary(&'a dyn SceneContribution, usize, SecondaryShadowCascade),
 }
 
 struct FittedShadow {
@@ -423,8 +425,8 @@ impl ShadowPrepared {
         }
         match contribution {
             Some(CasterContribution::Main(contribution)) => contribution.draw_shadow(&mut pass),
-            Some(CasterContribution::Secondary(contribution, index)) => {
-                contribution.draw_secondary_shadow(index, &mut pass);
+            Some(CasterContribution::Secondary(contribution, index, cascade)) => {
+                contribution.draw_secondary_shadow(index, cascade, &mut pass);
             }
             None => (),
         }
@@ -910,6 +912,15 @@ mod tests {
         let last = fitted.matrices[1];
         assert!(fitted.partitioned);
         assert!(near.project_point3(caster).z > 1.0);
+        let outside =
+            ShadowBounds::new([59.0, -1.0, 9000.0], [61.0, 1.0, 9002.0]).expect("outlying caster");
+        let near_volume = SecondaryShadowCascade::new(near);
+        let last_volume = SecondaryShadowCascade::new(last);
+        assert!(!near_volume.overlaps(outside));
+        assert!(!last_volume.overlaps(outside));
+        assert!(!near_volume.overlaps(bounds));
+        // The caster is outside the narrow camera frustum but can shadow the receiver.
+        assert!(last_volume.overlaps(bounds));
         let far_receiver = last.project_point3(receiver);
         let far_caster = last.project_point3(caster);
         let clip_depth = f32::from_le_bytes(fitted.samples[276..280].try_into().unwrap());

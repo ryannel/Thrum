@@ -1,4 +1,4 @@
-"""Generate the post's hard-edged rectangular mesh with the standard library."""
+"""Generate the mirror scene's post and terrain meshes with the standard library."""
 
 import json
 import math
@@ -21,9 +21,26 @@ def main():
     uvs = [(0, 0), (1, 0), (1, 1), (0, 1)] * len(faces)
     indices = [4 * i + j for i in range(len(faces)) for j in [0, 1, 2, 0, 2, 3]]
     write("post", positions, normals, uvs, indices)
-    write("bank", [(-44, 0, 0), (44, 0, 0), (44, 0, -30), (-44, 0, -30)],
+    write("ground", [(-4000, 0, 4000), (4000, 0, 4000), (4000, 0, -4000), (-4000, 0, -4000)],
           [(0, 1, 0)] * 4, [(0, 0), (1, 0), (1, 1), (0, 1)], [0, 1, 2, 0, 2, 3])
+    bank()
     hill()
+
+
+def bank():
+    # The slope faces the pool and both eyes. Descend into the plain behind it.
+    ridge_height, ridge_distance, far_edge = 2.4, 10, 40
+    for_shore = [(0, 0), (ridge_height, -ridge_distance), (-0.065, -far_edge)]
+    positions, normals, uvs, indices = [], [], [], []
+    for (y0, z0), (y1, z1) in zip(for_shore, for_shore[1:]):
+        rise, run = y1 - y0, z0 - z1
+        length = math.hypot(rise, run)
+        start = len(positions)
+        positions.extend([(-44, y0, z0), (44, y0, z0), (44, y1, z1), (-44, y1, z1)])
+        normals.extend([(0, run / length, rise / length)] * 4)
+        uvs.extend([(0, 0), (1, 0), (1, 1), (0, 1)])
+        indices.extend(start + index for index in [0, 1, 2, 0, 2, 3])
+    write("bank", positions, normals, uvs, indices)
 
 
 def hill():
@@ -33,7 +50,7 @@ def hill():
         taper = max(0, 1 - (x / half) ** 2) * max(0, 1 - (z / half) ** 2)
         ridge = 105 * math.exp(-((x - 60) / 150) ** 2 - ((z + 60) / 160) ** 2)
         spur = 65 * math.exp(-((x + 125) / 110) ** 2 - ((z - 50) / 160) ** 2)
-        return taper * (ridge + spur) * (1 + 0.08 * math.sin(x / 41 + z / 77))
+        return 1.55 * taper * (ridge + spur) * (1 + 0.08 * math.sin(x / 41 + z / 77))
 
     points, normals, uvs, indices = [], [], [], []
     for j in range(side):

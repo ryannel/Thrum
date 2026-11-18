@@ -1,6 +1,9 @@
 //! An ordered scene attachment, retaining the existing single-contribution API.
 
-use super::{ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds};
+use super::{
+    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SecondaryShadowCascade,
+    ShadowBounds,
+};
 
 /// Contributions in game-selected order. Empty lists add no graph passes.
 #[derive(Default)]
@@ -46,10 +49,15 @@ impl SceneContribution for SceneContributions {
             }
         }
     }
-    fn draw_secondary_shadow(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+    fn draw_secondary_shadow(
+        &self,
+        index: usize,
+        cascade: SecondaryShadowCascade,
+        pass: &mut wgpu::RenderPass<'_>,
+    ) {
         for entry in &self.entries {
             if entry.secondary_views_enabled() {
-                entry.draw_secondary_shadow(index, pass);
+                entry.draw_secondary_shadow(index, cascade, pass);
             }
         }
     }

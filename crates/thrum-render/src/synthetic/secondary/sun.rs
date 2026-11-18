@@ -264,7 +264,7 @@ impl SceneContext<'_> {
             .shadow
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        sun.prepared.write_secondary(
+        let matrices = sun.prepared.write_secondary(
             world,
             &request.camera,
             (request.cascades, request.shadow_reach),
@@ -320,7 +320,10 @@ impl SceneContext<'_> {
             self.contribution
                 .as_deref()
                 .filter(|entry| entry.secondary_views_enabled())
-                .map(|entry| shadow::CasterContribution::Secondary(entry, index)),
+                .map(|entry| {
+                    let cascade = crate::contribution::SecondaryShadowCascade::new(matrices[layer]);
+                    shadow::CasterContribution::Secondary(entry, index, cascade)
+                }),
         )
     }
 }

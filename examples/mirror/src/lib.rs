@@ -8,7 +8,10 @@ use std::{error::Error, time::Duration};
 use thrum_app::sky::{Camera, ContentStatus, Controls, CookedMaterial, MeshPlacement, SkyGame};
 use thrum_render::synthetic::SyntheticPointLight;
 
-const LEVEL: f32 = 0.06;
+const LEVEL: f32 = 250.0;
+const BANK_EDGE: f32 = -15.99;
+const LAMP_Z: f32 = -17.4;
+const LAMP_BASE: f32 = LEVEL + 0.24 * (BANK_EDGE - LAMP_Z);
 const FOV: f32 = 58.0;
 
 /// Build the scene used by the window and inspection capture.
@@ -47,9 +50,9 @@ pub fn build() -> Result<SkyGame, Box<dyn Error>> {
         sky.sun_elevation_degrees = c.get(elevation);
         sky.sun_azimuth_degrees = c.get(azimuth);
     })
-    .with_ground(Some([0.25, 0.21, 0.15]))
+    .with_ground(None)
     .with_local_lights(vec![SyntheticPointLight {
-        position: [-3.3, 2.05, -16.8],
+        position: [-3.3, LAMP_BASE + 2.05, LAMP_Z - 0.1],
         radius: 9.0,
         candela: [420.0, 220.0, 76.0],
     }])
@@ -95,22 +98,28 @@ fn placements() -> Vec<MeshPlacement> {
             .at([0.0, LEVEL, -16.1])
             .on_ground(),
         MeshPlacement::new("meshes/post", "textures/white")
-            .at([2.4, -0.25, 7.0])
+            .at([2.4, LEVEL - 0.31, 7.0])
             .material(stone),
         MeshPlacement::new("meshes/post", "textures/white")
             .scale(1.15)
-            .at([-3.3, LEVEL, -16.7])
+            .at([-3.3, LAMP_BASE, LAMP_Z])
             .material(stone),
         MeshPlacement::new("meshes/hill", "textures/white")
-            .at([340.0, LEVEL, -1080.0])
+            .at([460.0, LEVEL, -1080.0])
             .material(CookedMaterial {
                 base_colour: [0.14, 0.17, 0.11, 1.0],
                 ..stone
             }),
         MeshPlacement::new("meshes/bank", "textures/white")
-            .at([0.0, LEVEL + 0.002, -15.99])
+            .at([0.0, LEVEL, BANK_EDGE])
             .material(CookedMaterial {
                 base_colour: [0.23, 0.20, 0.15, 1.0],
+                ..stone
+            }),
+        MeshPlacement::new("meshes/ground", "textures/white")
+            .at([0.0, LEVEL - 0.06, 0.0])
+            .material(CookedMaterial {
+                base_colour: [0.25, 0.21, 0.15, 1.0],
                 ..stone
             }),
     ];
@@ -125,7 +134,7 @@ fn placements() -> Vec<MeshPlacement> {
         meshes.push(
             MeshPlacement::new("meshes/rock", "textures/white")
                 .scale(scale)
-                .at(position)
+                .at([position[0], LEVEL - 0.06, position[2]])
                 .yaw_degrees(yaw)
                 .on_ground()
                 .material(stone),

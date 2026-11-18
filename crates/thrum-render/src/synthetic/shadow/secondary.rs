@@ -52,7 +52,7 @@ impl ShadowPrepared {
         camera: &SyntheticView,
         profile: (u32, f32),
         bounds: Option<ShadowBounds>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<[super::Mat4; super::MAPS], RenderError> {
         let bounds = bounds.filter(|bounds| world.inputs.fit(Some(*bounds)).is_ok());
         let inputs = FitInputs {
             projection: camera.projection(),
@@ -69,6 +69,6 @@ impl ShadowPrepared {
         }
         self.queue
             .write_buffer(&self.sample_buffer, 0, &fitted.samples);
-        Ok(())
+        Ok(fitted.matrices)
     }
 }

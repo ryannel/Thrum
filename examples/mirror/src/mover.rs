@@ -68,7 +68,11 @@ impl SceneContribution for Mover {
             let seconds = (frame.time.tick as f32 - 1.0 + frame.time.display_phase).max(0.0)
                 * frame.time.tick_duration.as_secs_f32();
             let x = 12.0 * (seconds * 0.67).sin();
-            queue.write_buffer(placement, 0, bytemuck::cast_slice(&[x, 0.8, -16.9, 0.0]));
+            queue.write_buffer(
+                placement,
+                0,
+                bytemuck::cast_slice(&[x, super::LEVEL + 0.74, -16.9, 0.0]),
+            );
         }
     }
 

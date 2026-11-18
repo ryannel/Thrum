@@ -9,7 +9,7 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     contribution::{
         ContributionFrame, ContributionPasses, SceneContribution, SceneContributions, SceneSurface,
-        SecondaryViewFrame, SecondaryViewRequest, ViewAir,
+        SecondaryShadowCascade, SecondaryViewFrame, SecondaryViewRequest, ViewAir,
     },
     synthetic::SyntheticScene,
 };
@@ -59,7 +59,12 @@ impl SceneContribution for MainOnly {
         panic!("main-only contribution received view draw");
     }
 
-    fn draw_secondary_shadow(&self, _: usize, _: &mut wgpu::RenderPass<'_>) {
+    fn draw_secondary_shadow(
+        &self,
+        _: usize,
+        _: SecondaryShadowCascade,
+        _: &mut wgpu::RenderPass<'_>,
+    ) {
         panic!("main-only contribution received view Sun draw");
     }
 

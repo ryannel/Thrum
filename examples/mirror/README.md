@@ -6,7 +6,9 @@ presentation clock. The pool asks for one full-size secondary view, then combine
 with the air from the pool to the real camera.
 
 The tower, rock and white texel are copied from the [lighthouse example](../lighthouse/README.md).
-Run `python3 examples/mirror/generate_meshes.py` to regenerate the post, bank and hill.
+Run `python3 examples/mirror/generate_meshes.py` to regenerate the post, bank, ground and hill.
+The water is 250 m above sea level. The far bank rises from the waterline so its surface, including
+the light around the lamp and the shadows of nearby objects, is visible in both views.
 The [scene material hook](material.wgsl) paints the tower and lamp.
 
 ## Submitted Metal inspection
