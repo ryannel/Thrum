@@ -17,7 +17,7 @@ use thrum_app::{
         Offscreen,
         clock::{OpportunityClock, Timebase},
         thread_policy::{self, RenderThreadPolicy, WorkClock},
-        writer::{ImageWriter, SpoolEncoding},
+        writer::{ImageWriter, SpoolEncoding, WriterReport},
     },
 };
 use thrum_render::{
@@ -82,6 +82,7 @@ struct Trace {
     gpu: Vec<Value>,
     stalls: Vec<Value>,
     controls: Vec<Value>,
+    world_overload_recoveries: Vec<Value>,
     writer_omissions: u64,
     input_delay: Option<Duration>,
     input_delay_finished: bool,
@@ -226,13 +227,10 @@ impl Trace {
         image: SubmittedImage,
         origin: Instant,
     ) {
-        if self
-            .route_last_tick
-            .is_some_and(|tick| image.source.tick >= tick)
-            && self.route_finished_at.is_none()
-        {
-            self.route_finished_at = Some(image.submitted_at.saturating_duration_since(origin));
-        }
+        self.observe_route_end(
+            image.source.tick,
+            image.submitted_at.saturating_duration_since(origin),
+        );
         self.images.push(json!({"submission_id":image.sample.submission_order,"tick":image.sample.tick,
             "epoch":image.source.epoch,"timeline":image.source.timeline,
             "previous_endpoint_tick":image.source.tick.checked_sub(1),"current_endpoint_tick":image.source.tick,
@@ -251,6 +249,46 @@ impl Trace {
             self.writer_omissions += 1;
             driver.recycle(image);
         }
+    }
+
+    fn observe_route_end(&mut self, tick: u64, elapsed: Duration) {
+        if self.route_last_tick.is_some_and(|last| tick >= last) {
+            self.route_finished_at.get_or_insert(elapsed);
+        }
+    }
+
+    fn observe_overload<G: Game>(
+        &mut self,
+        driver: &Offscreen<G>,
+        origin: Instant,
+        observed: Duration,
+    ) -> Result<(), String> {
+        if let Some(refused_ticks) = driver.recover_world_overload().map_err(|e| e.to_string())? {
+            self.world_overload_recoveries.push(json!({
+                "observed_ns": observed.as_nanos(),
+                "resumed_ns": origin.elapsed().as_nanos(),
+                "refused_ticks": refused_ticks,
+            }));
+        }
+        Ok(())
+    }
+
+    fn finish_writer<G: Game>(
+        &mut self,
+        driver: &mut Offscreen<G>,
+        writer: Option<ImageWriter>,
+        origin: Instant,
+        submitted: usize,
+    ) -> Result<Result<WriterReport, String>, String> {
+        let Some(writer) = writer else {
+            return Ok(Ok(WriterReport::default()));
+        };
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while self.images.len() < submitted && Instant::now() < deadline {
+            self.drain(driver, Some(&writer), origin, true)?;
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        Ok(writer.finish(Duration::from_secs(10)))
     }
 
     fn drain<G: Game>(
@@ -549,7 +587,6 @@ async fn record(
     let mut recovery = native_recovery::Recovery::new(recovery_mode);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
-    let mut overload_recoveries = Vec::new();
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
     loop {
         if mode == "still" || scenario == "clouds-still" {
@@ -618,30 +655,19 @@ async fn record(
         let step = WorkClock::start().map_err(|e| e.to_string())?;
         let admission_usage = driver.capture_usage();
         let omissions_before = driver.omissions();
-        let report = driver.step_for(&opportunity)?;
+        let report = if motion_capture {
+            // The elapsed-time capture has no future display to target.
+            driver.step()?
+        } else {
+            driver.step_for(&opportunity)?
+        };
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
-        if motion_capture
-            && running
-            && report.overload.is_some()
-            && let Some(refused_ticks) = driver
-                .recover_world_overload()
-                .map_err(|error| error.to_string())?
-        {
-            overload_recoveries.push(json!({
-                "observed_ns": returned.as_nanos(),
-                "resumed_ns": origin.elapsed().as_nanos(),
-                "refused_ticks": refused_ticks,
-            }));
+        if motion_capture && running && report.overload.is_some() {
+            trace.observe_overload(&driver, origin, returned)?;
         }
-        if observer_only
-            && report.submitted
-            && trace
-                .route_last_tick
-                .is_some_and(|tick| report.tick >= tick)
-            && trace.route_finished_at.is_none()
-        {
-            trace.route_finished_at = Some(returned);
+        if observer_only && report.submitted {
+            trace.observe_route_end(report.tick, returned);
         }
         if t >= 3.0 && report.submitted && final_hold.is_none() {
             final_hold = Some(origin.elapsed());
@@ -670,15 +696,7 @@ async fn record(
         .iter()
         .filter(|row| row["submitted"] == true)
         .count();
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while capture && trace.images.len() < submitted && Instant::now() < deadline {
-        trace.drain(&mut driver, writer.as_ref(), origin, true)?;
-        std::thread::sleep(Duration::from_millis(1));
-    }
-    let writer_result = writer.map_or(
-        Ok(thrum_app::offscreen::writer::WriterReport::default()),
-        |writer| writer.finish(Duration::from_secs(10)),
-    );
+    let writer_result = trace.finish_writer(&mut driver, writer, origin, submitted)?;
     let interval_complete = mode == "still"
         || scenario == "clouds-still"
         || (scenario == "exit-stop" && mode == "fixed" && trace.images.len() >= 24)
@@ -691,7 +709,7 @@ async fn record(
             }
             .is_some_and(|start| origin.elapsed() >= start + Duration::from_secs(1)));
     let complete = interval_complete
-        && overload_recoveries.is_empty()
+        && trace.world_overload_recoveries.is_empty()
         && writer_result.is_ok()
         && (!capture
             || (trace.images.len() == submitted
@@ -700,7 +718,7 @@ async fn record(
     let phase_counts = trace.display_phase_counts();
     let mut result = json!({"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
         "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
-        "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
+        "presentation_lead_policy":if motion_capture {"actual elapsed observation without a future target"} else {"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero"},
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
         "recipe":format!("{:?}",capabilities.recipe()),"registry_digest":capabilities.registry_digest(),"unified_memory":capabilities.unified_memory(),"enabled_features":format!("{:?}",capabilities.features()),
         "extent":extent,"requested_hz":requested_hz,"interval_end_ns":interval_end_ns,
@@ -715,8 +733,18 @@ async fn record(
     result["display_phase_counts"] = phase_counts;
     result["gpu_pass_timing"] = json!(!motion_capture);
     result["observer_only"] = json!(observer_only);
-    result["world_overload_recoveries"] = json!(overload_recoveries);
+    result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
+    write_runtime_report(output, result, &driver, &capabilities, &admission)
+}
+
+fn write_runtime_report<G: Game>(
+    output: &Path,
+    mut result: Value,
+    driver: &Offscreen<G>,
+    capabilities: &DeviceCapabilities,
+    admission: &admission::Admission,
+) -> Result<(), String> {
     result["admission_policy"] = json!(admission.policy);
     result["admission_waits"] = json!(admission.waits);
     result["admission_skipped_opportunities"] = json!(admission.skipped);
