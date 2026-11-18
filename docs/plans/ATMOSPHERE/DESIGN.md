@@ -374,7 +374,7 @@ what a deliberate change to the look does to each.
 | H2 | Sky radiance along a direction | Night part: the cases and bound of P3. Solar part: the filtered-decode rule below, on the live sky-view chart at the 11 view directions and six Sun elevations of the all-orders grid, and on a known field. Its three wrong lookups fail. Plus the P11 row at its bound |
 | H3 | Incident diffuse on a normal | The cases and bounds of P6; with nightglow on, the added horizontal irradiance within P4's bound |
 | H4 | Aerial `(T,S)` to a point | Night part: the cases and bound of P5. Solar part and transmittance: P10's fixed-texel decode at its bound, and the filtered-decode rule below, on the live volume at P10's Sun elevations and on a known field. Its three wrong lookups fail |
-| H5 | Environment reflection | The cases and bounds of P7, P8 and P9 through the lent library. The same run also stores a known night term in the fixture and requires it back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance |
+| H5 | Environment reflection | The cases and bounds of P7, P8 and P9 through the lent library. The same run also stores a known night term in the fixture and requires it back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance. From M6 the split-sum pair also meets the stored-table rule below, and its three wrong lookups fail |
 
 **The filtered-decode rule, for H2 and H4.** Lying between the neighbouring texels is not enough: a lookup that
 returns one depth slice instead of blending two stays in that range at every query. So each result is compared
@@ -423,6 +423,39 @@ with the one value a correct lookup returns at that point.
   single texel in screen. A run in which one of them passes is a failed run, on Metal and in Chrome.
 
 The rule proves the handoff, the addressing and the units. It does not prove the accuracy of what is stored.
+
+**The stored-table rule, for H5's split-sum pair, from M6.** P8 made through the library asks whether the pair
+agrees with a quadrature of the reflection model. That is a question about the producer. A table made by a
+cheaper estimator fails it while the consumer returns every texel exactly: at view cosine 0.5 and roughness
+0.5225 a 32-sample table stores a scale of 0.8105 where the quadrature gives 0.8198, 0.0093 apart against P8's
+0.006 ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part A). So the handoff
+asks its own question of the pair: is it the one the atmosphere stored for the requested view cosine and
+roughness?
+
+- **Expected value.** The test reads back the table's stored texels, in the same run on the same target, and
+  evaluates in f64 the operation's addressing and blend at the query: the view cosine over 0–1 along one axis,
+  the roughness over 0.045–1 along the other, each range ending on a texel centre, and a bilinear blend of four
+  texels. This evaluation is written in the test. It does not call, include or translate the lent library's
+  code, and it integrates nothing.
+- **Bound.** The filtered-decode bound, `C/32 + 1e-5 × M + Q` per channel, over the four texels the blend
+  reads. The pair is also never negative and never sums over 1.001.
+- **Cases.** The seven texel-centre nodes H5 already puts to P8, where a correct read returns one texel. One
+  roughness below 0.045, which returns the table's first row. And queries a quarter, a half and three quarters
+  of the way between texel centres on both axes at once, in the four cells that begin at view cosine and
+  roughness (0.0625, 0.224), (0.125, 0.582), (0.75, 0.582) and (0.5625, 0.881): texels (4, 12), (8, 36),
+  (48, 36) and (36, 56) of the 65 × 65 table. Every case runs at exposure scales of 1 and 2.
+- **Wrong lookups that must fail.** The same harness runs three wrong lookups through the same bound, and each
+  must fail at every query between texel centres: one row alone, one column alone, and the view cosine and
+  roughness exchanged. A run in which one of them passes is a failed run, on Metal and in Chrome. The nearest
+  single texel is not on the list, because its errors on the two axes can cancel.
+- **Why those cells.** At low roughness away from grazing the table is nearly flat along one axis, and no bound
+  tells one of its rows from the next. On the diagonal the exchange is the same query. In the four cells, on
+  the table as the producer's equations give it, a correct read with 8-bit sampler weights and a half-float
+  result uses at most 0.36 of the bound, one row or one column alone misses it by 3.2 times or more, and the
+  exchange by 139 times or more (parts B and C).
+
+This rule proves that the pair is the stored one. Whether the stored table is a good split sum is P8's
+question, and [Closing G3s](#closing-g3s) makes that a guard.
 
 **Exposure control.** At least one case of each row H1–H5 whose expected value is larger than its bound is
 repeated with the lent exposure scale set to 2, and meets the same bound against the same expected value. A
@@ -713,23 +746,34 @@ Forbidden West, in words.
 
 **What guards the products.** The referees P1–P11 and the handoff rows H1–H5 of
 [the numerical acceptance](#numerical-acceptance) run in the workspace check on Metal, as they have since M5,
-and M6.4 runs the handoff in Chrome. Their comparisons are of two kinds, and M6 treats the two differently.
+and M6.4 runs the handoff in Chrome. M6.7 adds the stored-table rule on both targets. Their comparisons are of
+two kinds, and M6 treats the two differently.
 
 - **The contract: what a consumer receives.** These take their expected value from the atmosphere's own stored
   product, read back in the same run on the same target, or from a known field the fixture wrote. None takes it
-  from the model of the air or of the night sky. They are the filtered-decode rule's live arm, known-field arm
-  and wrong lookups (H2, H4); the fixed-texel decode (H4); the diffuse cases against the integral of the
-  read-back sky (H3); the reflection, split-sum and furnace cases and the known night term (H5); and the exact
-  zero with the Sun behind the planet (H1). They prove the sampling, the addressing and the units. A deliberate
-  change to a product moves both sides of each together, so none needs an edit to keep passing, and M6 changes
-  none of their cases, bounds or wrong lookups. One that fails is a broken handoff, whatever the picture looks
-  like.
+  from the model of the air or of the night sky, and none from a quadrature of the reflection model. They are
+  the filtered-decode rule's live arm, known-field arm and wrong lookups (H2, H4); the fixed-texel decode (H4);
+  the diffuse cases against the integral of the read-back sky (H3); the exact zero with the Sun behind the
+  planet (H1); and in H5 the split-sum pair under the stored-table rule with its wrong lookups, the known night
+  term, the furnace and source-scaling cases, and the reflection cases on the sky the fixture writes. They
+  prove the sampling, the addressing and the units. A deliberate change to the sky, the air or the split-sum
+  table moves both sides of each together, or neither side where the fixture wrote the field, so none needs an
+  edit to keep passing. M6 adds the stored-table rule and changes none of the other cases, bounds or wrong
+  lookups. One that fails is a broken handoff, whatever the picture looks like.
+
+  The reflection cases are the one place a closed form stands in the contract: the sky itself at the sharpest
+  level, and the lobe's mean at the widest. They are what "filtered to a GGX lobe" means to a consumer, and the
+  filter's sample count does not move them. From 512 samples down to 8, the widest level stays within 0.0052 of its
+  closed form, against a bound of 0.020
+  ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part D). Only another lobe
+  would move them. That changes what the lent operation returns, so it goes through
+  [the module list](../ARCHITECTURE.md#interfaces) and is not a fix to the look.
 - **Guards: where a product stood.** P1–P11 are regression guards: they catch a product that moved when nobody
-  meant it to. Five handoff comparisons are a P row made again through the lent library, with that row's
+  meant it to. Six handoff comparisons are a P row made again through the lent library, with that row's
   reference, cases and bound, and are guards too: H1 against P1 and P2, H2's night part against P3, H2's
-  spectral row against P11, H3's night illuminance against P4, and H4's night part against P5. A guard that
-  fails asks one question, whether the change was meant. Its difference from the model is a diagnostic and
-  never a finding.
+  spectral row against P11, H3's night illuminance against P4, H4's night part against P5, and H5's split-sum
+  pair against P8's quadrature. A guard that fails asks one question, whether the change was meant. Its
+  difference from the model is a diagnostic and never a finding.
 
 Every row, contract or guard, keeps [its repeat at an exposure scale of 2](#numerical-acceptance), which is
 what shows that the library does not apply the scale.
@@ -752,6 +796,9 @@ match, and every contract comparison in Chrome still reads Chrome's own product.
 changed, the change to the look that moved it, and its old and new values. No review asks for a model that
 justifies the new values. So a twilight adjustment that moves P11's blue channel by 4% lands with P11's three
 recorded values replaced on both targets, and H2's live arm passes untouched because it reads the new chart.
+In the same way, a split-sum table made with fewer samples lands with the expected pairs at P8's nodes taken
+from the table the Mac stores, in the producer's test and in H5's guard on both targets, and the stored-table
+rule passes untouched because it reads the new table.
 
 The solar sky and solar aerial transport are not qualified against an all-orders reference, and under the
 owner's bar no such campaign is planned.

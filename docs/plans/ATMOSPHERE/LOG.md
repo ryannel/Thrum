@@ -600,3 +600,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   a check, `scripts/atmosphere_cost.py`, and the timing question stays M8.9's. M7.13: the shadowed sky equals the clear sky plus the
   volume's own `ΔS`, and a sky that takes it twice or not at all fails. All four Suggestions taken as wording: aerosol coefficients
   and the noon figures, 30 stored steps for M9.2's fall, the optical-depth remedy, an exposure scale of 2. No Done item changed.
+- 2026-11-18 Design review asked for changes; one Must Fix resolved. H5 held the lent split-sum pair to a quadrature of the reflection
+  model while the design called that a fixed contract comparison; the review's counterexample, a 32-sample table 0.0093 from the
+  quadrature against a bound of 0.006, reproduces ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt)).
+  The design gains the stored-table rule: the pair against an f64 blend of the table's stored texels, with three wrong lookups that
+  must fail, measured to miss by 3.2 times or more where a correct read uses 0.36 of the bound. H5's quadrature comparison becomes the
+  sixth guard made through the library. M6.4 written again; M6.7 added for the rule on Metal, with a question that reads both
+  tests. The reflection radiance cases stay in the contract, with the reason written down. The review had no new Suggestions. M9's
+  note in the plan shrank to its review link. No Done item changed.
