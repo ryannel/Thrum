@@ -468,6 +468,18 @@
           "review": ""
         },
         {
+          "id": "M5.10",
+          "statement": "The game's query answers the flow bands. With the wind at nothing, points posted through the query over the riffle, at a footprint that reads each band's finest level, come back with the height, slope and rate of change of the chop drawn there: `thrum-water-model`'s two flow bands (M3.5) at the chart's gains, read in the current and brought to each point's use tick as the query reads and brings a cascade, within the tolerance `WATERS` M5.1's test states for a cascade, taken as that share of each band's rms height. So the answers' rms height over the riffle is the model's chop within a tenth, and over the pool it is under a tenth of the riffle's.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
+          "ask": "Does the test post its points through the game's query and read the answers from its mailbox? Would it fail if the query's sum left out either flow band, and if a band were read at the frame's time and not brought to the use tick?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "M5.3",
           "statement": "Ruling 4 is built for a chart's loss. Foam is born below the ledge, behind the rocks and down the chute, at a rate that follows the chart's loss, and is carried downstream. With the loss births switched off the foam ages out and none is born. The glide and the pool gain no foam but what the current brings. Lowering the gauge to its lowest sample lowers the cover below the ledge. The record gives the cover each station of the valley reaches and the birth constant used.",
           "check": "cargo test --locked --offline -p water-scene --test river_foam_gpu",
@@ -644,9 +656,20 @@
         },
         {
           "id": "M6.10",
-          "statement": "Ruling 5 is built: the interaction step has a current ladder. In a window that holds a pool at 0.2 m/s and a riffle at 1.5 m/s in one wet region, a stone is dropped in the pool while a source runs in the riffle. After 5 s each ring set's centre is within 0.5 m, two cells of the window, of where its own water's current carries it, in steps of 1 and of 8 ticks, and the pool's centre moves by under 0.1 m when the riffle's source is five times stronger. A ring set on water midway between two carriage currents never gains energy. Where a level's solves would pass the profile's count the step drops carriage currents before it rests a region, and reports it. On still water and on a uniform current the step's output is what it was, to the bit, and every existing interaction test of `WATERS` passes unchanged.",
+          "statement": "Ruling 5 is built: the interaction step has a current ladder, and a ring travels with the water under it. In a window that holds a pool at 0.2 m/s and a riffle at 1.5 m/s in one wet region, a stone is dropped in the pool while a source runs in the riffle. After 5 s each ring set's centre is within 0.5 m, two cells of the window, of where its own water's current carries it, in steps of 1 and of 8 ticks, and the pool's centre moves by under 0.1 m when the riffle's source is five times stronger. A ring raised on water the step carries as a blend, at a current that is no carriage current, survives the blend, on a straight stretch between two carriage currents and on a bend between three: after 5 s in steps of 1 tick it has at least half the energy of the same ring raised there with the scene's currents set to nothing, it never gains energy, and its centre has moved downstream with that water, within 0.5 m of it on the straight stretch.",
+          "check": "cargo test --locked --offline -p water-scene --test current_ladder_gpu",
+          "ask": "Are both ring sets raised at once in one region, and does the test show one mean current, plain or weighted, failing both centres there? Is the surviving ring raised where the step's own weights are split between carriage currents, on the straight stretch and on the bend, and would a step that damps blended cells to nothing fail it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.11",
+          "statement": "The current ladder stays inside the step's count of solves and changes nothing where one current serves. Where a level's solves would pass the profile's count the step drops carriage currents before it rests a region, and reports what it dropped. On still water and on a uniform current the step's output is what it was, to the bit, and every existing interaction test of `WATERS` passes unchanged.",
           "check": "cargo test --locked --offline -p water-scene --test current_ladder_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
-          "ask": "Are both ring sets raised at once in one region, and does the test show one mean current, plain or weighted, failing both centres there? Is a case run where the current turns across the window, not only along one line?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

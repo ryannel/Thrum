@@ -19,7 +19,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: the module closes without waiting for the governor and MetalFX, which `WATERS`' last milestone waits for; its two quality controls are declared for the governor to use.
 - Assumption: a float does not ground on the bed, and running water makes no sound, because the engine has no physics or audio owner.
 - Assumption: cost is recorded on the Mac only, at 2560×1440, and no timing figure decides an item (brief decision 3).
-- Assumption: the owner's bar of 17 November applies as in `WATERS`: the river in the map and the query stay tested, and the sheet, the flow bands and the river's caustics are judged by eye.
+- Assumption: the owner's bar of 17 November applies as in `WATERS`: what a game reads stays tested (the river in the map and the query, with the flow bands in its answers), and the look of the sheet, the flow bands and the river's caustics is judged by eye.
 
 ## M1 On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes
 
@@ -39,11 +39,11 @@ The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/
 
 ## M5 On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream
 
-The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against M5.4 and M5.5; record both.
+The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. `c` and the birth constant are the two values to tune against M5.4 and M5.5; record both. M5.10's expected answer comes from the band evaluator M3 left in `thrum-water-model` (`flow.rs`), and its tolerance from the query test `WATERS` M5 wrote.
 
 ## M6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
 
-M6.10's figures are part 9's: build the ladder in `thrum-water`'s interaction step. No f64 reference of it is required. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
+M6.10's figures are parts 9 and 12's: build the ladder in `thrum-water`'s interaction step. No f64 reference of it is required. The wave share is tuned by eye against M6.5 and recorded, and nothing asserts the fall's power as its ceiling. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
 
 ## M7 A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome
 

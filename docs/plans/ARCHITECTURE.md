@@ -465,13 +465,15 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
 3. **Flow bands** (`RIVERS` M3 in `thrum-water-model`, M5 in `thrum-sea` and `thrum-water`). The world's wave
    field gains two layers the wind does not fill, of the cascades' kind, generated only where a scene's profile
    names them. A chart's row holds a gain for each, which may be any size the depth limit allows, and every
-   other body's is zero. Every reader of the wave layers reads them through the one sum, with the rules a
-   cascade has. `WATERS:M16`'s caustic field reads them too; whichever of it and `RIVERS` M5 lands second makes
+   other body's is zero. Every reader of the wave layers, the game's query among them, reads them through the
+   one sum, with the rules a cascade has. `WATERS:M16`'s caustic field reads them too; whichever of it and
+   `RIVERS` M5 lands second makes
    that so.
 4. **Births from a chart's loss and at a plunge** (`RIVERS` M5 and M6; the foam's births in `thrum-water`), by
    the bounded rule the foam's other births use.
-5. **A current ladder in the interaction step** (`RIVERS` M6; the interaction step in `thrum-water` and its
-   reference in `thrum-water-model`). A region whose wet cells run at different currents is stepped with a
+5. **A current ladder in the interaction step** (`RIVERS` M6; the interaction step in `thrum-water`. An f64
+   reference of the ladder in `thrum-water-model` is a diagnostic a builder may add, and is not required). A
+   region whose wet cells run at different currents is stepped with a
    few carriage currents whose span, as vectors, holds them, and each cell takes the blend of the outputs
    carried at the currents that bracket its own, as the depth ladder blends by depth. So two sets of rings raised at once
    on a pool and on a riffle are each carried by their own water, whatever the other's strength. On still

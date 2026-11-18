@@ -359,6 +359,17 @@ covariance that sets roughness and glitter, the depth limit and the swash at a b
 foam's births read, the caustic field and the lens test. A body that is not a river has no flow gain. The
 wind's layers stay on a river at the gains its fetch gives.
 
+**What a game reads.** [`WATERS`' query](../WATERS/DESIGN.md#bodies-and-the-query) answers the flow bands as it
+answers a cascade: from the frame's evaluation, at the mip the point's footprint chooses, at the chart's gains
+at the point, with the current's carriage applied as the field is read, and brought from the frame's `t` to
+the point's use tick by their rate of change. So a float in a windless riffle rides the chop drawn under it,
+and a hull wider than a band's waves does not feel that band. M5.10 holds the dispatch to the model's bands
+(M3.5) read the same way, at the tolerance `WATERS` M5.1's test states for a cascade. A declared approximation,
+`WATERS`' own for anything brought forward in time: the short band's strongest wave, 0.75 m long, passes a
+fixed point in a 1.1 m/s current at up to 18 rad/s, so brought two ticks forward it is misstated by up to a
+fifth of its height, which is millimetres. The band's shortest waves are not followed to the phase, and hold
+little of its height.
+
 `c` is the one constant of the look. It starts at 2, between the turbulent energy at a channel's surface (0.65)
 and a bed of cobbles, and is tuned once against R2's inspection, between 1 and 4.
 
@@ -430,8 +441,10 @@ Each tick, for each segment of a fall whose path meets water, at the place it me
   sheet's own pattern arriving at that segment at that tick, with its mean over the pattern's loop taken out
   and its variance 1, and
   `α` the profile's wave share, 0.1 at first. So rings come from the strands a viewer sees land, stop when the
-  fall is dry, and are the same causes on every machine. `α` is a declared closure. Its bound is physical: the
-  waves' power never exceeds the fall's.
+  fall is dry, and are the same causes on every machine. `α` is a declared closure, tuned by eye against
+  M6.5's rings and recorded. Its ceiling is physical, the waves' power never exceeding the fall's, and it is a
+  diagnostic for a plunge that looks wrong: `thrum-water-model` gives the fall's power and each impulse
+  (M2.5), and no item asserts the ceiling.
 
 Rings exist where the interaction windows are, which is round the body the game names
 ([`WATERS`' reach](../WATERS/DESIGN.md#interaction-waves)). A path that lands on bare ground gives neither.
@@ -470,8 +483,20 @@ into a riffle pass through that blend.
 Part 11 is arithmetic on the span alone, for a pool at 0.2 m/s and a bend that turns a 1.5 m/s current.
 Carriage currents taken from the cells' own, the pool's and three on the bend, leave the bend's cells up to
 0.11 m/s outside their span through a turn of 90°, which is 0.57 m after 5 s, and 0.03 m/s through 45°. Rest
-and three currents on the bend's tangents hold every cell. What a blend of three copies up to 1.6 m/s apart
-costs a wave is unrun: part 9 is one section, and M6.10's turning case measures it.
+and three currents on the bend's tangents hold every cell.
+
+**A ring survives the blend.** The blend is a blur: a cell that mixes copies carried at different currents
+spreads its waves by the distance those copies part in one step. Part 12 takes it from the step's own
+multiplier, in plan, for a ring 0.5 m wide on water every cell of which is blended. After 5 s in steps of 1
+tick the ring keeps 93.6% of its energy midway between 0.2 and 1.5 m/s on a straight reach, and never less
+than 88.7% round a 90° bend carried by rest and three tangent currents, at any speed from the pool's to the
+riffle's. So a ring that passes through blended water softens and is still a ring, and M6.10 fails a step
+that leaves less than half. Steps of 8 ticks blur more: 5 s of nothing but such steps would keep 50% to 72%
+on that bend. A hitch gives one such step, and no item asserts its energy.
+
+The ladder is built in `thrum-water`'s interaction step. An f64 reference of it in `thrum-water-model` is a
+diagnostic a builder may add, as [`WATERS` says of its own step](../WATERS/DESIGN.md#the-system-as-it-runs),
+and is not required.
 
 ### The chart store
 
@@ -525,8 +550,9 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   written by hand. The solver's own samples of a valley, and its own lip that starts to run, are unrun; M3
   tests them.
 - **R8.** Part 7 is arithmetic on part 2's flow. Part 9 steps two ring sets at once on a pool and a riffle in
-  one region, in section. Part 11 is the span of the carriage currents round a bend. The ladder in plan and
-  on the GPU is unrun; M6 measures the rings.
+  one region, in section. Part 11 is the span of the carriage currents round a bend, and part 12 what the
+  blend costs a ring, in plan, from the step's multiplier. The ladder stepped in plan and on the GPU is
+  unrun; M6.10 is the first.
 - **What the looks cover.** The island's fall is about 4 m, and M6 judges it from 2 m to 200 m at three
   gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (M2.4)
   and are not judged by eye: the ledger says so until a game shows one.
@@ -641,10 +667,12 @@ dependencies. In addition:
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.
 - **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,
-  and it holds here: M4 to M7 pass on their look and their speed, what a game reads (the river in the map and
-  the query) is tested against `thrum-water-model` at the tolerance `WATERS` M4.1's test states, and the sheet,
-  the flow bands and the river's caustics are not held to an f64 reference or to a bound measured first. Parts
-  1 to 10 are the source of the bounds M1 to M3 were proved with and of M6.10's carriage figures.
+  and it holds here: M4 to M7 pass on their look and their speed, and what a game reads is tested against
+  `thrum-water-model`: the river in the map and the query at the tolerance `WATERS` M4.1's test states, and
+  the flow bands in the query's answers (M5.10) at the one `WATERS` M5.1's test states. The look of the sheet,
+  the flow bands and the river's caustics is not held to an f64 reference or to a bound measured first, and
+  nor are the rings: M6.10 compares the step with itself. Parts 1 to 10 are the source of the bounds M1 to M3
+  were proved with and of M6.10's carriage figures, and part 12 of its half.
 - **Maturity.** A ledger row for `E1.rivers` is added in M4 and kept current.
 
 ## Open questions
@@ -654,6 +682,6 @@ dependencies. In addition:
 | What does a solve cost in Rust, for the test valley and the island? | M1 and M4 record it |
 | Does `c = 2` read right, and do two bands suffice? | M5; [risk 2](#risks) |
 | Does the shallows' birth constant serve a river? | M5 records the cover; [risk 3](#risks) |
-| What wave share makes rings that read and stays under the fall's power? | M6 measures first, then asserts |
+| What wave share makes rings that read? | M6.5's look, tuned by eye from 0.1 and recorded. The fall's power is a diagnostic ([the plunge](#the-plunge)), and no item asserts it |
 | How many reaches does a winding river need? | M4's bytes; [risk 7](#risks) |
 | Does a fall need mist to meet its bar? | M6's review; the owner ([plan](PLAN.md#open-for-the-human)) |

@@ -118,3 +118,8 @@
   diagnostics. Plan: M5.1, M6.1, M6.2, M6.3, M6.10, M7.5 and M7.11 are rewritten without a bound measured first or an f64 reference, and
   M6.3 and M6.10 no longer run `thrum-water-model`'s interaction test, which `WATERS` M6 no longer builds. M4.3 names the tolerance
   `WATERS` M4.1's test states. Three cost records pass on their check alone. No item of a Done milestone changed.
+- 2026-11-18 Design review after the bar was lowered: [changes requested](../../evidence/RIVERS/design-review.md), three Must Fix, no
+  Suggestions. Plan: M5.10 is new, the query's answers over a windless riffle against the model's flow bands at `WATERS` M5.1's
+  tolerance. M6.10 is rewritten so a ring on blended water must keep half its energy and move with that water, with the half from
+  [part 12](../../evidence/RIVERS/design-proof/README.md) (88.7% at worst); its limits and bit identity move to M6.11. The design's
+  open question on the wave share and ruling 5 no longer assign a measured bound or an f64 reference of the ladder.
