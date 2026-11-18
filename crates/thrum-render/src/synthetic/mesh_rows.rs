@@ -163,6 +163,12 @@ impl MeshRows {
             .map_or_else(|_| MeshRowReport::default(), |state| state.report.clone())
     }
 
+    /// The most recently submitted publication, without copying the write history.
+    #[must_use]
+    pub fn generation(&self) -> Option<u64> {
+        self.0.lock().ok()?.report.generation
+    }
+
     /// Queue geometry prepared by the publication owner. An offered publication
     /// is protected until its switch commits; the owner must defer newer work.
     /// # Errors

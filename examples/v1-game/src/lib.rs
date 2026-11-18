@@ -9,6 +9,8 @@ pub mod clouds;
 pub use clouds::CloudSelection;
 #[cfg(not(target_arch = "wasm32"))]
 mod content;
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+mod content_preview;
 pub mod controls;
 pub mod cooked;
 pub mod effect;

@@ -251,6 +251,25 @@ pub(crate) fn attach_cooked_scene_with_path(
     attach_selected(host, path, Ok)
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn attach_content_preview(
+    host: &mut FrameHost,
+) -> Result<crate::content_preview::PreviewRecord, String> {
+    let store = launch_value("THRUM_ASSET_STORE").map_err(|error| error.to_string())?;
+    let rows = host
+        .cooked_rows()
+        .ok_or("content preview needs cooked mesh rows")?;
+    let (camera, assets) =
+        crate::showcase::prepare_content_preview(std::path::PathBuf::from(store).into())?;
+    let reader = rows.updates();
+    let assets = assets.with_rows(rows).map_err(|error| error.to_string())?;
+    let (contribution, record) =
+        crate::content_preview::attach(assets, reader, host.reconstruction());
+    host.set_scene_contribution(contribution)?;
+    host.set_scene_camera(camera)?;
+    Ok(record)
+}
+
 /// Attach selected content with an explicit compile-time-enabled qualification control.
 /// # Errors
 /// Refuses invalid content, incomplete reference arguments or a renderer failure.

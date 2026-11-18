@@ -58,6 +58,7 @@ pub(super) fn run(
             | "off"
             | "writer-slow"
             | "reconstruction-pan"
+            | "content-edits"
             | "reconstruction-stars"
             | "reconstruction-scrub"
             | "clouds-drift"
@@ -93,6 +94,7 @@ pub(super) fn run(
 #[derive(Default)]
 struct Trace {
     opportunities: Vec<Value>,
+    preview: Option<crate::content_preview::PreviewRecord>,
     images: Vec<Value>,
     gpu: Vec<Value>,
     stalls: Vec<Value>,
@@ -140,7 +142,10 @@ impl Trace {
             "clamped":statuses[3],"untargeted":statuses[4],"bound":bound,"stopped":stopped,"origin_changes":origin_changes})
     }
 
-    fn for_route(route: Option<&Value>) -> Result<Self, String> {
+    fn for_route(
+        route: Option<&Value>,
+        preview: Option<crate::content_preview::PreviewRecord>,
+    ) -> Result<Self, String> {
         let route_last_tick = route
             .map(|route| {
                 let origin = route["origin_tick"]
@@ -155,9 +160,21 @@ impl Trace {
             })
             .transpose()?;
         Ok(Self {
+            preview,
             route_last_tick,
             ..Self::default()
         })
+    }
+
+    fn opportunity(&mut self, mut row: Value, report: &thrum_render::runtime::DriveReport) {
+        if report.submitted
+            && let Some(preview) = &self.preview
+        {
+            row["content"] = json!(preview.frame());
+            row["presented_to_engine_surface"] = json!(report.surface_presented);
+            row["drawable_presented"] = json!(false);
+        }
+        self.opportunities.push(row);
     }
 
     fn prime<G: Game>(
@@ -193,10 +210,9 @@ impl Trace {
                 }
             }
         }
-        self.opportunities.push(
-        json!({"id":0,"request_ns":relative_ns(origin,prime_requested),"accepted_ns":null,"scenario_ns":0,
+        self.opportunity(json!({"id":0,"request_ns":relative_ns(origin,prime_requested),"accepted_ns":null,"scenario_ns":0,
         "submitted":true,"tick":primed.tick,"submission_id":driver.last_submission(),
-        "requested_yaw_degrees":0.0,"accepted_yaw_degrees":accepted_yaw(driver)?,"primed":true}),
+        "requested_yaw_degrees":0.0,"accepted_yaw_degrees":accepted_yaw(driver)?,"primed":true}), &primed,
     );
         Ok(origin)
     }
@@ -502,16 +518,29 @@ fn world_moves(scenario: &str) -> bool {
     is_route(scenario)
         || matches!(
             scenario,
-            "running" | "writer-slow" | "reconstruction-pan" | "clouds-drift" | "exit-drift"
+            "running"
+                | "writer-slow"
+                | "reconstruction-pan"
+                | "content-edits"
+                | "clouds-drift"
+                | "exit-drift"
         )
 }
 
 fn applies_yaw(scenario: &str, active_world: bool) -> bool {
-    (!active_world || scenario == "reconstruction-pan")
+    (!active_world || matches!(scenario, "reconstruction-pan" | "content-edits"))
         && !matches!(
             scenario,
             "reconstruction-stars" | "reconstruction-scrub" | "exit-stop"
         )
+}
+
+fn requested_yaw(scenario: &str, time: f64, recovery: super::NativeRecovery) -> f64 {
+    if scenario == "content-edits" {
+        3.0 * (time * 0.7).sin()
+    } else {
+        native_recovery::yaw(time, recovery)
+    }
 }
 
 fn prepare_parameters<G: Game>(
@@ -563,9 +592,11 @@ async fn record(
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) = metal_device(&instance, 1, hardware).await?;
-    let game = capture_game(output, scenario, capture_output)?;
+    let (game, preview) = capture_game(output, scenario, capture_output)?;
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
-    let motion_capture = mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift");
+    let preview = preview.and_then(|record| record.lock().ok()?.clone());
+    let motion_capture =
+        mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift" | "content-edits");
     if motion_capture {
         driver.set_timing_requested(false);
     }
@@ -573,19 +604,19 @@ async fn record(
     reset_native_capture(&mut driver);
     let observer_only = capture_output == RuntimeCaptureOutput::ObserverOnly;
     if observer_only && !motion_capture {
-        return Err("observer-only control requires realtime exit motion".to_owned());
+        return Err(
+            "observer-only control requires realtime exit or content-edit motion".to_owned(),
+        );
     }
     let capture = scenario != "off" && !observer_only;
     if capture {
         enable_stage_capture(&mut driver, 1, source)?;
     }
-    let writer = if capture {
-        Some(start_writer(scenario, encoding, disk_limit, recovery_mode)?)
-    } else {
-        None
-    };
+    let writer = capture
+        .then(|| start_writer(scenario, encoding, disk_limit, recovery_mode))
+        .transpose()?;
     let route = requested_route(scenario)?;
-    let mut trace = Trace::for_route(route.as_ref())?;
+    let mut trace = Trace::for_route(route.as_ref(), preview)?;
     let origin = trace.prime(output, &mut driver, writer.as_ref())?;
     let timebase = if mode == "fixed" {
         Timebase::Fixed
@@ -658,7 +689,7 @@ async fn record(
                 source,
             )
             .await?;
-        let yaw = native_recovery::yaw(t, recovery_mode);
+        let yaw = requested_yaw(scenario, t, recovery_mode);
         let control_dispatched = applies_yaw(scenario, active_world)
             && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
         let accepted = origin.elapsed();
@@ -692,14 +723,14 @@ async fn record(
         trace.drain(&mut driver, writer.as_ref(), origin, collect)?;
         let drain = drain.elapsed();
         let work = work.finish().map_err(|e| e.to_string())?;
-        trace.opportunities.push(json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
+        trace.opportunity(json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
             "scenario_ns":opportunity.scenario_time.as_nanos(),"accepted_ns":if control_dispatched {Some(accepted.as_nanos())} else {None},
             "control_dispatched":control_dispatched,
             "skipped_before":opportunity.skipped_before,"skip_reason":"driver busy or host oversleep",
             "returned_ns":returned.as_nanos(),"requested_yaw_degrees":yaw,"accepted_yaw_degrees":accepted_yaw,
             "submitted":report.submitted,"tick":report.tick,"dropped_view":report.dropped_view,
             "admission_usage":admission_usage,"ring_omissions":driver.omissions()-omissions_before,
-            "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}));
+            "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}), &report);
         last_sample_time = opportunity.scenario_time;
         if mode == "fixed" {
             drain_fixed(&mut driver, &mut trace, writer.as_ref(), origin)?;
@@ -757,11 +788,15 @@ fn capture_game(
     output: &Path,
     scenario: &str,
     capture_output: RuntimeCaptureOutput,
-) -> Result<impl Game, String> {
-    super::capture_game_with_route_limit(
+) -> Result<(impl Game, Option<super::ContentPreviewCapture>), String> {
+    let mut cooked = super::CaptureCooked::new(output, capture_output);
+    let preview = (scenario == "content-edits").then(super::ContentPreviewCapture::default);
+    cooked.preview.clone_from(&preview);
+    let game = super::capture_game_with_route_limit(
         matches!(scenario, "clouds-route" | "exit-route"),
-        Some(super::CaptureCooked::new(output, capture_output)),
-    )
+        Some(cooked),
+    )?;
+    Ok((game, preview))
 }
 
 fn write_runtime_report<G: Game>(
@@ -935,6 +970,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
         "exit-drift" => (25.0, 23.0, 23.0),
+        "content-edits" => (13.0, 12.0, 12.0),
         "route" => (8.4, 8.0, f64::INFINITY),
         _ => (6.0, 4.0, 3.0),
     }
@@ -972,6 +1008,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "writer-slow"
                 | "render-stall"
                 | "input-stall"
+                | "content-edits"
                 | "route"
                 | "clouds-route"
                 | "clouds-drift"

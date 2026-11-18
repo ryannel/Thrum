@@ -65,7 +65,7 @@ thrum-content-runtime = { path = "../../crates/thrum-content-runtime" }
 thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
 divan = "=0.1.21"
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }
-thrum-cook = { path = "../../crates/thrum-cook" }
+thrum-cook = { path = "../../crates/thrum-cook", features = ["fault-probe"] }
 
 [[bench]]
 name = "frame"

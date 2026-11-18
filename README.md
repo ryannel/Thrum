@@ -7,8 +7,8 @@ provides. Browsers run a portable WebGPU tier at showcase quality. Single-player
 multiplayer play share the same authoritative rules.
 
 **Status:** the V1 game runs a provisional 10,000-entity simulation on macOS and Chrome WebGPU, plus a thin
-iPhone simulator shell. An optional native cooked valley shares the physical sky and frame host; Chrome still uses
-the diagnostic scene. The showcase and creator experience remain unfinished. See [the brief](docs/plans/BRIEF.md) and [the status page](docs/plans/STATUS.md).
+iPhone simulator shell. The optional cooked valley shares the physical sky and frame host on Mac and Chrome.
+The showcase and creator experience remain unfinished. See [the brief](docs/plans/BRIEF.md) and [the status page](docs/plans/STATUS.md).
 
 **Make your first scene.** On a Mac, after the setup below, `./dev starter` opens a cooked rock on lit ground
 under a physically based sky, with Sun sliders and asset hot reload, in about 40 lines of game code. The
@@ -28,6 +28,7 @@ THRUM_ASSET_STORE=tmp/v1-valley THRUM_SCENE=valley cargo run --locked -p v1-game
 ```
 
 These are the real cooker and game binary. The scene is still a visual work in progress; transport remains after V1.
+For watched edits on Mac and in Chrome, see [Live cooked assets](docs/design/ENGINE-EXPERIENCE.md#live-cooked-assets).
 
 Install stable Rust through rustup (with rustfmt and Clippy) and Python 3.11 or newer:
 

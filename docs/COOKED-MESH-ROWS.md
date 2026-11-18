@@ -5,6 +5,13 @@ rows. In Chrome, select `?assets=<dev-server>&meshes=on`. Materials remain the s
 The moving-route overlay supplies visible entity subjects at valley metres; native captures select it with
 `THRUM_ROUTE_OVERLAY=proof`. The ordinary grid's entities remain at their original coordinates.
 
+To give the exit scene its authored entity meshes, include the five glTF and buffer pairs from
+`examples/v1-game/assets/exit` at the root of the same source tree as the valley assets. The exit
+resolves the rows in this order: `exit-boulder`, `exit-scrub`, `exit-cactus`,
+`exit-standing-rock`, `exit-balloon`. Keep those logical names when replacing a mesh. Select
+`THRUM_SCENE=exit` on Mac or add `scene=exit` to the cooked Chrome URL. The exit enables its
+cooked rows when it prepares the scene.
+
 An engine consumer prepares `thrum_asset_gpu::rows::CookedRows` from a mapped store or fetched generation,
 then builds its `SyntheticMeshes` with `selection`, supplying one stable choice per slot. Pass the same
 `CookedRows` to `CookedConfig::rows`. The game connects the generic renderer handle to residency; the

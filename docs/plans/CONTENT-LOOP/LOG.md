@@ -162,3 +162,9 @@
   A version field in `MeshletBounds` was rejected: the container already versions it
   ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md)). No item, code or product byte changes. The
   design review is owed.
+- 2026-11-19 M3. The watched valley uses the same publication for placements, cooked mesh rows and two lease readers.
+  Metal and hardware Chrome frame records and eight-frame T2 excerpts show the three whole switches under TAAU.
+  The ordinary Chrome windows stayed within the steady callback maximum. A larger R8 volume first missed a callback
+  at 256³ in the size probe. Five failure cases retained the previous pixels through mapped and fetched readers.
+  The preview convergence test and shipping scan passed. G5 scope, the maturity ledger and creator instructions
+  record the preview boundary and measurement limits. [Evidence](../../evidence/CONTENT-LOOP/M3.md)

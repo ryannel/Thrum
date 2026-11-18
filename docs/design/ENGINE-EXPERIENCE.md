@@ -9,8 +9,8 @@ one run command per target; they require no engine source. The starter README al
 parameter files, material hooks and the profiler. The wider SDK discussion below is optional.
 
 Creator guide, updated 17 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
-first slice; [What G6 built](#what-g6-built) says what runs today. Everything else here is design intent, not a
-working SDK or settled syntax. The
+first slice; [What G6 built](#what-g6-built) and [Live cooked assets](#live-cooked-assets) describe working paths.
+The remaining sections describe the SDK design. The
 [scenario](SCENARIO-WALKTHROUGHS.md), [first-use](FIRST-USE-WALKTHROUGHS.md) and [from-scratch](FROM-SCRATCH-WALKTHROUGHS.md)
 walkthroughs are the paper traces behind it; [architecture decisions](ARCHITECTURE-DECISIONS.md) select the core and
 library boundaries.
@@ -91,6 +91,63 @@ For a working scene, follow the [starter README](../../examples/starter/README.m
 commands, workspace registration, public kit types, metre/+Y convention, glTF requirements and parameter
 and material files without requiring engine source. Run `./dev scene <folder>` for Mac or
 `./dev scene <folder> --web` for Chrome. The sections below describe the wider SDK ambition.
+
+## Live cooked assets
+
+The starter commands above already watch the scene's asset directory. For the authored V1 valley, make an editable
+copy and run the watcher from the repository root. Keep this terminal open while you edit.
+
+```sh
+mkdir -p tmp/my-valley
+cp -R examples/v1-game/assets/showcase tmp/my-valley/source
+cargo run --locked --offline -p thrum-cook -- watch tmp/my-valley/source tmp/my-valley/store --serve 127.0.0.1:7878
+```
+
+Once the watcher reports its first publication, launch the Mac valley in a second terminal.
+
+```sh
+THRUM_ASSET_STORE=tmp/my-valley/store THRUM_SCENE=valley THRUM_VALLEY_MESHES=on \
+  THRUM_ROUTE_OVERLAY=proof THRUM_RECONSTRUCTION=taau cargo run --locked --offline --release -p v1-game
+```
+
+For Chrome, install the Wasm tools from the [starter's web setup](../../examples/starter/README.md), then build
+and serve V1.
+
+```sh
+sh examples/v1-game/web/build.sh
+python3 -m http.server 8765 --bind 127.0.0.1 --directory target/v1-game-web
+```
+
+Open `http://127.0.0.1:8765/?assets=http%3A%2F%2F127.0.0.1%3A7878&meshes=on&reconstruction=taau`
+in Chrome with hardware WebGPU.
+
+Save `ground.png`, or export `rock.gltf` and its buffer, under `tmp/my-valley/source`. The watcher treats file notices
+as hints and also sweeps the source tree. It hashes changed inputs, cooks affected products, then replaces `HEAD`
+with the new manifest pointer. Mac maps the products and Chrome fetches and verifies the changed content addresses.
+Each running host stages copies across frames and keeps the previous set drawing until every reader can switch
+in the same submitted frame.
+
+If an image or mesh fails to import, check the watcher's terminal for the asset name and reason. If the game
+cannot use a cooked product, check its cooked-content diagnostics. The affected product keeps its last good version.
+Correct the named file and save again. A multi-file save can produce a valid intermediate preview, such as a changed
+glTF using the previous buffer. That preview can stay on screen until the remaining file arrives. Once the save
+finishes, the products match a fresh cook of those finished inputs. The working-file preview feeds presentation only.
+
+For a module integrating cooked content, use these public entry points.
+
+- **Placements.** Build a `CookedConfig::new(source, meshes)` with `MeshPlacement::new(mesh_name, texture_name)` for
+  each placement. Use the source-relative names without extensions and assign transforms in world metres.
+  Construct `CookedAssets` once and attach it as a `SceneContribution` on the host.
+- **Entity meshes.** Prepare `CookedRows::from_store` or `CookedRows::from_generation` with one source name per row,
+  including repeated names where rows share a product. Assign each entity slot a stable row choice,
+  build `selection` from those choices, and prepare the host with those rows. Pass the same rows to
+  `CookedAssets::with_rows`. The renderer keeps the entity slots and bucket membership when a row changes.
+  The exit's scene follows this route with a separate row for each of its authored entity meshes.
+  [Cooked meshes on entities](../COOKED-MESH-ROWS.md)
+- **Textures and volumes for another pass.** Declare the logical name and texture dimension in
+  `CookedConfig::leased`, pass `CookedAssets::lease()` to the contribution, and sample the offered views during
+  that frame. Follow the lease's device identity, serial and submission rules when retaining bindings or history.
+  [Sampling cooked products](../COOKED-LEASES.md)
 
 ## Four things to understand
 

@@ -112,10 +112,17 @@ async fn game_device(path: CookedDrawPath) -> (wgpu::Device, wgpu::Queue, Device
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
         .expect("real adapter required for the in-game G5 proof");
+    device_for(&adapter, path).await
+}
+
+async fn device_for(
+    adapter: &wgpu::Adapter,
+    path: CookedDrawPath,
+) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     // Ask for every compressed family the adapter offers, as the game's platform layer does.
     // Timestamps too, so contributed frames exercise the renderer's timing collector.
-    let features = DeviceCapabilities::requested_content_features(&adapter)
-        | DeviceCapabilities::requested_timing_features(&adapter);
+    let features = DeviceCapabilities::requested_content_features(adapter)
+        | DeviceCapabilities::requested_timing_features(adapter);
     let (device, queue) = adapter
         .request_device(&wgpu::DeviceDescriptor {
             required_features: features,
@@ -123,7 +130,7 @@ async fn game_device(path: CookedDrawPath) -> (wgpu::Device, wgpu::Queue, Device
         })
         .await
         .expect("device");
-    let caps = selected_capabilities(&adapter, &device, 1, path);
+    let caps = selected_capabilities(adapter, &device, 1, path);
     (device, queue, caps)
 }
 
@@ -1274,6 +1281,237 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path: CookedDrawPa
     });
     drop(server);
     std::fs::remove_dir_all(&root).ok();
+}
+
+#[test]
+fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
+    let _fixture = gpu_fixture();
+    let Some(gpu) = thrum_test_support::gpu("cooked bad saves", None) else {
+        return;
+    };
+    let root = std::env::temp_dir().join(format!("thrum-bad-saves-{}", std::process::id()));
+    let mut cook = source_tree(&root, 16);
+    cook.profiles = vec![Profile::Portable];
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    let store = thrum_asset::AssetStore::new(&cook.store);
+    let first = cooker.cook_all().expect("first cook");
+    assert!(first.failed.is_empty(), "{first:?}");
+    let publications = Arc::new(thrum_cook::Publications::default());
+    let server =
+        thrum_cook::DevServer::start("127.0.0.1:0", store.clone(), Arc::clone(&publications))
+            .expect("dev server");
+    let origin = format!("http://{}", server.address());
+    pollster::block_on(async {
+        let (device, queue, capabilities) = device_for(&gpu.adapter, CookedDrawPath::Direct).await;
+        let view = drawable(&device);
+        let mut client = thrum_asset::DevClient::new(LoopbackFetch, &origin).expect("client");
+        let feed = thrum_asset_gpu::RemoteFeed::new(
+            client
+                .poll()
+                .await
+                .expect("fetch")
+                .expect("first publication"),
+        );
+        let mut hosts = Vec::new();
+        for source in [
+            thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
+            thrum_asset_gpu::CookedSource::Remote(feed.clone()),
+        ] {
+            let mut host =
+                FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
+                    .await
+                    .expect("prepare host");
+            let mut config = v1_game::cooked::cooked_config(source);
+            config.texture_preference = Some(vec![Profile::Portable]);
+            let assets = CookedAssets::new(config).expect("placements");
+            let stats = assets.stats();
+            host.set_scene_contribution(Box::new(assets))
+                .expect("attach");
+            host.pause().expect("hold world");
+            let mut clock = Duration::ZERO;
+            wait_presented_generation(&mut host, &device, &view, &stats, 1, &mut clock);
+            hosts.push((host, stats, clock));
+        }
+
+        let gltf = cook.source.join("meshes/terrain.gltf");
+        let buffer = cook.source.join("meshes/terrain.bin");
+        let texture = cook.source.join("textures/checker.png");
+        let volume = cook.source.join("cloud.tvol");
+        let mut good_generation = 1;
+        for (fault, name, source) in [
+            ("broken glTF", "meshes/terrain", &gltf),
+            ("missing glTF buffer", "meshes/terrain", &buffer),
+            ("truncated texture", "textures/checker", &texture),
+            ("oversized volume", "cloud", &volume),
+            ("save during cook", "textures/checker", &texture),
+        ] {
+            let before = hosts
+                .iter_mut()
+                .map(|(host, _, _)| host.capture_pixels().expect("old pixels"))
+                .collect::<Vec<_>>();
+            let original = std::fs::read(source).expect("original source");
+            let bad = if fault == "save during cook" {
+                demo::write_checker_png(source, 512, [171, 41, 24]).expect("trigger cook");
+                cooker
+                    .cook_with_save_after_scan(|| {
+                        demo::write_checker_png(source, 512, [25, 179, 67])
+                            .expect("save during cook");
+                    })
+                    .expect("raced cycle")
+            } else {
+                install_bad_source(fault, source, &original, &device);
+                cooker
+                    .cook_changed(std::slice::from_ref(source))
+                    .expect("bad cycle")
+            };
+            if fault == "oversized volume" {
+                let refused = bad
+                    .published
+                    .expect("oversize is valid cooked data")
+                    .generation;
+                assert_eq!(refused, good_generation + 1);
+                publications.announce(refused);
+                feed.publish(
+                    client
+                        .poll()
+                        .await
+                        .expect("fetch")
+                        .expect("oversize publication"),
+                );
+                for (host, stats, clock) in &mut hosts {
+                    let deadline = Instant::now() + Duration::from_secs(15);
+                    loop {
+                        let reason = stats
+                            .lock()
+                            .expect("stats")
+                            .errors
+                            .iter()
+                            .find(|error| {
+                                error.contains("extent exceeds this device's texture limit")
+                            })
+                            .cloned();
+                        if let Some(reason) = reason {
+                            eprintln!("{fault}: {reason}");
+                            break;
+                        }
+                        assert!(
+                            Instant::now() < deadline,
+                            "GPU did not report volume refusal"
+                        );
+                        presented_frame(host, &device, &view, clock);
+                    }
+                }
+            } else {
+                let (reported, reason) = bad.failed.first().expect("named cook failure");
+                assert_eq!(reported, name);
+                if fault == "missing glTF buffer" {
+                    assert!(reason.contains(fault), "{reason}");
+                }
+                if fault == "save during cook" {
+                    assert_eq!(reason, &thrum_cook::CookError::SourceChanged.to_string());
+                }
+                assert!(bad.published.is_none(), "{bad:?}");
+                let mut current =
+                    thrum_asset::DevClient::new(LoopbackFetch, &origin).expect("client");
+                let fetched = current
+                    .poll()
+                    .await
+                    .expect("read server")
+                    .expect("previous publication");
+                assert_eq!(fetched.head().generation, good_generation);
+                assert_eq!(store.read_head().expect("read HEAD"), Some(fetched.head()));
+                eprintln!("{fault}: {reason}");
+            }
+            for ((host, stats, clock), old) in hosts.iter_mut().zip(&before) {
+                presented_frame(host, &device, &view, clock);
+                assert_eq!(stats.lock().expect("stats").drawn, Some(good_generation));
+                assert_eq!(
+                    &host.capture_pixels().expect("retained pixels"),
+                    old,
+                    "{fault}"
+                );
+            }
+            // Make each correction a new valid product, so recovery must really submit a switch.
+            if fault != "save during cook" {
+                std::fs::write(source, original).expect("restore broken source");
+            }
+            match fault {
+                "save during cook" => {}
+                "truncated texture" => {
+                    demo::write_checker_png(&texture, 512, [55, 85, 175]).expect("fixed texture");
+                }
+                "oversized volume" => {
+                    demo::write_cloud_volume(&volume, 16, 77).expect("fixed volume");
+                }
+                _ => demo::write_grid_gltf(
+                    &cook.source.join("meshes"),
+                    "terrain",
+                    128,
+                    if fault == "broken glTF" { 1.0 } else { 2.0 },
+                )
+                .expect("fixed mesh"),
+            }
+            let fixed = cooker.cook_all().expect("fixed cycle");
+            assert!(fixed.failed.is_empty(), "{fixed:?}");
+            good_generation = fixed.published.expect("corrected publication").generation;
+            publications.announce(good_generation);
+            feed.publish(
+                client
+                    .poll()
+                    .await
+                    .expect("fetch")
+                    .expect("corrected publication"),
+            );
+            for ((host, stats, clock), old) in hosts.iter_mut().zip(&before) {
+                stats.lock().expect("stats").errors.clear();
+                wait_presented_generation(host, &device, &view, stats, good_generation, clock);
+                assert!(changed_pixels(old, &host.capture_pixels().expect("corrected pixels")) > 0);
+            }
+            eprintln!(
+                "{fault}: mapped and fetched pixels retained, then switched at generation {good_generation}"
+            );
+        }
+    });
+    drop(server);
+    std::fs::remove_dir_all(&root).expect("clean up");
+}
+
+fn wait_presented_generation(
+    host: &mut FrameHost,
+    device: &wgpu::Device,
+    view: &wgpu::TextureView,
+    stats: &Mutex<CookedStats>,
+    generation: u64,
+    clock: &mut Duration,
+) {
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        let state = stats.lock().expect("stats");
+        assert!(state.errors.is_empty(), "loader errors: {:?}", state.errors);
+        if state.drawn == Some(generation) {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "generation {generation} never drawn"
+        );
+        drop(state);
+        presented_frame(host, device, view, clock);
+    }
+}
+
+fn install_bad_source(fault: &str, source: &Path, original: &[u8], device: &wgpu::Device) {
+    match fault {
+        "missing glTF buffer" => std::fs::remove_file(source).expect("remove buffer"),
+        "oversized volume" => {
+            let width = device.limits().max_texture_dimension_3d + 4;
+            let bytes = thrum_cook::encode_volume(width, 4, 4, &vec![128; width as usize * 16]);
+            std::fs::write(source, bytes).expect("oversized volume");
+        }
+        "truncated texture" => std::fs::write(source, &original[..24]).expect("truncated PNG"),
+        "broken glTF" => std::fs::write(source, b"{").expect("broken glTF"),
+        _ => panic!("unknown save fault {fault}"),
+    }
 }
 
 /// A mesh drawn through a mirroring node (negative determinant) faces and lights like the same

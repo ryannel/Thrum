@@ -164,13 +164,18 @@ struct WindowGame {
 struct CaptureCooked {
     folder: std::path::PathBuf,
     path: thrum_asset_gpu::CookedDrawPath,
+    preview: Option<ContentPreviewCapture>,
 }
+
+type ContentPreviewCapture =
+    std::sync::Arc<std::sync::Mutex<Option<crate::content_preview::PreviewRecord>>>;
 
 impl CaptureCooked {
     fn new(folder: &std::path::Path, capture: RuntimeCaptureOutput) -> Self {
         Self {
             folder: folder.to_owned(),
             path: capture.cooked_path(),
+            preview: None,
         }
     }
 }
@@ -254,7 +259,15 @@ impl Game for WindowGame {
             crate::selected_setup()?,
         ))?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
-        let content = if let Some(cooked) = &self.capture_cooked {
+        let preview = self
+            .capture_cooked
+            .as_ref()
+            .and_then(|cooked| cooked.preview.as_ref());
+        let content = if let Some(preview) = preview {
+            *preview.lock().map_err(|error| error.to_string())? =
+                Some(crate::content::attach_content_preview(&mut host)?);
+            None
+        } else if let Some(cooked) = &self.capture_cooked {
             crate::content::attach_cooked_scene_with_path(&mut host, cooked.path)?
         } else {
             crate::attach_cooked_scene(&mut host)?

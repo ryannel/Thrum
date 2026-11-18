@@ -10,6 +10,9 @@ description = "Authoring-only Thrum asset cooker: stat cache, BLAKE3 CAS, cooker
 [lints]
 workspace = true
 
+[features]
+fault-probe = []
+
 [dependencies]
 astcenc-rs = "=0.2.0"
 blake3 = { version = "=1.8.7", default-features = false, features = ["std", "rayon"] }

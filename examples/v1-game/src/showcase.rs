@@ -71,6 +71,16 @@ pub(crate) fn prepare_showcase_with_path(
     prepare_showcase_with_volume(source, None, path)
 }
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+pub(crate) fn prepare_content_preview(
+    source: CookedSource,
+) -> Result<(SceneCamera, CookedAssets), String> {
+    let (camera, mut config) = valley_config(source).map_err(|error| error.to_string())?;
+    config.leased = crate::content_preview::requests();
+    let assets = CookedAssets::new(config).map_err(|error| error.to_string())?;
+    Ok((camera, assets))
+}
+
 /// The authored valley recipe or contribution could not be prepared.
 #[derive(Debug)]
 pub struct CookedValleyError(String);

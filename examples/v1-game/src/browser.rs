@@ -92,6 +92,7 @@ pub struct BrowserGame {
     temporal_inputs: bool,
     shell: Shell,
     cooked: Option<Arc<Mutex<CookedStats>>>,
+    content_preview: Option<crate::content_preview::PreviewRecord>,
     /// Facts from the first adapter-backed record, for fixed-view qualification.
     initial_downlevel: String,
     /// Explicit material reloads of the attached cooked valley (development builds only).
@@ -264,6 +265,7 @@ async fn create_game(
             == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
         shell,
         cooked: None,
+        content_preview: None,
         initial_downlevel,
         #[cfg(feature = "dev-material")]
         material: None,
@@ -511,9 +513,18 @@ impl BrowserGame {
         &mut self,
         valley: &CookedValley,
         effect_slab: Option<bool>,
+        content_preview: Option<bool>,
     ) -> Result<(), JsValue> {
         let source = CookedSource::Remote(valley.feed.clone());
-        let (camera, assets) = if self.temporal_inputs {
+        let preview = content_preview.unwrap_or(false);
+        if preview && (effect_slab.is_some() || self.temporal_inputs) {
+            return Err(js_error(
+                "content preview needs the ordinary valley forward pass",
+            ));
+        }
+        let (camera, assets) = if preview {
+            crate::showcase::prepare_content_preview(source)
+        } else if self.temporal_inputs {
             crate::showcase::prepare_temporal_showcase(source)
         } else {
             crate::showcase::prepare_showcase(source)
@@ -538,17 +549,27 @@ impl BrowserGame {
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();
-        let contribution: Box<dyn thrum_render::contribution::SceneContribution> =
-            if let Some(refraction) = effect_slab {
-                let (effect, witness) = crate::effect::DiagnosticEffect::new();
-                witness.lock().map_err(js_error)?.controls.slab_origin_scale = [0., 240., -6., 2.];
-                Box::new(thrum_render::contribution::SceneContributions::new(vec![
-                    Box::new(assets),
-                    Box::new(effect.with_slab(refraction)),
-                ]))
-            } else {
-                Box::new(assets)
-            };
+        let mut observation = None;
+        let contribution: Box<dyn thrum_render::contribution::SceneContribution> = if preview {
+            let rows = self
+                .shell
+                .host()
+                .mesh_rows()
+                .ok_or_else(|| js_error("content preview needs cooked mesh rows"))?;
+            let (contribution, record) =
+                crate::content_preview::attach(assets, rows, self.shell.host().reconstruction());
+            observation = Some(record);
+            contribution
+        } else if let Some(refraction) = effect_slab {
+            let (effect, witness) = crate::effect::DiagnosticEffect::new();
+            witness.lock().map_err(js_error)?.controls.slab_origin_scale = [0., 240., -6., 2.];
+            Box::new(thrum_render::contribution::SceneContributions::new(vec![
+                Box::new(assets),
+                Box::new(effect.with_slab(refraction)),
+            ]))
+        } else {
+            Box::new(assets)
+        };
         self.shell
             .set_scene_contribution(contribution)
             .map_err(js_error)?;
@@ -556,12 +577,22 @@ impl BrowserGame {
         self.demo
             .observe_camera(game::camera_orientation(&self.shell));
         self.cooked = Some(stats);
+        self.content_preview = observation;
         #[cfg(feature = "dev-material")]
         {
             self.material = Some(material);
             self.material_reported = 0;
         }
         Ok(())
+    }
+
+    /// Submitted placement, mesh-row and lease generations for the opt-in valley preview.
+    #[must_use]
+    pub fn content_preview_frame(&self) -> Option<String> {
+        let mut row = self.content_preview.as_ref()?.frame()?;
+        row["submissionId"] = serde_json::json!(self.shell.host().last_submission());
+        row["presented"] = serde_json::json!(self.shell.presented());
+        Some(row.to_string())
     }
 
     /// Cooked generation drawn, swaps and loader errors, or `None` without cooked content.

@@ -209,6 +209,22 @@ impl Cooker {
         self.cycle(scan, start.elapsed())
     }
 
+    /// Exercise a save racing the real cook cycle, deterministically after scanning.
+    ///
+    /// # Errors
+    /// As [`Cooker::cook_all`].
+    #[cfg(feature = "fault-probe")]
+    pub fn cook_with_save_after_scan(
+        &mut self,
+        save: impl FnOnce(),
+    ) -> Result<CookReport, CookError> {
+        let start = Instant::now();
+        let scan = self.stat.scan_all(&self.config.source)?;
+        let scan_time = start.elapsed();
+        save();
+        self.cycle(scan, scan_time)
+    }
+
     // Only a watch sweep waits for recent writes. Startup and explicit cooks remain immediate.
     // Stamp/content changes, rather than racy rehashes, decide whether the store needs work.
     pub(crate) fn sweep(&mut self, now: SystemTime) -> Result<Option<CookReport>, CookError> {
@@ -770,15 +786,27 @@ mod tests {
             durability: Durability::Process,
         })
         .expect("open");
-        cooker.stat.scan_all(&source).expect("scan");
-        let (jobs, failed) = cooker.plan();
-        assert_eq!(failed, Vec::<(String, String)>::new());
-        // The save lands after the scan hashed the old bytes and before the cooker reads them.
+        let first = cooker.cook_all().expect("publish the last good texture");
+        let first_head = first.published.expect("initial publication");
+        let store = thrum_asset::AssetStore::new(root.join("store"));
+        assert_eq!(store.read_head().expect("initial HEAD"), Some(first_head));
+        crate::demo::write_checker_png(&source.join("a.png"), 16, [0, 200, 0])
+            .expect("save that starts the next cook");
+        let scan = cooker.stat.scan_all(&source).expect("scan green bytes");
+        // The next save lands after the scan hashed the green bytes and before the cooker reads them.
         crate::demo::write_checker_png(&source.join("a.png"), 16, [0, 0, 200]).expect("edit");
-        let Err(error) = cooker.prepare(&jobs[0]) else {
-            panic!("stale key");
-        };
-        assert!(matches!(error, CookError::SourceChanged), "{error}");
+        let raced = cooker.cycle(scan, Duration::ZERO).expect("raced cook");
+        assert_eq!(
+            raced.failed,
+            vec![("a".into(), CookError::SourceChanged.to_string())]
+        );
+        assert!(raced.published.is_none());
+        assert_eq!(store.read_head().expect("retained HEAD"), Some(first_head));
+        let corrected = cooker.cook_all().expect("cook latest stable bytes");
+        assert!(corrected.failed.is_empty(), "{corrected:?}");
+        let head = corrected.published.expect("corrected publication");
+        assert_eq!(head.generation, first_head.generation + 1);
+        assert_ne!(head.manifest, first_head.manifest);
         drop(cooker);
         std::fs::remove_dir_all(&root).ok();
     }

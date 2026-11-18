@@ -100,12 +100,12 @@ not occluded by scene depth inside its box.
 | KTX2 ASTC/BC7 | G5, hardware-native | Own KTX2 writer and validated reader. BC7 via intel_tex_2 ISPC; ASTC 4×4 via the Arm astc-encoder (astcenc-rs); RGBA8 portable. Mips are built in linear light. | Tested. This Mac draws ASTC by default and BC7 when preferred (asserted in the game); BC4 volumes drawn |
 | Baked volumes | Brief, cloud port | `.tvol` source cooks to 3D KTX2: BC4 sliced-3D for desktop, R8 for portable. EAC R11 for iPhone is not built. | Tested; drawn in the game as a diagnostic raymarch; 512³ R8 uploaded in-game |
 | Profile selection | Hardware-native, C06 | The consumer orders profiles from one `DeviceCapabilities` record (ASTC → AppleAstc, BC → DesktopBc, else Portable). No private probes. The cooker always adds Portable. The runtime rejects partial compressed blocks; the loader rejects extents over device limits and unenabled formats, and records GPU validation errors instead of aborting. | Tested |
-| Watcher | G5 | notify/FSEvents. Events are only hints: an 8 ms quiet window closes a batch (250 ms maximum), `need_rescan` triggers a full scan, and the stat cache stays the authority. | Implemented; latency in bench |
+| Watcher | G5 | notify/FSEvents and an adaptive reconciliation sweep. An 8 ms quiet window closes a notice batch, up to 250 ms. The sweep checks the stat cache even without notices and defers dispatch on very recent unstable files. | Missed notices, the idle path and settling saves covered in [CONTENT-LOOP M4](../../evidence/CONTENT-LOOP/M4.md). |
 | Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`; `Host` checked; a loopback `Origin` or one listed with `--allow-origin` (exact `http(s)://host[:port]`, none by default) is echoed, any other is refused with 403. Client: `thrum-asset::DevClient`, target-independent protocol over a `Fetch` transport (`BrowserFetch`, the global `fetch`, on Wasm). It decodes `HEAD` with the native parser, never goes back a generation within an epoch, fetches the manifest and only the unheld products its per-kind profile preferences resolve, issues them together, and checks length and BLAKE3 before parsing. Products are 64-aligned owned bytes shared by reference count. | Server tested; client protocol unit-tested natively; Wasm client run end to end in Node and a Chrome page against `thrum-cook watch --serve`; allow-list near misses refused in tests |
-| No-stall swap | G5 | Loader-filled bounded staging ring; copies recorded in the frame's own graph under a per-frame byte budget; swap at submission. The render thread never waits. | In-game GPU tests, discard test and `cooked_edit` bench |
-| Drawn in the game | G5 gate | `SceneContribution` in the scene graph; scene fragment shader for meshes; volume raymarch. | Tested in the V1 game, visually reviewed |
-| Meshlet draw path | G5 | Registry-selected GPU frustum/cone cull with indirect multi-draw, or one full-range indexed draw when indirect facts are absent/unknown. | Mac D/R exact in five views with negative controls. Mac/Chrome indirect BASE output and repeats exact. Simulator direct function/lifecycle/rotation and held/sampled visuals pass with oriented M7 sizing. M1 claimed; lead review owed. |
-| Shipping excludes authoring | G5 | Registry edges plus a dependency-graph and symbol check of the release viewer binary. | Recorded in evidence |
+| No-stall swap | G5 | Bounded staging ring and graph copies on the frame host. Placements, mesh rows and leases switch on one submission after the copies and row writes are ready. | In-game GPU tests, discard test and `cooked_edit` bench. [CONTENT-LOOP M1](../../evidence/CONTENT-LOOP/M1.md) and [M2](../../evidence/CONTENT-LOOP/M2.md) retain the lease and row proofs. |
+| Drawn in the game | G5 gate | `SceneContribution` in the scene graph, with the scene fragment shader for placements, cooked entity rows and read-only texture and volume views for other passes. | Metal and Chrome T2 realtime submitted images show the three whole switches in the moving valley under TAAU. [CONTENT-LOOP M3](../../evidence/CONTENT-LOOP/M3.md) |
+| Meshlet draw path | G5 | Registry-selected GPU frustum/cone cull with indirect multi-draw, or one full-range indexed draw when indirect facts are absent/unknown. | Mac D/R exact in five views with negative controls. Mac/Chrome indirect BASE output and repeats exact. Simulator direct function/lifecycle/rotation and held/sampled visuals pass with oriented M7 sizing. |
+| Shipping excludes authoring | G5 | Workspace dependency boundaries, normal package dependency graphs and a symbol scan of the release starter with the release cooker as the positive control. | `python3 scripts/g5_shipping_links.py` |
 
 ## Cost account
 
@@ -183,9 +183,10 @@ Alternatives were rejected for these reasons:
    write risk is reduced by the debounce, stamp-stable hashing and product validation. However, a glTF and its `.bin`
    saved separately can publish one intermediate state.
    - **Safe default in force:** G5 publications are *preview* publications. They activate presentation products
-     only (meshes, textures, a diagnostic volume drawn by `CookedAssets`); nothing in the game's simulation,
-     collision, navigation or region activation reads them, so a partial change set can show one wrong frame of
-     presentation but cannot activate a gameplay product. An invalid or unresolvable product keeps the previous set.
+     only, including placement inputs, mesh rows and lent textures and volumes. Simulation, collision, navigation
+     and region activation have no readers on this path. A valid intermediate preview can remain visible until the
+     remaining source files arrive. The finished preview converges to the product hashes of a fresh cook. An invalid
+     or unresolvable product keeps the previous good content.
    - **Proposed for the owners (F4 with W2, V1, P7):** admitted builds cook from T1's captured tree through the same
      cooker API (`cook_changed` takes explicit paths); a multi-file glTF stays keyed as one asset through its input
      list; and the manifest gains a provenance section (source revision or `preview`) before any required product is
@@ -205,9 +206,9 @@ Alternatives were rejected for these reasons:
 5. **Preview marking and build binding.** Publications record no source revision and are not marked preview. C05 asks
    for a build binding per admitted revision. Recommendation: add a provenance section to the manifest when T1
    admission exists.
-6. **Residency admission.** The loader uploads replacement sets with no logical byte account against C05 `M_peak`.
-   Recommendation: report replacement bytes to the future F4 owner. Prepared sets carry no device generation (C06); the
-   renderer-owned loader must add it.
+6. **Residency admission.** The running loader validates formats and dimensions against its device. Swap observations
+   account for logical bytes and each lease identifies its owning device generation. Full C05 world admission and
+   physical residency measurements remain open.
 
 ## Open items
 
@@ -238,10 +239,12 @@ dev-server client.
   Forward already includes contribution compute; do not add it again. These descriptive figures promote no path,
   establish no cadence/budget, and imply no simulator or physical-device speed result.
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
-- Physical iPhone, Chrome and sustained measurements.
+- Physical iPhone, sustained runs and physical residency measurements remain open. The iPhone simulator proves function.
+- Parameter files as a cooked product and source admission remain parked. External saves have no admitted source boundary.
 - Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).
-  Timings are judged per load class; this shared machine has seeded `quiet`, `busy` and `saturated` classes. Quiet history was
-  measured from the pre-COOKED-DRAW accepted BASE, with only adapter-backed bench-caller/provenance overlays. Limits cover the shared machine's spread and catch doublings, not small drifts.
+  Timings are judged per load class. A metric needs three usable records before the check can compare it in
+  that class. The reports identify metrics still seeding. Limits cover the shared machine's measured spread
+  and catch large regressions.
   Recording appends to the baseline, so record only runs of accepted code, or the limits ratchet upward.
 - The dev server opens one thread per connection (at most 32). A page from another device needs its exact origin listed
   and the server bound to the address that page reaches (listing origins refuses a wildcard bind, and a host name in

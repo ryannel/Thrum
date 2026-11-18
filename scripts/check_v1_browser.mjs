@@ -3,6 +3,7 @@
 import fs from 'node:fs/promises';
 import { prepareLent } from './check_lent_browser.mjs';
 import { prepareMeshRows } from './check_mesh_rows_browser.mjs';
+import { checkContentEdits, loadContentEdits } from './check_content_edits_browser.mjs';
 import { qualifyTemporal } from './check_temporal_browser.mjs';
 import { qualifySprites } from './check_sprites_browser.mjs';
 import { installWasmReceipt, readWasmReceipt } from './wasm_receipt.mjs';
@@ -37,7 +38,7 @@ function options(args) {
     result[key] = args[++i];
   }
   if (result.case === 'field-mixed-oracle') result.mixedOracle = true, result.case = 'field-oracle';
-  if (result.case !== 'all' && !cases.includes(result.case) && !Object.hasOwn(movingControls, result.case.replace(/^moving-route-/, ''))) throw new Error(`Unknown case: ${result.case}`);
+  if (result.case !== 'all' && result.case !== 'content-edits' && !cases.includes(result.case) && !Object.hasOwn(movingControls, result.case.replace(/^moving-route-/, ''))) throw new Error(`Unknown case: ${result.case}`);
   result['timeout-ms'] = Number(result['timeout-ms']);
   if (!Number.isSafeInteger(result['timeout-ms']) || result['timeout-ms'] < 10000 || result['timeout-ms'] > 600000) throw new Error('--timeout-ms must be 10000..600000 per case');
   return result;
@@ -145,6 +146,9 @@ async function serveCooked(args, output, temporalDefinition) {
   // Watch a copy, so the live-edit step never touches repository sources.
   const source = path.join(output, 'source');
   await fs.cp(path.resolve(repo, args['assets-source']), source, { recursive: true });
+  if (args.case === 'content-edits') {
+    execFileSync('python3', ['scripts/edit_valley_content.py', source, 'prepare'], { cwd: repo });
+  }
   if (args.case === 'exit-scene' || args.case === 'exit-stops') {
     const exit = path.join(repo, 'examples/v1-game/assets/exit');
     for (const name of await fs.readdir(exit)) {
@@ -1961,6 +1965,9 @@ async function main() {
   if (args.case === 'exit-scene' && args.cook === 'target/debug/thrum-cook') {
     execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
   }
+  if (args.case === 'content-edits' && args.cook === 'target/debug/thrum-cook') {
+    execFileSync('cargo', ['build', '--locked', '--offline', '-p', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
+  }
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
   mixedOracle = args.mixedOracle === true;
@@ -1988,7 +1995,8 @@ async function main() {
   try {
     const lent = ['lent-products', 'all'].includes(args.case) ? await prepareLent(files, output, args.cook) : undefined;
     const rows = args.case === 'mesh-rows' ? await prepareMeshRows(files, output, args.cook, args['assets-source']) : undefined;
-    const serving = await serve(files, (request, response) => rows?.receive(request, response) || lent?.receive(request, response)); server = serving.server;
+    const content = args.case === 'content-edits' ? await loadContentEdits(files, output) : undefined;
+    const serving = await serve(files, (request, response) => rows?.receive(request, response) || lent?.receive(request, response) || content?.receive?.(request, response)); server = serving.server;
     const chromeLog = await fs.open(path.join(output, 'chrome.log'), 'a');
     let startupError;
     child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
@@ -2069,6 +2077,11 @@ async function main() {
       } else if (mode === 'environment-cost') {
         results.push(await qualifyEnvironmentCost(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, existingGame));
       } else if (mode === 'environment') results.push(await qualifyEnvironment(cdp, serving.origin, output, args['timeout-ms'], waitFor, existingGame));
+      else if (mode === 'content-edits') {
+        const watched = await serveCooked(args, output);
+        cook = watched.cook;
+        results.push(await checkContentEdits(cdp, serving.origin, watched.origin, watched.source, output, waitFor, content));
+      }
       else results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
     }
     if (modes.includes('field-oracle-direct')) results.push(await compareFieldOracle(output, results));
