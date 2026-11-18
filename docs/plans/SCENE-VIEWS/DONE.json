@@ -268,7 +268,7 @@
     {
       "id": "M3",
       "name": "The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -376,7 +376,17 @@
           "name": "The cost record omits per-resource byte counts",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "The lead needs to pause the other builders through Ready for Review and resume M3 for the capture-off Metal timing run.",
+        "work": {
+          "commit": "7a5f2c02b59649b758150d3251e99edd68ede31f",
+          "branch": "build/scene-views",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/SCENE-VIEWS/M3-handoff.md"
+      }
     }
   ]
 }
