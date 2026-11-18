@@ -6,8 +6,8 @@ use crate::{
     contribution::ContributionPasses,
     present::SurfacePresenter,
     synthetic::{
-        CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, SceneTimingLayout,
-        SyntheticScene,
+        CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, RetainedRayMeshes,
+        SceneTimingLayout, SyntheticScene,
     },
     timing::GpuTimings,
 };
@@ -57,13 +57,15 @@ pub(super) async fn prepare_scene(
     surface: bool,
     contribution_passes: ContributionPasses,
     effect_graph: crate::contribution::EffectGraph,
+    retained_ray_meshes: Option<RetainedRayMeshes>,
 ) -> Result<PreparedScene, FrameError> {
-    let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+    let mut prepared = PreparedSynthetic::prepare_with_retained_ray_meshes(
         capabilities,
         queue,
         scene,
         lighting,
         exposure,
+        retained_ray_meshes,
     )
     .await
     .map_err(|error| FrameError::Gpu(format!("scene prepare: {error:?}")))?;

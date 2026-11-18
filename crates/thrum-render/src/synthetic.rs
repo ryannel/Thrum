@@ -46,6 +46,7 @@ mod mesh_route;
 pub mod mesh_rows;
 mod native_witness;
 mod raytrace;
+pub(crate) use raytrace::RetainedRayMeshes;
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
 mod readback;
@@ -992,7 +993,27 @@ impl PreparedSynthetic {
         lighting: FrameLighting,
         exposure: f32,
     ) -> Result<Self, RenderError> {
-        Self::prepare_with_meshes(capabilities, queue, scene, lighting, exposure, None).await
+        Self::prepare_with_meshes(capabilities, queue, scene, lighting, exposure, None, None).await
+    }
+
+    pub(crate) async fn prepare_with_retained_ray_meshes(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+        exposure: f32,
+        retained: Option<RetainedRayMeshes>,
+    ) -> Result<Self, RenderError> {
+        Self::prepare_with_meshes(
+            capabilities,
+            queue,
+            scene,
+            lighting,
+            exposure,
+            None,
+            retained,
+        )
+        .await
     }
 
     #[expect(
@@ -1006,6 +1027,7 @@ impl PreparedSynthetic {
         lighting: FrameLighting,
         exposure: f32,
         internal: Option<MeshSelection>,
+        retained_ray_meshes: Option<RetainedRayMeshes>,
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
         let mut ray_structure_selection =
@@ -1099,8 +1121,14 @@ impl PreparedSynthetic {
         }
         let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
         let ray_structure = if ray_structure_selection == RayStructureSelection::Enabled {
-            let structure =
-                raytrace::prepare(capabilities, queue, &mut mesh_arena, instance_count).await;
+            let structure = raytrace::prepare(
+                capabilities,
+                queue,
+                &mut mesh_arena,
+                instance_count,
+                retained_ray_meshes,
+            )
+            .await;
             if structure.is_none() {
                 ray_structure_selection = RayStructureSelection::PreparationFailed;
             }
@@ -2798,8 +2826,16 @@ mod tests {
                 slots,
                 aloft: Vec::new(),
             };
-            Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(selection))
-                .await
+            Self::prepare_with_meshes(
+                capabilities,
+                queue,
+                scene,
+                lighting,
+                1.0,
+                Some(selection),
+                None,
+            )
+            .await
         }
     }
 

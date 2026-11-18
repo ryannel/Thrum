@@ -804,6 +804,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             config.surface.is_some(),
             ContributionPasses::default(),
             crate::contribution::EffectGraph::default(),
+            None,
         )
         .await?;
         let presenter = match config.surface {
@@ -872,6 +873,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             queue: self.queue.clone(),
             capabilities: self.prepared.capabilities().clone(),
             scene: self.scene.clone(),
+            retained_ray_meshes: self.prepared.retained_ray_meshes(),
             surface: self.presenter.is_some(),
             contribution_passes: self.prepared.contribution_passes(),
             effect_graph: self.prepared.effect_graph().clone(),

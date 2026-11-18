@@ -23,6 +23,7 @@ pub(super) async fn prepare(
     queue: &wgpu::Queue,
     arena: &mut MeshArena,
     slots: u32,
+    retained: Option<RetainedRayMeshes>,
 ) -> Option<SceneStructure> {
     let device = capabilities.site();
     let scopes = [
@@ -33,6 +34,15 @@ pub(super) async fn prepare(
     .map(|filter| device.push_error_scope(filter));
     let structure = (|| {
         let scene = SceneStructure::new(capabilities, slots).ok()?;
+        if let Some(RetainedRayMeshes(meshes)) = retained {
+            // The candidate belongs to the same host and device. At publication
+            // live rows transfer their whole arena, including any later edits.
+            if meshes.len() != arena.rows().len() {
+                return None;
+            }
+            arena.enable_ray_demand(meshes);
+            return Some(scene);
+        }
         let meshes = arena
             .rows()
             .iter()
@@ -82,6 +92,10 @@ pub(super) fn binding(id: usize) -> RecordBinding<SceneFamily> {
     })
 }
 
+/// A same-device visual candidate's snapshot of the host's prepared meshes.
+pub(crate) struct RetainedRayMeshes(Vec<MeshStructure>);
+
+#[derive(Clone)]
 pub(super) struct MeshStructure {
     pub(super) blas: wgpu::Blas,
     size: wgpu::BlasTriangleGeometrySizeDescriptor,
@@ -326,6 +340,14 @@ fn transform(row: &[u8; crate::abi::INSTANCE_BYTES], alpha: f32) -> [f32; 12] {
 }
 
 impl PreparedSynthetic {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn retained_ray_meshes(&self) -> Option<RetainedRayMeshes> {
+        self.ray_structure.as_ref()?;
+        Some(RetainedRayMeshes(
+            self.mesh_arena.mesh_structures().to_vec(),
+        ))
+    }
+
     pub(super) fn append_ray_structure(
         &self,
         graph: &mut FrameGraph,

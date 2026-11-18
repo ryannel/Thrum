@@ -125,6 +125,7 @@ impl DevicePrepareInputs {
             // The effect selects its new generation's declarations in rebuild at
             // publication. An old preferred format must not prevent base recovery.
             crate::contribution::EffectGraph::default(),
+            None,
         )
         .await?;
         let presenter = match surface {

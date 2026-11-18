@@ -8,7 +8,7 @@ use super::{
 use crate::{
     capabilities::DeviceCapabilities,
     contribution::ContributionPasses,
-    synthetic::{FrameLighting, SyntheticScene},
+    synthetic::{FrameLighting, RetainedRayMeshes, SyntheticScene},
 };
 use std::sync::Arc;
 
@@ -18,6 +18,7 @@ pub struct VisualPrepareInputs {
     pub(super) queue: wgpu::Queue,
     pub(super) capabilities: DeviceCapabilities,
     pub(super) scene: SyntheticScene,
+    pub(super) retained_ray_meshes: Option<RetainedRayMeshes>,
     pub(super) surface: bool,
     pub(super) contribution_passes: ContributionPasses,
     pub(super) effect_graph: crate::contribution::EffectGraph,
@@ -59,6 +60,7 @@ impl VisualPrepareInputs {
             self.surface,
             self.contribution_passes,
             self.effect_graph,
+            self.retained_ray_meshes,
         )
         .await?;
         drop(region);

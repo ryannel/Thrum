@@ -21,7 +21,7 @@ mod metal {
         mesh: Option<wgpu::Blas>,
         vertices: Option<wgpu::Buffer>,
         placements: Vec<([f32; 3], u8)>,
-        scale: f32,
+        prebuild: bool,
     }
 
     impl Geometry {
@@ -30,8 +30,28 @@ mod metal {
                 mesh: None,
                 vertices: None,
                 placements,
-                scale: 1.0,
+                prebuild: false,
             }
+        }
+
+        fn build(&self, encoder: &mut wgpu::CommandEncoder) {
+            let size = size();
+            let build = wgpu::BlasBuildEntry {
+                blas: self.mesh.as_ref().expect("mesh"),
+                geometry: wgpu::BlasGeometries::TriangleGeometries(vec![
+                    wgpu::BlasTriangleGeometry {
+                        size: &size,
+                        vertex_buffer: self.vertices.as_ref().expect("vertices"),
+                        first_vertex: 0,
+                        vertex_stride: 12,
+                        index_buffer: None,
+                        first_index: None,
+                        transform_buffer: None,
+                        transform_buffer_offset: None,
+                    },
+                ]),
+            };
+            encoder.build_acceleration_structures([&build], []);
         }
     }
 
@@ -79,34 +99,31 @@ mod metal {
                     usage: wgpu::BufferUsages::BLAS_INPUT,
                 },
             ));
+            if self.prebuild {
+                let mut encoder = surface
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                self.build(&mut encoder);
+                surface.queue.submit([encoder.finish()]);
+                ray_support::support::wait(surface.device);
+            }
             Ok(())
         }
 
         fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
-            let size = size();
-            let build = wgpu::BlasBuildEntry {
-                blas: self.mesh.as_ref().expect("mesh"),
-                geometry: wgpu::BlasGeometries::TriangleGeometries(vec![
-                    wgpu::BlasTriangleGeometry {
-                        size: &size,
-                        vertex_buffer: self.vertices.as_ref().expect("vertices"),
-                        first_vertex: 0,
-                        vertex_stride: 12,
-                        index_buffer: None,
-                        first_index: None,
-                        transform_buffer: None,
-                        transform_buffer_offset: None,
-                    },
-                ]),
-            };
-            encoder.build_acceleration_structures([&build], []);
+            if !self.prebuild {
+                self.build(encoder);
+            }
         }
 
         fn ray_instances(&self, instances: &mut RayInstances<'_>) {
             let mesh = self.mesh.as_ref().expect("mesh");
             for &([x, y, z], mask) in &self.placements {
-                let s = self.scale;
-                instances.offer(mesh, [s, 0.0, 0.0, x, 0.0, s, 0.0, y, 0.0, 0.0, s, z], mask);
+                instances.offer(
+                    mesh,
+                    [1.0, 0.0, 0.0, x, 0.0, 1.0, 0.0, y, 0.0, 0.0, 1.0, z],
+                    mask,
+                );
             }
         }
 
@@ -217,11 +234,10 @@ mod metal {
             1.0,
         ))
         .expect("traced scene");
-        host.set_scene_contribution(Box::new(Geometry::new(vec![
-            ([-0.5, 0.0, 0.25], 0b11),
-            ([0.5, 0.0, 0.25], 0b11),
-        ])))
-        .expect("attach two copies of the same plane");
+        let mut planes = Geometry::new(vec![([-0.5, 0.0, 0.25], 0b11), ([0.5, 0.0, 0.25], 0b11)]);
+        planes.prebuild = true;
+        host.set_scene_contribution(Box::new(planes))
+            .expect("attach two copies of the same plane");
         let pixels = host.capture_pixels().expect("submitted traced view");
         let list = host.ray_structure_instances().expect("scene membership");
         assert_eq!(list.len(), 3);
@@ -251,18 +267,25 @@ mod metal {
             assert_eq!(pixel(31, y), left, "left placement reaches its edge");
             assert_eq!(pixel(32, y), right, "right placement adjoins the left");
         }
-        // Move and scale about the eye so each identity stays at the same
-        // pixel coordinates and with the same normal, but at a longer distance.
-        let mut far = Geometry::new(vec![
-            ([-32.0, 0.0, 205.0], 0b11),
-            ([32.0, 0.0, 205.0], 0b11),
-        ]);
-        far.scale = 64.0;
-        host.set_scene_contribution(Box::new(far))
-            .expect("attach the same placements farther from the eye");
+        // Move the camera back and narrow its field of view so the same
+        // placements still cover the same pixels, at a longer distance.
+        host.source_mut().view = SyntheticView::perspective(
+            [0.0, 0.0, -210.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            2.0 * ((0.55_f32 / 2.0).tan() * 3.25 / 210.25).atan(),
+            1.0,
+            0.1,
+            1000.0,
+        )
+        .expect("distant camera")
+        .with_display_overlay(DisplayOverlay::TracedGeometry);
         let pixels = host.capture_pixels().expect("submitted distant view");
         let far_left = pixels.as_chunks::<4>().0[32 * 64 + 16];
         let far_right = pixels.as_chunks::<4>().0[32 * 64 + 48];
+        assert_ne!(far_left, far_right);
+        assert_ne!(far_left, sky);
+        assert_ne!(far_right, sky);
         for (near, far) in [(left, far_left), (right, far_right)] {
             for channel in 0..3 {
                 assert!(
@@ -274,5 +297,50 @@ mod metal {
         println!(
             "coplanar placement RGBA8: near {left:?} {right:?}, far {far_left:?} {far_right:?}, sky {sky:?}"
         );
+    }
+
+    #[test]
+    fn visual_replacement_on_the_same_device_reuses_prepared_meshes() {
+        let gpu = ray_support::support::gate("ray mesh visual replacement");
+        let (_, queue, caps) = ray_support::support::device(&gpu, "ray-query", 1);
+        let caps = caps.with_ray_preparation_observation();
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.ray_structure = true;
+        let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
+        let mut host = pollster::block_on(thrum_render::runtime::FrameHost::new(
+            &caps,
+            &queue,
+            thrum_render::runtime::FrameConfig {
+                render_extent: [64, 64],
+                surface: None,
+            },
+            support::World,
+            support::Source {
+                view: scene.view,
+                lighting,
+                instances: vec![([0.0, 0.0, 0.5], 0)],
+                lights: vec![],
+            },
+            scene,
+            1.0,
+        ))
+        .expect("ray scene");
+        let initial = host.observe_ray_mesh_builds().expect("initial observer");
+        assert_eq!(initial.take_recorded().len(), 2);
+        let before = host.capture_pixels().expect("initial frame");
+        let mut replacement =
+            pollster::block_on(host.visual_prepare_inputs().prepare(lighting, 1.0, None))
+                .expect("same-device visual preparation");
+        assert!(
+            host.publish_visual(&mut replacement)
+                .expect("replace visuals")
+        );
+        let probe = host
+            .observe_ray_mesh_builds()
+            .expect("replacement observer");
+        assert!(probe.take_recorded().is_empty());
+        assert_eq!(host.capture_pixels().expect("replaced frame"), before);
+        assert!(probe.take_recorded().is_empty());
+        println!("same-device visual preparation and first frame built zero mesh structures");
     }
 }
