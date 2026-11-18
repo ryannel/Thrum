@@ -2,7 +2,10 @@
 fn cloud_solar_source(phases:vec2<f32>,sun_depths:vec2<f32>,above:f32,viewer:vec3<f32>,
                       view_depth:f32,boundary:f32,path:vec3<f32>,droplet:vec3<f32>,g:f32)->f32 {
     let reduced=1.0-droplet.x;
-    let beam=exp(-max(droplet.y,reduced)*sun_depths.x);
+    // Shift the rim's energy toward the narrow disc lobe. This softens
+    // pearly halos at large angles without raising the Sun or ambient level.
+    let beam_rate=mix(max(droplet.y,reduced),reduced,0.75);
+    let beam=exp(-beam_rate*sun_depths.x);
     let remaining=exp(-reduced*sun_depths.x);
     let forward=dot(phases,vec2(beam,max(0.0,remaining-beam)));
 

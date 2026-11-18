@@ -37,16 +37,16 @@ pub fn shade_config() -> ShadeConfig {
             },
             Type {
                 base: 1600.0,
-                depth: [1100.0, 2450.0],
-                liquid_water: 0.00027,
+                depth: [700.0, 2700.0],
+                liquid_water: 0.00032,
                 droplet_radius: 0.000_012,
                 deck: 0.0,
-                profile: [0.18, 0.52],
+                profile: [0.13, 0.52],
             },
         ],
         weather: WeatherProfile {
             size: 256,
-            texels: vec![20.0, 80.0, 320.0, 3200.0],
+            texels: vec![20.0, 80.0, 320.0, 1600.0],
             maximum_age: 0.5,
         },
         sun: SunProfile {
