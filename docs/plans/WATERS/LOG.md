@@ -454,3 +454,10 @@
   New M6.15, and M6.11 in Chrome, hold a query's wake height to the wake's own state. M7.13 states a hitch as one elapsed step, ageing
   included. M14.1 and M14.8 keep only the flat-water projection; M14.4 judges attachment as wind rises. The cue table marks diagnostics
   (the review's Suggestion). The see-through ray's down-path rate now reads `K`, as under water. M3 and Done milestones are untouched.
+
+- 2026-11-18 Design review of `0fa0fb62710a` passed five of the six earlier findings and kept one: M16.14 found the shafts' shadow as
+  water that "stores no marched light", which a correct march fails, because under a blocker the marched part is negative (−0.24 of
+  `J_s p` at the item's 6 m and 20° Sun) and zero beside it. M16.14 now finds that patch, in a calm, as the water just above the bed
+  that the shaft pass leaves darker than with the box taken away, and M16.10 names the same criterion for Chrome. The design states
+  that the marched part is signed and kept signed to the sum. No brightness or displacement is held to a number. The review made no
+  Suggestions. No other item changed.

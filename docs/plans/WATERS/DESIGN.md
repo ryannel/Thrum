@@ -141,7 +141,7 @@ contract and what one pass hands another are still tested.
 | **W8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
 | **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel under water whose light falls with the length of water in front of it once and not twice |
 | **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by a net that is sharper on a receiver in the shallows than on one in the deep, with the model's contrast as a diagnostic, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
-| **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
+| **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull, where the water is darker than beside it | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
 | **W12** The camera follows the light down: the picture stays readable from the surface to the deep, deeper water is darker by a share and never black, and crossing the surface makes no jump | The sea to 20 m under and the lake to its bed; dawn, noon and twilight; half in, and crossing both ways | An exposure metered from the sky, which leaves deep water black, or a gain taken from the picture, which pumps as pale sand comes into view. Rejected by the descent, and by the resolved exposure against the model's light at the lens |
 
 ## Research and selection
@@ -1490,7 +1490,10 @@ carries the first two and one number the third.
   agree, and none of them leans past 48.6°. Both readers take that point from one function. A receiver that
   sampled the shadow along the Sun's direction above the water while the shafts sampled it at the exit point
   would each draw a dark patch, in two places. M16 tests that the bed's shadow and the dark water over it
-  meet, on the Mac and in Chrome. Where Snell's law puts them is a diagnostic.
+  meet, on the Mac and in Chrome. The dark water is known there by what the blocker does to it: just above
+  the shadowed bed the shaft pass leaves the water darker than it is with the blocker taken away, since
+  the marched part, below, is negative under a blocker and not zero. Where Snell's law puts the two
+  patches is a diagnostic.
 - **Shafts.** The water between the lens and what it sees ([under water](#under-water)) scatters `J₀`
   evenly. Of that, the part `J_s` that the Sun's light under the surface supplies is, while it is still a
   beam, scattered by the water type's phase function `p` of the angle `γ` between the view path and the
@@ -1506,6 +1509,16 @@ carries the first two and one number the third.
   offset, is joined to the full picture by depth, and writes no history of its own. `V` is the scene's Sun
   visibility, lent as one tap ([a ruling](#what-waters-asks-of-other-modules)), at the point where the
   sample's refracted ray leaves the water.
+- **The marched part is signed.** The two closed forms hold the beam as if nothing blocked it. Where `V` is
+  1 and the field is 1 the march adds nothing. Under a blocker `V` is 0 and the march is `−J_s p(γ) D`: it
+  takes the blocked beam back out, so the water under a hull is darker than the open water beside it, by
+  what the beam would have scattered there, and is not merely water without shafts. A march that wrote
+  zero under a hull would leave that water as bright as open water. So what the march stores, its
+  reduced-resolution target and its join to the full picture all keep the sign, and nothing clamps it at
+  zero before the three parts are summed. The sum cannot go negative: `J_s` is a share of `J₀` and `D` is
+  at most 1, so the source is never below `J₀ − J_s D`. With the example coefficients above, a bed 6 m
+  down and the Sun 20° up (`μ` = 0.71), `D` is 0.24: beside a floating box's shadow the marched part of a
+  sample at the bed is 0, and inside it −0.24 of `J_s p(γ)`.
 - **The meter.** V4's exposure is a level incident meter at the camera. Under water the light at the lens
   is the light above times `f = t · exp(−K z)` in each channel, with `z` the lens's depth below the surface
   the model evaluates at the display's time and `t` the surface's transmission of light from above, mixed
@@ -1681,7 +1694,10 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   vertical section in f64, so a net of lines and not of cells. That the net reads as sunlight on sand is
   unrun; M16 is the first look.
 - **W11.** Part S: where shafts stand, and the march against a fine integral. A section with one water
-  type and no hull. The look, and noise under reconstruction, are unrun; M16 and M10 are the first.
+  type and no hull. Under a hull the marched part is the equation's own arithmetic, negative where the
+  beam is blocked ([light under water](#light-under-water-caustics-shafts-and-the-meter)); M16
+  tests its place against the bed's shadow and not its size. The look, and noise under reconstruction, are
+  unrun; M16 and M10 are the first.
 - **W12.** Part T: the light at the lens by depth for three water types, and how far the picture darkens
   for each share. Arithmetic; the descent is unrun.
 - **The surface's read of the field.** Part Y finds where resolved waves become statistics, for a camera 2 m
@@ -1926,7 +1942,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   part hands another, each tested as a property of the frame and not against a light or wave model: the wake a query
   answers is the wake's state (M6), a hitch is one step of the elapsed time for wake and foam (M6, M7), the
   exposure scale and each medium reach a gathered surface once (M8, M15, M14), and the Sun's visibility
-  under water is read at one place by the bed and the shafts (M16). How light,
+  under water is read at one place by the bed and the shafts, which darken the water over the bed's own
+  shadow (M16). How light,
   foam, wakes, caustics and shafts are computed is not held to an f64 reference, a closed form or a bound
   measured first. The equations in the sections above are the mechanism to build and a builder's diagnostic
   when a look is wrong; a builder may tune their constants by eye and records what changed. M1, M2, M3 and M12

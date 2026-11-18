@@ -1594,9 +1594,9 @@
         },
         {
           "id": "M16.14",
-          "statement": "Under water the Sun's visibility is read at one place by both its readers. On Metal, with a box floating over a level bed 6 m down and the Sun 20 degrees up, the patch of bed that stores no direct Sun and the patch over which the water just above the bed stores no marched light are the same, at a tolerance the test states that is small beside the box. Neither lies where the Sun's direction above the water would put the box's shadow.",
+          "statement": "Under water the Sun's visibility is read at one place by both its readers. On Metal, in a calm, a box floats over a level bed 6 m down with the Sun 20 degrees up. The patch of bed that stores no direct Sun, and the patch over which the shaft pass leaves the water just above the bed darker than it is with the box taken away, are the same, at a tolerance the test states that is small beside the box. Neither lies where the Sun's direction above the water would put the box's shadow.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_sun_path_gpu",
-          "ask": "Would it fail if the bed read its shadow along the Sun's direction above the water while the shafts read theirs where the refracted ray leaves the water, or the other way round?",
+          "ask": "Would it fail if the bed read its shadow along the Sun's direction above the water while the shafts read theirs where the refracted ray leaves the water, or the other way round? Would a march that adds no light under the box, and takes none away, fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1659,7 +1659,7 @@
         },
         {
           "id": "M16.10",
-          "statement": "In Chrome the caustic field, the receivers, the shafts, the meter and the shared Sun visibility hold as M16.1, M16.2, M16.4, M16.5 and M16.14 hold them, with no validation error.",
+          "statement": "In Chrome the caustic field, the receivers, the shafts, the meter and the shared Sun visibility hold as M16.1, M16.2, M16.4, M16.5 and M16.14 hold them, the last by the same darkening of the water over the bed's shadow, with no validation error.",
           "check": "node scripts/check_water_browser.mjs --case under-light",
           "lock": "chrome",
           "target": "chrome-webgpu",
