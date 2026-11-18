@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": "docs/evidence/MESH-SHADING/design-review.md",
-    "commit": "56fa1b612b27961a4ffe89a9378f65437e2d4b97",
-    "hash": "560693c1b401d0bc60d7b427cf856587165ec74cbe78a804aef2949a161208ff",
+    "commit": "1ef8e1e0cede49159ead3c81258f35ca3e805d7b",
+    "hash": "f5722ae9d175830feed494d16b90f3200d7e2cb484a3bbaf16c21857bf48e72b",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 109347,
-      "cached": 2230400,
-      "output": 7652,
+      "input": 111423,
+      "cached": 1555968,
+      "output": 5959,
       "turns": 1
     },
-    "at": "2026-11-17T23:33:17Z"
+    "at": "2026-11-18T03:47:33Z"
   },
   "milestones": {
     "M1": {
@@ -93,6 +93,29 @@
         "turns": 1
       },
       "at": "2026-11-17T22:38:34Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/MESH-SHADING/design-review-2.md",
+      "commit": "56fa1b612b27961a4ffe89a9378f65437e2d4b97",
+      "hash": "560693c1b401d0bc60d7b427cf856587165ec74cbe78a804aef2949a161208ff",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 109347,
+        "cached": 2230400,
+        "output": 7652,
+        "turns": 1
+      },
+      "at": "2026-11-17T23:33:17Z"
     }
   ]
 }
