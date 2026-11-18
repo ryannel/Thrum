@@ -181,7 +181,7 @@ impl SceneContribution for Probe {
             @group({group}) @binding({}) var colours: texture_2d<f32>;
             struct Pixel {{ rgba: vec4<f32>, depth: f32 }}
             @group(2) @binding(0) var<storage, read_write> pixels: array<Pixel>;
-            @compute @workgroup_size(8,8) fn read(@builtin(global_invocation_id) p: vec3<u32>) {{
+            @compute @workgroup_size(8,8) fn read_view(@builtin(global_invocation_id) p: vec3<u32>) {{
                 let xy = vec2<i32>(p.xy);
                 pixels[p.y * {SIDE}u + p.x] = Pixel(textureLoad(colours, xy, 0), textureLoad(depths, xy, 0));
             }}
@@ -214,7 +214,7 @@ impl SceneContribution for Probe {
             label: Some("view equality reader"),
             layout: Some(&pipeline_layout),
             module: &module,
-            entry_point: Some("read"),
+            entry_point: Some("read_view"),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });

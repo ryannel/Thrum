@@ -129,6 +129,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     /// The caller supplies a prepared COPY_DST buffer and reads the range after
     /// submission. Returns its length, or None for disabled counters, no ready
     /// frame or insufficient output capacity.
+    #[cfg_attr(
+        not(feature = "creation-counters"),
+        expect(
+            clippy::unused_self,
+            reason = "disabled instrumentation retains the frame method"
+        )
+    )]
     pub fn copy_main_draw_witness(&mut self, output: &wgpu::Buffer) -> Option<u64> {
         #[cfg(not(feature = "creation-counters"))]
         {
