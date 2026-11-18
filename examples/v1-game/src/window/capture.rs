@@ -624,7 +624,9 @@ async fn record(
         if motion_capture
             && running
             && report.overload.is_some()
-            && let Some(refused_ticks) = driver.recover_world_overload()?
+            && let Some(refused_ticks) = driver
+                .recover_world_overload()
+                .map_err(|error| error.to_string())?
         {
             overload_recoveries.push(json!({
                 "observed_ns": returned.as_nanos(),

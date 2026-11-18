@@ -9,7 +9,10 @@ use thrum_core::sim::{WorldLaneFault, WorldLifecycle};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
-    runtime::{CaptureLimits, DriveReport, FrameHost, FrameSample, SubmittedImage, SurfaceOutput},
+    runtime::{
+        CaptureLimits, DriveReport, FrameError, FrameHost, FrameSample, SubmittedImage,
+        SurfaceOutput,
+    },
     synthetic::{CaptureSource, OUTPUT_FORMAT},
 };
 
@@ -55,7 +58,6 @@ impl<G: Game> Offscreen<G> {
         &mut self,
         fault: NativeFault,
     ) -> Result<(), thrum_render::runtime::FrameError> {
-        use thrum_render::runtime::FrameError;
         if self.host.pending_frames() != 0 {
             return Err(FrameError::InvalidState(
                 "native fault needs a drained diagnostic",
@@ -227,16 +229,21 @@ impl<G: Game> Offscreen<G> {
     /// A render report can outlive an overload, so the current world status decides.
     /// # Errors
     /// Returns a world fault, refused transition or acknowledgement timeout.
-    pub fn recover_world_overload(&self) -> Result<Option<u64>, String> {
-        let world = self.game.world().ok_or("game has no world lifecycle")?;
+    pub fn recover_world_overload(&self) -> Result<Option<u64>, FrameError> {
+        let world = self
+            .game
+            .world()
+            .ok_or(FrameError::InvalidState("game has no world lifecycle"))?;
         match world.check_health() {
             Ok(_) => Ok(None),
             Err(WorldLaneFault::Overload(refused_ticks)) => {
-                self.world_transition(WorldLifecycle::Pause)?;
-                self.world_transition(WorldLifecycle::Resume)?;
+                self.world_transition(WorldLifecycle::Pause)
+                    .map_err(FrameError::World)?;
+                self.world_transition(WorldLifecycle::Resume)
+                    .map_err(FrameError::World)?;
                 Ok(Some(refused_ticks))
             }
-            Err(error) => Err(error.to_string()),
+            Err(error) => Err(FrameError::World(error.to_string())),
         }
     }
 
