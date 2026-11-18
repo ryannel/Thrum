@@ -11,8 +11,13 @@ use thrum_render::synthetic::SyntheticPointLight;
 const LEVEL: f32 = 250.0;
 const BANK_EDGE: f32 = -15.99;
 const LAMP_Z: f32 = -17.4;
-const LAMP_BASE: f32 = LEVEL + 0.24 * (BANK_EDGE - LAMP_Z);
+const LAMP_BASE: f32 = bank_height(LAMP_Z);
 const FOV: f32 = 58.0;
+
+const fn bank_height(z: f32) -> f32 {
+    // Height on the rising face made by generate_meshes.py.
+    LEVEL + 0.24 * (BANK_EDGE - z)
+}
 
 /// Build the scene used by the window and inspection capture.
 ///

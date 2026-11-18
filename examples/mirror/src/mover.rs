@@ -2,6 +2,9 @@ use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SecondarySceneSurface,
 };
 
+const BEACON_Z: f32 = -16.9;
+const BEACON_Y: f32 = super::bank_height(BEACON_Z) + 0.74;
+
 #[derive(Default)]
 pub(super) struct Mover {
     main: Option<wgpu::RenderPipeline>,
@@ -71,7 +74,7 @@ impl SceneContribution for Mover {
             queue.write_buffer(
                 placement,
                 0,
-                bytemuck::cast_slice(&[x, super::LEVEL + 0.74, -16.9, 0.0]),
+                bytemuck::cast_slice(&[x, BEACON_Y, BEACON_Z, 0.0]),
             );
         }
     }
