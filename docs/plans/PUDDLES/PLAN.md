@@ -27,11 +27,8 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 ## M1 On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry: done
 [review](../../evidence/PUDDLES/M1-review.md)
 
-## M2 On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do
-
-Ruling 3 changes the surface model in `thrum-water-model`; `RIVERS` adds its flow bands to the same sum, and whichever lands second integrates. Parts 3 to 5 and 8 to 10 give the bounds. The fine interaction level is M8's, not this milestone's. The ring tables are data the model makes; the surface model in `thrum-water-model` takes them as data and does not depend on `thrum-rain-model`.
-
-M2 is built but for ground a puddle rises over and leaves, which failed three reviews; the design settles it as [the mark](DESIGN.md#the-mark-and-ground-that-changes-hands), and [the handoff](../../evidence/PUDDLES/M2-handoff.md) says what the code does today. In `thrum-rain-model`'s `src/fill.rs`, `cover_changes` and `lose` hold the old rule, `cover` is the mark, and `owed`, with the scaling of an owing hollow's ground sinks, is a debt the design no longer has. `step_reading` already gathers the rain on water by each hollow's level at the tick's start; keep that edge, and let a mark only tell held ground from open ground. Tests of the old rule are replaced, not kept: the three M2.11 cases in `tests/receivers.rs`, which keeps M1.13's two, and the account cases in `tests/stores.rs` that subtract `owed`. [Part 11](../../evidence/PUDDLES/design-proof/README.md) holds ground in d and e, rains on it in f, and has the bed over full pores in g.
+## M2 On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do: done
+[review](../../evidence/PUDDLES/M2-review.md)
 
 ## M3 On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one
 
@@ -43,7 +40,7 @@ The rain bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to 
 
 ## M8 A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill
 
-Built after M4 and before M5. Ruling 2 extends the interaction step `WATERS` M6 built, in `thrum-water`; leave its tests as they are. The game names the walking marker as the body the interaction windows follow.
+Built after M4 and before M5. Ruling 2 extends the interaction step `WATERS` M6 built, in `thrum-water`; leave its tests as they are. The game names the walking marker as the body the interaction windows follow. `WATERS` M6.3's test reads only its near and far levels, so it passes with a short wave on both the near and the fine level; M8.9 is the test that reads the near level with the fine level on.
 
 ## M5 The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last
 

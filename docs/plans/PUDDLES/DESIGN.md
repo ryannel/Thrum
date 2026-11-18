@@ -501,7 +501,14 @@ border and sources, and
 
 - a depth ladder of 5, 10, 20, 40, 80 and 160 mm, and the deep operator from 320 mm, with surface tension
   in its frequency;
-- the waves under 1 m long, which the near level then no longer holds;
+- the waves under 1 m long, and it alone holds them. The split is `WATERS`' rule one level down:
+  complementary filters on the source, crossing at 1 m, whose shares add to the whole source at every
+  wavelength, and outside the crossing a wave is whole on one level. The surface and the query add the
+  levels, so a wave left on two of them is drawn and felt twice, and each copy still looks like a ring: a
+  0.64 m wave fits both grids, 100 times across the near window and 8 times across the fine one. The split
+  is by wavelength wherever the source lies, so a source outside the fine window raises no wave under 1 m, a
+  declared approximation; the near level's 0.25 m cells held those at two to four cells a wave. With no fine
+  level in the profile the near level keeps every wave under the far level's band, as `WATERS` built it;
 - a step of one tick at a time and at most two in a frame. Ticks beyond are dropped and counted, as
   `WATERS` counts ticks past its bound. An 8 cm wave turns 27° a tick, and steps of eight ticks would take
   up to 42% of a wave's height a second (part 6).
@@ -641,7 +648,9 @@ these capabilities compiles to the shader text, passes and storage it has today,
 it the same answers to the bit.
 
 1. A hollows body in the map (M1 on the CPU, M3 on the GPU).
-2. A fine interaction level (M8, on the CPU and the GPU, after `WATERS:M6`).
+2. A fine interaction level, which takes the waves under 1 m from the near level (M8, on the GPU, in the
+   interaction step `WATERS:M6` builds; an f64 reference of it is a diagnostic a builder may add, as
+   `WATERS`' is).
 3. Rain bands: wave layers the wind does not fill, at a gain every body's row has (M2 on the CPU, M4 on the
    GPU).
 4. The film is drawn over standing rain water (M5).
@@ -733,7 +742,10 @@ dependencies. In addition:
   time (M4.1) and the wetness function (M5.2). Each of those tests also runs a named wrong evaluator and shows
   it miss: for M4.1, bands evaluated half a tick late and bands that ignore the rate history; for M5.2, wetness
   that ignores slope and wetness that reads the open store everywhere. The wet look, a ring's shape and the
-  fine level's waves are judged by eye, with no f64 reference required and no bound measured first. Parts 1 to
+  fine level's waves are judged by eye, with no f64 reference required and no bound measured first. Which
+  level holds a wave is not a look: it is state with one owner, two copies of a ring pass every view, and
+  M8.9 tests it on the levels' own state, with the near level still given the short waves as its wrong
+  evaluator. Parts 1 to
   11 are the source of the bounds M1 and M2 were proved with.
 - **Receivers.** The account's total and the receivers are separate proofs. A test of a receiver sets a
   case where the total would close under the wrong assignment too, and checks that receiver's gain alone.

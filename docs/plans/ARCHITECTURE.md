@@ -517,10 +517,10 @@ gives the reasons.
    state. Preparation refuses a hollows body with a cell in another body's water or shore margin anywhere in
    that body's stage range, so this settles how puddles merge without changing what preparation refuses of a
    basin: two basins that would merge are still refused.
-2. **A fine interaction level** (`PUDDLES` M8, in `thrum-water-model` and `thrum-water`, after `WATERS:M6` has built the interaction reference it extends). A profile may name
+2. **A fine interaction level** (`PUDDLES` M8, in `thrum-water-model` and `thrum-water`, after `WATERS:M6` has built the interaction step it extends). A profile may name
    a third level, of 2 cm cells with a depth ladder from 5 mm and surface tension in its frequency, which
-   takes the waves under 1 m and steps one tick at a time. With none, the two levels hold and step what they
-   did.
+   takes the waves under 1 m from the near level, so that no wave is on two levels, and steps one tick at a
+   time. With none, the two levels hold and step what they did.
 3. **Rain bands** (`PUDDLES` M2 in `thrum-water-model`, M4 in `thrum-sea` and `thrum-water`). The world's wave
    field gains two layers that are a function of time and of the rain's committed rate over the last second, and
    keep nothing of their own between frames, generated only where a scene's

@@ -162,3 +162,11 @@
   GPU against the model with a tolerance the test states and their wrong evaluators; M3.3, M3.4 and M6.2 name `WATERS` M4.1's
   tolerance; M5.3 and M8.3 state the look's rule without a reference. Five cost records pass on their check alone. No item of a Done
   milestone changed.
+
+- 2026-11-18 Design review: changes requested, one Must Fix. Dropping M8.1 on 17 November also dropped the only check that the
+  near level gives up the waves under 1 m when a profile names the fine level; a 0.64 m wave fits both grids and two copies still
+  look like a ring. Plan: new item M8.9 tests it on the GPU's own level state, with and without the fine level, and has the
+  reviewer read the test; M8.3 is as it was. Design: the footfall section states the split (complementary filters crossing at
+  1 m, by wavelength wherever the source lies, so a source outside the fine window raises no wave under 1 m). Suggestion taken:
+  the module handoff and ruling 2 now name `WATERS:M6`'s GPU interaction step, not a CPU reference. M2's note left the plan, as
+  M2 is Done.

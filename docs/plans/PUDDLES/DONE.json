@@ -559,6 +559,18 @@
           "review": ""
         },
         {
+          "id": "M8.9",
+          "statement": "With the fine level in the profile, no wave is on two interaction levels. A stone's impulse inside the fine window raises a wave both grids can hold, such as one 0.64 m long, on the fine level, and the near level's state stays at rest in it. A wave a few metres long from the same impulse is on the near level and not on the fine one. The same impulse with no fine level in the profile puts the 0.64 m wave on the near level, as `WATERS` built it.",
+          "check": "cargo test --locked --offline -p thrum-water --test fine_level_gpu",
+          "ask": "Does the test read the near level's own state with the fine level in the profile, and does it fail when the near level is still given the source's waves under 1 m?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "M8.4",
           "statement": "A footfall and a dropped stone ring a puddle: round rings cross it, slower in the shallower puddle, and die at its edge. The walking marker leaves a train of them. Nothing shows on the puddle beyond a dry sill, and no edge of the window shows.",
           "inspect": "`realtime` sequences from 1.7 m of the marker walking through two puddles of different depths a sill apart, with no rain, and of a stone dropped in each; one more after the two have joined.",
