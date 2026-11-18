@@ -337,7 +337,7 @@ fn advance_fleet(
     };
     if tick != 0 {
         for body in bodies.iter_mut() {
-            let answer = answers.iter().rfind(|answer| answer.id == body.id);
+            let answer = answers.iter().find(|answer| answer.id == body.id);
             let mut gpu_points = 0;
             let mut sample = |index, position: DVec3| {
                 if let Some(result) = sample_answer(answer, index, position) {

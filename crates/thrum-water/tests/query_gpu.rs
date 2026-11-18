@@ -318,12 +318,9 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
         .expect("both test readbacks complete");
     let results = mailbox.drain(9, step);
     assert_eq!(mailbox.stats().dispatches, 2);
-    assert_eq!(
-        results.iter().map(|body| body.posted).collect::<Vec<_>>(),
-        [7, 8]
-    );
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].posted, 7);
     assert_eq!(mailbox.stats().age_two, 1);
-    assert_eq!(mailbox.stats().age_one, 1);
 
     let check = |answer: &thrum_water::query::QueryAnswer, stage: f64| {
         let model = map
@@ -351,7 +348,6 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
         assert!((answer.surface.sample.slope[0] - 0.01).abs() < 0.000_002);
     };
     check(&results[0].points[0], 0.0);
-    check(&results[1].points[0], 0.10);
 
     map.lock()
         .expect("chart")
@@ -368,9 +364,15 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("stage result");
-    let answer = mailbox.drain(10, step);
-    assert_eq!(answer.len(), 1);
-    check(&answer[0].points[0], 0.20);
+    let second = mailbox.drain(10, step);
+    assert_eq!(second.len(), 1);
+    assert_eq!(second[0].posted, 8);
+    check(&second[0].points[0], 0.10);
+    let third = mailbox.drain(11, step);
+    assert_eq!(third.len(), 1);
+    assert_eq!(third[0].posted, 9);
+    check(&third[0].points[0], 0.20);
+    assert_eq!(mailbox.stats().age_two, 3);
 }
 
 fn check_delay(

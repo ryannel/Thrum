@@ -61,7 +61,6 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
     // Cover the old detachment interval at a frame per tick. Then use the
     // scene's normal 30 Hz capture cadence while physics stays at 60 Hz.
     let dense_ticks = 60 * 60;
-    let expected_gpu_ticks = u64::from(dense_ticks + (final_tick - dense_ticks) / 2);
     for speed in [15.0, 5.0, 0.0] {
         let scene =
             water_scene::floating::build(Wind::Gale, false, speed, std::f32::consts::PI, false)
@@ -155,7 +154,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
                 body.max_draft_error,
             );
             assert!(
-                body.gpu_points >= (expected_gpu_ticks - 2) * 6,
+                body.gpu_points >= (record.tick - 2) * 6,
                 "missing GPU samples for body {id}: {}",
                 body.gpu_points
             );

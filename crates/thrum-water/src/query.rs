@@ -218,23 +218,24 @@ impl QueryMailbox {
         }
     }
 
-    /// Take completed results for live bodies. Correct height once, from the
-    /// requested tick to the supplied tick, and reject results beyond the age limit.
+    /// Take the oldest usable completed result for each live body. Newer results
+    /// stay available for later ticks when a frame returned multiple pages.
+    /// Correct height once from the requested tick, and reject expired results.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
     pub fn drain(&self, tick: u64, step: Duration) -> Vec<BodyAnswers> {
         let mut state = self.state.lock().expect("water query mailbox");
-        let mut answers = Vec::new();
+        let mut answers: Vec<BodyAnswers> = Vec::new();
         for ((id, posted), mut body) in std::mem::take(&mut state.ready) {
             if state.generations.get(&id) != Some(&body.generation) {
                 continue;
             }
-            if tick <= body.posted {
-                state.ready.insert((id, posted), body);
+            if tick.saturating_sub(posted) > u64::from(self.limits.max_age) {
+                state.stats.unavailable += 1;
                 continue;
             }
-            if tick - body.posted > u64::from(self.limits.max_age) {
-                state.stats.unavailable += 1;
+            if tick <= posted || answers.last().is_some_and(|answer| answer.id == id) {
+                state.ready.insert((id, posted), body);
                 continue;
             }
             match tick - body.posted {
