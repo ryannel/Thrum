@@ -238,12 +238,12 @@
       }
     },
     "M3": {
-      "definitions": "964a0c5cc68662c32b3c7f4c595a134ec0e9d31f2a936aeade8db9c905a72de9",
+      "definitions": "7fb6b439b3113a2e3419fddacf1e7aa5e2eb1473ccdfd5c340bd5004642dc7c2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS M3. The builder wrote: M3.1 needs a planner decision on how to break up the repeated domes and shelves th",
-        "at": "2026-11-18T14:56:58Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-18T17:00:13Z"
       }
     },
     "M4": {
@@ -598,11 +598,15 @@
     {
       "task": "Unblock CLOUDS M3. The builder wrote: M3.1 needs a planner decision on how to break up the repeated domes and shelves that persisted across three shape trials. The builder's handoff, docs/evidence/CLOUDS/M3-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/clouds at 6c696409396a, which isn't merged; read it with `git show`. Three parameter trials on the same representation failed, so decide the representation or operator change rather than another parameter sweep, drawing on current state-of-the-art real-time volumetric cloud shaping in shipped games. The bar is a plausible shipped-game look at the frame cost the plan already sets; references diagnose, never gate. If the plan already provides it, change no file and end with `KEEP CLOUDS M3: builder: <where the plan provides it>`, and the script lifts the block.",
       "at": "2026-11-18T14:56:58Z"
+    },
+    {
+      "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T17:00:13Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T14:56:58Z"
+    "at": "2026-11-18T17:00:13Z"
   },
   "design_history": [
     {
