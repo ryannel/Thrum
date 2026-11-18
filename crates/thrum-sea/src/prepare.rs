@@ -1,5 +1,5 @@
 use crate::AmbientError;
-use crate::{Ambient, CacheLevel, LEVELS, Profile, records, spec};
+use crate::{Ambient, CacheLevel, LEVELS, Profile, TRANSFORM_SIZE, records, spec};
 use spec::BufferKey;
 use std::collections::BTreeMap;
 use thrum_render::runtime::DeviceSite;
@@ -13,8 +13,20 @@ pub(super) fn sizes() -> Vec<u64> {
     spec::resources().iter().map(|r| r.size).collect()
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "round unit roots to the GPU's f32 format"
+)]
+fn transform_twiddles() -> [[f32; 2]; TRANSFORM_SIZE as usize / 2] {
+    std::array::from_fn(|index| {
+        let angle = std::f64::consts::TAU * index as f64 / f64::from(TRANSFORM_SIZE);
+        let (sin, cos) = angle.sin_cos();
+        [cos as f32, sin as f32]
+    })
+}
+
 pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, AmbientError> {
-    if profile.transform_size != crate::TRANSFORM_SIZE {
+    if profile.transform_size != TRANSFORM_SIZE {
         return Err(AmbientError::UnsupportedProfile(
             crate::ProfileField::TransformSize,
         ));
@@ -65,8 +77,8 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
             limit: "max_compute_workgroup_storage_size",
         });
     }
-    if limits.max_compute_invocations_per_workgroup < crate::TRANSFORM_SIZE
-        || limits.max_compute_workgroup_size_x < crate::TRANSFORM_SIZE
+    if limits.max_compute_invocations_per_workgroup < TRANSFORM_SIZE
+        || limits.max_compute_workgroup_size_x < TRANSFORM_SIZE
     {
         return Err(AmbientError::DeviceLimit {
             resource: "FFT".into(),
@@ -93,21 +105,12 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
                 match resource.key {
                     BufferKey::MipParams(level) => {
                         let record = records::Mip {
-                            address: [0, 0, crate::TRANSFORM_SIZE >> level, 0],
+                            address: [0, 0, TRANSFORM_SIZE >> level, 0],
                         };
                         mapped.copy_from_slice(bytemuck::bytes_of(&record));
                     }
                     BufferKey::Twiddles => {
-                        let twiddles =
-                            std::array::from_fn::<_, { crate::TRANSFORM_SIZE as usize / 2 }, _>(
-                                |index| {
-                                    let angle = std::f64::consts::TAU * index as f64
-                                        / f64::from(crate::TRANSFORM_SIZE);
-                                    let (sin, cos) = angle.sin_cos();
-                                    [cos as f32, sin as f32]
-                                },
-                            );
-                        mapped.copy_from_slice(bytemuck::cast_slice(&twiddles));
+                        mapped.copy_from_slice(bytemuck::cast_slice(&transform_twiddles()));
                     }
                     _ => unreachable!("only mapped resources are initialized here"),
                 }

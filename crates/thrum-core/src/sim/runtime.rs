@@ -1325,14 +1325,13 @@ impl<G: TickGame> GameRuntime<G> {
         publication: PublicationMode,
     ) {
         if publication == PublicationMode::Defer || !self.pages.can_capture() {
-            self.publication_state = match undo {
-                Some(record) => PublicationState::SkippedWithRecord(Arc::clone(&record.world)),
+            self.publication_state = if let Some(record) = undo {
+                PublicationState::SkippedWithRecord(Arc::clone(&record.world))
+            } else {
                 // The unrecorded tick's preimages move out of the
                 // transaction scratch, which the next step clears.
-                None => {
-                    std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo);
-                    PublicationState::SkippedWithUndo
-                }
+                std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo);
+                PublicationState::SkippedWithUndo
             };
             return;
         }
@@ -1439,7 +1438,7 @@ impl<G: TickGame> GameRuntime<G> {
         txn_undo.clear();
         self.edits.clear();
         game.reset_candidate(candidate);
-        let preparation = catch_unwind(AssertUnwindSafe(|| -> Result<(), TickError<G::Error>> {
+        let preparation = catch_unwind(AssertUnwindSafe(|| {
             for wave in &mut self.waves {
                 #[cfg(not(target_arch = "wasm32"))]
                 // Two tiny input callbacks stay on the tick caller to avoid pool scheduling.
@@ -1549,18 +1548,7 @@ impl<G: TickGame> GameRuntime<G> {
             self.edit_scratch
                 .validate(&self.world, self.nonce, &self.edits, candidate)
                 .map_err(TickError::Edit)?;
-            self.world
-                .validate_profile()
-                .map_err(|error| TickError::Edit(EditError::World(error)))?;
-            if game
-                .profile_resources(candidate)
-                .is_some_and(|resources| !resources.is_finite())
-            {
-                return Err(TickError::Edit(EditError::World(
-                    RegisteredWorldError::NonFiniteResource,
-                )));
-            }
-            Ok(())
+            validate_tick_profile(&self.world, game, candidate)
         }));
         match preparation {
             Ok(Ok(())) => {}
@@ -1627,6 +1615,25 @@ impl<G: TickGame> GameRuntime<G> {
         self.poisoned = false;
         Ok(next)
     }
+}
+
+fn validate_tick_profile<G: TickGame>(
+    world: &RegisteredWorld,
+    game: &G,
+    candidate: &G::Candidate,
+) -> Result<(), TickError<G::Error>> {
+    world
+        .validate_profile()
+        .map_err(|error| TickError::Edit(EditError::World(error)))?;
+    if game
+        .profile_resources(candidate)
+        .is_some_and(|resources| !resources.is_finite())
+    {
+        return Err(TickError::Edit(EditError::World(
+            RegisteredWorldError::NonFiniteResource,
+        )));
+    }
+    Ok(())
 }
 
 fn capture_publication_page(
