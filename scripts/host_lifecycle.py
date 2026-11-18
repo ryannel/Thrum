@@ -81,6 +81,7 @@ def prepare_web(env):
 
 
 def check_web(folder):
+    folder.mkdir(parents=True, exist_ok=True)
     for case, web_root in [(case, 'v1-game-web') for case in WEB_CASES] + [
         ('material', 'v1-game-web-dev'),
     ]:
