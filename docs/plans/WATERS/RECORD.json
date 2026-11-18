@@ -635,12 +635,12 @@
       }
     },
     "M16": {
-      "definitions": "cfd05ddffe08f9d97e3b13d4989343c1302b2741abf9ec48dc6ff9ec6f474cc8",
+      "definitions": "2556754798430d1d29b20a1a6237abbfeb55a017bcd9fb54a365900c7a8c57b7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
-        "at": "2026-11-18T04:32:39Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 1 Must Fix findings ",
+        "at": "2026-11-18T05:23:29Z"
       }
     }
   },
@@ -696,11 +696,15 @@
     {
       "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolve its Must Fix findings in the design and the plan, keeping the owner's 17 Nov bar now in ORCHESTRATE.md (look and speed; references diagnose, never gate). Its Suggestions are yours to take or leave; say which you took and why. WATERS M3 is Ready for Review at 62877deb6 and should go to review as soon as the design is approved.",
       "at": "2026-11-18T04:32:39Z"
+    },
+    {
+      "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T05:23:29Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T04:32:39Z"
+    "at": "2026-11-18T05:23:29Z"
   },
   "design_history": [
     {
