@@ -60,3 +60,7 @@
   on Apple tile Metal at `e0fb4a93a`, with an exact no-demand comparison to the pre-change renderer.
   The contended field-count CPU rebuild was 9.804 ms median, with finish and submit the larger share.
   [Proofs and tripwire investigation](../../evidence/RAY-TRACING/M1/README.md).
+- 2026-11-18 Routed the shared native test gate through registry admission, resolved ray demand before
+  resource creation, and restored the sky kit's public error variants. Verified the portable fallback and
+  the shared gate's ordinary and named requests on Metal, and compiled the sky kit's exhaustive match.
+  [Review fix evidence](../../evidence/RAY-TRACING/M1/README.md#review-fixes).

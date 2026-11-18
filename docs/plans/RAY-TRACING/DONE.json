@@ -20,8 +20,8 @@
           "ask": "Do the Mac window, the capture runner and the test gate each make their device through the registry's one function, so that the retry exists in one place, with every decision taken from adapter facts and no test of platform, backend or adapter name?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md#review-fixes",
           "verdict": "fail",
           "review": "docs/evidence/RAY-TRACING/M1-review.md"
         },
@@ -66,8 +66,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_structure_absent_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M1/README.md#review-fixes",
           "verdict": "fail",
           "review": "docs/evidence/RAY-TRACING/M1-review.md"
         },
