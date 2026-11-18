@@ -495,7 +495,7 @@
           "ask": "Does the cloud shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own? Is its Sun the identity's true Sun and not the apparent surface light? Is the diffuse light's plane set by the type alone, one direction for a whole cloud, with no depth above a sample read to find it?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "docs/evidence/CLOUDS/M3-turrets/README.md",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
