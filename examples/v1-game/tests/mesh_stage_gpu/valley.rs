@@ -40,6 +40,13 @@ struct Valley<'a> {
     shadow_counts: Arc<Mutex<Option<wgpu::Buffer>>>,
 }
 
+#[derive(Clone, Copy)]
+enum Witness {
+    None,
+    SunMaps,
+    Temporal,
+}
+
 impl<'a> Valley<'a> {
     fn new(
         gpu: &'a Gpu,
@@ -89,7 +96,7 @@ impl<'a> Valley<'a> {
         let deadline = Instant::now() + Duration::from_secs(60);
         let mut warm = 0;
         while warm < 4 {
-            valley.frame(Duration::ZERO, false);
+            valley.frame(Duration::ZERO, Witness::None);
             let stats = valley.stats.lock().expect("cooked observations");
             assert!(stats.errors.is_empty(), "{:?}", stats.errors);
             if stats.drawn.is_some() {
@@ -143,7 +150,7 @@ impl<'a> Valley<'a> {
         route
     }
 
-    fn frame(&mut self, now: Duration, shadow: bool) -> (FrameSample, Vec<u8>) {
+    fn frame(&mut self, now: Duration, witness: Witness) -> (FrameSample, Vec<u8>) {
         let submitted = self
             .host
             .drive(
@@ -155,18 +162,24 @@ impl<'a> Valley<'a> {
             )
             .expect("ordinary game frame");
         assert!(submitted.submitted, "{submitted:?}");
-        let maps = if shadow {
-            self.read_texture(
+        let bytes = match witness {
+            Witness::SunMaps => self.read_texture(
                 self.host
                     .submitted_shadow_witness()
                     .expect("three Sun depth maps"),
                 4,
                 wgpu::TextureAspect::DepthOnly,
-            )
-        } else {
-            Vec::new()
+            ),
+            Witness::Temporal => self.read_texture(
+                self.host
+                    .submitted_temporal_witness()
+                    .expect("temporal inputs"),
+                8,
+                wgpu::TextureAspect::All,
+            ),
+            Witness::None => Vec::new(),
         };
-        (self.complete(), maps)
+        (self.complete(), bytes)
     }
 
     fn complete(&mut self) -> FrameSample {
@@ -277,24 +290,31 @@ fn valley_cull_equal() {
         let mut tick = route.origin_tick;
         for route_tick in 0..=route.keys.last().expect("route end").tick {
             let time = Duration::from_secs_f64(valley.host.route_step_ms(0.5) / 1000.0);
-            let (sample, _) = valley.frame(time, false);
+            let (sample, temporal) = valley.frame(time, Witness::Temporal);
             assert_eq!(sample.tick, tick, "missing or duplicate fixed route sample");
             let image = valley.image(&sample);
             let name = root.join(format!("valley-{route_tick}.raw"));
+            let temporal_name = root.join(format!("valley-{route_tick}-temporal.raw"));
             if cull {
                 assert_eq!(
                     image.rgba,
                     std::fs::read(name).expect("unculled frame"),
                     "scene-linear submission at route tick {route_tick}"
                 );
+                assert_eq!(
+                    temporal,
+                    std::fs::read(temporal_name).expect("unculled temporal inputs"),
+                    "temporal inputs at route tick {route_tick}"
+                );
             } else {
                 std::fs::write(name, &image.rgba).expect("unculled frame");
+                std::fs::write(temporal_name, temporal).expect("unculled temporal inputs");
             }
             valley.host.recycle_submitted_image(image);
             tick += 1;
         }
         println!(
-            "valley mesh-stage cull={cull}: {} submitted route ticks, cuts {:?}",
+            "valley mesh-stage cull={cull}: {} submitted scene-linear and temporal pairs, cuts {:?}",
             tick - route.origin_tick,
             route.cuts
         );
@@ -307,7 +327,7 @@ fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, witness: 
     if let Some(counts) = &counts {
         gpu.queue.write_buffer(counts, 0, &[0; 32]);
     }
-    let (_, maps) = valley.frame(Duration::ZERO, true);
+    let (_, maps) = valley.frame(Duration::ZERO, Witness::SunMaps);
     if let Some(counts) = &counts {
         let readback = gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Sun map object-stage counts"),
@@ -387,7 +407,7 @@ fn fixed_stops() {
                         .expect("T2 fixed stop tap");
                 }
                 let time = Duration::from_secs_f64(valley.host.route_step_ms(0.5) / 1000.0);
-                let (sample, _) = valley.frame(time, false);
+                let (sample, _) = valley.frame(time, Witness::None);
                 assert_eq!(sample.tick, route.origin_tick + tick);
                 if stop {
                     let image = valley.image(&sample);

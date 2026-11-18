@@ -733,5 +733,7 @@ pub(super) fn read_buffer(
         .recv_timeout(Duration::from_secs(5))
         .expect("read callback")
         .expect("read map");
-    buffer.get_mapped_range(..).expect("proof bytes").to_vec()
+    let bytes = buffer.get_mapped_range(..).expect("proof bytes").to_vec();
+    buffer.unmap();
+    bytes
 }

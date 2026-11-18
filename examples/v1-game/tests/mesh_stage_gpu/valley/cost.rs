@@ -8,7 +8,7 @@ use thrum_asset::{AssetStore, MeshProduct, Profile};
 use thrum_asset_gpu::CookedDrawPath::{Indirect, MeshStages};
 use v1_game::SurfaceOutput;
 
-use super::{Gpu, Valley, output, read_buffer, store};
+use super::{Gpu, Valley, Witness, output, read_buffer, store};
 
 const PASSES: [&str; 5] = [
     "contribution compute",
@@ -179,7 +179,7 @@ fn route_cost() {
                 json!({"route_tick": relative_tick, "forward_both": forward, "shadows": shadows}),
             );
         } else {
-            let (sample, _) = valley.frame(now, false);
+            let (sample, _) = valley.frame(now, Witness::None);
             assert_eq!(sample.tick, route.origin_tick + relative_tick);
             let gpu_passes = sample.gpu_pass_ns.expect("measured Metal timestamps");
             let span = gpu_passes
