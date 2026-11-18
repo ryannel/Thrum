@@ -373,6 +373,27 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     assert_eq!(third[0].posted, 9);
     check(&third[0].points[0], 0.20);
     assert_eq!(mailbox.stats().age_two, 3);
+
+    // A hitch can make three pages ready together. Keep the two timely
+    // replies rather than getting stuck one tick late as new pages arrive.
+    for tick in 12..=14 {
+        mailbox.post(tick, request(tick + 2));
+    }
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("retire prior chart");
+    assert!(
+        host.drive(14 * step, Some(&output))
+            .expect("catch-up submission")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("catch-up replies");
+    assert_eq!(mailbox.stats().dispatches, 6);
+    assert_eq!(mailbox.drain(15, step)[0].posted, 13);
+    assert_eq!(mailbox.drain(16, step)[0].posted, 14);
+    assert_eq!(mailbox.stats().age_older, 0);
 }
 
 fn check_delay(

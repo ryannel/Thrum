@@ -218,27 +218,40 @@ impl QueryMailbox {
         }
     }
 
-    /// Take the oldest usable completed result for each live body. Newer results
-    /// stay available for later ticks when a frame returned multiple pages.
+    /// Take one usable completed result for each live body. Prefer the older
+    /// result within the normal one-to-two tick window so the newer result can
+    /// serve the next tick. A newer result supersedes one outside that window.
     /// Correct height once from the requested tick, and reject expired results.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
     pub fn drain(&self, tick: u64, step: Duration) -> Vec<BodyAnswers> {
         let mut state = self.state.lock().expect("water query mailbox");
         let mut answers: Vec<BodyAnswers> = Vec::new();
-        for ((id, posted), mut body) in std::mem::take(&mut state.ready) {
+        let mut ready = std::mem::take(&mut state.ready).into_iter().peekable();
+        while let Some(((id, posted), mut body)) = ready.next() {
             if state.generations.get(&id) != Some(&body.generation) {
                 continue;
             }
-            if tick.saturating_sub(posted) > u64::from(self.limits.max_age) {
+            let age = tick.saturating_sub(posted);
+            if age > u64::from(self.limits.max_age) {
                 state.stats.unavailable += 1;
+                continue;
+            }
+            // A hitch can fill the queue with valid but older answers. Once
+            // newer answers arrive, recover the normal latency rather than
+            // retaining an age-three backlog indefinitely.
+            if age > 2
+                && ready
+                    .peek()
+                    .is_some_and(|((next_id, next_tick), _)| *next_id == id && *next_tick < tick)
+            {
                 continue;
             }
             if tick <= posted || answers.last().is_some_and(|answer| answer.id == id) {
                 state.ready.insert((id, posted), body);
                 continue;
             }
-            match tick - body.posted {
+            match age {
                 1 => state.stats.age_one += 1,
                 2 => state.stats.age_two += 1,
                 _ => state.stats.age_older += 1,
