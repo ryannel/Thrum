@@ -541,14 +541,14 @@ def strip(name: str, recording: subprocess.Popen, started: float, resized_at: fl
     log(f"{name}: {count} frames at {STRIP_FPS} fps from {begin:.2f} s ({name}-strip.png, {name}-frames/)")
 
 
-def rotate(name: str, test: str, base: dict[str, str], landscape: bool) -> dict[str, str]:
+def rotate(name: str, test: str, base: dict[str, str], landscape: bool, retain_motion: bool = True) -> dict[str, str]:
     """One real orientation change: a resize on the same window, lease and world."""
     p0, b = sample(f"before {name}")
     # Only orientation changes resize: installs (startup, replacement, resume)
     # configure once at the layer's extent and raise no `Resized` change.
     check(num(b, "resize_events") == (0 if landscape else num(base, "resize_events")),
           "a window install or lifecycle row changed the extent", b)
-    recording, started = record(name)
+    motion = record(name) if retain_motion else None
     driver = gesture(test)
     s = wait(lambda s: num(s, "resize_events") > num(b, "resize_events"), TOUCH_WINDOW, f"the {name} resize event")
     resized_at = time.monotonic()
@@ -556,7 +556,9 @@ def rotate(name: str, test: str, base: dict[str, str], landscape: bool) -> dict[
     s = wait(lambda s: want(*extent(s)) and presents_after(b, 120)(s), 20, f"presentation at the {name} extent")
     finish(driver)
     time.sleep(1.0)
-    strip(name, recording, started, resized_at)
+    if motion:
+        recording, started = motion
+        strip(name, recording, started, resized_at)
     p1, s = sample(f"after {name}")
     snapshot(name, s)
     check(want(*extent(s)), f"{name} did not present at the rotated extent", s)
@@ -762,6 +764,12 @@ def main() -> None:
         "or XCUITest HID gesture")
     s = startup()
     rows = os.environ.get("THRUM_V1_ROWS")
+    if rows == "extent":
+        snapshot("extent-portrait", s)
+        s = rotate("extent-landscape", "testLandscape", s, landscape=True, retain_motion=False)
+        rotate("extent-return-portrait", "testPortrait", s, landscape=False, retain_motion=False)
+        log("iPhone 18 Pro portrait, landscape and return extent passed (simulator function)")
+        return
     if rows in ("rotation", "device"):
         # Development only: the named route runs every row.
         rotation(s) if rows == "rotation" else device_loss(s)

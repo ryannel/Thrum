@@ -42,7 +42,7 @@ fn threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_wo
                     format: wgpu::TextureFormat::Bgra8Unorm,
                     extent: [640, 360],
                 }),
-                ..FrameConfig::default()
+                render_extent: [640, 360],
             },
         )
         .await

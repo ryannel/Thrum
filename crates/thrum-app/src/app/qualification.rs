@@ -13,10 +13,133 @@ use std::{
 };
 use thrum_controls::{Controls, Value, macos::MacPanel};
 use thrum_render::runtime::{
-    CaptureLimits, FrameError, FrameHost, FrameWorld, SceneSource, SubmittedImage,
+    CaptureLimits, FrameError, FrameExtent, FrameHost, FrameWorld, SceneSource, SubmittedImage,
 };
 
 const RECORDS: usize = 2048;
+
+/// One identified submission from the ordinary Mac window.
+pub(super) struct ExtentCapture {
+    output: PathBuf,
+    frame: Option<(FrameExtent, [u32; 2])>,
+}
+
+/// Requested AppKit bounds for a one-submission extent proof.
+#[derive(Clone, Copy)]
+pub enum ExtentWindow {
+    /// Content size in logical points.
+    Points([u32; 2]),
+    /// Fullscreen on the window's monitor.
+    Fullscreen,
+}
+
+/// Inputs for one window extent capture.
+pub struct WindowExtentCapture {
+    /// Window size to prepare.
+    pub window: ExtentWindow,
+    /// Existing output directory for the image and its extent witnesses.
+    pub output: PathBuf,
+}
+
+impl WindowExtentCapture {
+    pub(super) fn attributes(&self) -> winit::window::WindowAttributes {
+        let attributes = winit::window::Window::default_attributes();
+        match self.window {
+            ExtentWindow::Points([width, height]) => {
+                attributes.with_inner_size(winit::dpi::LogicalSize::new(width, height))
+            }
+            ExtentWindow::Fullscreen => attributes,
+        }
+    }
+
+    pub(super) fn prepare_window(&self, window: &winit::window::Window) -> Result<(), String> {
+        use winit::platform::macos::WindowExtMacOS;
+        match self.window {
+            ExtentWindow::Points([width, height]) => {
+                // Window creation can constrain its content to the visible screen.
+                // Request the prescribed size on the live AppKit window as well.
+                let _ = window.request_inner_size(winit::dpi::LogicalSize::new(width, height));
+            }
+            ExtentWindow::Fullscreen => {
+                // Establish the fullscreen backing before preparing the surface and host.
+                window.set_borderless_game(true);
+                if !window.set_simple_fullscreen(true) {
+                    return Err("could not enter fullscreen for the extent proof".to_owned());
+                }
+            }
+        }
+        let backing = window.inner_size();
+        let scale = window.scale_factor();
+        let logical = backing.to_logical::<f64>(scale);
+        let monitor = window.current_monitor().map(|monitor| {
+            let size = monitor.size();
+            [size.width, size.height]
+        });
+        let record = serde_json::json!({
+            "backing": [backing.width, backing.height],
+            "points": [logical.width, logical.height],
+            "scale": scale,
+            "fullscreen": window.simple_fullscreen(),
+            "monitor_backing": monitor,
+        });
+        std::fs::write(self.output.join("window.json"), record.to_string())
+            .map_err(|error| error.to_string())
+    }
+}
+
+impl ExtentCapture {
+    pub(super) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
+        host: &mut FrameHost<W, V>,
+        output: PathBuf,
+    ) -> Result<Self, String> {
+        host.enable_submitted_capture_with_limits(
+            1,
+            CaptureLimits {
+                staging_slots: 2,
+                cpu_buffers: 2,
+                byte_allowance: 256 * 1024 * 1024,
+            },
+        )
+        .map_err(|error| error.to_string())?;
+        Ok(Self {
+            output,
+            frame: None,
+        })
+    }
+
+    pub(super) fn frame(&mut self, frame: FrameExtent, drawable: [u32; 2]) {
+        self.frame.get_or_insert((frame, drawable));
+    }
+
+    pub(super) fn collect<W: FrameWorld, V: SceneSource<W::Page>>(
+        &self,
+        host: &mut FrameHost<W, V>,
+        recipe: &str,
+    ) -> Result<bool, FrameError> {
+        let Some((frame, drawable)) = self.frame else {
+            return Ok(false);
+        };
+        while let Some(image) = host.try_submitted_image()? {
+            if image.sample.surface_presented && image.sample.submission_order == frame.submission {
+                let record = serde_json::json!({
+                    "mode": "still", "recipe": recipe, "submission": frame.submission,
+                    "capture_extent": image.extent, "render_extent": image.sample.render_extent,
+                    "attachment_extents": frame.attachments, "source": frame.source,
+                    "destination": frame.destination, "drawable": drawable, "viewport": frame.viewport,
+                    "device_generation": image.device_generation,
+                });
+                std::fs::write(self.output.join("submitted.rgba"), &image.rgba)
+                    .map_err(|error| error.to_string())?;
+                std::fs::write(self.output.join("submitted.json"), record.to_string())
+                    .map_err(|error| error.to_string())?;
+                host.disable_submitted_capture();
+                return Ok(true);
+            }
+            host.recycle_submitted_image(image);
+        }
+        Ok(false)
+    }
+}
 
 #[cfg(test)]
 mod tests;

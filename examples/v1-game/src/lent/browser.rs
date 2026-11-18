@@ -168,7 +168,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
         .await
         .map_err(|error| error.to_string())?;
     let mut host =
-        FrameHost::new_with_capabilities(&device, &queue, &caps, FrameConfig::default()).await?;
+        FrameHost::new_with_capabilities(&device, &queue, &caps, FrameConfig::offscreen([640, 360])).await?;
     let mut config = CookedConfig::new(thrum_asset_gpu::CookedSource::Remote(feed.clone()), vec![]);
     config.leased = (0..12)
         .map(|index| LeaseRequest {

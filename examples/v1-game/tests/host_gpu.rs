@@ -43,7 +43,7 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared game scene");
         let capture_directory =
@@ -271,7 +271,7 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let host = FrameHost::new(&device, &queue, FrameConfig::default())
+        let host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
         let initial = host.controlled_position().expect("seeded player");
@@ -346,7 +346,7 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             })
             .await
             .expect("device request succeeds");
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared 10k scene");
         host.enable_projection()
@@ -437,9 +437,13 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device without timestamp queries");
-        let mut plain = FrameHost::new(&plain_device, &plain_queue, FrameConfig::default())
-            .await
-            .expect("same prepared scene without timestamps");
+        let mut plain = FrameHost::new(
+            &plain_device,
+            &plain_queue,
+            FrameConfig::offscreen([640, 360]),
+        )
+        .await
+        .expect("same prepared scene without timestamps");
         assert!(
             plain
                 .drive(Duration::from_nanos(16_666_667), None)
@@ -478,7 +482,7 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("native device");
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared game host");
         let initial = host.controlled_position().expect("seeded player");

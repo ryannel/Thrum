@@ -15,7 +15,7 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(wgpu::Backends::all(), false).await;
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
         let before = host.capture_pixels().expect("initial capture");
@@ -43,7 +43,7 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(wgpu::Backends::all(), false).await;
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
         let zero = host
@@ -148,7 +148,7 @@ fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(wgpu::Backends::all(), false).await;
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
         let advanced = host
@@ -304,7 +304,7 @@ fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(wgpu::Backends::all(), false).await;
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
         drop(

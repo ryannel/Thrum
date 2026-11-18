@@ -212,6 +212,7 @@ pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
             serde_json::json!({
                 "tick": sample.tick, "alpha": alpha, "alpha_bits": alpha.to_bits(),
                 "submission": sample.submission_order,
+                "render_extent": sample.render_extent, "surface_presented": sample.surface_presented,
                 "history_sample": sample.history_identity[0], "history_predecessor": sample.history_identity[1],
                 "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
                 "eye": pose.map(|pose| pose.eye), "yaw": pose.map(|pose| pose.yaw),
@@ -228,5 +229,6 @@ pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
         "unavailable": status.unavailable, "overload_events": status.overload_events,
         "dropped_views": dropped_views, "dropped_reports": dropped_reports,
         "extent": status.extent, "samples": samples,
+        "resize_prepare_ms": status.resize_prepare.map(|elapsed| elapsed.as_secs_f64() * 1000.0),
     })
 }

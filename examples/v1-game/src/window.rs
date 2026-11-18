@@ -91,15 +91,11 @@ const KEY_DOWN: u8 = 128;
 /// Run the bounded V1 scene in a macOS window and print its frames report.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
-pub fn run_window(hardware: Vec<HardwareRequest>) {
+pub fn run_window(hardware: Vec<HardwareRequest>, capture: Option<thrum_app::WindowExtentCapture>) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
     // are reported when the host is prepared.
     let (window_title, title) = match crate::selected_setup() {
-        Ok(crate::GameSetup {
-            sprite_scale: Some(_),
-            ..
-        }) => ("Thrum V1 — sprites", "Thrum V1 sprites"),
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Frustum,
@@ -124,29 +120,31 @@ pub fn run_window(hardware: Vec<HardwareRequest>) {
         }) => ("Thrum V1 — 10k world / Occlusion culling", "Thrum V1"),
         _ => ("Thrum V1 — 10k world / clustered forward+", "Thrum V1"),
     };
-    thrum_app::run(
-        Config {
-            name: "v1-game",
-            frames_variable: "THRUM_V1_FRAMES",
-            window_title,
-            title,
-            render_thread: "thrum-v1-render",
-            panel_title: "Thrum demo",
-            window_size: [1920, 1080],
-        },
-        || {
-            Ok(WindowGame {
-                demo: GameControls::new().map_err(|error| error.to_string())?,
-                world: None,
-                held_keys: 0,
-                capture_route: None,
-                capture_eye: None,
-                capture_cooked: None,
-                cloud_capture: false,
-                hardware,
-            })
-        },
-    );
+    let config = Config {
+        name: "v1-game",
+        frames_variable: "THRUM_V1_FRAMES",
+        window_title,
+        title,
+        render_thread: "thrum-v1-render",
+        panel_title: "Thrum demo",
+        window_size: [1920, 1080],
+    };
+    let game = || {
+        Ok(WindowGame {
+            demo: GameControls::new().map_err(|error| error.to_string())?,
+            world: None,
+            held_keys: 0,
+            capture_route: None,
+            capture_cooked: None,
+            cloud_capture: false,
+            hardware,
+        })
+    };
+    if let Some(capture) = capture {
+        thrum_app::run_with_extent_capture(config, capture, game);
+    } else {
+        thrum_app::run(config, game);
+    }
 }
 
 struct WindowGame {
@@ -155,7 +153,6 @@ struct WindowGame {
     world: Option<WorldControls>,
     held_keys: u8,
     capture_route: Option<String>,
-    capture_eye: Option<[f32; 3]>,
     capture_cooked: Option<CaptureCooked>,
     cloud_capture: bool,
     hardware: Vec<HardwareRequest>,
@@ -164,18 +161,13 @@ struct WindowGame {
 struct CaptureCooked {
     folder: std::path::PathBuf,
     path: thrum_asset_gpu::CookedDrawPath,
-    preview: Option<ContentPreviewCapture>,
 }
-
-type ContentPreviewCapture =
-    std::sync::Arc<std::sync::Mutex<Option<crate::content_preview::PreviewRecord>>>;
 
 impl CaptureCooked {
     fn new(folder: &std::path::Path, capture: RuntimeCaptureOutput) -> Self {
         Self {
             folder: folder.to_owned(),
             path: capture.cooked_path(),
-            preview: None,
         }
     }
 }
@@ -197,11 +189,6 @@ fn capture_game_with_route_limit(
         held_keys: 0,
         cloud_capture,
         capture_cooked,
-        capture_eye: crate::content::launch_value("THRUM_CAPTURE_FIXED_EYE")
-            .ok()
-            .map(|value| serde_json::from_str(&value))
-            .transpose()
-            .map_err(|error| format!("fixed capture eye: {error}"))?,
         hardware: Vec::new(),
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .map(std::fs::read_to_string)
@@ -247,7 +234,7 @@ impl Game for WindowGame {
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<WorldPort, GameScene>, String> {
-        let render_extent = capture::capture_extent()?;
+        let render_extent = gpu.surface.extent;
         let setup = crate::selected_setup()?;
         let exit = setup.content == crate::GameContent::Exit;
         let mut host = pollster::block_on(FrameHost::new_with_setup(
@@ -284,15 +271,6 @@ impl Game for WindowGame {
         } else {
             crate::attach_cooked_scene(&mut host)?
         };
-        if let Some(eye) = self.capture_eye {
-            if self.capture_route.is_some() {
-                return Err("a fixed capture eye cannot override an active route".to_owned());
-            }
-            let camera = host
-                .scene_camera()
-                .ok_or("fixed capture eye needs a cooked scene")?;
-            host.set_scene_camera(camera.at(eye)?)?;
-        }
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
             capture::prepare_route(

@@ -22,7 +22,7 @@ const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque');
-cases.push('exit-scene', 'exit-sweep', 'exit-stops');
+cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
 cases.push('sprites-2d', 'sprites-2d-cost');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -1986,6 +1986,66 @@ async function cleanup(child, exited, cdp, server, profile) {
   if (failures.length) throw new Error(`Cleanup failed; profile preserved at ${profile}: ${failures.join('; ')}`);
 }
 
+async function qualifyExtent(cdp, origin, output, timeout) {
+  const arms = [];
+  for (const dpr of [1, 2]) {
+    const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
+    const evaluate = async expression => {
+      const response = await cdp.call('Runtime.evaluate', { expression, returnByValue: true }, sessionId);
+      if (response.exceptionDetails) throw new Error(JSON.stringify(response.exceptionDetails));
+      return response.result.value;
+    };
+    const read = () => evaluate(`(() => {
+      const canvas = document.querySelector('#scene');
+      if (!window.thrumExtentReport || !canvas) return null;
+      const bounds = canvas.getBoundingClientRect();
+      return {
+        dpr: devicePixelRatio, css: [bounds.width, bounds.height],
+        backing: [canvas.width, canvas.height], frame: window.thrumExtentReport(),
+      };
+    })()`);
+    const setViewport = width => cdp.call('Emulation.setDeviceMetricsOverride', {
+      width, height: 900, deviceScaleFactor: dpr, mobile: false,
+    }, sessionId);
+    const same = (a, b) => a[0] === b[0] && a[1] === b[1];
+    const steady = async (before, label) => waitFor(async () => {
+      const row = await read();
+      if (!row || (before && same(row.backing, before))) return;
+      const frames = row.frame.samples.filter(sample => sample.surface_presented && same(sample.render_extent, row.backing));
+      if (frames.length < 2) return;
+      if (row.dpr !== dpr || !same(row.backing, row.css.map(n => Math.round(n * dpr))) ||
+          !same(row.backing, row.frame.extent) || row.frame.reconstruction !== 'Taau') {
+        throw new Error(`DPR ${dpr} ${label}: canvas, surface and GPU frame grids disagree`);
+      }
+      return { css: row.css, backing: row.backing, surface: row.frame.extent, frames: frames.slice(0, 2),
+        prepare_ms: row.frame.resize_prepare_ms, generation: row.frame.generation };
+    }, timeout, `DPR ${dpr} ${label} submissions`);
+    try {
+      await setViewport(720);
+      await cdp.call('Page.navigate', { url: `${origin}/?extent-probe&reconstruction=taau` }, sessionId);
+      const initial = await steady(null, 'initial');
+      await setViewport(869);
+      const resized = await steady(initial.backing, 'resized');
+      const [first, second] = resized.frames;
+      if (initial.frames[1].history_predecessor === 0 || first.history_predecessor !== 0 ||
+          second.history_predecessor !== first.history_sample || first.submission + 1 !== second.submission ||
+          resized.generation !== initial.generation || !Number.isFinite(resized.prepare_ms)) {
+        throw new Error(`DPR ${dpr}: resize did not reset exactly the first new-grid frame: ${JSON.stringify(resized)}`);
+      }
+      arms.push({ dpr, initial, resized });
+    } finally {
+      await cdp.call('Target.closeTarget', { targetId });
+    }
+  }
+  const record = {
+    case: 'extent', target: 'chrome-webgpu', arms,
+    commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+  };
+  await fs.writeFile(path.join(output, 'extent.json'), JSON.stringify(record, null, 2) + '\n');
+  return record;
+}
+
 async function main() {
   const args = options(process.argv.slice(2));
   if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
@@ -2073,7 +2133,8 @@ async function main() {
     let assetsSource;
     if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     for (const mode of modes) {
-      if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
+      if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms']));
+      else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
       }));

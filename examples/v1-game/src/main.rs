@@ -57,7 +57,34 @@ fn main() {
         }
         return;
     }
-    v1_game::run_window(hardware);
+    let window_capture =
+        window_extent_capture().unwrap_or_else(|error| report_capture_failure(&error));
+    v1_game::run_window(hardware, window_capture);
+}
+
+#[cfg(target_os = "macos")]
+fn window_extent_capture() -> Result<Option<thrum_app::WindowExtentCapture>, String> {
+    use thrum_app::{ExtentWindow, WindowExtentCapture};
+
+    let Some(output) = std::env::var_os("THRUM_MAC_EXTENT_PROOF") else {
+        return Ok(None);
+    };
+    let requested = std::env::var("THRUM_MAC_EXTENT_WINDOW").map_err(|error| error.to_string())?;
+    let window = if requested == "fullscreen" {
+        ExtentWindow::Fullscreen
+    } else {
+        let (width, height) = requested.split_once('x').ok_or("expected widthxheight")?;
+        let parse = |n: &str| n.parse::<u32>().map_err(|error| error.to_string());
+        let extent = [parse(width)?, parse(height)?];
+        if extent.contains(&0) {
+            return Err("window point extent must be nonzero".to_owned());
+        }
+        ExtentWindow::Points(extent)
+    };
+    Ok(Some(WindowExtentCapture {
+        output: output.into(),
+        window,
+    }))
 }
 
 #[cfg(target_os = "macos")]
