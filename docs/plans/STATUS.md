@@ -338,7 +338,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main (BASELINE-GUARD M1), 12 Nov · [review](../evidence/BASELINE-GUARD/M1-review.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5), 11 Nov · [review](../evidence/ATMOSPHERE/M5-review.md)
 - The existing frame lifecycle runs through one split graph (APPLE-TILE M2), 11 Nov · [review](../evidence/APPLE-TILE/M2-review.md)
-- Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1), 11 Nov · [review](../evidence/APPLE-PRESENTATION/M1-review.md)
 
 ## All modules
 
