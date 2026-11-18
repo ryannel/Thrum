@@ -1502,9 +1502,12 @@ name = "match-proof"
 version = "0.1.0"
 dependencies = [
  "crowd-2d",
+ "rayon",
  "serde_json",
  "sha2",
  "thrum-core",
+ "thrum-network",
+ "thrum-transport",
  "wasm-bindgen",
  "web-time",
 ]
@@ -3229,6 +3232,7 @@ name = "thrum-network"
 version = "0.1.0"
 dependencies = [
  "thrum-core",
+ "thrum-transport",
 ]
 
 [[package]]

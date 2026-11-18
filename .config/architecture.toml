@@ -44,7 +44,7 @@ allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]
 
 [packages.match-proof]
 manifest = "examples/match-proof/Cargo.toml"
-allowed_workspace_dependencies = ["crowd-2d", "thrum-core"]
+allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network", "thrum-transport"]
 
 [packages.thrum-sea-model]
 manifest = "crates/thrum-sea-model/Cargo.toml"
@@ -135,8 +135,7 @@ allowed_workspace_dependencies = []
 
 [packages.thrum-network]
 manifest = "crates/thrum-network/Cargo.toml"
-# The timed input window consumes the shared W1 InputFrame without owning gameplay truth.
-allowed_workspace_dependencies = ["thrum-core"]
+allowed_workspace_dependencies = ["thrum-core", "thrum-transport"]
 
 [packages.thrum-transport]
 manifest = "crates/thrum-transport/Cargo.toml"

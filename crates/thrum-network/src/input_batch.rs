@@ -222,14 +222,14 @@ fn put<const N: usize>(
     clippy::cast_possible_truncation,
     reason = "finite normalized axis and 32767 scale prove the rounded value fits i16"
 )]
-fn quantize(axis: f32) -> Result<i16, InputCodecError> {
+pub(crate) fn quantize(axis: f32) -> Result<i16, InputCodecError> {
     if !axis.is_finite() || axis.abs() > 1.0 {
         return Err(InputCodecError::InvalidAxis);
     }
     Ok((f64::from(axis) * 32767.0).round() as i16)
 }
 
-fn dequantize(value: i16) -> Result<f32, InputCodecError> {
+pub(crate) fn dequantize(value: i16) -> Result<f32, InputCodecError> {
     if value == i16::MIN {
         return Err(InputCodecError::InvalidAxis);
     }

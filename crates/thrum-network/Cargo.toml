@@ -10,3 +10,4 @@ workspace = true
 
 [dependencies]
 thrum-core = { path = "../thrum-core" }
+thrum-transport = { path = "../thrum-transport", default-features = false }

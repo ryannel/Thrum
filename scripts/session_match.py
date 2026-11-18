@@ -369,10 +369,19 @@ def identity(scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["image", "identity", "image-costs"])
+    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory"])
+    parser.add_argument("scenario", nargs="?", choices=["steady", "lead", "costs"])
     parser.add_argument("--target", choices=TARGETS, default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.action == "memory":
+        if args.scenario is None or args.target != "mac-metal":
+            parser.error("memory needs a scenario on mac-metal")
+        from session_memory import proof
+        proof(args.scenario, args.output, build)
+        return
+    if args.scenario is not None:
+        parser.error("only memory takes a scenario")
     provenance = conformance.identity()
     SCRATCH.mkdir(parents=True, exist_ok=True)
     scratch_root = None if args.action == "identity" else SCRATCH

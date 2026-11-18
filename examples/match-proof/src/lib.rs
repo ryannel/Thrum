@@ -3,6 +3,11 @@
 mod image;
 pub use image::{capture, restore};
 
+#[cfg(not(target_arch = "wasm32"))]
+mod memory;
+#[cfg(not(target_arch = "wasm32"))]
+pub use memory::{MemoryRun, run_memory};
+
 use thrum_core::sim::RuleSetIdentity;
 
 fn rule_set(mixed: bool) -> RuleSetIdentity {

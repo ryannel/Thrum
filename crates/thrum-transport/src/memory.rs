@@ -32,6 +32,18 @@ struct Flight {
     direction: usize,
     lane: Lane,
     bytes: Vec<u8>,
+    duplicate: bool,
+}
+
+/// Observation of a virtual datagram at the carrier boundary.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DatagramEvent {
+    /// The carrier discarded the datagram.
+    Lost,
+    /// The first copy reached the receiving link.
+    Delivered,
+    /// The additional copy reached the receiving link.
+    Duplicate,
 }
 /// Host-side deterministic link factory and carrier. Time advances only by explicit calls.
 #[derive(Debug)]
@@ -60,12 +72,7 @@ impl Memory {
     /// Returns `InvalidProfile` for invalid limits or conditioner ranges.
     pub fn new(profile: Profile, conditioner: Conditioner) -> Result<Self, LinkError> {
         profile.validate()?;
-        if conditioner.loss_ppm > 1_000_000
-            || conditioner.jitter_ms > conditioner.delay_ms
-            || conditioner.seed == 0
-        {
-            return Err(LinkError::InvalidProfile);
-        }
+        validate(conditioner)?;
         Ok(Self {
             profile,
             conditioner,
@@ -75,6 +82,16 @@ impl Memory {
             cut: false,
             stalled: false,
         })
+    }
+    /// Change the treatment of newly handed-on packets, preserving existing flight and random state.
+    ///
+    /// # Errors
+    /// Returns `InvalidProfile` for invalid conditioner ranges.
+    pub fn recondition(&mut self, mut conditioner: Conditioner) -> Result<(), LinkError> {
+        validate(conditioner)?;
+        conditioner.seed = self.conditioner.seed;
+        self.conditioner = conditioner;
+        Ok(())
     }
     /// Start a client/host pair. Returns immediately in the connecting state.
     /// # Errors
@@ -139,6 +156,19 @@ impl Memory {
     /// # Panics
     /// Panics if time goes backwards.
     pub fn advance(&mut self, now: u64) {
+        self.advance_observed(now, |_, _, _| {});
+    }
+
+    /// Advance and observe datagram loss and delivery with original bytes.
+    /// The direction is zero from the first link returned by `connect`.
+    ///
+    /// # Panics
+    /// Panics if time goes backwards or an earlier panic poisoned a link.
+    pub fn advance_observed(
+        &mut self,
+        now: u64,
+        mut observe: impl FnMut(usize, DatagramEvent, &[u8]),
+    ) {
         assert!(now >= self.now, "virtual time must be monotonic");
         self.now = now;
         for pair in &mut self.pairs {
@@ -209,6 +239,7 @@ impl Memory {
                             Lane::Datagram,
                             bytes,
                             now,
+                            &mut observe,
                         );
                     }
                     while pair
@@ -231,6 +262,7 @@ impl Memory {
                             Lane::Reliable,
                             bytes,
                             now,
+                            &mut observe,
                         );
                     }
                 }
@@ -256,6 +288,7 @@ impl Memory {
                             Lane::Datagram,
                             bytes,
                             now,
+                            &mut observe,
                         );
                     } else {
                         pair.stack[direction].push(bytes);
@@ -282,6 +315,14 @@ impl Memory {
                         .expect("link state poisoned")
                         .receive(flight.lane, flight.bytes.clone());
                     if accepted || flight.lane == Lane::Datagram {
+                        if accepted && flight.lane == Lane::Datagram {
+                            let event = if flight.duplicate {
+                                DatagramEvent::Duplicate
+                            } else {
+                                DatagramEvent::Delivered
+                            };
+                            observe(flight.direction, event, &flight.bytes);
+                        }
                         pair.flight.remove(index);
                     } else {
                         blocked[flight.direction] = true;
@@ -292,6 +333,17 @@ impl Memory {
         }
     }
 }
+fn validate(conditioner: Conditioner) -> Result<(), LinkError> {
+    if conditioner.loss_ppm > 1_000_000
+        || conditioner.jitter_ms > conditioner.delay_ms
+        || conditioner.seed == 0
+        || conditioner.delay_ms > 120_000
+    {
+        return Err(LinkError::InvalidProfile);
+    }
+    Ok(())
+}
+
 fn random(state: &mut u64) -> u64 {
     *state ^= *state << 13;
     *state ^= *state >> 7;
@@ -306,6 +358,7 @@ fn schedule(
     lane: Lane,
     bytes: Vec<u8>,
     now: u64,
+    observe: &mut impl FnMut(usize, DatagramEvent, &[u8]),
 ) {
     // The virtual network is finite too. A datagram that cannot enter it is network loss,
     // separate from expiry or overflow in the sender's link queue.
@@ -319,10 +372,12 @@ fn schedule(
             + bytes.len()
             > pair.datagram_cap
     {
+        observe(direction, DatagramEvent::Lost, &bytes);
         return;
     }
     let lost = random(rng) % 1_000_000 < u64::from(condition.loss_ppm);
     if lost && lane == Lane::Datagram {
+        observe(direction, DatagramEvent::Lost, &bytes);
         return;
     }
     let delay =
@@ -333,18 +388,22 @@ fn schedule(
         due = due.max(pair.reliable_due[direction]);
         pair.reliable_due[direction] = due;
     }
-    if lane == Lane::Datagram && condition.duplicate {
-        pair.flight.push(Flight {
-            due,
-            direction,
-            lane,
-            bytes: bytes.clone(),
-        });
-    }
+    let duplicate = lane == Lane::Datagram && condition.duplicate;
+    let duplicate_bytes = duplicate.then(|| bytes.clone());
     pair.flight.push(Flight {
         due,
         direction,
         lane,
         bytes,
+        duplicate: false,
     });
+    if let Some(bytes) = duplicate_bytes {
+        pair.flight.push(Flight {
+            due,
+            direction,
+            lane,
+            bytes,
+            duplicate: true,
+        });
+    }
 }

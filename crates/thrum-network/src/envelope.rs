@@ -40,6 +40,12 @@ pub enum Kind {
     BaselineChunkAck = 13,
     /// Selective acknowledgement for one admitted state image.
     StateAck = 14,
+    /// Committed deterministic sets and input margin.
+    AdmittedSets = 15,
+    /// Ordered deterministic action.
+    Command = 16,
+    /// Final authority endpoint.
+    MatchEnded = 17,
 }
 
 impl TryFrom<u8> for Kind {
@@ -61,6 +67,9 @@ impl TryFrom<u8> for Kind {
             12 => Self::Close,
             13 => Self::BaselineChunkAck,
             14 => Self::StateAck,
+            15 => Self::AdmittedSets,
+            16 => Self::Command,
+            17 => Self::MatchEnded,
             _ => return Err(EnvelopeError::ReservedKind),
         })
     }

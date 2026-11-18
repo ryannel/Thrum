@@ -8,6 +8,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect::<Vec<_>>()
         .as_slice()
     {
+        #[cfg(not(target_arch = "wasm32"))]
+        [
+            "memory",
+            profile,
+            ticks,
+            bodies,
+            repeats,
+            seed,
+            costs,
+            stall,
+        ] => match_proof::run_memory(match_proof::MemoryRun {
+            profile,
+            ticks: ticks.parse()?,
+            bodies: bodies.parse()?,
+            repeats: repeats.parse()?,
+            seed: seed.parse()?,
+            costs: costs.parse()?,
+            stall: stall.parse()?,
+            listen: false,
+        })?,
         ["identity"] => serde_json::json!({
             "crowd": match_proof::identity(false),
             "mixed": match_proof::identity(true),
