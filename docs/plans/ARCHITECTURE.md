@@ -2153,15 +2153,16 @@ belongs to its owner: later work there keeps its tests passing.
     ahead of time and M12's pipeline archive cover a launch with no hardware request, which is what their
     strict runs take. Bringing track 5's shaders into the library cook is a proposal for that module once M10
     is Done.
-12. **A preferred recipe** (`MESH-SHADING` M3, unless another milestone has landed it; `capabilities.rs`,
-    `capabilities/recipe.rs` and the proving ground's Mac host). The registry's recipe resolution gains one
+12. **A preferred recipe** (`MESH-SHADING` M3 or `RAY-TRACING` M6, whichever lands first, and the other
+    uses it as found; `capabilities.rs`, `capabilities/recipe.rs` and the proving ground's Mac host). The registry's recipe resolution gains one
     input beside the named recipe: a recipe the host prefers. It is read only when no recipe is named. Where
     the facts that admit a named Apple tile admit it, the generation resolves to Apple tile. Where they do
     not, it resolves to portable and the registry records why. A preference is never an error. A named
     recipe, `portable` or `apple-tile`, resolves exactly as today, and so does a launch that names none and
     states no preference, so no launch that exists today moves and no item of `APPLE-TILE` changes.
     `MESH-SHADING`'s launch selection states a preference for Apple tile, and only on a generation that
-    enabled `mesh-stages`. Another opt-in may use it as found.
+    enabled `mesh-stages`. `RAY-TRACING`'s states the same preference, and only on a generation that
+    enabled `ray-query`.
 
 ### Interfaces (track 5)
 
@@ -2262,9 +2263,9 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
     feature is missing, and `RAY-TRACING` M6 and `MESH-SHADING` M3 record how it looks and what it costs on
     this Mac, timed while other builders work. Making either a default needs a measured win on a quiet
     machine and a rule for which Macs it covers, and in the showcase it would change the V1 exit. The two can
-    be turned on together; neither module checks the pair. The mesh stages draw only on the Apple tile
-    recipe, so their setting also selects Apple tile where no recipe is named, and a launch that names the
-    portable recipe stays on the existing path.
+    be turned on together; neither module checks the pair. The mesh stages and the ray effects draw only on
+    the Apple tile recipe, so each setting also selects Apple tile where no recipe is named, and a launch
+    that names the portable recipe stays on the existing path.
 34. **Effects with no portable version.** Lamp shadows and ambient occlusion appear only on a device that
     traces rays, on the Apple tile recipe. On the portable recipe a scene that asks for a ray effect draws without it and reports why. No screen-space stand-in is planned for Chrome or the portable recipe.
 35. **Where track 5 sits in the queue.** Behind every V1 milestone. Its order among the other work off the
@@ -2705,3 +2706,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   and the timing record's span is named the timed-pass span, with the queued transfers it leaves out
   disclosed. No V1 module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
   Its design still calls the span the whole frame's and says its opt-in leaves the recipe as it is today.
+- 2026-11-18 Track 5 ruling 12 and owner decision 33 were amended after
+  [RAY-TRACING's third design review](../evidence/RAY-TRACING/design-review.md): `RAY-TRACING` M6 builds
+  the recipe preference if `MESH-SHADING` M3 has not, and its launch selection prefers Apple tile on a
+  generation that enabled `ray-query`. Its design now names ruling 7's timed-pass span as that ruling does.
+  No V1 module's item, contract or exact baseline changed, and no file of `MESH-SHADING` changed.

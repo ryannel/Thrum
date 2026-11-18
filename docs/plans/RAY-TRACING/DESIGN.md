@@ -28,7 +28,9 @@ The lead, 18 November 2026, after two design reviews found faults in a rule that
 itself: "the traced path is an explicit, recorded opt-in for this Mac, judged by eye against the inspection
 list, with a paired whole-frame timing kept as a tripwire, and a plain fallback to the portable path when its
 feature is missing. Drop adapter-keyed automatic promotion and recipe-difference crediting." So this module
-promotes nothing. The measured win the lead's task asks of a default is owed by whoever later makes one.
+promotes nothing. The measured win the lead's task asks of a default is owed by whoever later makes one. The
+timing the lead calls whole-frame is taken as two figures, [a timed-pass span and the frame's CPU time](#cost-account),
+and the span is named for what it measures.
 
 Mesh shaders are [MESH-SHADING](../MESH-SHADING/DESIGN.md). This design is ray tracing.
 
@@ -49,7 +51,7 @@ that cast shadows, and props that sit on the ground. Everything else in the fram
 | User | Needs | What that requires |
 |---|---|---|
 | A game or demo on the Mac | Turn each effect on for a scene, see what it resolved to, pay nothing when it is off, and still draw where rays cannot run | Scene-level requests that fall back to the map frame, a resolved report, no resource without a request |
-| A person running a scene on this Mac | Turn the traced path on for the machine with one launch setting, never have a launch fail for it, and know how it looks and what it costs | A launch request that falls back, and this Mac's record |
+| A person running a scene on this Mac | Turn the traced path on for the machine with one launch setting and nothing else, never have a launch fail for it, and know how it looks and what it costs as launched | A launch request that reaches the Apple tile recipe by itself and falls back, and this Mac's record of that launch |
 | Chrome, the iPhone simulator, a Mac on the portable recipe | The frame they have | No shader text, pipeline, resource or byte changes there, whatever the device offers |
 | A later Vulkan or D3D12 recipe | The same paths | Everything goes through wgpu's public API and WGSL; nothing names Metal |
 
@@ -60,8 +62,9 @@ that cast shadows, and props that sit on the ground. Everything else in the fram
 3. Shadows from lamps, as an effect a scene asks for.
 4. Soft Sun shadows: the Sun's disc sampled by rays and filtered over time and space.
 5. Ambient occlusion by ray.
-6. An opt-in a person makes for a machine, a fallback to the map frame wherever rays cannot run, and this
-   Mac's record: how the final build looks, and a paired whole-frame timing beside shadow maps.
+6. An opt-in a person makes for a machine with one setting, a fallback to the map frame wherever rays cannot
+   run, and this Mac's record: how the final build looks as that setting launches it, and a paired frame
+   timing beside shadow maps.
 
 **Not built**, with the reason:
 
@@ -85,7 +88,8 @@ that cast shadows, and props that sit on the ground. Everything else in the fram
 - **Water, clouds and anything drawn after opaque geometry** as occluders. Clouds shade through the Sun-path
   optical depth, as today.
 - **Ray effects on the portable recipe.** The portable recipe is the reference, on this Mac too, so it has
-  none. A scene that asks there draws the map frame.
+  none. A scene that asks there draws the map frame. The opt-in reaches Apple tile by itself only where no
+  recipe is named.
 - **Chrome and the iPhone simulator.** Neither offers ray queries. A physical iPhone with a ray-tracing GPU
   would resolve the same paths from the same registry facts; none is available, so nothing is claimed.
 
@@ -97,7 +101,7 @@ that cast shadows, and props that sit on the ground. Everything else in the fram
 | **R2 No acne, no gap, no leak** | Receivers at grazing light, thin casters, where a prop meets the ground | Sun elevation 1° to 90°; receivers 0.5 m to 20 km from the camera; coordinates to 20 km from the scene's origin | A bias tuned on one view, or one so large that it steps over a nearby caster. Rejected by inspection across the range and by a panel close to a wall, far from the origin |
 | **R3 A shadow softens with distance from its caster** | A balloon's shadow on the valley floor, a ridge's shadow at low Sun, a prop's own base | Caster 0.1 m to 3 km from the receiver; the Sun's disc cut by a ridge at sunset | A blur of constant width, or grain in place of softness. Rejected by frames inspected at rest and in motion |
 | **R4 Things are grounded** | Under and between props, in creases of terrain, in shade and under an overcast sky | Occluders from contact to the scene's declared radius | Darkening that follows the screen and not the scene: halos at silhouettes, occlusion that vanishes when the occluder leaves the view. Rejected by turning the camera so the occluder is off screen |
-| **R5 Nothing else moves** | The frame with no request; Chrome; the simulator; the portable recipe; a Mac that cannot trace | Every scene on main | A request that defaults on, or a launch that fails where rays are missing. Rejected by the exact baselines, by counting created resources, and by launching where the request cannot be met |
+| **R5 Nothing else moves** | The frame with no request; Chrome; the simulator; the portable recipe; a Mac that cannot trace | Every scene on main | A request that defaults on, a launch that fails where rays are missing, or an opt-in that draws maps on a Mac that traces because nothing chose its recipe. Rejected by the exact baselines, by counting created resources, and by launching the one setting where it can be met and where it cannot |
 
 The bar is ray-traced shadows and occlusion as shipped high-end games show them, such as Cyberpunk 2077's
 ray-traced Sun and local shadows and Metro Exodus Enhanced Edition's grounded ambient light, smooth at the
@@ -426,6 +430,14 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 - **Where a ray request can be met.** Only on a device generation that enabled ray queries, and only on a
   recipe that lists ray effects. The Apple tile recipe lists them. The portable recipe does not, so a launch
   on it is the reference on any Mac, with or without the feature enabled.
+- **The recipe.** A named recipe resolves as it does today: `THRUM_RECIPE=portable` is portable, and
+  `apple-tile` is Apple tile or the refusal it is today. With no recipe named, a launch resolves to portable
+  as today unless its host states a preference. Under
+  [ruling 12](../ARCHITECTURE.md#seam-rulings-for-track-5) a host may prefer Apple tile: the registry admits
+  it by the facts that admit a named one (Metal, unified memory, transient storage), and where they do not
+  admit it the generation resolves to portable and the registry records why. A preference is never an error
+  and never overrides a named recipe. `MESH-SHADING` M3 and this module's M6 both use it; whichever lands
+  first builds it and the other uses it as found.
 - **Resolution, with a plain fallback.** One function of the registry resolves the requests against the
   generation, before anything is allocated. A ray request that cannot be met resolves to what the portable
   path has: `Traced` to `Maps`, lamp shadows and ambient occlusion to off, the structure to none. The scene is
@@ -437,7 +449,8 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 - **Report.** For each request: what was asked, what it resolved to and, where the two differ, why. The
   reasons are that the device did not enable ray queries, that the recipe lists no ray effect, and that
   preparation failed. With them go the hardware names the launch gave, which were enabled, and why any was
-  not, and the settle lengths. All of it is reported where the culling mode is, so
+  not, the recipe the generation resolved to and, where a preferred recipe was not taken, why, and the
+  settle lengths. All of it is reported where the culling mode is, so
   [a run can say what it ran](../ARCHITECTURE.md#interfaces-track-5). A fallback is never silent.
 - **Everything is prepared.** Pipelines for the resolved methods are created on a device generation before
   the scene is ready on it, and none is created while that generation draws. A replacement device creates its
@@ -445,33 +458,63 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 - **Quality values.** Penumbra, lamp-ray count, ambient occlusion and its resolution, and the two settle
   lengths are runtime values declared through the contribution seam's quality knobs, each with the history it
   invalidates, for the governor.
-- **The opt-in.** A person turns the traced path on for a machine by how they launch: the Apple tile recipe,
-  `ray-query` as a [preferred](#hardware-features-at-launch) name, and a scene that asks for `Traced`. The
-  proving ground's valley has one launch selection, off by default, that names `ray-query` as preferred and
-  asks for `Traced` with the penumbra; the recipe is chosen as it is today. On a machine that cannot trace,
-  and on the portable recipe, the same launch draws the map frame and reports why.
+- **The opt-in.** A person turns the traced path on for a machine by how they launch: `ray-query` as a
+  [preferred](#hardware-features-at-launch) name, the Apple tile recipe, and a scene that asks for `Traced`.
+  The proving ground's valley has one launch selection, off by default, that does all three: it names
+  `ray-query` as preferred, it states a preference for Apple tile where the device enabled ray queries, and
+  it asks the scene for `Traced` with the penumbra. It asks for no lamp shadow and no ambient occlusion,
+  which keep the selections M3 and M5 gave them. The window and the capture host read it alike. What that
+  one setting gives:
+
+  | The launch, with the selection | Recipe | The Sun's shadow |
+  |---|---|---|
+  | No recipe named, on a Mac that traces rays and admits Apple tile | Apple tile | `Traced` with the penumbra |
+  | `THRUM_RECIPE=portable` | Portable | `Maps`, reported with the recipe as the reason |
+  | No recipe named, and Apple tile is not admitted | Portable, with why it was not taken | `Maps`, as above |
+  | The GPU offers no ray queries, or the device request with them fails | As with no selection | `Maps`, reported with the device as the reason |
+
+  In the last row the selection states no preference, so the launch is the ordinary one in everything but
+  its report. `THRUM_RECIPE=apple-tile` stays the strict diagnostic it is: on a Mac that does not admit Apple
+  tile it is refused with the selection as it is without it, and the selection neither causes that refusal
+  nor hides it. With no selection nothing here is read and the launch is today's. The opt-in is recorded in
+  two places: every run's report says what was asked, enabled and resolved, and this Mac's record says what
+  the opt-in was found to do here.
 - **This Mac's record (M6).** It is written for a person deciding whether to opt a machine in, and nothing in
   the engine reads it. It holds the machine as the OS reports it (chip, GPU core count, memory, OS version)
-  with the registry's digest, the commit, the launch line, the look, and the paired timing. The look is M6's
-  inspection of the final build against the lists of M3 to M5.
-- **The paired timing is a tripwire.** On the final build with capture off, on the Apple tile recipe at
-  1280×720 and at 1920×1080, the valley's route runs with the Sun's method as `Maps` and in the opt-in
-  configuration: `Traced` with the penumbra on, the default quality values, and lamp shadows and ambient
-  occlusion off. The two launches differ in the Sun's method and in nothing else: the same recipe,
-  reconstruction, display range, extent, route and quality values. At each extent they run interleaved, twice
-  each. The record keeps [the whole-frame figures](#cost-account) of every frame, each run's medians, each
-  pass by name and the machine's load. It states the difference between the methods beside the spread
-  between a method's own two runs, and where the spread is the larger it says the pair shows no difference.
-  Rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect together
-  sit beside the pair. It is taken while other builders work, as every timing of this module is. A traced
-  frame about 25% above the map frame in either figure, or a visible hitch, is investigated and the record
-  says what was found. No figure fails an item, and none turns anything on.
+  with the registry's digest, the commit, the launch line, the look, and the paired timing. The launch line
+  is the selection and nothing else: it names no recipe. The look is two inspections of the final build, each
+  under the settings its capture's report gives:
+  - **The opt-in as launched.** Frames captured with the selection as the launch line gives it: traced Sun
+    shadows with the penumbra, no lamp shadow, no ambient occlusion. The Sun's cues are judged at contact,
+    at rest and in motion, by the lists of M3 and M4 that apply. This is what a person who follows the launch
+    line sees, and the only inspection that would show a fault of this configuration alone, such as a soft
+    history that is bound only when ambient occlusion is on. At the night stop it shows lamps without
+    shadows, and the record says so.
+  - **Every effect together.** Lamp shadows and ambient occlusion added through their own selections, judged
+    by the lists of M3 to M5. No sentence of the record gives this result as the opt-in's.
+- **The paired timing is a tripwire.** On the final build with capture off, at 1280×720 and at 1920×1080, the
+  valley's route runs from two launches. One is the opt-in launch as the record's launch line gives it, with
+  no recipe named: `Traced` with the penumbra, the default quality values, and lamp shadows and ambient
+  occlusion off. The other is the same launch without the selection and with Apple tile named, which draws
+  `Maps`. So both run on the Apple tile recipe and differ in the Sun's method and in nothing else that draws:
+  the same recipe, cooked draw path, reconstruction, display range, extent, route and quality values. Each
+  run keeps its report of the resolved recipe, Sun shadow method and cooked draw path, which shows it. At
+  each extent they run interleaved, twice each, which is eight runs. The record keeps
+  [the two figures](#cost-account) of every frame, each run's medians, each pass by name and the machine's
+  load. It states the difference between the methods beside the spread between a method's own two runs, and
+  where the spread is the larger it says the pair shows no difference. Rows for `Traced` with hard edges, for
+  lamp shadows, for ambient occlusion and for every effect together sit beside the pair. It is taken while
+  other builders work, as every timing of this module is. A traced frame about 25% above the map frame in
+  either figure, or a visible hitch, is investigated and the record says what was found. No figure fails an
+  item, and none turns anything on.
+
+  The setting also moves a launch with no recipe named from portable to Apple tile. The pair holds the
+  recipe fixed because that isolates the method: against a portable launch it would also measure that
+  recipe's own attachments, reconstruction and display range. The record says so beside the pair.
 - **What is not claimed.** No default, and no performance qualification under C12. That asks for a
   comparison with the portable recipe, an image difference inside a declared tolerance and a sustained run,
-  and it belongs with a decision to make a ray effect a default. The pair is taken against the map method
-  under one recipe because that isolates the path. Against the portable recipe it would also measure that
-  recipe's own reconstruction and display range, and a difference image would show those too. The maturity
-  ledger records the traced path as run on this Mac, not performance-qualified and not a default.
+  and it belongs with a decision to make a ray effect a default. The maturity ledger records the traced path
+  as run on this Mac, not performance-qualified and not a default.
 - **Why M6 waits for the exit.** M6 waits for `SHOWCASE` M8 so that its inspection and its record describe
   the valley as the V1 exit leaves it. Nothing here changes the window's default, before the exit or after
   it, and the verifier's runs name no hardware feature, so no registered exact baseline moves.
@@ -500,10 +543,17 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 - **The retry at launch.** `request_device` returns an error and does not abort, and the Mac window already
   takes a fresh adapter for every device it makes, so a second request after a failed one is a call it makes
   today.
-- **The whole frame's GPU span.** The timestamp batch already keeps each pass's time and the gap before it,
-  the surface pass included, so the span is a sum the batch can give. A structure build is not a pass with
-  timestamps of its own. It is inside the span when a timed pass that reads no structure is encoded before
-  it, and M1's record of the build's GPU time has to arrange that anyway.
+- **The timed-pass span.** `timing.rs` reads every timed pass's begin and end counters from one batch, the
+  surface consumer's among them, so the span is the last end less the first begin, with no new query. A
+  structure build is not a pass with timestamps of its own. It is inside the span when a timed pass that
+  reads no structure is encoded before it, and M1's record of the build's GPU time has to arrange that
+  anyway. A span that held the queued transfers too would need the command buffer's own GPU start time,
+  which wgpu does not give. For a tripwire the pass interval is enough when it is named as one.
+- **The recipe.** `capabilities/recipe.rs` resolves the recipe from the adapter's backend, unified memory and
+  transient storage and one optional name, and returns portable when none is given. A preference is one
+  more optional input, read only when no name is given and admitted by the facts a named Apple tile needs.
+  With no preference the function returns what it returns today, so no existing launch moves. The registry
+  is made after the device, so the host knows whether ray queries were enabled before it states one.
 - **Scale.** The representative scene is 10,000 entities with 1,000 to 2,000 movers. A rebuild is linear in
   instances, and the structure holds every instance whether or not it is on screen. M1 records it at 10,000
   and at the field's 100,513, and claims nothing at the larger count.
@@ -514,7 +564,9 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 ## The system as it runs
 
 1. **Launch.** The launch's list names `ray-query`, required or preferred. The device enables it and the
-   registry records it. A preferred name that cannot be met is left out, and the registry records why.
+   registry records it. A preferred name that cannot be met is left out, and the registry records why. The
+   recipe resolves from its name, or from the host's preference where none was named, and the registry
+   records which and why.
 2. **Preparation.** The scene resolves its requests, to the map frame's where rays cannot run. With ray demand, the arena and each resident cooked
    mesh are created with the build usage and build their mesh structures, the shader is composed with the
    traced operations, and pipelines are created through the device's creation authority. Without it the scene
@@ -541,7 +593,8 @@ Defined here, listed in [the module list](../ARCHITECTURE.md#interfaces-track-5)
 
 This module builds inside state other modules own, under
 [the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5). Its own files are a `raytrace`
-module in `thrum-render` and its tests. With no request every byte on main is unchanged, and each milestone
+module in `thrum-render` and its tests. With no request and no selection every byte on main is unchanged,
+the recipe a launch resolves to included, and each milestone
 proves it through [the exact baselines](../ARCHITECTURE.md#exact-baselines). No baseline is added for a traced
 frame: it is judged by inspection.
 
@@ -550,17 +603,27 @@ frame: it is judged by inspection.
 Recorded, never a gate (brief decision 3). The tripwires are the brief's: a visible hitch, a comparable figure
 about 25% worse than its last record, growth that is not linear in what it should follow.
 
-**The whole frame** is two figures, in every record of this module from M3 on:
+**A frame's cost** is two figures, in every record of this module from M3 on:
 
-- **Frame GPU span:** from the start of the first GPU work the frame encodes, the structure build included,
-  to the end of the pass that consumes the frame's output. The time between passes and any untimed transfer
-  lie inside it.
-- **Frame CPU time:** the frame sample's upload and encode intervals together.
+- **Timed-pass span:** from the begin timestamp of the first timed pass the frame encodes to the end
+  timestamp of the pass that consumes the frame's output. The time between those passes lies inside it, and
+  so does the structure build, which a frame with ray demand encodes after its first timed pass. It is a
+  pass interval and not the whole frame's GPU time. wgpu runs the transfers a frame queues with
+  `Queue::write_buffer` before the frame's first pass, so they lie outside it: the view and instance uploads
+  under both methods, the cascades' view records under `Maps`, and whatever the traced path queues for its
+  own passes. Those differ between the methods, so the span can miss a GPU cost one of them pays. The CPU
+  side of the same writes is inside frame CPU time. It is the span
+  [ruling 7](../ARCHITECTURE.md#seam-rulings-for-track-5) adds to the frame's timing record, which M3 adds
+  if `MESH-SHADING` M2 has not, and uses as found if it has.
+- **Frame CPU time:** the frame sample's upload and encode intervals together, which run from the start of
+  the frame's uploads to the return of its submission.
 
-A sum of pass times is not the whole frame. The runtime's scene sum leaves out the surface pass, untimed
-transfers and the time between passes, and tracing moves work into exactly those places: it adds a build
-before shading and removes two cascade passes. Pass times by name explain a difference between two rows and
-are never the difference. M3's record is the first to read the span, and adds it to the frame's timing record.
+A sum of pass times is less than either. The runtime's scene sum leaves out the surface pass and the time
+between passes, and tracing moves work into exactly those places: it adds a build before shading and removes
+two cascade passes. Pass times by name explain a difference between two rows and are never the difference.
+
+Every record that carries the span calls it the timed-pass span and says which queued transfers lie outside
+it for each method, and no sentence drawn from it speaks of the whole frame's GPU time.
 
 - **Structure memory.** One mesh structure for each mesh, not each instance, plus an instance record for each
   thing in the scene. M1 and M2 record resident bytes.
@@ -602,9 +665,13 @@ that moved, through a third mask bit.
 
 - GPU tests ask `thrum-test-support`'s gate for a device with `ray-query` required and the Apple tile recipe,
   and are skipped with a reason where the adapter offers no ray queries. On this Mac a skip fails. A capture
-  for an inspected item requires the name too, so its frames cannot be the fallback's.
-- A case this Mac cannot show by itself is forced: an adapter without ray queries through the registry's
-  function, and a failed device request, structure or pipeline through a fault the test injects.
+  for an inspected item requires the name too, so its frames cannot be the fallback's. M6's capture of the
+  opt-in is the one exception: it is launched as the record's launch line gives it, because that launch is
+  what it judges. Its report is kept beside its frames, and frames whose report does not read Apple tile and
+  `Traced` with the penumbra are the fallback's and are not judged.
+- A case this Mac cannot show by itself is forced: an adapter without ray queries, and one whose facts do
+  not admit Apple tile, through the registry's functions, and a failed device request, structure or pipeline
+  through a fault the test injects.
 - Tests that need only entities live in `thrum-render`'s tests. Proofs that need cooked meshes or the valley
   run in the proving ground through a script, so a check names no game package.
 - Visual items use T2 engine capture on `mac-metal`, `fixed` for stills and `realtime` for motion, in the

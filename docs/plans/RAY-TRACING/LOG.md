@@ -45,3 +45,13 @@
   shadow bit is a fact about the thing and never follows Sun maps, so a lamp-only room is shadowed with Sun
   shadows off, for entities and cooked placements (M2.4, M3.4, M3.8). M3.12 was split from M3.6. The design
   review is owed.
+- 2026-11-18 The design review at `66c37436f35a` asked for changes: two Must Fix, one Suggestion. (1) The
+  opt-in could not reach tracing by itself, because nothing chose its recipe. The valley's selection now
+  prefers Apple tile where the device enabled `ray-query`, under ruling 12, which M6 builds if `MESH-SHADING`
+  M3 has not. A named recipe resolves as today, and portable draws maps and says why (M6.2). (2) M6 never
+  judged the frame the launch line produces. New M6.3 inspects the opt-in as launched; the combined
+  inspection is M6.4 and is labelled by its settings; the attended run covers both (M6.5). M6 renumbered.
+- 2026-11-18 The same review's Suggestion was taken: each run of the pair keeps its resolved recipe, Sun
+  method and cooked draw path, and the `Maps` arm names Apple tile (M6.1). Also brought into step with
+  ruling 7 as `MESH-SHADING`'s third review left it: the GPU figure is the timed-pass span, with the queued
+  transfers outside it disclosed (M3.10, M4.9, M5.7, M6.1). The design review is owed.

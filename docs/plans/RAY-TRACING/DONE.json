@@ -309,7 +309,7 @@
         },
         {
           "id": "M3.10",
-          "statement": "Paired rows on the valley's route are on record with the machine's load, for `Maps` and for `Traced` with and without lamp shadows: the design's two whole-frame figures and each pass by name, with the cascade passes' absence under `Traced` shown. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "Paired rows on the valley's route are on record with the machine's load, for `Maps` and for `Traced` with and without lamp shadows: the design's two figures, the timed-pass span and frame CPU time, and each pass by name, with the cascade passes' absence under `Traced` shown. The span holds the structure build, and the record calls it the timed-pass span and says which queued transfers lie outside it for each method. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py shadows",
           "lock": "gpu",
           "target": "mac-metal",
@@ -428,7 +428,7 @@
         },
         {
           "id": "M4.9",
-          "statement": "Paired rows on the valley's route are on record with the machine's load, with the penumbra on and off: the design's two whole-frame figures, the forward pass with its inline centre rays, and the visibility pass's trace and filter by name. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "Paired rows on the valley's route are on record with the machine's load, with the penumbra on and off: the design's two figures, the timed-pass span and frame CPU time, the forward pass with its inline centre rays, and the visibility pass's trace and filter by name. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py soft",
           "lock": "gpu",
           "target": "mac-metal",
@@ -512,7 +512,7 @@
         },
         {
           "id": "M5.7",
-          "statement": "Paired rows on the valley's route are on record with the machine's load, with ambient occlusion off, at half extent and at full: the design's two whole-frame figures and the visibility pass by name. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "Paired rows on the valley's route are on record with the machine's load, with ambient occlusion off, at half extent and at full: the design's two figures, the timed-pass span and frame CPU time, and the visibility pass by name. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py ambient",
           "lock": "gpu",
           "target": "mac-metal",
@@ -542,13 +542,13 @@
       "depends_on": [
         "SHOWCASE:M8"
       ],
-      "quality_bar": "An opt-in a person can trust: one launch setting, a launch that never fails for want of ray tracing, and a record that says plainly how the final build looks and what it costs beside shadow maps on this Mac, with each sentence no stronger than its rows and nothing claimed for a machine or a recipe that was not run. With every effect on, the valley meets the bars of M3 to M5 together and is smooth at the display's full refresh, or the record says why not.",
+      "quality_bar": "An opt-in a person can trust: one launch setting and nothing else to set, a launch that never fails for want of ray tracing, and a record that says plainly how the final build looks and what it costs beside shadow maps on this Mac as that setting launches it, with each sentence no stronger than its rows and nothing claimed for a machine, a recipe or a setting that was not run. As launched, the Sun's shadows meet the bars of M3 and M4; with every effect on, the valley meets the bars of M3 to M5 together. Each is smooth at the display's full refresh, or the record says why not.",
       "items": [
         {
           "id": "M6.1",
-          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the traced path on, and the design's paired timing. The pair holds both whole-frame figures for every frame of its eight runs, each run's medians, each pass by name and the machine's load, and states the difference between the two methods beside the spread between a method's own two runs. Beside it are rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect together. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the traced path on, which names no recipe, and the design's paired timing. For each of the pair's eight runs it holds the recipe, the Sun shadow method and the cooked draw path the run resolved, both figures for every frame, the timed-pass span and frame CPU time, with their medians, each pass by name and the machine's load. For each figure at each extent it states the difference between the two methods beside the spread between a method's own two runs, and says the pair shows no difference where the spread is the larger. It calls the GPU figure the timed-pass span and says which queued transfers lie outside it for each method. It says that the setting also moves a launch with no recipe named to Apple tile, which the pair does not measure. Beside the pair are rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect together. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
           "check": "python3 scripts/ray_tracing_cost.py check",
-          "ask": "Do the two methods' runs differ in the Sun's shadow method alone, does the frame GPU span run from the frame's first GPU work, the structure build included, to the end of the pass that consumes its output, and is each sentence the record draws from the pair no stronger than its spread allows?",
+          "ask": "Did every run of the pair resolve to the Apple tile recipe and to one cooked draw path, the two arms differing in the Sun's shadow method alone, with the traced arm launched by the record's launch line? Does the timed-pass span hold the structure build and the pass that consumes the frame's output? Is each sentence the record draws from the pair no stronger than its spread allows, and does none call the span the whole frame's GPU time?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -557,9 +557,9 @@
         },
         {
           "id": "M6.2",
-          "statement": "From an ordinary launch of the proving ground's Mac window on the final build: with the opt-in selection on the Apple tile recipe, the valley reports `ray-query` enabled and `Traced` with the penumbra. With no selection, the device is the one made today and the valley reports `Maps`. With the selection on the portable recipe, the frame is the map frame and the report says the recipe is why. With the selection and the first device request made to fail, the window makes the device it makes today, draws the map frame and reports why. No launch is refused and none fails.",
+          "statement": "From an ordinary launch of the proving ground's Mac window on the final build, on this Mac. With the opt-in selection and no recipe named, the valley reports the Apple tile recipe, `ray-query` enabled and `Traced` with the penumbra. With the selection and `THRUM_RECIPE=portable`, it reports the portable recipe and `Maps`, with the recipe as the reason. With the selection, no recipe named and the adapter's facts made not to admit Apple tile, it reports the same, and why Apple tile was not taken. With the selection and `ray-query` not enabled, once because the adapter is made not to offer it and once because the first device request is made to fail, the window makes the device it makes today, resolves the recipe of a launch with no selection, reports `Maps` and reports why. With no selection the device, the recipe and the frame are today's. No launch is refused and none fails.",
           "check": "python3 scripts/ray_tracing_proof.py launch",
-          "ask": "Is each case launched through the Mac window's host as a person would launch it, with only the device request's failure injected?",
+          "ask": "Is each case launched through the Mac window's host as a person would launch it, with only the adapter's offer of ray queries, the device request's failure and the adapter's recipe facts injected, and do the first two cases differ in `THRUM_RECIPE` alone?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -569,8 +569,8 @@
         },
         {
           "id": "M6.3",
-          "statement": "On the final build with every effect on together, the populated valley passes the lists of M3.2, M3.5, M4.2 to M4.6, M5.3, M5.4 and M5.5, and the effects agree: a surface in a traced shadow is not also lit by the Sun through the history, and occlusion does not darken a shadow's edge twice. The opt-in record states the result for each list.",
-          "inspect": "One capture pass on the final build: `fixed` stills at the route's stops at noon, at a low Sun, at dusk and at night, and `realtime` sequences of the route with the numbered frames M4.4 and M5.5 ask for, judged by those items' lists.",
+          "statement": "Launched as the record's launch line gives it, with the opt-in selection and nothing else, the valley on the final build shows the Sun's shadows as M3 and M4 passed them. At the noon and low-Sun stops no lit surface shows acne, no shadow gaps or leaks where a prop meets the ground, and an edge is sharp at a prop's base and wider under a balloon, by the lists of M3.2 and M4.2. At rest no penumbra shows grain, by M4.3's list. Along the route a balloon's shadow stays under it and its soft edge leaves no trail, by M4.4's list for the balloon. The record states the result for each list under the settings the capture's report gives, and says that in this configuration lamps cast no shadow and nothing is darkened by ambient occlusion.",
+          "inspect": "From the same capture session as M6.4, frames captured with the opt-in selection as the record's launch line gives it: no recipe named and no other ray selection. The capture's own report is beside them and reads the Apple tile recipe, `ray-query` enabled, `Traced` with the penumbra, lamp shadows off and ambient occlusion off; frames under any other report are not judged. `fixed` stills at the route's noon and low-Sun stops, whole and as native-size crops of a contact point, a grazing slope, a prop's base and a balloon's shadow edge. Consecutive `realtime` frames at rest at one stop, as native-size crops of the widest penumbra. The numbered `realtime` frames M4.4 asks for around a moving balloon's shadow.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -579,8 +579,18 @@
         },
         {
           "id": "M6.4",
-          "statement": "ATTENDED SETUP: on the built-in display the capture-off release proving ground runs the valley's route on the Apple tile recipe with the traced Sun shadow, its penumbra, lamp shadows and ambient occlusion on, with an OS-reported presented interval for every submission. Each missed refresh is listed and investigated.",
-          "inspect": "The presented-interval record of that run, with the list of missed refreshes and what each investigation found.",
+          "statement": "On the final build with every effect on together, the opt-in selection with lamp shadows and ambient occlusion added through their own selections, the populated valley passes the lists of M3.2, M3.5, M4.2 to M4.6, M5.3, M5.4 and M5.5, and the effects agree: a surface in a traced shadow is not also lit by the Sun through the history, and occlusion does not darken a shadow's edge twice. The record states the result for each list under the settings the capture's report gives, apart from M6.3's, and gives none of it as the opt-in's.",
+          "inspect": "One capture pass on the final build, shared with M6.3, with the capture's own report of the resolved recipe and of every ray request beside the frames: `fixed` stills at the route's stops at noon, at a low Sun, at dusk and at night, and `realtime` sequences of the route with the numbered frames M4.4 and M5.5 ask for, judged by those items' lists.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.5",
+          "statement": "ATTENDED SETUP: on the built-in display the capture-off release proving ground runs the valley's route twice in one sitting, with an OS-reported presented interval for every submission: once as the record's launch line gives it, and once with lamp shadows and ambient occlusion added. Each run keeps its report of the resolved recipe and ray requests. Each missed refresh is listed and investigated, and the record gives each run's result under its own settings.",
+          "inspect": "The presented-interval record of each run with its report, the list of missed refreshes and what each investigation found.",
           "needs": {
             "type": "access",
             "what": "Unlock the Mac, wake the built-in display and keep it awake for one sitting. The agent launches, records and reviews; nothing else is needed. Batch it with any other module's attended items."
@@ -592,7 +602,7 @@
           "review": ""
         },
         {
-          "id": "M6.5",
+          "id": "M6.6",
           "statement": "The penumbra, the lamp-ray count, ambient occlusion and its extent, the two settle lengths and any quality value M4 added can each be listed and set by a caller that knows nothing of ray tracing, as the governor will, with its range and the history it invalidates declared. Setting each to both ends while the scene runs creates no pipeline and no resource.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_quality_knobs_gpu",
           "ask": "Does each quality value declare the history it invalidates, and does setting it invalidate that history and no other?",
@@ -604,9 +614,9 @@
           "review": ""
         },
         {
-          "id": "M6.6",
-          "statement": "A creator can turn each effect on in a scene from the public documentation: the launch's list and what required and preferred mean, the scene's requests, what each resolves to where rays cannot run, that nothing is on unless asked, what each costs on this Mac by the record, and its limits.",
-          "ask": "Could an agent that has read only the public documentation launch a scene with traced Sun shadows and ambient occlusion on this Mac, and say what the same launch does on a Mac that cannot trace and what the same scene does in Chrome?",
+          "id": "M6.7",
+          "statement": "A creator can turn each effect on in a scene from the public documentation: the launch's list and what required and preferred mean, the scene's requests, how a host prefers the Apple tile recipe and what a named recipe does, what each request resolves to where rays cannot run, that nothing is on unless asked, what each costs on this Mac by the record, and its limits.",
+          "ask": "Could an agent that has read only the public documentation launch a scene with traced Sun shadows and ambient occlusion on this Mac without naming a recipe, and say what the same launch does with the portable recipe named, on a Mac that cannot trace, and what the same scene does in Chrome?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -614,7 +624,7 @@
           "review": ""
         },
         {
-          "id": "M6.7",
+          "id": "M6.8",
           "statement": "The maturity ledger has rows for the structure, traced shadows, soft shadows and ambient occlusion, with implementation, correctness, visuals and device kept apart. It records the traced path as run on this Mac, not performance-qualified and not a default, and claims nothing for a recipe or a target that was not run.",
           "ask": "Does each row match what M1 to M6 ran, with the physical iPhone recorded as owed?",
           "target": "mac-metal",
@@ -624,7 +634,7 @@
           "review": ""
         },
         {
-          "id": "M6.8",
+          "id": "M6.9",
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
