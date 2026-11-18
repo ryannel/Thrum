@@ -277,6 +277,13 @@ impl std::error::Error for SurfaceConfigError {
 ///
 /// # Errors
 /// Reports both native validation failures when the retry also fails.
+#[cfg_attr(
+    target_arch = "wasm32",
+    expect(
+        clippy::unnecessary_wraps,
+        reason = "the shared API reports synchronous native configuration failures"
+    )
+)]
 pub fn configure_surface(
     surface: &wgpu::Surface<'_>,
     device: &wgpu::Device,
