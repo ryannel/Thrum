@@ -9,6 +9,10 @@ const GROUP: u32 = 4;
 const RUN: u32 = 64;
 const STAGES: wgpu::ShaderStages = wgpu::ShaderStages::TASK.union(wgpu::ShaderStages::MESH);
 const NO_REJECTION_REPORT: &str = "fn cooked_report_rejection(_reason: u32) {}";
+#[cfg(feature = "draw-probe")]
+const CULL_OUTCOMES: u64 = 8; // Kept, six clip planes, normal cone.
+#[cfg(feature = "draw-probe")]
+const CULL_WITNESS_BYTES: u64 = CULL_OUTCOMES * size_of::<u32>() as u64;
 
 pub(crate) fn prepare(
     surface: &SceneSurface<'_>,
@@ -174,8 +178,10 @@ impl Layout {
         let report = NO_REJECTION_REPORT;
         #[cfg(feature = "draw-probe")]
         let report = if self.rejections.is_some() {
-            "@group(4) @binding(7) var<storage, read_write> counts: array<atomic<u32>, 7>;
-             fn cooked_report_rejection(reason: u32) { atomicAdd(&counts[reason], 1u); }"
+            &format!(
+                "@group(4) @binding(7) var<storage, read_write> counts: array<atomic<u32>, {CULL_OUTCOMES}>;
+                 fn cooked_report_rejection(reason: u32) {{ atomicAdd(&counts[reason], 1u); }}"
+            )
         } else {
             report
         };
@@ -254,13 +260,13 @@ fn rejection_layout(
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Storage { read_only: false },
                 has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(28),
+                min_binding_size: wgpu::BufferSize::new(CULL_WITNESS_BYTES),
             },
             count: None,
         });
         let buffer = surface.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cooked object-stage rejection witness"),
-            size: 28,
+            size: CULL_WITNESS_BYTES,
             usage: wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::COPY_SRC,

@@ -209,8 +209,8 @@ One draw for each placement of an eligible mesh: `draw_mesh_tasks` with enough o
 mesh's meshlets.
 
 - **Object stage.** Each workgroup owns a fixed run of meshlets. It tests each against the view with
-  `cull.wgsl`'s rule, the same function text compiled into both paths: the five frustum planes against the
-  bounding sphere, then the normal cone against the camera. It writes the survivors' indices to the payload
+  the same function text as the indexed compute cull in `meshlet_cull.wgsl`: the WebGPU clip planes, including
+  the finite reverse-Z far plane, against the bounding sphere, then the normal cone against the camera. It writes the survivors' indices to the payload
   and launches one mesh workgroup for each.
 - **Mesh stage.** A workgroup reads its meshlet from the payload, fetches the meshlet's vertices through the
   meshlet-vertex list, and writes for each vertex exactly what `cooked_vertex` writes: clip position,

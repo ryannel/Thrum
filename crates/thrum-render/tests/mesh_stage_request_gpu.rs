@@ -2,46 +2,39 @@
 #[cfg(target_os = "macos")]
 use std::{cell::Cell, io::Write as _};
 #[cfg(target_os = "macos")]
-use thrum_render::capabilities::{DeviceCapabilities, HardwareRequest};
+use thrum_render::capabilities::{HardwareFeature, HardwareLaunchError, HardwareRequest};
+#[cfg(target_os = "macos")]
+use thrum_test_support::{Profile, Restriction};
 
 #[cfg(target_os = "macos")]
 #[test]
 fn metal_launch_and_preference_retry() {
     let gate = thrum_test_support::gpu("mesh-stage launch", Some(wgpu::Backend::Metal))
         .expect("MESH-SHADING requires this Mac");
-    let unknown = HardwareRequest::parse("mesh_typo").expect_err("unknown hardware");
-    assert!(unknown.to_string().contains("mesh_typo"), "{unknown}");
-    let options = wgpu::RequestAdapterOptions::default();
-    let base = |adapter: &wgpu::Adapter| {
-        thrum_test_support::Profile::Portable
-            .descriptor(adapter, &thrum_test_support::Restriction::default())
+    let profile = Profile::Portable;
+    let unrestricted = Restriction::default();
+    let base = profile.descriptor(&gate.adapter, &unrestricted);
+    let open = |requests: &[HardwareRequest]| {
+        gate.fresh_adapter()
+            .device_with_hardware(profile, &unrestricted, 1, requests)
     };
-    let required = HardwareRequest::parse("mesh-stages").expect("required stages");
-    let preferred = HardwareRequest::parse("mesh-stages?").expect("preferred stages");
-    let (_, ordinary, _, registry) = pollster::block_on(DeviceCapabilities::open_generation(
-        &gate.instance,
-        &options,
-        1,
-        &[],
-        base,
-    ))
-    .expect("ordinary device");
-    assert_eq!(ordinary.features(), base(&gate.adapter).required_features);
-    assert_eq!(ordinary.limits(), base(&gate.adapter).required_limits);
+    assert!(matches!(
+        HardwareRequest::parse("mesh_typo"),
+        Err(HardwareLaunchError::Unknown(name)) if name == "mesh_typo"
+    ));
+    let required = HardwareRequest::parse("mesh-stages").expect("required mesh stages");
+    let preferred = HardwareRequest::parse("mesh-stages?").expect("preferred mesh stages");
+    let (ordinary, _, registry) = open(&[]).expect("ordinary gate launch");
+    assert_eq!(ordinary.features(), base.required_features);
+    assert_eq!(ordinary.limits(), base.required_limits);
     assert_eq!(registry.hardware(), []);
-    let (_, staged, _, registry) = pollster::block_on(DeviceCapabilities::open_generation(
-        &gate.instance,
-        &options,
-        2,
-        &required,
-        base,
-    ))
-    .expect("required stages device");
-    assert!(
-        staged
-            .features()
-            .contains(wgpu::Features::EXPERIMENTAL_MESH_SHADER)
-    );
+    let (legacy, _) = gate.device(profile, &unrestricted);
+    assert_eq!(legacy.features(), ordinary.features());
+    assert_eq!(legacy.limits(), ordinary.limits());
+    drop(legacy);
+    let stages = wgpu::Features::EXPERIMENTAL_MESH_SHADER;
+    let (staged, _, registry) = open(&required).expect("required stages device");
+    assert!(staged.features().contains(stages));
     assert_eq!(registry.features(), staged.features());
     assert_eq!(registry.limits(), &staged.limits());
     assert!(registry.hardware()[0].declined.is_none());
@@ -51,24 +44,56 @@ fn metal_launch_and_preference_retry() {
     assert!(staged.limits().max_mesh_workgroup_total_count >= 64);
     assert!(staged.limits().max_storage_buffers_per_shader_stage >= 6);
 
+    for (restriction, expected) in [
+        (
+            Restriction {
+                features: Some(wgpu::Features::all() - stages),
+                ..Default::default()
+            },
+            "does not offer",
+        ),
+        (
+            Restriction {
+                storage_buffers: Some(5),
+                ..Default::default()
+            },
+            "cannot grant the needed limits",
+        ),
+    ] {
+        let open_restricted = |requests: &[HardwareRequest]| {
+            gate.fresh_adapter()
+                .device_with_hardware(profile, &restriction, 2, requests)
+        };
+        assert!(matches!(
+            open_restricted(&required),
+            Err(HardwareLaunchError::Required { feature: HardwareFeature::MeshStages, reason })
+            if reason.contains(expected)
+        ));
+        let (fallback, _, registry) = open_restricted(&preferred).expect("restricted fallback");
+        let base = profile.descriptor(&gate.adapter, &restriction);
+        assert_eq!(fallback.features(), base.required_features);
+        assert_eq!(fallback.limits(), base.required_limits);
+        let decline = registry.hardware()[0].declined.as_deref().expect("decline");
+        assert!(decline.contains(expected), "{decline}");
+        writeln!(
+            std::io::stdout(),
+            "restricted gate: required refused, preferred used original recipe: {decline}"
+        )
+        .expect("restriction evidence");
+    }
+
     let attempts = Cell::new(0);
     let unsupported = wgpu::Features::EXPERIMENTAL_RAY_HIT_VERTEX_RETURN;
     assert!(!gate.adapter.features().contains(unsupported));
-    let (_, fallback, _, registry) = pollster::block_on(DeviceCapabilities::open_generation(
-        &gate.instance,
-        &options,
-        3,
-        &preferred,
-        |adapter| {
-            let mut descriptor = base(adapter);
+    let (fallback, _, registry) = gate
+        .fresh_adapter()
+        .device_with_hardware_adjusted(profile, &unrestricted, 3, &preferred, |descriptor| {
             if attempts.replace(attempts.get() + 1) == 0 {
                 // Force the real wgpu request to fail after mesh-stages admission.
                 descriptor.required_features |= unsupported;
             }
-            descriptor
-        },
-    ))
-    .expect("ordinary fallback");
+        })
+        .expect("ordinary fallback");
     assert_eq!(attempts.get(), 2);
     assert_eq!(fallback.features(), ordinary.features());
     assert_eq!(fallback.limits(), ordinary.limits());
@@ -82,7 +107,7 @@ fn metal_launch_and_preference_retry() {
     );
     writeln!(
         std::io::stdout(),
-        "Metal adapter {:?}; enabled mesh limits {:?}; preferred fallback {decline}",
+        "Metal adapter {:?}; gate checked the empty launch and enabled mesh limits {:?}; failed preference {decline}",
         gate.adapter.get_info(),
         staged.limits()
     )

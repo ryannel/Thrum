@@ -51,13 +51,12 @@ pub(crate) struct Bound {
     pub(crate) continued: Cell<bool>,
     draw_counts: (usize, usize, usize),
     indirect_meshlets: u32,
-    secondary_cull: bool,
 }
 
 impl Bound {
     /// Whether a frame drawing this set dispatches any cull work.
-    pub(crate) fn culls(&self) -> bool {
-        self.visible.is_some() || self.secondary_cull
+    pub(crate) fn culls(&self, views: &[thrum_render::contribution::SecondaryViewFrame]) -> bool {
+        self.visible.is_some() || self.culls_views(views)
     }
 
     pub(crate) fn has_meshes(&self) -> bool {
@@ -656,7 +655,6 @@ impl Pipelines {
             continued: Cell::new(false),
             draw_counts,
             indirect_meshlets,
-            secondary_cull: secondary_cull.is_some() && !set.meshes.is_empty(),
         }
     }
 
@@ -801,6 +799,9 @@ impl Pipelines {
         let Some((pipeline, _)) = &self.cull else {
             return;
         };
+        if bound.visible.is_none() {
+            return;
+        }
         pass.set_pipeline(pipeline);
         for mesh in &bound.meshes {
             let Some(indirect) = &mesh.indirect else {

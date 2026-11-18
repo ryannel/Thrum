@@ -2,15 +2,19 @@ use super::support;
 
 use std::{
     io::Write as _,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 use thrum_asset_gpu::CookedDrawPath::{Auto, Direct, Indirect, MeshStages};
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome};
-use thrum_render::capabilities::Recipe;
+use thrum_render::{
+    capabilities::Recipe,
+    contribution::{SecondaryViewRequest, ViewAir},
+};
 
 #[test]
 fn selection() {
-    let fixture = support::Fixture::new("selection", false);
+    let mut fixture = support::Fixture::new("selection", false);
     for (enabled, recipe, expected_path, reason) in [
         (true, "apple-tile", MeshStages, None),
         (
@@ -60,6 +64,48 @@ fn selection() {
             assert!(stats.meshlet_compute_cull);
             expected.equal(&image);
         }
+    }
+    let request = Arc::new(Mutex::new(None));
+    fixture.secondary_request = Some(Arc::clone(&request));
+    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let mut scene = gpu.scene(&fixture, MeshStages, true, false);
+    let view = support::camera([0.0, 3.1, 4.6], [0.0, 0.0, 0.0]);
+    let active = SecondaryViewRequest::new(&view, [support::SIDE; 2], None, ViewAir::Camera)
+        .expect("valid secondary camera");
+    for (label, current) in [
+        ("idle", None),
+        ("requested", Some(active)),
+        ("idle again", None),
+    ] {
+        *request.lock().expect("selection request") = current;
+        let image = scene.frame();
+        scene.report(label);
+        assert!(!image.sample.timing_fault, "{label}");
+        assert!(image.sample.gpu_pass_ns.is_some(), "{label}");
+        assert_eq!(
+            image.sample.gpu_contribution_ns.is_some(),
+            current.is_some(),
+            "{label}"
+        );
+        writeln!(
+            std::io::stdout(),
+            "{label}: contribution compute timestamp {:?}",
+            image.sample.gpu_contribution_ns
+        )
+        .expect("executed pass witness");
+        let stats = scene.stats.lock().expect("cooked report");
+        assert_eq!(stats.draw_path, Some(MeshStages));
+        assert_eq!(stats.mesh_stage_draws, 1);
+        assert_eq!(stats.indexed_indirect_draws, 0);
+        assert_eq!(stats.meshlet_compute_cull, current.is_some(), "{stats:?}");
+        assert_eq!(
+            stats.secondary_draw_paths,
+            if current.is_some() {
+                &[(0, Indirect)][..]
+            } else {
+                &[][..]
+            },
+        );
     }
 }
 
@@ -234,8 +280,8 @@ fn cull_equal() {
     let geometry = fixture.mesh("meshes/small");
     let mut culled = gpu.scene(&fixture, MeshStages, true, false);
     let mut unculled = gpu.scene(&fixture, MeshStages, false, false);
-    let mut rejected = [0_u32; 7];
-    let mut cut_by_plane = [0_u32; 5];
+    let mut rejected = [0_u32; support::CULL_OUTCOMES];
+    let mut cut_by_plane = [0_u32; 6];
     for (frame, (eye, target, cut)) in [
         ([0.0, 0.0, 0.0], [0.0, 0.0, -1.0], true),
         ([0.04, -0.03, -0.9], [0.22, 0.11, -3.0], false),
@@ -247,7 +293,7 @@ fn cull_equal() {
     .into_iter()
     .enumerate()
     {
-        let view = support::camera(eye, target);
+        let view = support::camera_with_far(eye, target, support::CULL_FAR);
         let cuts = intersections(&view, &geometry);
         let mut images = Vec::new();
         for scene in [&mut culled, &mut unculled] {
@@ -264,14 +310,20 @@ fn cull_equal() {
         let off = unculled.rejections();
         assert_eq!(on.iter().sum::<u32>() as usize, geometry.meshlets().len());
         assert_eq!(off[0] as usize, geometry.meshlets().len());
-        assert_eq!(off[1..], [0; 6]);
+        assert_eq!(off[1..], [0; support::CULL_OUTCOMES - 1]);
+        if frame == 0 {
+            assert!(
+                cuts[5] > 0 && on[6] > 0,
+                "finite far witnesses: {cuts:?} {on:?}"
+            );
+        }
         for (total, count) in rejected.iter_mut().zip(on) {
             *total += count;
         }
         for (total, count) in cut_by_plane.iter_mut().zip(cuts) {
             *total += count;
         }
-        writeln!(std::io::stdout(), "frame {frame} cut={cut} bytes equal, task counts [kept,left,right,bottom,top,near,cone]={on:?}; meshlets crossing planes={cuts:?}").expect("cull evidence");
+        writeln!(std::io::stdout(), "frame {frame} cut={cut} bytes equal, task counts [kept,left,right,bottom,top,near,far,cone]={on:?}; meshlets crossing planes={cuts:?}").expect("cull evidence");
         images[0].save("cull-equal", &format!("frame-{frame}"));
     }
     assert!(rejected.into_iter().all(|count| count > 0), "{rejected:?}");
@@ -279,12 +331,18 @@ fn cull_equal() {
         cut_by_plane.into_iter().all(|count| count > 0),
         "{cut_by_plane:?}"
     );
+    writeln!(
+        std::io::stdout(),
+        "finite projection far={}m; task totals {rejected:?}; crossing totals {cut_by_plane:?}",
+        support::CULL_FAR
+    )
+    .expect("cull totals");
 }
 
 fn intersections(
     view: &thrum_render::synthetic::SyntheticView,
     geometry: &thrum_asset::MeshProduct,
-) -> [u32; 5] {
+) -> [u32; 6] {
     let matrix = glam::Mat4::from_cols_array_2d(&view.view_proj_columns());
     let row = matrix.row(3);
     let planes = [
@@ -293,6 +351,7 @@ fn intersections(
         row + matrix.row(1),
         row - matrix.row(1),
         row - matrix.row(2),
+        matrix.row(2),
     ];
     planes.map(|plane| {
         u32::try_from(

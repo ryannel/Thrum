@@ -585,6 +585,11 @@ impl Live {
         }
     }
 
+    fn culls(&self) -> bool {
+        self.drawn()
+            .is_some_and(|bound| bound.culls(&self.secondary_views))
+    }
+
     /// The material replacement this frame draws instead of the accepted mesh pipeline.
     fn mesh_override(&self) -> Option<&material::MeshPipelines> {
         self.tentative
@@ -1083,8 +1088,7 @@ impl SceneContribution for CookedAssets {
         self.live
             .as_ref()
             .filter(|live| live.generation == frame.generation)
-            .and_then(Live::drawn)
-            .is_some_and(draw::Bound::culls)
+            .is_some_and(Live::culls)
     }
 
     fn encode_compute(&mut self, pass: &mut wgpu::ComputePass<'_>, frame: &ContributionFrame) {
@@ -1150,7 +1154,7 @@ impl SceneContribution for CookedAssets {
                 .map(draw::Bound::view_path)
         };
         let (stages, indirect, direct) = live.drawn().map_or((0, 0, 0), draw::Bound::draw_counts);
-        let compute = live.drawn().is_some_and(draw::Bound::culls);
+        let compute = live.culls();
         let Some(tentative) = live.tentative.take() else {
             return;
         };

@@ -16,10 +16,15 @@ use thrum_core::{
 use thrum_render::{
     atmosphere::{AtmosphereFrame, SunOpticalDepth},
     capabilities::{DeviceCapabilities, HardwareRequest},
+    contribution::{
+        ContributionFrame, ContributionPasses, SceneContribution, SceneContributions, SceneSurface,
+        SecondaryView, SecondaryViewRequest, SecondaryViewSlot,
+    },
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
-        CaptureLimits, FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource, SurfaceOutput,
+        CaptureLimits, FrameConfig, FrameHost, FrameSample, FrameWorld, SceneFrame, SceneSource,
+        SurfaceOutput,
     },
     synthetic::{
         CaptureSource, FrameLighting, PhotometricEnvironment, SyntheticScene, SyntheticView,
@@ -27,6 +32,8 @@ use thrum_render::{
 };
 
 pub(super) const SIDE: u32 = 128;
+pub(super) const CULL_OUTCOMES: usize = 8;
+pub(super) const CULL_FAR: f32 = 8.0;
 const PAGE: SourceTick = SourceTick {
     epoch: 1,
     tick: 0,
@@ -109,7 +116,11 @@ impl SceneSource<SourceTick> for Source {
 }
 
 pub(super) fn camera(eye: [f32; 3], target: [f32; 3]) -> SyntheticView {
-    SyntheticView::perspective(eye, target, [0.0, 1.0, 0.0], 0.92, 1.0, 0.1, 4000.0)
+    camera_with_far(eye, target, 4000.0)
+}
+
+pub(super) fn camera_with_far(eye: [f32; 3], target: [f32; 3], far: f32) -> SyntheticView {
+    SyntheticView::perspective(eye, target, [0.0, 1.0, 0.0], 0.92, 1.0, 0.1, far)
         .expect("camera")
         .with_sun_shadow_profile(2, 16.0)
         .expect("metre-scale fixture shadow reach")
@@ -121,6 +132,7 @@ pub(super) struct Fixture {
     pub(super) placements: Vec<MeshPlacement>,
     pub(super) count_cull: bool,
     parity_depth: Option<f32>,
+    pub(super) secondary_request: Option<Arc<Mutex<Option<SecondaryViewRequest>>>>,
 }
 
 impl Fixture {
@@ -155,6 +167,14 @@ impl Fixture {
                 0.04,
                 [0.382_683_43, 0.0, 0.0, 0.923_879_5],
             ));
+            // A front-facing tile wholly beyond the far plane, and a visible tilted tile
+            // with vertices on each side of it.
+            nodes.push(node([0.0, 0.0, -CULL_FAR - 1.5], 0.25, front));
+            nodes.push(node(
+                [2.2, 0.9, -CULL_FAR],
+                0.9,
+                [0.382_683_43, 0.0, 0.0, 0.923_879_5],
+            ));
             patch_nodes(&source.join("meshes/small.gltf"), nodes);
         }
         let mut placements = vec![MeshPlacement::new("meshes/small", "textures/checker")];
@@ -186,6 +206,7 @@ impl Fixture {
                 "parity-clear" => Some(0.0),
                 _ => None,
             },
+            secondary_request: None,
         }
     }
 
@@ -230,23 +251,18 @@ impl Gpu {
     pub(super) fn new(stages: bool, recipe: &str, restrict: impl Fn(&mut wgpu::Limits)) -> Self {
         let gate = thrum_test_support::gpu("mesh-stage proof", Some(wgpu::Backend::Metal))
             .expect("Metal required for MESH-SHADING");
-        let requests =
+        let hardware =
             HardwareRequest::parse(if stages { "mesh-stages" } else { "" }).expect("hardware");
-        let (adapter, device, queue, capabilities) =
-            pollster::block_on(DeviceCapabilities::open_generation(
-                &gate.instance,
-                &wgpu::RequestAdapterOptions::default(),
+        let (device, queue, capabilities) = gate
+            .device_with_hardware_adjusted(
+                thrum_test_support::Profile::Portable,
+                &thrum_test_support::Restriction::default(),
                 1,
-                &requests,
-                |adapter| {
-                    let mut descriptor = thrum_test_support::Profile::Portable
-                        .descriptor(adapter, &thrum_test_support::Restriction::default());
-                    restrict(&mut descriptor.required_limits);
-                    descriptor
-                },
-            ))
+                &hardware,
+                |descriptor| restrict(&mut descriptor.required_limits),
+            )
             .expect("explicit Metal launch");
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        assert_eq!(device.adapter_info().backend, wgpu::Backend::Metal);
         let capabilities = capabilities
             .with_recipe_override(recipe)
             .expect("native recipe");
@@ -313,7 +329,19 @@ impl Gpu {
         let cooked = CookedAssets::new(config).expect("cooked placements");
         let stats = cooked.stats();
         let reload = cooked.material();
-        host.set_scene_contribution(Box::new(cooked))
+        let contribution: Box<dyn SceneContribution> =
+            if let Some(request) = &fixture.secondary_request {
+                Box::new(SceneContributions::new(vec![
+                    Box::new(cooked),
+                    Box::new(SelectionView {
+                        request: Arc::clone(request),
+                        slot: None,
+                    }),
+                ]))
+            } else {
+                Box::new(cooked)
+            };
+        host.set_scene_contribution(contribution)
             .expect("cooked contribution");
         host.enable_submitted_capture_from(
             1,
@@ -363,6 +391,51 @@ impl Gpu {
     }
 }
 
+struct SelectionView {
+    request: Arc<Mutex<Option<SecondaryViewRequest>>>,
+    slot: Option<SecondaryView>,
+}
+
+impl SceneContribution for SelectionView {
+    fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+        vec![SecondaryViewSlot::new(1.0).expect("selection slot")]
+    }
+
+    fn passes(&self) -> ContributionPasses {
+        ContributionPasses {
+            upload: true,
+            compute: false,
+        }
+    }
+
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        self.slot = Some(surface.secondary_views[0].clone());
+        Ok(())
+    }
+
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
+        if let Some(request) = *self.request.lock().expect("selection request") {
+            self.slot
+                .as_ref()
+                .expect("prepared slot")
+                .request(&request)
+                .expect("secondary view accepted");
+        }
+    }
+
+    fn computes(&self, _: &ContributionFrame) -> bool {
+        false
+    }
+
+    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
+
+    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+
+    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
+
+    fn submitted(&mut self, _: bool) {}
+}
+
 pub(super) struct Scene<'a> {
     gpu: &'a Gpu,
     pub(super) host: FrameHost<World, Source>,
@@ -377,6 +450,7 @@ pub(super) struct Scene<'a> {
 pub(super) struct Image {
     pub(super) colour: Vec<u8>,
     pub(super) temporal: Vec<u8>,
+    pub(super) sample: FrameSample,
 }
 
 impl Image {
@@ -434,14 +508,17 @@ impl Scene<'_> {
 
     pub(super) fn clear_rejections(&self) {
         let source = self.rejections.lock().expect("witness");
-        self.gpu
-            .queue
-            .write_buffer(source.as_ref().expect("cull witness"), 0, &[0; 28]);
+        self.gpu.queue.write_buffer(
+            source.as_ref().expect("cull witness"),
+            0,
+            &[0; size_of::<[u32; CULL_OUTCOMES]>()],
+        );
     }
 
-    pub(super) fn rejections(&self) -> [u32; 7] {
+    pub(super) fn rejections(&self) -> [u32; CULL_OUTCOMES] {
         let source = self.rejections.lock().expect("witness");
         let source = source.as_ref().expect("cull witness");
+        assert_eq!(source.size(), size_of::<[u32; CULL_OUTCOMES]>() as u64);
         let buffer = self.gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("object-stage cull count readback"),
             size: source.size(),
@@ -478,11 +555,12 @@ impl Scene<'_> {
                 .expect("frame contract witness"),
         );
         let deadline = Instant::now() + Duration::from_secs(10);
+        let mut sample = None;
         let image = loop {
             if let Some(image) = self.host.try_submitted_image().expect("colour tap") {
                 break image;
             }
-            drop(self.host.poll_completed().expect("poll frame"));
+            sample = self.host.poll_completed().expect("poll frame").or(sample);
             assert!(
                 Instant::now() < deadline,
                 "timed out waiting for submitted colour, omissions {}",
@@ -492,11 +570,19 @@ impl Scene<'_> {
         };
         let colour = image.rgba.clone();
         self.host.recycle_submitted_image(image);
-        while self.host.pending_frames() != 0 {
-            drop(self.host.poll_completed().expect("poll frame"));
+        let sample = loop {
+            if let Some(sample) = sample {
+                break sample;
+            }
+            sample = self.host.poll_completed().expect("poll frame");
             assert!(Instant::now() < deadline, "timed out retiring proof frame");
+        };
+        assert_eq!(sample.observation, self.clock);
+        Image {
+            colour,
+            temporal,
+            sample,
         }
-        Image { colour, temporal }
     }
 }
 

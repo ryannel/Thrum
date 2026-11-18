@@ -117,7 +117,7 @@ impl Pipelines {
         let Some(cull) = &self.secondary_cull else {
             return;
         };
-        if views.is_empty() || bound.view_path() != CookedDrawPath::Indirect {
+        if !bound.culls_views(views) {
             return;
         }
         pass.set_pipeline(&cull.pipeline);
@@ -168,6 +168,10 @@ impl Pipelines {
 }
 
 impl Bound {
+    pub(super) fn culls_views(&self, views: &[SecondaryViewFrame]) -> bool {
+        !views.is_empty() && self.view_path() == CookedDrawPath::Indirect
+    }
+
     pub(crate) fn view_path(&self) -> CookedDrawPath {
         if self
             .meshes

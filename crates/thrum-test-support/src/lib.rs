@@ -172,6 +172,22 @@ impl Gpu {
         generation: u64,
         requests: &[HardwareRequest],
     ) -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), HardwareLaunchError> {
+        self.device_with_hardware_adjusted(profile, restriction, generation, requests, |_| {})
+    }
+
+    /// Open a generation with an adjustment to the test profile's base device descriptor.
+    /// The adjustment runs again if the registry retries without a preference.
+    ///
+    /// # Errors
+    /// Reports registry admission or device creation failures.
+    pub fn device_with_hardware_adjusted(
+        &self,
+        profile: Profile,
+        restriction: &Restriction,
+        generation: u64,
+        requests: &[HardwareRequest],
+        adjust: impl Fn(&mut wgpu::DeviceDescriptor<'static>),
+    ) -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), HardwareLaunchError> {
         let mut admitted = Some(self.adapter.clone());
         let (_, device, queue, capabilities) =
             pollster::block_on(DeviceCapabilities::open_generation_from(
@@ -185,7 +201,11 @@ impl Gpu {
                 },
                 generation,
                 requests,
-                |adapter| profile.descriptor(adapter, restriction),
+                |adapter| {
+                    let mut descriptor = profile.descriptor(adapter, restriction);
+                    adjust(&mut descriptor);
+                    descriptor
+                },
                 |adapter| {
                     let (limits, features) =
                         restriction.apply(adapter.limits(), adapter.features());
