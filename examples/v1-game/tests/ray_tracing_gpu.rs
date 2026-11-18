@@ -123,7 +123,7 @@ mod ray_tracing {
         assert_eq!(before.pixels, changed);
         report(&before.record("one edited product rebuilt", &stats));
 
-        let replacement = Metal::new(2);
+        let replacement = metal.replacement();
         let mut candidate =
             pollster::block_on(game.device_prepare_inputs().expect("inputs").prepare(
                 &replacement.caps,
@@ -149,6 +149,17 @@ mod ray_tracing {
         );
         assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 2);
         report(&after.record("replacement device residency", &stats));
+        game.resume(Duration::from_secs(1))
+            .expect("resume the game");
+        let frozen_tick = game.tick();
+        for offset in [17, 34, 51] {
+            game.advance_without_rendering(Duration::from_millis(1_000 + offset))
+                .expect("play the next tick");
+            drop(game.capture_pixels().expect("moving frame"));
+            assert!(rebuilt_arena.take_recorded().is_empty());
+            assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 2);
+        }
+        assert!(game.tick() > frozen_tick);
     }
 
     #[test]

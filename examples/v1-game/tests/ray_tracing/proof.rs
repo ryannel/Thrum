@@ -30,6 +30,7 @@ pub(super) const EXTENT: [u32; 2] = [320, 180];
 pub(super) type Stats = Arc<Mutex<CookedStats>>;
 
 pub(super) struct Metal {
+    gpu: Gpu,
     pub(super) device: wgpu::Device,
     pub(super) queue: wgpu::Queue,
     pub(super) caps: DeviceCapabilities,
@@ -39,13 +40,16 @@ impl Metal {
     pub(super) fn new(generation: u64) -> Self {
         let gpu = thrum_test_support::gpu("cooked ray geometry", Some(wgpu::Backend::Metal))
             .expect("real Metal required");
-        Self::open(&gpu, generation)
+        Self::open(gpu, generation)
     }
 
-    fn open(gpu: &Gpu, generation: u64) -> Self {
+    pub(super) fn replacement(&self) -> Self {
+        Self::open(self.gpu.fresh_adapter(), self.caps.generation() + 1)
+    }
+
+    fn open(gpu: Gpu, generation: u64) -> Self {
         let request = HardwareRequest::parse("ray-query").expect("required ray queries");
         let (device, queue, caps) = gpu
-            .fresh_adapter()
             .device_with_hardware(
                 thrum_test_support::Profile::Portable,
                 &Restriction::default(),
@@ -55,6 +59,7 @@ impl Metal {
             .expect("Metal generation with ray queries");
         let caps = caps.with_recipe_override("apple-tile").expect("Apple tile");
         Self {
+            gpu,
             device,
             queue,
             caps,

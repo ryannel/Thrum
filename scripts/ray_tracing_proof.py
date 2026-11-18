@@ -95,7 +95,7 @@ def capture(output, binary, store):
             runtime = json.loads((directory / "runtime.json").read_text())
             if not (manifest["complete"] and runtime["mode"] == "fixed" and
                     "EXPERIMENTAL_RAY_QUERY" in runtime["enabled_features"] and
-                    runtime["backend"] == "Metal" and runtime["recipe"] == "AppleTile"):
+                    runtime["backend"] == "Metal" and runtime["recipe"] == "Ok(AppleTile)"):
                 raise ValueError(f"incomplete or wrong capture device: {directory}")
             record, = manifest["records"]
             source = directory / "png" / f"{record['submission_id']:06}.png"

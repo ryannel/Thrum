@@ -114,8 +114,8 @@ def valley(output):
         raise ValueError(f"missing initial mesh builds: {initial}")
     if edit["mesh"] != "terrain" or not edit["switch_in_this_frame"]:
         raise ValueError(f"expected the terrain edit to build in its switch submission: {edit}")
-    if not all(row["triangles"] > 0 and math.isfinite(row["gpu_bracket_ns"])
-               and row["gpu_bracket_ns"] > 0 for row in [*initial, edit]):
+    if not all(row["triangles"] > 0 and all(math.isfinite(row[field]) and row[field] > 0
+               for field in ("gpu_bracket_ns", "control_bracket_ns")) for row in [*initial, edit]):
         raise ValueError("missing mesh build measurement")
     if memory["incremental_resident_bytes"] <= 0:
         raise ValueError("missing resident bytes")
@@ -129,9 +129,10 @@ def valley(output):
         "memory": memory,
         "initial": initial,
         "edit": edit,
-        "scope": "Under load. Each GPU interval brackets one real mesh build, including its "
-                 "command boundaries. The edit interval measures the added build in the "
-                 "switch submission and excludes its copies and the ordinary scene structure build.",
+        "scope": "Under load. Each interval includes a one-instance measurement structure and "
+                 "a query that consumes it. The paired control repeats these commands over the "
+                 "finished mesh. The subtraction estimates the edit's additional GPU work "
+                 "in its switch submission, outside its copies and ordinary scene structure build.",
     }
     text = json.dumps(record, indent=2) + "\n"
     print(text, end="")

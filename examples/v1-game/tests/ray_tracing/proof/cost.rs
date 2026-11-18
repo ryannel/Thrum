@@ -119,14 +119,24 @@ fn rendered_builds(
                 .iter()
                 .map(|tick| u64::from_le_bytes(*tick))
                 .collect::<Vec<_>>();
-            let nanoseconds = ticks[1]
-                .checked_sub(ticks[0])
-                .expect("ordered timestamp bracket") as f64
-                * f64::from(metal.queue.get_timestamp_period());
-            assert!(nanoseconds.is_finite() && nanoseconds > 0.0);
+            let bracket = |end: usize| {
+                ticks[end]
+                    .checked_sub(ticks[end - 1])
+                    .expect("ordered timestamp bracket") as f64
+                    * f64::from(metal.queue.get_timestamp_period())
+            };
+            let nanoseconds = bracket(1);
+            let control = bracket(3);
+            assert!(
+                nanoseconds.is_finite()
+                    && nanoseconds > 0.0
+                    && control.is_finite()
+                    && control > 0.0
+            );
             report(
                 &json!({"type":"mesh_build","phase":phase,"mesh":sample.mesh,"triangles":sample.triangles,
-                "gpu_bracket_ns":nanoseconds,"submission":stats.submitted_frames,"displayed_publication":stats.drawn,
+                "gpu_bracket_ns":nanoseconds,"control_bracket_ns":control,"estimated_mesh_build_ns":nanoseconds-control,
+                "submission":stats.submitted_frames,"displayed_publication":stats.drawn,
                 "switch_in_this_frame":stats.drawn == Some(goal)}),
             );
         }

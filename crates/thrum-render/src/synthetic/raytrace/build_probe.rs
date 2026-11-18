@@ -12,6 +12,7 @@ pub struct RayBuildProbe(Arc<Probe>);
 struct Probe {
     device: wgpu::Device,
     marker: wgpu::ComputePipeline,
+    consumer: wgpu::ComputePipeline,
     binding: wgpu::BindGroup,
     samples: Mutex<Vec<RayBuildSample>>,
 }
@@ -27,7 +28,8 @@ pub struct RayBuildSample {
 }
 
 impl RayBuildSample {
-    /// Resolve and copy the two GPU ticks to a 16-byte, mappable readback buffer.
+    /// Resolve four GPU ticks to 32 mappable bytes. Each pair spans a marker
+    /// through a consuming query. The second pair skips the mesh build.
     #[must_use]
     pub fn resolve(
         &self,
@@ -37,15 +39,15 @@ impl RayBuildSample {
         let buffer = |usage| {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("ray mesh build time"),
-                size: 16,
+                size: 32,
                 usage,
                 mapped_at_creation: false,
             })
         };
         let resolve = buffer(wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC);
         let readback = buffer(wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ);
-        encoder.resolve_query_set(&self.queries, 0..2, &resolve, 0);
-        encoder.copy_buffer_to_buffer(&resolve, 0, &readback, 0, Some(16));
+        encoder.resolve_query_set(&self.queries, 0..4, &resolve, 0);
+        encoder.copy_buffer_to_buffer(&resolve, 0, &readback, 0, Some(32));
         readback
     }
 }
@@ -70,20 +72,51 @@ impl RayBuildProbe {
     fn new(device: &wgpu::Device) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("ray mesh timestamp marker"),
-            source: wgpu::ShaderSource::Wgsl(
-                "@group(0) @binding(0) var<storage, read_write> sink: atomic<u32>;
-                 @compute @workgroup_size(1) fn mark() { atomicAdd(&sink, 1u); }"
-                    .into(),
-            ),
+            source: wgpu::ShaderSource::Wgsl(include_str!("build_probe.wgsl").into()),
         });
-        let marker = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("ray mesh timestamp marker"),
-            layout: None,
-            module: &shader,
-            entry_point: Some("mark"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            cache: None,
+        let sink_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("ray mesh timestamp sink layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(4),
+                },
+                count: None,
+            }],
         });
+        let structure_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("ray mesh timestamp structure layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::AccelerationStructure {
+                    vertex_return: false,
+                },
+                count: None,
+            }],
+        });
+        let pipeline = |entry, groups| {
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("ray mesh timestamp pipeline layout"),
+                bind_group_layouts: groups,
+                immediate_size: 0,
+            });
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("ray mesh timestamp marker"),
+                layout: Some(&layout),
+                module: &shader,
+                entry_point: Some(entry),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                cache: None,
+            })
+        };
+        let marker_groups = [Some(&sink_layout)];
+        let consumer_groups = [Some(&sink_layout), Some(&structure_layout)];
+        let marker = pipeline("mark", &marker_groups);
+        let consumer = pipeline("consume", &consumer_groups);
         let sink = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("ray mesh timestamp marker sink"),
             size: 4,
@@ -92,7 +125,7 @@ impl RayBuildProbe {
         });
         let binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("ray mesh timestamp marker group"),
-            layout: &marker.get_bind_group_layout(0),
+            layout: &sink_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: sink.as_entire_binding(),
@@ -101,6 +134,7 @@ impl RayBuildProbe {
         Self(Arc::new(Probe {
             device: device.clone(),
             marker,
+            consumer,
             binding,
             samples: Mutex::default(),
         }))
@@ -124,11 +158,31 @@ impl RayBuildProbe {
         let queries = self.0.device.create_query_set(&wgpu::QuerySetDescriptor {
             label: Some("ray mesh build bracket"),
             ty: wgpu::QueryType::Timestamp,
-            count: 2,
+            count: 4,
         });
-        self.marker(encoder, &queries, None, Some(0));
-        encoder.build_acceleration_structures([build], []);
-        self.marker(encoder, &queries, Some(1), None);
+        let mut tlas = super::create_tlas(&self.0.device, 1);
+        tlas[0] = Some(wgpu::TlasInstance::new(
+            build.blas,
+            [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            0,
+            1,
+        ));
+        let group = self.0.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("ray mesh timestamp consumer binding"),
+            layout: &self.0.consumer.get_bind_group_layout(1),
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: tlas.as_binding(),
+            }],
+        });
+        self.marker(encoder, &queries, 0, None);
+        encoder.build_acceleration_structures([build], [&tlas]);
+        self.marker(encoder, &queries, 1, Some(&group));
+        // Ordered consumer on the same inputs and TLAS build, with the BLAS
+        // already available. Both intervals include the same probe commands.
+        self.marker(encoder, &queries, 2, None);
+        encoder.build_acceleration_structures([], [&tlas]);
+        self.marker(encoder, &queries, 3, Some(&group));
         if let Ok(mut samples) = self.0.samples.lock() {
             samples.push(RayBuildSample {
                 mesh,
@@ -142,19 +196,26 @@ impl RayBuildProbe {
         &self,
         encoder: &mut wgpu::CommandEncoder,
         queries: &wgpu::QuerySet,
-        begin: Option<u32>,
-        end: Option<u32>,
+        end: u32,
+        structure: Option<&wgpu::BindGroup>,
     ) {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("ray mesh timestamp marker"),
             timestamp_writes: Some(wgpu::ComputePassTimestampWrites {
                 query_set: queries,
-                beginning_of_pass_write_index: begin,
-                end_of_pass_write_index: end,
+                beginning_of_pass_write_index: None,
+                end_of_pass_write_index: Some(end),
             }),
         });
-        pass.set_pipeline(&self.0.marker);
+        pass.set_pipeline(if structure.is_some() {
+            &self.0.consumer
+        } else {
+            &self.0.marker
+        });
         pass.set_bind_group(0, &self.0.binding, &[]);
+        if let Some(structure) = structure {
+            pass.set_bind_group(1, structure, &[]);
+        }
         pass.dispatch_workgroups(1, 1, 1);
     }
 

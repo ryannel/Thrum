@@ -178,8 +178,9 @@ impl SceneStructure {
         }
         let count = entity_count + contributed.len();
         if count > tlas.get().len() {
-            let capacity = count
-                .next_power_of_two()
+            // The arena's slot capacity is already reserved. Round just the
+            // placement addition so a few cooked meshes do not double it.
+            let capacity = (self.slots as usize + contributed.len().next_power_of_two())
                 .min(scene.capabilities.device().limits().max_tlas_instance_count as usize);
             *tlas = create_tlas(
                 scene.capabilities.device(),
