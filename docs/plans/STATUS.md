@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-13 of 33 modules done · 13 in progress · 7 to come
+13 of 33 modules done · 14 in progress · 6 to come
 
 ### Needs you now
 
@@ -37,7 +37,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - ATMOSPHERE assumes: M9 is built now, ahead of M6 and TAAU, and is held by numbers and by where the retained images moved. Its look on a real sea is judged in `WATERS` M2, which now waits for it. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show. ([plan](ATMOSPHERE/PLAN.md))
-- ATMOSPHERE assumes: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference, and under the owner's bar of 17 November no accuracy campaign is planned. The referees P1–P11, and the six handoff comparisons that repeat one through the lent library, stay in the checks as regression guards, which a deliberate change to the look gives new expected values. The handoff's contract comparisons, which read the stored product, stay fixed. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference, and under the owner's bar of 17 November no accuracy campaign is planned. The referees P1–P11, and the five comparisons in H1–H4 that repeat one through the lent library, stay as regression guards, which a deliberate change to the look gives new expected values. The handoff's contract comparisons, which read the stored product, stay fixed. H5's reflection-model differences are only recorded. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step, because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image, and M6 judges by eye whether a step shows. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: "top quality atmosphere" (the owner, 14 November) gives this module two milestones after G3s closes, M7 and M8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close. ([plan](ATMOSPHERE/PLAN.md))
@@ -273,15 +273,16 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - SHOWCASE's design: Design Changes Requested · [design](SHOWCASE/DESIGN.md) · [plan](SHOWCASE/PLAN.md)
-- The same sea draws in Chrome from one command (WATERS M3): Ready for Review · [plan](WATERS/PLAN.md) · [latest review](../evidence/WATERS/M3-review.md)
+- A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand (WATERS M4): Not Started · [plan](WATERS/PLAN.md)
 - SCENE-VIEWS M3 The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed: Blocked: Needs Dependency: The lead needs to pause the other builders through Ready for Review and resume M3 for the capture-off Metal timing run. A planner adds it to the module that owns it
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
-- A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): Not Started · [plan](SESSION/PLAN.md)
+- A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): In Progress · [plan](SESSION/PLAN.md)
 - On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws (RAY-TRACING M1): In Progress · [plan](RAY-TRACING/PLAN.md)
 - On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces (MESH-SHADING M1): In Progress · [plan](MESH-SHADING/PLAN.md)
 
 ### Recently done
 
+- The same sea draws in Chrome from one command (WATERS M3), 18 Nov · [review](../evidence/WATERS/M3-review.md)
 - A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide (SIM-2D M3), 18 Nov · [review](../evidence/SIM-2D/M3-review.md)
 - A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them (SCENE-VIEWS M2), 18 Nov · [review](../evidence/SCENE-VIEWS/M2-review.md)
 - Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for (REVIEW-ENGINE M5), 18 Nov · [review](../evidence/REVIEW-ENGINE/M5-review.md)
@@ -357,7 +358,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; ATMOSPHERE M10 for the populated valley's motion review; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Design Changes Requested |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M3 of 16 · Ready for Review |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M4 of 16 · Not Started |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M3 of 3 · Blocked: Needs Dependency |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Changes Requested |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Waiting: On Dependency, WATERS:M9 |
@@ -365,7 +366,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M1 of 7 · Not Started |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M1 of 7 · In Progress |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, TEST-SUPPORT:M2, GAME-SPLIT:M3 |
