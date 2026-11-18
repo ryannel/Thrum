@@ -367,8 +367,18 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
-      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged."
+      "status": "blocked",
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged.",
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "Assign the shipped valley fix and authorize the affected APPLE-TILE exact-reference refresh.",
+        "work": {
+          "commit": "b65cab08fd6cf30252373e3ab68634ecfc5ebf2f",
+          "branch": "build/atmosphere",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/ATMOSPHERE/M6-handoff.md"
+      }
     },
     {
       "id": "M7",
