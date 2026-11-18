@@ -407,7 +407,9 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             assert_eq!(report.overload, None);
         }
         host.pause().expect("pause at the prepared tick");
-        let origin = Instant::now() - tick_time(30);
+        let origin = Instant::now()
+            .checked_sub(tick_time(30))
+            .expect("flythrough clock origin");
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
         let paused = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
         assert_eq!(paused.id.tick, 30);
