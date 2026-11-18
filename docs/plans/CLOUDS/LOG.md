@@ -442,3 +442,12 @@
   check also runs `cloud_cost.py refuse`, which passes only when a record with no clouds-visible run is turned away; `check` holds the
   record and its fresh measurement to one list. No budget and no reviewer question is added. Taken: the M3 test handoff, as a note.
   Left: S5's M2.11 and S4's M1.2, since M2 and M1 are Done. No item of a Done milestone changed. The design needs a review.
+
+- 2026-11-18 Plan, answering M3's block (`needs_context`: how to break up the repeated domes and shelves three shape trials left;
+  work on `build/clouds` at `6c696409396a`, unmerged). Cause, from its code and [part XVIII](../../evidence/CLOUDS/design-proof/README.md):
+  a cell's column was one dome, whose scaled outline is the same for every cell, under one octave of 200 m noise, so pitch, depth and
+  taper only resized one outline; the shelf is a shallow cell's dome under a deep one's. Decided: the column is
+  [a cluster of turrets](DESIGN.md#one-weather-field-in-the-air-frame) under the cell's dome, and [the shape noise](DESIGN.md#one-density-in-m¹)
+  is a billow field in one tiling volume, as shipped clouds form theirs. A billow field on the dome alone left the dome. M3.1 is written
+  again to name the cue. M2.2's test compares each map level with the model's column at that level's footprint; its statement stands.
+  The level dark band is not explained: risk 12 says what to do first. No interface or Done item changed. The design needs a review.

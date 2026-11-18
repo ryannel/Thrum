@@ -23,7 +23,10 @@ Revised 17 November 2026 after [M3's handoff](../../evidence/CLOUDS/M3-handoff.m
 for [the owner's bar](#how-the-module-is-proved): the look and the speed decide, references are diagnostics, and
 near and far fog [share one Sun term](#condensate-that-meets-the-ground-mist-fog-and-low-cloud). Revised
 18 November 2026 after [the review of 17 November](../../evidence/CLOUDS/design-review.md) (finding MF1):
-[one boundary rule for every consumer](#cloud-light), what each integrator reads, and part XVII.
+[one boundary rule for every consumer](#cloud-light), what each integrator reads, and part XVII. Revised
+that day again after M3 stopped on repeated domes and shelves: a cell's column is
+[a cluster of turrets](#one-weather-field-in-the-air-frame) and the shape noise is
+[a billow field](#one-density-in-m¹), in place of one dome with a fretted skin (part XVIII).
 
 ## The request
 
@@ -185,6 +188,19 @@ What each source was read for, and how far.
   **Light comes from a 256×256×32 grid of density summed toward the Sun**, refreshed over 8 frames for 0.1–0.2
   ms, which cut render time by 40% and gave "long distance shadows". With a distance field and steps that grow
   with distance, cloud cost fell from 10 ms to 2.2–4 ms at 960×540.
+- **How shipped clouds get their form, read on 18 November** after three looks in M3 all read as domes.
+  Nubis ([2017 slides](https://www.slideshare.net/guerrillagames/nubis-realtime-volumetric-cloudscapes-in-a-nutshell),
+  slide text and notes as the page gives them) builds a cloud as
+  `remap(noise · height gradient, coverage, 1, 0, 1)`. Its noise is a low-frequency "Perlin-Worley": Perlin
+  noise given the round cells of inverted Worley noise, with finer Worley noise eroding the edge. Nubis
+  Evolved's "Modeling Density" slides, read again for this, give
+  `dimensional_profile = vertical_profile * cloud_coverage` and
+  `cloud_density = saturate(cloud_noise_composite - (1.0 - dimensional_profile))`, the composite a four-channel
+  128³ volume, billowy where a cloud rises and wispy where it thins. In both, the 2D fields say where cloud may
+  stand and how high, with soft edges and irregular outlines, painted or generated. The lobes a viewer reads as
+  the cloud are the noise's, a few to a cloud. This design kept that operator and lost what it works on: its
+  column was one smooth dome a cell, and its noise a skin 200 m long on a cloud several kilometres wide.
+  [Part XVIII](#check-that-it-can-work) measures the difference.
 - **Frostbite** ([Hillaire 2016 course notes](https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/s2016_pbs_frostbite_sky_clouds.pdf),
   sections 5.6 to 5.10 read). Equation 17 integrates a step's scattering against its own extinction, which
   conserves energy at any step length. Equations 19–20 approximate multiple scattering as octaves with scaled
@@ -255,8 +271,8 @@ What each source was read for, and how far.
   relights clouds as meshes with a learned encoding (Olajos, Doggett and Goswami), and a hybrid of sparse voxels
   and noise. Titles and abstracts only. Neither is shipped practice or runs in a browser's limits, and neither
   changes a selection below.
-- **Not read:** the Red Dead Redemption 2 course notes (Bauer 2019; not found to fetch), the 2015 and 2017 Nubis
-  talks, and the Broadsides cloud shaders beyond their names and sizes. Nothing below rests on them.
+- **Not read:** the Red Dead Redemption 2 course notes (Bauer 2019; not found to fetch), the 2015 Nubis
+  talk, and the Broadsides cloud shaders beyond their names and sizes. Nothing below rests on them.
 
 Five reproductions were run for this design, the second for its revision, the third for the first-principles
 judgement, the fourth after its second review and the fifth for mist, fog and low cloud; a sixth followed that
@@ -378,9 +394,22 @@ with no GPU:
   size, its depth and a shape seed. A cell's **envelope** rises smoothly from zero at birth and returns to zero
   at death, and scales its radius, depth and density together: the cell forms, grows and thins. Coverage sets
   how many cells exist, through a smooth threshold on a per-cell hash, so raising coverage swells cells in and
-  never switches one on. A cell's column is a dome over a flat base at the type's condensation level, or the
-  footprint of an authored shape where the cell is a [placed](#placed-volumes) one; bases are shared, sizes
-  vary.
+  never switches one on. A cell's column is a cluster of turrets over a flat base at the type's condensation
+  level, or the footprint of an authored shape where the cell is a [placed](#placed-volumes) one; bases are
+  shared, sizes vary.
+- **Turrets.** A heaped cloud is several rising heaps of different heights on one base, and its outline is
+  theirs. The **turret field** is a second, finer lattice in the air frame, hash-named as the cells' is. Each
+  site holds one rounded cap with its own centre, width and height: a few tall and wide, most low and narrow.
+  The field is a function of the air-frame point alone and takes no time, so a cell's envelope raises and
+  lowers the turrets under it. A cell's thickness at a point is the lesser of two: its **dome**, which rises
+  from the cell's rim to its depth at its centre and is the most the cell can hold there, and its depth times
+  its envelope times the turret field. What that leaves thinner than a least share of the cell's depth clears
+  smoothly to nothing, so no sheet or lip stands between turrets or round a rim. The field is read with a
+  footprint, as noise is: as the footprint grows past a turret's width the field tends to one share, so a
+  reader too coarse to resolve a turret sees none and nothing aliases. A point query's footprint is zero.
+  The turret pitch, the least share and that one share are profile constants, as the lattice is. One dome a
+  cell, the rule this replaces, gave every cloud the same outline at a different size
+  ([part XVIII](#check-that-it-can-work)).
 - **The deck.** Layered cloud is a sheet whose thickness follows a smooth evolving noise against a threshold set
   by coverage and type: gaps at a broken deck, none at overcast.
 - **Types** are game data: a table along the type axis giving base height, depth range, liquid water content,
@@ -389,6 +418,8 @@ with no GPU:
 - **Continuity.** Under cells and the deck the field is continuous in space, in weather time and in every
   parameter: its density at every point, and its column's optical depth, coverage, thickness and top. Where
   cells overlap the column takes the larger depth and the larger profile, never a switch between cells.
+  Overlapping cells scale the one turret field, so a shallow cell beside a deep one is lower turrets beside
+  taller ones, and never a shelf under a dome.
   [Outputs](#one-weather-field-in-the-air-frame) says what a placed shape's column does.
 - **Lattice and period are profile constants.** A preset never changes them, because scaling a lattice would move
   every cloud at once.
@@ -417,7 +448,7 @@ every cloud's edge, where a clear texel that holds its base draws a thinner clou
 that fell to zero as a cell cleared would step by the height of the base, where the cell's thickness goes to
 nothing smoothly.
 
-**What steps and what does not.** Thickness follows a cell's envelope and its rim to zero, so under cells and
+**What steps and what does not.** Thickness follows a cell's envelope, its rim and its turrets to zero, so under cells and
 the deck the top comes down to the base as a column clears and rises from it as one forms. There the top, the
 thickness, the coverage and the optical depth never step, and the base moves only as the type does. A placed
 shape's extents are its geometry, and its envelope does not scale them: its base and top stand whole at its
@@ -509,12 +540,23 @@ Every consumer (the view, the Sun's path, the sky overlay, the CPU reference) ev
 
 `σ(point) = σ_type · profile(height fraction) · shape(column profile, noise)`
 
-The column profile thresholds a low-frequency 3D shape noise, so a cloud's interior is solid and its edge breaks
-into billows; a finer detail noise erodes only the edge. Noise can remove extinction and never add it beyond the
-column's bound. As a cell's envelope moves, the threshold sweeps through fixed noise, so billows appear and
-dissolve as structure and nothing slides. Noise is read at a mip chosen from the sample's footprint, so a far
-ray reads an average, not aliased detail. Both noise volumes are generated on the GPU at preparation from the
-same integer hash on every target.
+The column profile is held against the **shape noise**, a billow field in the air frame: a few octaves of
+round lobes with sharp creases between them, as inverted cellular noise gives them and the Perlin-Worley
+noise of shipped clouds has them. Its coarsest lobe is about half a turret
+wide and each octave is two to three times finer. The threshold it sets spans the profile's whole range short
+of the core, so a turret's interior stays solid and its surface moves by a lobe's size and not by a skin's:
+lobes on a turret, and smaller lobes on those. A finer detail noise erodes only the edge. Noise can remove
+extinction and never add it beyond the column's bound. As a cell's envelope moves, the threshold sweeps
+through fixed noise, so billows appear and dissolve as structure and nothing slides.
+
+Each noise is one tiling volume, generated on the GPU at preparation from the same integer hash on every
+target, and costs a sample one read, where octaves of lobes computed at the sample would each cost a
+neighbourhood of lattice sites. The volume's texels are the noise's definition: the model computes the same
+texels from the hash and interpolates them as the sampler does, so the GPU and the model read one function. A
+volume is read at a mip chosen from the sample's footprint, so a far ray reads an average, not aliased detail,
+and keeps every lobe wider than its footprint. A volume repeats, at a period longer than a turret. The turret
+field is what makes each cloud its own, so it is evaluated from the hash, in the weather map, and never
+repeats.
 
 **Full and coarse.** The function is evaluated two ways, which differ only in the detail term. The **full
 density** reads the detail noise; the view march and its local light samples use it. The **coarse density**
@@ -533,10 +575,12 @@ darkened twice and no density is divided by a count.
 The GPU reads the field through a **weather map**: a few world-anchored wrapping levels in the air frame, whose
 texel doubles or quadruples outward to the horizon. A texel holds the field's column (base, top, profile, type),
 a clear one with its top at its base, and, apart from it, two presentation values: the slot of at most one
-placed shape and the weight of its volume form. Compute passes in `simulate` evaluate the same cell and deck rules as the CPU. Because the map lives in
+placed shape and the weight of its volume form. Compute passes in `simulate` evaluate the same cell, turret and deck rules as the CPU. Because the map lives in
 the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
 the map is refreshed in parts. A coarse level of the tallest top in each region lets a ray step across empty
-air: a region is empty where its tallest top is no higher than the base.
+air: a region is empty where its tallest top is no higher than the base. Each level reads the turret
+field at its own texel as the footprint, so a level whose texel is wider than a turret holds none, and a cloud
+that far off takes its form from the shape noise alone.
 
 **The map holds nothing of the ground.** With ground condensate a texel also holds each ground row's **air
 factors**, and only those: its extent and the cut of its noise. A row's
@@ -852,7 +896,7 @@ A sky with clouds must light the world as one. Three small products do it, each 
 
 A placed volume is a cooked density volume that stands for one cell.
 
-A placed cell is a cell of the weather field whose cloud is an authored shape and not a dome. The field knows
+A placed cell is a cell of the weather field whose cloud is an authored shape and not a cluster of turrets. The field knows
 the shape, so the query, the picture and the shade agree on its outline at any distance and with no camera.
 
 - **Content.** The game cooks its library as one stacked volume product: each shape is a slab of the same
@@ -1344,6 +1388,26 @@ the yardstick, which is 5.5% of the reference radiance.
 - **Unrun:** the ground band's and the map's own errors in the three depths, which are the same read for both
   integrators; the two grains, a cell sixteen pixels across against a texel of four. M15.13's stills see both.
 
+From `cloud_shape_proof.py`, run on 18 November after M3 stopped on repeated domes and shelves
+(`git show 6c696409396a:docs/evidence/CLOUDS/M3-handoff.md`). It makes the fair sky's cells and their density
+as `build/clouds` computes them at that commit, and draws the same cells from the side in three forms
+([the picture](../../evidence/CLOUDS/design-proof/cloud-shape-proof.png)). An outline is the top of a cloud's
+silhouette across its width, both scaled to 1.
+
+- **XVIII, what gives a heaped cloud its form.** Sixteen mature cells, each alone. With nothing eroded, the
+  built column's outline is `(1 − x²)^0.7` for every cell, whatever its size, depth or age: one outline, which
+  three looks at other pitches, depths and tapers could not change. Its 200 m noise moves that outline 0.036
+  of the cloud's height from a single smooth hump, and two clouds' outlines lie 0.074 apart. The same domes
+  under a billow field with a 900 m coarsest lobe: 0.062 and 0.138, and the picture is the same domes, lumpier.
+  Turrets under the dome with the same billow field: 0.094 and 0.258, with 2.8 separate tops a cloud for 1.9,
+  and the picture is clusters of heaps, no two alike. In a strip of sky where cells overlap, the built form
+  shows the shelf, a shallow cell's dome standing out under a deep one's; with turrets the same two cells are
+  low heaps beside a taller one. The drawn
+  column is 0.46 to 0.51 of the query's in all three, so the bound a query promises is no looser than it was.
+- **Unrun:** the engine's light on the new form, so the level band across M3's clouds is not explained here;
+  the detail noise; a view from the ground; motion; turrets at the map's far levels. M3.1 and M3.2 judge those
+  in the engine.
+
 ## The system as it runs
 
 | State | Owner |
@@ -1473,9 +1537,16 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    in sixteen), a coarser far step, fewer local samples with a finer near level. M3 tries the ones its record
    points at and records what each did to the cost and to the look. Building goes on either way; what remains
    over the refresh interval is written up as a follow-up for the performance phase.
-2. **Procedural cumulus reads as soft shelves**, as Broadsides' did. Early sign: M3's first stills. The mechanism
-   (profile thresholding shape noise, flat shared bases, domes) is the shipped one; the look is tuned against
-   M3's list with a fresh opinion. Three failed looks on one cue go to the log and end `BLOCKED`.
+2. **Procedural cumulus reads as repeated shapes.** M3's first form did, through three looks: one dome a
+   cell, so domes, lenses and shelves. Turrets and the billow field replace it (part XVIII). Early sign: M3's
+   stills. The look is tuned against M3's list with a fresh opinion, in the turret rule's constants, the shape
+   noise's octaves and the type's depths. If clouds still share an outline, the fixes in order: a wider spread
+   of turret heights and widths; a coarser first octave; turrets with lives of their own, by the cell rule one
+   level down. Never one dome a cell again, and never a form only the trace has: the query, the map, the Sun's
+   path and the trace read one density. Past the map level whose texel is wider than a turret, a cloud's
+   form is the shape noise's alone; if M3.2's crops show where that begins, the fix is in the levels' texels
+   and sizes, which are profile constants.
+   Three failed looks on one cue go to the log and end `BLOCKED`.
 3. **The reconstructed layer ghosts or crawls.** Early sign: M3's pan. Fallback: refresh every texel every
    frame at a lower layer scale, which removes the layer's history from the picture.
 4. **Low-Sun relief is lost in the summed product**, or its coarse density shades an eroded edge visibly
@@ -1513,7 +1584,10 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    sunlit top or a seam along a cloud's shoulder, and M5's at a low Sun, where the plane's cosine ranges
    furthest. The fixes, in order: a deeper level margin than 2; a `tau_up` taken from the same coarse density
    as the product, or the term's constants adjusted by eye. The builder makes them and records what changed.
-   Never a second light or a return to fixed orders.
+   Never a second light or a return to fixed orders. M3's domes also showed a level dark band low in each
+   cloud, its cause not found. The light's vertical depths come from the map's column by height, and under one
+   dome a cell every column had the same profile, so the band may go with the dome. If it stays on turrets,
+   the first step is to draw each light term alone and see which one holds it, before any constant moves.
 13. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
@@ -1557,6 +1631,8 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
 | Does the Sun term give clouds their brightness and relief with nothing tuned, and if not, which constant moves? | M3's stills, then M5's at a low Sun; the builder records any constant it changed |
 | Does the lit plane hold steady where the map's column and the eroded cloud disagree? | M3's stills, then M5's at a low Sun |
+| Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | M7's time-lapse |
+| Does a far cloud keep its form past the map level whose texel is wider than a turret? | M3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | M1 measures first, beside part G's 1,025 |
 | Does the incident-light meter already see cloud shade? | M8 reads the code and measures |

@@ -39,19 +39,19 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 
-Ruling 2 is built in `ATMOSPHERE`'s aerial lookup. Write the trace over
-[the interval a ray marches](DESIGN.md#the-visible-layer), though here that interval is the cloud band. The
-work so far is on branch `build/clouds` at `fa4eabb9d`, with
-[its handoff](../../evidence/CLOUDS/M3-handoff.md). Its trace, Sun-path reconstruction, capture routes and
-photon reference stand. Its light is the four fixed orders, which made the clouds too dark;
-[cloud light](DESIGN.md#cloud-light) replaces them in the shader. Build the term and tune by eye against M3.1 to M3.3: no item compares the
-shader with the model or with photons. `far_aerial_gpu` and `transport_gpu` exist: keep the chart-based
-far-air interface and the known-source composition cases, and print their superseded figures, against the air
-reference and the four-order source, as diagnostics. In `thrum-cloud-model` leave `Orders` and `medium.rs` as they are:
-M14.13 removes them. After three looks under the new term that fail the same cue of M3.1 to M3.3, record them
-in the log and end `BLOCKED`; looks taken under the four orders do not count. A frame
-over the refresh interval takes the first risk's remedies and stops nothing. `cloud_cost.py`'s `refuse` is new
-in M3.9.
+The work is on branch `build/clouds` at `6c696409396a`, unmerged; read its handoff with
+`git show 6c696409396a:docs/evidence/CLOUDS/M3-handoff.md`. Its trace, [cloud light](DESIGN.md#cloud-light),
+far-plane compose, full refresh and capture routes stand. Its stills, sequences and cost record are of the
+dome, and are taken again once the form is settled. What remains is the cloud's form.
+[Turrets](DESIGN.md#one-weather-field-in-the-air-frame) go in the column, which `Field::column` and
+`weather.wgsl` compute as one dome a cell. [The shape noise](DESIGN.md#one-density-in-m¹) becomes a billow
+volume, where `Field::noise` and `cloud_noise` in `layer.wgsl` hash value noise at each sample. M1's and M2's
+tests in `./dev check` hold the query, the map and the Sun's path to one another; where the new form moves an
+expected value, update it in the same landing. Tune by eye against M3.1 to M3.3. If the level band stays,
+[risk 12](DESIGN.md#risks) says what to do first. Looks under one dome a cell do not count: after three looks
+under turrets that fail the same cue, record them in the log and end `BLOCKED`. A frame over the refresh
+interval takes the first risk's remedies and stops nothing. Leave `Orders` and `medium.rs` as they are: M14.13
+removes them.
 
 ## M4 The same sky and the same shade draw in Chrome
 
