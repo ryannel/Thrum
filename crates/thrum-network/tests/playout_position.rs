@@ -1,9 +1,8 @@
 //! Sample ordinary buffered motion, underrun recovery, and a deliberate skip.
 /// The shared integer rule set and carrier fixture.
-#[path = "support/session.rs"]
-pub mod session_fixture;
+pub mod support;
 
-use session_fixture::{Match, local};
+use support::{Match, local};
 use thrum_network::session::{Playout, Skip, World};
 
 #[derive(Clone, Copy)]

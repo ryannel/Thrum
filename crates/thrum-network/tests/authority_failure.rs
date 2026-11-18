@@ -1,9 +1,8 @@
 //! Runtime refusal terminates authority without publishing a set for that tick.
 /// The shared integer rule set and carrier fixture.
-#[path = "support/session.rs"]
-pub mod session_fixture;
+pub mod support;
 
-use session_fixture::{Failure, Match, local};
+use support::{Failure, Match, local};
 use thrum_core::sim::TickError;
 use thrum_network::session::{
     ClientState, Controls, Disposition, EndReason, HostState, Input, World,

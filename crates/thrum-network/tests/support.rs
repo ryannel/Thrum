@@ -210,7 +210,7 @@ impl World for Game {
         let mut bytes = [0; 32];
         for (lane, output) in bytes.as_chunks_mut::<8>().0.iter_mut().enumerate() {
             let mut digest = Digest::default();
-            digest.bytes(include_bytes!("session.rs"));
+            digest.bytes(include_bytes!("support.rs"));
             digest.bytes(&u64::try_from(lane).expect("four lanes").to_le_bytes());
             digest.bytes(match self.rules.rule {
                 Rule::Add => b"add",

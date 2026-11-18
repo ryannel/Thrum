@@ -3,7 +3,6 @@ use crate::{
     envelope::{self, Header, Kind},
     input_batch::{ActionView, ActionWire, MAX_ACTION_BYTES, MAX_ACTIONS, dequantize, quantize},
 };
-
 use thrum_core::sim::InputFrame;
 use thrum_transport::{Lane, Link, LinkError, RELIABLE_LIMIT};
 

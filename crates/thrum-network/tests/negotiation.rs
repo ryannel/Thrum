@@ -1,9 +1,8 @@
 //! Session negotiation before input admission.
 /// The shared integer rule set and carrier fixture.
-#[path = "support/session.rs"]
-pub mod session_fixture;
+pub mod support;
 
-use session_fixture::{Game, Match, Rule, shaped};
+use support::{Game, Match, Rule, shaped};
 use thrum_network::{
     envelope::{self, Header, Kind},
     session::{ClientState, PROTOCOL, Refusal, World},

@@ -1,17 +1,65 @@
 //! Stdin entry point for session payload refusal through the in-memory link.
 
-/// Integer rule set and virtual carrier shared with the integration tests.
-#[path = "../tests/support/session.rs"]
-pub mod session_fixture;
-
 use std::io::{self, Read};
 
-use session_fixture::{Match, local};
+use thrum_core::sim::{InputFrame, RuleSetIdentity};
 use thrum_network::{
     envelope::{self, Header, Kind, MAX_MESSAGE_BYTES},
-    session::{Controls, World},
+    input_batch::{ActionView, ActionWire, InputCodecError},
+    session::{Client, Controls, Host, SLOTS, Settings, World},
 };
-use thrum_transport::{DATAGRAM_LIMIT, Lane};
+use thrum_transport::{
+    DATAGRAM_LIMIT, Lane, Profile,
+    memory::{Conditioner, Memory},
+};
+
+struct Endpoint(u64);
+
+impl World for Endpoint {
+    type Action = u8;
+    type Error = ();
+
+    fn tick(&self) -> u64 {
+        self.0
+    }
+    fn identity(&self) -> RuleSetIdentity {
+        RuleSetIdentity([0; 32])
+    }
+    fn step(&mut self, _: &[InputFrame<u8>; SLOTS], _: u8) -> Result<(), ()> {
+        self.0 += 1;
+        Ok(())
+    }
+    fn digest(&self) -> u64 {
+        self.0
+    }
+    fn image(&self, output: &mut Vec<u8>) -> Result<(), ()> {
+        output.clear();
+        output.extend(self.0.to_le_bytes());
+        Ok(())
+    }
+    fn restore(&mut self, tick: u64, image: &[u8]) -> Result<(), ()> {
+        if image != tick.to_le_bytes() {
+            return Err(());
+        }
+        self.0 = tick;
+        Ok(())
+    }
+}
+
+struct ByteWire;
+
+impl ActionWire<u8> for ByteWire {
+    fn encode(&self, action: &u8, output: &mut [u8]) -> Result<(u32, usize), InputCodecError> {
+        output[0] = *action;
+        Ok((1, 1))
+    }
+    fn decode(&self, action: ActionView<'_>) -> Result<u8, InputCodecError> {
+        match (action.schema_id, action.payload) {
+            (1, [value]) => Ok(*value),
+            _ => Err(InputCodecError::InvalidAction),
+        }
+    }
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut bytes = Vec::new();
@@ -22,22 +70,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let [selector, mode, payload @ ..] = bytes.as_slice() else {
         return Ok(());
     };
-    let mut fixture = Match::new(local(), 1, None, false);
+    let mut carrier = Memory::new(
+        Profile::default(),
+        Conditioner {
+            delay_ms: 0,
+            jitter_ms: 0,
+            loss_ppm: 0,
+            seed: 29,
+            duplicate: false,
+        },
+    )?;
+    let links = carrier.connect()?;
+    let mut authority = Host::new(
+        Endpoint(0),
+        ByteWire,
+        Settings::default(),
+        [4; 16],
+        341,
+        false,
+        0,
+    )?;
+    authority.connect(links[1].clone(), 0)?;
+    let mut client = Client::adaptive(Endpoint(0), ByteWire, links[0].clone(), 0);
+    let mut now = 0;
     let negotiated = selector & 1 != 0;
     let to_authority = selector & 2 != 0;
     let raw = selector & 4 != 0;
     if negotiated {
-        fixture.ready();
-        while fixture.host.world().tick() < 6 {
-            fixture.neutral(6);
+        authority.start(100_000);
+        while now <= 225_000 {
+            carrier.advance(now / 1_000);
+            authority.advance(now, 6);
+            client.advance(now, |_| Controls::axes([0.0; 3]))?;
+            now += 2_500;
         }
     } else {
         // Open the link and put the client in negotiation. Captured hello is
         // removed so the test message is the next message across this lane.
-        fixture.memory.advance(0);
-        fixture.clients[0].advance(0, |_| Controls::axes([0.0; 3]))?;
-        fixture.memory.advance(0);
-        drop(fixture.links[0][1].receive(Lane::Reliable));
+        carrier.advance(0);
+        client.advance(0, |_| Controls::axes([0.0; 3]))?;
+        carrier.advance(0);
+        drop(links[1].receive(Lane::Reliable));
     }
     let lane = if mode & 1 == 0 {
         Lane::Reliable
@@ -83,13 +156,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let from = usize::from(!to_authority);
-    let time = fixture.now / 1_000;
-    if fixture.links[0][from].send(lane, bytes, time).is_ok() {
-        fixture.memory.advance(time);
+    let time = now / 1_000;
+    if links[from].send(lane, bytes, time).is_ok() {
+        carrier.advance(time);
         if to_authority {
-            fixture.host.advance(fixture.now, 6);
+            authority.advance(now, 6);
         } else {
-            fixture.clients[0].advance(fixture.now, |_| Controls::axes([0.0; 3]))?;
+            client.advance(now, |_| Controls::axes([0.0; 3]))?;
         }
     }
     Ok(())

@@ -1,9 +1,8 @@
 //! Reliable commands are ordered authority input even when timed actions miss.
 /// The shared integer rule set and carrier fixture.
-#[path = "support/session.rs"]
-pub mod session_fixture;
+pub mod support;
 
-use session_fixture::{Match, local, shaped};
+use support::{Match, local, shaped};
 use thrum_network::session::{Controls, Disposition, Input, World};
 
 #[test]
