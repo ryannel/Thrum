@@ -71,6 +71,20 @@
         "../evidence/RAY-TRACING/M1/structure-cost.json"
       ]
     },
+    "RAY_TRACING_M2": {
+      "implementation": "Opt-in cooked mesh structures build from resident draw buffers. Scene membership includes all opaque placements through the contribution seam and follows the raster publication switch. The primary-ray view uses the same camera as the drawn frame.",
+      "functional_validation": "Metal builder checks passed cooked placement and entity edit switches, discard and refusal, off-camera casters with Sun maps on and off, device replacement and ordinary valley output parity with the pre-change renderer.",
+      "experienced_quality": "Inspected four Metal T2 fixed pairs at 1280 by 720 with native-size contact crops. The terrain, placements and visible entity positions agreed between the drawn and primary-ray outputs.",
+      "platform_performance": {
+        "mac_apple_tile": "Contended release measurements recorded a 15,384,576-byte resident delta and estimated 0.737 to 0.905 ms additional GPU work for the terrain edit. Initial terrain build brackets were 58.5 to 76.2 ms. The cost evidence records the cold outlier and uncertainty in the smaller mesh estimates.",
+        "browser": "Ordinary output covered by the shared exact-images check. The traced view has no browser qualification.",
+        "ios": "No ray structure qualification."
+      },
+      "evidence": [
+        "../evidence/RAY-TRACING/M2/README.md",
+        "../evidence/RAY-TRACING/M2/valley-cost.json"
+      ]
+    },
     "SCENE_VIEWS": {
       "implementation": "Prepared contribution-owned secondary slots, per-frame camera and clip requests, separate entity and cooked visibility, Sun cascades, local-light clusters and aerial products, and same-frame colour, depth and record reads. The mirror pool composes two air stretches and declares five runtime quality controls.",
       "functional_validation": "M1 and M2 were independently reviewed on Metal, including stored-format equality, slot lifetime and absence, view-local light and shadow products, direct and indirect cooked draws, and composition from main-view marker colours. M3 verifies both knob endpoints against direct requests on both Metal recipes, checks main draw-buffer equality and reads the prepared viewport attachments. Chrome WebGPU matches its own main draw for entities and cooked placements to zero stored colour and depth steps, including the three hill-shadow camera cases at both extents, and passes both marker exposures.",

@@ -64,3 +64,9 @@
   resource creation, and restored the sky kit's public error variants. Verified the portable fallback and
   the shared gate's ordinary and named requests on Metal, and compiled the sky kit's exhaustive match.
   [Review fix evidence](../../evidence/RAY-TRACING/M1/README.md#review-fixes).
+- 2026-11-18 Cooked residency now builds mesh structures from its draw buffers and contributes every
+  placement using the raster publication's transform and switch. Verified sampled rays and raster bytes
+  across placement and entity edits, discard, refusal and device replacement on Apple tile Metal.
+  Inspected four T2 fixed valley pairs and native-size contact crops. The two contended timing runs found
+  a cold terrain-build outlier and an estimated 0.737–0.905 ms added GPU cost for the edit.
+  [M2 evidence](../../evidence/RAY-TRACING/M2/README.md).

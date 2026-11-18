@@ -108,8 +108,8 @@
           "statement": "In the valley the traced view shows what the drawn frame shows: the terrain, every cooked mesh and the entities standing on them, each where it is drawn, with none missing, extra or out of place.",
           "inspect": "`fixed` stills of the traced view beside the drawn frame, at four views of the valley that between them show the terrain near and far and every cooked mesh, whole and as native-size crops where meshes meet the terrain.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/README.md",
           "verdict": "",
           "review": ""
         },

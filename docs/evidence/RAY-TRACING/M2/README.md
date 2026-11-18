@@ -4,6 +4,36 @@ The automated builder checks ran at `e43e3b6d253b9e7265c5b7a951f0eed9e710a24b` w
 wgpu 30.0.1 on a 30-GPU-core Apple M3 Max with 36 GB and macOS 26.6.2. They used Apple tile with
 `ray-query` required.
 
+## Fixed valley inspection
+
+The T2 capture submitted the 1280 × 720 SDR output at tick zero on the same hardware and recipe.
+The four pairs use the cooked valley and the game's visible proof population with cooked entity rows.
+The drawn arm uses standard lighting and Sun maps. The traced arm uses neutral lighting derived from
+primary-ray hits. [Capture identities, source revision and hashes](stills/capture.json)
+
+| View | Whole drawn frame | Whole traced frame | Native-size crop, drawn on the left |
+| --- | --- | --- | --- |
+| Valley, level | [Drawn](stills/valley-drawn.png) | [Traced](stills/valley-traced.png) | [Contacts](stills/valley-contact-pair.png) |
+| Down to the ground | [Drawn](stills/contact-drawn.png) | [Traced](stills/contact-traced.png) | [Contacts](stills/contact-contact-pair.png) |
+| West | [Drawn](stills/west-drawn.png) | [Traced](stills/west-traced.png) | [Contacts](stills/west-contact-pair.png) |
+| East | [Drawn](stills/east-drawn.png) | [Traced](stills/east-traced.png) | [Contacts](stills/east-contact-pair.png) |
+
+- The foreground terrain covers the same part of each frame. The far ridge peaks and intervening slopes
+  line up in the level and turned views. The downward view retains the foreground up to the bottom edge.
+- The large sphere and the rock have matching contours and positions in each crop. Their lower edges
+  meet the same part of the terrain. The sphere's raster reflection and the ground shadows change the
+  apparent brightness near those edges.
+- The eleven smaller entities between the sphere and the rock keep the same order, screen positions
+  and partial overlaps. The traced view has a narrow shading fringe at some facet and silhouette edges.
+
+Reproduce with the stock release V1 game and a cooked store made from `examples/v1-game/assets/showcase`.
+Run `python3 scripts/ray_tracing_proof.py stills --binary target/release/v1-game --store <store> --output <new-directory>`
+under the GPU lock. The script requires ray queries, selects Apple tile and records fixed T2 checkpoints.
+For the retained crops, take the rectangle in each pair's `crop` record from both images and place the
+two rectangles side by side without resampling.
+
+## Automated checks
+
 | Item | What the builder checked |
 | --- | --- |
 | M2.2 | A contribution using the public seam offered two placements of one mesh after its upload. A shadow ray hit the off-camera placement with both bits set and missed the one with only the ambient bit. An empty contribution preserved the ordinary raster and instance list. Cargo metadata confirmed the renderer has no dependency on cooked GPU residency. [Test output](seam.txt) |
