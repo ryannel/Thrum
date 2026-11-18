@@ -31,6 +31,32 @@
         "by": "plan",
         "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 2 Must F",
         "at": "2026-11-18T05:29:44Z"
+      },
+      "ready_for_review": {
+        "commit": "aa0c5275b9f99e94d7fd6d2d77cd5ae4d3121e42",
+        "checked": "d47f7476c5c56cf22d1c509c5d06666229dd8710",
+        "at": "2026-11-18T10:36:21Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 917293,
+          "cached": 100584960,
+          "output": 167998,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 917293,
+          "cached": 100584960,
+          "output": 167998,
+          "turns": 3
+        }
       }
     },
     "M2": {
