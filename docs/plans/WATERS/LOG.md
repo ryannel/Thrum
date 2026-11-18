@@ -461,3 +461,9 @@
   that the shaft pass leaves darker than with the box taken away, and M16.10 names the same criterion for Chrome. The design states
   that the marched part is signed and kept signed to the sum. No brightness or displacement is held to a number. The review made no
   Suggestions. No other item changed.
+
+- 2026-11-18 M3 now reads its browser frame clock directly from successful submissions.
+  Hardware Chrome passed 11 oracle checkpoints and agreed with captured submission 632 after the
+  completion history filled. The runtime merged at `e9a449b08` after `./dev check` passed.
+  [Target evidence](../../evidence/WATERS/M3-frame-report.md) includes four new Chrome/Metal fixed
+  pairs and a 62-frame Chrome pan on the merged runtime. Callback timing measures the page clock.
