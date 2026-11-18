@@ -121,7 +121,7 @@ async fn measure() -> Result<(), String> {
                 serde_json::json!({
                     "completed":true, "backend":"Metal", "adapter":adapter.get_info().name,
                     "extent":EXTENT, "reconstruction":"taau",
-                    "recipe":format!("{:?}", caps.recipe().map_err(|error| error.to_string())?), "capture":false,
+                    "recipe":format!("{:?}", caps.recipe().map_err(|error| format!("{error:?}"))?), "capture":false,
                     "solar_hours":host.time_of_day()*24.0, "yaw":yaw.to_degrees(), "pitch":pitch.to_degrees(),
                     "frames":frames,
                 })
