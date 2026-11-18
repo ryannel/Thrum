@@ -259,7 +259,64 @@
     },
     "M3": {
       "definitions": "0b8c43f8fd43ae99abc01eccafb8ae1dcd859c28d5a719cd12f4c86b8ff4489d",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "f246ab22f889ba43cbda9ca88cd907212013fdec",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md",
+          "items": {
+            "M3.1": "fail",
+            "M3.2": "pass",
+            "M3.3": "fail",
+            "M3.4": "fail",
+            "M3.5": "fail",
+            "M3.6": "pass",
+            "M3.7": "pass"
+          },
+          "findings": [
+            {
+              "item": "M3.1",
+              "name": "Chrome omits the terrain-shadow equality cases",
+              "repeat": false
+            },
+            {
+              "item": "M3.4",
+              "name": "The final cost record was taken during another builder's GPU run",
+              "repeat": false
+            },
+            {
+              "item": "M3.3",
+              "name": "The pool comparison accepts the wrong effect",
+              "repeat": false
+            },
+            {
+              "item": "M3.5",
+              "name": "The author guide omits the measured cost of each control",
+              "repeat": false
+            },
+            {
+              "name": "The cost record omits per-resource byte counts",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 175325,
+            "cached": 9124864,
+            "output": 15628,
+            "turns": 1
+          },
+          "at": "2026-11-18T05:41:05Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",

@@ -268,8 +268,8 @@
     {
       "id": "M3",
       "name": "The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -281,10 +281,10 @@
           "check": "node scripts/check_mirror_browser.mjs --case view",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m31-chrome-stored-format-checks",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -293,8 +293,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m32-submitted-noon-and-dusk-inspection",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -303,10 +303,10 @@
           "ask": "Can a caller that knows nothing of views list these knobs and set one, as the governor will? Is the frame compared outside the pool's pixels, and the pool's inside them against the declared change?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m33-runtime-quality-controls",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -315,20 +315,20 @@
           "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.5",
           "statement": "An effect author can use secondary views from the public documentation: declaring slots, the request, what a view holds and leaves out, what is read and when, the limits, the knobs and what each costs.",
           "ask": "Could the builder of `WATERS` M14 write the mirror lookup's reads from the documentation and this design alone? Does it say that a view has no sky, fog, water or history, and what a consumer must compose itself?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/EFFECTS.md#secondary-views",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -337,8 +337,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -347,8 +347,34 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "item": "M3.1",
+          "name": "Chrome omits the terrain-shadow equality cases",
+          "repeat": false
+        },
+        {
+          "item": "M3.4",
+          "name": "The final cost record was taken during another builder's GPU run",
+          "repeat": false
+        },
+        {
+          "item": "M3.3",
+          "name": "The pool comparison accepts the wrong effect",
+          "repeat": false
+        },
+        {
+          "item": "M3.5",
+          "name": "The author guide omits the measured cost of each control",
+          "repeat": false
+        },
+        {
+          "name": "The cost record omits per-resource byte counts",
+          "repeat": false
         }
       ]
     }
