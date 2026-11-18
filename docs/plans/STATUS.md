@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-13 of 33 modules done · 14 in progress · 6 to come
+14 of 33 modules done · 13 in progress · 6 to come
 
 ### Needs you now
 
@@ -274,14 +274,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow (ATMOSPHERE M10): In Progress · [plan](ATMOSPHERE/PLAN.md)
 - A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand (WATERS M4): In Progress · [plan](WATERS/PLAN.md)
-- The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed (SCENE-VIEWS M3): Ready for Review · [plan](SCENE-VIEWS/PLAN.md) · [latest review](../evidence/SCENE-VIEWS/M3-review.md)
 - Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh (CLOUDS M3): Not Started · [plan](CLOUDS/PLAN.md)
 - A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): In Progress · [plan](SESSION/PLAN.md)
 - The whole valley is in the ray-tracing structure, terrain and cooked meshes included, on screen or off, and an edited mesh is replaced there in the frame it changes on screen (RAY-TRACING M2): Not Started · [plan](RAY-TRACING/PLAN.md)
-- On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces (MESH-SHADING M1): In Progress · [plan](MESH-SHADING/PLAN.md) · [latest review](../evidence/MESH-SHADING/M1-review.md)
+- MESH-SHADING's design: Design Ready for Review · [design](MESH-SHADING/DESIGN.md) · [plan](MESH-SHADING/PLAN.md)
 
 ### Recently done
 
+- The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed (SCENE-VIEWS M3), 18 Nov · [review](../evidence/SCENE-VIEWS/M3-review.md)
 - On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws (RAY-TRACING M1), 18 Nov · [review](../evidence/RAY-TRACING/M1-review.md)
 - The same sea draws in Chrome from one command (WATERS M3), 18 Nov · [review](../evidence/WATERS/M3-review.md)
 - A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide (SIM-2D M3), 18 Nov · [review](../evidence/SIM-2D/M3-review.md)
@@ -359,7 +359,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; ATMOSPHERE M10 for the populated valley's motion review; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Waiting: On Dependency, ATMOSPHERE:M10 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M4 of 16 · In Progress |
-| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M3 of 3 · Ready for Review |
+| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | Done 18 Nov |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | M3 of 16 · Not Started |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Waiting: On Dependency, WATERS:M9 |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
@@ -376,4 +376,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | M2 of 6 · Not Started |
-| 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | M1 of 3 · In Progress |
+| 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Design Ready for Review |
