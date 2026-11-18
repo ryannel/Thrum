@@ -155,7 +155,7 @@ impl PreparedSynthetic {
         SceneSurface {
             ray_demand: self.mesh_arena.ray_demand(),
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
-            ray_build_probe: self.ray_build_probe.clone(),
+            ray_build_probe: self.ray_build_probe(),
             secondary_surfaces: Vec::new(),
             secondary_views: &self.secondary_handles,
             sun_optical_depth: self.cloud.is_some(),

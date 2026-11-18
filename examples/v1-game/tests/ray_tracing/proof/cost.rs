@@ -15,11 +15,17 @@ pub(crate) fn measure_valley() {
     report(&resident);
     let (mut game, stats, probe) = valley(&cook.store, &metal, true, true);
     let probe = probe.expect("Metal build observer");
-    let first = rendered_builds(&mut game, &metal, &stats, generation, &probe, "initial");
+    let prepared = probe.take_recorded();
     assert_eq!(
-        first, 5,
-        "two arena cube orientations and three cooked meshes"
+        prepared.len(),
+        2,
+        "both arena orientations built in preparation"
     );
+    for sample in &prepared {
+        report_build(&metal, sample, "initial", 0, None, false);
+    }
+    let first = rendered_builds(&mut game, &metal, &stats, generation, &probe, "initial");
+    assert_eq!(first, 3, "three cooked meshes built during staged loading");
     assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 3);
     drop(game.capture_pixels().expect("steady rendered valley"));
     assert!(probe.take_recorded().is_empty());
@@ -102,42 +108,19 @@ fn rendered_builds(
         assert!(stats.errors.is_empty(), "{:?}", stats.errors);
         let samples = probe.take_recorded();
         count += samples.len();
-        let mut encoder = metal
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        let buffers = samples
-            .iter()
-            .map(|sample| sample.resolve(&metal.device, &mut encoder))
-            .collect::<Vec<_>>();
-        if !buffers.is_empty() {
-            metal.queue.submit([encoder.finish()]);
-        }
-        for (sample, buffer) in samples.iter().zip(buffers) {
-            let ticks = read(&metal.device, &buffer)
-                .as_chunks::<8>()
-                .0
-                .iter()
-                .map(|tick| u64::from_le_bytes(*tick))
-                .collect::<Vec<_>>();
-            let bracket = |end: usize| {
-                ticks[end]
-                    .checked_sub(ticks[end - 1])
-                    .expect("ordered timestamp bracket") as f64
-                    * f64::from(metal.queue.get_timestamp_period())
-            };
-            let nanoseconds = bracket(1);
-            let control = bracket(3);
+        for sample in &samples {
+            let switched = stats.drawn == Some(goal);
             assert!(
-                nanoseconds.is_finite()
-                    && nanoseconds > 0.0
-                    && control.is_finite()
-                    && control > 0.0
+                phase != "initial" || !switched,
+                "mesh built in the first published frame"
             );
-            report(
-                &json!({"type":"mesh_build","phase":phase,"mesh":sample.mesh,"triangles":sample.triangles,
-                "gpu_bracket_ns":nanoseconds,"control_bracket_ns":control,"estimated_mesh_build_ns":nanoseconds-control,
-                "submission":stats.submitted_frames,"displayed_publication":stats.drawn,
-                "switch_in_this_frame":stats.drawn == Some(goal)}),
+            report_build(
+                metal,
+                sample,
+                phase,
+                stats.submitted_frames,
+                stats.drawn,
+                switched,
             );
         }
         if stats.drawn == Some(goal) {
@@ -148,4 +131,35 @@ fn rendered_builds(
             "valley did not publish generation {goal}"
         );
     }
+}
+
+fn report_build(
+    metal: &Metal,
+    sample: &thrum_render::synthetic::RayBuildSample,
+    phase: &str,
+    submission: u64,
+    publication: Option<u64>,
+    switched: bool,
+) {
+    let mut encoder = metal
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    let buffer = sample.resolve(&metal.device, &mut encoder);
+    metal.queue.submit([encoder.finish()]);
+    let ticks = read(&metal.device, &buffer);
+    let tick = |index: usize| u64::from_le_bytes(ticks.as_chunks::<8>().0[index]);
+    let bracket = |end: usize| {
+        tick(end)
+            .checked_sub(tick(end - 1))
+            .expect("ordered timestamp bracket") as f64
+            * f64::from(metal.queue.get_timestamp_period())
+    };
+    let nanoseconds = bracket(1);
+    let control = bracket(3);
+    assert!(nanoseconds.is_finite() && nanoseconds > 0.0 && control.is_finite() && control > 0.0);
+    report(
+        &json!({"type":"mesh_build","phase":phase,"mesh":sample.mesh,"triangles":sample.triangles,
+        "gpu_bracket_ns":nanoseconds,"control_bracket_ns":control,"estimated_mesh_build_ns":nanoseconds-control,
+        "submission":submission,"displayed_publication":publication,"switch_in_this_frame":switched}),
+    );
 }

@@ -4,6 +4,7 @@ use std::sync::Mutex;
 
 use super::mesh_arena::{ArenaBuffers, MeshArena, MeshId, MeshRow, VERTEX_BYTES};
 use super::{PreparedSynthetic, RenderError, SceneFamily, mesh_rows::LiveRows};
+use crate::capabilities::DeviceCapabilities;
 use crate::contribution::{RayInstances, SceneContribution};
 use crate::graph::{
     Access, AccessKind, FrameGraph, GraphError, Pass, PassKind, PassScope, ResourceDescriptor,
@@ -18,34 +19,59 @@ const SHADOW_AND_AMBIENT: u8 = 0b11;
 const MAX_IDENTITIES: u32 = 1 << 24;
 
 pub(super) async fn prepare(
-    device: &wgpu::Device,
+    capabilities: &DeviceCapabilities,
+    queue: &wgpu::Queue,
     arena: &mut MeshArena,
     slots: u32,
 ) -> Option<SceneStructure> {
+    let device = capabilities.site();
     let scopes = [
         wgpu::ErrorFilter::Internal,
         wgpu::ErrorFilter::OutOfMemory,
         wgpu::ErrorFilter::Validation,
     ]
     .map(|filter| device.push_error_scope(filter));
-    let structures = SceneStructure::new(device, slots).and_then(|scene| {
+    let structure = (|| {
+        let scene = SceneStructure::new(capabilities, slots).ok()?;
         let meshes = arena
             .rows()
             .iter()
             .map(|&row| MeshStructure::new(device, row))
-            .collect::<Result<_, _>>()?;
-        Ok((scene, meshes))
-    });
+            .collect::<Result<_, _>>()
+            .ok()?;
+        arena.enable_ray_demand(meshes);
+        arena.upload(device, queue);
+        let buffers = arena.buffers()?;
+        let builds: Vec<_> = arena
+            .mesh_structures()
+            .iter()
+            .map(|mesh| mesh.build(buffers))
+            .collect();
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("prepare resident ray meshes"),
+        });
+        scene.record_initial_meshes(&mut encoder, &builds);
+        let submitted = queue.submit([encoder.finish()]);
+        // Apple tile is native. Complete the arena builds before the host can
+        // publish this preparation, including a detached replacement device.
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submitted),
+                timeout: Some(crate::runtime::GPU_WAIT),
+            })
+            .ok()?;
+        Some(scene)
+    })();
     let mut gpu_error = false;
     for scope in scopes.into_iter().rev() {
         gpu_error |= scope.pop().await.is_some();
     }
-    let (scene, meshes) = structures.ok()?;
-    if gpu_error {
-        return None;
+    if gpu_error || structure.is_none() {
+        arena.discard_ray_preparation();
+        None
+    } else {
+        structure
     }
-    arena.enable_ray_demand(meshes);
-    Some(scene)
 }
 
 pub(super) fn binding(id: usize) -> RecordBinding<SceneFamily> {
@@ -109,6 +135,8 @@ pub(super) struct SceneStructure {
     // This cursor belongs to that CPU list and survives an abandoned encoder.
     state: Mutex<SceneInstances>,
     slots: u32,
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    probe: Option<RayBuildProbe>,
 }
 
 struct SceneInstances {
@@ -121,7 +149,8 @@ struct SceneInstances {
 }
 
 impl SceneStructure {
-    pub(super) fn new(device: &wgpu::Device, slots: u32) -> Result<Self, RenderError> {
+    fn new(capabilities: &DeviceCapabilities, slots: u32) -> Result<Self, RenderError> {
+        let device = capabilities.site();
         if slots > MAX_IDENTITIES || slots > device.limits().max_tlas_instance_count {
             return Err(RenderError::SceneCapacity);
         }
@@ -135,7 +164,28 @@ impl SceneStructure {
                 mesh_rows: Vec::with_capacity(slots as usize),
             }),
             slots,
+            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+            probe: (capabilities.observe_ray_preparation
+                && device.features().contains(wgpu::Features::TIMESTAMP_QUERY))
+            .then(|| RayBuildProbe::new(device)),
         })
+    }
+
+    fn record_initial_meshes(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        builds: &[wgpu::BlasBuildEntry<'_>],
+    ) {
+        #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+        if let Some(probe) = &self.probe {
+            for (index, build) in builds.iter().enumerate() {
+                probe.encode(encoder, format!("arena mesh {index}"), build);
+            }
+            return;
+        }
+        #[cfg(not(all(feature = "creation-counters", target_os = "macos")))]
+        let _ = self;
+        encoder.build_acceleration_structures(builds, []);
     }
 
     fn record(
@@ -231,17 +281,14 @@ impl SceneStructure {
         retired.fill(None);
         *previous_count = count;
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
-        let replacements = scene
+        let builds: Vec<_> = scene
             .row_updates
             .iter()
-            .flat_map(LiveRows::pending_ray_builds);
-        let builds: Vec<_> = arena
-            .pending_mesh_builds()
-            .chain(replacements)
+            .flat_map(LiveRows::pending_ray_builds)
             .map(|mesh| mesh.build(buffers))
             .collect();
         #[cfg(all(feature = "creation-counters", target_os = "macos"))]
-        if let Some(probe) = &scene.ray_build_probe {
+        if let Some(probe) = &self.probe {
             for (index, build) in builds.iter().enumerate() {
                 probe.encode(encoder, format!("arena mesh {index}"), build);
             }

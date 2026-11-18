@@ -12,18 +12,33 @@ mod metal {
         ContributionFrame, ContributionPasses, RayInstances, SceneContribution, SceneContributions,
         SceneSurface,
     };
-    use thrum_render::synthetic::{FrameLighting, SyntheticLight, SyntheticScene};
+    use thrum_render::synthetic::{
+        DisplayOverlay, FrameLighting, SyntheticLight, SyntheticScene, SyntheticView,
+    };
     use wgpu::util::DeviceExt;
 
     struct Geometry {
         mesh: Option<wgpu::Blas>,
         vertices: Option<wgpu::Buffer>,
+        placements: Vec<([f32; 3], u8)>,
+        scale: f32,
+    }
+
+    impl Geometry {
+        fn new(placements: Vec<([f32; 3], u8)>) -> Self {
+            Self {
+                mesh: None,
+                vertices: None,
+                placements,
+                scale: 1.0,
+            }
+        }
     }
 
     fn size() -> wgpu::BlasTriangleGeometrySizeDescriptor {
         wgpu::BlasTriangleGeometrySizeDescriptor {
             vertex_format: wgpu::VertexFormat::Float32x3,
-            vertex_count: 3,
+            vertex_count: 6,
             index_format: None,
             index_count: None,
             flags: wgpu::AccelerationStructureGeometryFlags::OPAQUE,
@@ -56,7 +71,10 @@ mod metal {
                     contents: bytemuck::cast_slice(&[
                         [-0.5_f32, -0.4, 0.0],
                         [0.5, -0.4, 0.0],
-                        [0.0, 0.8, 0.0],
+                        [-0.5, 0.4, 0.0],
+                        [-0.5, 0.4, 0.0],
+                        [0.5, -0.4, 0.0],
+                        [0.5, 0.4, 0.0],
                     ]),
                     usage: wgpu::BufferUsages::BLAS_INPUT,
                 },
@@ -86,12 +104,9 @@ mod metal {
 
         fn ray_instances(&self, instances: &mut RayInstances<'_>) {
             let mesh = self.mesh.as_ref().expect("mesh");
-            for (x, mask) in [(12.0, 0b11), (20.0, 0b10)] {
-                instances.offer(
-                    mesh,
-                    [1.0, 0.0, 0.0, x, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-                    mask,
-                );
+            for &([x, y, z], mask) in &self.placements {
+                let s = self.scale;
+                instances.offer(mesh, [s, 0.0, 0.0, x, 0.0, s, 0.0, y, 0.0, 0.0, s, z], mask);
             }
         }
 
@@ -137,10 +152,7 @@ mod metal {
             assert_eq!(host.capture_pixels().expect("empty contribution"), control);
             assert_eq!(host.ray_structure_instances().expect("list").len(), 1);
             host.set_scene_contribution(Box::new(SceneContributions::new(vec![Box::new(
-                Geometry {
-                    mesh: None,
-                    vertices: None,
-                },
+                Geometry::new(vec![([12.0, 0.0, 0.0], 0b11), ([20.0, 0.0, 0.0], 0b10)]),
             )])))
             .expect("attach geometry");
             assert_eq!(host.capture_pixels().expect("geometry recording"), control);
@@ -168,5 +180,99 @@ mod metal {
                 [list[1].slot + 1, 0]
             );
         });
+    }
+
+    #[test]
+    fn traced_view_distinguishes_adjoining_coplanar_placements() {
+        let gpu = ray_support::support::gate("traced view instance identity");
+        let (device, queue, caps) = ray_support::support::device(&gpu, "ray-query", 1);
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.ray_structure = true;
+        scene.view = SyntheticView::perspective(
+            [0.0, 0.0, -3.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            0.55,
+            1.0,
+            0.1,
+            1000.0,
+        )
+        .expect("camera")
+        .with_display_overlay(DisplayOverlay::TracedGeometry);
+        let mut host = pollster::block_on(thrum_render::runtime::FrameHost::new(
+            &caps,
+            &queue,
+            thrum_render::runtime::FrameConfig {
+                render_extent: [64, 64],
+                surface: None,
+            },
+            support::World,
+            support::Source {
+                view: scene.view,
+                lighting: FrameLighting::Diagnostic(SyntheticLight::default()),
+                instances: vec![([4.0, 0.0, 0.5], 0)],
+                lights: vec![],
+            },
+            scene,
+            1.0,
+        ))
+        .expect("traced scene");
+        host.set_scene_contribution(Box::new(Geometry::new(vec![
+            ([-0.5, 0.0, 0.25], 0b11),
+            ([0.5, 0.0, 0.25], 0b11),
+        ])))
+        .expect("attach two copies of the same plane");
+        let pixels = host.capture_pixels().expect("submitted traced view");
+        let list = host.ray_structure_instances().expect("scene membership");
+        assert_eq!(list.len(), 3);
+        let probe = ray_support::support::Probe::bind(&device, |layout| {
+            host.ray_structure_probe_group(layout)
+        });
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let samples = probe.record(
+            &device,
+            &mut encoder,
+            &[[-0.5, 0.0, -3.0, 0.0], [0.5, 0.0, -3.0, 0.0]],
+        );
+        queue.submit([encoder.finish()]);
+        assert_eq!(
+            ray_support::support::answers(&device, &samples),
+            [list[1].slot + 1, list[2].slot + 1]
+        );
+        let pixel = |x: usize, y: usize| pixels.as_chunks::<4>().0[y * 64 + x];
+        let [left, right, sky] = [pixel(16, 32), pixel(48, 32), pixel(16, 5)];
+        assert_ne!(
+            left, right,
+            "depth, surface orientation and mesh are shared"
+        );
+        assert_ne!(left, sky);
+        assert_ne!(right, sky);
+        for y in 24..40 {
+            assert_eq!(pixel(31, y), left, "left placement reaches its edge");
+            assert_eq!(pixel(32, y), right, "right placement adjoins the left");
+        }
+        // Move and scale about the eye so each identity stays at the same
+        // pixel coordinates and with the same normal, but at a longer distance.
+        let mut far = Geometry::new(vec![
+            ([-32.0, 0.0, 205.0], 0b11),
+            ([32.0, 0.0, 205.0], 0b11),
+        ]);
+        far.scale = 64.0;
+        host.set_scene_contribution(Box::new(far))
+            .expect("attach the same placements farther from the eye");
+        let pixels = host.capture_pixels().expect("submitted distant view");
+        let far_left = pixels.as_chunks::<4>().0[32 * 64 + 16];
+        let far_right = pixels.as_chunks::<4>().0[32 * 64 + 48];
+        for (near, far) in [(left, far_left), (right, far_right)] {
+            for channel in 0..3 {
+                assert!(
+                    far[channel] < near[channel],
+                    "distance darkens each identity"
+                );
+            }
+        }
+        println!(
+            "coplanar placement RGBA8: near {left:?} {right:?}, far {far_left:?} {far_right:?}, sky {sky:?}"
+        );
     }
 }

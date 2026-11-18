@@ -54,7 +54,7 @@ pub use tokens::{AdvancedFrame, EncodedFrame};
 pub use visual::{PreparedVisual, VisualPrepareInputs};
 
 const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
-const GPU_WAIT: Duration = Duration::from_secs(10);
+pub(crate) const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
 
 /// A submitted capture of one committed endpoint, owned by the caller until
@@ -459,8 +459,8 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
-    /// Observe subsequent mesh builds for a contended Metal measurement. Install
-    /// before the first recording and before attaching the measured contribution.
+    /// Read the preparation observer or install one for subsequent mesh builds.
+    /// Install before attaching a contribution whose builds should be observed.
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     #[must_use]
     pub fn observe_ray_mesh_builds(&mut self) -> Option<crate::synthetic::RayBuildProbe> {

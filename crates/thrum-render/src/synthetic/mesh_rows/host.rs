@@ -91,8 +91,6 @@ impl PreparedSynthetic {
     }
 
     pub(crate) fn submit_mesh_rows(&mut self) {
-        // Read-only endpoint captures still submit GPU uploads and builds.
-        self.mesh_arena.submit_mesh_builds();
         if let Some(rows) = self.row_updates.as_mut() {
             rows.submitted();
         }

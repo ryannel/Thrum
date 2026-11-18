@@ -401,6 +401,10 @@ impl StagedUpload {
         recorded.end == self.stream.copies.len()
     }
 
+    pub(crate) fn has_ray_meshes(&self) -> bool {
+        !self.stream.ray_meshes.is_empty()
+    }
+
     #[cfg(feature = "draw-probe")]
     pub(crate) fn ray_build_count(&self, recorded: Recorded) -> usize {
         let builds = &self.stream.ray_meshes;

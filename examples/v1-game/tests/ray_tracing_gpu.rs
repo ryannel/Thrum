@@ -93,12 +93,14 @@ mod ray_tracing {
         let mut fixture = Fixture::new("lifecycle");
         let (mut game, stats, probe) = fixture.host(&metal, true);
         let probe = probe.expect("mesh build observer");
+        prepared_arena(&probe, 1);
         let initial = proof::settle(&mut game, &stats, fixture.generation());
         let initial_builds = probe.take_recorded();
-        assert_eq!(
-            initial_builds.len(),
-            7,
-            "five arena meshes and two distinct placements"
+        assert_eq!(initial_builds.len(), 2, "two distinct cooked uploads");
+        assert!(
+            initial_builds
+                .iter()
+                .all(|build| !build.mesh.starts_with("arena mesh "))
         );
         assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 2);
         assert_eq!(stats.lock().expect("stats").ray_mesh_storage.len(), 2);
@@ -119,14 +121,28 @@ mod ray_tracing {
             .expect("one edited structure");
         assert_eq!(edit.mesh, "placement");
         assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 3);
+        let edited = Snapshot::capture(&mut game, &metal, &queries);
+        assert_eq!(edited.pixels, changed);
+        report(&edited.record("one edited placement product rebuilt", &stats));
+
+        let next = fixture.edit("entity", true, 8);
+        let changed = proof::settle(&mut game, &stats, next);
+        let [edit] = probe
+            .take_recorded()
+            .try_into()
+            .ok()
+            .expect("one edited entity row");
+        assert!(edit.mesh.starts_with("arena mesh "));
+        assert_eq!(edit.triangles, 128);
+        assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 3);
         let before = Snapshot::capture(&mut game, &metal, &queries);
         assert_eq!(before.pixels, changed);
-        report(&before.record("one edited product rebuilt", &stats));
+        report(&before.record("one edited entity row rebuilt", &stats));
 
         let replacement = metal.replacement();
         let mut candidate =
             pollster::block_on(game.device_prepare_inputs().expect("inputs").prepare(
-                &replacement.caps,
+                &replacement.caps.clone().with_ray_preparation_observation(),
                 &replacement.queue,
                 None,
             ))
@@ -135,11 +151,14 @@ mod ray_tracing {
         let rebuilt_arena = game
             .observe_ray_mesh_builds()
             .expect("replacement observer");
+        prepared_arena(&rebuilt_arena, 2);
         assert_eq!(proof::settle(&mut game, &stats, next), changed);
-        assert_eq!(
-            rebuilt_arena.take_recorded().len(),
-            5,
-            "every retained arena row rebuilt"
+        let restored_builds = rebuilt_arena.take_recorded();
+        assert_eq!(restored_builds.len(), 2, "only the two cooked uploads");
+        assert!(
+            restored_builds
+                .iter()
+                .all(|build| !build.mesh.starts_with("arena mesh "))
         );
         let after = Snapshot::capture(&mut game, &replacement, &queries);
         assert_eq!(before, after);
@@ -160,6 +179,27 @@ mod ray_tracing {
             assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 2);
         }
         assert!(game.tick() > frozen_tick);
+    }
+
+    fn prepared_arena(probe: &thrum_render::synthetic::RayBuildProbe, device_generation: u64) {
+        let meshes = probe
+            .take_recorded()
+            .into_iter()
+            .map(|build| (build.mesh, build.triangles))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            meshes.len(),
+            5,
+            "every arena row built before the first recording"
+        );
+        for (index, (name, triangles)) in meshes.iter().enumerate() {
+            assert_eq!(*name, format!("arena mesh {index}"));
+            assert!(*triangles > 0);
+        }
+        report(&serde_json::json!({
+            "phase": "ready before first frame", "device_generation": device_generation,
+            "arena_mesh_builds": meshes, "ordinary_frames_begun": 0
+        }));
     }
 
     #[test]

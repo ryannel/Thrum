@@ -553,8 +553,6 @@ pub struct PreparedSynthetic {
     /// shared vertices.
     mesh_arena: MeshArena,
     ray_structure: Option<raytrace::SceneStructure>,
-    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
-    ray_build_probe: Option<RayBuildProbe>,
     traced_view: Option<Box<raytrace::TracedView>>,
     ray_structure_selection: RayStructureSelection,
     row_updates: Option<mesh_rows::LiveRows>,
@@ -1101,7 +1099,8 @@ impl PreparedSynthetic {
         }
         let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
         let ray_structure = if ray_structure_selection == RayStructureSelection::Enabled {
-            let structure = raytrace::prepare(device, &mut mesh_arena, instance_count).await;
+            let structure =
+                raytrace::prepare(capabilities, queue, &mut mesh_arena, instance_count).await;
             if structure.is_none() {
                 ray_structure_selection = RayStructureSelection::PreparationFailed;
             }
@@ -1329,7 +1328,9 @@ impl PreparedSynthetic {
             label: Some("ABI2 material table and classes"),
             entries: &entries,
         });
-        mesh_arena.upload(device, queue);
+        if mesh_arena.buffers().is_none() {
+            mesh_arena.upload(device, queue);
+        }
         let cube_draw = mesh_arena
             .row(mesh_arena::MeshId::CUBE)
             .and_then(|row| {
@@ -1700,8 +1701,6 @@ impl PreparedSynthetic {
                 .map(|updates| mesh_rows::LiveRows::new(updates, &mut mesh_arena)),
             mesh_arena,
             ray_structure,
-            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
-            ray_build_probe: None,
             traced_view,
             ray_structure_selection,
             bucket_route,
@@ -2029,7 +2028,6 @@ impl PreparedSynthetic {
 
     /// Advance retained camera, transform and exposure sides after successful submission.
     pub fn commit_frame(&mut self) {
-        self.mesh_arena.submit_mesh_builds();
         if let Some(atmosphere) = self.atmosphere.as_mut() {
             atmosphere.commit();
         }

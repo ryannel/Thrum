@@ -46,6 +46,8 @@ pub struct DeviceCapabilities {
     recipe: Result<Recipe, RecipeError>,
     reconstructor: Reconstructor,
     hardware: Vec<HardwareSelection>,
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    pub(crate) observe_ray_preparation: bool,
 }
 
 impl DeviceCapabilities {
@@ -120,6 +122,8 @@ impl DeviceCapabilities {
             generation,
             adapter,
             hardware: Vec::new(),
+            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+            observe_ray_preparation: false,
         }
     }
 
@@ -261,6 +265,15 @@ impl DeviceCapabilities {
         if let Some(flags) = &mut self.downlevel {
             flags.remove(wgpu::DownlevelFlags::INDIRECT_EXECUTION);
         }
+        self
+    }
+
+    /// Time initial mesh builds for ray-demanding scenes prepared with this
+    /// diagnostic copy. The generation's device and capabilities are unchanged.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    #[must_use]
+    pub fn with_ray_preparation_observation(mut self) -> Self {
+        self.observe_ray_preparation = true;
         self
     }
 

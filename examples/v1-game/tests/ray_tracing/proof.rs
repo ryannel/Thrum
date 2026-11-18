@@ -124,10 +124,15 @@ impl Fixture {
         )
         .expect("cooked entity rows");
         drop(rows.updates().with_binding_limit(64 << 10));
+        let caps = if observe {
+            metal.caps.clone().with_ray_preparation_observation()
+        } else {
+            metal.caps.clone()
+        };
         let mut game = pollster::block_on(FrameHost::new_with_rows(
             &metal.device,
             &metal.queue,
-            &metal.caps,
+            &caps,
             frame_config(),
             GameSetup {
                 field_meshes: true,

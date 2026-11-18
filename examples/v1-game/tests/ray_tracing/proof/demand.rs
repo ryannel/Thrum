@@ -91,10 +91,15 @@ pub(super) fn valley(
         route_overlay: v1_game::RouteOverlay::Proof,
         ..GameSetup::default()
     };
+    let caps = if record_builds {
+        metal.caps.clone().with_ray_preparation_observation()
+    } else {
+        metal.caps.clone()
+    };
     let mut game = pollster::block_on(FrameHost::new_with_setup(
         &metal.device,
         &metal.queue,
-        &metal.caps,
+        &caps,
         frame_config(),
         setup,
     ))

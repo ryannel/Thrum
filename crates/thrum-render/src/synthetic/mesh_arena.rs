@@ -194,7 +194,6 @@ pub(super) struct MeshArena {
     dirty_indices: Vec<Range<usize>>,
     gpu: Option<ArenaBuffers>,
     ray_meshes: Option<Vec<MeshStructure>>,
-    initial_ray_builds: bool,
     live: bool,
     live_geometry: Vec<std::sync::Arc<super::SyntheticMesh>>,
 }
@@ -211,7 +210,6 @@ impl MeshArena {
             dirty_indices: Vec::new(),
             gpu: None,
             ray_meshes: None,
-            initial_ray_builds: false,
             live: false,
             live_geometry: Vec::new(),
         };
@@ -238,7 +236,12 @@ impl MeshArena {
 
     pub(super) fn enable_ray_demand(&mut self, meshes: Vec<MeshStructure>) {
         self.ray_meshes = Some(meshes);
-        self.initial_ray_builds = true;
+    }
+
+    pub(super) fn discard_ray_preparation(&mut self) {
+        self.ray_meshes = None;
+        // The ordinary upload recreates both buffers and writes the full arena.
+        self.gpu = None;
     }
 
     pub(super) fn ray_demand(&self) -> bool {
@@ -249,24 +252,10 @@ impl MeshArena {
         self.ray_meshes.as_deref().unwrap_or_default()
     }
 
-    pub(super) fn pending_mesh_builds(&self) -> impl Iterator<Item = &MeshStructure> {
-        self.mesh_structures()
-            .iter()
-            .take(if self.initial_ray_builds {
-                self.rows.len()
-            } else {
-                0
-            })
-    }
-
     pub(super) fn install_mesh_structure(&mut self, mesh: MeshId, structure: MeshStructure) {
         if let Some(meshes) = &mut self.ray_meshes {
             meshes[mesh.row() as usize] = structure;
         }
-    }
-
-    pub(super) fn submit_mesh_builds(&mut self) {
-        self.initial_ray_builds = false;
     }
 
     pub(super) fn enable_live(&mut self) {

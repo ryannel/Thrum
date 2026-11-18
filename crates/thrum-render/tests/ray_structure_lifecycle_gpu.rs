@@ -13,7 +13,7 @@ mod metal {
     };
 
     #[test]
-    fn discarded_first_build_is_replayed_and_replacement_builds_its_own_meshes() {
+    fn discarded_first_scene_build_replays_and_replacement_uses_its_prepared_meshes() {
         let gpu = support::gate("ray structure lifecycle");
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
@@ -29,7 +29,7 @@ mod metal {
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         prepared
             .encode(&mut discarded, 1, &target, None)
-            .expect("recorded initial BLAS and TLAS");
+            .expect("recorded first TLAS over prepared meshes");
         drop(discarded.finish());
 
         scene.instances[0].current[3][0] = 8.0;

@@ -55,20 +55,24 @@ impl RayBuildSample {
 
 impl PreparedSynthetic {
     pub(crate) fn observe_ray_mesh_builds(&mut self) -> Option<RayBuildProbe> {
-        self.ray_structure.as_ref()?;
+        let structure = self.ray_structure.as_mut()?;
         let device = self.capabilities.site();
         if !device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
             return None;
         }
-        let probe = self
-            .ray_build_probe
+        let probe = structure
+            .probe
             .get_or_insert_with(|| RayBuildProbe::new(device));
         Some(probe.clone())
+    }
+
+    pub(in crate::synthetic) fn ray_build_probe(&self) -> Option<RayBuildProbe> {
+        self.ray_structure.as_ref()?.probe.clone()
     }
 }
 
 impl RayBuildProbe {
-    fn new(device: &DeviceSite) -> Self {
+    pub(super) fn new(device: &DeviceSite) -> Self {
         let _transition = device.transition("ray-mesh-build-probe");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("ray mesh timestamp marker"),

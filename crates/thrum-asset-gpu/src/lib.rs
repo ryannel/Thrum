@@ -454,7 +454,7 @@ fn product_profiles(kind: thrum_asset::ProductKind, features: wgpu::Features) ->
 /// Loader thread and channels for one device generation.
 struct Live {
     generation: u64,
-    ray_demand: bool,
+    ray_queue: Option<wgpu::Queue>,
     stop: Arc<AtomicBool>,
     /// The loader's shared observations, so retirement can fence its last writes.
     stats: Arc<Mutex<CookedStats>>,
@@ -480,6 +480,8 @@ struct Live {
 struct Pending {
     /// Last copy committed in an earlier submission. Immutable until the switch submits.
     ready: bool,
+    /// Completion of the initial upload, owned by this pending set alone.
+    initial_ray_completion: Option<Arc<AtomicBool>>,
     set: load::PendingSet,
     first_copy: Option<Instant>,
     frames: u32,
@@ -487,12 +489,28 @@ struct Pending {
     bound: Option<draw::Bound>,
 }
 
+impl Pending {
+    fn initial_ray_upload_completed(&mut self, queue: Option<&wgpu::Queue>) -> bool {
+        let Some(queue) = queue.filter(|_| self.set.upload.has_ray_meshes()) else {
+            return true;
+        };
+        self.initial_ray_completion
+            .get_or_insert_with(|| {
+                let completed = Arc::new(AtomicBool::new(false));
+                let signal = Arc::clone(&completed);
+                queue.on_submitted_work_done(move || signal.store(true, Ordering::Release));
+                completed
+            })
+            .load(Ordering::Acquire)
+    }
+}
+
 /// One frame's recording.
 #[derive(Clone, Copy, Default)]
 struct Tentative {
     view_offset: u32,
     recorded: Option<staging::Recorded>,
-    /// The pending set's last copies are in this frame, which draws it.
+    /// This frame draws the pending set and commits it if submitted.
     swap: bool,
     /// The cull count was copied out in this frame, of this many meshlets.
     counted: Option<u32>,
@@ -588,7 +606,7 @@ impl Drop for Live {
 }
 
 impl Live {
-    /// The set this frame draws: the pending one when its last copies are in this frame.
+    /// The set this frame draws, including a pending publication at its switch.
     fn drawn(&self) -> Option<&draw::Bound> {
         if self.tentative.is_some_and(|tentative| tentative.swap) {
             self.pending
@@ -780,7 +798,7 @@ impl CookedAssets {
             .then(|| Readback::new(surface.device));
         Live {
             generation: surface.generation,
-            ray_demand: surface.ray_demand,
+            ray_queue: surface.ray_demand.then(|| surface.queue.clone()),
             stop,
             stats: Arc::clone(&self.stats),
             loader: handle,
@@ -839,7 +857,7 @@ impl CookedAssets {
             // restarts with the new bindings.
             Some(live)
                 if live.generation == surface.generation
-                    && live.ray_demand == surface.ray_demand
+                    && live.ray_queue.is_some() == surface.ray_demand
                     && live.pipelines.uses_mesh_stages() == stages =>
             {
                 live.readback = (indexed_path == CookedDrawPath::Indirect)
@@ -1000,16 +1018,28 @@ impl SceneContribution for CookedAssets {
                 .filter(|set| set.base_head == live.current.as_ref().map(|(set, _)| set.head))
                 .map(|set| Pending {
                     ready: false,
+                    initial_ray_completion: None,
                     set,
                     first_copy: None,
                     frames: 0,
                     bound: None,
                 });
             if let (Some(rows), Some(pending)) = (&self.config.rows, &live.pending) {
-                let current = live
-                    .current
-                    .as_ref()
-                    .map_or(&[][..], |(set, _)| set.rows.as_slice());
+                // The entity arena already holds these rows, even before
+                // the first set of placements becomes resident on this device.
+                let shown = live
+                    .ray_queue
+                    .is_some()
+                    .then(|| rows.shown.lock().ok())
+                    .flatten();
+                let current = shown.as_deref().map_or_else(
+                    || {
+                        live.current
+                            .as_ref()
+                            .map_or(&[][..], |(set, _)| set.rows.as_slice())
+                    },
+                    Vec::as_slice,
+                );
                 let changed = pending
                     .set
                     .set
@@ -1023,6 +1053,7 @@ impl SceneContribution for CookedAssets {
                     })
                     .map(|(index, (_, geometry))| (index, geometry.clone()))
                     .collect();
+                drop(shown);
                 if let Err(error) = rows.updates.prepare(pending.set.set.generation, changed) {
                     if let Ok(mut stats) = self.stats.lock() {
                         stats.errors.push(format!("mesh rows: {error}"));
@@ -1070,6 +1101,10 @@ impl SceneContribution for CookedAssets {
                 let recorded = pending.set.upload.encode(encoder, budget);
                 tentative.swap = self.config.leased.is_empty()
                     && self.config.rows.is_none()
+                    // Initial residency waits for its build submission to finish.
+                    && !(live.ray_queue.is_some()
+                        && live.current.is_none()
+                        && pending.set.upload.has_ray_meshes())
                     && pending.set.upload.completes(recorded);
                 tentative.recorded = Some(recorded);
             }
@@ -1211,14 +1246,16 @@ impl SceneContribution for CookedAssets {
             }
         }
         let now = Instant::now();
+        let initial_ray_queue = live.ray_queue.as_ref().filter(|_| live.current.is_none());
         if let (Some(recorded), Some(pending)) = (tentative.recorded, live.pending.as_mut()) {
             #[cfg(feature = "draw-probe")]
             if let Ok(mut stats) = self.stats.lock() {
                 stats.submitted_ray_builds += pending.set.upload.ray_build_count(recorded);
             }
             pending.set.upload.commit(recorded);
-            if (!self.config.leased.is_empty() || self.config.rows.is_some())
+            if !tentative.swap
                 && pending.set.upload.completes(recorded)
+                && pending.initial_ray_upload_completed(initial_ray_queue)
                 && self
                     .config
                     .rows
@@ -1245,7 +1282,9 @@ impl SceneContribution for CookedAssets {
                         }
                     })
                     .collect();
-                self.lease.offer(pending.set.set.generation, products);
+                if self.config.rows.is_some() || !self.config.leased.is_empty() {
+                    self.lease.offer(pending.set.set.generation, products);
+                }
             }
             pending.first_copy.get_or_insert(now);
             pending.frames += 1;
