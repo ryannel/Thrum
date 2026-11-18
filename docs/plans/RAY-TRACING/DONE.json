@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
@@ -22,7 +22,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M1/README.md#review-fixes",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RAY-TRACING/M1-review.md"
         },
         {
@@ -68,7 +68,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M1/README.md#review-fixes",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RAY-TRACING/M1-review.md"
         },
         {
@@ -91,22 +91,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": "docs/evidence/RAY-TRACING/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Portable structure request allocates and builds ray structures",
-          "item": "M1.5",
-          "repeat": false
-        },
-        {
-          "name": "Shared native test gate bypasses registry device admission",
-          "item": "M1.1",
-          "repeat": false
-        },
-        {
-          "name": "Sky headless device error breaks existing public matches",
-          "repeat": false
         }
       ]
     },
