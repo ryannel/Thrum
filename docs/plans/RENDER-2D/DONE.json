@@ -87,10 +87,10 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-2d",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/chrome-sprites.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.8",
@@ -120,10 +120,10 @@
           "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/cost-chrome-webgpu.json.gz",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.11",

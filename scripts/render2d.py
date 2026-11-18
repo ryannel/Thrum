@@ -167,6 +167,9 @@ def validate(record, target):
             not re.fullmatch("[a-f0-9]{64}", record["binary_sha256"]) or
             len(record["runs"]) != 2):
         raise ValueError("missing target, release build identity or separate takes")
+    takes = record["take_started_unix_ns"]
+    if len(takes) != 2 or not all(type(stamp) is int and stamp > 0 for stamp in takes) or takes[1] <= takes[0]:
+        raise ValueError("the two takes need distinct start times")
     summaries = []
     for take in record["runs"]:
         if [tuple(row["extent"]) for row in take] != list(EXTENTS):
@@ -251,8 +254,9 @@ def main():
     identity = digest(binary)
     build = ("cargo build --locked --offline --release -p v1-game --bin v1-game" if metal
              else "sh examples/v1-game/web/build.sh (locked offline release)")
+    compiler = ["rustc"] if metal else ["rustup", "run", "stable", "rustc"]
     record = {"target": args.target, "profile": "release", "commit": commit, "build": build,
-              "toolchain": subprocess.check_output(["rustc", "--version"], text=True).strip(),
+              "toolchain": subprocess.check_output([*compiler, "--version"], text=True).strip(),
               "binary_sha256": identity, "runs": [], "take_started_unix_ns": []}
     for index in range(1, 3):
         record["take_started_unix_ns"].append(time.time_ns())

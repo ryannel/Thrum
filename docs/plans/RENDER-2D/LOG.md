@@ -63,3 +63,8 @@
   M3: a sheet uses the lease and the publication, both M1's. No item changed. The design now says the rulings
   are built on what the owning modules have landed, and that the iPhone app for a second game is `GAME-UI` M6.
   It needs a design review.
+- 2026-11-19 M1 adds a sprite scene half to the existing frame host and selects it from the V1 game on Mac and web.
+  Both Metal recipes passed submitted-pixel, resource, admission and lifecycle checks. The V1 3D graph control
+  matched its starting snapshots. Chrome matched the CPU rasterizer before and after resize and device replacement.
+  The four fixed Metal stills and two release timing takes per target are in the [M1 evidence](../../evidence/RENDER-2D/M1.md).
+  Chrome's sprite median crossed one timestamp step from 1080p to full backing size. The record flags both takes.
