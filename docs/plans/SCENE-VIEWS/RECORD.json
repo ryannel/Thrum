@@ -136,7 +136,58 @@
     },
     "M2": {
       "definitions": "2979a1a80b7505aa8345fc2a1d649b94c6657e9fac525b4edd36640428434e76",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ca138c501f47ab774230a8566a34509ca3034e8c",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "fail",
+            "M2.4": "pass",
+            "M2.5": "fail",
+            "M2.6": "pass",
+            "M2.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Reflected bank does not show the lamp-lit ground",
+              "item": "M2.5",
+              "repeat": false
+            },
+            {
+              "name": "Radiance markers are inside the main frame",
+              "item": "M2.3",
+              "repeat": false
+            },
+            {
+              "name": "Secondary cascades submit every cooked caster",
+              "repeat": false
+            },
+            {
+              "name": "Mirror example uses sea-level air instead of 250 m",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 131914,
+            "cached": 4018048,
+            "output": 10996,
+            "turns": 1
+          },
+          "at": "2026-11-18T01:29:24Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SCENE-VIEWS at docs/evidence/SCENE-VIEWS/design-review.md asked for changes. Resolve its 1 Must Fix",

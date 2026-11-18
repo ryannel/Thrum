@@ -181,8 +181,8 @@
     {
       "id": "M2",
       "name": "A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -197,8 +197,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -208,8 +208,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -218,10 +218,10 @@
           "ask": "Are `V`, `B` and `W` stored colours of the scene's ordinary main view with the pool's effect off, composed by the test without the pool's shader, with the allowance worked out from stored steps and printed beside the difference? Is the pool the example's own effect, with no type or file of it in an engine crate?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -230,18 +230,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.5",
           "statement": "The reflection is in the scene's light. In the pool the tower shows its Sun-lit and shaded sides, the shadows on the ground and on the tower lie where the direct view shows them, the lamp lights the ground round it at dusk and at night, and the far hill carries its haze: at dawn, noon, dusk and night.",
           "inspect": "`fixed` stills at the four hours from 1.5 m, each with the direct view of the same things in frame: lit and shaded sides, each shadow, the lamp's pool of light and the hill, in the scene and in the mirror.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -250,8 +250,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -260,8 +260,28 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Reflected bank does not show the lamp-lit ground",
+          "item": "M2.5",
+          "repeat": false
+        },
+        {
+          "name": "Radiance markers are inside the main frame",
+          "item": "M2.3",
+          "repeat": false
+        },
+        {
+          "name": "Secondary cascades submit every cooked caster",
+          "repeat": false
+        },
+        {
+          "name": "Mirror example uses sea-level air instead of 250 m",
+          "repeat": false
         }
       ]
     },
