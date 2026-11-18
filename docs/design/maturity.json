@@ -654,6 +654,21 @@
       "scope": "The running partial path has game-owned 21-bit position/20-bit velocity quantization, byte-exact field masks, selective image ACK and retained-base rebasing for four 32-actor partitions per peer, with one shared image history and per-connection sequence/image ID owners. Initial and reconnect visual images now stage through a delayed lossy no-socket link, publish all four together and retry on missing full image or admission ACK; mode-0 deltas wait for the ACK. The parser fuzz target compiles but no campaign has run. Encoded lifecycle, exact controller/result grouping, real session replay/authentication and OS transport, visible correction and platform budgets remain open; parked N1 credit/ledger work is not reopened.",
       "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
+    "host_device_recipe": {
+      "implementation": "Shared native and portable device requests, capability restrictions, generation fault watch and SDR surface configuration.",
+      "functional_validation": "Metal verified adapter limits, restricted-profile refusal and real validation and device loss. The original Mac window recovery audit passed. The iPhone 18 Pro simulator selected cooked ASTC and submitted through rotation and background and foreground.",
+      "experienced_quality": "Builder inspected the Mac window recovery excerpt and the simulator's three submitted engine stills.",
+      "platform_performance": {
+        "mac": "Functional Metal and window recovery evidence",
+        "windows": "not_run",
+        "browser": "not_run",
+        "ios": "iPhone 18 Pro simulator function only",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "The M3 Max enabled 29 native and 8 portable storage buffers per shader stage. SEA refused a device limited to 7. The iOS simulator reported ASTC first and 29 storage buffers per stage.",
+      "evidence": ["../evidence/HOST/M1-proof.md"],
+      "scope": "Shared device creation and reporting in the Mac window, browser page, iPhone app, captures and benches. Each platform drives replacement through its host lifecycle."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
       "functional_validation": "Mac_live_held_drawable_Metal_recovery_preserves_authority_with_zero_old_queue_calls;_Mac_overload_drain_resume_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",
