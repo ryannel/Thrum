@@ -5731,6 +5731,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-chrome-half-tick.tar",
+      "size": 2136652288,
+      "sha256": "336b726c18551aaf8495ee8c4ac95c2a8576741c5b6aad356e207b2503f821e7",
+      "date": "2026-11-18T21:05:02.679144+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-fixed-submitted.tar.gz",
       "size": 21142649,
       "sha256": "7526e3b51f40d36f160f167e38a4829a58f714d3f37d10551b186f05b85aa3fa",

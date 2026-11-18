@@ -102,10 +102,10 @@
           "statement": "In Chrome the six stops show the same props and movers as the Mac, with none missing, and along the exit flythrough the movers drift from one tick to the next without popping in or out or jumping.",
           "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first. A record that repeats a tick, with the next carrying two, is the page deferring a due tick under load: it is noted, and the longer step after it is not counted as a jump. That accounts for how far the scene moves between those frames and for nothing else, so a mover or prop that is missing, new or changed in them is judged like any other. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#chrome-fixed-motion; docs/evidence/SHOWCASE/M5-retake/chrome-half-tick.json; docs/evidence/SHOWCASE/M5-chrome-half-tick.tar",
           "verdict": "fail",
           "review": "docs/evidence/SHOWCASE/M5-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.10",

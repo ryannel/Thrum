@@ -75,3 +75,7 @@
   and WATERS integrated. The same build reproduced all retained fixed route images and both
   sets of six stops byte for byte. Exit parity passed.
   [Evidence](../../evidence/SHOWCASE/M5.md)
+- 2026-11-18 Restored the authored half tick after the Chrome fixed capture's opening hold.
+  The recorder checks the submitted phase across the active route. The retake kept 1,351
+  half-tick route frames with no deferrals, reproduced both sets of stops, and passed parity.
+  Retook all six real-time arms on the same clean build. [Evidence](../../evidence/SHOWCASE/M5.md#chrome-fixed-motion)
