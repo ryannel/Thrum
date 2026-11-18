@@ -64,8 +64,8 @@ def compare(output, case, pairs):
                 maxima[field] = max(maxima[field], maximum)
                 # Colour admits two half-float rounding steps through the independently compiled
                 # vertex and interpolation programs. Reverse-Z is observed by the reconstruction
-                # witness at half precision. Motion is UV-space, with an absolute budget of
-                # 1/4096 viewport widths plus two half rounding steps. Reactive and invalid
+                # witness at half precision. Motion is pixel-space, with an absolute budget of
+                # 1/4096 pixel plus two half rounding steps. Reactive and invalid
                 # motion sentinels are discrete.
                 tolerances = []
                 for c in channels:

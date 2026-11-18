@@ -110,6 +110,8 @@ impl SceneSource<SourceTick> for Source {
 pub(super) fn camera(eye: [f32; 3], target: [f32; 3]) -> SyntheticView {
     SyntheticView::perspective(eye, target, [0.0, 1.0, 0.0], 0.92, 1.0, 0.1, 4000.0)
         .expect("camera")
+        .with_sun_shadow_profile(2, 16.0)
+        .expect("metre-scale fixture shadow reach")
         .with_temporal_inputs(true)
 }
 
@@ -164,7 +166,8 @@ impl Fixture {
         }
         let mut placements = vec![MeshPlacement::new("meshes/small", "textures/checker")];
         if mixed {
-            demo::write_grid_gltf(&source.join("meshes"), "large", 128, 0.18).expect("large");
+            let divisions = if case == "residency" { 160 } else { 128 };
+            demo::write_grid_gltf(&source.join("meshes"), "large", divisions, 0.18).expect("large");
             placements[0] = placements[0].clone().at([-1.15, 0.0, 0.0]);
             placements
                 .push(MeshPlacement::new("meshes/large", "textures/checker").at([1.15, 0.0, 0.0]));
@@ -390,11 +393,11 @@ impl Scene<'_> {
     pub(super) fn report(&self, label: &str) {
         let s = self.stats.lock().expect("stats");
         writeln!(std::io::stdout(),
-            "{label}: recipe {:?} requested {:?} resolved {:?} fallback {:?}; mesh {} indirect {} direct {} compute {}; exclusions {:?}; mesh buffers {} including stage {}, storage vertex streams {}; upload {} bytes, maximum frame copy {}",
+            "{label}: recipe {:?} requested {:?} resolved {:?} fallback {:?}; mesh {} indirect {} direct {} compute {}; exclusions {:?}; mesh buffers {} including stage {}, storage vertex streams {}; upload {} bytes over {} frames, maximum frame copy {}",
             s.recipe, s.requested_draw_path, s.draw_path, s.draw_fallback, s.mesh_stage_draws,
             s.indexed_indirect_draws, s.indexed_direct_draws, s.meshlet_compute_cull,
             s.mesh_stage_exclusions, s.mesh_buffer_bytes, s.mesh_stage_bytes, s.mesh_stage_vertex_streams,
-            s.swaps[0].uploaded_bytes, s.max_frame_copy_bytes,
+            s.swaps[0].uploaded_bytes, s.swaps[0].upload_frames, s.max_frame_copy_bytes,
         ).expect("Metal proof report");
     }
 

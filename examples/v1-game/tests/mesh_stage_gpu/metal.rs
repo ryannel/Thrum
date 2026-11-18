@@ -186,7 +186,10 @@ fn residency() {
         b.mesh_buffer_bytes,
         a.mesh_buffer_bytes + b.mesh_stage_bytes
     );
-    assert!(b.swaps[0].uploaded_bytes > a.swaps[0].uploaded_bytes);
+    assert_eq!(
+        b.swaps[0].uploaded_bytes,
+        a.swaps[0].uploaded_bytes + expected_storage
+    );
     assert!(b.swaps[0].upload_frames > 1);
     assert!(b.max_frame_copy_bytes > 0 && b.max_frame_copy_bytes <= thrum_asset_gpu::COPY_UNIT);
 }
@@ -383,7 +386,9 @@ fn material() {
     scene.frame().save("material", "original");
     scene.report("mixed material scene");
     let before = scene.host.creation_report();
-    let red = scene.reload.request(edit("accepted-red", [12.0, 0.0, 0.0]));
+    let red = scene
+        .reload
+        .request(edit("accepted-red", [1200.0, 0.0, 0.0]));
     await_candidate_off_frame(&scene, &before);
     discard_candidate(&mut scene, red);
     let red_image = scene.frame();
@@ -415,7 +420,7 @@ fn material() {
     let before = scene.host.creation_report();
     let blue = scene
         .reload
-        .request(edit("candidate-blue", [0.0, 0.0, 12.0]));
+        .request(edit("candidate-blue", [0.0, 0.0, 1200.0]));
     await_candidate_off_frame(&scene, &before);
     discard_candidate(&mut scene, blue);
     scene.frame().save("material", "after-discard");
