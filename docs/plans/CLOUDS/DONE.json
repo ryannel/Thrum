@@ -459,7 +459,7 @@
     {
       "id": "M3",
       "name": "Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -597,7 +597,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "M3.1 needs a planner decision on how to break up the repeated domes and shelves that persisted across three shape trials.",
+        "work": {
+          "commit": "6c696409396a870cf10b6f01c7417378b1f69dea",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/CLOUDS/M3-handoff.md"
+      }
     },
     {
       "id": "M4",
