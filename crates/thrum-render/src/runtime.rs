@@ -1067,8 +1067,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 PreparedSynthetic::contribution_passes,
             ),
             effect_graph: prepared
-                .map(|scene| scene.effect_graph().clone())
-                .unwrap_or_default(),
+                .map_or_else(crate::contribution::EffectGraph::default, |scene| {
+                    scene.effect_graph().clone()
+                }),
             render_extent: self.render_extent,
             owner: Arc::clone(&self.visual_owner),
             creations: self.creations.detach(),
