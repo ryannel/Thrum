@@ -22,6 +22,8 @@ WEB_CHECK = ROOT / 'scripts/check_v1_browser.mjs'
 WEB_CASES = ('normal', 'device-loss', 'late-device-loss', 'device-recovery',
              'device-recovery-retry', 'valley-recovery', 'valley-late-attach')
 COOKER = ROOT / 'target/debug/thrum-cook'
+BUILD_INPUTS = ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo',
+                'crates', 'examples', 'tools')
 
 
 def run(*arguments, cwd=ROOT, env=None):
@@ -39,7 +41,8 @@ def prepare_mac(folder, revision, env):
                 if package['name'] == 'wgpu' and package['version'] == '30.0.1')
     archive = folder / 'source'
     backend = folder / 'wgpu'
-    with subprocess.Popen(['git', 'archive', revision], cwd=ROOT, stdout=subprocess.PIPE) as source:
+    with subprocess.Popen(['git', 'archive', revision, '--', *BUILD_INPUTS],
+                          cwd=ROOT, stdout=subprocess.PIPE) as source:
         with tarfile.open(fileobj=source.stdout, mode='r|') as stream:
             stream.extractall(archive, filter='data')
         # tar may stop at the first end marker while Git is still writing padding.
