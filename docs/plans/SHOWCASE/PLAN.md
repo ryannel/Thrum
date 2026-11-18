@@ -37,8 +37,9 @@ held route, with the windows and the phase its caller names, so that a reviewer 
 `scripts/capture_v1_runtime.py --mode fixed` cannot give that sequence, and
 `scripts/capture_v1_browser.mjs --mode fixed` with the exit route already gives Chrome's. `motion` takes M5.11's
 six arms and writes `docs/evidence/SHOWCASE/M5-motion-record.json`; `motion --check` reads that file, computes
-the input digest and starts nothing. Take the arms last, on a branch that holds main, and land the record with
-nothing else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames, then add and
+the input digest and starts nothing. That digest covers `scripts/` and `.cargo/` as well as the build paths, so
+finish the launcher first. Take the arms last, on a branch that holds main, and land the record with nothing
+else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames, then add and
 use [the refresh](DESIGN.md#the-route-check-sees-a-missing-prop): `--save-baseline` is the first calibration
 only, and refuses a baseline that exists.
 

@@ -8,7 +8,8 @@ by C04, C05, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), and by
 [Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before M8. Revised again that
 day for [the design review](../../evidence/SHOWCASE/design-review.md) of that revision: how each target produces
 a tick-by-tick sequence, what build a timing record is of, how the exit baseline is replaced, and what M7 does
-with a late frame it cannot explain.
+with a late frame it cannot explain. Revised a third time for that review's second round: a timing record's
+digest also covers the scripts that launch, drive and observe its arms.
 
 ## The request
 
@@ -255,7 +256,8 @@ So motion is proved in two parts, and the project's rule for timing decides whic
    doing, so a pop, a jump, a mover through terrain or a shadow that blinks is the engine's and is a finding.
 2. **How evenly real time delivers those frames is recorded, and does not gate before M8.** M5.11 keeps
    real-time takes on both targets with capture-off arms back to back, their timelines and the load. Its
-   check fails on a record of another build, on a missing arm or field, on an arm whose world stopped early,
+   check fails on a record of another build or of other capture scripts, on a missing arm or field, on an arm
+   whose world stopped early,
    and on a median interval more than twice that of the retained arm it repeats. Those arms held the requested
    60 Hz: medians of 16.8 and 16.7 ms on the Mac and 16.7 ms in Chrome. A long interval in the record is
    looked into when the take's own timeline points at the engine, and is never a finding by itself.
@@ -285,19 +287,26 @@ So motion is proved in two parts, and the project's rule for timing decides whic
   to the next callback ([ruling](../ARCHITECTURE.md#a-fixed-capture-that-stalls)): one record repeats a tick
   and the next carries two. That is a step of the page's clock and not of the scene. A judge reads a run's
   source ticks first, judges on runs whose ticks advance one at a time, and does not count a deferred tick as a
-  jump.
+  jump. A deferral accounts for how far the scene moves between those frames and for nothing else: a mover or
+  prop that is missing, new or changed in them is judged like any other.
 
-**What build a timing record is of.** A record that names a build proves nothing if the check never looks: a
-change to a frame driver after the arms were taken would leave the record, the launcher and the check's result
-as they were. So `motion` refuses a tree with uncommitted changes, builds both programs from it, and takes all
-six arms from that one commit. The record holds the commit, each program's hash, and one digest of the build and
-route inputs there: the tracked files under `crates/` and `examples/v1-game/`, which hold the routes, and
-`Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`. `motion --check` computes that digest again from the
-checkout it runs in, without building, and fails when it differs. M5.11's `reads` lists the same paths, so a
-pass is not reused once one of them changes. Other modules land changes to those paths most hours, and a record
-cannot outlive one. So the arms are the milestone's last act, taken on a branch that already holds main, and
-landed with nothing else. If another landing gets in first, the check fails on main and the six arms, a few
-minutes of takes, are taken again. Nothing else is proved twice.
+**What a timing record is of.** A record that names a build proves nothing if the check never looks: a change
+to a frame driver after the arms were taken would leave the record, the launcher and the check's result as they
+were. The same holds for how the arms are run. A capture script decides which route the launcher starts, how a
+frame is driven and how many submissions the receiver keeps, with the game's binary unchanged: Chrome's receiver
+refused the flythrough's record 1,024 until `4ffb33052` raised its limit, a change to two files under `scripts/`
+and to nothing else. So `motion` refuses a tree with uncommitted changes, builds both programs from it, and takes
+all six arms from that one commit. The record holds the commit, each program's hash, and one digest of every
+tracked file there that builds, launches, drives or observes an arm: the files under `crates/`,
+`examples/v1-game/` (which holds the routes and the capture page), `scripts/` and `.cargo/`, and `Cargo.toml`,
+`Cargo.lock` and `rust-toolchain.toml`. `scripts/` is taken whole and not as a list of today's helpers, because
+the launcher and the two capture drivers import across it and a list would miss the next helper. `motion --check`
+computes that digest again from the checkout it runs in, without building, and fails when it differs. M5.11's
+`reads` lists exactly those paths and the two records the check compares, so a pass is not reused once one of
+them changes: the digest and the reuse of a pass cover the same files. Other modules land changes to those paths
+most hours, and a record cannot outlive one. So the arms are the milestone's last act, taken on a branch that
+already holds main, and landed with nothing else. If another landing gets in first, the check fails on main and
+the six arms, a few minutes of takes, are taken again. Nothing else is proved twice.
 
 In M5, M6 and M7 a reviewer who sees a step in a real-time take reads the take's timeline first. A step the
 elapsed time between two submissions accounts for is a recorded gap. A step it does not account for, or

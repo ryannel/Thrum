@@ -59,3 +59,8 @@
   approvals). Taken in part: day-cycle storage is an open question M8's builder answers with T2's storage record
   (S2), because no sweep exists to measure. The plan's step lists became notes and its stop rules moved to the
   design as [Limits for every milestone](DESIGN.md#limits-for-every-milestone). Not yet design-reviewed.
+- 2026-11-18 Revised for the second round of [the design review](../../evidence/SHOWCASE/design-review.md), of
+  `571cd10a31d6`, 1 Must Fix. MF3: M5.11's digest and `reads` now also cover `scripts/`, whole, and `.cargo/`, so a
+  change to a capture script alone (`4ffb33052`, the receiver's limit) makes the old record fail and its pass is
+  not reused. Suggestion taken: M5.9 discounts only the size of the step after a deferred Chrome tick, and still
+  judges a mover or prop missing or changed in those frames. Not yet design-reviewed.

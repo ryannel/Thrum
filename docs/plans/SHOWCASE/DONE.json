@@ -100,7 +100,7 @@
         {
           "id": "M5.9",
           "statement": "In Chrome the six stops show the same props and movers as the Mac, with none missing, and along the exit flythrough the movers drift from one tick to the next without popping in or out or jumping.",
-          "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first: a record that repeats a tick, with the next carrying two, is the page deferring a due tick under load, and is noted and not counted as a jump. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
+          "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first. A record that repeats a tick, with the next carrying two, is the page deferring a due tick under load: it is noted, and the longer step after it is not counted as a jump. That accounts for how far the scene moves between those frames and for nothing else, so a mover or prop that is missing, new or changed in them is judged like any other. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -119,14 +119,13 @@
         },
         {
           "id": "M5.11",
-          "statement": "Real-time takes of the build this milestone claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and a digest of the build and route inputs there (the tracked files under `crates/` and `examples/v1-game/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/M5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
+          "statement": "Real-time takes of the build this milestone claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and one digest of every tracked file there that builds, launches, drives or observes an arm (the files under `crates/`, `examples/v1-game/`, `scripts/` and `.cargo/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's, as it does after a change to one capture script and nothing else; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/M5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
           "check": "python3 scripts/run_v1_showcase.py motion --check",
           "reads": [
-            "scripts/run_v1_showcase.py",
-            "scripts/capture_v1_runtime.py",
-            "scripts/capture_v1_browser.mjs",
+            "scripts/",
             "crates/",
             "examples/v1-game/",
+            ".cargo/",
             "Cargo.toml",
             "Cargo.lock",
             "rust-toolchain.toml",
