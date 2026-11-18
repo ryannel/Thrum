@@ -281,6 +281,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces (MESH-SHADING M1), 18 Nov · [review](../evidence/MESH-SHADING/M1-review.md)
 - A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow (ATMOSPHERE M10), 18 Nov · [review](../evidence/ATMOSPHERE/M10-review.md)
 - The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed (SCENE-VIEWS M3), 18 Nov · [review](../evidence/SCENE-VIEWS/M3-review.md)
 - On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws (RAY-TRACING M1), 18 Nov · [review](../evidence/RAY-TRACING/M1-review.md)
