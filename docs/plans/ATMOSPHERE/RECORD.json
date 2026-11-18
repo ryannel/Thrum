@@ -214,6 +214,35 @@
         "by": "plan",
         "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix f",
         "at": "2026-11-18T10:42:13Z"
+      },
+      "ready_for_review": {
+        "commit": "df4603c77428ce7e87640885eceeed7978d69977",
+        "checked": "b2c4e650a5037405fc488b871c8c484845dbaefe",
+        "at": "2026-11-18T12:30:12Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 305445,
+          "cached": 46370432,
+          "output": 49868,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 305445,
+          "cached": 46370432,
+          "output": 49868,
+          "turns": 1
+        }
       }
     }
   },
