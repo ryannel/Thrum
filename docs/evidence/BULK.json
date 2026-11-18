@@ -5058,6 +5058,46 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/MESH-SHADING/M2/realtime-low-sun-indexed.mp4",
+      "size": 3517685,
+      "sha256": "8398eeaa77472f1556ee92e44dca66f8f6175de36836c653daafcc3c0c490705",
+      "date": "2026-11-18T15:14:48.213052+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/MESH-SHADING/M2/realtime-low-sun-mesh.mp4",
+      "size": 3791638,
+      "sha256": "4df8f7611fd2547354537d826bb5ca021e6f74c56ea084f1c7dbd9c94695aae6",
+      "date": "2026-11-18T15:14:48.296382+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/MESH-SHADING/M2/realtime-noon-indexed.mp4",
+      "size": 3227696,
+      "sha256": "f8e951cef13403d7ac4f005f094776c477f1a18e78668670394656450bbce230",
+      "date": "2026-11-18T15:14:48.378313+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/MESH-SHADING/M2/realtime-noon-mesh.mp4",
+      "size": 3034633,
+      "sha256": "748695c54c6c5fe87c99debe53ac06d030dff6a4d6d1b5c01b8f7e0fcb49087b",
+      "date": "2026-11-18T15:14:48.459598+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/MESH-SHADING/M2/valley-fixed-source.zip",
+      "size": 91887760,
+      "sha256": "fb1ed572cf5130810c04af432053ce57e9bd3aadbe11cef92d754593c43ae7e0",
+      "date": "2026-11-18T15:12:47.301970+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/live-window/grid-replacement/png/000356.png",
       "size": 2873998,

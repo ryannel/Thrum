@@ -134,8 +134,8 @@
           "check": "python3 scripts/mesh_stage_proof.py valley-cull-equal",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -146,8 +146,8 @@
           "ask": "Does a diagnostic count show meshlets rejected in a shadow pass on the valley, so the equality is not vacuous? Do the object and mesh stages read each map's matrix from the binding the pass makes at group 0, with the caster view layout unchanged on a device that did not enable the stages?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -158,8 +158,8 @@
           "ask": "Would a caster drawn one-sided, or with another placement's transform, fail this proof at the low Sun?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -168,8 +168,8 @@
           "statement": "On the mesh-stage path the valley is the valley the existing path draws, at rest and in motion, at noon and at a low Sun: it passes this item's inspection list.",
           "inspect": "`fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, on the mesh-stage path, with the same stops on the existing path beside them, both on the Apple tile recipe, whole and as native-size crops. The list: (1) terrain is whole to the screen's border and at the near plane, with no meshlet-sized hole; (2) ridge lines and mesh silhouettes are unbroken; (3) every cooked mesh is whole from inside, beside and far away; (4) terrain and meshes cast the shadows they cast on the existing path, with no hole or light leak at a low Sun, near the camera, in the middle distance and beyond the cascades; (5) materials, lighting and texture read as they do at the existing path's stop; (6) in motion nothing pops, flickers or arrives late at the screen's edge, and no cooked surface smears or trails after a snap turn or a cut.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2.md#m24-visual-inspection",
           "verdict": "",
           "review": ""
         },
@@ -180,8 +180,8 @@
           "ask": "Is the switch frame the one the content publication names, from the same run that shows the image change?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -191,8 +191,8 @@
           "check": "python3 scripts/mesh_stage_proof.py lifecycle",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -202,8 +202,8 @@
           "check": "python3 scripts/mesh_stage_cost.py valley",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/valley-cost.json.gz",
           "verdict": "",
           "review": ""
         },
@@ -213,8 +213,8 @@
           "check": "python3 scripts/mesh_stage_proof.py shadows-off",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -223,8 +223,8 @@
           "statement": "No exact baseline moves: with no request, and on the direct and indirect paths, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

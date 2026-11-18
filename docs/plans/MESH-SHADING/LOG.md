@@ -37,3 +37,8 @@
 - 2026-11-18 M1 review fixes passed on M3 Max Metal. The GPU gate shares registry creation with the native hosts,
   the cull compares all six planes with nonzero crossing and rejection witnesses, and a prepared secondary
   slot starts cooked compute only in the frame that requests it. [Repair evidence](../../evidence/MESH-SHADING/M1.md).
+- 2026-11-18 M2 runs the valley and all three Sun maps through opt-in mesh stages on M3 Max Metal.
+  The forward binding uses the existing packed view through a stage-only group to work around wgpu 30
+  Metal's mixed-stage binding defect. Target proofs cover culling, shadow depth, publication and device
+  replacement. The paired timing records load and the repeated CPU tripwire investigation.
+  [Target results and captures](../../evidence/MESH-SHADING/M2.md).
