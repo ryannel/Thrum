@@ -8,7 +8,7 @@ proving_ground = "v1-game"
 [packages.thrum-test-support]
 manifest = "crates/thrum-test-support/Cargo.toml"
 test_role = "support"
-allowed_workspace_dependencies = []
+allowed_workspace_dependencies = ["thrum-render"]
 
 [packages.thrum-core]
 manifest = "crates/thrum-core/Cargo.toml"

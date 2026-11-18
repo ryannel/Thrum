@@ -8,7 +8,7 @@
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared, CloudPrepared, SunOpticalDepth};
-use crate::capabilities::DeviceCapabilities;
+use crate::capabilities::{DeviceCapabilities, RayStructureSelection};
 use crate::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SurfaceParts,
 };
@@ -111,7 +111,7 @@ pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 #[derive(Clone, Debug)]
 pub struct SyntheticScene {
     /// Ask preparation for a scene-wide ray structure for diagnostics.
-    /// Devices without ray queries prepare the ordinary scene.
+    /// Preparation falls back to the ordinary scene if the device or recipe cannot trace.
     pub ray_structure: bool,
     /// Optional Sun-path optical-depth provider. Presence is fixed at prepare
     /// time. Metadata and same-sized contents may change on the live frame.
@@ -612,6 +612,7 @@ pub struct PreparedSynthetic {
     /// shared vertices.
     mesh_arena: MeshArena,
     ray_structure: Option<raytrace::SceneStructure>,
+    ray_structure_selection: RayStructureSelection,
     row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
@@ -1053,6 +1054,7 @@ impl PreparedSynthetic {
         internal: Option<MeshSelection>,
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
+        let mut ray_structure_selection = capabilities.resolve_ray_structure(scene.ray_structure);
         let culling_selection = CullingSelection::resolve(scene.camera_culling, capabilities);
         let camera_mode = culling_selection.resolved;
         let device = capabilities.device();
@@ -1141,16 +1143,15 @@ impl PreparedSynthetic {
             packed_materials.extend_from_slice(&material.pack(&classes)?);
         }
         let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
-        let ray_demand = scene.ray_structure
-            && capabilities
-                .features()
-                .contains(wgpu::Features::EXPERIMENTAL_RAY_QUERY);
-        let ray_structure = ray_demand
-            .then(|| raytrace::SceneStructure::new(device, instance_count))
-            .transpose()?;
-        if ray_demand {
-            mesh_arena.enable_ray_demand(device)?;
-        }
+        let ray_structure = if ray_structure_selection == RayStructureSelection::Enabled {
+            let structure = raytrace::prepare(device, &mut mesh_arena, instance_count).await;
+            if structure.is_none() {
+                ray_structure_selection = RayStructureSelection::PreparationFailed;
+            }
+            structure
+        } else {
+            None
+        };
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let material_buffer = storage_buffer(
             device,
@@ -1741,6 +1742,7 @@ impl PreparedSynthetic {
                 .map(|updates| mesh_rows::LiveRows::new(updates, &mut mesh_arena)),
             mesh_arena,
             ray_structure,
+            ray_structure_selection,
             bucket_route,
             caster_boxes,
             shadow_members,
@@ -1860,6 +1862,10 @@ impl PreparedSynthetic {
     /// Requested and resolved camera modes and the preparation-time reason.
     pub fn culling_selection(&self) -> CullingSelection {
         self.culling_selection
+    }
+    /// Whether the requested structure was prepared, or why the scene draws without it.
+    pub fn ray_structure_selection(&self) -> RayStructureSelection {
+        self.ray_structure_selection
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {

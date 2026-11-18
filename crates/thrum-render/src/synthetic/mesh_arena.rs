@@ -18,7 +18,7 @@
 
 use std::ops::Range;
 
-use super::{RenderError, raytrace::MeshStructure};
+use super::raytrace::MeshStructure;
 
 /// One mesh vertex in local space, packed as the 48 bytes the camera and
 /// Sun caster shaders fetch.
@@ -236,15 +236,9 @@ impl MeshArena {
         &self.rows
     }
 
-    pub(super) fn enable_ray_demand(&mut self, device: &wgpu::Device) -> Result<(), RenderError> {
-        self.ray_meshes = Some(
-            self.rows
-                .iter()
-                .map(|&row| MeshStructure::new(device, row))
-                .collect::<Result<_, _>>()?,
-        );
+    pub(super) fn enable_ray_demand(&mut self, meshes: Vec<MeshStructure>) {
+        self.ray_meshes = Some(meshes);
         self.initial_ray_builds = true;
-        Ok(())
     }
 
     pub(super) fn ray_demand(&self) -> bool {

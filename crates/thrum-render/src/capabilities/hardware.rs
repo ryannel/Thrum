@@ -265,6 +265,30 @@ impl DeviceCapabilities {
         descriptor: impl Fn(&wgpu::Adapter) -> wgpu::DeviceDescriptor<'static>,
         feature_mask: wgpu::Features,
     ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
+        Self::open_generation_from(
+            async || instance.request_adapter(options).await,
+            generation,
+            requests,
+            descriptor,
+            |adapter| (adapter.features() & feature_mask, adapter.limits()),
+        )
+        .await
+    }
+
+    /// Admit a device from the host's adapter source and base recipe.
+    ///
+    /// The source is called again only for a preference retry and must then return a fresh
+    /// adapter. The offered features and limits may be restricted from the adapter's facts.
+    ///
+    /// # Errors
+    /// Reports adapter or device failures and names refused required hardware.
+    pub async fn open_generation_from(
+        mut acquire_adapter: impl AsyncFnMut() -> Result<wgpu::Adapter, wgpu::RequestAdapterError>,
+        generation: u64,
+        requests: &[HardwareRequest],
+        descriptor: impl Fn(&wgpu::Adapter) -> wgpu::DeviceDescriptor<'static>,
+        offer: impl Fn(&wgpu::Adapter) -> (wgpu::Features, wgpu::Limits),
+    ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
         for (index, request) in requests.iter().enumerate() {
             if requests[..index]
                 .iter()
@@ -275,15 +299,15 @@ impl DeviceCapabilities {
         }
         let mut retry = None;
         loop {
-            let adapter = instance
-                .request_adapter(options)
+            let adapter = acquire_adapter()
                 .await
                 .map_err(HardwareLaunchError::Adapter)?;
+            let (features, limits) = offer(&adapter);
             let (request, selections) = plan(
                 descriptor(&adapter),
                 requests,
-                adapter.features() & feature_mask,
-                &adapter.limits(),
+                features & adapter.features(),
+                &limits,
                 retry.as_deref(),
             )?;
             match adapter.request_device(&request).await {

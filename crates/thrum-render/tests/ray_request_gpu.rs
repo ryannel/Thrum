@@ -15,10 +15,6 @@ mod metal {
     #[test]
     fn mac_launch_admits_rays_and_keeps_the_original_recipe_on_fallback() {
         let gate = support::gate("ray query admission");
-        let options = wgpu::RequestAdapterOptions::default();
-        let base = |adapter: &wgpu::Adapter| {
-            Profile::Portable.descriptor(adapter, &Restriction::default())
-        };
         let ray = wgpu::Features::EXPERIMENTAL_RAY_QUERY;
         let mask = wgpu::Features::all() - ray;
         let required = HardwareRequest::parse("ray-query").expect("required");
@@ -26,21 +22,26 @@ mod metal {
         assert!(matches!(HardwareRequest::parse("ray-typo"),
         Err(HardwareLaunchError::Unknown(name)) if name == "ray-typo"));
         let open = |names: &[HardwareRequest], mask| {
-            pollster::block_on(DeviceCapabilities::open_generation_with_feature_mask(
-                &gate.instance,
-                &options,
+            gate.fresh_adapter().device_with_hardware(
+                Profile::Portable,
+                &Restriction {
+                    features: Some(mask),
+                    ..Default::default()
+                },
                 1,
                 names,
-                base,
-                mask,
-            ))
+            )
         };
-        let (_, ordinary, _, ordinary_caps) =
+        let (ordinary, _, ordinary_caps) =
             open(&[], wgpu::Features::all()).expect("ordinary device");
+        let base = Profile::Portable.descriptor(&gate.adapter, &Restriction::default());
+        let (gate_default, _) = gate.device(Profile::Portable, &Restriction::default());
         assert_eq!(ordinary_caps.hardware(), []);
-        assert_eq!(ordinary.features(), base(&gate.adapter).required_features);
-        assert_eq!(ordinary.limits(), base(&gate.adapter).required_limits);
-        let (_, required_device, _, caps) =
+        assert_eq!(ordinary.features(), base.required_features);
+        assert_eq!(ordinary.limits(), base.required_limits);
+        assert_eq!(gate_default.features(), ordinary.features());
+        assert_eq!(gate_default.limits(), ordinary.limits());
+        let (required_device, _, caps) =
             open(&required, wgpu::Features::all()).expect("required rays");
         assert!(required_device.features().contains(ray));
         assert_eq!(caps.features(), required_device.features());
@@ -54,7 +55,7 @@ mod metal {
         Err(HardwareLaunchError::Required { feature: HardwareFeature::RayQuery, reason })
         if reason.contains("does not offer")));
 
-        let (_, fallback, _, caps) =
+        let (fallback, _, caps) =
             open(&preferred, mask).expect("preference leaves the base device usable");
         assert_eq!(fallback.features(), ordinary.features());
         assert_eq!(fallback.limits(), ordinary.limits());
@@ -65,6 +66,20 @@ mod metal {
                 .unwrap_or_default()
                 .contains("does not offer")
         );
+
+        let restriction = Restriction {
+            storage_buffers: Some(6),
+            features: Some(ray),
+        };
+        let (restricted, _, caps) = gate
+            .fresh_adapter()
+            .device_with_hardware(Profile::Native, &restriction, 2, &required)
+            .expect("ray queries with restricted native profile");
+        let mut limits = gate.adapter.limits();
+        limits.max_storage_buffers_per_shader_stage = 6;
+        assert_eq!(restricted.limits(), limits);
+        assert_eq!(restricted.features(), ray);
+        assert!(caps.hardware()[0].declined.is_none());
     }
 
     #[test]

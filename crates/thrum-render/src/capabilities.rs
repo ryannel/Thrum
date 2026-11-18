@@ -13,6 +13,21 @@ pub enum Reconstructor {
     /// Shader-based temporal reconstruction, available on every recipe.
     Taau,
 }
+
+/// The outcome of resolving a scene's request for a ray structure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RayStructureSelection {
+    /// The scene asked for no structure.
+    NotRequested,
+    /// Ray queries are enabled and the recipe admits the structure.
+    Enabled,
+    /// The device generation did not enable ray queries.
+    MissingRayQuery,
+    /// The resolved recipe does not support ray effects.
+    UnsupportedRecipe,
+    /// The scene could not prepare its structures and fell back.
+    PreparationFailed,
+}
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub(crate) mod apple;
 
@@ -147,6 +162,21 @@ impl DeviceCapabilities {
     /// Returns the invalid or unsupported request captured at platform creation.
     pub fn recipe(&self) -> Result<Recipe, RecipeError> {
         self.recipe
+    }
+
+    pub(crate) fn resolve_ray_structure(&self, requested: bool) -> RayStructureSelection {
+        if !requested {
+            RayStructureSelection::NotRequested
+        } else if self.recipe != Ok(Recipe::AppleTile) {
+            RayStructureSelection::UnsupportedRecipe
+        } else if !self
+            .features
+            .contains(wgpu::Features::EXPERIMENTAL_RAY_QUERY)
+        {
+            RayStructureSelection::MissingRayQuery
+        } else {
+            RayStructureSelection::Enabled
+        }
     }
 
     /// Actual native unified-memory fact, unknown without a retained native adapter.

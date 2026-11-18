@@ -6,6 +6,7 @@ pub mod ray_support;
 mod metal {
     use super::ray_support::support;
 
+    use thrum_render::capabilities::RayStructureSelection;
     use thrum_render::synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticScene};
 
     fn submit_bytes(
@@ -67,6 +68,10 @@ mod metal {
         scene.ray_structure = false;
         let (paired, paired_target) = support::prepare(&device, &queue, &caps, &scene);
 
+        assert_eq!(
+            traced.ray_structure_selection(),
+            RayStructureSelection::Enabled
+        );
         assert_eq!(traced.ray_mesh_structure_count(), 2);
         assert!(
             traced
@@ -80,17 +85,37 @@ mod metal {
             reference_bytes
         );
 
-        for (device, queue, prepared, target) in [
-            (&ordinary, &ordinary_queue, &reference, &reference_target),
+        for (device, queue, prepared, target, selection) in [
+            (
+                &ordinary,
+                &ordinary_queue,
+                &reference,
+                &reference_target,
+                RayStructureSelection::NotRequested,
+            ),
             (
                 &ordinary,
                 &ordinary_queue,
                 &unsupported,
                 &unsupported_target,
+                RayStructureSelection::MissingRayQuery,
             ),
-            (&device, &queue, &unpaired, &unpaired_target),
-            (&device, &queue, &paired, &paired_target),
+            (
+                &device,
+                &queue,
+                &unpaired,
+                &unpaired_target,
+                RayStructureSelection::NotRequested,
+            ),
+            (
+                &device,
+                &queue,
+                &paired,
+                &paired_target,
+                RayStructureSelection::NotRequested,
+            ),
         ] {
+            assert_eq!(prepared.ray_structure_selection(), selection);
             assert_eq!(prepared.ray_mesh_structure_count(), 0);
             assert!(prepared.ray_structure_instances().is_none());
             assert_eq!(prepared.ray_structure_input_usages(), usages);
@@ -117,6 +142,54 @@ mod metal {
         );
         if let Some(path) = std::env::var_os("THRUM_REFERENCE_OUTPUT") {
             std::fs::write(path, reference_bytes).expect("write ordinary reference witness");
+        }
+    }
+
+    #[test]
+    fn portable_request_falls_back_before_allocation_even_when_device_enabled_rays() {
+        let gpu = support::gate("portable ray structure fallback");
+        let (ordinary, ordinary_queue, ordinary_caps) = support::device(&gpu, "", 1);
+        let (device, queue, caps) = support::device(&gpu, "ray-query", 2);
+        let ordinary_caps = ordinary_caps
+            .with_recipe_override("portable")
+            .expect("portable");
+        let caps = caps.with_recipe_override("portable").expect("portable");
+        let mut scene = SyntheticScene::grid(81).expect("scene");
+        let (reference, target) =
+            support::prepare(&ordinary, &ordinary_queue, &ordinary_caps, &scene);
+        let bytes = submit_bytes(&ordinary, &ordinary_queue, &reference, &target);
+        let usages = reference.ray_structure_input_usages();
+        let names = reference.graph(&target, true).expect("graph");
+        assert!(!names.pass_names().any(|name| name == "ray structure build"));
+        assert!(
+            usages
+                .iter()
+                .all(|usage| !usage.contains(wgpu::BufferUsages::BLAS_INPUT))
+        );
+
+        for (device, queue, caps) in [
+            (&ordinary, &ordinary_queue, &ordinary_caps),
+            (&device, &queue, &caps),
+        ] {
+            for (requested, selection) in [
+                (false, RayStructureSelection::NotRequested),
+                (true, RayStructureSelection::UnsupportedRecipe),
+            ] {
+                scene.ray_structure = requested;
+                let (prepared, target) = support::prepare(device, queue, caps, &scene);
+                assert_eq!(prepared.ray_structure_selection(), selection);
+                assert_eq!(prepared.ray_mesh_structure_count(), 0);
+                assert!(prepared.ray_structure_instances().is_none());
+                assert_eq!(prepared.ray_structure_input_usages(), usages);
+                assert!(
+                    prepared
+                        .graph(&target, true)
+                        .expect("graph")
+                        .pass_names()
+                        .eq(names.pass_names())
+                );
+                assert_eq!(submit_bytes(device, queue, &prepared, &target), bytes);
+            }
         }
     }
 }

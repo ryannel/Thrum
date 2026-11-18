@@ -7,7 +7,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{capabilities::DeviceCapabilities, runtime::FrameConfig};
+use thrum_render::{
+    capabilities::{DeviceCapabilities, HardwareLaunchError},
+    runtime::FrameConfig,
+};
 
 use super::{ContentStatus, SkyGame};
 use crate::Config;
@@ -193,12 +196,52 @@ pub async fn headless_device()
             ..Default::default()
         },
     )
-    .await?;
+    .await
+    .map_err(|error| match error {
+        HardwareLaunchError::Adapter(error) => HeadlessDeviceError::Adapter(error),
+        HardwareLaunchError::Device { source, .. } => HeadlessDeviceError::Device(source),
+        _ => unreachable!("the headless sky kit requests no named hardware"),
+    })?;
     Ok((device, queue, capabilities))
 }
 
 /// Failure opening the sky kit's headless Metal device.
-pub type HeadlessDeviceError = thrum_render::capabilities::HardwareLaunchError;
+///
+/// ```
+/// use thrum_app::sky::HeadlessDeviceError;
+///
+/// fn describe(error: HeadlessDeviceError) -> String {
+///     match error {
+///         HeadlessDeviceError::Adapter(error) => format!("adapter: {error}"),
+///         HeadlessDeviceError::Device(error) => format!("device: {error}"),
+///     }
+/// }
+/// ```
+#[derive(Debug)]
+pub enum HeadlessDeviceError {
+    /// No suitable Metal adapter could be opened.
+    Adapter(wgpu::RequestAdapterError),
+    /// The adapter could not create a device with the requested features.
+    Device(wgpu::RequestDeviceError),
+}
+
+impl std::fmt::Display for HeadlessDeviceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Adapter(error) => write!(f, "Metal adapter request failed ({error})"),
+            Self::Device(error) => write!(f, "Metal device request failed ({error})"),
+        }
+    }
+}
+
+impl std::error::Error for HeadlessDeviceError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Adapter(error) => Some(error),
+            Self::Device(error) => Some(error),
+        }
+    }
+}
 
 /// Encode tightly packed RGBA8 display pixels as an RGB PNG with stored (uncompressed)
 /// deflate blocks: larger than a compressed file, but exact and dependency-free.

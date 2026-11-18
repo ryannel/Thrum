@@ -21,16 +21,15 @@ pub fn device(
     generation: u64,
 ) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let request = HardwareRequest::parse(launch).expect("named hardware");
-    let (adapter, device, queue, capabilities) =
-        pollster::block_on(DeviceCapabilities::open_generation(
-            &gpu.instance,
-            &wgpu::RequestAdapterOptions::default(),
+    let (device, queue, capabilities) = gpu
+        .fresh_adapter()
+        .device_with_hardware(
+            Profile::Portable,
+            &Restriction::default(),
             generation,
             &request,
-            |adapter| Profile::Portable.descriptor(adapter, &Restriction::default()),
-        ))
+        )
         .expect("admitted Metal device");
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
     let capabilities = capabilities
         .with_recipe_override("apple-tile")
         .expect("Apple tile");

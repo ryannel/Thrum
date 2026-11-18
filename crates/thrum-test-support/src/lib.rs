@@ -1,7 +1,9 @@
 //! GPU admission for tests. This package is a dev-dependency only.
 use std::io::Write as _;
+#[cfg(feature = "render")]
+use thrum_render::capabilities::{DeviceCapabilities, HardwareLaunchError, HardwareRequest};
 
-/// Gate result, containing only wgpu types so renderer unit tests can use it.
+/// Gate result retaining the instance and admitted adapter.
 pub struct Gpu {
     /// Instance owning the selected backend.
     pub instance: wgpu::Instance,
@@ -145,7 +147,7 @@ impl Gpu {
         }
     }
 
-    /// M1 stand-in for HOST's device recipe. Restrictions never add capabilities.
+    /// Open the ordinary device for this profile. Restrictions never add capabilities.
     /// # Panics
     /// Fails if the admitted adapter cannot create the requested device.
     pub fn device(
@@ -153,11 +155,44 @@ impl Gpu {
         profile: Profile,
         restriction: &Restriction,
     ) -> (wgpu::Device, wgpu::Queue) {
-        pollster::block_on(
-            self.adapter
-                .request_device(&profile.descriptor(&self.adapter, restriction)),
-        )
-        .expect("admitted GPU test device")
+        let (device, queue, _) = self
+            .device_with_hardware(profile, restriction, 1, &[])
+            .expect("admitted GPU test device");
+        (device, queue)
+    }
+
+    /// Open a device for this profile with explicit named hardware and capture its registry.
+    ///
+    /// # Errors
+    /// Reports registry admission or device creation failures.
+    pub fn device_with_hardware(
+        &self,
+        profile: Profile,
+        restriction: &Restriction,
+        generation: u64,
+        requests: &[HardwareRequest],
+    ) -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), HardwareLaunchError> {
+        let mut admitted = Some(self.adapter.clone());
+        let (_, device, queue, capabilities) =
+            pollster::block_on(DeviceCapabilities::open_generation_from(
+                async || {
+                    if let Some(adapter) = admitted.take() {
+                        return Ok(adapter);
+                    }
+                    self.instance
+                        .request_adapter(&wgpu::RequestAdapterOptions::default())
+                        .await
+                },
+                generation,
+                requests,
+                |adapter| profile.descriptor(adapter, restriction),
+                |adapter| {
+                    let (limits, features) =
+                        restriction.apply(adapter.limits(), adapter.features());
+                    (features, limits)
+                },
+            ))?;
+        Ok((device, queue, capabilities))
     }
 }
 

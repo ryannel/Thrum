@@ -14,6 +14,37 @@ pub(super) const PASS: &str = "ray structure build";
 const SHADOW_AND_AMBIENT: u8 = 0b11;
 const MAX_IDENTITIES: u32 = 1 << 24;
 
+pub(super) async fn prepare(
+    device: &wgpu::Device,
+    arena: &mut MeshArena,
+    slots: u32,
+) -> Option<SceneStructure> {
+    let scopes = [
+        wgpu::ErrorFilter::Internal,
+        wgpu::ErrorFilter::OutOfMemory,
+        wgpu::ErrorFilter::Validation,
+    ]
+    .map(|filter| device.push_error_scope(filter));
+    let structures = SceneStructure::new(device, slots).and_then(|scene| {
+        let meshes = arena
+            .rows()
+            .iter()
+            .map(|&row| MeshStructure::new(device, row))
+            .collect::<Result<_, _>>()?;
+        Ok((scene, meshes))
+    });
+    let mut gpu_error = false;
+    for scope in scopes.into_iter().rev() {
+        gpu_error |= scope.pop().await.is_some();
+    }
+    let (scene, meshes) = structures.ok()?;
+    if gpu_error {
+        return None;
+    }
+    arena.enable_ray_demand(meshes);
+    Some(scene)
+}
+
 pub(super) fn binding(id: usize) -> RecordBinding<SceneFamily> {
     RecordBinding::<SceneFamily>::new(id, PassKind::AccelerationBuild, |frame, _| {
         frame.prepared.record_ray_structure(frame.encoder)

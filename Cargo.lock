@@ -3305,6 +3305,7 @@ name = "thrum-test-support"
 version = "0.1.0"
 dependencies = [
  "pollster",
+ "thrum-render",
  "wgpu",
 ]
 
