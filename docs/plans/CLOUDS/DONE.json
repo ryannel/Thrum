@@ -474,7 +474,7 @@
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, looking toward, across and away from the Sun, from 2 m and from 40 m, and one pair taken 40 m apart. Judge each frame whole, and the pair for clouds that shift against one another.",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "docs/evidence/CLOUDS/M3-refresh/README.md",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
