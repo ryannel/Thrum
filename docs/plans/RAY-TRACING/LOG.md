@@ -72,3 +72,7 @@
   [M2 evidence](../../evidence/RAY-TRACING/M2/README.md).
 - 2026-11-18 Routed the opt-in M2 timing probe's two pipelines through the prepared scene's device
   generation. The probe installation is recorded as a creation transition.
+- 2026-11-18 Completed arena builds during startup and device preparation, carried them across
+  same-device visual replacement, and gated initial cooked publication on completed mesh builds.
+  Verified both Metal generations, the edit builds, and the traced view's instance colors and distance
+  cue. [Review fix evidence](../../evidence/RAY-TRACING/M2/README.md).

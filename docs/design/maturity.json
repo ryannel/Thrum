@@ -82,11 +82,11 @@
       ]
     },
     "RAY_TRACING_M2": {
-      "implementation": "Opt-in cooked mesh structures build from resident draw buffers. Scene membership includes all opaque placements through the contribution seam and follows the raster publication switch. The primary-ray view uses the same camera as the drawn frame.",
-      "functional_validation": "Metal builder checks passed cooked placement and entity edit switches, discard and refusal, off-camera casters with Sun maps on and off, device replacement and ordinary valley output parity with the pre-change renderer.",
-      "experienced_quality": "Inspected four Metal T2 fixed pairs at 1280 by 720 with native-size contact crops. The terrain, placements and visible entity positions agreed between the drawn and primary-ray outputs.",
+      "implementation": "Opt-in arena mesh structures complete during device preparation and survive same-device visual replacement. Cooked meshes build from their draw buffers and complete before initial publication. The scene structure follows the raster publication switch and the primary-ray view shades each hit by instance identity and distance.",
+      "functional_validation": "Metal builder checks covered initial readiness, device replacement with an edited row, both edit switches, discard and refusal, off-camera casters, and ordinary valley output parity. A coplanar fixture preserved the shared edge and distinguished both placements at two distances.",
+      "experienced_quality": "Inspected four Metal T2 fixed pairs at 1280 by 720 with native-size contact crops. The terrain, placements and visible entity positions agreed, and traced instance colors persisted across camera turns.",
       "platform_performance": {
-        "mac_apple_tile": "Contended release measurements recorded a 15,384,576-byte resident delta and estimated 0.737 to 0.905 ms additional GPU work for the terrain edit. Initial terrain build brackets were 58.5 to 76.2 ms. The cost evidence records the cold outlier and uncertainty in the smaller mesh estimates.",
+        "mac_apple_tile": "Contended release measurements recorded a 15,384,576-byte resident delta and estimated 0.733 to 1.061 ms additional GPU work for the terrain edit. The first measurement bracket in preparation was 138.7 to 156.5 ms; the cost evidence records the order-dependent outlier and the uncertainty in isolated build costs.",
         "browser": "Ordinary output covered by the shared exact-images check. The traced view has no browser qualification.",
         "ios": "No ray structure qualification."
       },

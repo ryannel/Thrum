@@ -1,9 +1,12 @@
-Revision e43e3b6d253b9e7265c5b7a951f0eed9e710a24b
-Target mac-metal, Apple M3 Max, Apple tile, required ray-query
-Command cargo test --locked --offline -p thrum-render --features creation-counters --test ray_instances_seam
-Cargo metadata confirmed no thrum-render dependency on thrum-asset-gpu.
+Revision 2143317d2914008cba650447f622c5f9d920bb18
+Apple M3 Max, Metal, Apple tile, ray-query required.
+cargo test --locked --offline -p thrum-render --features creation-counters --test ray_instances_seam -- --nocapture
 
-running 1 test
+running 3 tests
+coplanar placement RGBA8: near [102, 127, 66, 255] [66, 84, 127, 255], far [85, 107, 56, 255] [56, 70, 107, 255], sky [23, 31, 41, 255]
+test metal::traced_view_distinguishes_adjoining_coplanar_placements ... ok
 test metal::a_contribution_offers_scene_membership_after_upload_without_any_draw ... ok
+same-device visual preparation and first frame built zero mesh structures
+test metal::visual_replacement_on_the_same_device_reuses_prepared_meshes ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s

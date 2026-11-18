@@ -155,8 +155,8 @@
           "check": "python3 scripts/ray_tracing_proof.py lifecycle",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/lifecycle.json",
           "verdict": "fail",
           "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },

@@ -1,5 +1,5 @@
 {
-  "revision": "055010d1b265da85fd45751e1a7c120053a22a06",
+  "revision": "2143317d2914008cba650447f622c5f9d920bb18",
   "mode": "fixed",
   "extent": [
     1280,
@@ -13,7 +13,7 @@
       "frames": {
         "drawn": {
           "file": "valley-drawn.png",
-          "submission_id": 161,
+          "submission_id": 251,
           "offset": 0,
           "rgba_sha256": "aa7a2abeee6483ffefd3a73114ffc453e1605d6d0119f819f63b0748f652148f",
           "submit_ns": 0,
@@ -22,10 +22,10 @@
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -46,27 +46,24 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "fbebc85f2afc34499d943f792eddd94f92a0c0f3e6cb03d117c25b459eda437a",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         },
         "traced": {
           "file": "valley-traced.png",
-          "submission_id": 104,
+          "submission_id": 151,
           "offset": 0,
-          "rgba_sha256": "f4d58a2bb57746026d04d70694914cb756ead0c274e10323826c20911a2b13bc",
+          "rgba_sha256": "e00a33d29ba8480011b5e0520234861d0fd5f7930b816b4df7c60559a067717c",
           "submit_ns": 0,
           "sample_ns": 0,
           "adapter": "Apple M3 Max",
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -87,11 +84,8 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "fbebc85f2afc34499d943f792eddd94f92a0c0f3e6cb03d117c25b459eda437a",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         }
       },
       "crop": {
@@ -115,7 +109,7 @@
       "frames": {
         "drawn": {
           "file": "contact-drawn.png",
-          "submission_id": 170,
+          "submission_id": 241,
           "offset": 0,
           "rgba_sha256": "358e8ede46b65212bd6e9f69e6d428c53917d78a48824aec8b37f4b831b8f37c",
           "submit_ns": 0,
@@ -124,10 +118,10 @@
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -148,27 +142,24 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "57dac722aaaa4c075d56713f7bd3b28a934e64a8df805a46494417567540f942",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         },
         "traced": {
           "file": "contact-traced.png",
-          "submission_id": 113,
+          "submission_id": 193,
           "offset": 0,
-          "rgba_sha256": "80bd75a268c7bb51d36042df43c990f830801ad5d64f92ded5cfbfd73a6eecea",
+          "rgba_sha256": "b5c932e38a0ed288c5e726de7904c6fd1fab01303e7c219ee1d88040dbba2ce4",
           "submit_ns": 0,
           "sample_ns": 0,
           "adapter": "Apple M3 Max",
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -189,11 +180,8 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "57dac722aaaa4c075d56713f7bd3b28a934e64a8df805a46494417567540f942",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         }
       },
       "crop": {
@@ -217,7 +205,7 @@
       "frames": {
         "drawn": {
           "file": "west-drawn.png",
-          "submission_id": 155,
+          "submission_id": 240,
           "offset": 0,
           "rgba_sha256": "61bb296c60d4a1315084e4e76e750cb92b39d5ad7dabba71a5108de9e0286d2c",
           "submit_ns": 0,
@@ -226,10 +214,10 @@
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -250,27 +238,24 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "10f3b13010dfcd1a495ff6ccac2b41231168a8387a92d07deafdcd696550a96f",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         },
         "traced": {
           "file": "west-traced.png",
-          "submission_id": 107,
+          "submission_id": 199,
           "offset": 0,
-          "rgba_sha256": "8cfa3bfbfa1d9ea19efa51bd9c9f91b0d0a03dbe18728baf14c4243e57e70a12",
+          "rgba_sha256": "0c58070fd32028b86ab42f4817b74b9296cd535f0df8ca02fc4822161b7dffe0",
           "submit_ns": 0,
           "sample_ns": 0,
           "adapter": "Apple M3 Max",
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -291,11 +276,8 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "10f3b13010dfcd1a495ff6ccac2b41231168a8387a92d07deafdcd696550a96f",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         }
       },
       "crop": {
@@ -319,7 +301,7 @@
       "frames": {
         "drawn": {
           "file": "east-drawn.png",
-          "submission_id": 153,
+          "submission_id": 256,
           "offset": 0,
           "rgba_sha256": "c46e8bef03ddb31fae356a2250ac478726e077df532d93886faa8601eb71b112",
           "submit_ns": 0,
@@ -328,10 +310,10 @@
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -352,27 +334,24 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "9d6650749ba8ef8057977cb8fa44e753f1c3f35460d28c013d0ef773c4e05487",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         },
         "traced": {
           "file": "east-traced.png",
-          "submission_id": 126,
+          "submission_id": 176,
           "offset": 0,
-          "rgba_sha256": "f403cb34009466f9d39adde3548c552e9b75daa79e64110b9374ca98ebc2a199",
+          "rgba_sha256": "6abfb985e659dc4332f6f5e8469336ec413ed140b7a291f77823d78ca229073e",
           "submit_ns": 0,
           "sample_ns": 0,
           "adapter": "Apple M3 Max",
           "backend": "Metal",
           "recipe": "Ok(AppleTile)",
           "feature": "ray-query required",
-          "binary_sha256": "fd577b77f05f226a26245489b5cf4a4e300cbb1ee26a882f1a061ed914be3078",
+          "binary_sha256": "5d999e5507b67e1904396d4074fe0eca12d6a81113cddfc81065f5810d3ab4d7",
           "cooked_products_sha256": {
-            "EPOCH": "d96464e9f8e967f8b07e9ae3dd19a3162275f38819fda536d7a4636853f36a09",
-            "HEAD": "35d3a4eb6c5713453a8473b296d364b57e06c19197896b21fdd551b62d171ebd",
+            "EPOCH": "5f22c9c1dcc5d10f63da4be1431026a6362e6119aa0960589c6d7a0877068f78",
+            "HEAD": "93a850a01f7e343bff067aa6d3c258c2d5e2037d6f4b66651df9c1ceaed29a65",
             "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
             "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
@@ -393,11 +372,8 @@
             "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
             "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
             "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
-            "stat-cache.bin": "6e5910b521b3251afea9998134397b0fde1841035b0674a76165ad2307fa1170"
-          },
-          "build_source_digest": "f66c25b6e56b37dcf66a7bce815e67fa6f10aa6c1622003bb698bbb75c66e665",
-          "parameters_sha256": "9d6650749ba8ef8057977cb8fa44e753f1c3f35460d28c013d0ef773c4e05487",
-          "tick": 0
+            "stat-cache.bin": "df03fa85f82dfc22ee50a06bf94b01a1ec4bd6f4910644ff81ceecb699cb1f60"
+          }
         }
       },
       "crop": {
