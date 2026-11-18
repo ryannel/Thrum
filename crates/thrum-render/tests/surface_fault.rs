@@ -1,12 +1,15 @@
-//! Public drive and completed-frame telemetry for a stale drawable extent.
+//! Presentation encode failures and the frame host's public drop telemetry.
 mod support;
 
 use std::time::Duration;
 use thrum_render::{
     capabilities::DeviceCapabilities,
-    present::SurfaceProfile,
+    present::{PresentError, SurfacePresenter, SurfaceProfile},
     runtime::{FrameConfig, SurfaceFault, SurfaceOutput},
-    synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
+    synthetic::{
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
+    },
+    timing::{GpuTimings, TimingError},
 };
 
 #[test]
@@ -24,10 +27,11 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
         format: wgpu::TextureFormat::Rgba8Unorm,
         extent: [64, 64],
     };
+    let scene = SyntheticScene::grid(1).unwrap();
     let mut host = pollster::block_on(support::host_with_config(
         &cap,
         &queue,
-        SyntheticScene::grid(1).unwrap(),
+        scene.clone(),
         FrameLighting::Diagnostic(SyntheticLight::default()),
         FrameConfig {
             render_extent: profile.extent,
@@ -66,4 +70,45 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
     let sample = host.poll_completed().unwrap().expect("scene completion");
     assert!(!sample.surface_presented);
     assert_eq!(sample.surface_fault, report.surface_fault);
+
+    pollster::block_on(async {
+        let prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
+            .await
+            .unwrap();
+        let target = OffscreenTarget::new(&device, &prepared, 64, 64).unwrap();
+        let presenter = SurfacePresenter::prepare(&cap, profile.extent, profile)
+            .await
+            .unwrap();
+        let retired = SurfacePresenter::prepare(&cap, profile.extent, profile)
+            .await
+            .unwrap();
+        let binding = presenter.bind_target(&device, &target).unwrap();
+        let old_binding = retired.bind_target(&device, &target).unwrap();
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        assert!(matches!(
+            presenter.encode(&mut encoder, &old_binding, &view, profile.extent, None),
+            Err(PresentError::StaleTarget)
+        ));
+        assert!(matches!(
+            presenter.encode(&mut encoder, &binding, &view, [32, 64], None),
+            Err(PresentError::Extent)
+        ));
+        let mut timings = GpuTimings::new(&cap, &queue, 1).unwrap();
+        assert!(
+            timings
+                .pass_writes(1, "earlier scene pass")
+                .unwrap()
+                .is_some()
+        );
+        assert!(matches!(
+            presenter.encode(
+                &mut encoder,
+                &binding,
+                &view,
+                profile.extent,
+                Some(&mut timings)
+            ),
+            Err(PresentError::Timing(TimingError::Capacity))
+        ));
+    });
 }
