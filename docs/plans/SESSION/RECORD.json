@@ -26,7 +26,64 @@
   "milestones": {
     "M1": {
       "definitions": "3820d372cf33e8dc8f5a785bc5f06fa18e481786a93e1ef7e26879b1efdc1183",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "749dcbec6d7db5c47b81a1aeda26e7af6294a699",
+          "review": "docs/evidence/SESSION/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "fail",
+            "M1.6": "fail",
+            "M1.7": "fail",
+            "M1.8": "pass",
+            "M1.9": "fail",
+            "M1.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Different crowd rules accept the same world image and diverge",
+              "item": "M1.6",
+              "repeat": false
+            },
+            {
+              "name": "Malformed-image check uses a destination that rejects valid images",
+              "item": "M1.5",
+              "repeat": false
+            },
+            {
+              "name": "Mac cost record omits a host tick regression flag",
+              "item": "M1.7",
+              "repeat": false
+            },
+            {
+              "name": "Paired codecs changed accepted SIM-2D test fixtures",
+              "item": "M1.9",
+              "planner": "The frozen SIM-2D fixtures register encode-only types. M1.4 requires rejection of those types while M1.9 and the plan require those tests to stay unchanged. Decide the scope of the paired-codec boundary or allow fixture-only codec adaptations.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 97773,
+            "cached": 1470080,
+            "output": 6376,
+            "turns": 1
+          },
+          "at": "2026-11-18T17:04:02Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",

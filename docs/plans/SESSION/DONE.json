@@ -15,8 +15,8 @@
           "ask": "Read the harness. Is the image restored in a different process from the one that wrote it, into a runtime with a different world epoch? Does the restored world step through thrum_core::sim's registered runtime? Are the digests compared with SIM-2D's retained files, unchanged in git since SIM-2D was accepted? Is an image taken at tick 0 and at more than one later tick, with reused slots and despawned bodies counted above zero at the later ones?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/image-mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -25,8 +25,8 @@
           "check": "python3 scripts/session_match.py image --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SESSION/M1/image-chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -35,8 +35,8 @@
           "check": "python3 scripts/session_match.py image --target ios-sim",
           "target": "ios-sim",
           "evidence": "docs/evidence/SESSION/M1/image-ios-sim.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -46,8 +46,8 @@
           "ask": "Read the test. Does it cover, one at a time, each kind in the design's list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Does any encoded value pass through the machine's width or std::hash? Does thrum-core name anything of the reference crowd?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/core-checks.txt",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -56,10 +56,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_image_untrusted",
           "ask": "Read the test. Does it drive the restore the session will use, with each kind of input in the statement generated? Is the whole image validated before any part of the world is replaced? Is there a stdin target for the image decoder, in the style of thrum-network's?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/core-checks.txt",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SESSION/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.6",
@@ -67,10 +67,10 @@
           "check": "python3 scripts/session_match.py identity",
           "ask": "Is the identity derived when the game is built from the sources the design lists, with no number a person raises? Does it also cover the game's action wire and the toolchain? Does the command make each change in a scratch copy outside the tree and fail if any leaves the identity unchanged? Do the Chrome and simulator image runs show an image written under the Mac's identity accepted there?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/identity-mac-metal.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SESSION/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.7",
@@ -78,10 +78,10 @@
           "check": "python3 scripts/session_match.py image-costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/image-costs-mac-metal.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SESSION/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.8",
@@ -89,8 +89,8 @@
           "check": "python3 scripts/session_match.py image-costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SESSION/M1/image-costs-chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -99,10 +99,10 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this milestone change any item, test or comparison of SIM-2D's?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/sim2d-mac-metal.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SESSION/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.10",
@@ -110,16 +110,39 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As exact as Factorio's map transfer to a joining player, after which the newcomer's world matches the server's checksum for checksum, and as careful with untrusted bytes as thrum-network's existing decoders. An image carries everything the digest covers and nothing the machine it was made on, proved by stepping a restored world on to SIM-2D's own retained digests on all three targets."
+      "status": "in_progress",
+      "quality_bar": "As exact as Factorio's map transfer to a joining player, after which the newcomer's world matches the server's checksum for checksum, and as careful with untrusted bytes as thrum-network's existing decoders. An image carries everything the digest covers and nothing the machine it was made on, proved by stepping a restored world on to SIM-2D's own retained digests on all three targets.",
+      "findings": [
+        {
+          "name": "Different crowd rules accept the same world image and diverge",
+          "item": "M1.6",
+          "repeat": false
+        },
+        {
+          "name": "Malformed-image check uses a destination that rejects valid images",
+          "item": "M1.5",
+          "repeat": false
+        },
+        {
+          "name": "Mac cost record omits a host tick regression flag",
+          "item": "M1.7",
+          "repeat": false
+        },
+        {
+          "name": "Paired codecs changed accepted SIM-2D test fixtures",
+          "item": "M1.9",
+          "planner": "The frozen SIM-2D fixtures register encode-only types. M1.4 requires rejection of those types while M1.9 and the plan require those tests to stay unchanged. Decide the scope of the paired-codec boundary or allow fixture-only codec adaptations.",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M2",
