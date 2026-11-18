@@ -288,10 +288,10 @@
         },
         {
           "id": "D4.4",
-          "statement": "Through a resize driven by a scripted clock, the host presents the old generation, scaled with linear filtering into the resized drawable, until the new one is ready. The surface is reconfigured at most once a display tick and only while no surface texture is held. A build starts when the extent has been stable for the debounce, on the preparation thread. A newer extent cancels a running build, whose result is never bound. The render thread creates no texture, view, bind group or pipeline at any point.",
+          "statement": "Through a resize driven by a scripted clock, the host presents the old generation at its own extent, and asks for no change to the surface, until the new one is ready. A build starts when the extent has been stable for the debounce, on the preparation thread. A newer extent cancels a running build, whose result is never bound. The host asks for the surface to be reconfigured once for each generation it takes, to that generation's extent and in the step that takes it, and takes nothing when the reconfigure is refused. The render thread creates no texture, view, bind group or pipeline at any point.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test generation_transition",
           "lock": "gpu",
-          "ask": "Read the test. Does it drive the host's own resize and frame calls, count creations by thread, and include a control in which the build runs on the render thread and the count sees it? Is a superseded build's result shown never to reach a frame?",
+          "ask": "Read the test. Does it drive the host's own resize and frame calls, count creations by thread, and include a control in which the build runs on the render thread and the count sees it? Is a superseded build's result shown never to reach a frame, and a refused reconfigure shown to leave the old generation presenting?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -312,10 +312,10 @@
         },
         {
           "id": "D4.6",
-          "statement": "In the Mac game window, on both native recipes, a resize sweep made in code and a forced backing-scale change on the display record each keep frames presenting throughout, the old generation scaled until the new one is ready. Every display tick without a present during the sweep carries its reason in the frame record, and none is a wait for a build or for frames in flight to drain. Render-thread frame times through the sweep are on record beside the run without one, a spike is flagged as a tripwire, and no time decides the result.",
+          "statement": "In the Mac game window, on both native recipes, a resize sweep made in code and a forced backing-scale change on the display record each keep frames presenting throughout, the old generation at its own extent until the new one is ready. The surface is reconfigured once for each generation taken and at no other time in the sweep, and each frame's record carries the window's backing size beside the surface's extent. Every display tick without a present during the sweep carries its reason in the frame record: none is a wait for a build, and a wait for the GPU appears only inside a reconfigure, with its duration. Render-thread frame times through the sweep are on record beside the run without one, a spike is flagged as a tripwire, and no time decides the result.",
           "check": "python3 scripts/apple_presentation.py transition --target mac-metal",
           "lock": "gpu",
-          "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path?",
+          "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path, which reconfigures at every step?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -324,8 +324,12 @@
         },
         {
           "id": "D4.7",
-          "statement": "On the Mac a resize reads cleanly: while the edge moves the old picture is scaled smoothly, and the switch to the new size shows no black frame, flash, stretch that snaps, or ghost of the old picture.",
-          "inspect": "Capture the resize sweep and the backing-scale change with T2 engine capture in `realtime` mode on each native recipe. Judge the frames around every switch whole and in native-size crops of the terrain silhouette, the grid fixture and a thin prop. Say that you watched motion.",
+          "statement": "On the Mac a resize reads cleanly in the window itself. While the edge moves, the old picture fills the window, scaled smoothly, with no band or blank area. The switch to the new size is one clean change, with no black frame, flash, half-drawn frame or ghost of the old picture.",
+          "inspect": "Record the game window itself through the resize sweep and the backing-scale change with OS-window capture, on one native recipe, with the display held awake. Read runs of consecutive captured frames from while the size changes: the picture fills the window in each. Capture the same two changes with T2 engine capture in `realtime` mode on each native recipe, and judge the frames around every switch whole and in native-size crops of the terrain silhouette, the grid fixture and a thin prop. Name the frames read.",
+          "needs": {
+            "type": "access",
+            "what": "Screen Recording granted to the tool that captures the game window, with the Mac unlocked. The agent wakes the display, runs the capture and reviews it; nobody has to watch."
+          },
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

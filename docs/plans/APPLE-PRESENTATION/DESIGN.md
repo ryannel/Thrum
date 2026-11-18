@@ -11,7 +11,8 @@
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
 fresh design review of that revision passed on 11 November. Revised 14 November for M4 to M12
-([settled below](#m4-to-m12-settled-14-november-2026)); a design review of this revision is owed. It answers the three independent reviews of revision 1
+([settled below](#m4-to-m12-settled-14-november-2026)), and on 19 November for
+[the surface across a transition](#the-surface-across-a-transition-m4); a design review of this revision is owed. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -317,12 +318,11 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   requires, and is counted as its own phase. It may run where it runs today, on the render thread, because a lost
   device has nothing to present. Play resumes only when the new device generation is ready, and compiles nothing
   after that.
-- *Surface reconfigure during a drag.* Today `render_actor.rs:244-257` reconfigures only after every in-flight frame
-  completes, so it skips frames on each resize step. G4 changes the rule, with G3b owner review:
-  - reconfigure when no `SurfaceTexture` is held, not when GPU work is pending;
-  - coalesce to at most one reconfigure per display tick.
-
-  In-flight GPU work that targets an already-presented drawable is unaffected on Metal.
+- *The surface during a drag.* Today `render_actor.rs` reconfigures at every resize step, and only after every
+  in-flight frame completes, so it skips frames throughout a drag. G4 changes the rule, with G3b owner review: the
+  surface is left as configured while the size changes, the layer scales the picture, and the surface is
+  reconfigured once, in the step that takes the generation built for the new size.
+  [The surface across a transition](#the-surface-across-a-transition-m4) gives the rule and why.
 - *Off-thread build.* This needs `PreparedSynthetic` split in two:
   - an immutable prepared part (pipelines, layouts, samplers), shared behind an `Arc`, which the builder reads;
   - per-generation state (targets, per-slot frame buffers, bind groups, providers), which the builder creates.
@@ -426,10 +426,10 @@ the device generation. The frame host holds the latest request, and one build at
 | State | Entered when | What the render thread does |
 |---|---|---|
 | Steady | A generation is current and matches the request | Draws it |
-| Debouncing | The request's extent changed during a live resize | Draws the current generation, scaled with linear filtering into the drawable; reconfigures the surface at most once a display tick and only while no surface texture is held |
+| Debouncing | The request's extent changed during a live resize | Draws the current generation at its own extent. The surface stays as configured, and the layer scales the picture to the window |
 | Building | The extent has been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor holds |
-| Ready | The build finished and its request is still the latest for the current device generation | At the next frame boundary, swaps the generation in and resets history and reconstruction |
-| Unmet | The build for the latest request failed, and the request has not changed | Draws the current generation, scaled into the drawable where the extents differ. No build runs, and the governor runs |
+| Ready | The build finished and its request is still the latest for the current device generation | At the next frame boundary, with no surface texture held, reconfigures the surface for the new generation, swaps the generation in and resets history and reconstruction |
+| Unmet | The build for the latest request failed, and the request has not changed | Draws the current generation at its own extent; the surface stays as configured and the layer scales the picture. No build runs, and the governor runs |
 | Retiring | The swap happened | Keeps the old generation, providers included, until its frames in flight complete, as retirement works today |
 
 - **Cancellation.** A newer request sets the running build's cancel flag, which the builder reads between
@@ -444,7 +444,45 @@ the device generation. The frame host holds the latest request, and one build at
 - **The switch** is pointer swaps on the render thread, with one full upload of the new frame buffers in its
   first frame. No texture, view, bind group or pipeline is created on the render thread at any point of a
   transition, which the creation counters prove by thread. Recovery preparation after a lost device is not a
-  transition, and is counted apart.
+  transition, and is counted apart. So is the surface texture each acquisition returns, with the view of it:
+  those are presentation, made in every steady frame, and belong to no generation.
+
+### The surface across a transition (M4)
+
+**The rule.** The surface's configured extent and format are the current generation's, at every frame. They
+change only in the switch, in one step with the generation, or not at all.
+
+- **While the size changes, nothing touches the surface.** The drawable keeps the old generation's extent and the
+  present pass stays one render pixel to one drawable pixel. Core Animation scales the drawable to the layer's
+  bounds with linear filtering, in step with the window: that is the layer's default contents gravity, `resize`,
+  which the layer wgpu makes through raw-window-metal leaves in place on the Mac and on iOS for this purpose.
+  `resize` stretches to fill. The builder may set aspect fill instead if the stretch reads worse under D4.7;
+  neither leaves a band. The host therefore has no scaled present path, and the presenter extent, the history
+  key and engine capture's tap all stay still until the switch.
+- **At the switch the surface is reconfigured once**, through `Surface::configure`, with no surface texture held.
+  wgpu waits inside that call for every submission on the device to finish. The wait is paid once for each
+  generation taken, it is bounded by the frames in flight, and the compositor goes on showing the last drawable,
+  scaled, while it lasts. A display tick it costs is recorded with that reason and the wait's duration, as a
+  tripwire. The frames in flight have completed when the call returns, so the old generation retires at once.
+- **A refused reconfigure changes nothing.** wgpu refuses when another thread submits during its wait. The old
+  generation and the old configuration stay, the ready generation is kept, and the switch is tried at the next
+  frame boundary while its request is still the latest. The preparation thread starts no build while a switch is
+  under way. A second refusal for the same request ends as a failed build does: Unmet, and reported.
+- **iOS** follows the same rule inside its lease section. The lease, its epochs and revocation do not change.
+  Chrome is not affected: its canvas is resized by the page and prepared between two frames.
+
+**Why the surface is not resized as the edge moves.** Released wgpu-core 30.0.1 makes that wait in
+`Device::configure_surface` on every backend, for any surface of the device and from any thread, and the wgpu
+documentation calls it intended. No call through the released crates changes a drawable's size without it. A
+raw `setDrawableSize` behind wgpu leaves wgpu-core and the Metal backend describing the old size, which makes two
+authorities for one extent. The M4 builder's source audit found both, and
+[its handoff](../../evidence/APPLE-PRESENTATION/M4-handoff.md) records them. Two designs would remove the wait:
+an engine-owned drawable path beside wgpu's surface, or a patched copy of wgpu-core. Neither is taken. Each adds
+an authority or a pinned crate from M4 on, to save one wait that falls after the size has settled, and neither
+shows a better picture: a build starts only when the extent has been stable for the debounce, so the old picture
+is scaled through the whole drag in every design. Changing a layer's drawable size often is also its own risk:
+developers report `nextDrawable` stalling for about a second after such changes, with no fix from Apple
+([Apple developer forums](https://developer.apple.com/forums/thread/773229)).
 
 ### The governor across a build (M4 and M7)
 
@@ -689,7 +727,7 @@ pixels of the window, which is why the governor exists before the paired proof.
 - **MetalFX history does not track the GPU-written exposure.** Early sign: lag under a time scrub. Fallback: the
   costed normalising pre-pass.
 - **Transitions stall the render thread.** Early sign: render-thread frame time spikes during a resize. Guard:
-  counters by thread; a resize sequence.
+  counters by thread; a resize sequence; the reconfigure's wait on record at each switch.
 - **The governor oscillates or hides regressions.** Guard: hysteresis plus a minimum period. Tripwires compare at a
   replayed scale trace.
 - **EDR changes SDR appearance.** Guard: the H = 1 identity (D6.3) and the agents' inspection of the float
