@@ -25,7 +25,7 @@
   },
   "milestones": {
     "M5": {
-      "definitions": "d35752d8f6672aa39a1caa14454d94333e96183e6acd1f1398ad66a94a244d7a",
+      "definitions": "b234dd70d4011d398611b0c9e47beae0eb3f25a370213aabc994beac6ebbb719",
       "reviews": [
         {
           "verdict": "fail",
@@ -75,8 +75,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "SHOWCASE M5 is blocked needing a dependency: 'Fix the Sun-shadow discontinuity and the remaining frame stalls, then veri",
-        "at": "2026-11-18T08:48:12Z"
+        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findi",
+        "at": "2026-11-18T10:38:55Z"
       }
     },
     "M6": {
@@ -96,36 +96,22 @@
       ]
     },
     "M7": {
-      "definitions": "cd4cd92bc059ca597df536069708906f3aa6741a531c43c17e4247d8e0b014e7",
+      "definitions": "2ac212f7fed1c669106c5f49bd931a57c64f11a34b593916dc463300ff231d49",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findi",
+        "at": "2026-11-18T10:38:55Z"
+      }
     },
     "M8": {
-      "definitions": "e47ae0de7b70cc950e86ad4bd6ddabb0f8df3b60eb50eab360a7e8683c055335",
+      "definitions": "62a4c8eeb517e8c74f1c2ca245d9e159b9bbe0e3d6cae92922a817221ed7de9a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T16:54:40Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findi",
+        "at": "2026-11-18T10:38:55Z"
+      }
     }
   },
   "briefs": [
@@ -148,11 +134,15 @@
     {
       "task": "SHOWCASE M5 is blocked needing a dependency: 'Fix the Sun-shadow discontinuity and the remaining frame stalls, then verify continuous motion on Metal and Chrome.' Handoff: docs/evidence/SHOWCASE/M5-handoff.md on build/showcase (1556e66d0). Add the Sun-shadow fix to the module that owns the Sun-shadow renderer (a strip appears on Metal at committed ticks 233-234 on the exit camera, reproduced with every tick submitted), as the smallest milestone item that fixes it without changing the meaning of registered exact references.\n\nLead: under the owner's 17 Nov bar, the whole-frame gaps (121.8 and 176.1 ms in Chrome, also seen with capture off on the Mac) were measured while several builders shared this machine; treat them as a tripwire record labelled with load, not a gate. Rewrite M5.8/M5.9 so they don't block on host scheduling noise. Unblock SHOWCASE M5 once the shadow item exists.",
       "at": "2026-11-18T08:48:12Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T10:38:55Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T08:48:12Z"
+    "at": "2026-11-18T10:38:55Z"
   },
   "design_history": [
     {
