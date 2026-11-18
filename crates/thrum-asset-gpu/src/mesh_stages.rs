@@ -6,6 +6,7 @@ use thrum_render::runtime::DeviceSite;
 use crate::material::MeshSurface;
 
 const GROUP: u32 = 4;
+const VIEW_BINDING: u32 = 9;
 const RUN: u32 = 64;
 const STAGES: wgpu::ShaderStages = wgpu::ShaderStages::TASK.union(wgpu::ShaderStages::MESH);
 const NO_REJECTION_REPORT: &str = "fn cooked_report_rejection(_reason: u32) {}";
@@ -127,6 +128,8 @@ pub(crate) fn exclusion(
 pub(crate) struct Layout {
     group: wgpu::BindGroupLayout,
     pipeline: wgpu::PipelineLayout,
+    view: wgpu::Buffer,
+    view_size: Option<wgpu::BufferSize>,
     #[cfg(feature = "draw-probe")]
     rejections: Option<wgpu::Buffer>,
     #[cfg(feature = "draw-probe")]
@@ -135,7 +138,7 @@ pub(crate) struct Layout {
 
 impl Layout {
     fn new(surface: &SceneSurface<'_>, config: &crate::CookedConfig) -> Self {
-        let default_entries: [_; 7] = std::array::from_fn(|i| wgpu::BindGroupLayoutEntry {
+        let stream_entries: [_; 7] = std::array::from_fn(|i| wgpu::BindGroupLayoutEntry {
             binding: u32::try_from(i).expect("mesh group binding fits u32"),
             visibility: match i {
                 0 => STAGES,
@@ -150,6 +153,20 @@ impl Layout {
                 },
                 has_dynamic_offset: false,
                 min_binding_size: None,
+            },
+            count: None,
+        });
+        // wgpu 30 Metal misindexes buffers in groups shared by vertex,
+        // fragment, compute and mesh stages. Bind the same authoritative view
+        // range through the stage-only placement group, with no extra upload.
+        let mut default_entries = stream_entries.to_vec();
+        default_entries.push(wgpu::BindGroupLayoutEntry {
+            binding: VIEW_BINDING,
+            visibility: STAGES,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: true,
+                min_binding_size: surface.mesh_view_uniform.size,
             },
             count: None,
         });
@@ -183,6 +200,8 @@ impl Layout {
         Self {
             group,
             pipeline,
+            view: surface.mesh_view_uniform.buffer.clone(),
+            view_size: surface.mesh_view_uniform.size,
             #[cfg(feature = "draw-probe")]
             rejections,
             #[cfg(feature = "draw-probe")]
@@ -312,24 +331,30 @@ impl Layout {
         device: &wgpu::Device,
         buffers: [&wgpu::Buffer; 7],
     ) -> wgpu::BindGroup {
-        let entries: [_; 7] = std::array::from_fn(|i| wgpu::BindGroupEntry {
+        let stream_entries: [_; 7] = std::array::from_fn(|i| wgpu::BindGroupEntry {
             binding: u32::try_from(i).expect("mesh group binding fits u32"),
             resource: buffers[i].as_entire_binding(),
         });
+        let mut entries = stream_entries.to_vec();
+        entries.push(wgpu::BindGroupEntry {
+            binding: VIEW_BINDING,
+            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                buffer: &self.view,
+                offset: 0,
+                size: self.view_size,
+            }),
+        });
         #[cfg(feature = "draw-probe")]
-        let entries: Vec<_> = entries
-            .into_iter()
-            .chain(
-                [(7, &self.rejections), (8, &self.shadow_rejections)]
-                    .into_iter()
-                    .filter_map(|(binding, buffer)| {
-                        Some(wgpu::BindGroupEntry {
-                            binding,
-                            resource: buffer.as_ref()?.as_entire_binding(),
-                        })
-                    }),
-            )
-            .collect();
+        entries.extend(
+            [(7, &self.rejections), (8, &self.shadow_rejections)]
+                .into_iter()
+                .filter_map(|(binding, buffer)| {
+                    Some(wgpu::BindGroupEntry {
+                        binding,
+                        resource: buffer.as_ref()?.as_entire_binding(),
+                    })
+                }),
+        );
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("cooked mesh stages"),
             layout: &self.group,
@@ -350,7 +375,7 @@ fn rejection_shader(binding: u32) -> String {
 fn rejection_layout(
     surface: &SceneSurface<'_>,
     config: &crate::CookedConfig,
-    defaults: &[wgpu::BindGroupLayoutEntry; 7],
+    defaults: &[wgpu::BindGroupLayoutEntry],
 ) -> (
     Vec<wgpu::BindGroupLayoutEntry>,
     Option<wgpu::Buffer>,
@@ -393,7 +418,12 @@ fn rejection_layout(
     (entries, rejections, shadow_rejections)
 }
 
-pub(crate) fn draw(pass: &mut wgpu::RenderPass<'_>, bind: &wgpu::BindGroup, meshlets: u32) {
-    pass.set_bind_group(GROUP, bind, &[]);
+pub(crate) fn draw(
+    pass: &mut wgpu::RenderPass<'_>,
+    bind: &wgpu::BindGroup,
+    meshlets: u32,
+    view_offset: u32,
+) {
+    pass.set_bind_group(GROUP, bind, &[view_offset]);
     pass.draw_mesh_tasks(groups(meshlets), 1, 1);
 }

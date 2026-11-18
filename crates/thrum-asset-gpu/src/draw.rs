@@ -884,7 +884,7 @@ impl Pipelines {
                 stages = Some(stage.is_some());
             }
             if let Some((group, _)) = stage {
-                crate::mesh_stages::draw(pass, group, mesh.meshlets);
+                crate::mesh_stages::draw(pass, group, mesh.meshlets, 0);
                 continue;
             }
             pass.set_vertex_buffer(0, mesh.vertex[0].slice(..));
@@ -902,6 +902,7 @@ impl Pipelines {
         bound: &Bound,
         pass: &mut wgpu::RenderPass<'_>,
         mesh: Option<&MeshPipelines>,
+        view_offset: u32,
     ) {
         let pipelines = mesh.unwrap_or(&self.mesh);
         let mut stages = None;
@@ -913,7 +914,7 @@ impl Pipelines {
             }
             if let Some((group, _)) = stage {
                 pass.set_bind_group(2, &mesh.material, &[]);
-                crate::mesh_stages::draw(pass, group, mesh.meshlets);
+                crate::mesh_stages::draw(pass, group, mesh.meshlets, view_offset);
                 continue;
             }
             mesh.bind_draw(pass);

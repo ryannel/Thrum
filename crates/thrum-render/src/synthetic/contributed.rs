@@ -176,6 +176,11 @@ impl PreparedSynthetic {
             shader_source: &self.surface.shader_source,
             pipeline_layout: &self.surface.pipeline_layout,
             view_layout: &self.view_layout,
+            mesh_view_uniform: wgpu::BufferBinding {
+                buffer: &self.view_buffer,
+                offset: 0,
+                size: wgpu::BufferSize::new(super::VIEW_BYTES as u64),
+            },
             light_layout: &self.surface.light_layout,
             material_layout: &self.surface.material_layout,
             fragment_entry: self.surface.fragment_entry,
@@ -216,6 +221,7 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map(crate::atmosphere::AtmospherePrepared::environment),
             view_proj: view.raster_projection().to_cols_array_2d(),
+            view_uniform_offset: self.view_stride * u32::from(self.frame_revision & 1 != 0),
             camera: view.camera_position(),
             generation: self.key.device_generation,
             history_reset: view.history_reset(),

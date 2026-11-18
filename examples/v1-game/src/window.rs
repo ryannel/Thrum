@@ -160,6 +160,15 @@ struct CaptureCooked {
     path: thrum_asset_gpu::CookedDrawPath,
 }
 
+impl CaptureCooked {
+    fn new(folder: &std::path::Path, capture: RuntimeCaptureOutput) -> Self {
+        Self {
+            folder: folder.to_owned(),
+            path: capture.cooked_path(),
+        }
+    }
+}
+
 /// Construct the ordinary game for the engine's headless presenter adapter.
 /// # Errors
 /// Returns a demo-control declaration failure.

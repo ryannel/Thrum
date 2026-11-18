@@ -547,19 +547,8 @@ async fn record(
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) = metal_device(&instance, 1, hardware).await?;
-    let mut driver = Offscreen::new(
-        super::capture_game_with_route_limit(
-            matches!(scenario, "clouds-route" | "exit-route"),
-            Some(super::CaptureCooked {
-                folder: output.to_owned(),
-                path: capture_output.cooked_path(),
-            }),
-        )?,
-        &device,
-        &capabilities,
-        &queue,
-        extent,
-    )?;
+    let game = capture_game(output, scenario, capture_output)?;
+    let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
     let motion_capture = mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift");
     if motion_capture {
         driver.set_timing_requested(false);
@@ -746,6 +735,17 @@ async fn record(
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
     write_runtime_report(output, result, &driver, &capabilities, &admission)
+}
+
+fn capture_game(
+    output: &Path,
+    scenario: &str,
+    capture_output: RuntimeCaptureOutput,
+) -> Result<impl Game, String> {
+    super::capture_game_with_route_limit(
+        matches!(scenario, "clouds-route" | "exit-route"),
+        Some(super::CaptureCooked::new(output, capture_output)),
+    )
 }
 
 fn write_runtime_report<G: Game>(
@@ -973,8 +973,10 @@ pub(super) fn prepare_route(
     render_extent: [u32; 2],
     gpu: &thrum_app::Gpu<'_>,
     cloud_capture: bool,
-    _report_folder: Option<&Path>,
+    report_folder: Option<&Path>,
 ) -> Result<Duration, String> {
+    #[cfg(not(feature = "draw-probe"))]
+    let _ = report_folder;
     let camera = host
         .scene_camera()
         .ok_or("routed capture needs the cooked valley camera")?;
@@ -1025,7 +1027,7 @@ pub(super) fn prepare_route(
                     return Err("routed capture generation mismatch".to_owned());
                 }
                 #[cfg(feature = "draw-probe")]
-                if let Some(output) = _report_folder {
+                if let Some(output) = report_folder {
                     let report = json!({
                         "generation": generation,
                         "recipe": format!("{:?}", stats.recipe),

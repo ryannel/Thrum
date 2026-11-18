@@ -72,12 +72,16 @@ impl<'a> Valley<'a> {
                 extent,
             }),
         };
+        let mut setup = v1_game::selected_setup().expect("game setup");
+        if extent == PROOF_EXTENT {
+            setup.display_overlay = thrum_render::synthetic::DisplayOverlay::TemporalInputs;
+        }
         let mut host = pollster::block_on(FrameHost::new_with_setup(
             &gpu.device,
             &gpu.queue,
             &gpu.capabilities,
             config,
-            v1_game::selected_setup().expect("game setup"),
+            setup,
         ))
         .expect("production game host");
         host.set_scene_camera(camera).expect("authored camera");
@@ -292,6 +296,16 @@ fn valley_cull_equal() {
             let time = Duration::from_secs_f64(valley.host.route_step_ms(0.5) / 1000.0);
             let (sample, temporal) = valley.frame(time, Witness::Temporal);
             assert_eq!(sample.tick, tick, "missing or duplicate fixed route sample");
+            let geometry = temporal
+                .as_chunks::<8>()
+                .0
+                .iter()
+                .filter(|pixel| u16::from_le_bytes([pixel[2], pixel[3]]) & 0x7fff != 0)
+                .count();
+            assert!(
+                geometry > 1000,
+                "route tick {route_tick} omitted the valley geometry ({geometry} pixels)"
+            );
             let image = valley.image(&sample);
             let name = root.join(format!("valley-{route_tick}.raw"));
             let temporal_name = root.join(format!("valley-{route_tick}-temporal.raw"));
@@ -399,7 +413,7 @@ fn fixed_stops() {
             let mut valley = Valley::new(&gpu, path, true, extent, hour, false);
             let route = valley.install_route(hour);
             for tick in 0..=360 {
-                let stop = [0, 90, 180, 199, 200, 230, 290, 340, 360].contains(&tick);
+                let stop = [0, 90, 180, 200, 201, 230, 290, 340, 360].contains(&tick);
                 if stop {
                     valley
                         .host

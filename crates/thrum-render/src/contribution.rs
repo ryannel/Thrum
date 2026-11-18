@@ -159,6 +159,9 @@ pub struct SceneSurface<'a> {
     pub pipeline_layout: &'a wgpu::PipelineLayout,
     /// Group 0 (view) layout.
     pub view_layout: &'a wgpu::BindGroupLayout,
+    /// The main view's existing packed uniform at offset zero. Mesh-stage
+    /// bindings apply the recording's `ContributionFrame::view_uniform_offset`.
+    pub mesh_view_uniform: wgpu::BufferBinding<'a>,
     /// Group 1 (light) layout.
     pub light_layout: &'a wgpu::BindGroupLayout,
     /// Group 2 (material) layout: material records, four texture arrays and a sampler.
@@ -292,6 +295,8 @@ pub struct ContributionFrame {
     /// Culling uses the same raster frustum as the forward vertices; motion uses
     /// the separately bound unjittered matrices.
     pub view_proj: [[f32; 4]; 4],
+    /// Dynamic byte offset of the packed main view selected for this recording.
+    pub view_uniform_offset: u32,
     /// Declared world-space camera position, without matrix inversion. A secondary
     /// camera must copy coordinates 0 and 2 exactly to stand on this camera's vertical.
     pub camera: [f32; 3],

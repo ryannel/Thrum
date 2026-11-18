@@ -1160,7 +1160,6 @@ impl PreparedSynthetic {
             camera_mode,
             shadow_enabled,
             matches!(lighting, FrameLighting::Atmosphere(_)),
-            forward::mesh_stage_visibility(capabilities.features()),
         );
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic view and target aux"),

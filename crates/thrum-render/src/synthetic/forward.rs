@@ -23,15 +23,13 @@ pub(super) fn view_entries(
     camera_mode: super::CullMode,
     shadowed: bool,
     atmosphere: bool,
-    mesh_stages: wgpu::ShaderStages,
 ) -> Vec<wgpu::BindGroupLayoutEntry> {
     let mut entries = vec![
         wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::VERTEX
                 | wgpu::ShaderStages::FRAGMENT
-                | wgpu::ShaderStages::COMPUTE
-                | mesh_stages,
+                | wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: true,

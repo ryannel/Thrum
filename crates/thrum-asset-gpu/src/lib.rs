@@ -490,6 +490,7 @@ struct Pending {
 /// One frame's recording.
 #[derive(Clone, Copy, Default)]
 struct Tentative {
+    view_offset: u32,
     recorded: Option<staging::Recorded>,
     /// The pending set's last copies are in this frame, which draws it.
     swap: bool,
@@ -1058,6 +1059,7 @@ impl SceneContribution for CookedAssets {
             live.pending = None;
         }
         let mut tentative = Tentative {
+            view_offset: frame.view_uniform_offset,
             material: live.material.is_some(),
             ..Tentative::default()
         };
@@ -1155,7 +1157,9 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            live.pipelines.draw(bound, pass, live.mesh_override());
+            let view_offset = live.tentative.map_or(0, |record| record.view_offset);
+            live.pipelines
+                .draw(bound, pass, live.mesh_override(), view_offset);
         }
     }
 

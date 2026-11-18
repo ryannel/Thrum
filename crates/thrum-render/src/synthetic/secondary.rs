@@ -282,7 +282,6 @@ impl SecondaryPrepared {
             prepared.camera_culling(),
             prepared.shadow.is_some(),
             prepared.atmosphere.is_some(),
-            wgpu::ShaderStages::empty(),
         );
         entries.push(super::uniform_layout(
             6,
