@@ -271,12 +271,24 @@ def main():
                 os.environ['THRUM_V1_ROUTE_OUT'] = str(session_out / 'route')
                 route = runpy.run_path('examples/v1-game-ios/ios/route.py')
                 sys.argv = previous_argv
-                extent_proof = route['extent_proof']
                 fov = json.loads(Path('examples/v1-game/assets/showcase/scene.json').read_text())['camera']['vertical_fov_degrees']
-                route['rotate'].__globals__['extent_proof'] = lambda s: extent_proof(s, fov)
 
                 start = still('start', 1, before)
-                rotated = route['rotate']('landscape', 'testLandscape', state(), landscape=True)
+                portrait = state()
+                driver = route['gesture']('testLandscape')
+                try:
+                    rotated = wait(
+                        state,
+                        lambda s: int(s.get('resize_events', 0)) > int(portrait['resize_events'])
+                        and int(s.get('presented_epoch', 0)) > int(portrait['presented_epoch'])
+                        and int(s.get('presented', 0)) > int(portrait['presented'])
+                        and route['extent'](s)[0] > route['extent'](s)[1],
+                        'presented landscape drawable', route['TOUCH_WINDOW'])
+                finally:
+                    route['finish'](driver)
+                if any(rotated[key] != portrait[key] for key in ('pid', 'installs', 'device_generation')):
+                    raise RuntimeError('rotation replaced the process, surface install or device')
+                route['extent_proof'](rotated, fov)
                 landscape = still('landscape', 2, rotated)
                 resumed = route['background'](state(), 'host-lifecycle')
                 foreground = still('resumed', 3, resumed)
