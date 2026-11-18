@@ -8,9 +8,11 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
-const configuredExportSlots = Number(query.get('export-slots'));
-const exportSlots = scene === 'exit' && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
 const witness = query.get('witness') ?? 'off';
+const configuredExportSlots = Number(query.get('export-slots'));
+const exportSlots = (scene === 'exit' || witness !== 'off') && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
+const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
+  (scene === 'exit' || witness !== 'off');
 const useAnimationFrame = scene === 'exit' && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
 if (!['day', 'night', 'noon', 'exit'].includes(scene)) throw new Error('Unknown route scene');
@@ -67,7 +69,7 @@ try {
   if (query.get('overlay') === 'off') { route.overlay = 'off'; text = JSON.stringify(route); }
   record.effective_route = route;
   record.scene = scene;
-  if (useAnimationFrame && control === 'ordinary') {
+  if (useUploadWorker) {
     uploadWorker = await startCaptureUploadWorker();
     const bytes = route.render_extent[0] * route.render_extent[1] * (source === 'scene-linear' ? 8 : 4);
     for (let index = 0; index < exportSlots; index++) reusablePixels.push(new Uint8Array(bytes));

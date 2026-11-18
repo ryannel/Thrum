@@ -61,16 +61,17 @@ for (const file of sourceFiles) {
 }
 const route = JSON.parse(captureRoute ?? files.movingRoute);
 const frameBytes = route.render_extent[0] * route.render_extent[1] * (args.source === 'scene-linear' ? 8 : 4);
+const spoolRaw = args.mode === 'realtime' && args.control === 'ordinary' &&
+  (args.scene === 'exit' || args.witness !== 'off');
 const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, reconstruction: args.reconstruction, witness: args.witness, diagnostic_clouds: args['diagnostic-clouds'], overlay: args.overlay, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
-if (args.scene === 'exit') {
-  manifest.record_limit = 1800;
+if (args.scene === 'exit' || spoolRaw) {
+  manifest.record_limit = args.scene === 'exit' ? 1800 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
-  manifest.export_slots = args.mode === 'realtime' && args.control === 'ordinary' &&
-    frameBytes <= 1280 * 720 * 4 ? 64 : 24;
+  manifest.export_slots = spoolRaw && frameBytes <= 1280 * 720 * 4 ? 64 : 24;
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
 manifest.effect = args.effect;
@@ -83,7 +84,6 @@ execFileSync('/usr/bin/swiftc', ['-module-cache-path', path.join(output, 'swift-
 execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle]);
 manifest.launcher = { sha256: sha(await fs.readFile(launcher)), scope: 'LaunchServices app identity, preflight must be false before starting Chrome; no permission request' };
 let child, cdp, server, cook, ended = false, failure;
-const spoolRaw = args.scene === 'exit' && args.mode === 'realtime' && args.control === 'ordinary';
 const retainRaw = args['retain-raw'] === 'on';
 const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
