@@ -246,17 +246,20 @@ impl Game for WindowGame {
         ))?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let content = if let Some(cooked) = &self.capture_cooked {
+            if exit {
+                let selection = host.culling_selection();
+                let report = serde_json::json!({
+                    "requested": format!("{:?}", selection.requested),
+                    "resolved": format!("{:?}", selection.resolved),
+                    "reason": format!("{:?}", selection.reason),
+                });
+                std::fs::write(cooked.folder.join("culling.json"), report.to_string())
+                    .map_err(|error| error.to_string())?;
+            }
             crate::content::attach_cooked_scene_with_path(&mut host, cooked.path)?
         } else {
             crate::attach_cooked_scene(&mut host)?
         };
-        if exit {
-            let selection = host.culling_selection();
-            eprintln!(
-                "Exit culling: {:?} (requested {:?}, reason {:?})",
-                selection.resolved, selection.requested, selection.reason
-            );
-        }
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
             capture::prepare_route(
