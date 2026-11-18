@@ -518,3 +518,7 @@
   The builder and independent inspector still saw shelves, an overhead silhouette break and repeated caps.
   M3.1 remains open. The branch restores 0.61 for the prior passing proofs.
   The lead's next step is to move the form cue to a later milestone.
+
+- 2026-11-19 M3.1 passes the revised whole-sky inspection on the retained 0.61 Metal matrix.
+  [The six views and lossless translation pair](../../evidence/CLOUDS/M3-type-plane/README.md#m31-form)
+  show separate clouds with open gaps and relative motion between near crests and distant clusters.

@@ -473,8 +473,8 @@
           "statement": "At noon under the fair preset, from 2 m and from 40 m, the sky reads at a glance as scattered cumulus: separate clouds with open sky between them, sizes that vary, bases near one level and solid interiors. No grid shows, and near clouds move against far ones as the camera moves. The form of a single cloud is M17.1's and is not judged here: a shelf, a lip or level band under a cloud, a fold or squared break in an outline, and a dome, cap or cone that repeats fail nothing in this item.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, looking toward, across and away from the Sun, from 2 m and from 40 m, and one pair taken 40 m apart. Judge each frame whole, and the pair for clouds that shift against one another.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
           "verdict": "",
           "review": ""
         },
