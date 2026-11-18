@@ -115,3 +115,8 @@
   image-writing tick is a defect in `scripts/session_match.py` against the item as written. M1.1 to M1.4, M1.8
   and M1.10 are unchanged. Check commands are the approved ones and were not run again, so as not to take
   Chrome and the simulator. The revised design needs a design review.
+- 2026-11-18 Bound the image identity to the configured Crowd or Mixed rules and verified refusal in both
+  directions. Each untrusted-image fixture now rejects malformed input on a fresh destination that then
+  accepts the intact control. All three targets matched the retained digests. The Mac cost record flags the
+  increase in the 5,000-body write tick. The [M1 proof](../../evidence/SESSION/M1.md) records the target runs,
+  SIM-2D fixture audit and the shared exact-image check.
