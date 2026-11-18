@@ -41,4 +41,26 @@ RGBA bytes at each paired Mac stop. [Retained fixed images](M5-fixed-submitted.t
   24 refused ticks. The world resumed around 2.5 ms after the recorder observed overload,
   subsequently rendering 1,173 submissions through tick 1,293. The take reported incomplete.
 
+## Reproduced shadow transition
+
+A fresh visual reader found a dark strip appearing in the terrain shadow between Metal submissions
+521 and 522 at 4.449441 and 4.452691 seconds. The strip persists through submission 528. The camera
+advanced from tick 233 to 236 across those two submissions, following two longer submission gaps.
+The same balloons stay visible through the inspected sequence. [Consecutive submitted crops](M5-motion-shadow-crop.png)
+
+A separate fixed diagnostic replayed the same camera and rendered every tick. The crops from committed
+ticks 232, 233, 234 and 235 show the same strip appearing at tick 234. The comparison rectangle counts
+280, 2,710 and 308 pixels that darken by more than 30 points in mean RGB across each adjacent pair.
+This reproduces the shadow discontinuity without a missed render opportunity.
+[Fixed diagnostic crops, left to right](M5-motion-fixed-shadow-crop.png)
+
+Sampling the Mac real-time capture at the elapsed observation restores fractional interpolation. A
+follow-up kept 1,305 held images over 22.99 seconds and 1,403 route images over 24.51 seconds, each
+with zero capture omissions. It still had gaps of 54.02 ms in the held view and 70.00 ms on the route.
+Chrome's 64-buffer profile retained 1,450 images in a complete take, with gaps of 121.8 ms at
+9.238 seconds and 176.1 ms at 22.828 seconds.
+
 [Per-attempt timings, build identities and fixed-stop receipts](M5-motion-diagnostics.json)
+· [Lossless excerpts and source timing records](M5-motion-diagnostic-source.tar.gz)
+
+Restore the archive via `python3 scripts/evidence_store.py restore docs/evidence/SHOWCASE/M5-motion-diagnostic-source.tar.gz`.

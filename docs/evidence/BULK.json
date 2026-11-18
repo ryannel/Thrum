@@ -5667,6 +5667,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-motion-diagnostic-source.tar.gz",
+      "size": 42015187,
+      "sha256": "b24906831375f1f8cde364a2f579963a642c9062b8cc0c7cb463eca11e4652c1",
+      "date": "2026-11-18T01:42:28.199571+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-motion-samples.tar.gz",
       "size": 41879033,
       "sha256": "b4f567d5f3afdc7e7968e88c93bf8a870d349fa94ce88c45f1c7ee2b38d153a1",

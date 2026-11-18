@@ -90,8 +90,10 @@ Additional cases use the same binary:
 - `--case variants`: semantic noon/night/noon edits at one and three seconds, using the prepared star variants.
 - `--case route --route examples/v1-game/routes/moving-v1.json`: validates the cooked root and runs the checked route on the resident world lane. Use a route copy with a 1920×1080 render extent for this full-resolution driver. The initial hold precedes normal world resume, and the final hold follows the last authored tick.
 - `--case exit-route --route examples/v1-game/routes/exit-flythrough.json` and `--case exit-drift`: in
-  real time these request 60 Hz with GPU pass timing disabled. The output still records actual elapsed
-  submissions and world ticks. `--observer-only` runs the same scenario without image readback or a spool writer.
+  real time these request 60 Hz with GPU pass timing disabled. Each frame samples the actual elapsed
+  observation and records submission time, tick and interpolation. `--observer-only` runs the same scenario
+  without image readback or a spool writer. The driver resumes a world that overloaded and retains that
+  interval as incomplete evidence.
 
 `--params PATH` selects a checked parameter file before warmup. `--source scene-linear` captures the existing
 RGBA16Float scene colour after its last writer, including stars at night. It preserves all eight stored bytes

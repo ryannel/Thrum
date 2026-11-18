@@ -3751,6 +3751,415 @@
       ],
       "dirty_diff_sha256": "69e941393fc94817ba6e692509d19e144df2d258a0684e5903934764419db222",
       "build_source_digest": "1ac7dc92c4da6c25458b10e5d7abe9821ea8fdc40c9eada2c05f43c003a7658f"
+    },
+    {
+      "name": "elapsed-exit-drift",
+      "target": "mac-metal",
+      "revision": "37bc20bdb2bf5cace4c5a32f9a79fc1868935c4c",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "bca4c2440429a4eb5a3b402105cefd6a0ff0cd62503c6108e411766d1ecfcaf5",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 69,
+      "load_averages": [
+        [
+          8.3984375,
+          9.302734375,
+          10.2998046875
+        ],
+        [
+          7.529296875,
+          8.9765625,
+          10.14453125
+        ]
+      ],
+      "count": 1305,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 14.598,
+      "elapsed_s": 22.98975,
+      "median_interval_ms": 16.705,
+      "largest_intervals": [
+        {
+          "gap_ms": 54.018,
+          "elapsed_s": 1.571844,
+          "submissions": [
+            305,
+            306
+          ],
+          "ticks": [
+            33,
+            37
+          ],
+          "alpha": [
+            0.9204574823379517,
+            0.16683001816272736
+          ]
+        },
+        {
+          "gap_ms": 50.071,
+          "elapsed_s": 1.801204,
+          "submissions": [
+            313,
+            314
+          ],
+          "ticks": [
+            47,
+            50
+          ],
+          "alpha": [
+            0.6918874979019165,
+            0.6916724443435669
+          ]
+        },
+        {
+          "gap_ms": 42.575,
+          "elapsed_s": 9.757991,
+          "submissions": [
+            770,
+            771
+          ],
+          "ticks": [
+            524,
+            525
+          ],
+          "alpha": [
+            0.8419650197029114,
+            0.9475950002670288
+          ]
+        },
+        {
+          "gap_ms": 41.369,
+          "elapsed_s": 20.401314,
+          "submissions": [
+            1377,
+            1378
+          ],
+          "ticks": [
+            1163,
+            1166
+          ],
+          "alpha": [
+            0.7100775241851807,
+            0.18415750563144684
+          ]
+        },
+        {
+          "gap_ms": 40.764,
+          "elapsed_s": 2.901479,
+          "submissions": [
+            374,
+            375
+          ],
+          "ticks": [
+            113,
+            116
+          ],
+          "alpha": [
+            0.719135046005249,
+            0.15864501893520355
+          ]
+        },
+        {
+          "gap_ms": 40.542,
+          "elapsed_s": 14.668823,
+          "submissions": [
+            1049,
+            1050
+          ],
+          "ticks": [
+            819,
+            821
+          ],
+          "alpha": [
+            0.7539374828338623,
+            1.0
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "4f11b00cdffd66f343c2e435417064fce407569f4ac6ab5c59915284e3c18ac4"
+    },
+    {
+      "name": "elapsed-exit-route",
+      "target": "mac-metal",
+      "revision": "37bc20bdb2bf5cace4c5a32f9a79fc1868935c4c",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "bca4c2440429a4eb5a3b402105cefd6a0ff0cd62503c6108e411766d1ecfcaf5",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 60,
+      "load_averages": [
+        [
+          7.529296875,
+          8.9765625,
+          10.14453125
+        ],
+        [
+          6.9931640625,
+          8.72265625,
+          10.017578125
+        ]
+      ],
+      "count": 1403,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 16.371,
+      "elapsed_s": 24.508227,
+      "median_interval_ms": 16.808,
+      "largest_intervals": [
+        {
+          "gap_ms": 69.996,
+          "elapsed_s": 6.423908,
+          "submissions": [
+            603,
+            604
+          ],
+          "ticks": [
+            354,
+            355
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 56.827,
+          "elapsed_s": 9.356639,
+          "submissions": [
+            769,
+            770
+          ],
+          "ticks": [
+            530,
+            531
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 50.575,
+          "elapsed_s": 2.240902,
+          "submissions": [
+            368,
+            369
+          ],
+          "ticks": [
+            104,
+            104
+          ],
+          "alpha": [
+            0.2652149796485901,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 41.291,
+          "elapsed_s": 5.601456,
+          "submissions": [
+            556,
+            557
+          ],
+          "ticks": [
+            305,
+            307
+          ],
+          "alpha": [
+            0.9731899499893188,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 40.202,
+          "elapsed_s": 9.11947,
+          "submissions": [
+            756,
+            757
+          ],
+          "ticks": [
+            516,
+            519
+          ],
+          "alpha": [
+            1.0,
+            0.45587998628616333
+          ]
+        },
+        {
+          "gap_ms": 39.972,
+          "elapsed_s": 17.452363,
+          "submissions": [
+            1230,
+            1231
+          ],
+          "ticks": [
+            1016,
+            1019
+          ],
+          "alpha": [
+            1.0,
+            0.41777247190475464
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "4f11b00cdffd66f343c2e435417064fce407569f4ac6ab5c59915284e3c18ac4"
+    },
+    {
+      "name": "current-chrome",
+      "target": "chrome-webgpu",
+      "revision": "37bc20bdb2bf5cace4c5a32f9a79fc1868935c4c",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "renderer_omissions": 0,
+        "export_omissions": 0
+      },
+      "wasm_sha256": "a06b5f1f1a580636ed67f47d28146e1beba2bd28f83cc46c7bf5f8eb222d9f23",
+      "scheduling": "visible headless page, browser animation-frame callbacks and elapsed time",
+      "capture_off": false,
+      "dropped_views": 8,
+      "overload_events": 0,
+      "load_averages": [
+        [
+          5.302734375,
+          7.7490234375,
+          9.51318359375
+        ],
+        [
+          6.0615234375,
+          7.73486328125,
+          9.45654296875
+        ]
+      ],
+      "count": 1450,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 0,
+      "elapsed_s": 24.5153,
+      "median_interval_ms": 16.7,
+      "largest_intervals": [
+        {
+          "gap_ms": 176.1,
+          "elapsed_s": 22.828,
+          "submissions": [
+            1388,
+            1389
+          ],
+          "ticks": [
+            1338,
+            1346
+          ],
+          "alpha": [
+            0.9300000071525574,
+            0.9459999203681946
+          ]
+        },
+        {
+          "gap_ms": 121.8,
+          "elapsed_s": 9.2383,
+          "submissions": [
+            578,
+            579
+          ],
+          "ticks": [
+            523,
+            526
+          ],
+          "alpha": [
+            0.9800000190734863,
+            0.9800000190734863
+          ]
+        },
+        {
+          "gap_ms": 49.4,
+          "elapsed_s": 9.1212,
+          "submissions": [
+            575,
+            576
+          ],
+          "ticks": [
+            516,
+            519
+          ],
+          "alpha": [
+            0.984000027179718,
+            0.6479999423027039
+          ]
+        },
+        {
+          "gap_ms": 47.9,
+          "elapsed_s": 6.8722,
+          "submissions": [
+            442,
+            443
+          ],
+          "ticks": [
+            381,
+            384
+          ],
+          "alpha": [
+            0.9359999299049377,
+            0.8700000047683716
+          ]
+        },
+        {
+          "gap_ms": 43.9,
+          "elapsed_s": 9.1706,
+          "submissions": [
+            576,
+            577
+          ],
+          "ticks": [
+            519,
+            521
+          ],
+          "alpha": [
+            0.6479999423027039,
+            0.9159999489784241
+          ]
+        },
+        {
+          "gap_ms": 41.2,
+          "elapsed_s": 23.0041,
+          "submissions": [
+            1389,
+            1390
+          ],
+          "ticks": [
+            1346,
+            1351
+          ],
+          "alpha": [
+            0.9459999203681946,
+            0.949999988079071
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "browser": "Chrome/157.0.8103.79"
     }
   ],
   "fixed_recheck": {
@@ -3850,5 +4259,134 @@
     "last_tick": 1293,
     "complete": false,
     "source_revision": "2a41ed7e3"
+  },
+  "fixed_shadow_diagnostic": {
+    "revision": "37bc20bdb",
+    "target": "mac-metal",
+    "mode": "fixed",
+    "route_cooked_root": "3083a794f837963050dae3e566c788d6a9aad7fa7479309a46c1540cb0654643",
+    "crop_xywh": [
+      717,
+      360,
+      288,
+      150
+    ],
+    "roi_xywh": [
+      717,
+      385,
+      145,
+      105
+    ],
+    "pixels_darkening_by_over_30_channel_average": [
+      280,
+      2710,
+      308
+    ],
+    "frames_left_to_right": [
+      {
+        "route_tick": 201,
+        "capture": {
+          "alpha_bits": 1065351539,
+          "capture_source": "Sdr",
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1191621072,
+            1097660381,
+            1200377486,
+            0,
+            232,
+            0,
+            1
+          ],
+          "headroom": 1,
+          "history_epoch": 1,
+          "presenter_generation": 1,
+          "source_tick": 232,
+          "submission_id": 231,
+          "timeline": 0
+        },
+        "raw_sha256": "4829988a98de822ace06c4defcf982ecdcc9a9f88cff8e71cabfc7e54fdf7a9b"
+      },
+      {
+        "route_tick": 202,
+        "capture": {
+          "alpha_bits": 1065351538,
+          "capture_source": "Sdr",
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1191619356,
+            1097660087,
+            1200375704,
+            0,
+            233,
+            0,
+            1
+          ],
+          "headroom": 1,
+          "history_epoch": 1,
+          "presenter_generation": 1,
+          "source_tick": 233,
+          "submission_id": 232,
+          "timeline": 0
+        },
+        "raw_sha256": "982c70eecfa11d22dbdd639f6021d29e6bae9f3515ce99a766567d091ae42e09"
+      },
+      {
+        "route_tick": 203,
+        "capture": {
+          "alpha_bits": 1065351539,
+          "capture_source": "Sdr",
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1191617612,
+            1097659788,
+            1200373887,
+            0,
+            234,
+            0,
+            1
+          ],
+          "headroom": 1,
+          "history_epoch": 1,
+          "presenter_generation": 1,
+          "source_tick": 234,
+          "submission_id": 233,
+          "timeline": 0
+        },
+        "raw_sha256": "c0ba3b79d3e1e090fa01918fa34047b5e0a48971684030f78ac5270f132ec822"
+      },
+      {
+        "route_tick": 204,
+        "capture": {
+          "alpha_bits": 1065351539,
+          "capture_source": "Sdr",
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1191615886,
+            1097659492,
+            1200372086,
+            0,
+            235,
+            0,
+            1
+          ],
+          "headroom": 1,
+          "history_epoch": 1,
+          "presenter_generation": 1,
+          "source_tick": 235,
+          "submission_id": 234,
+          "timeline": 0
+        },
+        "raw_sha256": "9682ac4bdc55bdff670c79a4fe461c7e83ad411212d736430e36b6b971695a5d"
+      }
+    ]
   }
 }
