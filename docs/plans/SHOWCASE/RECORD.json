@@ -77,6 +77,32 @@
         "by": "plan",
         "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 1 Must Fix findi",
         "at": "2026-11-18T11:29:07Z"
+      },
+      "ready_for_review": {
+        "commit": "5f19c07030fc37c7be925d0b15285e5cddeb0835",
+        "checked": "8f69e56deb9c3cdea153b3088c87b89a7ee44431",
+        "at": "2026-11-18T18:46:37Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 1706493,
+          "cached": 210218624,
+          "output": 263025,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 2336265,
+          "cached": 328836480,
+          "output": 427983,
+          "turns": 5
+        }
       }
     },
     "M6": {
