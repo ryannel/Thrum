@@ -36,3 +36,8 @@
   drift, Metal culling and the Chrome pause. Inspected both targets' submitted stills and real-time motion.
   The 48-triangle tier was the lightest measured. No measured tier met both Mac recipes' interval.
   The integrated exact-image run remains the lead's gate. [Evidence](../../evidence/SHOWCASE/M5.md)
+- 2026-11-18 Followed up on M5.8 and M5.9 by removing optional pass timing from the exit motion
+  captures, bounding Chrome upload work away from the rendering callback, and recording native
+  world overload recovery. The six refreshed Chrome stops match the retained bytes. Complete
+  captures still show intermittent submission gaps under shared load.
+  [Motion diagnostics](../../evidence/SHOWCASE/M5-motion-diagnostics.md)

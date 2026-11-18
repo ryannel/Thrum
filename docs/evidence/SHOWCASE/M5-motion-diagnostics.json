@@ -2588,6 +2588,1169 @@
       ],
       "dirty_diff_sha256": "5563174044d1ff20e8fe14a7653abe940a93dc2e651750bab1b9581d5a8ac924",
       "browser": "Chrome/157.0.8103.79"
+    },
+    {
+      "name": "compare-chrome",
+      "target": "chrome-webgpu",
+      "revision": "37182f7dc8e4be29f65c32cf0b95cac43770e3af",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": false,
+      "omissions": {
+        "renderer_omissions": 0,
+        "export_omissions": 34
+      },
+      "wasm_sha256": "cafcd066536a3823c8c3b840c00863cc71151b0b6e00d22836649b8d14a8eac4",
+      "scheduling": "visible headless page, browser animation-frame callbacks and elapsed time",
+      "capture_off": false,
+      "dropped_views": 11,
+      "overload_events": 0,
+      "load_averages": [
+        [
+          5.568359375,
+          9.12353515625,
+          13.1640625
+        ],
+        [
+          5.3466796875,
+          8.7900390625,
+          12.9267578125
+        ]
+      ],
+      "count": 1411,
+      "time_scope": "actual submitted image",
+      "elapsed_s": 24.5169,
+      "median_interval_ms": 16.7,
+      "largest_intervals": [
+        {
+          "gap_ms": 581.7,
+          "elapsed_s": 18.72,
+          "submissions": [
+            1126,
+            1161
+          ],
+          "ticks": [
+            1093,
+            1127
+          ],
+          "alpha": [
+            0.00799993984401226,
+            0.9160000085830688
+          ]
+        },
+        {
+          "gap_ms": 87.4,
+          "elapsed_s": 9.6023,
+          "submissions": [
+            582,
+            583
+          ],
+          "ticks": [
+            545,
+            547
+          ],
+          "alpha": [
+            0.9760000109672546,
+            0.00799993984401226
+          ]
+        },
+        {
+          "gap_ms": 35.1,
+          "elapsed_s": 3.3021,
+          "submissions": [
+            206,
+            207
+          ],
+          "ticks": [
+            167,
+            170
+          ],
+          "alpha": [
+            0.9579999446868896,
+            0.004000000189989805
+          ]
+        },
+        {
+          "gap_ms": 35.0,
+          "elapsed_s": 1.1025,
+          "submissions": [
+            85,
+            86
+          ],
+          "ticks": [
+            35,
+            37
+          ],
+          "alpha": [
+            0.981999933719635,
+            0.9919999241828918
+          ]
+        },
+        {
+          "gap_ms": 34.9,
+          "elapsed_s": 2.5359,
+          "submissions": [
+            164,
+            165
+          ],
+          "ticks": [
+            121,
+            123
+          ],
+          "alpha": [
+            0.9860000014305115,
+            0.9900000095367432
+          ]
+        },
+        {
+          "gap_ms": 34.8,
+          "elapsed_s": 2.9538,
+          "submissions": [
+            187,
+            188
+          ],
+          "ticks": [
+            147,
+            149
+          ],
+          "alpha": [
+            0.006000000052154064,
+            0.03999999910593033
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "browser": "Chrome/157.0.8103.79"
+    },
+    {
+      "name": "followup-chrome",
+      "target": "chrome-webgpu",
+      "revision": "c242b40eeb18347ba0a97182da0bb8b2a37a9f44",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "renderer_omissions": 0,
+        "export_omissions": 0
+      },
+      "wasm_sha256": "cafcd066536a3823c8c3b840c00863cc71151b0b6e00d22836649b8d14a8eac4",
+      "scheduling": "visible headless page, browser animation-frame callbacks and elapsed time",
+      "capture_off": false,
+      "dropped_views": 8,
+      "overload_events": 0,
+      "load_averages": [
+        [
+          4.984375,
+          7.1474609375,
+          11.59619140625
+        ],
+        [
+          5.37841796875,
+          7.06884765625,
+          11.4384765625
+        ]
+      ],
+      "count": 1453,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 0,
+      "elapsed_s": 24.5137,
+      "median_interval_ms": 16.7,
+      "largest_intervals": [
+        {
+          "gap_ms": 132.7,
+          "elapsed_s": 18.7392,
+          "submissions": [
+            1146,
+            1147
+          ],
+          "ticks": [
+            1093,
+            1101
+          ],
+          "alpha": [
+            0.9620000720024109,
+            0.9359999895095825
+          ]
+        },
+        {
+          "gap_ms": 85.0,
+          "elapsed_s": 9.4036,
+          "submissions": [
+            593,
+            594
+          ],
+          "ticks": [
+            533,
+            538
+          ],
+          "alpha": [
+            0.9100000262260437,
+            0.968000054359436
+          ]
+        },
+        {
+          "gap_ms": 68.7,
+          "elapsed_s": 18.9898,
+          "submissions": [
+            1153,
+            1154
+          ],
+          "ticks": [
+            1109,
+            1112
+          ],
+          "alpha": [
+            0.028000060468912125,
+            0.9160000085830688
+          ]
+        },
+        {
+          "gap_ms": 50.9,
+          "elapsed_s": 18.637,
+          "submissions": [
+            1143,
+            1144
+          ],
+          "ticks": [
+            1087,
+            1088
+          ],
+          "alpha": [
+            0.8780000805854797,
+            0.843999981880188
+          ]
+        },
+        {
+          "gap_ms": 49.3,
+          "elapsed_s": 18.6899,
+          "submissions": [
+            1145,
+            1146
+          ],
+          "ticks": [
+            1091,
+            1093
+          ],
+          "alpha": [
+            0.03400000184774399,
+            0.9620000720024109
+          ]
+        },
+        {
+          "gap_ms": 46.5,
+          "elapsed_s": 9.3389,
+          "submissions": [
+            590,
+            591
+          ],
+          "ticks": [
+            529,
+            531
+          ],
+          "alpha": [
+            0.9620000720024109,
+            0.18000000715255737
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "browser": "Chrome/157.0.8103.79"
+    },
+    {
+      "name": "followup-mac-drift",
+      "target": "mac-metal",
+      "revision": "c242b40eeb18347ba0a97182da0bb8b2a37a9f44",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "9f30072af1bd664c1b4a808438124524a23fe176349acb0784b9c2db3d534711",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 81,
+      "load_averages": [
+        [
+          4.28076171875,
+          7.5966796875,
+          12.07373046875
+        ],
+        [
+          4.5302734375,
+          7.3740234375,
+          11.8623046875
+        ]
+      ],
+      "count": 1279,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 43.417,
+      "elapsed_s": 21.644989,
+      "median_interval_ms": 16.55,
+      "largest_intervals": [
+        {
+          "gap_ms": 238.688,
+          "elapsed_s": 21.406302,
+          "submissions": [
+            1515,
+            1516
+          ],
+          "ticks": [
+            1222,
+            1224
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 59.669,
+          "elapsed_s": 1.221976,
+          "submissions": [
+            311,
+            312
+          ],
+          "ticks": [
+            12,
+            13
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 45.447,
+          "elapsed_s": 21.321081,
+          "submissions": [
+            1513,
+            1514
+          ],
+          "ticks": [
+            1218,
+            1219
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 43.417,
+          "elapsed_s": 21.237252,
+          "submissions": [
+            1510,
+            1511
+          ],
+          "ticks": [
+            1213,
+            1213
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 39.773,
+          "elapsed_s": 21.366529,
+          "submissions": [
+            1514,
+            1515
+          ],
+          "ticks": [
+            1219,
+            1222
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 26.277,
+          "elapsed_s": 21.280669,
+          "submissions": [
+            1511,
+            1512
+          ],
+          "ticks": [
+            1213,
+            1216
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "ce2702e642dd344db07810a578a6377cc3362e12e56fa5f7ac7c7849df70827b"
+    },
+    {
+      "name": "followup-mac-route",
+      "target": "mac-metal",
+      "revision": "c242b40eeb18347ba0a97182da0bb8b2a37a9f44",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "9f30072af1bd664c1b4a808438124524a23fe176349acb0784b9c2db3d534711",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 2,
+      "load_averages": [
+        [
+          4.40771484375,
+          7.30126953125,
+          11.81005859375
+        ],
+        [
+          4.72216796875,
+          7.13330078125,
+          11.61767578125
+        ]
+      ],
+      "count": 1460,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 16.445,
+      "elapsed_s": 24.542047,
+      "median_interval_ms": 16.582,
+      "largest_intervals": [
+        {
+          "gap_ms": 47.918,
+          "elapsed_s": 13.869266,
+          "submissions": [
+            1070,
+            1071
+          ],
+          "ticks": [
+            801,
+            803
+          ],
+          "alpha": [
+            1.0,
+            0.9455724954605103
+          ]
+        },
+        {
+          "gap_ms": 44.927,
+          "elapsed_s": 23.685919,
+          "submissions": [
+            1654,
+            1655
+          ],
+          "ticks": [
+            1391,
+            1391
+          ],
+          "alpha": [
+            0.9455724954605103,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 41.559,
+          "elapsed_s": 12.951528,
+          "submissions": [
+            1018,
+            1019
+          ],
+          "ticks": [
+            746,
+            748
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 34.592,
+          "elapsed_s": 17.028642,
+          "submissions": [
+            1256,
+            1257
+          ],
+          "ticks": [
+            990,
+            992
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 34.171,
+          "elapsed_s": 4.783969,
+          "submissions": [
+            529,
+            530
+          ],
+          "ticks": [
+            255,
+            258
+          ],
+          "alpha": [
+            1.0,
+            0.945572555065155
+          ]
+        },
+        {
+          "gap_ms": 32.489,
+          "elapsed_s": 13.802214,
+          "submissions": [
+            1067,
+            1068
+          ],
+          "ticks": [
+            797,
+            799
+          ],
+          "alpha": [
+            1.0,
+            0.945572555065155
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "ce2702e642dd344db07810a578a6377cc3362e12e56fa5f7ac7c7849df70827b"
+    },
+    {
+      "name": "followup-mac-route-off",
+      "target": "mac-metal",
+      "revision": "c242b40eeb18347ba0a97182da0bb8b2a37a9f44",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "9f30072af1bd664c1b4a808438124524a23fe176349acb0784b9c2db3d534711",
+      "requested_hz": 60,
+      "capture_off": true,
+      "unsubmitted_opportunities": 13,
+      "load_averages": [
+        [
+          4.4873046875,
+          7.97900390625,
+          12.365234375
+        ],
+        [
+          4.28076171875,
+          7.5966796875,
+          12.07373046875
+        ]
+      ],
+      "count": 0,
+      "time_scope": "return after successful submission",
+      "largest_interval_ms": 94.601,
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "ce2702e642dd344db07810a578a6377cc3362e12e56fa5f7ac7c7849df70827b"
+    },
+    {
+      "name": "current-mac-drift",
+      "target": "mac-metal",
+      "revision": "4f7b10d6ae4e9b8834ec09cd2d350877a07aeb52",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "0813ce426c7a6f2b7c1147a4c031af99062ca0a007c49f1019a6f42c65944350",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 0,
+      "load_averages": [
+        [
+          5.9228515625,
+          6.58544921875,
+          10.11962890625
+        ],
+        [
+          5.74560546875,
+          6.48974609375,
+          9.9814453125
+        ]
+      ],
+      "count": 1380,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 18.227,
+      "elapsed_s": 22.991431,
+      "median_interval_ms": 16.376,
+      "largest_intervals": [
+        {
+          "gap_ms": 29.78,
+          "elapsed_s": 4.717912,
+          "submissions": [
+            508,
+            509
+          ],
+          "ticks": [
+            222,
+            223
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 26.012,
+          "elapsed_s": 3.201965,
+          "submissions": [
+            417,
+            418
+          ],
+          "ticks": [
+            131,
+            133
+          ],
+          "alpha": [
+            1.0,
+            0.930630087852478
+          ]
+        },
+        {
+          "gap_ms": 25.109,
+          "elapsed_s": 21.567786,
+          "submissions": [
+            1519,
+            1520
+          ],
+          "ticks": [
+            1233,
+            1235
+          ],
+          "alpha": [
+            1.0,
+            0.9306300282478333
+          ]
+        },
+        {
+          "gap_ms": 25.036,
+          "elapsed_s": 13.650983,
+          "submissions": [
+            1044,
+            1045
+          ],
+          "ticks": [
+            758,
+            760
+          ],
+          "alpha": [
+            1.0,
+            0.930630087852478
+          ]
+        },
+        {
+          "gap_ms": 25.012,
+          "elapsed_s": 18.067722,
+          "submissions": [
+            1309,
+            1310
+          ],
+          "ticks": [
+            1023,
+            1025
+          ],
+          "alpha": [
+            1.0,
+            0.9306300282478333
+          ]
+        },
+        {
+          "gap_ms": 24.984,
+          "elapsed_s": 17.201139,
+          "submissions": [
+            1257,
+            1258
+          ],
+          "ticks": [
+            971,
+            973
+          ],
+          "alpha": [
+            1.0,
+            0.930630087852478
+          ]
+        }
+      ],
+      "movie_sha256": "1c63a9710e216ebd6b307ece24a4b16eaeacb2d073c5d536238c33a4027e88d1",
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "acfcbdf6e81f00826e34621fbdb86e1d78adc275adc9673913736010259f79f2"
+    },
+    {
+      "name": "current-mac-route",
+      "target": "mac-metal",
+      "revision": "4f7b10d6ae4e9b8834ec09cd2d350877a07aeb52",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "0813ce426c7a6f2b7c1147a4c031af99062ca0a007c49f1019a6f42c65944350",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 0,
+      "load_averages": [
+        [
+          5.74560546875,
+          6.48974609375,
+          9.9814453125
+        ],
+        [
+          7.45068359375,
+          6.76171875,
+          9.9541015625
+        ]
+      ],
+      "count": 1467,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 13.765,
+      "elapsed_s": 24.540846,
+      "median_interval_ms": 16.443,
+      "largest_intervals": [
+        {
+          "gap_ms": 69.294,
+          "elapsed_s": 4.380147,
+          "submissions": [
+            520,
+            521
+          ],
+          "ticks": [
+            229,
+            233
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 56.156,
+          "elapsed_s": 4.323991,
+          "submissions": [
+            519,
+            520
+          ],
+          "ticks": [
+            228,
+            229
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 38.628,
+          "elapsed_s": 14.338715,
+          "submissions": [
+            1115,
+            1116
+          ],
+          "ticks": [
+            829,
+            830
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 28.439,
+          "elapsed_s": 10.668889,
+          "submissions": [
+            895,
+            896
+          ],
+          "ticks": [
+            609,
+            611
+          ],
+          "alpha": [
+            1.0,
+            0.8750525712966919
+          ]
+        },
+        {
+          "gap_ms": 26.527,
+          "elapsed_s": 9.85563,
+          "submissions": [
+            846,
+            847
+          ],
+          "ticks": [
+            560,
+            561
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 25.819,
+          "elapsed_s": 21.285281,
+          "submissions": [
+            1531,
+            1532
+          ],
+          "ticks": [
+            1246,
+            1247
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "movie_sha256": "9bc41cc0a229161434db577847d05e6b4da0768eb424122dcac67459ad40e94d",
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "acfcbdf6e81f00826e34621fbdb86e1d78adc275adc9673913736010259f79f2"
+    },
+    {
+      "name": "current-mac-route-off",
+      "target": "mac-metal",
+      "revision": "4f7b10d6ae4e9b8834ec09cd2d350877a07aeb52",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "0813ce426c7a6f2b7c1147a4c031af99062ca0a007c49f1019a6f42c65944350",
+      "requested_hz": 60,
+      "capture_off": true,
+      "unsubmitted_opportunities": 0,
+      "load_averages": [
+        [
+          6.72802734375,
+          6.77490234375,
+          10.31103515625
+        ],
+        [
+          5.9228515625,
+          6.58544921875,
+          10.11962890625
+        ]
+      ],
+      "count": 0,
+      "time_scope": "return after successful submission",
+      "largest_interval_ms": 75.28,
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "acfcbdf6e81f00826e34621fbdb86e1d78adc275adc9673913736010259f79f2"
+    },
+    {
+      "name": "acceptance-exit-drift",
+      "target": "mac-metal",
+      "revision": "2a41ed7e38b38046e104f39289ad1e1d9df59e7c",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "140991735cfa8808af33e80da54517b88486f500d8d502869dd94f8cf17919eb",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 0,
+      "load_averages": [
+        [
+          16.39990234375,
+          10.9248046875,
+          11.07666015625
+        ],
+        [
+          12.8466796875,
+          10.5810546875,
+          10.94580078125
+        ]
+      ],
+      "count": 1374,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 15.081,
+      "elapsed_s": 22.987747,
+      "median_interval_ms": 16.568,
+      "largest_intervals": [
+        {
+          "gap_ms": 74.467,
+          "elapsed_s": 10.622612,
+          "submissions": [
+            878,
+            879
+          ],
+          "ticks": [
+            576,
+            577
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 42.334,
+          "elapsed_s": 11.920988,
+          "submissions": [
+            953,
+            954
+          ],
+          "ticks": [
+            654,
+            655
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 35.778,
+          "elapsed_s": 5.568504,
+          "submissions": [
+            576,
+            577
+          ],
+          "ticks": [
+            273,
+            275
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 26.46,
+          "elapsed_s": 5.43505,
+          "submissions": [
+            569,
+            570
+          ],
+          "ticks": [
+            265,
+            266
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 26.451,
+          "elapsed_s": 8.954165,
+          "submissions": [
+            778,
+            779
+          ],
+          "ticks": [
+            476,
+            478
+          ],
+          "alpha": [
+            1.0,
+            0.8101649880409241
+          ]
+        },
+        {
+          "gap_ms": 23.828,
+          "elapsed_s": 7.553348,
+          "submissions": [
+            694,
+            695
+          ],
+          "ticks": [
+            392,
+            393
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_source_digest": "1ac7dc92c4da6c25458b10e5d7abe9821ea8fdc40c9eada2c05f43c003a7658f"
+    },
+    {
+      "name": "acceptance-exit-route",
+      "target": "mac-metal",
+      "revision": "2a41ed7e38b38046e104f39289ad1e1d9df59e7c",
+      "extent": [
+        1280,
+        720
+      ],
+      "pass_timings": false,
+      "capture_complete": true,
+      "omissions": {
+        "ring_omissions": 0,
+        "writer_omissions": 0
+      },
+      "binary_sha256": "140991735cfa8808af33e80da54517b88486f500d8d502869dd94f8cf17919eb",
+      "requested_hz": 60,
+      "capture_off": false,
+      "unsubmitted_opportunities": 3,
+      "load_averages": [
+        [
+          12.8466796875,
+          10.5810546875,
+          10.94580078125
+        ],
+        [
+          11.00732421875,
+          10.3876953125,
+          10.8642578125
+        ]
+      ],
+      "count": 1463,
+      "time_scope": "actual submitted image",
+      "longest_identical_image_ms": 16.524,
+      "elapsed_s": 24.536969,
+      "median_interval_ms": 16.597,
+      "largest_intervals": [
+        {
+          "gap_ms": 71.915,
+          "elapsed_s": 3.176917,
+          "submissions": [
+            469,
+            470
+          ],
+          "ticks": [
+            159,
+            160
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 69.208,
+          "elapsed_s": 12.104295,
+          "submissions": [
+            999,
+            1000
+          ],
+          "ticks": [
+            695,
+            696
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 57.14,
+          "elapsed_s": 3.248832,
+          "submissions": [
+            470,
+            471
+          ],
+          "ticks": [
+            160,
+            167
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 26.993,
+          "elapsed_s": 16.457874,
+          "submissions": [
+            1257,
+            1258
+          ],
+          "ticks": [
+            956,
+            957
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 23.282,
+          "elapsed_s": 3.140185,
+          "submissions": [
+            467,
+            468
+          ],
+          "ticks": [
+            157,
+            158
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "gap_ms": 21.662,
+          "elapsed_s": 9.935032,
+          "submissions": [
+            869,
+            870
+          ],
+          "ticks": [
+            565,
+            566
+          ],
+          "alpha": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "dirty_diff_sha256": "69e941393fc94817ba6e692509d19e144df2d258a0684e5903934764419db222",
+      "build_source_digest": "1ac7dc92c4da6c25458b10e5d7abe9821ea8fdc40c9eada2c05f43c003a7658f"
     }
   ],
   "fixed_recheck": {
@@ -2668,5 +3831,24 @@
         ]
       }
     ]
+  },
+  "overload_control": {
+    "case": "400 ms SIGSTOP on the owned Metal capture process",
+    "capture": "realtime",
+    "extent": [
+      1280,
+      720
+    ],
+    "target": "mac-metal",
+    "recovery": {
+      "observed_ns": 3431621084,
+      "refused_ticks": 24,
+      "resumed_ns": 3434145375
+    },
+    "later_submissions": 1173,
+    "first_resumed_tick": 121,
+    "last_tick": 1293,
+    "complete": false,
+    "source_revision": "2a41ed7e3"
   }
 }

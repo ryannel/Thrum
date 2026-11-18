@@ -74,3 +74,9 @@
   SDR/linear forced-full controls and seven exit-path tests pass; a stronger CPU load honestly expires the writer.
   [Evidence and limits](../../evidence/T2-CAPTURE/M3/README.md) retain the records, source hashes and scope audit.
   The shared exact-images run after merge remains the proof of record; no branch-wide exact run was made.
+
+- 2026-11-18 SHOWCASE M5 now uses a 60 Hz native exit capture and the browser's animation-frame
+  callbacks, with optional pass timings disabled in those arms. A bounded worker and raw spool
+  keep Chrome transport and live compression out of the presentation callback. The native exit
+  runner records overload recovery through the existing world-lane barriers and refuses affected
+  takes as continuous evidence. [Motion diagnostics](../../evidence/SHOWCASE/M5-motion-diagnostics.md)

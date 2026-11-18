@@ -37,5 +37,8 @@ RGBA bytes at each paired Mac stop. [Retained fixed images](M5-fixed-submitted.t
   earlier submission had been stored. The exit recorder now drains and resumes the running world
   through its lifecycle barriers on overload. It records the refused ticks and classifies any
   take with overload recovery as incomplete, even when every submitted image was saved.
+- A controlled 400 ms suspension of just the Metal capture process triggered this recovery with
+  24 refused ticks. The world resumed around 2.5 ms after the recorder observed overload,
+  subsequently rendering 1,173 submissions through tick 1,293. The take reported incomplete.
 
 [Per-attempt timings, build identities and fixed-stop receipts](M5-motion-diagnostics.json)
