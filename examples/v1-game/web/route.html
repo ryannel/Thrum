@@ -162,6 +162,9 @@
             record.samples[sample.tick] = sample;
             nextSample = Math.max(nextSample, sample.tick + 1);
           }
+          // The shell holds one report. Keep its latest sample for exit status
+          // and release earlier samples once the page has copied them.
+          if (exit && frames % 400 === 0 && nextSample > 1) game.discard_route_samples_before(nextSample - 1);
           expectedTick = step.tick;
           if (step.tick >= origin) record.steps.push(step);
           before = report;
