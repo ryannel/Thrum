@@ -345,10 +345,10 @@
           "check": "python3 scripts/atmosphere_cost.py check --scene route",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M6-cost.json; docs/evidence/ATMOSPHERE/M6/README.md#m65-paired-route-cost",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.6",

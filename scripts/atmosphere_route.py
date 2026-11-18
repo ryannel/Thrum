@@ -2,6 +2,7 @@
 """Capture the G3s showcase stops and matching elapsed-time pans through T2."""
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,18 +27,20 @@ def capture(args):
         output = args.output / name
         common = ['--mode', mode, '--params', str(parameters), '--output', str(output),
                   '--overlay', 'off', '--reconstruction', 'taau']
+        environment = dict(os.environ)
         if args.target == 'mac-metal':
             native_case = scenario if fixed else f'atmosphere-{scenario}'
             command = [sys.executable, 'scripts/capture_v1_runtime.py', '--binary', str(args.binary),
                        '--store', str(args.store), '--case', native_case, '--defer', *common]
             if not fixed:
-                command += ['--admission', 'wait']
+                command += ['--admission', 'wait', '--extent', '1280', '720']
+                environment['THRUM_CAPTURE_ENCODING'] = 'raw'
         else:
             command = ['node', 'scripts/capture_v1_browser.mjs', '--cook', str(args.cook),
                        '--web-root', str(args.web_root), '--atmosphere', scenario, *common]
             if not fixed:
                 command += ['--retain-raw', 'on']
-        if subprocess.run(command, cwd=ROOT, check=False).returncode:
+        if subprocess.run(command, cwd=ROOT, env=environment, check=False).returncode:
             failures.append(name)
     if failures:
         raise SystemExit('Incomplete captures: ' + ', '.join(failures))

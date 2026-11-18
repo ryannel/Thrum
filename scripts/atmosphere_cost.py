@@ -63,12 +63,15 @@ def measure(args):
             result = json.loads(row.stdout)
             result.update(load_before=load_before, load_after=os.getloadavg(),
                           preset_sha256=sha(preset(name)))
+            if name == 'noon' and all('atmosphere stars' not in frame['pass_gpu_ns']
+                                      for frame in result['frames']):
+                result['stars'] = 'daylight-suppressed'
             run['stops'][name] = result
         report['runs'].append(run)
         args.output.write_text(json.dumps(report, separators=(',', ':')) + '\n')
 
 
-def summary(row):
+def summary(stop, row):
     frames = row['frames']
     measured = [frame for frame in frames if frame['resident']]
     spans = [frame['frame_gpu_ns'] for frame in measured]
@@ -80,6 +83,10 @@ def summary(row):
         # separate from the warm frame span and from skipped passes.
         values = ([frame['pass_gpu_ns'][name] for frame in measured if name in frame['pass_gpu_ns']]
                   or [frame['pass_gpu_ns'][name] for frame in frames if name in frame['pass_gpu_ns']])
+        if stop == 'noon' and name == 'atmosphere stars' and row.get('stars') == 'daylight-suppressed':
+            if values:
+                raise ValueError('noon star omission disagrees with the GPU timestamps')
+            continue
         if not values or not all(isinstance(v, (int, float)) and math.isfinite(v) and v >= 0 for v in values):
             raise ValueError(f'missing GPU timing for {name}')
         result[name] = statistics.median(values)
@@ -111,10 +118,13 @@ def validate(record):
             setup = (row['recipe'], row['preset_sha256'])
             if configs.setdefault(stop, setup) != setup or setup[0] != 'Portable' or setup[1] != sha(preset(stop)):
                 raise ValueError(f'{stop}: cost setups differ')
-            values[run['arm']][stop].append(summary(row))
+            values[run['arm']][stop].append(summary(stop, row))
     alerts = []
     for stop in STOPS:
-        for name in ('whole frame', *PASSES):
+        starting_names = set(values['starting'][stop][0])
+        if any(set(row) != starting_names for arm in ('starting', 'final') for row in values[arm][stop]):
+            raise ValueError(f'{stop}: named pass measurements differ across arms')
+        for name in sorted(starting_names):
             before, after = (statistics.median(row[name] for row in values[arm][stop])
                              for arm in ('starting', 'final'))
             if before > 0 and after >= 1.25 * before:
