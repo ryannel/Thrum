@@ -93,3 +93,6 @@
   checkpoints. Chrome and the simulator wrote bytes equal to the Mac's. Core tests, identity controls and the
   Mac SIM-2D conformance run passed. The [M1 proof](../../evidence/SESSION/M1.md) records target revisions and
   both Mac and Chrome cost runs. The exact-image verifier is provided by the shared main-branch check.
+- 2026-11-18 M1.2 now runs both Chrome captures and all six restores under one Chrome lock after the Mac
+  images are ready. The revised check matched all six images and 1,000 retained checkpoints in under
+  22 minutes including lock wait. The [M1 proof](../../evidence/SESSION/M1.md) records the retry.
