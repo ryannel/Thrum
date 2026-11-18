@@ -148,7 +148,50 @@
     },
     "M2": {
       "definitions": "e64d45bf9c2bb2f8613cfabdf428237bd8d22d89369c1324653d8eadacb27604",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "76f2a88b1e3ec68eb0918d3297da901ebc656ba4",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "fail",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Initial mesh builds run after the generation is ready",
+              "item": "M2.5",
+              "repeat": false
+            },
+            {
+              "name": "Traced view omits the hit instance identity",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 122550,
+            "cached": 2559360,
+            "output": 7467,
+            "turns": 1
+          },
+          "at": "2026-11-18T17:33:15Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",

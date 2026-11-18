@@ -97,8 +97,8 @@
     {
       "id": "M2",
       "name": "The whole valley is in the ray-tracing structure, terrain and cooked meshes included, on screen or off, and an edited mesh is replaced there in the frame it changes on screen",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [],
       "quality_bar": "The structure of a shipped ray-traced game's world: the terrain and every mesh in the scene, whether or not the camera sees it, with an edit showing in rays and on screen together. The traced view lines up with the drawn frame as a ray-tracing debug view does in a shipped engine.",
@@ -110,8 +110,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -122,8 +122,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/seam.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -134,8 +134,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/edit.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -146,8 +146,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/casters.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -155,10 +155,10 @@
           "check": "python3 scripts/ray_tracing_proof.py lifecycle",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/lifecycle.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -168,8 +168,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/demand.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -179,8 +179,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/valley-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -189,8 +189,19 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Initial mesh builds run after the generation is ready",
+          "item": "M2.5",
+          "repeat": false
+        },
+        {
+          "name": "Traced view omits the hit instance identity",
+          "repeat": false
         }
       ]
     },
