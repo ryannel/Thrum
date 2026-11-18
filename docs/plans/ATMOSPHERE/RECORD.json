@@ -103,12 +103,12 @@
       }
     },
     "M6": {
-      "definitions": "5eeebe562efd0bd23ec65e58cd5d874be8450c527f6cdfb6716dc69f5e80c2b7",
+      "definitions": "283b930db48a1fd9b5a1d51019fe1168fc64e7b6b68517f28373a0da062ed5fd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix f",
-        "at": "2026-11-18T07:27:48Z"
+        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes: one Must Fix in M6.4, wh",
+        "at": "2026-11-18T09:30:51Z"
       }
     },
     "M7": {
@@ -273,11 +273,15 @@
     {
       "task": "SHOWCASE M5 is blocked needing a dependency: 'Fix the Sun-shadow discontinuity and the remaining frame stalls, then verify continuous motion on Metal and Chrome.' Handoff: docs/evidence/SHOWCASE/M5-handoff.md on build/showcase (1556e66d0). Add the Sun-shadow fix to the module that owns the Sun-shadow renderer (a strip appears on Metal at committed ticks 233-234 on the exit camera, reproduced with every tick submitted), as the smallest milestone item that fixes it without changing the meaning of registered exact references.\n\nLead: under the owner's 17 Nov bar, the whole-frame gaps (121.8 and 176.1 ms in Chrome, also seen with capture off on the Mac) were measured while several builders shared this machine; treat them as a tripwire record labelled with load, not a gate. Rewrite M5.8/M5.9 so they don't block on host scheduling noise. Unblock SHOWCASE M5 once the shadow item exists.",
       "at": "2026-11-18T08:48:12Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes: one Must Fix in M6.4, where the fixed H5 numeric comparison rejects a contribution that reads the reflection cube correctly. The cause is gating a handoff on a numeric reference, which the owner's 17 Nov bar rules out: references diagnose, they don't gate. Fix it by checking the handoff by what it is, not by matching a reference: the contribution binds and samples the producer's cube and table (a structural or probe check that a wrong binding, wrong mip or swapped face would fail), plus the visual inspection list. Keep any f64 comparison as a recorded diagnostic with no pass threshold. Don't add new numeric gates elsewhere. Say which Suggestions you took and why.",
+      "at": "2026-11-18T09:30:51Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T08:48:12Z"
+    "at": "2026-11-18T09:30:51Z"
   },
   "design_history": [
     {
