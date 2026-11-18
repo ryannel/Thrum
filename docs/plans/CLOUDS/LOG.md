@@ -434,3 +434,11 @@
   and [the proof's README](../../evidence/CLOUDS/design-proof/README.md) hold the cases and figures. M14.13 is written again and M15.13,
   an inspection, is new. S5 taken in the design; M2.11's wording and S4's M1.2 are left, since M2 and M1 are Done. No item of a Done
   milestone changed. The design needs a review.
+
+- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../evidence/CLOUDS/design-review.md)'s two findings with the
+  smallest check each. MF1: presence probes passed a GPU drawing twice the query's extinction, so M14.2 gains one sight line whose
+  optical depth is held to the public query's, M6.9 the map's column at a point inside a directed shape, and M6.2 and M7.6 the drawn
+  column's upper bound at a point inside, each at the allowance its test states and each failing at twice the amount. MF2: M3.9's
+  check also runs `cloud_cost.py refuse`, which passes only when a record with no clouds-visible run is turned away; `check` holds the
+  record and its fresh measurement to one list. No budget and no reviewer question is added. Taken: the M3 test handoff, as a note.
+  Left: S5's M2.11 and S4's M1.2, since M2 and M1 are Done. No item of a Done milestone changed. The design needs a review.

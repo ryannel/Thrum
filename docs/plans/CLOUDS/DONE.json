@@ -558,8 +558,8 @@
         },
         {
           "id": "M3.9",
-          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, under the fair preset, a paired record with clouds absent gives the whole frame, each cloud pass's GPU time by name, the rays traced, the mean and 95th-percentile samples a ray and the bytes of each resource, beside the design's estimates. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
-          "check": "python3 scripts/cloud_cost.py check --scene first-frame",
+          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, under the fair preset, the record holds a run with clouds absent and a run with clouds visible at one view, and from the visible run each cloud pass's GPU time by name, the rays traced, the mean and 95th-percentile samples a ray and the bytes of each resource, beside the design's estimates. Each tripwire it trips has its investigation beside it. `check` holds the committed record and its own fresh measurement to that list, and `refuse` passes only when the committed record with every clouds-visible run replaced by its clouds-absent run is turned away by the same validation. No figure in the record decides this item.",
+          "check": "python3 scripts/cloud_cost.py check --scene first-frame && python3 scripts/cloud_cost.py refuse --scene first-frame",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -772,9 +772,9 @@
         },
         {
           "id": "M6.2",
-          "statement": "A placed cloud goes through the one density function, and its shade is its volume's. For a cooked shape that is not a dome and whose density is uneven inside, with the Sun at 60\u00b0 and at 20\u00b0, the ground shade under it follows the volume's own path at a volume-form weight of 1 and the column form's at 0, and the test shows the two differ at its probes. At stated points over its footprint and around it, at weights of 1, 0 and between, the GPU draws cloud where the model's query has it, and none where the query and its neighbours within a texel are clear.",
+          "statement": "A placed cloud goes through the one density function, and its shade is its volume's. For a cooked shape that is not a dome and whose density is uneven inside, with the Sun at 60\u00b0 and at 20\u00b0, the ground shade under it follows the volume's own path at a volume-form weight of 1 and the column form's at 0, and the test shows the two differ at its probes. At stated points over its footprint and around it, at weights of 1, 0 and between, the GPU draws cloud where the model's query has it, and none where the query and its neighbours within a texel are clear. At a point inside the shape, at each of those weights, the column the GPU draws is no more than the query's column optical depth plus the allowance the test states, and a column drawn at twice the density fails.",
           "check": "cargo test --locked --offline -p thrum-clouds --test placed_shade_gpu",
-          "ask": "Is the shape asymmetric, so that a dome of the same mean column would fail? At a weight of 1, would a Sun path filled from the footprint alone fail?",
+          "ask": "Is the shape asymmetric, so that a dome of the same mean column would fail? At a weight of 1, would a Sun path filled from the footprint alone fail? Is the drawn column summed from the density the trace marches, and compared with the public query's column?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -848,7 +848,7 @@
         },
         {
           "id": "M6.9",
-          "statement": "In a directed profile the game's shapes are drawn where it put them. Over a directed shape the GPU weather map has cloud where the model's query has it, and none where the query is clear; with coverage at 0 every pixel outside the shapes and their shade equals the frame with clouds absent; a refused shape is counted, reported and not drawn.",
+          "statement": "In a directed profile the game's shapes are drawn where it put them. Over a directed shape the GPU weather map has cloud where the model's query has it, and none where the query is clear, and at a point inside the shape the map's column optical depth agrees with the query's at the tolerance the test states, where twice the column fails; with coverage at 0 every pixel outside the shapes and their shade equals the frame with clouds absent; a refused shape is counted, reported and not drawn.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_directed_gpu",
           "ask": "Does the test place its shape through the game's weather state and the public interface, at a point it chose, and compare with the model's query there?",
           "lock": "gpu",
@@ -955,7 +955,7 @@
         },
         {
           "id": "M7.6",
-          "statement": "Across the four presets and the ramps between them, the GPU weather map agrees with the CPU field at the tolerance the test states, and a wind change mid-run alters only later travel. At the map's texel centres, over cells, the deck and placed cells, the GPU draws cloud where the query has it, and none where the query and its neighbours within a texel are clear.",
+          "statement": "Across the four presets and the ramps between them, the GPU weather map agrees with the CPU field at the tolerance the test states, and a wind change mid-run alters only later travel. At the map's texel centres, over cells, the deck and placed cells, the GPU draws cloud where the query has it, and none where the query and its neighbours within a texel are clear. At a point inside each of the three, the column the GPU draws is no more than the queried column optical depth plus that tolerance, and a column drawn at twice the density fails.",
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_range_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1325,9 +1325,9 @@
         },
         {
           "id": "M14.2",
-          "statement": "The GPU's ground condensate follows the model, each factor in its own frame. At world probe points over a shoreline and uneven ground, after a travel that is not a whole number of texels, mist stands where the model's query has it and is absent where the query is clear, for pooled, even, held and drifting rows, and a water row has none inland of the shore margin. A map that holds the shore and drifts it fails the same test.",
+          "statement": "The GPU's ground condensate follows the model in place and in amount, each factor in its own frame. At world probe points over a shoreline and uneven ground, after a travel that is not a whole number of texels, mist stands where the model's query has it and is absent where the query is clear, for pooled, even, held and drifting rows, and a water row has none inland of the shore margin. Along a level sight line through a bank's interior, the optical depth summed from the GPU's coarse extinction agrees with the query's optical depth between the same two points, within the allowance the test states. A map that holds the shore and drifts it fails the test, and so does a GPU extinction of twice the model's.",
           "check": "cargo test --locked --offline -p thrum-clouds --test ground_map_gpu",
-          "ask": "Does the test run the drifting shore mask through the same assertion and show it fail?",
+          "ask": "Does the test run the drifting shore mask and the doubled extinction through the same assertions and show each fail? Is the sight line's expected value the public query's optical depth between the two points?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

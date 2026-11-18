@@ -431,7 +431,7 @@ noise only removes extinction, and it is zero exactly where the sky is clear. Th
 query never answers for a neighbourhood, and no form of a cloud is fitted to another's mean. The averages in
 this design are named where they are made: the GPU reads the field through filtered textures, so what it draws
 over a point is a local average of the model's density over a texel, held to the model at stated points within
-a bound that is measured first; the [coarse density](#one-density-in-m¹) takes the detail noise at its mean; and
+a tolerance its test states; the [coarse density](#one-density-in-m¹) takes the detail noise at its mean; and
 the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean transmittance.
 
 ### Time: drift at the display's time, evolution on the tick
@@ -1123,7 +1123,16 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
 - **What a game reads is tested.** The weather field is the game's: it is deterministic, and its CPU query is
   what a server reads. So the GPU's weather map and ground condensate are tested against the query, at a
   tolerance the test states: cloud and mist stand where the query has them and not where it is clear (M2, M4.1,
-  M6.2, M6.9, M7.6, M14.2).
+  M6.2, M6.9, M7.6, M14.2). Presence is not enough. A GPU that draws twice the query's extinction puts mist at
+  every probe the query does, and a player loses sight of a thing at half the range the game works with. So
+  the test of each GPU path that M2's map test does not reach also compares the amount, at a point inside the
+  condensate: through ground condensate, the optical depth along a sight line, summed from the GPU's coarse
+  extinction, against the query's optical depth between the same two points (M14.2); over a directed shape,
+  the map's column optical depth against the query's (M6.9); and for the column the GPU draws, through a placed
+  cloud's two forms and their blend and through eroded cells and the deck, that it is never more than the
+  query's column, which is [the bound a query promises](#one-weather-field-in-the-air-frame) (M6.2, M7.6).
+  Each test states its allowance for the map's filtering and shows that twice the amount fails. These compare
+  two answers to one question a game asks. Neither is a reference for light, and no photon is counted.
 - **Contracts are tested.** The frame contract's motion, reactive coverage and history (M3.4, M15.7); air and
   condensate composed once (M3.6, M14.3); one optical depth for every receiver, with the same bytes with
   visible clouds off (M3.8, M6.12, M8.9); a capability left out costing nothing; state through pauses, hitches
@@ -1445,9 +1454,17 @@ to find the cause and what was fixed or left as a follow-up in the log. Visible 
 
 The ambition is the display's full refresh, and whole-frame tuning is the later performance phase. **No timing
 figure decides whether an item passes, whether a milestone is Done or whether the next one starts.**
-`cloud_cost.py check` measures the scene again and fails only when the scene cannot be measured, when the
-committed record lacks part of what a paired record holds, or when a wire the record trips has no investigation
-beside it. Presented cadence on the built-in panel is measured once, attended, in M12.
+`cloud_cost.py check` measures the scene again and fails only on a missing measurement or a missing
+investigation. It holds the committed record and its own fresh measurement to one list: for the scene named,
+a run with clouds absent and a run with clouds visible, at one view; and from the visible run, the cloud
+passes by name, the work the scene's item names (rays and samples where there is a trace) and the bytes of
+each resource. A record or a measurement with no clouds-visible run fails whatever its timings, and so does
+a record whose tripped wire has no investigation beside it. The fresh measurement is what ties a record to
+the code being checked; the record's commit is written down and decides nothing, because a record pinned to
+a commit goes stale at every merge. `cloud_cost.py refuse` shows the list has teeth: it puts the committed
+record, with every clouds-visible run replaced by its clouds-absent run, through the same validation and
+passes only when that is turned away. M3.9 runs it, and every later scene goes through the validation it
+proved. Presented cadence on the built-in panel is measured once, attended, in M12.
 
 ## Risks
 

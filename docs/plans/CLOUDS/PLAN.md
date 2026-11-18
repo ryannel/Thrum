@@ -44,13 +44,14 @@ Ruling 2 is built in `ATMOSPHERE`'s aerial lookup. Write the trace over
 work so far is on branch `build/clouds` at `fa4eabb9d`, with
 [its handoff](../../evidence/CLOUDS/M3-handoff.md). Its trace, Sun-path reconstruction, capture routes and
 photon reference stand. Its light is the four fixed orders, which made the clouds too dark;
-[cloud light](DESIGN.md#cloud-light) replaces them in the shader. Build the term, take a look, and tune by eye
-against M3.1 to M3.3 as [the bar](DESIGN.md#how-the-module-is-proved) allows: no item compares the shader with
-the model or with photons. In `thrum-cloud-model` leave `Orders` and `medium.rs` as they are:
+[cloud light](DESIGN.md#cloud-light) replaces them in the shader. Build the term and tune by eye against M3.1 to M3.3: no item compares the
+shader with the model or with photons. `far_aerial_gpu` and `transport_gpu` exist: keep the chart-based
+far-air interface and the known-source composition cases, and print their superseded figures, against the air
+reference and the four-order source, as diagnostics. In `thrum-cloud-model` leave `Orders` and `medium.rs` as they are:
 M14.13 removes them. After three looks under the new term that fail the same cue of M3.1 to M3.3, record them
 in the log and end `BLOCKED`; looks taken under the four orders do not count. A frame
-over the refresh interval is investigated with the design's first risk's remedies and does not stop the
-milestone.
+over the refresh interval takes the first risk's remedies and stops nothing. `cloud_cost.py`'s `refuse` is new
+in M3.9.
 
 ## M4 The same sky and the same shade draw in Chrome
 
@@ -91,8 +92,7 @@ are not this milestone's to fix.
 `ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this milestone writes the medium
 coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
 in the volume itself goes to `ATMOSPHERE`'s log. M13 built the model's solar kernel from the four fixed
-orders; M14.13 removes them, and the kernel the view volume takes is the trace's own shader function. After three looks that fail
-the same cue of M14.5 or M14.6, record them in the log and end `BLOCKED`.
+orders; M14.13 removes them, and the kernel the view volume takes is the trace's own shader function.
 
 ## M15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 
