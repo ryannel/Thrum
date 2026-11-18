@@ -12,8 +12,9 @@ use crate::{
     synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene},
 };
 
-const RADIANCE: &str = "vec4(environment_reflection(q.xyz,q.w,0.5).radiance,1.0)";
-const PAIR: &str = "vec4(environment_reflection(vec3(0.0,1.0,0.0),q.y,q.x).split_sum,0.0,1.0)";
+const RADIANCE: &str =
+    "vec4(environment_reflection(q.xyz,q.w,0.5).radiance,environment_storage_scale())";
+const PAIR: &str = "vec4(environment_reflection(vec3(0.0,1.0,0.0),q.y,q.x).split_sum,0.0,environment_storage_scale())";
 const NODES: [(usize, usize); 7] = [
     (0, 32),
     (8, 48),
@@ -109,9 +110,10 @@ fn metal_split_sum_reads_stored_table() {
         }
     }
     let queries: Vec<_> = cases.iter().map(|case| case.0).collect();
-    let products = surface.environment_products().unwrap();
-    for products in [&products, &filtered::exposure_two(&prepared, &queue)] {
-        let actual = observer::sample(&device, &queue, products, PAIR, &queries, 0);
+    for exposure in [1.0, 2.0] {
+        let products = filtered::with_exposure(&prepared, &queue, exposure);
+        let actual = observer::sample(&device, &queue, &products, PAIR, &queries, 0);
+        assert_eq!(actual[0][3].to_bits(), exposure.to_bits());
         let mut wrong_queries = Vec::new();
         let mut comparisons = Vec::new();
         for ((query, x, y), value) in cases.iter().copied().zip(actual) {
@@ -151,7 +153,7 @@ fn metal_split_sum_reads_stored_table() {
                 comparisons.extend([(query, expected, limits); 3]);
             }
         }
-        let wrong = observer::sample(&device, &queue, products, PAIR, &wrong_queries, 0);
+        let wrong = observer::sample(&device, &queue, &products, PAIR, &wrong_queries, 0);
         for (index, (value, (query, expected, limits))) in
             wrong.into_iter().zip(comparisons).enumerate()
         {
@@ -232,6 +234,7 @@ fn check_cube(
     queue: &wgpu::Queue,
     products: &EnvironmentProducts,
     lux: f64,
+    exposure: f32,
 ) {
     let mut queries = Vec::new();
     let mut comparisons = Vec::new();
@@ -288,6 +291,7 @@ fn check_cube(
         }
     }
     let actual = observer::sample(device, queue, products, RADIANCE, &queries, 0);
+    assert_eq!(actual[0][3].to_bits(), exposure.to_bits());
     for ((query, value), (right, expected, limits)) in
         queries.into_iter().zip(actual).zip(comparisons)
     {
@@ -315,12 +319,9 @@ fn metal_reflection_reads_stored_cube() {
         prepared
             .update_frame(&queue, &mut target, &scene, lighting(lux), 1.0)
             .unwrap();
-        let products = prepared
-            .scene_surface(&queue)
-            .environment_products()
-            .unwrap();
-        for products in [&products, &filtered::exposure_two(&prepared, &queue)] {
-            check_cube(&device, &queue, products, f64::from(lux));
+        for exposure in [1.0, 2.0] {
+            let products = filtered::with_exposure(&prepared, &queue, exposure);
+            check_cube(&device, &queue, &products, f64::from(lux), exposure);
         }
     }
     println!(

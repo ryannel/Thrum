@@ -165,14 +165,20 @@ pub(super) fn exposure_two(
     prepared: &PreparedSynthetic,
     queue: &wgpu::Queue,
 ) -> EnvironmentProducts {
+    with_exposure(prepared, queue, 2.0)
+}
+
+pub(super) fn with_exposure(
+    prepared: &PreparedSynthetic,
+    queue: &wgpu::Queue,
+    scale: f32,
+) -> EnvironmentProducts {
     let surface = prepared.scene_surface(queue);
     let exposure = surface
         .device
         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("H row exposure scale two"),
-            contents: [2.0_f32, 0.0, 0.0, 0.0]
-                .map(f32::to_le_bytes)
-                .as_flattened(),
+            label: Some("H row fixed exposure scale"),
+            contents: [scale, 0.0, 0.0, 0.0].map(f32::to_le_bytes).as_flattened(),
             usage: wgpu::BufferUsages::UNIFORM,
         });
     super::super::create(

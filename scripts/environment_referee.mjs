@@ -396,8 +396,13 @@ async function environmentReferee() {
     }
     return result;
   };
-  const reflectionRadiance = 'vec4(environment_reflection(q.xyz,q.w,0.5).radiance,1.0)';
-  const reflectionPair = 'vec4(environment_reflection(vec3(0.0,1.0,0.0),q.y,q.x).split_sum,0.0,1.0)';
+  const unitExposure = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  device.queue.writeBuffer(unitExposure, 0, new Float32Array([1, 0, 0, 0]));
+  const unitGroup = device.createBindGroup({ layout: lent.descriptor.layout,
+    entries: lent.descriptor.entries.map(item => item.binding === 10 ? {...item,resource:{buffer:unitExposure}} : item) });
+  const storedProbeExposures = [[1,unitGroup],[2,exposed]];
+  const reflectionRadiance = 'vec4(environment_reflection(q.xyz,q.w,0.5).radiance,environment_storage_scale())';
+  const reflectionPair = 'vec4(environment_reflection(vec3(0.0,1.0,0.0),q.y,q.x).split_sum,0.0,environment_storage_scale())';
   const splitSumNodes = [[0,32],[8,48],[32,32],[32,64],[64,32],[64,64],[0,64]];
   const blend = (a, b, t) => (1-t)*a+t*b;
   const bound = (values, rounding) => (Math.max(...values)-Math.min(...values))/32+1e-5*Math.max(...values)+rounding;
@@ -435,8 +440,9 @@ async function environmentReferee() {
     for (const [x,y] of [[4,12],[8,36],[48,36],[36,56]]) {
       for (const f of [0.25,0.5,0.75]) cases.push({x:x+f,y:y+f,q:tableQuery(x+f,y+f)});
     }
-    for (const group of [lent.value,exposed]) {
+    for (const [scale,group] of storedProbeExposures) {
       const actual=await query(reflectionPair,cases.map(({q})=>q),library,group);
+      assert(actual[0][3]===scale,'H5 stored table exposure fixture');
       const wrongQueries=[], comparisons=[];
       cases.forEach(({x,y,q},i)=>{
         const col=Math.floor(x), row=Math.floor(y), right=Math.ceil(x), down=Math.ceil(y);
@@ -507,8 +513,9 @@ override level:f32;
           probes.forEach((q,i)=>{queries.push(q); comparisons.push({right:i===0,expected,limits});});
         }
       });
-      for (const group of [lent.value,exposed]) {
+      for (const [scale,group] of storedProbeExposures) {
         const actual=await query(reflectionRadiance,queries,library,group);
+        assert(actual[0][3]===scale,'H5 stored cube exposure fixture');
         actual.forEach((value,i)=>{
           const {right,expected,limits}=comparisons[i];
           assert(withinStored(value,expected,limits)===right,`H5 stored cube Sun ${lux}, query ${queries[i]}, correct lookup ${right}: ${value} vs ${expected} ± ${limits}`);
