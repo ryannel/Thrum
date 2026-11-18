@@ -2129,9 +2129,12 @@ belongs to its owner: later work there keeps its tests passing.
 7. **The frame graph, history and timing** (`RAY-TRACING` M1, M3 and M4; `graph.rs`, the frame host,
    `timing.rs`). The structure build and the traced visibility pass are passes of the one graph, with their
    reads and writes declared. The visibility history is accepted, reset and committed by
-   `APPLE-PRESENTATION`'s history rules. The frame's timing record gains the GPU span of the whole frame,
-   from its first GPU work to the end of the pass that consumes its output, beside the pass times and the
-   scene sum it has, which keep their meaning. `RAY-TRACING` M3 or `MESH-SHADING` M2 adds the span,
+   `APPLE-PRESENTATION`'s history rules. The frame's timing record gains the timed-pass span: from the begin
+   of the first timed pass the frame encodes to the end of the pass that consumes its output, beside the
+   pass times and the scene sum it has, which keep their meaning. The time between those passes lies inside
+   it. It is a pass interval and not the whole frame's GPU time: transfers a frame queues with
+   `Queue::write_buffer` run before its first pass and lie outside the span, and every record that reads the
+   span names it so and says which transfers those are. `RAY-TRACING` M3 or `MESH-SHADING` M2 adds the span,
    whichever lands first, and the other uses it as found.
 8. **Scene layouts for the object and mesh stages** (`MESH-SHADING` M1: the view and light group layouts and
    `SceneSurface`; M2: the caster view layout of `synthetic/shadow.rs`, which each Sun map pass binds at
@@ -2150,6 +2153,15 @@ belongs to its owner: later work there keeps its tests passing.
     ahead of time and M12's pipeline archive cover a launch with no hardware request, which is what their
     strict runs take. Bringing track 5's shaders into the library cook is a proposal for that module once M10
     is Done.
+12. **A preferred recipe** (`MESH-SHADING` M3, unless another milestone has landed it; `capabilities.rs`,
+    `capabilities/recipe.rs` and the proving ground's Mac host). The registry's recipe resolution gains one
+    input beside the named recipe: a recipe the host prefers. It is read only when no recipe is named. Where
+    the facts that admit a named Apple tile admit it, the generation resolves to Apple tile. Where they do
+    not, it resolves to portable and the registry records why. A preference is never an error. A named
+    recipe, `portable` or `apple-tile`, resolves exactly as today, and so does a launch that names none and
+    states no preference, so no launch that exists today moves and no item of `APPLE-TILE` changes.
+    `MESH-SHADING`'s launch selection states a preference for Apple tile, and only on a generation that
+    enabled `mesh-stages`. Another opt-in may use it as found.
 
 ### Interfaces (track 5)
 
@@ -2158,7 +2170,7 @@ belongs to its owner: later work there keeps its tests passing.
 | **Hardware features at launch**: a launch names the hardware features it wants, each as required or preferred, and one function makes the device. A required name is enabled or the launch is refused by name. A preferred name never fails a launch: it is left out where the adapter does not offer it or the device request with it fails. The registry records what was enabled and why any name was not. Default: none. No host adds either name unasked | `RAY-TRACING:M1`, `MESH-SHADING:M1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
 | **Ray instances**: a contribution offers each frame, for each opaque thing it holds in the scene, drawn or not, a mesh structure, a transform and a mask (casts shadows, occludes ambient light); the scene structure is rebuilt from them each frame | `RAY-TRACING:M2` → `CONTENT-LOOP`'s cooked contribution; any later contribution with opaque geometry | [RAY-TRACING](RAY-TRACING/DESIGN.md#the-structure-m1-m2) |
 | **Traced visibility**: a scene's preparation takes the Sun's shadow method (`Maps`, or `Traced` with the penumbra on or off), lamp shadows, and ambient occlusion with a radius; each is resolved from the registry before anything is allocated and reported, with the reason where it did not resolve as asked. A ray request is met only on a device that enabled ray queries and on a recipe that lists ray effects, which is Apple tile. Anywhere else, and where a traced scene fails to prepare, the scene draws the map frame: `Maps`, no lamp shadow, no occlusion. Nothing is `Auto`, and no ray effect is a default | `RAY-TRACING:M3` (Sun, lamps), `M4` (penumbra), `M5` (ambient occlusion) → games, the proving ground | C04, C08, [RAY-TRACING](RAY-TRACING/DESIGN.md#selection-fallback-and-the-opt-in) |
-| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported with the reason where it did not resolve as asked. `Auto` is `COOKED-DRAW`'s selection on every device and never the stages. `MeshStages` is met on a device that enabled the stages; anywhere else, and where a stage pipeline fails to build, the scene draws what `Auto` draws. It is not refused | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-the-opt-in) |
+| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported with the reason where it did not resolve as asked. `Auto` is `COOKED-DRAW`'s selection on every device and never the stages. `MeshStages` is met only on a device that enabled the stages and on the Apple tile recipe. Anywhere else, which includes the portable recipe whether named or resolved, and where a stage pipeline fails to build, the scene draws what `Auto` draws. It is not refused | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-the-opt-in) |
 
 
 ## Owner decisions
@@ -2250,7 +2262,9 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
     feature is missing, and `RAY-TRACING` M6 and `MESH-SHADING` M3 record how it looks and what it costs on
     this Mac, timed while other builders work. Making either a default needs a measured win on a quiet
     machine and a rule for which Macs it covers, and in the showcase it would change the V1 exit. The two can
-    be turned on together; neither module checks the pair.
+    be turned on together; neither module checks the pair. The mesh stages draw only on the Apple tile
+    recipe, so their setting also selects Apple tile where no recipe is named, and a launch that names the
+    portable recipe stays on the existing path.
 34. **Effects with no portable version.** Lamp shadows and ambient occlusion appear only on a device that
     traces rays, on the Apple tile recipe. On the portable recipe a scene that asks for a ray effect draws without it and reports why. No screen-space stand-in is planned for Chrome or the portable recipe.
 35. **Where track 5 sits in the queue.** Behind every V1 milestone. Its order among the other work off the
@@ -2685,3 +2699,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   a reason, the caster view layout is visible to the object and mesh stages on a device that enabled them,
   and whichever of `RAY-TRACING` M3 and `MESH-SHADING` M2 lands first adds the whole-frame GPU span. No V1
   module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
+- 2026-11-18 Track 5 ruling 7, the cooked-draw-path interface and owner decision 33 were amended and ruling 12
+  was added after [MESH-SHADING's third design review](../evidence/MESH-SHADING/design-review.md):
+  `MeshStages` is met only on the Apple tile recipe, a host may prefer Apple tile where no recipe is named,
+  and the timing record's span is named the timed-pass span, with the queued transfers it leaves out
+  disclosed. No V1 module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
+  Its design still calls the span the whole frame's and says its opt-in leaves the recipe as it is today.

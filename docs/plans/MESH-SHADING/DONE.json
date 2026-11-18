@@ -51,9 +51,9 @@
         },
         {
           "id": "M1.4",
-          "statement": "The frame reports the cooked path that was asked for, the path it resolved to and, where the two differ, why. `Auto` resolves to the path chosen today, on a device with the stages as on one without. `MeshStages` on a device that did not enable the stages is not refused: it resolves to the path chosen today and the scene submits that path's bytes. On the mesh-stage path the forward pass records one mesh draw for each placement, and no cull pass and no indexed indirect draw for it.",
+          "statement": "The frame reports the recipe, the cooked path that was asked for, the path it resolved to and, where the two differ, why. `Auto` resolves to the path chosen today on every device and recipe. `MeshStages` is met only on a device that enabled the stages and on the Apple tile recipe. On a device that did not enable them, and on the portable recipe with them enabled, it is not refused: it resolves to the path chosen today, the scene submits that path's bytes and records no mesh-stage draw. On the mesh-stage path the forward pass records one mesh draw for each placement, and no cull pass and no indexed indirect draw for it.",
           "check": "python3 scripts/mesh_stage_proof.py selection",
-          "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages and a fallback is never silent?",
+          "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages, the stages cannot draw a portable frame, and a fallback is never silent?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -166,7 +166,7 @@
         {
           "id": "M2.4",
           "statement": "On the mesh-stage path the valley is the valley the existing path draws, at rest and in motion, at noon and at a low Sun: it passes this item's inspection list.",
-          "inspect": "`fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, on the mesh-stage path, with the same stops on the existing path beside them, whole and as native-size crops. The list: (1) terrain is whole to the screen's border and at the near plane, with no meshlet-sized hole; (2) ridge lines and mesh silhouettes are unbroken; (3) every cooked mesh is whole from inside, beside and far away; (4) terrain and meshes cast the shadows they cast on the existing path, with no hole or light leak at a low Sun, near the camera, in the middle distance and beyond the cascades; (5) materials, lighting and texture read as they do at the existing path's stop; (6) in motion nothing pops, flickers or arrives late at the screen's edge, and no cooked surface smears or trails after a snap turn or a cut.",
+          "inspect": "`fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, on the mesh-stage path, with the same stops on the existing path beside them, both on the Apple tile recipe, whole and as native-size crops. The list: (1) terrain is whole to the screen's border and at the near plane, with no meshlet-sized hole; (2) ridge lines and mesh silhouettes are unbroken; (3) every cooked mesh is whole from inside, beside and far away; (4) terrain and meshes cast the shadows they cast on the existing path, with no hole or light leak at a low Sun, near the camera, in the middle distance and beyond the cascades; (5) materials, lighting and texture read as they do at the existing path's stop; (6) in motion nothing pops, flickers or arrives late at the screen's edge, and no cooked surface smears or trails after a snap turn or a cut.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -198,7 +198,7 @@
         },
         {
           "id": "M2.7",
-          "statement": "For both paths on the valley's route at 1280\u00d7720 and 1920\u00d71080, with the machine's load, the record holds the design's two whole-frame figures, the GPU time of the cull pass, the forward pass and each of the Sun's map passes by name, the draws recorded, the counts of the design's cost account and resident bytes. The frame GPU span runs through the pass that consumes the frame's output. Each tripwire of the cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "For both paths on the valley's route on the Apple tile recipe, at 1280\u00d7720 and 1920\u00d71080, with the machine's load, the record holds the design's two figures for each frame, the timed-pass span and frame CPU time, the GPU time of the cull pass, the forward pass and each of the Sun's map passes by name, the draws recorded, the counts of the design's cost account and resident bytes. The span runs from the first timed pass through the pass that consumes the frame's output. The record calls it the timed-pass span and says which queued transfers lie outside it for each path. Each tripwire of the cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/mesh_stage_cost.py valley",
           "lock": "gpu",
           "target": "mac-metal",
@@ -243,9 +243,9 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the path on, and the design's paired timing. For each of the pair's eight runs it holds M2.7's rows, the timed ones as medians. For each figure at each extent it states the difference between the two paths beside the spread, and says the pair shows no difference where the spread is the larger. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
+          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the path on, and the design's paired timing. For each of the pair's eight runs it holds the recipe and cooked path the run resolved and M2.7's rows, the timed ones as medians. For each of the two figures at each extent it states the difference between the two paths beside the spread, and says the pair shows no difference where the spread is the larger. It calls the GPU figure the timed-pass span and says which queued transfers lie outside it for each path. It says that the setting also moves a launch with no recipe named to Apple tile, which the pair does not measure. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
           "check": "python3 scripts/mesh_stage_cost.py check",
-          "ask": "Do the two paths' runs differ in the opt-in selection alone, on the final build and in the design's order, and is each sentence the record draws from the pair no stronger than its spread allows?",
+          "ask": "Did every run resolve to the Apple tile recipe, the two arms differing in the cooked path alone, on the final build and in the design's order? Is each sentence the record draws from the pair no stronger than its spread allows, and does none call the span the whole frame's GPU time?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -254,9 +254,9 @@
         },
         {
           "id": "M3.2",
-          "statement": "From an ordinary launch of the proving ground's Mac window on the final build: with the opt-in selection, on each recipe, the valley reports `mesh-stages` enabled and the cooked draw path resolved to `MeshStages`, with a count of mesh-stage draws that is not zero. With no selection the device is the one made today and the valley reports the path chosen today. With the selection and the first device request made to fail, the window makes the device it makes today, draws the existing path and reports why. No launch is refused and none fails.",
+          "statement": "From an ordinary launch of the proving ground's Mac window on the final build, on this Mac. With the opt-in selection and no recipe named, the valley reports the Apple tile recipe, `mesh-stages` enabled and the cooked draw path resolved to `MeshStages`, with a count of mesh-stage draws that is not zero. With the selection and `THRUM_RECIPE=portable`, it reports the portable recipe and the path chosen today, with no mesh-stage draw and the recipe as the reason. With the selection, no recipe named and the adapter's facts made not to admit Apple tile, it reports the same, and why Apple tile was not taken. With the selection and the first device request made to fail, the window makes the device it makes today, resolves the recipe and the path of a launch with no selection and reports why. With no selection the device, the recipe and the path are today's. No launch is refused and none fails.",
           "check": "python3 scripts/mesh_stage_proof.py opt-in",
-          "ask": "Is each case launched through the Mac window's host as a person would launch it, with only the device request's failure injected?",
+          "ask": "Is each case launched through the Mac window's host as a person would launch it, with only the device request's failure and the adapter's recipe facts injected, and do the first two cases differ in `THRUM_RECIPE` alone?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -267,7 +267,7 @@
         {
           "id": "M3.3",
           "statement": "With the opt-in selection on the final build, the valley as the V1 exit leaves it passes M2.4's inspection list. The record states the result for each entry of the list.",
-          "inspect": "One capture pass on the final build, launched with the opt-in selection and with `mesh-stages` required, so its frames cannot be the fallback's: `fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, whole and as native-size crops, with the capture's own report of the enabled features and the resolved cooked path beside them. Judged by M2.4's list.",
+          "inspect": "One capture pass on the final build, launched with the opt-in selection, no recipe named and `mesh-stages` required, so its frames cannot be the fallback's: `fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, whole and as native-size crops, with the capture's own report of the enabled features, the resolved recipe and the resolved cooked path beside them. Judged by M2.4's list.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -276,7 +276,7 @@
         },
         {
           "id": "M3.4",
-          "statement": "The record says, from its rows, what share of cooked triangles the cone test and the frustum test each removed in each pass, for terrain and for the other cooked meshes apart, and what the pair shows the path saved or cost. From the shares measured on the other cooked meshes it says what the same tests would be expected to remove from the exit scene's entities, so that the next plan can decide whether entities are drawn this way.",
+          "statement": "The record says, from its rows, what share of cooked triangles the cone test and the frustum test each removed in each pass, for terrain and for the other cooked meshes apart, and what the pair shows the path saved or cost in the timed-pass span and in frame CPU time. From the shares measured on the other cooked meshes it says what the same tests would be expected to remove from the exit scene's entities, so that the next plan can decide whether entities are drawn this way.",
           "ask": "Is the expectation for entities derived from triangle shares measured on meshes like the exit scene's props, with its assumptions stated, and not asserted?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -286,7 +286,7 @@
         },
         {
           "id": "M3.5",
-          "statement": "A creator can turn the path on for a scene from the public documentation: the launch's list and what required and preferred mean, the scene's request, what it resolves to on a device without the stages and for a mesh the device cannot bind, that nothing selects it unasked, and what this Mac's record shows.",
+          "statement": "A creator can turn the path on for a scene from the public documentation: the launch's list and what required and preferred mean, the scene's request, that the path draws only on the Apple tile recipe and what the valley's one setting does about the recipe, what a request resolves to on the portable recipe, on a device without the stages and for a mesh the device cannot bind, that nothing selects it unasked, and what this Mac's record shows.",
           "ask": "Could an agent that has read only the public documentation launch a scene on the mesh stages on this Mac and read back that it did?",
           "target": "mac-metal",
           "builder_result": "open",

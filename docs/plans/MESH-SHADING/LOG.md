@@ -25,3 +25,9 @@
   opt-in, and the pair is a tripwire. M2 gained M2.8 and M3's items were rewritten.
   [What changed, finding by finding](../../evidence/MESH-SHADING/design-review-2-resolution.md). The design
   review is owed.
+- 2026-11-18 [The third design review](../../evidence/MESH-SHADING/design-review.md) asked for changes: two
+  Must Fix. The lead: "take the smallest fix that removes each defect: an explicit portable recipe must stay on
+  the portable path; for the frame timing, either measure the whole command-buffer GPU span or label the number
+  as the pass interval it is." `MeshStages` is met only on Apple tile, and the GPU figure is named the
+  timed-pass span. [What changed, finding by finding](../../evidence/MESH-SHADING/design-review-3-resolution.md).
+  The design review is owed.
