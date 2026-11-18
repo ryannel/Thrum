@@ -263,7 +263,10 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
         let eye = [0.0, 40.0, 0.0];
         let target = [0.0, 1600.0, -3000.0];
         let fov = std::f32::consts::FRAC_PI_3;
-        let camera = v1_game::SceneCamera::perspective(eye, target, fov, 0.1, 200_000.0)
+        // The opaque camera ends before the cloud band. Cloud motion must
+        // still replace sky motion where a dominant cloud is traced.
+        let opaque_far = 700.0;
+        let camera = v1_game::SceneCamera::perspective(eye, target, fov, 0.1, opaque_far)
             .expect("upward real camera");
         clear.set_scene_camera(camera).expect("clear camera");
         sky.set_scene_camera(camera).expect("cloud camera");
@@ -276,7 +279,7 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
                     fov,
                     16.0 / 9.0,
                     0.1,
-                    200_000.0,
+                    opaque_far,
                 )
                 .unwrap()
                 .view_proj_columns(),

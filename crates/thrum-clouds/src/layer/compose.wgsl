@@ -15,7 +15,10 @@ struct Output {@location(0) colour:vec4<f32>,@location(1) motion:vec4<f32>,@loca
     let ray=normalize(far.xyz/far.w-view.camera.xyz);
     let point=view.camera.xyz+ray*front_value.x*1000.0;
     let raster=view.raster*vec4(point,1.0);
-    if textureLoad(depth,vec2<i32>(position.xy),0)>raster.z/raster.w {discard;}
+    let opaque_depth=textureLoad(depth,vec2<i32>(position.xy),0);
+    // Reversed-Z zero denotes sky. Clouds may extend past the opaque
+    // camera's far plane, where their projected depth is negative.
+    if opaque_depth>0.0 && opaque_depth>raster.z/raster.w {discard;}
     var motion=vec2(65504.0);
     if cloud.temporal.x!=0u {
         let old_point=point-vec3(cloud.drift.z,0.0,cloud.drift.w);
