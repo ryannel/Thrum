@@ -42,6 +42,8 @@ def prepare_mac(folder, revision, env):
     with subprocess.Popen(['git', 'archive', revision], cwd=ROOT, stdout=subprocess.PIPE) as source:
         with tarfile.open(fileobj=source.stdout, mode='r|') as stream:
             stream.extractall(archive, filter='data')
+        # tar may stop at the first end marker while Git is still writing padding.
+        source.stdout.read()
         if source.wait():
             raise RuntimeError('could not archive the source revision')
     shutil.copytree(wgpu, backend)
