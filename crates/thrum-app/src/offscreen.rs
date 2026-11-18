@@ -54,10 +54,7 @@ impl<G: Game> Offscreen<G> {
     /// disabled before injected work; the caller restarts it after recovery.
     /// # Errors
     /// Refuses pending frames, missing diagnostic or unexpected error ordering.
-    pub fn native_fault(
-        &mut self,
-        fault: NativeFault,
-    ) -> Result<(), thrum_render::runtime::FrameError> {
+    pub fn native_fault(&mut self, fault: NativeFault) -> Result<(), FrameError> {
         if self.host.pending_frames() != 0 {
             return Err(FrameError::InvalidState(
                 "native fault needs a drained diagnostic",
@@ -127,7 +124,7 @@ impl<G: Game> Offscreen<G> {
         &mut self,
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
-    ) -> Result<(), thrum_render::runtime::FrameError> {
+    ) -> Result<(), FrameError> {
         let mut candidate = self
             .host
             .device_prepare_inputs()?
