@@ -38,21 +38,25 @@ def measure(scene='shade', alternatives=True):
     rows = []
     arms=[('off',1,None,None),('shade',1,None,None),('shade',8,None,None),('shade',60,None,None)]
     if scene=='first-frame':
-        arms=[('off',1,None,None),('sky',1,2,3)]
+        arms=[('off',1,None,None),('sky',1,None,None)]
         if alternatives:
-            arms += [('sky',1,1,3),('sky',1,4,3),('sky',1,2,1),('sky',1,2,0)]
+            arms += [('sky',1,2,3),('sky',1,4,3),('sky',1,1,1),('sky',1,1,0)]
     for selection, scale, stride, samples in arms:
         environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(store),
                            THRUM_CLOUDS=selection, THRUM_CLOUD_TIME_SCALE=str(scale),
                            THRUM_CLOUD_WIND='40', THRUM_RECIPE='portable')
         if scene=='first-frame':
+            environment.pop('THRUM_CLOUD_REFRESH_STRIDE', None)
+            environment.pop('THRUM_CLOUD_LIGHT_SAMPLES', None)
             environment.update(THRUM_CAMERA_HEIGHT='260.4846459239257',THRUM_CAMERA_Z='80')
         if stride is not None:
             environment.update(THRUM_CLOUD_REFRESH_STRIDE=str(stride),THRUM_CLOUD_LIGHT_SAMPLES=str(samples))
         row = json.loads(run(['target/release/examples/cloud_cost'], env=environment, timeout=180))
         row.update(selection=selection, weather_speed=scale)
-        if stride is not None:
-            row.update(refresh_stride=stride,local_light_samples=samples)
+        if selection == 'sky':
+            knobs = {knob['name'].rsplit('/', 1)[-1]: knob['value'] for knob in row['quality']}
+            row.update(refresh_stride=1 << knobs['cloud refresh exponent'],
+                       local_light_samples=knobs['cloud local light samples'])
         rows.append(row)
     return rows
 
