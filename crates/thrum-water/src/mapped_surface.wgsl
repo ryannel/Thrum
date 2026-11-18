@@ -48,7 +48,7 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>, view_y: f32) -> f32 {
     // A glancing ray travels farther through the thin sheet. Let the ground
     // contribution decay continuously with that path to the bed.
     let path = max(0.0, depth) / max(0.15, abs(view_y));
-    return 1.0 - 0.6 * exp2(-64.0 * path);
+    return 1.0 - 0.72 * exp2(-27.0 * path);
 }
 
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
