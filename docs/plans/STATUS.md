@@ -338,6 +338,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5), 11 Nov · [review](../evidence/ATMOSPHERE/M5-review.md)
 - The existing frame lifecycle runs through one split graph (APPLE-TILE M2), 11 Nov · [review](../evidence/APPLE-TILE/M2-review.md)
 - Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1), 11 Nov · [review](../evidence/APPLE-PRESENTATION/M1-review.md)
+- The latest build report: [2026-11-13](../evidence/build-reports/2026-11-13.md)
 
 ## All modules
 
