@@ -1,0 +1,10 @@
+[package]
+name = "thrum-fixtures"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Shared plain-data qualification fixtures"
+
+[lints]
+workspace = true

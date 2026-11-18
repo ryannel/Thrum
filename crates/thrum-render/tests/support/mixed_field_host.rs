@@ -1,19 +1,24 @@
-//! Host lifecycle witness using the game's authored field and mesh selection.
+//! Host lifecycle witness using the shared mixed-mesh field.
 use std::{sync::Arc, time::Duration};
 
-use super::{Gpu, environment::DayCycle, equal, field, field_meshes};
+use super::{Gpu, equal};
 use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
+use thrum_fixtures::mixed_field::{self as field, day_cycle::DayCycle, meshes};
 use thrum_render::{
+    abi::MaterialRecord,
     atmosphere::AtmosphereFrame,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
         FrameConfig, FrameHost, FrameSample, FrameWorld, SceneFrame, SceneSource, SurfaceOutput,
     },
-    synthetic::{CullMode, FrameLighting, SyntheticScene, SyntheticView},
+    synthetic::{
+        CullMode, FrameLighting, SyntheticMesh, SyntheticMeshChoice, SyntheticMeshes,
+        SyntheticScene, SyntheticVertex, SyntheticView,
+    },
 };
 
 struct Page {
@@ -167,14 +172,50 @@ fn profile(extent: [u32; 2]) -> SurfaceProfile {
         extent,
     }
 }
+
+fn field_meshes() -> Arc<SyntheticMeshes> {
+    Arc::new(SyntheticMeshes {
+        updates: None,
+        meshes: meshes::prop_meshes()
+            .into_iter()
+            .map(|mesh| SyntheticMesh {
+                vertices: mesh
+                    .vertices
+                    .into_iter()
+                    .map(|vertex| SyntheticVertex {
+                        position: vertex.position,
+                        normal: vertex.normal,
+                        uv: vertex.uv,
+                        tangent: vertex.tangent,
+                    })
+                    .collect(),
+                indices: mesh.indices,
+            })
+            .collect(),
+        slots: (0..field::ENTITY_COUNT)
+            .map(|index| {
+                meshes::mesh_slot(index, true)
+                    .map_or(SyntheticMeshChoice::Cube, SyntheticMeshChoice::Mesh)
+            })
+            .collect(),
+    })
+}
+
 async fn host(gpu: &Gpu, mode: CullMode, surface: [u32; 2], tick: u64) -> Host {
     let mut scene = SyntheticScene::grid(u32::try_from(field::ENTITY_COUNT).expect("field size"))
         .expect("field scene");
-    scene.materials = field::materials();
+    scene.materials = field::materials()
+        .into_iter()
+        .map(|material| MaterialRecord {
+            base_rgba: material.base_rgba,
+            surface: material.surface,
+            ..Default::default()
+        })
+        .collect();
     for (index, instance) in scene.instances.iter_mut().enumerate() {
         let entity = field::entity(index);
         let (mut basis, mut normal) = field::basis(&entity);
-        if field_meshes::mirrored(index) {
+        if meshes::mirrored(index) {
             basis[0] = basis[0].map(|v| -v);
             normal[0] = normal[0].map(|v| -v);
         }
@@ -184,7 +225,7 @@ async fn host(gpu: &Gpu, mode: CullMode, surface: [u32; 2], tick: u64) -> Host {
         }
         instance.previous = instance.current;
     }
-    let meshes = field_meshes::selection();
+    let meshes = field_meshes();
     assert_eq!(meshes.meshes.len(), 3, "rock, column and spruce");
     assert_eq!(meshes.slots.len(), field::ENTITY_COUNT);
     scene.meshes = Some(meshes);

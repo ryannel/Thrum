@@ -1,26 +1,33 @@
-//! Game-authored solar time derived from the committed world tick.
-//! The renderer receives a Sun sample; it never owns another game clock.
+//! Field solar time sampled from the committed world tick.
 
 use std::f32::consts::{FRAC_PI_4, TAU};
 
 /// One equinox day at −45° latitude. The active world tick supplies time;
 /// display interpolation only samples between its committed endpoints.
-pub(crate) struct DayCycle;
+pub struct DayCycle;
 
+/// Sun and clock state at a rendered field sample.
 #[derive(Clone, Copy)]
-pub(crate) struct SunSample {
+pub struct SunSample {
+    /// Direction from the field toward the Sun.
     pub toward_sun: [f32; 3],
+    /// Rotation from the equatorial frame to the world frame.
     pub equatorial_to_world: [[f32; 3]; 3],
+    /// Direct solar illuminance outside the atmosphere.
     pub top_illuminance_lux: f32,
+    /// Linear RGB solar colour.
     pub colour: [f32; 3],
+    /// Identity of the atmospheric profile used with the sample.
     pub profile_epoch: u64,
+    /// Interpolated simulation time in seconds.
     pub simulation_time_seconds: f64,
 }
 
 impl DayCycle {
-    pub(crate) const TICKS_PER_DAY: u64 = 60 * 60 * 5;
+    const TICKS_PER_DAY: u64 = 60 * 60 * 5;
 
-    pub(crate) fn offset_for_time(tick: u64, time_of_day: f32) -> Option<f32> {
+    /// Phase offset for the requested time of day, if it is within `0..=1`.
+    pub fn offset_for_time(tick: u64, time_of_day: f32) -> Option<f32> {
         if !time_of_day.is_finite() || !(0.0..=1.0).contains(&time_of_day) {
             return None;
         }
@@ -37,7 +44,8 @@ impl DayCycle {
         Some(if offset >= 1.0 { 0.0 } else { offset })
     }
 
-    pub(crate) fn time_of_day(tick: u64, phase_offset: f32) -> f32 {
+    /// Time of day at the committed tick, with midnight at zero.
+    pub fn time_of_day(tick: u64, phase_offset: f32) -> f32 {
         (Self::committed_phase(tick) + phase_offset + 0.5).rem_euclid(1.0)
     }
 
@@ -64,11 +72,13 @@ impl DayCycle {
         if phase >= 1.0 { phase - 1.0 } else { phase }
     }
 
-    pub(crate) fn rendered_time_of_day(tick: u64, alpha: f32, phase_offset: f32) -> f32 {
+    /// Time of day interpolated over the committed tick's presentation interval.
+    pub fn rendered_time_of_day(tick: u64, alpha: f32, phase_offset: f32) -> f32 {
         (Self::rendered_phase(tick, alpha, phase_offset) + 0.5).rem_euclid(1.0)
     }
 
-    pub(crate) fn sample(tick: u64, alpha: f32, phase_offset: f32) -> SunSample {
+    /// Sun and clock sample over the committed tick's presentation interval.
+    pub fn sample(tick: u64, alpha: f32, phase_offset: f32) -> SunSample {
         let phase = Self::rendered_phase(tick, alpha, phase_offset);
         let hour_angle = TAU * phase;
         let (sin_hour, cos_hour) = hour_angle.sin_cos();

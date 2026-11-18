@@ -36,7 +36,7 @@ fn metal_cooked_march_uses_each_world_sample_and_preserves_sky() {
             ..Default::default()
         },
     );
-    let cloud = include_str!("../../../thrum-render/src/atmosphere/cloud.wgsl");
+    let cloud = thrum_render::atmosphere::CLOUD_SHADER_SOURCE;
     let volume = super::cooked_source(true);
     let volume = volume
         .split_once("struct CookedVolume {")
@@ -360,10 +360,9 @@ fn draw(
         .get_mapped_range()
         .expect("valid Metal qualification fixture");
     let alpha = f32::from_le_bytes(bytes[12..16].try_into().expect("alpha bytes"));
-    let definition: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../thrum-render/src/synthetic/temporal/witness.json"
-    ))
-    .expect("shared temporal definition");
+    let definition: serde_json::Value =
+        serde_json::from_str(thrum_render::synthetic::TEMPORAL_WITNESS_JSON)
+            .expect("shared temporal definition");
     assert_eq!(definition["rows"]["W3"]["reactive"], "volume alpha");
     assert_eq!(
         u64::from(bytes[256]),

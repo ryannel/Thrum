@@ -4,13 +4,15 @@
 
 use std::f32::consts::{PI, TAU};
 
-use thrum_render::abi::MaterialRecord;
+pub mod day_cycle;
+pub mod meshes;
 
-/// Slot 0 is the ground; walls follow; props fill the rest.
-pub(crate) const WALL_COUNT: usize = 512;
+/// Number of wall slots following the ground slot.
+pub const WALL_COUNT: usize = 512;
 /// Props on a lattice; the last four are the controlled peers.
-pub(crate) const PROP_COUNT: usize = 100_000;
-pub(crate) const ENTITY_COUNT: usize = 1 + WALL_COUNT + PROP_COUNT;
+const PROP_COUNT: usize = 100_000;
+/// Total slots, including ground, walls and props.
+pub const ENTITY_COUNT: usize = 1 + WALL_COUNT + PROP_COUNT;
 
 const COLUMNS: usize = 316;
 const SPACING_M: f32 = 2.5;
@@ -28,14 +30,17 @@ const PROPS: [u64; 3] = [2, 3, 4];
 /// One seeded entity: authoritative position, velocity and material, plus the
 /// cold oriented box the renderer is prepared with.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct FieldEntity {
-    pub(crate) position: [f64; 3],
-    pub(crate) velocity: [f64; 3],
-    pub(crate) material: u64,
+pub struct FieldEntity {
+    /// Position in metres.
+    pub position: [f64; 3],
+    /// Velocity in metres per second.
+    pub velocity: [f64; 3],
+    /// Index into the field's material rows.
+    pub material: u64,
     /// Box half-extents along its local axes, in metres.
-    pub(crate) half_extent: [f32; 3],
+    pub half_extent: [f32; 3],
     /// Rotation about +Y, in radians.
-    pub(crate) yaw: f32,
+    pub yaw: f32,
 }
 
 fn mix(index: usize, salt: u64) -> u64 {
@@ -47,7 +52,7 @@ fn mix(index: usize, salt: u64) -> u64 {
 }
 
 /// A hash-chosen index below `count`.
-pub(crate) fn pick(index: usize, salt: u64, count: usize) -> usize {
+fn pick(index: usize, salt: u64, count: usize) -> usize {
     let count = u64::try_from(count).expect("small count");
     usize::try_from(mix(index, salt) % count).expect("below a usize count")
 }
@@ -76,7 +81,7 @@ fn lattice(column: usize, row: usize) -> [f32; 2] {
 ///
 /// # Panics
 /// For an index at or beyond [`ENTITY_COUNT`].
-pub(crate) fn entity(index: usize) -> FieldEntity {
+pub fn entity(index: usize) -> FieldEntity {
     assert!(index < ENTITY_COUNT, "field slot {index} out of range");
     if index == 0 {
         return FieldEntity {
@@ -124,8 +129,17 @@ pub(crate) fn entity(index: usize) -> FieldEntity {
     }
 }
 
+/// A field material's base colour and surface parameters.
+#[derive(Clone, Copy)]
+pub struct FieldMaterial {
+    /// Linear RGBA base colour.
+    pub base_rgba: [f32; 4],
+    /// Occlusion, roughness, metallic and normal scale.
+    pub surface: [f32; 4],
+}
+
 /// Material rows indexed by [`FieldEntity::material`].
-pub(crate) fn materials() -> Vec<MaterialRecord> {
+pub fn materials() -> [FieldMaterial; 5] {
     [
         ([0.20, 0.22, 0.17, 1.0], [1.0, 0.9, 0.0, 1.0]),
         ([0.42, 0.40, 0.37, 1.0], [1.0, 0.8, 0.0, 1.0]),
@@ -133,18 +147,12 @@ pub(crate) fn materials() -> Vec<MaterialRecord> {
         ([0.12, 0.30, 0.55, 1.0], [1.0, 0.35, 0.0, 1.0]),
         ([0.65, 0.58, 0.30, 1.0], [1.0, 0.6, 0.0, 1.0]),
     ]
-    .into_iter()
-    .map(|(base_rgba, surface)| MaterialRecord {
-        base_rgba,
-        surface,
-        ..Default::default()
-    })
-    .collect()
+    .map(|(base_rgba, surface)| FieldMaterial { base_rgba, surface })
 }
 
 /// Column-major object basis (three columns) and its inverse-transpose normal
 /// basis for an oriented box.
-pub(crate) fn basis(entity: &FieldEntity) -> ([[f32; 3]; 3], [[f32; 3]; 3]) {
+pub fn basis(entity: &FieldEntity) -> ([[f32; 3]; 3], [[f32; 3]; 3]) {
     let (sin, cos) = entity.yaw.sin_cos();
     let axes = [[cos, 0.0, -sin], [0.0, 1.0, 0.0], [sin, 0.0, cos]];
     let mut current = [[0.0; 3]; 3];
@@ -159,7 +167,7 @@ pub(crate) fn basis(entity: &FieldEntity) -> ([[f32; 3]; 3], [[f32; 3]; 3]) {
 }
 
 /// Ticks in one loop of the flythrough (60 s at 60 Hz).
-pub(crate) const PATH_TICKS: u64 = 3600;
+const PATH_TICKS: u64 = 3600;
 const PATH_RADIUS_M: f32 = 250.0;
 /// Within each 600-tick block the camera snaps to look backwards for 120 ticks.
 const TURN_BLOCK: u64 = 600;
@@ -170,13 +178,14 @@ const CUT_BLOCK: u64 = 1800;
 
 /// One flythrough camera sample.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct FieldCamera {
-    pub(crate) eye: [f32; 3],
+pub struct FieldCamera {
+    /// Camera position in metres.
+    pub eye: [f32; 3],
     /// Heading in the XZ plane, forward = (cos, 0, sin), before the player's yaw.
-    pub(crate) heading: f32,
+    pub heading: f32,
     /// Camera continuity changes on a cut or snap turn and remains visible
     /// to the renderer even when the first sample in a segment is dropped.
-    pub(crate) history_epoch: u64,
+    pub history_epoch: u64,
 }
 
 /// The scripted flythrough at `tick` and presentation `alpha`.
@@ -184,7 +193,7 @@ pub(crate) struct FieldCamera {
     clippy::cast_precision_loss,
     reason = "tick phases are reduced modulo small loop lengths first"
 )]
-pub(crate) fn camera(tick: u64, alpha: f32) -> FieldCamera {
+pub fn camera(tick: u64, alpha: f32) -> FieldCamera {
     let step = tick.saturating_sub(1);
     let cuts = step / CUT_BLOCK;
     let phase = ((step % PATH_TICKS) as f32 + alpha) / PATH_TICKS as f32 * TAU
@@ -209,5 +218,4 @@ pub(crate) fn camera(tick: u64, alpha: f32) -> FieldCamera {
 }
 
 #[cfg(test)]
-#[path = "field/tests.rs"]
 mod tests;

@@ -66,10 +66,9 @@ fn retain(recipe: &str, image: &SubmittedImage, expected: u8, alpha: f64) {
 
 #[test]
 fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
-    let fixture: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../crates/thrum-render/src/synthetic/temporal/witness.json"
-    ))
-    .expect("shared Chrome/Metal witness");
+    let fixture: serde_json::Value =
+        serde_json::from_str(thrum_render::synthetic::TEMPORAL_WITNESS_JSON)
+            .expect("shared Chrome/Metal witness");
     let volume = &fixture["volume"];
     let extent: [u32; 3] = serde_json::from_value(volume["extent"].clone()).expect("volume extent");
     let density: u8 = serde_json::from_value(volume["density"].clone()).expect("density");

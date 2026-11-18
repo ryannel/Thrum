@@ -3,12 +3,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
-export async function qualifyTemporal(cdp, origin, output, timeout, assetsOrigin, waitFor, files, directory) {
+export async function qualifyTemporal(cdp, origin, output, timeout, assetsOrigin, waitFor, files, directory, definition) {
   for (const [url,file,type] of [
     ['/temporal.html','temporal.html','text/html'],
     ['/temporal-witness.json','temporal-witness.json','application/json'],
   ]) files.set(url,{bytes:await fs.readFile(path.join(directory,file)),type});
-  const definition=await fs.readFile(new URL('../crates/thrum-render/src/synthetic/temporal/witness.json',import.meta.url));
   const fixture=JSON.parse(definition);
   if(!files.get('/temporal-witness.json').bytes.equals(definition))throw Error('stale temporal fixture');
   const {targetId}=await cdp.call('Target.createTarget',{url:'about:blank'});

@@ -169,7 +169,14 @@ fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, String>
     let count = u32::try_from(field::ENTITY_COUNT).map_err(|_| "field exceeds u32 slots")?;
     let mut scene =
         SyntheticScene::grid(count).map_err(|error| format!("field scene: {error:?}"))?;
-    scene.materials = field::materials();
+    scene.materials = field::materials()
+        .into_iter()
+        .map(|material| MaterialRecord {
+            base_rgba: material.base_rgba,
+            surface: material.surface,
+            ..Default::default()
+        })
+        .collect();
     for (index, instance) in scene.instances.iter_mut().enumerate() {
         let entity = field::entity(index);
         let (mut basis, mut normal) = field::basis(&entity);
@@ -390,10 +397,8 @@ impl GameScene {
     pub(super) fn new(setup: GameSetup) -> Self {
         let temporal: Option<serde_json::Value> =
             (setup.display_overlay == DisplayOverlay::TemporalInputs).then(|| {
-                serde_json::from_str(include_str!(
-                    "../../../../crates/thrum-render/src/synthetic/temporal/witness.json"
-                ))
-                .expect("checked-in temporal fixture")
+                serde_json::from_str(thrum_render::synthetic::TEMPORAL_WITNESS_JSON)
+                    .expect("checked-in temporal fixture")
             });
         Self {
             sprite_scale: setup.sprite_scale,

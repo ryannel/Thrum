@@ -47,7 +47,7 @@ fn local_and_codec_frames_commit_the_retained_slice() {
         .expect("wire");
     assert_eq!(local["timeline"], wire["timeline"]);
     assert!(wire["changed_axes"].as_u64().expect("count") > 0);
-    let retained = include_str!("../../crowd-2d/retained/crowd.txt");
+    let retained = crowd_2d::RETAINED_CROWD_TRACE;
     for line in retained
         .lines()
         .filter(|line| line.starts_with("slice 2000 "))

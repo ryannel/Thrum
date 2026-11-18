@@ -114,10 +114,9 @@ pub(crate) fn prepare_temporal_showcase(
         #[serde(rename = "expected_central_byte")]
         _expected: u8,
     }
-    let definition: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../crates/thrum-render/src/synthetic/temporal/witness.json"
-    ))
-    .map_err(|e| e.to_string())?;
+    let definition: serde_json::Value =
+        serde_json::from_str(thrum_render::synthetic::TEMPORAL_WITNESS_JSON)
+            .map_err(|e| e.to_string())?;
     let v: Volume =
         serde_json::from_value(definition["volume"].clone()).map_err(|e| e.to_string())?;
     prepare_showcase_with_volume(

@@ -140,7 +140,7 @@ function solidPng(rgb) {
 }
 
 // Cook the valley into a fresh store under the run directory and serve it with the G5 dev server.
-async function serveCooked(args, output, temporal = false) {
+async function serveCooked(args, output, temporalDefinition) {
   const log = await fs.open(path.join(output, 'cook.log'), 'a');
   // Watch a copy, so the live-edit step never touches repository sources.
   const source = path.join(output, 'source');
@@ -151,8 +151,8 @@ async function serveCooked(args, output, temporal = false) {
       if (/^exit-.*\.(bin|gltf)$/.test(name)) await fs.copyFile(path.join(exit, name), path.join(source, name));
     }
   }
-  if (temporal) {
-    const fixture=JSON.parse(await fs.readFile(path.join(repo,'crates/thrum-render/src/synthetic/temporal/witness.json'),'utf8'));
+  if (temporalDefinition) {
+    const fixture=JSON.parse(temporalDefinition);
     const v=fixture.volume, bytes=Buffer.alloc(16+v.extent.reduce((a,b)=>a*b,1),v.density);
     bytes.write('TVOL',0,'ascii');v.extent.forEach((n,i)=>bytes.writeUInt32LE(n,4+i*4));
     await fs.writeFile(path.join(source,`${v.name}.tvol`),bytes);
@@ -2019,9 +2019,12 @@ async function main() {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
+    const temporalDefinition = modes.includes('temporal')
+      ? execFileSync('rustup', ['run', 'stable', 'cargo', 'run', '--locked', '--offline', '--quiet', '-p', 'thrum-render', '--example', 'temporal_witness'], { cwd: repo })
+      : undefined;
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
+    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     for (const mode of modes) {
       if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
@@ -2029,7 +2032,7 @@ async function main() {
       }));
       else if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));
-      else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
+      else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory, temporalDefinition));
       else if (mode === 'effect-state' || mode === 'effect-after-opaque') {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
         const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });

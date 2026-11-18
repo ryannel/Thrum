@@ -12,9 +12,7 @@ mod content;
 pub mod controls;
 pub mod cooked;
 pub mod effect;
-mod environment;
 mod exit_scene;
-mod field;
 mod field_meshes;
 mod host;
 pub mod lent;
@@ -25,6 +23,8 @@ pub mod simulation;
 mod sprite_card;
 #[cfg(target_os = "macos")]
 mod window;
+
+use thrum_fixtures::mixed_field::{self as field, day_cycle as environment};
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{

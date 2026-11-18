@@ -3214,6 +3214,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-fixtures"
+version = "0.1.0"
+
+[[package]]
 name = "thrum-lighthouse"
 version = "0.1.0"
 dependencies = [
@@ -3249,6 +3253,7 @@ dependencies = [
  "pollster",
  "serde_json",
  "thrum-core",
+ "thrum-fixtures",
  "thrum-test-support",
  "web-time",
  "wgpu",
@@ -3595,6 +3600,7 @@ dependencies = [
  "thrum-controls",
  "thrum-cook",
  "thrum-core",
+ "thrum-fixtures",
  "thrum-render",
  "thrum-test-support",
  "wasm-bindgen",

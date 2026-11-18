@@ -21,6 +21,9 @@ pub use environment::{EnvironmentEpoch, EnvironmentFrame, SurfaceSun, TrueSun};
 pub(crate) use gpu::{AtmospherePrepared, SecondaryAerial};
 pub use products::EnvironmentProducts;
 
+/// Cloud sampling source shared by the synthetic and cooked draw shader assemblies.
+pub const CLOUD_SHADER_SOURCE: &str = include_str!("atmosphere/cloud.wgsl");
+
 pub(crate) const STAGE_NAMES: [&str; 14] = [
     "atmosphere transmittance",
     "atmosphere multiple scattering",

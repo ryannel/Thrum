@@ -28,6 +28,7 @@ name = "ray_tracing_gpu"
 required-features = ["draw-probe"]
 
 [dependencies]
+thrum-fixtures = { path = "../../crates/thrum-fixtures" }
 pollster = "=1.0.1"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"

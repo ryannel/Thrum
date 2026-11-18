@@ -6,6 +6,9 @@ use crate::graph::{
 };
 use std::collections::BTreeSet;
 
+/// The shared submitted temporal-input qualification witness, as UTF-8 JSON.
+pub const TEMPORAL_WITNESS_JSON: &str = include_str!("temporal/witness.json");
+
 pub(super) struct TemporalInputs {
     pipelines: [wgpu::RenderPipeline; 2],
 }

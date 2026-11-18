@@ -65,6 +65,7 @@ mod view;
 pub(crate) use native_witness::NativeFrame;
 pub use native_witness::{NativeOutcome, NativeSegment, NativeWitness, NativeWitnessReport};
 pub use readback::{CaptureSource, PixelReadback};
+pub use temporal::TEMPORAL_WITNESS_JSON;
 pub use view::Reconstruction;
 
 pub(crate) use air_shadow::AIR_SHADOW_PASS;

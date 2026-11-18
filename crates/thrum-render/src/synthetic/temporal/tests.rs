@@ -2,7 +2,7 @@ use super::super::*;
 use crate::capabilities::DeviceCapabilities;
 
 fn fixture() -> serde_json::Value {
-    serde_json::from_str(include_str!("witness.json")).expect("shared witness definition")
+    serde_json::from_str(TEMPORAL_WITNESS_JSON).expect("shared witness definition")
 }
 
 async fn metal() -> (DeviceCapabilities, wgpu::Queue) {

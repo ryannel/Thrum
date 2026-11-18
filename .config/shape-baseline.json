@@ -150,12 +150,6 @@
     "package-reach": {
       "version": 1,
       "files": {
-        "crates/thrum-asset-gpu/src/draw/tests.rs": 2,
-        "crates/thrum-render/tests/visibility_buckets.rs": 3,
-        "examples/crowd-2d-run/tests/input_route.rs": 1,
-        "examples/v1-game/src/host/scene_source.rs": 1,
-        "examples/v1-game/src/showcase.rs": 1,
-        "examples/v1-game/tests/temporal_volume_gpu.rs": 1
       }
     },
     "path-attribute": {
@@ -178,7 +172,7 @@
         "crates/thrum-render/tests/effect_state.rs": 1,
         "crates/thrum-render/tests/graph_kinds.rs": 1,
         "crates/thrum-render/tests/graph_kinds_support/support.rs": 2,
-        "crates/thrum-render/tests/visibility_buckets.rs": 5,
+        "crates/thrum-render/tests/visibility_buckets.rs": 2,
         "crates/thrum-water-model/tests/conformance.rs": 1,
         "crates/thrum-water-model/tests/gains.rs": 1,
         "crates/thrum-water-model/tests/map.rs": 1,
@@ -187,7 +181,6 @@
         "crates/thrum-water-model/tests/swash.rs": 1,
         "examples/v1-game/benches/valley_culling.rs": 1,
         "examples/v1-game/src/bin/window/capture.rs": 2,
-        "examples/v1-game/src/field.rs": 1,
         "examples/v1-game/src/main.rs": 1,
         "examples/v1-game/tests/field_gpu.rs": 1,
         "examples/v1-game/tests/field_occlusion_gpu.rs": 1,

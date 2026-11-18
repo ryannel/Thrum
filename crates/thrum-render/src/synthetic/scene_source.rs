@@ -48,7 +48,7 @@ pub(super) fn prepare(
 pub(super) fn cloud_variant(source: String, gpu_written: bool) -> String {
     if gpu_written {
         source.replace(
-            include_str!("../atmosphere/cloud.wgsl"),
+            crate::atmosphere::CLOUD_SHADER_SOURCE,
             include_str!("../atmosphere/cloud_gpu.wgsl"),
         )
     } else {
@@ -80,7 +80,7 @@ fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String 
         "sun_irradiance(input.world_position)*sun_factor",
         "sun_irradiance(input.world_position)*sun_factor*cloud_factor(input.world_position)",
     );
-    format!("{shaded}\n{}", include_str!("../atmosphere/cloud.wgsl"))
+    format!("{shaded}\n{}", crate::atmosphere::CLOUD_SHADER_SOURCE)
 }
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
