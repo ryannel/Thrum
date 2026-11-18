@@ -57,6 +57,11 @@ struct BodyRecord {
 #[test]
 fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
     let seconds = 600_u32;
+    let final_tick = seconds * 60;
+    // Cover the old detachment interval at a frame per tick. Then use the
+    // scene's normal 30 Hz capture cadence while physics stays at 60 Hz.
+    let dense_ticks = 60 * 60;
+    let expected_gpu_ticks = u64::from(dense_ticks + (final_tick - dense_ticks) / 2);
     for speed in [15.0, 5.0, 0.0] {
         let scene =
             water_scene::floating::build(Wind::Gale, false, speed, std::f32::consts::PI, false)
@@ -80,6 +85,12 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
                 step.tick,
                 step.contact
             );
+            assert!(
+                step.up > 0.62,
+                "body {} listed or capsized at tick {}, speed {speed}",
+                step.id,
+                step.tick
+            );
             body.correlation[0] += step.heave * step.waterline;
             body.correlation[1] += step.heave * step.heave;
             body.correlation[2] += step.waterline * step.waterline;
@@ -87,7 +98,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
             body.max_draft_error = body
                 .max_draft_error
                 .max((step.heave - step.waterline).abs());
-            if step.tick % 120 == 1 || step.tick == u64::from(seconds) * 60 {
+            if step.tick % 120 == 1 || step.tick == u64::from(final_tick) {
                 if let Some(begin) = body.energy {
                     let overage = step.energy - begin - body.input;
                     body.worst_energy_overage = body.worst_energy_overage.max(overage);
@@ -108,31 +119,29 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
         let mut host = support::Fixture::from_game([96, 64], scene.game, scene.report);
         let begin = std::time::Instant::now();
         let baseline = observe_pose()[0].position.x;
-        for frame in 0..=seconds * 60 {
-            host.frame_without_timings(f64::from(frame) * 0.016_666_667);
-            let poses = observe_pose();
-            for body in &poses {
-                assert!(
-                    (body.rotation * DVec3::Y).y > 0.62,
-                    "body {} listed or capsized at frame {frame}, speed {speed}",
-                    body.id
-                );
-            }
-            if frame > 0 && frame % 3600 == 0 {
+        for tick in (0..=dense_ticks).chain(((dense_ticks + 2)..=final_tick).step_by(2)) {
+            host.frame_without_timings(f64::from(tick) * 0.016_666_667);
+            if tick > 0 && tick % 3600 == 0 {
                 eprintln!(
                     "gale {speed} m/s: {} simulated seconds, {:.1} wall seconds",
-                    frame / 60,
+                    tick / 60,
                     begin.elapsed().as_secs_f64()
                 );
             }
         }
-        let actual_speed = (baseline - observe_pose()[0].position.x) / f64::from(seconds);
+        let final_poses = observe_pose();
+        assert!(
+            final_poses
+                .iter()
+                .all(|body| (body.rotation * DVec3::Y).y > 0.62)
+        );
+        let actual_speed = (baseline - final_poses[0].position.x) / f64::from(seconds);
         assert!(
             (actual_speed - f64::from(speed)).abs() < 0.3,
             "actual speed {actual_speed}"
         );
         let record = record.lock().expect("step record");
-        assert_eq!(record.tick, u64::from(seconds) * 60);
+        assert_eq!(record.tick, u64::from(final_tick));
         for (id, body) in record.bodies.iter().enumerate() {
             let [cross, heave, waves] = body.correlation;
             let tracking = cross / (heave * waves).sqrt();
@@ -146,7 +155,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
                 body.max_draft_error,
             );
             assert!(
-                body.gpu_points >= (record.tick - 2) * 6,
+                body.gpu_points >= (expected_gpu_ticks - 2) * 6,
                 "missing GPU samples for body {id}: {}",
                 body.gpu_points
             );
@@ -158,11 +167,10 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
                 body.worst_energy_overage
             );
         }
-        assert_eq!(mailbox.stats().blocking_reads, 0);
-        eprintln!(
-            "gale {speed} m/s: actual {actual_speed:.3} m/s, {:?}",
-            mailbox.stats()
-        );
+        let stats = mailbox.stats();
+        assert_eq!(stats.dispatches, u64::from(final_tick) + 1);
+        assert_eq!(stats.blocking_reads, 0);
+        eprintln!("gale {speed} m/s: actual {actual_speed:.3} m/s, {stats:?}");
     }
 }
 

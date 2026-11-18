@@ -91,6 +91,8 @@ pub struct BodyStep {
     pub waterline: f64,
     /// Body origin height plus the equilibrium draft.
     pub heave: f64,
+    /// World-up component of the hull's up axis.
+    pub up: f64,
     /// Number of the six stations driven by the GPU answer.
     pub gpu_points: u32,
 }
@@ -360,6 +362,7 @@ fn advance_fleet(
                     .map(|(i, s)| s.0.sample.height - body.station(i).y + body.hull.keel_depth())
                     .fold(f64::NEG_INFINITY, f64::max);
                 let heave = body.position.y + body.draft();
+                let up = (body.rotation * DVec3::Y).y;
                 let work = body.advance(dt, |i, _| stations[i]);
                 observer(BodyStep {
                     tick,
@@ -369,6 +372,7 @@ fn advance_fleet(
                     contact,
                     waterline,
                     heave,
+                    up,
                     gpu_points,
                 });
             } else {
