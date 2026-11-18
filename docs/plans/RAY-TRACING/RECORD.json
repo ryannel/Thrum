@@ -43,39 +43,39 @@
       }
     },
     "M3": {
-      "definitions": "4d4a59f7b26ddb6e812e8dbfb2cf5f91f22f72c251632198a1e11b0ca4154a97",
+      "definitions": "eff32c7c07d695534c5e5f2bdd6573434e6edeae5c6656181993e370c96509cd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",
-        "at": "2026-11-18T01:58:13Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
+        "at": "2026-11-18T06:24:55Z"
       }
     },
     "M4": {
-      "definitions": "08e14a33faa158f03658fd556f2e5133a2e609bba695254440f73880a68692e7",
+      "definitions": "36f2158d68ff50c13bfdaa199285138b8dbfd6591cb5defa060da211199e005b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",
-        "at": "2026-11-18T01:58:13Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
+        "at": "2026-11-18T06:24:55Z"
       }
     },
     "M5": {
-      "definitions": "a61349dc691592f147a657397833f609b5c0da1b5a8a6fbb7fb38abba114b4ac",
+      "definitions": "1aa678e2de2b2ef882630ce6c5902a5b98ace392c9a9e029e68d997148784400",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",
-        "at": "2026-11-18T01:58:13Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
+        "at": "2026-11-18T06:24:55Z"
       }
     },
     "M6": {
-      "definitions": "479e965f0a61739a18e30b30935f7d602e03275b1f13cd704b808ccb0e898843",
+      "definitions": "018d9e0efc4d689431bf98a7dac936ab2f56f7c75e027555b250639a9e71152d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",
-        "at": "2026-11-18T01:58:13Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
+        "at": "2026-11-18T06:24:55Z"
       }
     }
   },
@@ -95,11 +95,15 @@
     {
       "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nLead: four of the six (1, 2, 5, 6) are about the automatic promotion machinery, the same theme MESH-SHADING keeps failing on. Under the owner's 17 Nov bar (proof proportional to risk), use the simplest rule that holds: the traced path is an explicit, recorded opt-in for this Mac, judged by eye against the inspection list, with a paired whole-frame timing kept as a tripwire, and a plain fallback to the portable path when its feature is missing. Drop adapter-keyed automatic promotion and recipe-difference crediting. Fix the two rendering findings (3, 4) on their merits.",
       "at": "2026-11-18T01:58:13Z"
+    },
+    {
+      "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. Keep the owner's 17 Nov bar: plausible at shipped-game quality, proof proportional to risk; the opt-in path should be simple.",
+      "at": "2026-11-18T06:24:55Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T01:58:13Z"
+    "at": "2026-11-18T06:24:55Z"
   },
   "design_history": [
     {
