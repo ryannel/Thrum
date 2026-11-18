@@ -31,6 +31,8 @@ Use `--mode still` for one settled submitted image, `--mode fixed` for synthetic
 `--mode realtime` for actual monotonic elapsed time, including oversleep and stalls. Fixed samples may wait
 between readbacks; their smoothness cannot prove runtime motion. Existing `THRUM_CAPTURE_SCENE` and
 `FrameHost::capture_pixels` retain separate endpoint/no-history/alpha-one oracle semantics.
+`--case checkpoint --mode fixed --params <file>` retains the first settled submission through the
+fixed timebase with the chosen camera and game controls.
 
 Mac realtime capture defaults to `--admission omit`. Opt-in `--admission wait` drains readbacks and writer
 leases before taking another opportunity when all six staging slots are reserved. It preserves each actual

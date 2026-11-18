@@ -68,6 +68,7 @@ fn store_manifest(store: &AssetStore, head: &Head) -> Result<Manifest, String> {
 
 /// A mesh resident on the GPU, with one indexed draw per meshlet.
 pub(crate) struct GpuMesh {
+    pub(crate) ray_mesh: Option<crate::ray_mesh::RayMesh>,
     pub(crate) mapped: bool,
     pub(crate) positions: wgpu::Buffer,
     pub(crate) attributes: wgpu::Buffer,
@@ -125,11 +126,23 @@ impl ResidentSet {
         stats.mesh_buffer_bytes = 0;
         stats.mesh_stage_bytes = 0;
         stats.mesh_stage_vertex_streams = 0;
+        #[cfg(feature = "draw-probe")]
+        stats.ray_mesh_storage.clear();
         let mut counted = std::collections::HashSet::new();
         for ((mesh, _), placement) in self.meshes.iter().zip(placements) {
             if !counted.insert(Arc::as_ptr(mesh)) {
                 continue;
             }
+            #[cfg(feature = "draw-probe")]
+            stats.ray_mesh_storage.push((
+                placement.mesh.clone(),
+                [
+                    mesh.positions.usage(),
+                    mesh.attributes.usage(),
+                    mesh.indices.usage(),
+                ],
+                mesh.ray_mesh.is_some(),
+            ));
             if let Some(reason) = mesh.mesh_stage_exclusion {
                 stats
                     .mesh_stage_exclusions
@@ -176,6 +189,9 @@ pub(crate) struct Confirmed {
 }
 
 pub(crate) struct Loader {
+    pub(crate) ray_demand: bool,
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    pub(crate) ray_build_probe: Option<thrum_render::synthetic::RayBuildProbe>,
     pub(crate) indirect: bool,
     pub(crate) mesh_stage_limits: Option<wgpu::Limits>,
     pub(crate) device: wgpu::Device,
@@ -532,7 +548,10 @@ impl Loader {
         let (opened, texture_profile, volume_profile) = self
             .open(source, confirmed)
             .map_err(|error| error.to_string())?;
-        let mut plan = StagingPlan::default();
+        let mut plan = StagingPlan::new(
+            #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+            self.ray_build_probe.clone(),
+        );
         let mut set = ResidentSet {
             rows: Vec::new(),
             head: *head,
@@ -583,13 +602,27 @@ impl Loader {
                 set.rows.push((hash, geometry));
             }
         }
-        for (mesh_hash, mesh, texture_hash, texture) in opened.meshes {
-            let gpu_mesh = match mesh {
-                Some(mesh) => Arc::new(
-                    self.stage_mesh(&mut plan, &Arc::new(mesh))
+        let mut staged = HashMap::new();
+        for ((mesh_hash, mesh, texture_hash, texture), placement) in
+            opened.meshes.into_iter().zip(&self.config.meshes)
+        {
+            let gpu_mesh = if let Some(mesh) = confirmed
+                .meshes
+                .get(&mesh_hash)
+                .or_else(|| staged.get(&mesh_hash))
+            {
+                Arc::clone(mesh)
+            } else {
+                let mesh = Arc::new(mesh.ok_or("lost mesh")?);
+                let gpu = Arc::new(
+                    self.stage_mesh(&mut plan, &mesh)
                         .map_err(|error| error.to_string())?,
-                ),
-                None => Arc::clone(confirmed.meshes.get(&mesh_hash).ok_or("lost mesh")?),
+                );
+                if gpu.ray_mesh.is_some() {
+                    plan.ray_mesh(Arc::clone(&gpu), &placement.mesh);
+                    staged.insert(mesh_hash, Arc::clone(&gpu));
+                }
+                gpu
             };
             let gpu_texture = match texture {
                 Some(texture) => Arc::new(self.stage_texture(&mut plan, Arc::new(texture))),
@@ -710,16 +743,32 @@ impl Loader {
                 buffer
             })
         });
+        let index_count = u32::try_from(tables.indices().len()).unwrap_or(0);
+        let ray_mesh = if self.ray_demand {
+            crate::ray_mesh::RayMesh::new(&self.device, mesh.positions().len(), index_count)?
+        } else {
+            None
+        };
+        let ray_usage = if ray_mesh.is_some() {
+            wgpu::BufferUsages::BLAS_INPUT
+        } else {
+            wgpu::BufferUsages::empty()
+        };
         let gpu = GpuMesh {
+            ray_mesh,
             mapped: mesh.is_mapped(),
             mesh_stage_streams,
             mesh_stage_exclusion,
-            positions: self.buffer("cooked positions", positions.bytes().len(), vertex_usage),
+            positions: self.buffer(
+                "cooked positions",
+                positions.bytes().len(),
+                vertex_usage | ray_usage,
+            ),
             attributes: self.buffer("cooked attributes", attributes.bytes().len(), vertex_usage),
             indices: self.buffer(
                 "cooked meshlet indices",
                 indices.bytes().len(),
-                wgpu::BufferUsages::INDEX,
+                wgpu::BufferUsages::INDEX | ray_usage,
             ),
             ranges: indirect.then(|| {
                 self.buffer(
@@ -736,7 +785,7 @@ impl Loader {
                 )
             }),
             meshlet_count,
-            index_count: u32::try_from(tables.indices().len()).unwrap_or(0),
+            index_count,
             caster_box: caster_box(mesh.positions()),
             rest_points: rest_points(mesh.positions()),
         };

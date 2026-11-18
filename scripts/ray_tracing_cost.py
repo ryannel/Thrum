@@ -9,6 +9,8 @@ from pathlib import Path
 import statistics
 import subprocess
 
+from ray_tracing_proof import run_test
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES = {(10_000, 0), (10_000, 1500), (10_000, 10_000), (100_513, 0)}
@@ -98,12 +100,52 @@ def structure(output):
         output.write_text(report)
 
 
+def valley(output):
+    host = command("system_profiler", "SPHardwareDataType", "SPDisplaysDataType")
+    machine = [line.strip() for line in host.splitlines() if line.strip().startswith(
+        ("Chip:", "Chipset Model:", "Memory:", "Total Number of Cores:")
+    )]
+    before = os.getloadavg()
+    rows = run_test("valley_cost", release=True)
+    memory, = [row for row in rows if row["type"] == "memory"]
+    initial = [row for row in rows if row["type"] == "mesh_build" and row["phase"] == "initial"]
+    edit, = [row for row in rows if row["type"] == "mesh_build" and row["phase"] == "edit"]
+    if {row["mesh"] for row in initial} != {"arena mesh 0", "arena mesh 1", "terrain", "rock", "sphere"}:
+        raise ValueError(f"missing initial mesh builds: {initial}")
+    if edit["mesh"] != "terrain" or not edit["switch_in_this_frame"]:
+        raise ValueError(f"expected the terrain edit to build in its switch submission: {edit}")
+    if not all(row["triangles"] > 0 and math.isfinite(row["gpu_bracket_ns"])
+               and row["gpu_bracket_ns"] > 0 for row in [*initial, edit]):
+        raise ValueError("missing mesh build measurement")
+    if memory["incremental_resident_bytes"] <= 0:
+        raise ValueError("missing resident bytes")
+    record = {
+        "revision": command("git", "rev-parse", "HEAD"),
+        "target": "mac-metal",
+        "os": command("sw_vers", "-productVersion"),
+        "machine": machine,
+        "load_average_before": before,
+        "load_average_after": os.getloadavg(),
+        "memory": memory,
+        "initial": initial,
+        "edit": edit,
+        "scope": "Under load. Each GPU interval brackets one real mesh build, including its "
+                 "command boundaries. The edit interval measures the added build in the "
+                 "switch submission and excludes its copies and the ordinary scene structure build.",
+    }
+    text = json.dumps(record, indent=2) + "\n"
+    print(text, end="")
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(text)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("profile", choices=["structure"])
+    parser.add_argument("profile", choices=["structure", "valley"])
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    structure(args.output)
+    {"structure": structure, "valley": valley}[args.profile](args.output)
 
 
 if __name__ == "__main__":

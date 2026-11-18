@@ -161,7 +161,13 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("reference") => thrum_render::synthetic::Reconstruction::Reference,
             _ => return Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
         },
-        display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
+        display_overlay: match launch_value("THRUM_TRACED_VIEW").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => {
+                thrum_render::synthetic::DisplayOverlay::Off
+            }
+            Ok("on") => thrum_render::synthetic::DisplayOverlay::TracedGeometry,
+            _ => return Err("THRUM_TRACED_VIEW must be off or on".to_owned()),
+        },
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,
         exit_entities: if content == crate::GameContent::Exit

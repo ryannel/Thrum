@@ -10,7 +10,7 @@ description = "GPU residency for cooked G5 products: staged budgeted uploads, me
 workspace = true
 
 [features]
-draw-probe = []
+draw-probe = ["thrum-render/creation-counters"]
 fault-probe = []
 
 [dev-dependencies]

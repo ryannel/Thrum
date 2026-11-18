@@ -98,6 +98,9 @@ enum Source {
 
 /// A planned upload, shared by its filler and its recorder. Filled chunks arrive in order.
 struct Stream {
+    ray_meshes: Vec<(usize, MeshBuild)>,
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    ray_probe: Option<thrum_render::synthetic::RayBuildProbe>,
     sources: Vec<Source>,
     copies: Vec<Copy>,
     /// Per chunk, the index one past its last copy.
@@ -398,6 +401,13 @@ impl StagedUpload {
         recorded.end == self.stream.copies.len()
     }
 
+    #[cfg(feature = "draw-probe")]
+    pub(crate) fn ray_build_count(&self, recorded: Recorded) -> usize {
+        let builds = &self.stream.ray_meshes;
+        builds.partition_point(|(end, _)| *end <= recorded.end)
+            - builds.partition_point(|(end, _)| *end <= self.next)
+    }
+
     /// Record copies from the last committed one until `budget` bytes have been spent (at least
     /// one copy when its chunk is filled) or the next copy's chunk is not filled yet.
     pub(crate) fn encode(&mut self, encoder: &mut wgpu::CommandEncoder, budget: u64) -> Recorded {
@@ -450,6 +460,24 @@ impl StagedUpload {
             }
             recorded.bytes += copy.size;
             recorded.end += 1;
+        }
+        // The committed copy cursor also commits these builds. A discarded encoder
+        // crosses the same boundaries and records the builds again.
+        let builds = &self.stream.ray_meshes;
+        let first = builds.partition_point(|(end, _)| *end <= self.next);
+        for (_, mesh) in builds[first..]
+            .iter()
+            .take_while(|(end, _)| *end <= recorded.end)
+        {
+            if let Some(ray_mesh) = &mesh.mesh.ray_mesh {
+                let build = ray_mesh.build(&mesh.mesh);
+                #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+                if let Some(probe) = &self.stream.ray_probe {
+                    probe.encode(encoder, mesh.name.clone(), &build);
+                    continue;
+                }
+                encoder.build_acceleration_structures([&build], []);
+            }
         }
         recorded
     }
@@ -553,7 +581,14 @@ impl StagingRing {
 }
 
 /// One piece of source data and where it goes.
+struct MeshBuild {
+    mesh: Arc<crate::load::GpuMesh>,
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    name: String,
+}
+
 enum Piece {
+    RayMesh(MeshBuild),
     Buffer {
         bytes: Arc<dyn Bytes>,
         buffer: wgpu::Buffer,
@@ -568,6 +603,8 @@ enum Piece {
 #[derive(Default)]
 pub(crate) struct StagingPlan {
     pieces: Vec<Piece>,
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    ray_probe: Option<thrum_render::synthetic::RayBuildProbe>,
 }
 
 /// Packs copies in order into chunks of `size` bytes, each copy 256-byte aligned.
@@ -600,6 +637,28 @@ impl Packer {
 }
 
 impl StagingPlan {
+    pub(crate) fn new(
+        #[cfg(all(feature = "draw-probe", target_os = "macos"))] ray_probe: Option<
+            thrum_render::synthetic::RayBuildProbe,
+        >,
+    ) -> Self {
+        Self {
+            pieces: Vec::new(),
+            #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+            ray_probe,
+        }
+    }
+
+    pub(crate) fn ray_mesh(&mut self, mesh: Arc<crate::load::GpuMesh>, name: &str) {
+        #[cfg(not(all(feature = "draw-probe", target_os = "macos")))]
+        let _ = name;
+        self.pieces.push(Piece::RayMesh(MeshBuild {
+            mesh,
+            #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+            name: name.to_owned(),
+        }));
+    }
+
     pub(crate) fn buffer(&mut self, bytes: Arc<dyn Bytes>, buffer: wgpu::Buffer) {
         self.pieces.push(Piece::Buffer { bytes, buffer });
     }
@@ -625,9 +684,11 @@ impl StagingPlan {
         };
         let mut sources = Vec::with_capacity(self.pieces.len());
         let mut copies = Vec::new();
+        let mut ray_meshes = Vec::new();
         for piece in self.pieces {
             let source = sources.len();
             match piece {
+                Piece::RayMesh(mesh) => ray_meshes.push((copies.len(), mesh)),
                 Piece::Buffer { bytes, buffer } => {
                     let len = bytes.bytes().len();
                     let size = (len as u64).next_multiple_of(wgpu::COPY_BUFFER_ALIGNMENT);
@@ -674,6 +735,9 @@ impl StagingPlan {
         let total = copies.iter().map(|copy| copy.size).sum();
         let chunks = chunk_ends.len();
         let stream = Arc::new(Stream {
+            ray_meshes,
+            #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+            ray_probe: self.ray_probe,
             sources,
             copies,
             chunk_ends,

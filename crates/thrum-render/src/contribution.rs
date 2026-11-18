@@ -121,6 +121,9 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 pub struct SceneSurface<'a> {
     /// Whether the prepared scene uses ray queries.
     pub ray_demand: bool,
+    /// Optional mesh-build observation for a contended diagnostic capture.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    pub ray_build_probe: Option<crate::synthetic::RayBuildProbe>,
     /// Prepared pipeline surfaces for all slots, lent only to a contribution
     /// that opts in through [`SceneContribution::secondary_views_enabled`].
     pub secondary_surfaces: Vec<SecondarySceneSurface<'a>>,
@@ -310,6 +313,15 @@ pub struct ContributionPasses {
 
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Offer every opaque placement this contribution holds for this recording,
+    /// including off-camera placements and geometry outside all shadow passes.
+    /// Called only with scene ray demand, after staged uploads and before the
+    /// scene structure is built. Offer the same mesh and transform the frame
+    /// draws, including a tentative publication switch, in stable placement order.
+    /// The mesh must belong to this device generation and have a build recorded
+    /// by this point. The default offers no instances.
+    fn ray_instances(&self, _instances: &mut RayInstances<'_>) {}
+
     /// Opt opaque geometry into secondary views. The default receives no
     /// pipeline surfaces and records no extra upload, caster or opaque draw.
     fn secondary_views_enabled(&self) -> bool {
@@ -445,6 +457,33 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     /// The encoder holding this frame's recording was submitted: commit it. `history_advanced`
     /// is false for a capture, which renders without making itself the scene's previous frame.
     fn submitted(&mut self, history_advanced: bool);
+}
+
+/// Receives opaque placements for the current scene structure.
+pub struct RayInstances<'a> {
+    pub(crate) entries: &'a mut Vec<Option<wgpu::TlasInstance>>,
+    pub(crate) next_identity: u32,
+    pub(crate) limit: usize,
+    pub(crate) overflowed: bool,
+}
+
+impl RayInstances<'_> {
+    /// Offer one placement of `mesh` using its row-major affine world transform.
+    /// Bit 0 enables shadow casting and bit 1 enables ambient light occlusion.
+    /// Set both for ordinary opaque geometry, regardless of enabled light effects.
+    pub fn offer(&mut self, mesh: &wgpu::Blas, transform: [f32; 12], mask: u8) {
+        if self.entries.len() == self.limit {
+            self.overflowed = true;
+            return;
+        }
+        self.entries.push(Some(wgpu::TlasInstance::new(
+            mesh,
+            transform,
+            self.next_identity,
+            mask & 0b11,
+        )));
+        self.next_identity += 1;
+    }
 }
 
 /// Pieces of a prepared scene that a [`SceneSurface`] lends out.

@@ -4,13 +4,16 @@ use std::sync::Mutex;
 
 use super::mesh_arena::{ArenaBuffers, MeshArena, MeshId, MeshRow, VERTEX_BYTES};
 use super::{PreparedSynthetic, RenderError, SceneFamily, mesh_rows::LiveRows};
+use crate::contribution::{RayInstances, SceneContribution};
 use crate::graph::{
     Access, AccessKind, FrameGraph, GraphError, Pass, PassKind, PassScope, ResourceDescriptor,
-    ResourceScope,
+    ResourceId, ResourceScope,
 };
 use crate::graph_record::RecordBinding;
 
 pub(super) const PASS: &str = "ray structure build";
+mod view;
+pub(super) use view::TracedView;
 const SHADOW_AND_AMBIENT: u8 = 0b11;
 const MAX_IDENTITIES: u32 = 1 << 24;
 
@@ -47,7 +50,9 @@ pub(super) async fn prepare(
 
 pub(super) fn binding(id: usize) -> RecordBinding<SceneFamily> {
     RecordBinding::<SceneFamily>::new(id, PassKind::AccelerationBuild, |frame, _| {
-        frame.prepared.record_ray_structure(frame.encoder)
+        frame
+            .prepared
+            .record_ray_structure(frame.encoder, frame.contribution.as_deref())
     })
 }
 
@@ -103,11 +108,14 @@ pub(super) struct SceneStructure {
     // Recording snapshots the wgpu instance list into the command buffer.
     // This cursor belongs to that CPU list and survives an abandoned encoder.
     state: Mutex<SceneInstances>,
+    slots: u32,
 }
 
 struct SceneInstances {
     tlas: wgpu::Tlas,
     count: usize,
+    contributed: Vec<Option<wgpu::TlasInstance>>,
+    traced_group: Option<wgpu::BindGroup>,
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     mesh_rows: Vec<u32>,
 }
@@ -117,19 +125,16 @@ impl SceneStructure {
         if slots > MAX_IDENTITIES || slots > device.limits().max_tlas_instance_count {
             return Err(RenderError::SceneCapacity);
         }
-        let tlas = device.create_tlas(&wgpu::CreateTlasDescriptor {
-            label: Some("scene ray structure"),
-            max_instances: slots,
-            flags: wgpu::AccelerationStructureFlags::PREFER_FAST_BUILD,
-            update_mode: wgpu::AccelerationStructureUpdateMode::Build,
-        });
         Ok(Self {
             state: Mutex::new(SceneInstances {
-                tlas,
+                tlas: create_tlas(device, slots),
                 count: 0,
+                contributed: Vec::new(),
+                traced_group: None,
                 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
                 mesh_rows: Vec::with_capacity(slots as usize),
             }),
+            slots,
         })
     }
 
@@ -138,6 +143,7 @@ impl SceneStructure {
         scene: &PreparedSynthetic,
         arena: &MeshArena,
         encoder: &mut wgpu::CommandEncoder,
+        contribution: Option<&dyn SceneContribution>,
     ) -> Result<(), RenderError> {
         let mut state = self
             .state
@@ -146,12 +152,42 @@ impl SceneStructure {
         let SceneInstances {
             tlas,
             count: previous_count,
+            contributed,
+            traced_group,
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
             mesh_rows,
         } = &mut *state;
         #[cfg(all(feature = "creation-counters", target_os = "macos"))]
         mesh_rows.clear();
-        let count = scene.instance_upload.active_count() as usize;
+        let entity_count = scene.instance_upload.active_count() as usize;
+        if let Some(contribution) = contribution {
+            let device = scene.capabilities.device();
+            let limit = (device.limits().max_tlas_instance_count as usize - entity_count)
+                .min((MAX_IDENTITIES - self.slots) as usize);
+            let mut instances = RayInstances {
+                entries: contributed,
+                next_identity: self.slots,
+                limit,
+                overflowed: false,
+            };
+            contribution.ray_instances(&mut instances);
+            if instances.overflowed {
+                contributed.clear();
+                return Err(RenderError::SceneCapacity);
+            }
+        }
+        let count = entity_count + contributed.len();
+        if count > tlas.get().len() {
+            let capacity = count
+                .next_power_of_two()
+                .min(scene.capabilities.device().limits().max_tlas_instance_count as usize);
+            *tlas = create_tlas(
+                scene.capabilities.device(),
+                u32::try_from(capacity).map_err(|_| RenderError::SceneCapacity)?,
+            );
+            *previous_count = 0;
+            *traced_group = None;
+        }
         let list = tlas
             .get_mut_slice(0..count.max(*previous_count))
             .ok_or(RenderError::SceneCapacity)?;
@@ -170,7 +206,8 @@ impl SceneStructure {
         } else {
             MeshId::CUBE
         };
-        for (entry, (slot, row)) in active.iter_mut().zip(scene.instance_upload.active_rows()) {
+        let (entities, placements) = active.split_at_mut(entity_count);
+        for (entry, (slot, row)) in entities.iter_mut().zip(scene.instance_upload.active_rows()) {
             let mesh = scene
                 .bucket_route
                 .as_ref()
@@ -185,6 +222,11 @@ impl SceneStructure {
                 SHADOW_AND_AMBIENT,
             ));
         }
+        for (entry, placement) in placements.iter_mut().zip(contributed.drain(..)) {
+            *entry = placement;
+            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+            mesh_rows.push(u32::MAX);
+        }
         retired.fill(None);
         *previous_count = count;
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
@@ -197,9 +239,26 @@ impl SceneStructure {
             .chain(replacements)
             .map(|mesh| mesh.build(buffers))
             .collect();
+        #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+        if let Some(probe) = &scene.ray_build_probe {
+            for (index, build) in builds.iter().enumerate() {
+                probe.encode(encoder, format!("arena mesh {index}"), build);
+            }
+            encoder.build_acceleration_structures([], std::iter::once(&*tlas));
+            return Ok(());
+        }
         encoder.build_acceleration_structures(&builds, std::iter::once(&*tlas));
         Ok(())
     }
+}
+
+fn create_tlas(device: &wgpu::Device, capacity: u32) -> wgpu::Tlas {
+    device.create_tlas(&wgpu::CreateTlasDescriptor {
+        label: Some("scene ray structure"),
+        max_instances: capacity,
+        flags: wgpu::AccelerationStructureFlags::PREFER_FAST_BUILD,
+        update_mode: wgpu::AccelerationStructureUpdateMode::Build,
+    })
 }
 
 fn transform(row: &[u8; crate::abi::INSTANCE_BYTES], alpha: f32) -> [f32; 12] {
@@ -223,9 +282,10 @@ impl PreparedSynthetic {
         &self,
         graph: &mut FrameGraph,
         mesh: &[Access; 2],
-    ) -> Result<(), GraphError> {
+        contribution_products: Option<&ResourceId>,
+    ) -> Result<Option<ResourceId>, GraphError> {
         if self.ray_structure.is_none() {
-            return Ok(());
+            return Ok(None);
         }
         let structure = graph.resource(
             ResourceDescriptor::AccelerationStructure,
@@ -241,7 +301,18 @@ impl PreparedSynthetic {
                 )
             })
             .collect();
-        accesses.push(Access::new(structure, 0..1, AccessKind::AccelerationBuild));
+        if let Some(products) = contribution_products {
+            accesses.push(Access::new(
+                products.clone(),
+                0..super::contributed::CONTRIBUTION_TOKEN_BYTES,
+                AccessKind::AccelerationInput,
+            ));
+        }
+        accesses.push(Access::new(
+            structure.clone(),
+            0..1,
+            AccessKind::AccelerationBuild,
+        ));
         graph.pass(Pass {
             name: PASS.into(),
             scope: PassScope::Shared,
@@ -249,17 +320,18 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: true,
         });
-        Ok(())
+        Ok(Some(structure))
     }
 
     pub(super) fn record_ray_structure(
         &self,
         encoder: &mut wgpu::CommandEncoder,
+        contribution: Option<&dyn SceneContribution>,
     ) -> Result<(), RenderError> {
         self.ray_structure
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?
-            .record(self, &self.mesh_arena, encoder)
+            .record(self, &self.mesh_arena, encoder, contribution)
     }
 }
 
@@ -267,3 +339,7 @@ impl PreparedSynthetic {
 mod diagnostics;
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use diagnostics::RayStructureInstance;
+#[cfg(all(feature = "creation-counters", target_os = "macos"))]
+mod build_probe;
+#[cfg(all(feature = "creation-counters", target_os = "macos"))]
+pub use build_probe::{RayBuildProbe, RayBuildSample};

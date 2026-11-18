@@ -37,6 +37,9 @@ pub enum DisplayOverlay {
     Motion = 2,
     /// Actual reactive/depth/motion inputs. Requires temporal inputs at preparation.
     TemporalInputs = 3,
+    /// Opaque geometry as seen by camera rays. Select at preparation on a
+    /// ray-capable scene to prepare the traced view.
+    TracedGeometry = 4,
 }
 
 /// Word 7 of the exposure policy and sample: the tone map in bits 0–7 and the
@@ -271,6 +274,7 @@ impl SdrToneStage {
         &self,
         graph: &mut FrameGraph,
         input: &PreToneInput,
+        ray_structure: Option<ResourceId>,
     ) -> Result<(ResourceId, usize), RenderError> {
         let [width, height] = input.extent;
         for (id, format) in [
@@ -305,7 +309,7 @@ impl SdrToneStage {
             name: "synthetic tone encode".into(),
             scope: PassScope::View(1),
             pipeline: Some(self.key),
-            accesses: vec![
+            accesses: [
                 Access {
                     view: None,
                     resource: input.motion.clone(),
@@ -334,7 +338,10 @@ impl SdrToneStage {
                     kind: AccessKind::AttachmentClear,
                     store: true,
                 },
-            ],
+            ]
+            .into_iter()
+            .chain(ray_structure.map(|resource| Access::new(resource, 0..1, AccessKind::RayQuery)))
+            .collect(),
             external_side_effect: true,
         });
         Ok((output, pass))

@@ -50,6 +50,7 @@ pub(super) fn run(
             | "reconstruction-scrub"
             | "clouds-drift"
             | "clouds-still"
+            | "checkpoint"
             | "clouds-route"
             | "exit-route"
             | "exit-drift"
@@ -592,7 +593,7 @@ async fn record(
     let mut last_sample_time = Duration::ZERO;
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
     loop {
-        if mode == "still" || scenario == "clouds-still" {
+        if mode == "still" || matches!(scenario, "clouds-still" | "checkpoint") {
             break;
         }
         admission.wait(&mut driver, &mut trace, writer.as_ref(), origin, &mut clock)?;
@@ -701,7 +702,7 @@ async fn record(
         .count();
     let writer_result = trace.finish_writer(&mut driver, writer, origin, submitted)?;
     let interval_complete = mode == "still"
-        || scenario == "clouds-still"
+        || matches!(scenario, "clouds-still" | "checkpoint")
         || (scenario == "exit-stop" && mode == "fixed" && trace.images.len() >= 24)
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
@@ -931,8 +932,8 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
     if !matches!(mode.as_str(), "realtime" | "fixed" | "still") {
         return Err("invalid capture mode".to_owned());
     }
-    if scenario == "exit-stop" && mode != "fixed" {
-        return Err("an exit-stop capture uses fixed mode".to_owned());
+    if matches!(scenario, "exit-stop" | "checkpoint") && mode != "fixed" {
+        return Err(format!("a {scenario} capture uses fixed mode"));
     }
     if mode != "realtime"
         && matches!(

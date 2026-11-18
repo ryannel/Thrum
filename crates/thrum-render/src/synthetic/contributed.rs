@@ -7,6 +7,7 @@ use super::{
     ContributionFrame, ContributionPasses, DEPTH_FORMAT, MOTION_FORMAT, PreparedSynthetic,
     RenderError, SCENE_FORMAT, SceneSurface,
 };
+use crate::graph::ResourceId;
 use crate::graph::{
     Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceScope,
 };
@@ -18,7 +19,7 @@ pub(super) const CONTRIBUTION_UPLOAD: &str = "contribution upload";
 /// Extent of each contribution token resource. Tokens only order the contribution passes before
 /// forward for resources the contribution owns; they are not those resources' extent, memory or
 /// hazard evidence.
-const CONTRIBUTION_TOKEN_BYTES: u64 = 4;
+pub(super) const CONTRIBUTION_TOKEN_BYTES: u64 = 4;
 
 impl PreparedSynthetic {
     pub(crate) fn set_effect_graph(&mut self, graph: crate::contribution::EffectGraph) {
@@ -56,7 +57,8 @@ impl PreparedSynthetic {
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<crate::contribution::EffectResources, RenderError> {
+        mesh: &[Access; 2],
+    ) -> Result<(crate::contribution::EffectResources, Option<ResourceId>), RenderError> {
         let passes = self.contribution_passes;
         let token = |graph: &mut FrameGraph, usage| {
             graph.resource(
@@ -70,7 +72,13 @@ impl PreparedSynthetic {
         let products = if passes.upload {
             let products = token(
                 graph,
-                wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
+                wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::STORAGE
+                    | if self.mesh_arena.ray_demand() {
+                        wgpu::BufferUsages::BLAS_INPUT
+                    } else {
+                        wgpu::BufferUsages::empty()
+                    },
             )?;
             graph.pass(Pass {
                 name: CONTRIBUTION_UPLOAD.into(),
@@ -96,6 +104,7 @@ impl PreparedSynthetic {
         } else {
             None
         };
+        let ray_structure = self.append_ray_structure(graph, mesh, products.as_ref())?;
         if passes.compute {
             let draws = token(
                 graph,
@@ -135,13 +144,18 @@ impl PreparedSynthetic {
         }
         let resources = self.effect_graph.append(graph, self.key, prepared_keys)?;
         accesses.extend_from_slice(&resources.opaque_reads);
-        Ok(resources)
+        Ok((
+            resources,
+            ray_structure.filter(|_| self.traced_view.is_some()),
+        ))
     }
 
     /// The forward pass a [`SceneContribution`] draws into.
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {
             ray_demand: self.mesh_arena.ray_demand(),
+            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+            ray_build_probe: self.ray_build_probe.clone(),
             secondary_surfaces: Vec::new(),
             secondary_views: &self.secondary_handles,
             sun_optical_depth: self.cloud.is_some(),

@@ -312,6 +312,10 @@ impl SyntheticView {
         self
     }
 
+    pub(super) fn traced_geometry(self) -> bool {
+        self.display_overlay == DisplayOverlay::TracedGeometry
+    }
+
     /// Mark a camera cut or another invalid correspondence for this sample.
     #[must_use]
     pub fn with_history_reset(mut self, reset: bool) -> Self {

@@ -5,7 +5,7 @@ use super::{PreparedSynthetic, RenderError};
 pub struct RayStructureInstance {
     /// Logical scene slot, the ray query's custom data.
     pub slot: u32,
-    /// Mesh arena row.
+    /// Mesh arena row, or `u32::MAX` for a contribution placement.
     pub mesh_row: u32,
     /// The row-major affine transform passed to wgpu.
     pub transform: [f32; 12],
@@ -14,6 +14,15 @@ pub struct RayStructureInstance {
 }
 
 impl PreparedSynthetic {
+    pub(crate) fn ray_inspection_shadow_volumes(
+        &self,
+        bounds: Option<crate::contribution::ShadowBounds>,
+    ) -> Vec<crate::contribution::SecondaryShadowCascade> {
+        self.shadow.as_ref().map_or_else(Vec::new, |shadow| {
+            shadow.inspection_volumes(bounds).to_vec()
+        })
+    }
+
     /// Inspect the last recorded list, including from an abandoned encoder.
     #[must_use]
     pub fn ray_structure_instances(&self) -> Option<Vec<RayStructureInstance>> {
@@ -85,6 +94,6 @@ impl PreparedSynthetic {
         &self,
         encoder: &mut wgpu::CommandEncoder,
     ) -> Result<(), RenderError> {
-        self.record_ray_structure(encoder)
+        self.record_ray_structure(encoder, None)
     }
 }

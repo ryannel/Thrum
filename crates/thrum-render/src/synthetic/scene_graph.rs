@@ -344,10 +344,9 @@ impl PreparedSynthetic {
             atmosphere_inputs,
             mut late_uniforms,
         } = self.append_frame_environment(&mut graph, &mut prepared_keys, &mut accesses)?;
-        self.append_ray_structure(&mut graph, &mesh)?;
         let contribution_start = accesses.len();
-        let effect_resources =
-            self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
+        let (effect_resources, ray_structure) =
+            self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys, &mesh)?;
         let contribution_reads = accesses[contribution_start..].to_vec();
         let shadow = self.append_shadow_passes(
             &mut graph,
@@ -463,7 +462,9 @@ impl PreparedSynthetic {
             native.as_ref(),
             [width, height],
         )?;
-        let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
+        let (output, display_pass) =
+            self.display
+                .append_graph(&mut graph, &pre_tone, ray_structure)?;
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =

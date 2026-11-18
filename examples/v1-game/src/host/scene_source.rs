@@ -465,6 +465,7 @@ impl GameScene {
                 setup.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
             )
             .with_display_overlay(setup.display_overlay);
+        scene.ray_structure = setup.display_overlay == DisplayOverlay::TracedGeometry;
         scene.camera_culling = setup.camera_culling;
         if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(

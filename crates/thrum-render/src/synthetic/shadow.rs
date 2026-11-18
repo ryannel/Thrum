@@ -366,6 +366,19 @@ impl ShadowPrepared {
         cooked.is_some()
     }
 
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    pub(super) fn inspection_volumes(
+        &self,
+        bounds: Option<ShadowBounds>,
+    ) -> [SecondaryShadowCascade; MAPS] {
+        let cooked = bounds.and_then(|bounds| self.inputs.fit(Some(bounds)).ok());
+        cooked
+            .as_ref()
+            .unwrap_or(&self.fitted)
+            .matrices
+            .map(SecondaryShadowCascade::new)
+    }
+
     pub(super) fn encode_cascade<const MAP_COUNT: usize>(
         &self,
         encoder: &mut wgpu::CommandEncoder,

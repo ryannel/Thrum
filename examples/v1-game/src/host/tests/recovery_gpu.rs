@@ -284,6 +284,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
         );
         let label = match (midnight, overlay) {
             (_, DisplayOverlay::TemporalInputs) => "recovery-temporal",
+            (_, DisplayOverlay::TracedGeometry) => "recovery-traced",
             (_, DisplayOverlay::ExposureZones) => "recovery-zones",
             (_, DisplayOverlay::Motion) => "recovery-motion",
             (true, DisplayOverlay::Off) => "recovery-midnight",

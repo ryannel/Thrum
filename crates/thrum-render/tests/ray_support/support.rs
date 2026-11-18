@@ -97,6 +97,16 @@ impl Probe {
     /// # Panics
     /// The scene must provide its ray structure.
     pub fn new(device: &wgpu::Device, scene: &PreparedSynthetic) -> Self {
+        Self::bind(device, |layout| scene.ray_structure_probe_group(layout))
+    }
+
+    /// Bind a diagnostic reader to a scene structure obtained from its host.
+    /// # Panics
+    /// The scene must provide its ray structure.
+    pub fn bind(
+        device: &wgpu::Device,
+        structure: impl FnOnce(&wgpu::BindGroupLayout) -> Option<wgpu::BindGroup>,
+    ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("scene ray answers"),
             source: wgpu::ShaderSource::Wgsl(include_str!("probe.wgsl").into()),
@@ -109,9 +119,7 @@ impl Probe {
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
-        let structure = scene
-            .ray_structure_probe_group(&pipeline.get_bind_group_layout(0))
-            .expect("scene ray structure");
+        let structure = structure(&pipeline.get_bind_group_layout(0)).expect("scene ray structure");
         Self {
             pipeline,
             structure,

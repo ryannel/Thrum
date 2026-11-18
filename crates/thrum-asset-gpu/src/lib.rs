@@ -40,6 +40,7 @@ mod material;
 mod mesh_stages;
 pub mod mesh_upload;
 mod placement;
+mod ray_mesh;
 pub mod records;
 pub mod rows;
 mod staging;
@@ -328,6 +329,12 @@ impl CookedDrawPath {
 /// Shared observations, readable while the contribution belongs to the frame host.
 #[derive(Debug, Default)]
 pub struct CookedStats {
+    /// Number of individual cooked mesh structures encoded in submitted frames on this surface.
+    #[cfg(feature = "draw-probe")]
+    pub submitted_ray_builds: usize,
+    /// Distinct drawn meshes and their position, attribute and index usage, and BLAS presence.
+    #[cfg(feature = "draw-probe")]
+    pub ray_mesh_storage: Vec<(String, [wgpu::BufferUsages; 3], bool)>,
     /// Actual bound draw commands observed at the last resident swap in a probe build.
     #[cfg(feature = "draw-probe")]
     pub probe_commands: Vec<String>,
@@ -442,6 +449,7 @@ fn product_profiles(kind: thrum_asset::ProductKind, features: wgpu::Features) ->
 /// Loader thread and channels for one device generation.
 struct Live {
     generation: u64,
+    ray_demand: bool,
     stop: Arc<AtomicBool>,
     /// The loader's shared observations, so retirement can fence its last writes.
     stats: Arc<Mutex<CookedStats>>,
@@ -694,6 +702,9 @@ impl CookedAssets {
         let (resident_tx, resident_rx) = channel();
         let stop = Arc::new(AtomicBool::new(false));
         let loader = load::Loader {
+            ray_demand: surface.ray_demand,
+            #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+            ray_build_probe: surface.ray_build_probe.clone(),
             indirect: pipelines.indexed_path == CookedDrawPath::Indirect
                 || (!surface.secondary_surfaces.is_empty()
                     && CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect),
@@ -763,6 +774,7 @@ impl CookedAssets {
             .then(|| Readback::new(surface.device));
         Live {
             generation: surface.generation,
+            ray_demand: surface.ray_demand,
             stop,
             stats: Arc::clone(&self.stats),
             loader: handle,
@@ -821,6 +833,7 @@ impl CookedAssets {
             // restarts with the new bindings.
             Some(live)
                 if live.generation == surface.generation
+                    && live.ray_demand == surface.ray_demand
                     && live.pipelines.uses_mesh_stages() == stages =>
             {
                 live.readback = (indexed_path == CookedDrawPath::Indirect)
@@ -850,6 +863,11 @@ impl CookedAssets {
                     stats.mesh_stage_exclusions.clear();
                     stats.mesh_buffer_bytes = 0;
                     stats.mesh_stage_bytes = 0;
+                    #[cfg(feature = "draw-probe")]
+                    {
+                        stats.submitted_ray_builds = 0;
+                        stats.ray_mesh_storage.clear();
+                    }
                 }
                 self.live = None;
                 self.live = Some(self.start(surface, pipelines));
@@ -865,6 +883,12 @@ impl CookedAssets {
 }
 
 impl SceneContribution for CookedAssets {
+    fn ray_instances(&self, instances: &mut thrum_render::contribution::RayInstances<'_>) {
+        if let Some(bound) = self.live.as_ref().and_then(Live::drawn) {
+            bound.ray_instances(instances);
+        }
+    }
+
     fn secondary_views_enabled(&self) -> bool {
         !self.config.meshes.is_empty()
     }
@@ -1179,6 +1203,10 @@ impl SceneContribution for CookedAssets {
         }
         let now = Instant::now();
         if let (Some(recorded), Some(pending)) = (tentative.recorded, live.pending.as_mut()) {
+            #[cfg(feature = "draw-probe")]
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.submitted_ray_builds += pending.set.upload.ray_build_count(recorded);
+            }
             pending.set.upload.commit(recorded);
             if (!self.config.leased.is_empty() || self.config.rows.is_some())
                 && pending.set.upload.completes(recorded)

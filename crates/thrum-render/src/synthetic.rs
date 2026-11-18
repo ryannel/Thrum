@@ -47,7 +47,7 @@ pub mod mesh_rows;
 mod native_witness;
 mod raytrace;
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
-pub use raytrace::RayStructureInstance;
+pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
 mod readback;
 mod scene_apply;
 mod scene_graph;
@@ -553,6 +553,9 @@ pub struct PreparedSynthetic {
     /// shared vertices.
     mesh_arena: MeshArena,
     ray_structure: Option<raytrace::SceneStructure>,
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    ray_build_probe: Option<RayBuildProbe>,
+    traced_view: Option<Box<raytrace::TracedView>>,
     ray_structure_selection: RayStructureSelection,
     row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
@@ -852,6 +855,15 @@ impl SceneContext<'_> {
     }
 
     fn tone(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        if let Some(traced) = &self.prepared.traced_view
+            && self
+                .prepared
+                .pending_view
+                .unwrap_or(self.prepared.view_sample)
+                .traced_geometry()
+        {
+            return traced.encode(self, pass);
+        }
         self.prepared.display.encode(
             self.encoder,
             self.generation,
@@ -998,7 +1010,8 @@ impl PreparedSynthetic {
         internal: Option<MeshSelection>,
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
-        let mut ray_structure_selection = capabilities.resolve_ray_structure(scene.ray_structure);
+        let mut ray_structure_selection =
+            capabilities.resolve_ray_structure(scene.ray_structure || scene.view.traced_geometry());
         let culling_selection = CullingSelection::resolve(scene.camera_culling, capabilities);
         let camera_mode = culling_selection.resolved;
         let device = capabilities.device();
@@ -1651,6 +1664,8 @@ impl PreparedSynthetic {
                     taau::Taau::new(device, scene.view.reconstruction_reference())
                 }
             });
+        let traced_view = (scene.view.traced_geometry() && ray_structure.is_some())
+            .then(|| Box::new(raytrace::TracedView::new(device, &view_layout)));
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
         }
@@ -1686,6 +1701,9 @@ impl PreparedSynthetic {
                 .map(|updates| mesh_rows::LiveRows::new(updates, &mut mesh_arena)),
             mesh_arena,
             ray_structure,
+            #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+            ray_build_probe: None,
+            traced_view,
             ray_structure_selection,
             bucket_route,
             caster_boxes,

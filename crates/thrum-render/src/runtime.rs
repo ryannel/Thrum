@@ -459,6 +459,45 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+    /// Observe subsequent mesh builds for a contended Metal measurement. Install
+    /// before the first recording and before attaching the measured contribution.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    #[must_use]
+    pub fn observe_ray_mesh_builds(&mut self) -> Option<crate::synthetic::RayBuildProbe> {
+        self.prepared.observe_ray_mesh_builds(&self.device)
+    }
+
+    /// Inspect the actual scene structure from the latest recording.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    #[must_use]
+    pub fn ray_structure_instances(&self) -> Option<Vec<crate::synthetic::RayStructureInstance>> {
+        self.prepared.ray_structure_instances()
+    }
+
+    /// Bind the latest scene structure for a diagnostic query on the host's queue.
+    /// Reacquire after a recording, which can increase the structure's capacity.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    #[must_use]
+    pub fn ray_structure_probe_group(
+        &self,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Option<wgpu::BindGroup> {
+        self.prepared.ray_structure_probe_group(layout)
+    }
+
+    /// Inspect the Sun pass volumes determined by the latest camera and scene bounds.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    #[must_use]
+    pub fn ray_inspection_shadow_volumes(
+        &self,
+    ) -> Vec<crate::contribution::SecondaryShadowCascade> {
+        self.prepared.ray_inspection_shadow_volumes(
+            self.contribution
+                .as_ref()
+                .and_then(|entry| entry.shadow_bounds()),
+        )
+    }
+
     /// Optional entity-row reader retained with the scene through reconstruction.
     pub fn mesh_rows(&self) -> Option<crate::synthetic::mesh_rows::MeshRows> {
         self.scene

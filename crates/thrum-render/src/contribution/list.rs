@@ -25,6 +25,12 @@ impl SceneContributions {
 }
 
 impl SceneContribution for SceneContributions {
+    fn ray_instances(&self, instances: &mut super::RayInstances<'_>) {
+        for entry in &self.entries {
+            entry.ray_instances(instances);
+        }
+    }
+
     fn secondary_views_enabled(&self) -> bool {
         self.entries
             .iter()

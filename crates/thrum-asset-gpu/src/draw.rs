@@ -54,6 +54,18 @@ pub(crate) struct Bound {
 }
 
 impl Bound {
+    pub(crate) fn ray_instances(
+        &self,
+        instances: &mut thrum_render::contribution::RayInstances<'_>,
+    ) {
+        for mesh in &self.meshes {
+            if let Some(blas) = &mesh.ray_mesh {
+                let transform = std::array::from_fn(|index| mesh.model.row(index / 4)[index % 4]);
+                instances.offer(blas, transform, 0b11);
+            }
+        }
+    }
+
     /// Whether a frame drawing this set dispatches any cull work.
     pub(crate) fn culls(&self, views: &[thrum_render::contribution::SecondaryViewFrame]) -> bool {
         self.visible.is_some() || self.culls_views(views)
@@ -127,6 +139,7 @@ impl Bound {
 }
 
 struct BoundMesh {
+    ray_mesh: Option<wgpu::Blas>,
     #[cfg(feature = "draw-probe")]
     probe: Option<crate::draw_probe::Bound>,
     material: wgpu::BindGroup,
@@ -622,6 +635,7 @@ impl Pipelines {
                     None
                 };
                 BoundMesh {
+                    ray_mesh: mesh.ray_mesh.as_ref().map(|mesh| mesh.blas.clone()),
                     #[cfg(feature = "draw-probe")]
                     probe: self.probe.as_ref().and_then(|probe| {
                         probe.bind(&self.device, &self.queue, placement_index, mesh.index_count)

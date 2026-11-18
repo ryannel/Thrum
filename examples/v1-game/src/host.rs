@@ -459,6 +459,32 @@ impl ThreadedFrameHost {
 }
 
 impl FrameHost {
+    /// Observe Mesh BLAS builds before the first frame of the diagnostic run.
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    #[must_use]
+    pub fn observe_ray_mesh_builds(&mut self) -> Option<thrum_render::synthetic::RayBuildProbe> {
+        self.inner.observe_ray_mesh_builds()
+    }
+
+    /// Inspect the actual scene structure from the latest recording.
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    #[must_use]
+    pub fn ray_structure_instances(
+        &self,
+    ) -> Option<Vec<thrum_render::synthetic::RayStructureInstance>> {
+        self.inner.ray_structure_instances()
+    }
+
+    /// Bind the latest scene structure for a diagnostic query on the host's queue.
+    #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+    #[must_use]
+    pub fn ray_structure_probe_group(
+        &self,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Option<wgpu::BindGroup> {
+        self.inner.ray_structure_probe_group(layout)
+    }
+
     /// Optional submitted cloud transport and lighting products for inspection.
     pub fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts> {
         self.cloud_input.as_ref()?.sky_products()

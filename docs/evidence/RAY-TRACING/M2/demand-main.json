@@ -1,0 +1,11 @@
+{
+  "revision": "b4321abdc43f9e130f481d881cced926e48f8cb2",
+  "target": "mac-metal",
+  "adapter": "Apple M3 Max",
+  "recipe": "AppleTile",
+  "enabled_hardware": "ray-query required",
+  "extent": [320, 180],
+  "format": "submitted RGBA8",
+  "rgba_sha256": "3a85c2e76f5888c0243eabcf4e00c6fb03c7464f6c44238bc139a48b8619b1f1",
+  "source": "demand-reference-main.rs.txt"
+}
