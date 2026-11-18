@@ -248,6 +248,13 @@ impl Game for WindowGame {
         } else {
             crate::attach_cooked_scene(&mut host)?
         };
+        if std::env::var("THRUM_SCENE").as_deref() == Ok("exit") {
+            let selection = host.culling_selection();
+            eprintln!(
+                "Exit culling: {:?} (requested {:?}, reason {:?})",
+                selection.resolved, selection.requested, selection.reason
+            );
+        }
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
             capture::prepare_route(
