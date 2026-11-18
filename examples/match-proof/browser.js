@@ -13,8 +13,24 @@ export default async function initializeProof() {
     })));
 }
 
-export function capture(count, mixed, ticks) {
-    return captureImage(count, mixed, Uint32Array.from(ticks));
+export function capture(count, mixed, ticks, names) {
+    const packet = JSON.parse(captureImage(count, mixed, Uint32Array.from(ticks)));
+    if (packet.rows.length !== names.length) throw new Error("Missing captured images");
+    for (const [index, row] of packet.rows.entries()) {
+        const reference = images.get(names[index]);
+        if (row.image.length !== reference.length * 2) {
+            throw new Error(`Image size differs at tick ${row.tick}`);
+        }
+        for (const [offset, byte] of reference.entries()) {
+            const actual = Number.parseInt(row.image.slice(offset * 2, offset * 2 + 2), 16);
+            if (actual !== byte) {
+                throw new Error(`Image differs at tick ${row.tick}, byte ${offset}: Mac ${byte}, Chrome ${actual}`);
+            }
+        }
+        delete row.image;
+        row.equal_to_mac = true;
+    }
+    return JSON.stringify(packet);
 }
 
 export function restore(count, mixed, name, last) {
