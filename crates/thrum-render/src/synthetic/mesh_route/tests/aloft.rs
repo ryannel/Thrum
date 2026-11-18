@@ -1,7 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use super::{EXTENT, Gpu, OffscreenTarget, gpu, place};
+use super::{EXTENT, Gpu, OffscreenTarget, place};
+use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::{
     FrameLighting, PreparedSynthetic, SyntheticLight, SyntheticMeshChoice, SyntheticMeshes,
     SyntheticScene, SyntheticView, shadow,
@@ -132,9 +133,22 @@ fn read_layers(gpu: &Gpu, scene: &SyntheticScene) -> Vec<u8> {
 
 #[test]
 fn aloft_casters_draw_into_both_cascades_only() {
-    let gpu = gpu();
-    #[cfg(target_os = "macos")]
-    assert_eq!(gpu.capabilities.adapter().backend, wgpu::Backend::Metal);
+    let backend = cfg!(target_os = "macos").then_some(wgpu::Backend::Metal);
+    let Some(admitted) = thrum_test_support::gpu("aloft casters", backend) else {
+        return;
+    };
+    let (device, queue) =
+        admitted.device(thrum_test_support::Profile::Portable, &Default::default());
+    let gpu = Gpu {
+        capabilities: DeviceCapabilities::capture(&admitted.adapter, &device, 41),
+        device,
+        queue,
+    };
+    eprintln!(
+        "{} ({:?})",
+        gpu.capabilities.adapter().name,
+        gpu.capabilities.adapter().backend
+    );
     for mode in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
         let mut scene = scene();
         scene.camera_culling = mode;
