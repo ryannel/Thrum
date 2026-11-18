@@ -103,7 +103,7 @@
           "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first. A record that repeats a tick, with the next carrying two, is the page deferring a due tick under load: it is noted, and the longer step after it is not counted as a jump. That accounts for how far the scene moves between those frames and for nothing else, so a mover or prop that is missing, new or changed in them is judged like any other. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SHOWCASE/M5.md#chrome-fixed-motion; docs/evidence/SHOWCASE/M5-retake/chrome-half-tick.json; docs/evidence/SHOWCASE/M5-chrome-half-tick.tar",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
@@ -142,16 +142,8 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content, tick by tick. The finished image, and stutter at 1x, are judged in M8.",
-      "findings": [
-        {
-          "name": "Chrome fixed flythrough loses the route\u2019s presentation phase",
-          "item": "M5.9",
-          "different": "The earlier finding concerned a wall-clock stall. Every active submission here advances one tick, but samples phase zero instead of the designed half tick.",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content, tick by tick. The finished image, and stutter at 1x, are judged in M8."
     },
     {
       "id": "M6",
