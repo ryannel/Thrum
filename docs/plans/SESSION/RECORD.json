@@ -88,6 +88,32 @@
         "by": "plan",
         "task": "Diagnose SESSION M1. Its last review found something only a planner can settle: Paired codecs changed accepted SIM-2D te",
         "at": "2026-11-18T17:57:51Z"
+      },
+      "ready_for_review": {
+        "commit": "564604fb7cb06afe81594eff222a2e600955c827",
+        "checked": "c84daf9bc7dfdb464334c9e987fda877b7952f29",
+        "at": "2026-11-18T22:19:46Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 220490,
+          "cached": 38057728,
+          "output": 47850,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 944176,
+          "cached": 129870976,
+          "output": 203333,
+          "turns": 4
+        }
       }
     },
     "M2": {
