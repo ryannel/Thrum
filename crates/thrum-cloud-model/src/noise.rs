@@ -1,5 +1,6 @@
 //! Mip-zero reference for the GPU's two repeat-sampled, unorm8 volumes.
 use crate::Field;
+use std::cell::Cell;
 
 /// Period in metres of the shape volume.
 pub const SHAPE_PERIOD: f64 = 6400.0;
@@ -10,18 +11,41 @@ pub const SHAPE_SIZE: u32 = 128;
 /// Detail volume extent on each axis.
 pub const DETAIL_SIZE: u32 = 64;
 
+const SHAPE_CACHE_SIZE: usize = 1024;
+thread_local! {
+    // Rays repeatedly interpolate the same neighbouring texels. Cache only
+    // immutable hash results, keyed by both seed and wrapped texel index.
+    static SHAPE_TEXELS: [Cell<(u64, f64)>; SHAPE_CACHE_SIZE] =
+        const { [const { Cell::new((u64::MAX, 0.0)) }; SHAPE_CACHE_SIZE] };
+}
+
 impl Field {
     pub(crate) fn shape_noise(&self, point: [f64; 3]) -> f64 {
-        volume(point, SHAPE_PERIOD, SHAPE_SIZE, |uv| {
-            let sum = 0.55 * self.billow(uv, 8, 50)
-                + 0.30 * self.billow(uv, 20, 53)
-                + 0.15 * self.billow(uv, 50, 56);
-            ((sum - 0.22) / 0.56).clamp(0.0, 1.0)
+        SHAPE_TEXELS.with(|cache| {
+            volume(point, SHAPE_PERIOD, SHAPE_SIZE, |texel, uv| {
+                let width = u64::from(SHAPE_SIZE);
+                let [x, y, z] = texel.map(u64::from);
+                let index = (z * width + y) * width + x;
+                let key = (u64::from(self.seed) << 32) | index;
+                let hash = (key ^ (key >> 17)).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+                let at = usize::try_from(hash >> (u64::BITS - SHAPE_CACHE_SIZE.ilog2()))
+                    .expect("bounded cache slot");
+                let (previous, value) = cache[at].get();
+                if previous == key {
+                    return value;
+                }
+                let sum = 0.55 * self.billow(uv, 8, 50)
+                    + 0.30 * self.billow(uv, 20, 53)
+                    + 0.15 * self.billow(uv, 50, 56);
+                let value = ((sum - 0.22) / 0.56).clamp(0.0, 1.0);
+                cache[at].set((key, value));
+                value
+            })
         })
     }
 
     pub(crate) fn detail_noise(&self, point: [f64; 3]) -> f64 {
-        volume(point, DETAIL_PERIOD, DETAIL_SIZE, |uv| {
+        volume(point, DETAIL_PERIOD, DETAIL_SIZE, |_, uv| {
             let (site, f) = lattice(uv.map(|x| x * 32.0));
             interpolate(f.map(crate::smooth), |offset| {
                 let [x, y, z] = std::array::from_fn(|i| (site[i] + offset[i]).rem_euclid(32));
@@ -53,14 +77,23 @@ impl Field {
     }
 }
 
-fn volume(point: [f64; 3], period: f64, size: u32, texel: impl Fn([f64; 3]) -> f64) -> f64 {
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "wrapped texel coordinates are below the u32 texture size"
+)]
+fn volume(
+    point: [f64; 3],
+    period: f64,
+    size: u32,
+    texel: impl Fn([u32; 3], [f64; 3]) -> f64,
+) -> f64 {
     let size_f = f64::from(size);
     let (site, local) = lattice(point.map(|x| (x.rem_euclid(period) / period) * size_f - 0.5));
     interpolate(local, |offset| {
-        let uv = std::array::from_fn(|i| {
-            ((site[i] + offset[i]).rem_euclid(i64::from(size)) as f64 + 0.5) / size_f
-        });
-        (texel(uv) * 255.0).round() / 255.0
+        let wrapped =
+            std::array::from_fn(|i| (site[i] + offset[i]).rem_euclid(i64::from(size)) as u32);
+        let uv = wrapped.map(|x| (f64::from(x) + 0.5) / size_f);
+        (texel(wrapped, uv) * 255.0).round() / 255.0
     })
 }
 

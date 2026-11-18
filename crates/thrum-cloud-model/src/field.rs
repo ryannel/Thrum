@@ -94,7 +94,7 @@ pub enum Density {
 
 /// CPU field authority; construction validates all profile/type data once.
 pub struct Field {
-    seed: u32,
+    pub(super) seed: u32,
     profile: Profile,
     types: Vec<Type>,
 }
@@ -185,6 +185,18 @@ impl Field {
     )]
     pub fn column(&self, air: [f64; 2], time: f64, parameters: Parameters) -> Column {
         let t = self.kind(parameters.kind);
+        let clear = Column {
+            kind: parameters.kind,
+            base: t.base,
+            top: t.base,
+            profile: t.profile,
+            ..Column::default()
+        };
+        // Zero coverage multiplies every cell and the deck down to zero.
+        // Placed shapes are evaluated separately from this procedural column.
+        if parameters.coverage == 0.0 {
+            return clear;
+        }
         let site = air.map(|p| (p / self.profile.pitch).floor() as i64);
         let turret = self.turret(air);
         let mut coverage: f64 = 0.0;
@@ -240,13 +252,7 @@ impl Field {
         coverage = coverage.max(deck);
         depth = depth.max(t.depth[0] * deck.powf(0.7) * (0.6 + 0.4 * n));
         if coverage == 0.0 || depth == 0.0 {
-            return Column {
-                kind: parameters.kind,
-                base: t.base,
-                top: t.base,
-                profile: t.profile,
-                ..Column::default()
-            };
+            return clear;
         }
         Column {
             coverage,
