@@ -108,9 +108,11 @@ pub(super) fn run(
         };
         let left = f64::from(floor_map[region]);
         let bottom = f64::from(floor_map[region + 1]);
-        let rows: Vec<_> = (0..=256)
+        // The cleared turrets sharpen the factor over a texel. Resolve the
+        // same border interval with finer probes before comparing halvings.
+        let rows: Vec<_> = (0..=1024)
             .map(|i| {
-                let x = left + width * (-0.05 + 0.25 * f64::from(i) / 256.0);
+                let x = left + width * (-0.05 + 0.25 * f64::from(i) / 1024.0);
                 (0..17)
                     .map(|j| {
                         factor(
