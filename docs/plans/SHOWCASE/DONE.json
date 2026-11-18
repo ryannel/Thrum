@@ -155,8 +155,8 @@
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": "docs/evidence/SHOWCASE/M6.md#metal-equality",
+          "builder_result": "pass"
         },
         {
           "id": "M6.2",
@@ -202,8 +202,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": "main-branch check exact-images",
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
