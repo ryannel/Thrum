@@ -6346,6 +6346,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M5-r1-candidate-motion.tar.zst",
+      "size": 238285631,
+      "sha256": "984f207c082ee0589ea3d463dc21da5ad10b3dfad100c60a8f6da3c5e879a22d",
+      "date": "2026-11-18T23:47:40.201224+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,

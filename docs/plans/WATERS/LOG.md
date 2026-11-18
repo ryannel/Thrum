@@ -488,3 +488,8 @@
   delivered body replies and counted the unavailable station uses across a deliberate hitch.
   [M5 evidence](../../evidence/WATERS/M5.md) links twelve elapsed-time sequences and the capture-off cost.
   Empty Sun shadow timestamps prevented a complete native or portable GPU timing report.
+
+- 2026-11-19 Preserved accepted query pages across catch-up frames and sampled authored stages and chart slopes at the use tick.
+  The craft follows the encountered waterline rate. Metal passed ten minutes of the scene gale at each commanded speed.
+  Chrome reconciled individual reply ages through the hitch. The Metal candidate records the wider beam-sea buoy course.
+  [Review fixes and target evidence](../../evidence/WATERS/M5-r1.md).

@@ -626,7 +626,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
+          "evidence": "docs/evidence/WATERS/M5-r1-metal-checks.txt",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M5-review.md"
         },
@@ -661,7 +661,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
+          "evidence": "docs/evidence/WATERS/M5-r1-metal-checks.txt",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M5-review.md"
         },
@@ -671,7 +671,7 @@
           "inspect": "`realtime` sequences from a chase view and a side view, at each speed in each sea: the waterline on the hull and on one float.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-metal.json",
+          "evidence": "docs/evidence/WATERS/M5-r1.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M5-review.md"
         },
@@ -694,7 +694,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-chrome.json",
+          "evidence": "docs/evidence/WATERS/M5-r1-chrome.json",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M5-review.md"
         },
