@@ -466,30 +466,30 @@
       ]
     },
     "M6": {
-      "definitions": "06dea1716ac4ad94b789c7009defcd82bd74fd99404d23f9af76da7616228582",
+      "definitions": "333161dbd71c967dcdda4551f43fd323eb219025b14fc3b882f6f7387cab1696",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
+        "at": "2026-11-18T04:32:39Z"
       }
     },
     "M7": {
-      "definitions": "b87dff0f4d49c874ef1c23e5096f39260cbfd03bae569563809d12f5b3e71027",
+      "definitions": "2bea36130145b8a3cd654d9becbb9e7887ff783dd6c934df23aada5860f97ceb",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
+        "at": "2026-11-18T04:32:39Z"
       }
     },
     "M8": {
-      "definitions": "3ecc3a74e925eac18602e8b7c304d4cd04d911962b5adabcae1f24fb7cbcbce6",
+      "definitions": "4ff7f2dfea8deede0a7eb9c4762c6c1da5132874d28d5a5de6133d0b15a94c8c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
+        "at": "2026-11-18T04:32:39Z"
       }
     },
     "M9": {
@@ -617,30 +617,30 @@
       }
     },
     "M15": {
-      "definitions": "8e04bf0fe03666ede7af26fe013713ceee5e2c9ddf2762622449eaa4b1173368",
+      "definitions": "090d4967267cc29d0c7df3d119f0182479be295ca7228031ff7e9897deb94666",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
+        "at": "2026-11-18T04:32:39Z"
       }
     },
     "M14": {
-      "definitions": "87e4180d73a9a125c4bda1b27fb4f9ca43f5b710abb14373ac79ee5a18c61453",
+      "definitions": "8f63c7260ea82ae3ccec465ec913775b0239d95c0a25d00cc67c93ece9698735",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
+        "at": "2026-11-18T04:32:39Z"
       }
     },
     "M16": {
-      "definitions": "3fb90fb466b3b834a1e41d6fceff57664e935cf2458fdfdb9743a0979e9798e0",
+      "definitions": "cfd05ddffe08f9d97e3b13d4989343c1302b2741abf9ec48dc6ff9ec6f474cc8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
+        "at": "2026-11-18T04:32:39Z"
       }
     }
   },
@@ -692,11 +692,15 @@
     {
       "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
       "at": "2026-11-17T23:05:22Z"
+    },
+    {
+      "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolve its Must Fix findings in the design and the plan, keeping the owner's 17 Nov bar now in ORCHESTRATE.md (look and speed; references diagnose, never gate). Its Suggestions are yours to take or leave; say which you took and why. WATERS M3 is Ready for Review at 62877deb6 and should go to review as soon as the design is approved.",
+      "at": "2026-11-18T04:32:39Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T23:05:22Z"
+    "at": "2026-11-18T04:32:39Z"
   },
   "design_history": [
     {
