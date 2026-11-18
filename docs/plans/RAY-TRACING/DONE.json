@@ -97,7 +97,7 @@
     {
       "id": "M2",
       "name": "The whole valley is in the ray-tracing structure, terrain and cooked meshes included, on screen or off, and an edited mesh is replaced there in the frame it changes on screen",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [],
@@ -157,7 +157,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RAY-TRACING/M2/lifecycle.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RAY-TRACING/M2-review.md"
         },
         {
@@ -191,17 +191,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": "docs/evidence/RAY-TRACING/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Initial mesh builds run after the generation is ready",
-          "item": "M2.5",
-          "repeat": false
-        },
-        {
-          "name": "Traced view omits the hit instance identity",
-          "repeat": false
         }
       ]
     },

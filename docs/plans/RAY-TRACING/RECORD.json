@@ -152,7 +152,7 @@
         {
           "verdict": "fail",
           "commit": "76f2a88b1e3ec68eb0918d3297da901ebc656ba4",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md",
+          "review": "docs/evidence/RAY-TRACING/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -190,6 +190,37 @@
             "turns": 1
           },
           "at": "2026-11-18T17:33:15Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "0f9a2854e4aff6873ee4967307911a43dc43c45e",
+          "review": "docs/evidence/RAY-TRACING/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 90451,
+            "cached": 2337792,
+            "output": 6899,
+            "turns": 1
+          },
+          "at": "2026-11-18T20:43:14Z"
         }
       ],
       "authorised": {
@@ -225,6 +256,13 @@
           "output": 203531,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "0f9a2854e4aff6873ee4967307911a43dc43c45e",
+        "review": "docs/evidence/RAY-TRACING/M2-review.md",
+        "checked": "564604fb7cb06afe81594eff222a2e600955c827",
+        "at": "2026-11-18T20:43:14Z"
       }
     },
     "M3": {
