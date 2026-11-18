@@ -143,18 +143,19 @@ impl BrowserScene {
         self.shell.request_graphics_recovery().map_err(js)
     }
 
-    /// Device generation and the most recently submitted frame's interpolation clock.
+    /// Device generation and the latest submitted clock on that device.
+    /// The clock fields are zero until the device submits its first frame.
     pub fn frame_info(&self) -> String {
         let status = self.shell.status();
-        let sample = self.shell.samples().last();
+        let clock = self.shell.host().last_submitted_clock();
         format!(
             "generation={} recovered={} presented={} tick={} alpha={} submission={}",
             status.generation,
             status.recovered,
             status.presented,
-            sample.map_or(0, |s| s.tick),
-            sample.map_or(0.0, |s| s.presentation_alpha),
-            sample.map_or(0, |s| s.submission_order),
+            clock.map_or(0, |frame| frame.tick),
+            clock.map_or(0.0, |frame| frame.presentation_alpha),
+            clock.map_or(0, |frame| frame.submission_order),
         )
     }
     /// Number of submitted images omitted by the bounded observer.

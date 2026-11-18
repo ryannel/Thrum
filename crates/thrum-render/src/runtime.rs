@@ -293,6 +293,17 @@ pub struct FrameSample {
     pub visual_revision: Option<[u8; 32]>,
 }
 
+/// Clock of a frame accepted for GPU submission, available before completion.
+#[derive(Clone, Copy, Debug)]
+pub struct SubmittedFrameClock {
+    /// Complete world tick used by the submitted view.
+    pub tick: u64,
+    /// Fraction between the previous and current committed ticks.
+    pub presentation_alpha: f32,
+    /// GPU submission order.
+    pub submission_order: u64,
+}
+
 /// One clock callback. A busy presentation ring drops only its optional view;
 /// committed simulation updates are never dropped or applied twice.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -429,6 +440,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
+    submitted_clock: Option<SubmittedFrameClock>,
     timing_requested: bool,
     native_failed_generation: Option<u64>,
     dropped_views: u64,
@@ -794,6 +806,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             slots: gpu.slots,
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
+            submitted_clock: None,
             timing_requested: true,
             native_failed_generation: None,
             dropped_views: 0,
@@ -1147,6 +1160,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Engine-owned identity of the last successful queue submission.
     pub fn last_submission(&self) -> Option<u64> {
         self.next_submission_order.checked_sub(1)
+    }
+
+    /// Latest submitted view's clock on the current device, even while GPU work
+    /// is pending. Empty until this device submits its first view.
+    pub fn last_submitted_clock(&self) -> Option<SubmittedFrameClock> {
+        self.submitted_clock
     }
 
     /// Number of submitted render packets awaiting GPU completion or readback.
@@ -1776,6 +1795,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         sample.surface_presented = surface_presented;
         sample.submission_order = self.next_submission_order;
+        self.submitted_clock = Some(SubmittedFrameClock {
+            tick: sample.tick,
+            presentation_alpha: sample.presentation_alpha,
+            submission_order: sample.submission_order,
+        });
         if let Some(index) = capture_slot
             && let Some(tap) = self.submitted_capture.as_mut()
         {

@@ -14,6 +14,9 @@ await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
 const assert = (ok,text) => {if(!ok) throw Error(text);};
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const frameInfo = text => Object.fromEntries(
+  text.split(' ').map(pair => pair.split('=')).map(([key, value]) => [key, Number(value)]),
+);
 async function until(fn,label,timeout=180000) {
   const end=Date.now()+timeout;
   while(Date.now()<end) {const v=await fn(); if(v)return v; await delay(50);}
@@ -104,7 +107,7 @@ let chrome,cdp,sid,failure;
 const result={mode,command:'./dev scene examples/water --web',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),target:'chrome-webgpu',output,frames:[]};
 result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
 result.source_sha256={};
-for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
+for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','crates/thrum-render/src/runtime.rs','crates/thrum-render/src/runtime/device.rs','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
 try {
   const url=await until(async()=>/SCENE_URL=(\S+)/.exec(await fs.readFile(path.join(output,'command.log'),'utf8'))?.[1],'scene URL',600000);
   const wasm=await fs.readFile(path.join(output,'web/scene_bg.wasm'));result.wasm=hash(wasm);
@@ -136,15 +139,20 @@ try {
   const capture=async(name,delta=1000/120,probe=false)=>{
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
     await evaluate('game.begin_capture()');if(probe)await evaluate('__probeNext=true');
-    await drive(delta);
+    now+=delta;
+    const submitted=frameInfo(await evaluate(`game.frame(${now});game.frame_info()`));
     const image=await until(()=>evaluate('(()=>{const v=game.capture();if(!v)return null;globalThis.__capturePixels=v.rgba;return {identity:v.identity,frame:v.frame};})()'),'submitted image');
     await evaluate('game.end_capture()');
     const rgba=await pixels('__capturePixels');
     assert(image.identity.includes('presented=true'),'checkpoint was not the submitted surface frame');
     assert(rgba.length===2560*1440*4,'capture extent differs');
     const file=name+'.png';await fs.writeFile(path.join(output,file),png(rgba,2560,1440));
-    const info=Object.fromEntries(image.frame.split(' ').map(p=>p.split('=')).map(([k,v])=>[k,Number(v)]));
-    const record={name,file,...image,...info,sha256_rgba:hash(rgba)};
+    const info=frameInfo(image.frame);
+    for(const field of ['tick','alpha','submission']){
+      assert(submitted[field]===info[field],`${name}: immediate frame report ${field} differs from submitted output`);
+    }
+    assert(submitted.generation===Number(/device=(\d+)/.exec(image.identity)[1]),`${name}: frame report generation differs`);
+    const record={name,file,...image,...info,frame_report:submitted,sha256_rgba:hash(rgba)};
     if(probe){
       const [params,long,cascades]=await evaluate('__readFields()');
       const anchor=await evaluate('JSON.parse(game.controls_json()).controls.filter(c=>c.key.startsWith("camera.")).map(c=>[c.key,c.value])');
@@ -201,6 +209,29 @@ try {
       for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'replacement frame slot');await drive(1000/120);await delay(30);}
       await capture('recovered',1000/240,true);result.recovery=await evaluate('game.frame_info()');
       assert(result.frames[1].tick===result.frames[2].tick&&result.frames[1].alpha===result.frames[2].alpha,'repeat changed the model clock');
+
+      // Fill this generation's 600 completion samples with normal, uncaptured draws.
+      const before=frameInfo(result.recovery);
+      const history=await evaluate(`(async()=>{
+        let time=${now};
+        const presented=()=>Number(/presented=(\\d+)/.exec(game.frame_info())[1]);
+        const goal=presented()+605;
+        const deadline=performance.now()+90000;
+        while(presented()<goal){
+          if(performance.now()>deadline)throw Error('completion history saturation timed out');
+          if(game.frame_ready())game.frame(time+=1000/60);
+          await new Promise(resolve=>setTimeout(resolve,0));
+        }
+        return {time,info:game.frame_info()};
+      })()`);
+      now=history.time;
+      const after=frameInfo(history.info);
+      assert(after.presented-before.presented===605,'completion history did not fill');
+      assert(after.generation===before.generation&&after.submission-before.submission>=605&&after.tick>before.tick,
+        'frame report stayed stale when completion history filled');
+      const saturated=await capture('history-full',1000/240,true);
+      assert(saturated.submission===after.submission+1,'post-saturation capture was not the next submission');
+      result.frame_report_history={before,after};
     }
   } else if(mode==='fixed'){
     for(const [name,height,bearing]of [['noon-2-along',2,90],['noon-2-across',2,0],['noon-40-along',40,90],['noon-40-across',40,0]]){
