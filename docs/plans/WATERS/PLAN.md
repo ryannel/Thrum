@@ -22,7 +22,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind it, longer ones to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists, and no timing figure decides an item (brief decision 3).
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones.
-- Assumption: under the owner's bar of 17 November, tests stay on what a game reads and on the frame contract; wakes, foam and underwater light are judged by eye.
+- Assumption: under the owner's bar of 17 November, tests stay on what a game reads, the frame contract and what one pass hands another; the look of wakes, foam and underwater light is judged by eye.
 
 ## M1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 
@@ -44,7 +44,7 @@ The work so far is on `build/waters`, and [its handoff](../../evidence/WATERS/M2
 
 ## M4 A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand
 
-Make the island's ground here as the example's content, and build the bed from its triangles: a lake about 300 m from the sea and well above it, under a ridge, with a second hollow beside it for M4.6 and a rim over its highest stage; a beach of about 1 in 10 facing the trade wind's swell; a lee shore and a headland, which M13 and M14 use. The profile has no surf until M13. M4.1's test states its own tolerance.
+Make the island's ground here as the example's content, and build the bed from its triangles: a lake about 300 m from the sea and well above it, under a ridge, with a second hollow beside it for M4.6 and a rim over its highest stage; a beach of about 1 in 10 facing the trade wind's swell; a lee shore and a headland, which M13 and M14 use. The profile has no surf until M13.
 
 ## M5 A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it
 
@@ -58,7 +58,7 @@ The foam pattern is the example's cooked product, lent by a `CONTENT-LOOP` lease
 
 ## M13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Both sea crates are this module's to extend now: the field cache gains the transform and the section, and `SEA`'s tests keep passing. Turn surf on in the example's profile. M13.1's test states its own tolerance.
+Both sea crates are this module's to extend now: the field cache gains the transform and the section, and `SEA`'s tests keep passing. Turn surf on in the example's profile.
 
 ## M8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 

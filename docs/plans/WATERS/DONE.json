@@ -795,6 +795,18 @@
           "review": ""
         },
         {
+          "id": "M6.15",
+          "statement": "The wake a query answers is the wake that is drawn. On Metal, on calm water crossed by a pressure patch the test moves, a public query's height at points in the wake, clear of every body's footprint, is the height the wake's own state holds at that place and tick, at a tolerance the test states that is small beside the wake's crests.",
+          "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
+          "ask": "Is the expected height read back from the wake's endpoints, with no second wake solver, and would a query that returned half the wake's height fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "M6.8",
           "statement": "On a calm sea the wake reads as water. At 3 m/s two arms spread behind the craft with transverse crests between them; at 12 m/s the wake is narrower; through a turn the old wake stays where it was made and keeps spreading; after the craft stops the waves travel on and fade; a float on the track rocks as they cross.",
           "inspect": "`realtime` sequences of a straight run at each speed, a turn, and a stop and restart, from a chase view and from 40 m above: the wake's shape and how it moves.",
@@ -826,7 +838,7 @@
         },
         {
           "id": "M6.11",
-          "statement": "In Chrome the craft's wake spreads, outlives it and lifts the float, and a stone's rings die at the lake's shore.",
+          "statement": "In Chrome the craft's wake spreads, outlives it and lifts the float, a stone's rings die at the lake's shore, and a query's height in the wake is the wake's own state, as M6.15 holds it.",
           "check": "node scripts/check_water_browser.mjs --case wake",
           "lock": "chrome",
           "target": "chrome-webgpu",
@@ -1003,8 +1015,9 @@
         },
         {
           "id": "M7.13",
-          "statement": "After every submitted frame the foam's two endpoints hold what the design's endpoint table gives. A hitch of up to eight ticks is one foam step: after it a drifting patch is where the drift carries it, and no foam is lost or doubled. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the foam to none. A discarded frame and a capture frame change nothing.",
+          "statement": "After every submitted frame the foam's two endpoints hold what the design's endpoint table gives. A hitch of up to eight ticks is one foam step of the whole elapsed time. Transport keeps what it moves: a drifting patch ends where the drift carries it over those ticks, and moving it neither loses nor doubles foam. Births, transfers and ageing act once for the elapsed time: a drifting patch of aged film, with births off, holds after the hitch what the same ticks stepped one at a time leave it, at a tolerance the test states, which is less than it held before. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the foam to none. A discarded frame and a capture frame change nothing.",
           "check": "cargo test --locked --offline -p thrum-water --test foam_gpu",
+          "ask": "Would a step that froze the foam's ageing through the hitch, one that aged it by a single tick, and one that aged it twice each fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1273,6 +1286,18 @@
           "review": ""
         },
         {
+          "id": "M8.12",
+          "statement": "What the gather hands the rays is applied once. On Metal, a water pixel that reflects a matte panel and one that shows a matte bed through shallow water store the same colour over the exposure scale at scales sixteen times apart. Seen across 3 km of air, the part of each pixel's colour that the panel or the bed supplies is dimmed by the camera's air once: against the same view in clear air it falls by the lent transmission from the camera to the water, at a tolerance the test states that tells once from twice.",
+          "check": "cargo test --locked --offline -p water-scene --test optics_once_gpu",
+          "ask": "Would a gather that left the camera's air in what it copies, a surface pass that left the air off, and one that multiplied the exposure scale a second time each fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "M8.9",
           "statement": "In Chrome the sea passes M8.1's and M8.2's lists at noon, low Sun and night, and the lake passes M8.3's and M8.5's at noon.",
           "inspect": "`fixed` stills in Chrome at noon, low Sun and night at those items' views, judged by their lists and against the Mac's portable recipe.",
@@ -1426,6 +1451,18 @@
           "review": ""
         },
         {
+          "id": "M15.11",
+          "statement": "Under water the water in front of what the lens sees is applied once. On Metal, from a lens under water looking level at a matte panel at its own depth, the part of a pixel's colour that the panel supplies falls between two lengths of water by the water type's transmission over the difference, at a tolerance the test states that tells once from twice. The pixel's stored colour over the exposure scale is the same at scales sixteen times apart.",
+          "check": "cargo test --locked --offline -p water-scene --test under_once_gpu",
+          "ask": "Would composing the water over an under-water pixel twice, and multiplying the exposure scale twice, each fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "M15.3",
           "statement": "Looking up through calm water, the sky, the bank and the craft's hull at its waterline show inside a bright disc about the vertical, squeezed toward its rim, and outside it the surface mirrors the water below. Waves break the rim into moving shards with no hole, streak or hard seam, and foam overhead is a pale ceiling.",
           "inspect": "`fixed` stills and `realtime` sequences from 1 m and 5 m under the lake and the sea, in a calm, a breeze and a trade wind with whitecaps, looking straight up and 45\u00b0 off it: the disc, its rim and the water round it.",
@@ -1522,7 +1559,7 @@
       "items": [
         {
           "id": "M16.1",
-          "statement": "The caustic field is the surface's own light, carried down. Under flat water it is exactly 1 at every rung. Under a rippled surface its mean over the window stays near 1, so the net moves light about and neither brightens nor darkens the bed, and its contrast falls from the rung nearest 0.5 m to the one nearest 8 m.",
+          "statement": "The caustic field is the surface's own light, carried down. Under flat water it is exactly 1 at every rung. Under a rippled surface it is uneven, it changes when the surface does, and the rungs nearest 0.5 m and 8 m hold different patterns. Its mean over the window stays near 1 at every rung, at a tolerance the test states, so the net moves light about and neither brightens nor darkens the bed. How the net sharpens and softens with depth is not this item's: M16.6 judges it on a receiver.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test caustic_field_gpu",
           "ask": "Would a fixed pattern, and a map made at one depth and read at every depth, each fail?",
           "lock": "gpu",
@@ -1548,6 +1585,18 @@
           "id": "M16.4",
           "statement": "The water's scattered light stands as shafts only where the surface breaks it up. In a calm with nothing overhead a path through open water stores the same light with the march on and with it off. With shafts left out the frame is M15's.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test shafts_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.14",
+          "statement": "Under water the Sun's visibility is read at one place by both its readers. On Metal, with a box floating over a level bed 6 m down and the Sun 20 degrees up, the patch of bed that stores no direct Sun and the patch over which the water just above the bed stores no marched light are the same, at a tolerance the test states that is small beside the box. Neither lies where the Sun's direction above the water would put the box's shadow.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_sun_path_gpu",
+          "ask": "Would it fail if the bed read its shadow along the Sun's direction above the water while the shafts read theirs where the refracted ray leaves the water, or the other way round?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1610,7 +1659,7 @@
         },
         {
           "id": "M16.10",
-          "statement": "In Chrome the caustic field, the receivers, the bent Sun path, the shafts and the meter hold as M16.1 to M16.5 hold them, with no validation error.",
+          "statement": "In Chrome the caustic field, the receivers, the shafts, the meter and the shared Sun visibility hold as M16.1, M16.2, M16.4, M16.5 and M16.14 hold them, with no validation error.",
           "check": "node scripts/check_water_browser.mjs --case under-light",
           "lock": "chrome",
           "target": "chrome-webgpu",
@@ -1826,9 +1875,9 @@
       "items": [
         {
           "id": "M14.1",
-          "statement": "A reflected ray reads the scenery its true ray meets. On flat water the mirror lookup is exact to a texel of the mirror. For a bank, a post and a hill behind ripples and 0.3 m waves, seen from 2 m and 10 m, the lookup with its two corrections lands nearer the true hit than a lookup with none, and takes sky for scenery, or scenery for sky, on fewer rays.",
+          "statement": "On flat water the mirror lookup is a projection, and exact. For a bank, a post and a hill behind flat water, seen from 2 m and 10 m with the view's jitter on, each reflected ray reads the texel of the mirror that the scenery point its ray meets projects to, to a texel.",
           "check": "cargo test --locked --offline -p water-scene --test mirror_lookup_gpu",
-          "ask": "Are the true hits traced on the CPU from each surface point's own height and normal?",
+          "ask": "Is the expected texel worked out on the CPU by projecting the scenery point through the view's own matrix, and would a lookup that flipped the image or left out the jitter fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1860,8 +1909,8 @@
         },
         {
           "id": "M14.4",
-          "statement": "As the wind rises from a calm through a breeze to a trade wind the lake's reflection softens, stretches down the water and passes into the sky's with no step, edge or flicker. Under the island in a trade wind the sea carries the island's blurred reflection.",
-          "inspect": "A `realtime` sequence of the lake from 2 m as the wind control rises, and `fixed` stills of the sea under the island from 2 m and 40 m in a calm and a trade wind.",
+          "statement": "As the wind rises from a calm through a breeze to a trade wind the lake's reflection softens, stretches down the water and passes into the sky's with no step, edge or flicker. While a reflection can still be made out it stays joined to its foot at the waterline, neither sliding off it nor doubling. Under the island in a trade wind the sea carries the island's blurred reflection.",
+          "inspect": "A `realtime` sequence of the lake from 2 m as the wind control rises, with the foot of the tree and of the far shore in view, and `fixed` stills of the sea under the island from 2 m and 40 m in a calm and a trade wind.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1903,7 +1952,7 @@
         },
         {
           "id": "M14.8",
-          "statement": "In Chrome the mirror views draw with no validation error and the lookup holds M14.1's bounds.",
+          "statement": "In Chrome the mirror views draw with no validation error, and on flat water the lookup is exact to a texel of the mirror, as M14.1 holds it.",
           "check": "node scripts/check_water_browser.mjs --case mirror",
           "lock": "chrome",
           "target": "chrome-webgpu",

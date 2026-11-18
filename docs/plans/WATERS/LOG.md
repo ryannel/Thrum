@@ -447,3 +447,10 @@
   M7.2, M7.11, M7.13, M7.15, M9.1, M9.2, M13.1, M13.10, M14.1, M15.7, M16.1, M16.2, M16.4 and M11.4. Kept: the map, the long waves
   and the body query against the model, the frame contract and lifecycle. Ten cost records pass on their check alone. The design's
   handoff states the bar. No item of a Done milestone changed.
+
+- 2026-11-18 Design review of `8de6cef92` asked for six changes; all taken, under the owner's bar (no item holds a look to a reference).
+  M16.1 no longer asks the caustic field to fade with depth (its contrast rises; the receiver's falls), and new M16.14 holds the bed's
+  shadow and the shafts' to one Sun-visibility point, named in M16.10. New M8.12 and M15.11 test exposure and each medium applied once.
+  New M6.15, and M6.11 in Chrome, hold a query's wake height to the wake's own state. M7.13 states a hitch as one elapsed step, ageing
+  included. M14.1 and M14.8 keep only the flat-water projection; M14.4 judges attachment as wind rises. The cue table marks diagnostics
+  (the review's Suggestion). The see-through ray's down-path rate now reads `K`, as under water. M3 and Done milestones are untouched.

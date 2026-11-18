@@ -117,25 +117,30 @@ is the beaches of Horizon Forbidden West; for the view from under water it is Se
 the light in it the shallows of Subnautica. All in
 words, at the display's full refresh.
 
+The last column says what tells each cue from its substitute. For light, wakes and foam that is something seen
+in the running scene, under [the bar](#proof-and-builder-handoff); where theory or the model is named there as
+a diagnostic, it finds the cause of a look that is wrong and decides no item. What a game reads, the frame
+contract and what one pass hands another are still tested.
+
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **S1** Open sea from the waterline to the horizon: wind sea over swell, no repeating tile, crests that sharpen with wind | Glassy calm to gale presets; camera 1–40 m above the water and a 1–20 km vista; noon, low Sun and twilight | One tiled FFT patch. Rejected by a 40 m view of a kilometre of sea, and by the long waves matching the CPU model at points a patch length apart |
 | **S2** Bodies float: a small float and one hull rise, pitch and roll with the waves they sit on | One craft and eight floats; rest to 15 m/s; the GPU field read through one batched asynchronous query, one to two ticks late, never synchronously | Scheduled bobbing, or a CPU copy of the waves. Rejected by a float riding a wake crest that only the GPU holds, and by a count of blocking reads that stays zero |
-| **S3** A wake that is water: it spreads behind a moving hull, persists after the hull stops or turns, and lifts a float it crosses | Displacement speeds to planing; turn, coast and restart; wedge angle and crest travel compared with theory at two speeds | A wake decal, or a constant-speed wave equation. Rejected by the transverse wavelength at two speeds and by a crest that keeps travelling after the source is removed |
+| **S3** A wake that is water: it spreads behind a moving hull, persists after the hull stops or turns, and lifts a float it crosses | Displacement speeds to planing; turn, coast and restart; 3 m/s and 12 m/s, with theory's wedge angle and crest travel as a diagnostic | A wake decal, or a constant-speed wave equation. Rejected by arms that narrow from 3 m/s to 12 m/s with transverse crests between them, by a crest that keeps travelling after the source is removed, and by a query's wake height, which must be the wake's own state |
 | **S4** Foam that is material: born where waves break and where the hull meets water, carried by the water, thinning and vanishing with age | No foam on a calm sea or at rest; whitecaps scaling from fresh breeze to gale; a trail that outlives its source; no stamped or tiled pattern | Foam drawn from the present wave shape. Rejected by a trail that stays where the water carried it after the hull has gone, and by two views a tile length apart |
-| **S5** Sea optics: the sky and Sun reflect, colour deepens with depth, the Sun glitters, cloud shade dims it once | G3s sky from dawn to night; screen-space reflection with the environment product as fallback; `CLOUDS` shade when present | A private sky or exposure, or a frame that only looks right at one exposure. Rejected by a seam test against terrain-lit geometry at the waterline at four times of day, and by a body's reflection and submerged part held to the optics equation at two exposures |
+| **S5** Sea optics: the sky and Sun reflect, colour deepens with depth, the Sun glitters, cloud shade dims it once | G3s sky from dawn to night; screen-space reflection with the environment product as fallback; `CLOUDS` shade when present | A private sky or exposure, or a frame that only looks right at one exposure. Rejected by the waterline seen against terrain-lit ground from dawn to night, and by a reflected panel and a bed under water whose colour over the exposure scale holds at two exposures and carries the camera's air once. The optics equation is a diagnostic |
 | **S6** Stable in motion: no shimmer, ghosting or history smear under reconstruction; cuts and rebuilds reset cleanly | TAAU on portable and Chrome, MetalFX on Apple tile; motion, reactive and reset written per the frame contract | Zero motion on a moving surface. Rejected by motion read from submitted frames against the surface's known displacement |
 | **S7** Controls a visitor can use: wind, swell, time of day and a field overlay, on Mac and in Chrome | The typed controls of `CREATOR` | A control that restarts the sea. Rejected by a wind change in motion with no pop |
 | **W1** Water lies where the land holds it: a level surface that ends in a clean line where the ground rises | A sea, a lake above it and a pond in one view; levels raised and lowered while the scene runs; from the shore and from 40 m up | A water plane drawn through the terrain, or a sheet joining two levels. Rejected by a hollow beyond a ridge that must stay dry, and by a top-down view classified from the CPU model |
 | **W2** Shelter and shallows: a lake is calm while the sea runs, waves fade as water shallows, and on a beach the waterline runs up and back with them | Glassy calm to gale; fetches of 200 m to open sea; depths from 10 m to the waterline; a beach of 1 in 10 at a fixed stage | One wave height for all water, or a waterline pinned to the still level. Rejected by the lake's measured height against its fetch in a gale, by a wave that reaches the beach at full height, and by the waterline's travel under one regular wave |
-| **W3** The ground shows through the shallows and the shore reflects in still water | Depths from the waterline to where the water type hides the bed; calm to breeze; the far shore, hills and a tree on the bank on screen | An opaque sheet with a painted edge, or a sky-only mirror. Rejected by a bed of known radiance under known depths, and by a reflection that must join its source at the waterline |
-| **W4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes, short waves and long, in one window that holds shallows and deep water; a shore and a bar of dry ground | A deep-water solver everywhere, or one transform over land and water alike. Rejected by a wave's speed across the range of depths, and by the water beyond a bar of ground, which must stay at rest |
+| **W3** The ground shows through the shallows and the shore reflects in still water | Depths from the waterline to where the water type hides the bed; calm to breeze; the far shore, hills and a tree on the bank on screen | An opaque sheet with a painted edge, or a sky-only mirror. Rejected by a bed that shows through the shallows and fades with depth into the water's own colour, with the optics equation as a diagnostic, and by a reflection that must join its source at the waterline |
+| **W4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes, short waves and long, in one window that holds shallows and deep water; a shore and a bar of dry ground | A deep-water solver everywhere, or one transform over land and water alike. Rejected by rings that slow and bunch toward the shallows, with the depth's wave speed as a diagnostic, and by the water beyond a bar of ground, which must stay at rest |
 | **W5** Running water: where the map has a current, ripples, foam and floats travel with it | Currents to 3 m/s; a channel that narrows; a hand-made chart here, a solved one in `RIVERS` | A texture sliding over still water. Rejected by a float that must be carried, by foam born at a post standing in the current, and by tracked surface detail |
 | **W6** One water: the same light, foam, query and controls on every body, and no seam where two meet | A channel leaving a lake and entering the sea; a swell running; the lake's level and the tide moved through their ranges; a mouth shallow enough for the depth to hold the swell; one craft crossing from one body to another | A renderer for each kind, or a blend drawn over two surfaces that do not meet. Rejected by the surface's height either side of the join, after its depth limit, under a swell and after a stage has moved, and by one query answering across it |
 | **W7** Surf: a swell meets a shore as surf. Its lines turn to face the beach, close up and rise; the largest of a set break furthest out; a crest steepens, pitches forward and breaks into a white front that runs in to the swash | Trade wind to gale with a swell of 6 s to 14 s; beaches of 1 in 30 to 1 in 5; swell square on and 60° off the beach; a headland and a lee shore; the tide through its range; from the sand at 2 m, from 40 m up and from 1 km off | A wave train drawn along the shore, apart from the sea's own waves, or a wave that only fades. Rejected by one swell crest followed from deep water to the sand, its spacing and height against wave theory at three depths, and by a float that must rise on the crest the viewer sees break |
 | **W8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
-| **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel of known radiance seen through known lengths of water |
-| **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by the net's contrast at two depths and two winds against the model, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
+| **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel under water whose light falls with the length of water in front of it once and not twice |
+| **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by a net that is sharper on a receiver in the shallows than on one in the deep, with the model's contrast as a diagnostic, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
 | **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
 | **W12** The camera follows the light down: the picture stays readable from the surface to the deep, deeper water is darker by a share and never black, and crossing the surface makes no jump | The sea to 20 m under and the lake to its bed; dawn, noon and twilight; half in, and crossing both ways | An exposure metered from the sky, which leaves deep water black, or a gain taken from the picture, which pumps as pale sand comes into view. Rejected by the descent, and by the resolved exposure against the model's light at the lens |
 
@@ -892,6 +897,11 @@ the answer will be used at, and the body's ID and generation. One compute dispat
   not shake on ripples, at the body's gains;
 - the wake, read from its windows, with **the body's own static dent added back** (below).
 
+The wake's share of an answer is the height the wake's own state holds at that place and tick, which is the
+height the surface draws there, with no gain between them. A float lifted by half a crest would still rise when
+the crest came and lie still after it, so M6 compares the two directly: a query's height against the wake's
+endpoints read back, at points clear of every footprint, where no dent is added. No second wake solver is needed.
+
 Crests sharpen because displacement is horizontal as well as vertical, so the surface above a world point is
 found by inverting that displacement. Where no crest can be thrown onto the point, a fixed-point iteration on
 the horizontal displacement does it, a contraction, and the oracle iterates to convergence.
@@ -1119,6 +1129,11 @@ after 6 s). What cannot rise without a birth is the inventory, fresh plus aged f
 With the source off every stock ends at nothing. The chain is linear between births, so a step of any number of
 ticks has a closed form, and one long step equals many short ones to rounding.
 
+A step of *n* ticks is the elapsed time, once. Transport keeps what it moves, and that is all that is kept:
+the sinks, the transfers and the births still act for the whole `nΔt`, one time. A patch of aged film that
+drifts through a hitch arrives holding what those ticks stepped one at a time would leave it, less than it
+set out with, its ageing neither frozen nor applied twice. M7 tests a hitch that way.
+
 **Births come only from booked causes**, as bounded rates `dc/dt = r(1 − c)` integrated exactly over the tick:
 
 - *breaking waves*: where the Jacobian of the summed displacement falls below an onset. The onset is biased short
@@ -1286,7 +1301,8 @@ stores the result in the scene target's pre-exposed range, and the surface pass 
 reads. What a ray then reads is radiance leaving the body toward the camera, unexposed and with no air on it. No
 new product is asked of `ATMOSPHERE`. The rays use it so:
 
-- *Refracted:* `L_behind = L_body · exp(−c·z)`, with `z` the hit's depth below the surface. The forward pass lit
+- *Refracted:* `L_behind = L_body · exp(−K z)`, with `z` the hit's depth below the surface and `K` the
+  water type's rate for light from above, as [under water](#under-water). The forward pass lit
   the body as if it stood in air, and this is the water its light crossed on the way down, taken vertically. The
   view path's `T_water` and the water's in-scatter are the equation's own, applied once.
 - *Reflected:* `L_reflected = L_body`. The equation's `T_air` and `S_air` carry the air from the camera to the
@@ -1305,6 +1321,17 @@ The declared approximations, and where they hold:
 - Where a scene's forward pass shadows its aerial in-scatter, the lent `S_c` is too large by at most the
   camera-to-body in-scatter; the clamp keeps the result from going negative. A texel the forward pass clamped at
   the half-float ceiling stays clamped.
+
+**What stays tested.** The equation above is the mechanism and a diagnostic. Two properties of what one pass
+hands another are contracts (C08), and a fault in either hides at the settings a scene usually runs at: a
+second exposure multiplication is invisible at a scale of one, and haze left in the copy passes any test of
+where the gather reads. So where each path first ships a test holds, without the equation:
+
+- *the exposure scale once:* with only the scale changed, a water pixel's stored colour over the scale does
+  not change;
+- *each medium once:* what a gathered surface supplies to a water pixel is dimmed by the camera's air one
+  time, seen from above (M8), and by the water between the lens and that surface one time, seen from under
+  water (M15). The mirror view's two stretches of air are M14's.
 
 ### Mirror views: scenery the camera cannot see
 
@@ -1360,6 +1387,11 @@ takes sky for scenery or scenery for sky on 8% to 23% of rays. With two correcti
 0.09%, the 95th percentile at most 8.4%, and at most 1.3% of rays are confused, all of them at the skyline
 or the tree's top (part P).
 
+Those figures show the correction can work, and diagnose a reflection that looks detached. They gate
+nothing: a count of confused rays can tie while a post visibly leaves its foot. What is tested is the
+flat-water lookup, a projection that must equal itself, on the Mac and in Chrome. Rough water is judged by
+eye in M14, on a tree and a far shore that must stay joined to their feet as the wind rises.
+
 Declared approximations: radiance toward the mirrored camera stands in for radiance toward the water, which
 is exact for a matte surface. A level further than the plane tolerance from every plane has no view. A
 surface point off the plane sees scenery from a viewpoint that is off by twice its height, so the hidden side
@@ -1399,7 +1431,8 @@ reach, which the CPU tests from the model each frame, none of its work is done.
 - **How it is drawn.** In the water's own pass. A draw over the pixels under water writes the composition
   for those that see no surface, from the gather, and the two-sided surface then draws over it wherever it
   is nearer. The gather copies the screen while any pixel is under. Nothing is laid over the frame
-  afterwards, so no pixel takes the water twice.
+  afterwards, so no pixel takes the water twice, which [M15 tests](#optics) on a panel seen through two
+  lengths of water.
 - **The frame contract.** The underside writes depth, motion and reactive coverage as the upper side does,
   so a cloud march still stops at the water. Crossing the surface is not a reset: each pixel changes side by
   itself. The meniscus writes reactive coverage.
@@ -1454,7 +1487,10 @@ carries the first two and one number the third.
   reader. The field is addressed along it. A receiver under water reads its Sun visibility at the point
   where its refracted ray leaves the water, which the same ruling gives the forward pass. The shafts read
   theirs there too. So a hull's shadow on the bed, the dark water under the hull and the lean of the beams
-  agree, and none of them leans past 48.6°.
+  agree, and none of them leans past 48.6°. Both readers take that point from one function. A receiver that
+  sampled the shadow along the Sun's direction above the water while the shafts sampled it at the exit point
+  would each draw a dark patch, in two places. M16 tests that the bed's shadow and the dark water over it
+  meet, on the Mac and in Chrome. Where Snell's law puts them is a diagnostic.
 - **Shafts.** The water between the lens and what it sees ([under water](#under-water)) scatters `J₀`
   evenly. Of that, the part `J_s` that the Sun's light under the surface supplies is, while it is still a
   beam, scattered by the water type's phase function `p` of the angle `γ` between the view path and the
@@ -1492,6 +1528,13 @@ to ray across a 6° fan, by 8% at 5° off it, 1.2% at 10° and not at all level,
 Sun's direction and nowhere else. A march of 16 steps is within 1.4% of a fine integral along the beams,
 and within 3% off them and across them once each step reads the mean of what it crosses, where point
 samples across them are 10% off (parts R and S).
+
+The field's own contrast does not fall with depth. It climbs to the depth where the waves focus and stays
+high below it: at 4 m/s the map's is 0.31 at 0.5 m and 0.40 at 8 m (part R2). What softens with depth is the
+net on a receiver, `D(z) · (C − 1)`, whose contrast there goes from 0.28 to 0.09, together with the blur. So
+nothing asks the field to fade with depth, which would dim the net a second time. The field is tested for
+what it must be whatever its tuning: exactly 1 under flat water, uneven under waves, changing with the
+surface and from rung to rung. The softening is judged by eye on the bed and the hull in M16.
 
 Declared approximations: the net is no finer than the waves the wave field resolves, 7 cm, and ripples
 below that only soften it. Beyond the window the bed is evenly lit. A blocker shadows the water where its
@@ -1879,7 +1922,11 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   What a game reads stays tested: the map, the long waves and the body query against `thrum-water-model`, at a
   tolerance each test states, because a float must sit on the water that is drawn and answer the same on every
   device. So do the contracts: the frame contract's depth, motion and reactive coverage; state through pauses,
-  hitches and a replaced device; no wave across dry ground; a capability left out costing nothing. How light,
+  hitches and a replaced device; no wave across dry ground; a capability left out costing nothing; and what one
+  part hands another, each tested as a property of the frame and not against a light or wave model: the wake a query
+  answers is the wake's state (M6), a hitch is one step of the elapsed time for wake and foam (M6, M7), the
+  exposure scale and each medium reach a gathered surface once (M8, M15, M14), and the Sun's visibility
+  under water is read at one place by the bed and the shafts (M16). How light,
   foam, wakes, caustics and shafts are computed is not held to an f64 reference, a closed form or a bound
   measured first. The equations in the sections above are the mechanism to build and a builder's diagnostic
   when a look is wrong; a builder may tune their constants by eye and records what changed. M1, M2, M3 and M12
