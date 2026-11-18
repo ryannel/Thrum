@@ -9,6 +9,8 @@ use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::mesh_arena::MeshId;
 
 mod admission;
+#[cfg(feature = "creation-counters")]
+mod aloft;
 mod caster_cull;
 mod casters;
 mod grazing;

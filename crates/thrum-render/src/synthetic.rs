@@ -134,6 +134,11 @@ pub struct SyntheticScene {
     /// Each instance slot's stable mesh choice. A live selection prepares the
     /// newest committed geometry on reconstruction. `None` draws the unit cube.
     pub meshes: Option<Arc<SyntheticMeshes>>,
+    /// Authored row indices in [`SyntheticMeshes::meshes`] that are aloft.
+    /// They cast into both Sun cascades and are omitted from the terrain
+    /// horizon. The mark is fixed at preparation and survives row replacement.
+    /// Preparation refuses indices outside the selected mesh table.
+    pub aloft_mesh_rows: Vec<u32>,
 }
 
 pub use mesh_arena::MeshVertex as SyntheticVertex;
@@ -207,6 +212,9 @@ fn admit_meshes(
     }
     let mut arena = MeshArena::new(limits).map_err(|_| RenderError::SceneCapacity)?;
     let Some(meshes) = scene.meshes.as_deref() else {
+        if !scene.aloft_mesh_rows.is_empty() {
+            return Err(RenderError::SceneCapacity);
+        }
         return Ok((arena, None));
     };
     if meshes.slots.len() != scene.instances.len() {
@@ -242,6 +250,12 @@ fn admit_meshes(
             }
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let aloft = scene
+        .aloft_mesh_rows
+        .iter()
+        .map(|&index| rows.get(usize::try_from(index).ok()?).copied())
+        .collect::<Option<Vec<_>>>()
+        .ok_or(RenderError::SceneCapacity)?;
     let slots = meshes
         .slots
         .iter()
@@ -252,7 +266,7 @@ fn admit_meshes(
         .collect::<Option<Vec<_>>>()
         .ok_or(RenderError::SceneCapacity)?;
     arena.retain_geometry(current.unwrap_or_default());
-    Ok((arena, Some(MeshSelection { slots })))
+    Ok((arena, Some(MeshSelection { slots, aloft })))
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
@@ -312,6 +326,7 @@ impl SyntheticScene {
             camera_culling: CullMode::Direct,
             star_catalogue: None,
             meshes: None,
+            aloft_mesh_rows: Vec::new(),
             ray_structure: false,
         })
     }
@@ -786,10 +801,13 @@ impl SceneContext<'_> {
                 ),
                 None => None,
             },
-            draws: prepared
-                .bucket_route
-                .as_ref()
-                .map_or(&cube, BucketRoute::caster_draws),
+            draws: prepared.bucket_route.as_ref().map_or(&cube, |route| {
+                if index == shadow::HEIGHT_LAYER {
+                    route.height_caster_draws()
+                } else {
+                    route.caster_draws()
+                }
+            }),
         };
         shadow.encode_cascade(
             self.encoder,
@@ -2822,7 +2840,10 @@ mod tests {
             slots: Vec<mesh_arena::MeshId>,
         ) -> Result<Self, RenderError> {
             let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
-            let selection = MeshSelection { slots };
+            let selection = MeshSelection {
+                slots,
+                aloft: Vec::new(),
+            };
             Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(selection))
                 .await
         }

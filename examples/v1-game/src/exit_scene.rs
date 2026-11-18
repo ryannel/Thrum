@@ -17,6 +17,7 @@ pub(crate) const MESH_NAMES: [&str; 5] = [
     "exit-standing-rock",
     "exit-balloon",
 ];
+const BALLOON_MESH_ROW: u32 = 4;
 
 #[derive(Clone, Copy, Debug, Deserialize)]
 pub(crate) struct Prop(u32, u64, f64, f64, f64, f32, f32);
@@ -138,6 +139,7 @@ pub(crate) fn scene() -> Result<SyntheticScene, String> {
             .map(|prop| SyntheticMeshChoice::Mesh(prop.0))
             .collect(),
     }));
+    scene.aloft_mesh_rows = vec![BALLOON_MESH_ROW];
     scene.sun_shadows = true;
     scene.local_lights.clear();
     Ok(scene)

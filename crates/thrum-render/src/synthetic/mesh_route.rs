@@ -31,6 +31,7 @@ const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
 /// holds.
 pub(super) struct MeshSelection {
     pub(super) slots: Vec<MeshId>,
+    pub(super) aloft: Vec<MeshId>,
 }
 
 /// The classes in pipeline-array order.
@@ -90,6 +91,10 @@ pub(super) struct BucketRoute {
     /// The Sun caster draws for the current layout: every bucket's active
     /// members, never the camera-visible list. Rebuilt when members change.
     caster_draws: Vec<CasterDraw>,
+    /// Scene-owned horizon membership, keyed by the stable mesh row.
+    aloft: Vec<MeshId>,
+    /// The horizon reuses the cascade draws when there are no aloft rows.
+    height_caster_draws: Option<Vec<CasterDraw>>,
 }
 
 impl BucketRoute {
@@ -209,6 +214,8 @@ impl BucketRoute {
             }),
             ranges,
             caster_draws: Vec::new(),
+            aloft: selection.aloft.clone(),
+            height_caster_draws: (!selection.aloft.is_empty()).then(Vec::new),
         };
         route.lay_out_casters();
         route.publish(queue, upload)?;
@@ -279,6 +286,18 @@ impl BucketRoute {
                     instances: segment.len,
                 });
             }
+        }
+        if let Some(grounded) = &mut self.height_caster_draws {
+            grounded.clear();
+            grounded.extend(
+                self.caster_draws
+                    .iter()
+                    .filter(|draw| {
+                        let mesh = self.buckets.keys()[draw.bucket as usize].mesh;
+                        !self.aloft.contains(&mesh)
+                    })
+                    .cloned(),
+            );
         }
     }
 
@@ -417,6 +436,12 @@ impl BucketRoute {
     /// segment offset.
     pub(super) fn caster_draws(&self) -> &[CasterDraw] {
         &self.caster_draws
+    }
+
+    pub(super) fn height_caster_draws(&self) -> &[CasterDraw] {
+        self.height_caster_draws
+            .as_deref()
+            .unwrap_or(&self.caster_draws)
     }
 }
 

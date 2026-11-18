@@ -835,7 +835,12 @@ impl PreparedSynthetic {
                 samples: 1,
                 format: shadow::FORMAT,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | if cfg!(all(test, feature = "creation-counters")) {
+                        wgpu::TextureUsages::COPY_SRC
+                    } else {
+                        wgpu::TextureUsages::empty()
+                    },
             },
             ResourceScope::Transient,
         )?;

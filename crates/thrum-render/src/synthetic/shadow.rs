@@ -22,6 +22,7 @@ const CASTER_VIEW_BYTES: usize = 80;
 pub(super) const CASTER_VIEW_RANGE: u64 = CASTER_VIEW_BYTES as u64;
 /// Two Sun cascades, then the top-down caster height map.
 pub(super) const MAPS: usize = 3;
+pub(super) const HEIGHT_LAYER: usize = MAPS - 1;
 /// The same layer count for graph ranges and pipeline roles.
 pub(super) const LAYERS: u32 = 3;
 const _: () = assert!(LAYERS as usize == MAPS);
@@ -106,6 +107,7 @@ pub(super) struct CasterDraws<'a> {
     pub(super) draws: &'a [CasterDraw],
 }
 
+#[derive(Clone)]
 pub(super) struct CasterDraw {
     /// The bucket's index, which selects its culled indirect record.
     pub(super) bucket: u32,
