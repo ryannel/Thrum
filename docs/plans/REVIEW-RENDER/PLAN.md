@@ -6,8 +6,9 @@ pass identities, string errors and wasted work, with no retained pixel moved. [D
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation)
 
 Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-rulings-for-track-4) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. Run the verifier before `land`, and
-again when `land` refuses a rebased commit for lack of a proof.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines) before any milestone. Exact images are proved once, on main
+after the merge, by [the shared run](../ARCHITECTURE.md#proofs-run-once-on-main): don't run the verifier yourself.
+Set each milestone's verifier item `pass` with the evidence `main-branch check exact-images`.
 
 ## Open for the human
 
@@ -21,11 +22,13 @@ The light split is in `synthetic.rs` (`cpu_light_bytes`), `atmosphere/graph.rs`,
 light group through the contribution seam, so they follow its layout. The mode with no atmosphere is
 `FrameLighting::Photometric` and `Diagnostic`: `pack_directional` writes the constant ambient at bytes 48 to 60,
 and `ambient_irradiance` in `synthetic.wgsl` picks it when the mark is clear. Take the photometric scene's bytes
-before you change anything. M1.5 adds two arguments to `ambient_irradiance` and `indirect_radiance` and changes no
-arithmetic ([Mechanisms](DESIGN.md#mechanisms), mechanism 1). Their callers are `shade`, the two composed variants
-(`synthetic_environment.wgsl`, `synthetic_plain.wgsl`), the cooked volume in `thrum-asset-gpu`'s `cooked.wgsl`,
-and the test shaders in `atmosphere/reflection/tests.rs` and `thrum-asset-gpu/src/draw/tests.rs`. The atmosphere's
-lent `environment_diffuse` and `environment_reflection` are not part of it. The dropped encode is in `runtime.rs`
+before you change anything. M1.5 splits today's `ambient_irradiance(n)` into the source read `ambient_source` and
+the surface query, and changes no arithmetic ([Mechanisms](DESIGN.md#mechanisms), mechanism 1). The query's
+callers are `shade` and the two composed variants (`synthetic_environment.wgsl`, `synthetic_plain.wgsl`); the
+reflection test shader in `atmosphere/reflection/tests.rs` stubs it. The cooked volume in `thrum-asset-gpu`'s
+`cooked.wgsl` calls `ambient_irradiance` once before its march today and moves to `ambient_source`, as the stub in
+`thrum-asset-gpu/src/draw/tests.rs` does. The atmosphere's lent `environment_diffuse` and
+`environment_reflection` are not part of it. The dropped encode is in `runtime.rs`
 (`encode_surface(...).is_ok()`), and the two blanket conversions are beside `FrameError` there.
 
 ## M2 Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test

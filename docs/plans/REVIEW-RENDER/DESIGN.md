@@ -1,7 +1,7 @@
 # Review fixes in the renderer: confirmed bugs, GPU records, pass identity, errors and waste
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/REVIEW-RENDER/design-review.md),
-and on 18 November for [the indirect-light query](#mechanisms).
+14 November 2026, revised 15 November after the first design review, and on 18 November for
+[the indirect-light query](#mechanisms) and after [its design review](../../evidence/REVIEW-RENDER/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), slices S1 to S4 ·
@@ -62,17 +62,37 @@ Rust record, one WGSL declaration and a layout test, and readers bind both. The 
 offsets, keeps two writers on one buffer, which the adopted shape rules out. The values read are the same in
 every mode, so the image is.
 
-*Indirect light is asked for by position.* The split rewrites `ambient_irradiance`, and every reader of it
-follows in that landing. In the same landing the scene shader's indirect light takes the shape
-[C08](../../design/CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4) now gives it: one query by
-world position, shading normal, view direction, roughness and pixel position. `ambient_irradiance` and
-`indirect_radiance`, in `synthetic.wgsl` and in both composed variants (`synthetic_environment.wgsl` and
-`synthetic_plain.wgsl`), take the world position and the pixel position of the point being lit, beside what they
-take now. Nothing reads the two new arguments, so every value is what it was and no retained image moves. `shade`
-passes its fragment's. The cooked volume's one call passes the world position and pixel of the fragment it
-marches from. Test shaders that stub either function follow the signature; their assertions do not change. It is
-done here because the callers are three today, and a traced occlusion (`RAY-TRACING` M5), a world-space cache
-and a screen-space gather each need one of the two arguments
+*Indirect light is asked for by position, at a surface.* The split rewrites `ambient_irradiance`, and every
+reader of it follows in that landing. [C08](../../design/CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4)
+names two operations, and the same landing gives each its own function in `synthetic.wgsl`:
+
+- **The source read**, `ambient_source(direction)`, is the body `ambient_irradiance` has today: the environment
+  light's coefficients for that direction when its mark is set, the directional record's constant otherwise. It is
+  the ambient light as a distant source, keyed by direction alone, and takes no position.
+- **The surface query** is C08's one query, by world position, shading normal, view direction, roughness and pixel
+  position. `ambient_irradiance` and `indirect_radiance`, in `synthetic.wgsl` and in both composed variants
+  (`synthetic_environment.wgsl` and `synthetic_plain.wgsl`), take the world position and the pixel position of the
+  surface point being lit, beside what they take now. `ambient_irradiance` returns `ambient_source` of its normal
+  and reads neither new argument, so every value is what it was and no retained image moves. `shade` passes its
+  fragment's interpolated world position and fragment position, on every entry that reaches it, and
+  `indirect_radiance` hands the same two on to `ambient_irradiance`.
+
+Whatever shades a surface asks the query. `ambient_source` is called by `ambient_irradiance` and by media, and by
+nothing else.
+
+The cooked volume is a medium, not a surface, so it reads the source. Its fragment is a point on the back face of
+the volume's box, and the march lights every occupied sample along the ray through it: no one world position
+belongs to that fragment's light, and the back face is none of the samples. The volume keeps the approximation it
+has, uniform sky radiance from the upward irradiance, read once before the march, and reads it from
+`ambient_source`. It calls neither surface function. Its one lookup and its pixels stay as they are, and an
+answer by position added behind the query later cannot reach a march sample with the wrong point. Spatial
+indirect light inside a volume is not planned here: it would be a new design that says which sample supplies the
+position.
+
+A test shader that stubs one of these functions follows the signature of the function its shader calls: the
+source for the cooked march, the query for the reflection consumer. Their assertions do not change. The query
+takes its arguments now because its callers are three today, and a traced occlusion (`RAY-TRACING` M5), a
+world-space cache and a screen-space gather each need one of the two arguments
 ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), which also says why the atmosphere's lent
 `environment_diffuse` and `environment_reflection` do not change).
 

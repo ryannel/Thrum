@@ -76,7 +76,9 @@ normal, view direction, roughness and pixel position. `ambient_irradiance` and `
 position and the pixel in [REVIEW-RENDER](../../plans/REVIEW-RENDER/DESIGN.md) M1, which already rewrites the
 first and every reader of it. Nothing reads the new arguments, so no byte moves. It is done there because the
 callers are three today, and a traced occlusion, a world-space cache and a screen-space gather each need one of
-the two arguments.
+the two arguments. The cooked volume in `thrum-asset-gpu` is a medium, so it is not one of those callers: it
+reads the ambient light as a source, by direction, through `ambient_source`, which the same landing splits out of
+`ambient_irradiance`.
 
 **Rejected: the same change to the atmosphere's lent `environment_diffuse` and `environment_reflection`.** These
 are what `WATERS` and `CLOUDS` read, and they are a different thing: the sky as a distant source, seen from the

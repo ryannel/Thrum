@@ -15,3 +15,11 @@
   pixel, in the landing that already rewrites the first, with no value changed (mechanism 1 in the design; C08;
   [the decision](../../design/decisions/POST-V1-FOUNDATIONS.md)). The atmosphere's lent sky products keep their
   signatures. M1.1 to M1.4 are unchanged. The design review is owed.
+- 2026-11-18 Planner, after [the design review](../../evidence/REVIEW-RENDER/design-review.md) of M1.5 (one Must
+  Fix): the cooked volume is a medium, so it reads the ambient source and is not a caller of the surface query. The
+  design had it pass the world position of its fragment, which is the box's back face and none of the march
+  samples it lights. Mechanism 1 now splits `ambient_irradiance(n)` into `ambient_source(direction)`, the source
+  read C08 gives a medium, and the surface query by position and pixel; the volume keeps its one uniform-sky read
+  and its pixels. M1.5 is rewritten to match, and module-list ruling 4 and the decision say the same. Suggestion
+  taken: the plan no longer tells builders to run the verifier before landing, since exact images are proved once
+  on main. The design review is owed.

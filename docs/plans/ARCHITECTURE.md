@@ -1983,7 +1983,9 @@ baseline. C05, C07 and C08 each gained the lines these rulings rest on.
 4. **The indirect-light query** (`REVIEW-RENDER` M1, item M1.5; `synthetic.wgsl`, its two composed variants,
    `thrum-asset-gpu`'s cooked volume and the test shaders that stub the functions). `ambient_irradiance` and
    `indirect_radiance` take the lit point's world position and pixel position, in the landing that splits the
-   light buffer. Nothing reads them, so every byte is as it was, and M1's verifier item holds it.
+   light buffer. Nothing reads them, so every byte is as it was, and M1's verifier item holds it. The cooked
+   volume is a medium and not a caller of the query: it reads the ambient light as a source, by direction, through
+   `ambient_source`, which that landing splits out of `ambient_irradiance`, so its one read and its pixels stay.
    `RAY-TRACING` M5 gives the pixel its first reader under [track 5's ruling 6](#seam-rulings-for-track-5), on
    the signature it finds. `ATMOSPHERE`'s lent `environment_diffuse` and `environment_reflection` do not change:
    they are the sky as a source, asked by direction, and `WATERS`, `CLOUDS` and `SEA` keep reading them as they
