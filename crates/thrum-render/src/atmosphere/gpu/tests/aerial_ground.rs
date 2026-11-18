@@ -24,7 +24,7 @@ impl Fixture {
         writeln!(std::io::stdout(), "M9 device {info:?}").expect("report device");
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });

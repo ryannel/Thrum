@@ -1,7 +1,7 @@
 mod attachment;
 
 use super::super::*;
-use crate::synthetic::*;
+use crate::{light::EnvironmentLight, synthetic::*};
 use std::{sync::mpsc, time::Duration};
 
 #[derive(Debug)]
@@ -67,11 +67,21 @@ fn resolve(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     exposure: &ExposureResolve,
-    light: &wgpu::Buffer,
+    [directional, environment_light]: [&wgpu::Buffer; 2],
     policy: [u8; 32],
     values: [f32; 16],
 ) -> Sample {
-    queue.write_buffer(light, 0, values.map(f32::to_le_bytes).as_flattened());
+    let directional_light = DirectionalLight {
+        direction_to_light: values[..4].try_into().unwrap(),
+        irradiance: values[4..8].try_into().unwrap(),
+        ..Default::default()
+    };
+    let environment = EnvironmentLight {
+        horizontal_irradiance: values[12..16].try_into().unwrap(),
+        sky_diffuse: [[0.0; 4]; 9],
+    };
+    queue.write_buffer(directional, 0, bytemuck::bytes_of(&directional_light));
+    queue.write_buffer(environment_light, 0, bytemuck::bytes_of(&environment));
     exposure.update(queue, policy);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
@@ -95,7 +105,7 @@ fn assert_night_policy(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     exposure: &ExposureResolve,
-    light_buffer: &wgpu::Buffer,
+    light_buffers: [&wgpu::Buffer; 2],
 ) {
     let night_policy = ExposurePolicy::IncidentHorizontal {
         min_ev100: -12.0,
@@ -108,7 +118,7 @@ fn assert_night_policy(
             device,
             queue,
             exposure,
-            light_buffer,
+            light_buffers,
             night_policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
             light(-1.0, [0.0; 3], [lux; 3]),
         );
@@ -125,10 +135,17 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let light_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: 64,
+            size: DIRECTIONAL_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let environment_light = device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: ENVIRONMENT_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let light_buffers = [&light_buffer, &environment_light];
         let serials = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: 32,
@@ -141,6 +158,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
         let exposure = ExposureResolve::new(
             &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &light_buffer,
+            &environment_light,
             &serials,
             ExposureResolve::allocate_samples(&device),
         );
@@ -150,7 +168,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &device,
                 &queue,
                 &exposure,
-                &light_buffer,
+                light_buffers,
                 ExposurePolicy::Fixed { inverse }.pack(
                     16_000.0,
                     false,
@@ -187,7 +205,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &device,
                 &queue,
                 &exposure,
-                &light_buffer,
+                light_buffers,
                 policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
                 values,
             );
@@ -204,7 +222,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &device,
             &queue,
             &exposure,
-            &light_buffer,
+            light_buffers,
             policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
             sky,
         );
@@ -214,7 +232,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &device,
             &queue,
             &exposure,
-            &light_buffer,
+            light_buffers,
             policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
             probe_warning,
         );
@@ -227,7 +245,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &device,
             &queue,
             &exposure,
-            &light_buffer,
+            light_buffers,
             ExposurePolicy::incident(1.0, 0.0, 18.0).unwrap().pack(
                 16_000.0,
                 true,
@@ -250,7 +268,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &device,
                 &queue,
                 &exposure,
-                &light_buffer,
+                light_buffers,
                 policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
                 values,
             );
@@ -262,7 +280,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &device,
             &queue,
             &exposure,
-            &light_buffer,
+            light_buffers,
             policy.pack(16_000.0, false, SdrToneMap::Reinhard, DisplayOverlay::Off),
             sky,
         );
@@ -298,7 +316,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                     &device,
                     &queue,
                     &exposure,
-                    &light_buffer,
+                    light_buffers,
                     selected.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
                     values,
                 )
@@ -309,7 +327,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             );
             assert_eq!(dim.flags, plain.flags);
         }
-        assert_night_policy(&device, &queue, &exposure, &light_buffer);
+        assert_night_policy(&device, &queue, &exposure, light_buffers);
         assert!(scope.pop().await.is_none());
     });
 }

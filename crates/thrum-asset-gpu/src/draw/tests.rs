@@ -9,7 +9,7 @@ struct Light { direction_to_light:vec4<f32>, irradiance:vec4<f32>, ambient:vec4<
 struct Aerial {sun_lux:vec4<f32>}
 const aerial_frame=Aerial(vec4(0.0,1.0,0.0,1.0));
 @group(1) @binding(6) var aerial_sampler:sampler;
-fn ambient_irradiance(n:vec3<f32>)->vec3<f32>{return light.ambient.rgb;}
+fn ambient_source(n:vec3<f32>)->vec3<f32>{return light.ambient.rgb;}
 fn aerial_colour(colour:vec3<f32>,world:vec3<f32>,pixel:vec4<f32>)->vec3<f32>{return colour;}
 fn scene_storage_scale()->f32{return 1.0;}
 struct FragmentOutput { @location(0) colour:vec4<f32>, @location(1) motion:vec2<f32>, @location(2) reactive:f32 }

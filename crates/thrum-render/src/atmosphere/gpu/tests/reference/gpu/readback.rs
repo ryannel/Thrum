@@ -63,7 +63,7 @@ impl Probe {
     ) -> Self {
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("reference directional output"),
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::UNIFORM
                 | wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::COPY_SRC,

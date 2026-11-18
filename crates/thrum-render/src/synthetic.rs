@@ -18,6 +18,7 @@ use crate::graph::{
     PipelineKey, ResourceId,
 };
 use crate::graph_record::{ExecutableGraph, RecordFamily};
+use crate::light::{DIRECTIONAL_BYTES, DirectionalLight};
 use crate::timing::{GpuTimings, TimingError};
 use crate::visibility::casters::{CasterCulling, CasterInputs};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
@@ -100,7 +101,6 @@ pub const SYNTHETIC_REVISION: u64 = 18;
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = view::VIEW_BYTES;
 const VIEW_SLOTS: u32 = 2;
-pub(crate) const LIGHT_BYTES: usize = 208;
 pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 pub(crate) const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
@@ -306,7 +306,7 @@ impl Default for SyntheticLight {
     }
 }
 impl SyntheticLight {
-    fn pack(self) -> Result<[u8; LIGHT_BYTES], RenderError> {
+    fn pack(self) -> Result<DirectionalLight, RenderError> {
         if !self
             .irradiance
             .iter()
@@ -351,7 +351,7 @@ pub enum FrameLighting {
 
 fn pack_frame_lighting(
     lighting: FrameLighting,
-) -> Result<([u8; LIGHT_BYTES], wgpu::Color, usize), RenderError> {
+) -> Result<(DirectionalLight, wgpu::Color, usize), RenderError> {
     match lighting {
         FrameLighting::Diagnostic(light) => Ok((
             light.pack()?,
@@ -390,7 +390,7 @@ impl PhotometricEnvironment {
         clippy::cast_possible_truncation,
         reason = "validated and presentation-clamped f64 authored quantities round once to the f32 GPU ABI"
     )]
-    fn pack(self) -> Result<([u8; LIGHT_BYTES], wgpu::Color, usize), RenderError> {
+    fn pack(self) -> Result<(DirectionalLight, wgpu::Color, usize), RenderError> {
         const MAX_PRESENTATION_LIGHT: f64 = 10_000_000.0;
         // Retain F3's exact accepted predicate at this boundary.
         let luminance =
@@ -441,7 +441,7 @@ fn pack_directional(
     toward_source: [f64; 3],
     irradiance: [f32; 3],
     ambient: [f32; 3],
-) -> Result<[u8; LIGHT_BYTES], RenderError> {
+) -> Result<DirectionalLight, RenderError> {
     let length = toward_source.iter().map(|v| v * v).sum::<f64>().sqrt();
     if !length.is_finite() || length == 0.0 {
         return Err(RenderError::InvalidLighting);
@@ -458,19 +458,16 @@ fn pack_directional(
         [0.0, 0.0, -1.0]
     };
     let angular_fresnel = (1.0 + half[2]).clamp(0.0, 1.0).powi(5) as f32;
-    let mut bytes = [0; LIGHT_BYTES];
-    for i in 0..3 {
-        bytes[i * 4..i * 4 + 4].copy_from_slice(&(direction[i] as f32).to_le_bytes());
-        bytes[32 + i * 4..36 + i * 4].copy_from_slice(&(half[i] as f32).to_le_bytes());
-    }
-    bytes[44..48].copy_from_slice(&angular_fresnel.to_le_bytes());
-    for (i, value) in irradiance.into_iter().enumerate() {
-        bytes[16 + i * 4..20 + i * 4].copy_from_slice(&value.to_le_bytes());
-    }
-    for (i, value) in ambient.into_iter().enumerate() {
-        bytes[48 + i * 4..52 + i * 4].copy_from_slice(&value.to_le_bytes());
-    }
-    Ok(bytes)
+    Ok(DirectionalLight {
+        direction_to_light: Vec3::from_array(direction.map(|value| value as f32))
+            .extend(0.0)
+            .to_array(),
+        irradiance: Vec3::from_array(irradiance).extend(0.0).to_array(),
+        half_vector_fresnel: Vec3::from_array(half.map(|value| value as f32))
+            .extend(angular_fresnel)
+            .to_array(),
+        ambient_irradiance: Vec3::from_array(ambient).extend(0.0).to_array(),
+    })
 }
 
 /// A slot's caster box: its selected mesh bounds, or the legacy unit cube.
@@ -480,13 +477,8 @@ fn caster_box(boxes: Option<&[CasterBox]>, slot: usize) -> CasterBox {
         .unwrap_or(CasterBox::UNIT)
 }
 
-fn packed_light_direction(data: &[u8; LIGHT_BYTES]) -> Vec3 {
-    let words = data[..12].as_chunks::<4>().0;
-    Vec3::new(
-        f32::from_le_bytes(words[0]),
-        f32::from_le_bytes(words[1]),
-        f32::from_le_bytes(words[2]),
-    )
+fn packed_light_direction(data: &DirectionalLight) -> Vec3 {
+    glam::Vec4::from_array(data.direction_to_light).truncate()
 }
 
 /// Expected failures before a view can be encoded or published ready.
@@ -611,6 +603,7 @@ pub struct PreparedSynthetic {
     pending_view: Option<SyntheticView>,
     frame_revision: u64,
     directional_buffer: wgpu::Buffer,
+    environment_light: wgpu::Buffer,
     local_light_buffer: wgpu::Buffer,
     cluster_head_buffer: wgpu::Buffer,
     cluster_index_buffer: wgpu::Buffer,
@@ -1249,7 +1242,7 @@ impl PreparedSynthetic {
             return Err(RenderError::SceneCapacity);
         }
         let has_local_lights: f32 = if self.clusters.active { 1.0 } else { 0.0 };
-        light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
+        light_data.direction_to_light[3] = has_local_lights;
         if let Some(shadow) = self.shadow.as_mut() {
             shadow.update(
                 &view,
@@ -1304,13 +1297,7 @@ impl PreparedSynthetic {
                         &light_data,
                     )
                 });
-        // Atmosphere owns the ambient tail on GPU; preserve its cached value.
-        let cpu_light_bytes = if self.atmosphere.is_some() {
-            48
-        } else {
-            LIGHT_BYTES
-        };
-        queue.write_buffer(&self.directional_buffer, 0, &light_data[..cpu_light_bytes]);
+        queue.write_buffer(&self.directional_buffer, 0, bytemuck::bytes_of(&light_data));
         queue.write_buffer(&self.local_light_buffer, 0, &self.clusters.lights);
         if let Some(compute) = self.cluster_compute.as_ref() {
             queue.write_buffer(&compute.bounds, 0, &self.clusters.bounds);
@@ -1614,7 +1601,7 @@ impl PreparedSynthetic {
             return Err(RenderError::StaleTarget);
         }
         if let Some(timings) = timings.as_deref_mut() {
-            let count = u32::try_from(graph.plan().pipeline_pass_count())
+            let count = u32::try_from(graph.plan().pipeline_pass_count_before_acquire())
                 .map_err(|_| RenderError::GraphPassMismatch)?;
             timings.check_passes(generation, count)?;
         }
@@ -2186,9 +2173,8 @@ mod tests {
             }
             .pack()
             .unwrap();
-            assert_eq!(f32::from_le_bytes(bytes[..4].try_into().unwrap()), 1.0);
-            assert_eq!(&bytes[12..16], &[0; 4]);
-            assert_eq!(&bytes[28..32], &[0; 4]);
+            assert_eq!(bytes.direction_to_light, [1.0, 0.0, 0.0, 0.0]);
+            assert_eq!(bytes.irradiance[3], 0.0);
         }
         for direction in [[0.0; 3], [f32::NAN, 0.0, 1.0], [f32::INFINITY, 0.0, 1.0]] {
             assert!(matches!(
@@ -2229,16 +2215,10 @@ mod tests {
             ambient_lux: [1000.0; 3],
             background_radiance: [2.0, 3.0, 4.0],
         };
-        let (bytes, background, clamps) = source.pack().unwrap();
+        let (light, background, clamps) = source.pack().unwrap();
         assert_eq!(clamps, 0);
-        assert_eq!(
-            f32::from_le_bytes(bytes[16..20].try_into().unwrap()),
-            100_000.0
-        );
-        assert_eq!(
-            f32::from_le_bytes(bytes[48..52].try_into().unwrap()),
-            1000.0
-        );
+        assert_eq!(light.irradiance[0], 100_000.0);
+        assert_eq!(light.ambient_irradiance[0], 1000.0);
         assert_eq!(background.r, 2.0 / 1024.0);
         let (_, _, clamps) = PhotometricEnvironment {
             sun_lux: 20_000_000.0,

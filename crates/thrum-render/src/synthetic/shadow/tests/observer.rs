@@ -72,6 +72,10 @@ pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePi
             "\n",
             include_str!("../../../atmosphere/irradiance.wgsl"),
             "\n",
+            include_str!("../../../directional_light.wgsl"),
+            "\n",
+            include_str!("../../../environment_light.wgsl"),
+            "\n",
             include_str!("../../../synthetic.wgsl"),
             "\n",
             include_str!("../../../synthetic_plain.wgsl")
@@ -120,11 +124,13 @@ pub(super) fn read_visibility(
             },
         ],
     });
-    let mut light_bytes = vec![0; super::super::super::LIGHT_BYTES];
-    light_bytes[..16].copy_from_slice(direction.map(f32::to_le_bytes).as_flattened());
+    let light_record = crate::light::DirectionalLight {
+        direction_to_light: direction,
+        ..Default::default()
+    };
     let light = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: None,
-        contents: &light_bytes,
+        contents: bytemuck::bytes_of(&light_record),
         usage: wgpu::BufferUsages::UNIFORM,
     });
     let light_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

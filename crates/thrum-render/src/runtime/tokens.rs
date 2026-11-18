@@ -46,10 +46,10 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
         let report = self
             .report
             .take()
-            .ok_or("advanced frame already consumed")?;
+            .ok_or(FrameError::InvalidState("advanced frame already consumed"))?;
         self.host
             .take()
-            .ok_or("advanced host already consumed")?
+            .ok_or(FrameError::InvalidState("advanced host already consumed"))?
             .finish_advance(
                 report,
                 self.tick_cpu,
@@ -70,13 +70,19 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
                 "serial scene is not ready for encoding",
             ));
         }
-        let host = self.host.as_deref_mut().ok_or("advanced host consumed")?;
+        let host = self
+            .host
+            .as_deref_mut()
+            .ok_or(FrameError::InvalidState("advanced host consumed"))?;
         let slot_index = host
             .slots
             .iter()
             .position(|slot| matches!(slot.state, SlotState::Free))
-            .ok_or("no free scene slot")?;
-        let report = self.report.as_mut().ok_or("advanced report consumed")?;
+            .ok_or(FrameError::InvalidState("no free scene slot"))?;
+        let report = self
+            .report
+            .as_mut()
+            .ok_or(FrameError::InvalidState("advanced report consumed"))?;
         let frame =
             host.extract_serial(self.tick_cpu, report.completed_ticks, report.queued_ticks)?;
         let ready = match host.prepare_extracted(slot_index, report, frame) {
@@ -87,10 +93,16 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
                 return Err(error);
             }
         };
-        let host = self.host.take().ok_or("advanced host consumed")?;
+        let host = self
+            .host
+            .take()
+            .ok_or(FrameError::InvalidState("advanced host consumed"))?;
         Ok(EncodedFrame {
             ready: ready.map(|recorded| ReadyFrame { host, recorded }),
-            report: self.report.take().ok_or("advanced report consumed")?,
+            report: self
+                .report
+                .take()
+                .ok_or(FrameError::InvalidState("advanced report consumed"))?,
             wall_start: self.wall_start,
         })
     }
@@ -275,7 +287,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     /// Submit the recorded scene and optional surface pass once, or return
     /// the dropped report if the publication was stale.
     /// # Errors
-    /// Returns a GPU submission fault; committed world ticks remain committed.
+    /// Returns a GPU submission fault or a permanent surface encode refusal.
+    /// A surface encode refusal can report that the scene itself was submitted.
     pub fn submit(
         mut self,
         surface: Option<&SurfaceOutput<'_>>,

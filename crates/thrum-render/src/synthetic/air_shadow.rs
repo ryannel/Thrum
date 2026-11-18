@@ -4,7 +4,7 @@
 //! perspective. Prepared with the shadow recipe when atmosphere lighting is on.
 
 use super::shadow::{ShadowPrepared, ShadowTarget};
-use super::{LIGHT_BYTES, RenderError, shadow};
+use super::{DIRECTIONAL_BYTES, RenderError, shadow};
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
     PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
@@ -122,7 +122,7 @@ pub(super) fn append_graph(
                 shadow::HEIGHT_LAYER as u64..u64::from(shadow::LAYERS),
                 AccessKind::SampledRead,
             ),
-            read(directional, 0..LIGHT_BYTES as u64, AccessKind::UniformRead),
+            read(directional, 0..DIRECTIONAL_BYTES, AccessKind::UniformRead),
             read(heights.clone(), 0..1, AccessKind::AttachmentClear),
         ],
         external_side_effect: false,
@@ -176,7 +176,14 @@ impl AirShadowPrepared {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("synthetic Sun air shadow heights"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("air_shadow.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(
+                concat!(
+                    include_str!("../directional_light.wgsl"),
+                    "\n",
+                    include_str!("air_shadow.wgsl")
+                )
+                .into(),
+            ),
         });
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("synthetic Sun air shadow heights"),

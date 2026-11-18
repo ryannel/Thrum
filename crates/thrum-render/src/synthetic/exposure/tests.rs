@@ -54,7 +54,7 @@ fn policy_refuses_unrepresentable_or_reversed_ev_settings() {
 fn policy_shader_layouts_validate_without_a_device() {
     for (source, expected) in [
         (
-            include_str!("../exposure.wgsl"),
+            SHADER,
             &[("Policy", 32), ("ExposureSample", 32), ("Serials", 32)][..],
         ),
         (
@@ -91,7 +91,16 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
     let directional = graph
         .resource(
             ResourceDescriptor::Buffer {
-                bytes: 64,
+                bytes: DIRECTIONAL_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )
+        .unwrap();
+    let environment_light = graph
+        .resource(
+            ResourceDescriptor::Buffer {
+                bytes: ENVIRONMENT_BYTES,
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             },
             ResourceScope::Imported { initialized: true },
@@ -103,8 +112,8 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
         pipeline: None,
         accesses: vec![Access {
             view: None,
-            resource: directional.clone(),
-            range: 48..64,
+            resource: environment_light.clone(),
+            range: 0..ENVIRONMENT_BYTES,
             kind: AccessKind::StorageWrite,
             store: true,
         }],
@@ -115,7 +124,8 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
         revision: 11,
         role: 6,
     };
-    let sample = ExposureResolve::append_graph(&mut graph, key, directional).unwrap();
+    let sample =
+        ExposureResolve::append_graph(&mut graph, key, [directional, environment_light]).unwrap();
     graph.pass(Pass {
         name: "tone".into(),
         scope: PassScope::View(1),

@@ -1,6 +1,6 @@
 //! Conservative omission of the SDR star composite in bright incident light.
 
-use super::super::{LIGHT_BYTES, Projection, SyntheticView};
+use super::super::{DirectionalLight, Projection, SyntheticView};
 
 const BIN_SIDE: usize = 34;
 const BIN_SCALE: f64 = 16.0;
@@ -19,7 +19,7 @@ pub(super) struct DaylightBound {
 }
 
 impl DaylightBound {
-    pub(super) fn new(records: &[[f32; 4]], light: &[u8; LIGHT_BYTES]) -> Self {
+    pub(super) fn new(records: &[[f32; 4]], light: &DirectionalLight) -> Self {
         let peak = local_flux_bound(records) / (std::f64::consts::TAU * ANGULAR_SIGMA.powi(2));
         // Positive spectral weights bound each transmission channel by 1.5.
         // Round-to-nearest additive fp16 can double a positive increment.
@@ -32,7 +32,7 @@ impl DaylightBound {
         }
     }
 
-    pub(super) fn update(&mut self, light: &[u8; LIGHT_BYTES]) {
+    pub(super) fn update(&mut self, light: &DirectionalLight) {
         self.direct_lux = direct_horizontal_lux(light);
     }
 
@@ -55,10 +55,9 @@ impl DaylightBound {
     }
 }
 
-fn direct_horizontal_lux(light: &[u8; LIGHT_BYTES]) -> f32 {
-    let words = light.as_chunks::<4>().0;
-    let vertical = f32::from_le_bytes(words[1]).max(0.0);
-    let rgb = glam::Vec3::from_array([4, 5, 6].map(|index| f32::from_le_bytes(words[index])));
+fn direct_horizontal_lux(light: &DirectionalLight) -> f32 {
+    let vertical = light.direction_to_light[1].max(0.0);
+    let rgb = glam::Vec4::from_array(light.irradiance).truncate();
     vertical * rgb.dot(glam::Vec3::new(0.2126, 0.7152, 0.0722))
 }
 

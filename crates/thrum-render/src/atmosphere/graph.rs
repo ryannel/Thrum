@@ -22,7 +22,7 @@ impl AtmospherePrepared {
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         forward_accesses: &mut Vec<Access>,
-        directional: crate::graph::ResourceId,
+        environment_light: crate::graph::ResourceId,
     ) -> Result<(crate::graph::ResourceId, crate::graph::ResourceId), GraphError> {
         let uniform = graph.resource(
             ResourceDescriptor::Buffer {
@@ -111,8 +111,8 @@ impl AtmospherePrepared {
                 Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
                 Access::new(resources[2].clone(), 0..1, AccessKind::SampledRead),
                 Access::new(
-                    directional,
-                    48..crate::synthetic::LIGHT_BYTES as u64,
+                    environment_light,
+                    0..crate::light::ENVIRONMENT_BYTES,
                     AccessKind::StorageWrite,
                 ),
             ],

@@ -1,14 +1,7 @@
 // Read-only environment operations. Inputs and outputs use physical scene units.
 @group(0) @binding(1) var surface_transmittance: texture_2d<f32>;
 @group(0) @binding(2) var aerial_sampler: sampler;
-struct EnvironmentDirectional {
-    direction_to_light: vec4<f32>,
-    irradiance: vec4<f32>,
-    half_vector_fresnel: vec4<f32>,
-    ambient_irradiance: vec4<f32>,
-    sky_diffuse: array<vec4<f32>,9>,
-}
-@group(0) @binding(3) var<uniform> environment_light: EnvironmentDirectional;
+@group(0) @binding(3) var<uniform> environment_light: EnvironmentLight;
 @group(0) @binding(4) var environment_sky: texture_2d<f32>;
 @group(0) @binding(5) var aerial_scatter: texture_2d_array<f32>;
 @group(0) @binding(6) var aerial_transmittance: texture_2d_array<f32>;

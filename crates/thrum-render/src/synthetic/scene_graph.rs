@@ -1,10 +1,10 @@
 //! Compiles and binds the prepared scene and capture graph.
 
 use super::{
-    AUX_BYTES, CONTRIBUTION_UPLOAD, CaptureSource, DEPTH_FORMAT, ExposureResolve, LIGHT_BYTES,
-    MOTION_FORMAT, PreToneInput, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily,
-    SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure, history_gpu,
-    shadow,
+    AUX_BYTES, CONTRIBUTION_UPLOAD, CaptureSource, DEPTH_FORMAT, DIRECTIONAL_BYTES,
+    ExposureResolve, MOTION_FORMAT, PreToneInput, PreparedSynthetic, RenderError, SCENE_FORMAT,
+    SceneFamily, SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure,
+    history_gpu, shadow,
 };
 use crate::graph::{
     Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassKind, PassScope,
@@ -21,7 +21,7 @@ pub(super) struct CompiledScene {
 }
 
 struct FrameEnvironment {
-    directional: ResourceId,
+    light: [ResourceId; 2],
     view: ResourceId,
     atmosphere_inputs: Option<(ResourceId, ResourceId)>,
     late_uniforms: Vec<Access>,
@@ -343,7 +343,7 @@ impl PreparedSynthetic {
         );
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let FrameEnvironment {
-            directional,
+            light,
             view,
             atmosphere_inputs,
             mut late_uniforms,
@@ -364,7 +364,7 @@ impl PreparedSynthetic {
             &mut graph,
             &mut prepared_keys,
             shadow.as_ref(),
-            &directional,
+            &light[0],
             &mut accesses,
         )?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
@@ -383,7 +383,7 @@ impl PreparedSynthetic {
             &mut prepared_keys,
         )?;
         let exposure_sample =
-            ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
+            ExposureResolve::append_graph(&mut graph, self.exposure_key(), light)?;
         accesses.push(Access::new(
             exposure_sample.clone(),
             0..exposure::SAMPLE_BYTES,
@@ -684,14 +684,14 @@ impl PreparedSynthetic {
     ) -> Result<(ResourceId, ResourceId), GraphError> {
         let directional = graph.resource(
             ResourceDescriptor::Buffer {
-                bytes: LIGHT_BYTES as u64,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+                bytes: DIRECTIONAL_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
             },
             ResourceScope::Imported { initialized: true },
         )?;
         accesses.push(Access::new(
             directional.clone(),
-            0..LIGHT_BYTES as u64,
+            0..DIRECTIONAL_BYTES,
             AccessKind::UniformRead,
         ));
         let view = graph.resource(
@@ -1081,11 +1081,24 @@ impl PreparedSynthetic {
             .cloned()
             .collect::<Vec<_>>();
         let start = accesses.len();
-        let atmosphere_inputs = self.append_environment(graph, keys, accesses, &directional)?;
+        let environment_light = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: crate::light::ENVIRONMENT_BYTES,
+                usage: self.environment_light.usage(),
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access::new(
+            environment_light.clone(),
+            0..crate::light::ENVIRONMENT_BYTES,
+            AccessKind::UniformRead,
+        ));
+        let atmosphere_inputs =
+            self.append_environment(graph, keys, accesses, &environment_light)?;
         // Late consumers borrow these same producers through EnvironmentProducts.
         late_uniforms.extend(accesses[start..].iter().cloned());
         Ok(FrameEnvironment {
-            directional,
+            light: [directional, environment_light],
             view,
             atmosphere_inputs,
             late_uniforms,
@@ -1097,7 +1110,7 @@ impl PreparedSynthetic {
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         accesses: &mut Vec<Access>,
-        directional: &ResourceId,
+        environment_light: &ResourceId,
     ) -> Result<Option<(ResourceId, ResourceId)>, RenderError> {
         if let Some(cloud) = &self.cloud {
             cloud.append_reads(graph, accesses)?;
@@ -1105,7 +1118,9 @@ impl PreparedSynthetic {
         Ok(self
             .atmosphere
             .as_ref()
-            .map(|atmosphere| atmosphere.append_graph(graph, keys, accesses, directional.clone()))
+            .map(|atmosphere| {
+                atmosphere.append_graph(graph, keys, accesses, environment_light.clone())
+            })
             .transpose()?)
     }
 

@@ -3,7 +3,7 @@
 use super::{
     AirShadowPrepared, ArenaLimits, BucketRoute, CasterBox, CasterCulling, CasterInputs,
     ClusterCompute, ClusterTable, ContributionPasses, CullMode, CullingSelection, DEPTH_FORMAT,
-    DeviceCapabilities, ExposureResolve, FrameLighting, InstanceUpload, LIGHT_BYTES, MOTION_FORMAT,
+    DeviceCapabilities, ExposureResolve, FrameLighting, InstanceUpload, MOTION_FORMAT,
     MeshSelection, NativeWitness, PackedInstances, PipelineKey, PreparedSynthetic, REACTIVE_FORMAT,
     RayStructureSelection, RenderError, RetainedRayMeshes, SCENE_FORMAT, SYNTHETIC_REVISION,
     SdrToneStage, ShadowPrepared, ShadowSelection, StarPrepared, SunOpticalDepth, SunShadowMethod,
@@ -15,6 +15,7 @@ use super::{
 };
 use crate::abi::AbiError;
 use crate::atmosphere::{AtmospherePrepared, CloudPrepared};
+use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BINDING, ENVIRONMENT_BYTES};
 use std::sync::Arc;
 
 impl PreparedSynthetic {
@@ -101,23 +102,18 @@ impl PreparedSynthetic {
             ClusterTable::build(&scene.local_lights, &scene.view)?
         };
         let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
-        light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
+        light_data.direction_to_light[3] = has_local_lights;
         let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
         let dropped_light_references = clusters.dropped_references;
         let limits = capabilities.limits();
         if scene.sun_optical_depth.is_some() && !matches!(lighting, FrameLighting::Atmosphere(_)) {
             return Err(RenderError::InvalidLighting);
         }
-        if matches!(lighting, FrameLighting::Atmosphere(_))
-            && (limits.max_sampled_textures_per_shader_stage
-                < 9 + 2 * u32::from(shadow_enabled) + u32::from(scene.sun_optical_depth.is_some())
-                || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled)
-                || limits.max_bindings_per_bind_group
-                    < if scene.sun_optical_depth.is_some() {
-                        15
-                    } else {
-                        13
-                    })
+        if limits.max_bindings_per_bind_group <= ENVIRONMENT_BINDING
+            || matches!(lighting, FrameLighting::Atmosphere(_))
+                && (limits.max_sampled_textures_per_shader_stage
+                    < 9 + 2 * u32::from(shadow_enabled) + u32::from(scene.sun_optical_depth.is_some())
+                    || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
         {
             return Err(AbiError::DeviceLimits.into());
         }
@@ -249,13 +245,18 @@ impl PreparedSynthetic {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(LIGHT_BYTES as u64),
+                    min_binding_size: wgpu::BufferSize::new(DIRECTIONAL_BYTES),
                 },
                 count: None,
             },
             storage_layout(1, wgpu::ShaderStages::FRAGMENT, 32),
             storage_layout(2, wgpu::ShaderStages::FRAGMENT, 8),
             storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
+            uniform_layout(
+                ENVIRONMENT_BINDING,
+                ENVIRONMENT_BYTES,
+                wgpu::ShaderStages::FRAGMENT,
+            ),
         ];
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
             for (binding, dimension) in [
@@ -333,13 +334,22 @@ impl PreparedSynthetic {
         };
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic directional source"),
-            size: LIGHT_BYTES as u64,
-            usage: wgpu::BufferUsages::UNIFORM
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::STORAGE,
+            size: DIRECTIONAL_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        queue.write_buffer(&directional, 0, &light_data);
+        queue.write_buffer(&directional, 0, bytemuck::bytes_of(&light_data));
+        let mut environment_usage = wgpu::BufferUsages::UNIFORM;
+        if matches!(lighting, FrameLighting::Atmosphere(_)) {
+            environment_usage |= wgpu::BufferUsages::STORAGE;
+        }
+        // WebGPU initializes this buffer to zero. Only the atmosphere can write it.
+        let environment_light = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("environment light"),
+            size: ENVIRONMENT_BYTES,
+            usage: environment_usage,
+            mapped_at_creation: false,
+        });
         let exposure_samples = ExposureResolve::allocate_samples(device);
         let atmosphere = match lighting {
             FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
@@ -348,7 +358,7 @@ impl PreparedSynthetic {
                 generation,
                 frame,
                 &scene.view,
-                &directional,
+                &environment_light,
                 &exposure_samples,
             )),
             _ => None,
@@ -386,6 +396,7 @@ impl PreparedSynthetic {
         });
         let light = forward::LightBindings {
             directional: &directional,
+            environment_light: &environment_light,
             local: &local_lights,
             heads: &cluster_heads,
             indices: &cluster_indices,
@@ -477,7 +488,7 @@ impl PreparedSynthetic {
             None
         };
         let air_shadow = (shadow.is_some() && atmosphere.is_some()).then(|| {
-            AirShadowPrepared::new(device, shadow::SAMPLE_BYTES as u64, LIGHT_BYTES as u64)
+            AirShadowPrepared::new(device, shadow::SAMPLE_BYTES as u64, DIRECTIONAL_BYTES)
         });
         if let Some(shadow) = shadow.as_ref() {
             instance_upload.seed_shadow_clamps(&scene.instances, |slot, instance| {
@@ -740,6 +751,7 @@ impl PreparedSynthetic {
         let exposure_resolve = ExposureResolve::new(
             device,
             &directional,
+            &environment_light,
             history.serial_buffer(),
             exposure_samples,
         );
@@ -835,6 +847,7 @@ impl PreparedSynthetic {
             frame_revision: 0,
             cloud,
             directional_buffer: directional,
+            environment_light,
             local_light_buffer: local_lights,
             cluster_head_buffer: cluster_heads,
             cluster_index_buffer: cluster_indices,

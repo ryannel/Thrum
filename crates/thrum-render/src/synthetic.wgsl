@@ -21,16 +21,10 @@ struct ViewAuxRecord {
     flags: vec4<u32>,
     subrectangle: vec4<f32>,
 }
-struct DirectionalSource {
-    direction_to_light: vec4<f32>,
-    irradiance: vec4<f32>,
-    half_vector_fresnel: vec4<f32>,
-    ambient_irradiance: vec4<f32>,
-    sky_diffuse: array<vec4<f32>,9>,
-}
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
-@group(1) @binding(0) var<uniform> light: DirectionalSource;
+@group(1) @binding(0) var<uniform> light: DirectionalLight;
+@group(1) @binding(18) var<uniform> environment_light: EnvironmentLight;
 struct LocalSource {
     position_radius: vec4<f32>,
     candela: vec4<f32>,
@@ -510,11 +504,15 @@ fn low_sun_terrain(visibility: f32, receiver: ShadowReceiver) -> f32 {
     return min(visibility,horizon_visibility(receiver));
 }
 
-fn ambient_irradiance(n: vec3<f32>) -> vec3<f32> {
-    if light.ambient_irradiance.w==0.0 { return light.ambient_irradiance.rgb; }
+fn ambient_source(n: vec3<f32>) -> vec3<f32> {
+    if environment_light.horizontal_irradiance.w==0.0 { return light.ambient_irradiance.rgb; }
     // Signed SH coefficients are retained. Only the final reconstructed
     // irradiance is repaired; approximation risk is recorded by normal probes.
-    return max(evaluate_sky_diffuse(light.sky_diffuse,n),vec3(0.0));
+    return max(evaluate_sky_diffuse(environment_light.sky_diffuse,n),vec3(0.0));
+}
+
+fn ambient_irradiance(n: vec3<f32>, world_position: vec3<f32>, pixel_position: vec4<f32>) -> vec3<f32> {
+    return ambient_source(n);
 }
 
 fn shade(input: VertexOutput, receiver: ShadowReceiver, front_facing: bool, shadowed: bool) -> vec4<f32> {
@@ -554,7 +552,7 @@ fn shade(input: VertexOutput, receiver: ShadowReceiver, front_facing: bool, shad
     let colour = direct_brdf(surface_base,metalness,roughness,n,
             light.direction_to_light.xyz,v,sun_irradiance(input.world_position)*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
-        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r)
+        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position)
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
     // before pre-exposure and bound only to the finite fp16 storage envelope.

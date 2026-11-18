@@ -86,13 +86,13 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
         });
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky illuminance"),
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
         let readback = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky illuminance readback"),
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
@@ -110,7 +110,13 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
             pass.set_bind_group(0, &group, &[]);
             pass.dispatch_workgroups(1, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&directional, 0, &readback, 0, 64);
+        encoder.copy_buffer_to_buffer(
+            &directional,
+            0,
+            &readback,
+            0,
+            crate::light::ENVIRONMENT_BYTES,
+        );
         let (send, receive) = std::sync::mpsc::channel();
         encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
             send.send(result).expect("diffuse readback receiver alive");
@@ -135,7 +141,7 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
             .into_iter()
             .enumerate()
         {
-            let start = 48 + channel * 4; // directional[3].rgb, horizontal sky E.
+            let start = channel * 4; // Horizontal sky irradiance.
             let actual =
                 f32::from_le_bytes(bytes[start..start + 4].try_into().expect("f32 channel"));
             let expected = std::f32::consts::PI * radiance * solar_illuminance;

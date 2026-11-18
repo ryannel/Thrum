@@ -228,6 +228,10 @@ fn a_missing_surface_binding_has_one_drop_and_one_scene_commit_on_both_routes() 
             assert!(report.dropped_view);
             assert!(!report.surface_presented);
             assert_eq!(host.dropped_surface(), 1);
+            assert_eq!(
+                report.surface_fault,
+                Some(crate::runtime::SurfaceFault::MissingBinding)
+            );
             assert_eq!(host.last_view_source, Some(host.world.source()));
             assert_eq!(host.pending_frames(), 1);
         }
@@ -1336,6 +1340,8 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
 mod creation;
 mod extent;
 mod mesh_rows;
+#[cfg(target_os = "macos")]
+mod surface_fault;
 mod view_history;
 
 struct RecoveryContribution {

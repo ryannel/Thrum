@@ -24,9 +24,11 @@ const NORMALS: [[f64; 3]; 14] = [
 ];
 const SCALE: [f64; 3] = [1.0 / 16384.0, 1.0 / 32768.0, 1.0 / 65536.0];
 const READ: &str = concat!(
+    include_str!("../../../environment_light.wgsl"),
+    "\n",
     include_str!("../../irradiance.wgsl"),
     r"
-@group(0) @binding(0) var<storage,read> light: array<vec4<f32>,13>;
+@group(0) @binding(0) var<storage,read> light: EnvironmentLight;
 @group(0) @binding(1) var<storage,read_write> output: array<vec4<f32>>;
 @group(0) @binding(2) var image: texture_2d<f32>;
 @compute @workgroup_size(1)
@@ -35,8 +37,7 @@ fn evaluate() {
         vec3(1,0,0),vec3(-1,0,0),vec3(0,1,0),vec3(0,-1,0),vec3(0,0,1),vec3(0,0,-1),
         vec3(1,1,1),vec3(-1,1,1),vec3(1,-1,1),vec3(1,1,-1),
         vec3(-1,-1,1),vec3(-1,1,-1),vec3(1,-1,-1),vec3(-1,-1,-1));
-    var coefficients: array<vec4<f32>,9>;
-    for(var i=0u;i<9u;i++) { coefficients[i]=light[i+4u]; }
+    let coefficients=light.sky_diffuse;
     for(var i=0u;i<14u;i++) {
         output[i]=vec4(max(evaluate_sky_diffuse(coefficients,normalize(normals[i])),vec3(0.0)),0.0);
     }
@@ -79,23 +80,12 @@ impl Gpu {
     }
 
     fn light(&self) -> wgpu::Buffer {
-        // Distinct authored direct-light prefix: the sky producer must preserve it.
-        let mut values = vec![0.0_f32; crate::synthetic::LIGHT_BYTES / 4];
-        for (i, value) in values[..12].iter_mut().enumerate() {
-            *value = f32::from(u16::try_from(i).expect("twelve prefix words")) + 17.0;
-        }
-        self.device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("authored direct light and sky SH"),
-                contents: values
-                    .iter()
-                    .flat_map(|v| v.to_le_bytes())
-                    .collect::<Vec<_>>()
-                    .as_slice(),
-                usage: wgpu::BufferUsages::STORAGE
-                    | wgpu::BufferUsages::UNIFORM
-                    | wgpu::BufferUsages::COPY_SRC,
-            })
+        self.buffer(
+            crate::light::ENVIRONMENT_BYTES,
+            wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::COPY_SRC,
+        )
     }
 
     fn collect(
@@ -164,7 +154,9 @@ impl Gpu {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 cache: None,
             });
-        let count = sky.map_or(27, |t| u64::from(t.width()) * u64::from(t.height()));
+        let count = sky.map_or(14 + crate::light::ENVIRONMENT_BYTES / 16, |t| {
+            u64::from(t.width()) * u64::from(t.height())
+        });
         let output = self.buffer(
             count * 16,
             wgpu::BufferUsages::STORAGE
@@ -205,7 +197,13 @@ impl Gpu {
             }
         }
         if sky.is_none() {
-            encoder.copy_buffer_to_buffer(light, 0, &output, 14 * 16, 208);
+            encoder.copy_buffer_to_buffer(
+                light,
+                0,
+                &output,
+                14 * 16,
+                crate::light::ENVIRONMENT_BYTES,
+            );
         }
         self.collect(encoder, &output, count * 16)
     }
@@ -505,13 +503,13 @@ fn compare(
         let projection_budget = 0.01 * mass + 1e-12;
         let mut maximum_projection_error = 0.0_f64;
         for i in 0..9 {
-            let error = (observed[18 + i][c] - fine.coefficients[i][c]).abs();
+            let error = (observed[15 + i][c] - fine.coefficients[i][c]).abs();
             let refinement = (coarse.coefficients[i][c] - fine.coefficients[i][c]).abs();
             maximum_projection_error = maximum_projection_error.max(error);
             assert!(
                 error <= projection_budget + 2.0 * refinement,
                 "{label} c{c} coefficient{i}: GPU {}, CPU {}, midpoint delta {refinement}, budget {projection_budget}",
-                observed[18 + i][c],
+                observed[15 + i][c],
                 fine.coefficients[i][c]
             );
         }
@@ -543,7 +541,7 @@ fn compare(
             let projection_error: f64 = evaluation
                 .iter()
                 .enumerate()
-                .map(|(j, b)| b.abs() * (observed[18 + j][c] - fine.coefficients[j][c]).abs())
+                .map(|(j, b)| b.abs() * (observed[15 + j][c] - fine.coefficients[j][c]).abs())
                 .sum();
             let bound = 3.0 * mass / 32.0 + projection_error + 2.0 * refinement + 1e-12;
             assert!(
@@ -596,10 +594,10 @@ fn analytic_fields_preserve_direction_colour_and_physical_units() {
                 if kind == 5 { 512 } else { 128 },
             );
             if kind == 5 {
-                let marker = observed[17][3];
+                let marker = observed[14][3];
                 assert!(marker > 1.0 && marker <= 65.0 && marker.fract().abs() < f64::EPSILON);
                 assert!(
-                    observed[18][3] < 0.0,
+                    observed[15][3] < 0.0,
                     "narrow positive sky has negative raw SH probes"
                 );
                 assert!(
@@ -617,11 +615,6 @@ fn analytic_fields_preserve_direction_colour_and_physical_units() {
                             "analytic{kind} normal{i} channel{c}: {actual} vs {expected}, budget {budget}"
                         );
                     }
-                }
-            }
-            for (i, prefix) in observed[14..17].iter().enumerate() {
-                for (c, &actual) in prefix.iter().enumerate() {
-                    assert_eq!(actual, (i * 4 + c) as f64 + 17.0);
                 }
             }
         }

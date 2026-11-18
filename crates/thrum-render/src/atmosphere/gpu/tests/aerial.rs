@@ -317,7 +317,7 @@ fn aerial_storage_matches_float32_transport_and_consumer_units() {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
@@ -520,7 +520,7 @@ fn finite_night_radiance_survives_the_aerial_composite() {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });

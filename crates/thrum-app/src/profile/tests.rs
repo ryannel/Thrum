@@ -30,6 +30,7 @@ fn sample(order: u64) -> FrameSample {
         gpu_present_ns: None,
         gpu_contribution_ns: None,
         surface_presented: true,
+        surface_fault: None,
         timing_fault: false,
         timing_requested: true,
         culling_mode: CullMode::Direct,

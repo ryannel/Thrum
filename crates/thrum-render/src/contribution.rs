@@ -136,7 +136,7 @@ pub struct SceneSurface<'a> {
     pub sun_optical_depth: bool,
     pub(crate) cloud: Option<&'a crate::atmosphere::CloudPrepared>,
     pub(crate) environment: Option<&'a crate::atmosphere::AtmospherePrepared>,
-    pub(crate) directional: &'a wgpu::Buffer,
+    pub(crate) environment_light: &'a wgpu::Buffer,
     pub(crate) exposure: &'a [wgpu::Buffer; 2],
     /// The device every scene resource belongs to.
     pub device: &'a crate::runtime::DeviceSite,
@@ -194,7 +194,7 @@ impl SceneSurface<'_> {
         self.environment.map(|environment| {
             environment.products(
                 self.device,
-                self.directional,
+                self.environment_light,
                 self.exposure,
                 self.cloud.is_some(),
             )

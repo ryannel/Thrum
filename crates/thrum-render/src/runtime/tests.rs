@@ -49,6 +49,7 @@ fn sample(tick: u64) -> FrameSample {
         gpu_present_ns: None,
         gpu_contribution_ns: None,
         surface_presented: false,
+        surface_fault: None,
         timing_fault: false,
         timing_requested: true,
         culling_mode: crate::synthetic::CullMode::Direct,
@@ -275,6 +276,7 @@ fn lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submi
                 projection_lost_ticks: 0,
                 submitted: false,
                 surface_presented: false,
+                surface_fault: None,
                 dropped_view: false,
                 wall: Duration::ZERO,
             };
@@ -354,6 +356,7 @@ fn progress(host: &FrameHost<StaticWorld, StaticScene>) -> super::DriveReport {
         projection_lost_ticks: 0,
         submitted: false,
         surface_presented: false,
+        surface_fault: None,
         dropped_view: false,
         wall: Duration::ZERO,
     }

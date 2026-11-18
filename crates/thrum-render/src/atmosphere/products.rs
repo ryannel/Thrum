@@ -48,16 +48,16 @@ impl EnvironmentProducts {
 pub(super) fn create(
     atmosphere: &AtmospherePrepared,
     device: &wgpu::Device,
-    directional: &wgpu::Buffer,
+    environment_light: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
 ) -> EnvironmentProducts {
-    create_with_far(atmosphere, device, directional, exposure, false)
+    create_with_far(atmosphere, device, environment_light, exposure, false)
 }
 
 pub(super) fn create_with_far(
     atmosphere: &AtmospherePrepared,
     device: &wgpu::Device,
-    directional: &wgpu::Buffer,
+    environment_light: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
     far_aerial: bool,
 ) -> EnvironmentProducts {
@@ -72,7 +72,11 @@ pub(super) fn create_with_far(
         },
         count: None,
     };
-    let mut entries = vec![buffer(0, 128), buffer(3, 208), buffer(10, 16)];
+    let mut entries = vec![
+        buffer(0, 128),
+        buffer(3, crate::light::ENVIRONMENT_BYTES),
+        buffer(10, 16),
+    ];
     for (binding, view_dimension) in [
         (1, wgpu::TextureViewDimension::D2),
         (4, wgpu::TextureViewDimension::D2),
@@ -118,7 +122,7 @@ pub(super) fn create_with_far(
         },
         wgpu::BindGroupEntry {
             binding: 3,
-            resource: directional.as_entire_binding(),
+            resource: environment_light.as_entire_binding(),
         },
         wgpu::BindGroupEntry {
             binding: 9,
@@ -160,7 +164,8 @@ pub(super) fn create_with_far(
 
 fn library(far_aerial: bool) -> String {
     let products = format!(
-        "{}{}{}",
+        "{}\n{}{}{}",
+        include_str!("../environment_light.wgsl"),
         include_str!("products.wgsl"),
         if far_aerial {
             include_str!("products_aerial_far.wgsl")

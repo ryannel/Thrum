@@ -67,6 +67,7 @@ impl Lighting {
         });
         let groups = crate::synthetic::forward::LightBindings {
             directional: &prepared.directional_buffer,
+            environment_light: &prepared.environment_light,
             local: &prepared.local_light_buffer,
             heads: &heads,
             indices: &indices,

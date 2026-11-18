@@ -9,10 +9,18 @@ use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BYTES};
 use crate::timing::GpuTimings;
 
 pub(super) const SAMPLE_BYTES: u64 = 32;
 const POLICY_BYTES: u64 = 32;
+const SHADER: &str = concat!(
+    include_str!("../directional_light.wgsl"),
+    "\n",
+    include_str!("../environment_light.wgsl"),
+    "\n",
+    include_str!("exposure.wgsl"),
+);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum ExposurePolicy {
@@ -114,6 +122,7 @@ impl ExposureResolve {
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         directional: &wgpu::Buffer,
+        environment_light: &wgpu::Buffer,
         serials: &wgpu::Buffer,
         samples: [wgpu::Buffer; 2],
     ) -> Self {
@@ -127,7 +136,8 @@ impl ExposureResolve {
             label: Some("camera exposure resolve"),
             entries: &[
                 uniform_layout(0, POLICY_BYTES, wgpu::ShaderStages::COMPUTE),
-                uniform_layout(1, 64, wgpu::ShaderStages::COMPUTE),
+                uniform_layout(1, DIRECTIONAL_BYTES, wgpu::ShaderStages::COMPUTE),
+                uniform_layout(4, ENVIRONMENT_BYTES, wgpu::ShaderStages::COMPUTE),
                 uniform_layout(2, history_gpu::SERIAL_BYTES, wgpu::ShaderStages::COMPUTE),
                 wgpu::BindGroupLayoutEntry {
                     binding: 3,
@@ -162,12 +172,16 @@ impl ExposureResolve {
                         binding: 3,
                         resource: samples[side].as_entire_binding(),
                     },
+                    wgpu::BindGroupEntry {
+                        binding: 4,
+                        resource: environment_light.as_entire_binding(),
+                    },
                 ],
             })
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("incident camera exposure"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("exposure.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("camera exposure resolve"),
@@ -197,9 +211,9 @@ impl ExposureResolve {
     pub(super) fn append_graph(
         graph: &mut FrameGraph,
         key: PipelineKey,
-        directional: ResourceId,
+        [directional, environment_light]: [ResourceId; 2],
     ) -> Result<ResourceId, GraphError> {
-        let mut accesses = Vec::with_capacity(4);
+        let mut accesses = Vec::with_capacity(5);
         for bytes in [POLICY_BYTES, history_gpu::SERIAL_BYTES] {
             let resource = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -216,13 +230,12 @@ impl ExposureResolve {
                 store: true,
             });
         }
-        accesses.push(Access {
-            view: None,
-            resource: directional,
-            range: 0..64,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
+        for (resource, bytes) in [
+            (directional, DIRECTIONAL_BYTES),
+            (environment_light, ENVIRONMENT_BYTES),
+        ] {
+            accesses.push(Access::new(resource, 0..bytes, AccessKind::UniformRead));
+        }
         let sample = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: SAMPLE_BYTES,

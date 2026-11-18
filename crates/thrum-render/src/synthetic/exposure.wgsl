@@ -20,7 +20,8 @@ struct ExposureSample {
     metadata: vec4<u32>,
 }
 @group(0) @binding(0) var<uniform> policy: Policy;
-@group(0) @binding(1) var<uniform> directional: array<vec4<f32>,4>;
+@group(0) @binding(1) var<uniform> directional: DirectionalLight;
+@group(0) @binding(4) var<uniform> environment_light: EnvironmentLight;
 @group(0) @binding(2) var<uniform> serials: Serials;
 @group(0) @binding(3) var<storage,read_write> result: ExposureSample;
 const FLOOR: u32 = 1u;
@@ -52,9 +53,9 @@ fn resolve() {
     var storage_scale = policy.pre_exposure;
     if policy.mode == 1u || policy.mode == 2u {
         flags = INVALID | NOT_METERED;
-        if policy.atmosphere != 0u && finite(directional[0].y)
-            && valid_rgb(directional[1].rgb) && valid_rgb(directional[3].rgb) {
-            let incident = directional[3].rgb + directional[1].rgb * max(directional[0].y, 0.0);
+        if policy.atmosphere != 0u && finite(directional.direction_to_light.y)
+            && valid_rgb(directional.irradiance.rgb) && valid_rgb(environment_light.horizontal_irradiance.rgb) {
+            let incident = environment_light.horizontal_irradiance.rgb + directional.irradiance.rgb * max(directional.direction_to_light.y, 0.0);
             let measured = dot(incident, vec3(0.2126,0.7152,0.0722));
             if finite(measured) && measured >= 0.0 {
                 lux = measured;
@@ -80,7 +81,7 @@ fn resolve() {
             }
         }
     }
-    if policy.atmosphere!=0u && directional[3].w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
+    if policy.atmosphere!=0u && environment_light.horizontal_irradiance.w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
     result.values = vec4(storage_scale, inverse, ev, lux);
     result.metadata = vec4(flags, serials.current, policy.display_selectors);
 }

@@ -11,7 +11,7 @@ use crate::graph::{
 };
 
 use super::{
-    LIGHT_BYTES, PreparedSynthetic, Projection, RenderError, SCENE_FORMAT, SceneContext,
+    DirectionalLight, PreparedSynthetic, Projection, RenderError, SCENE_FORMAT, SceneContext,
     SyntheticView, exposure,
 };
 
@@ -45,7 +45,7 @@ impl StarPrepared {
         device: &crate::runtime::DeviceSite,
         records: &[[f32; 4]],
         max_storage_bytes: u64,
-        light: &[u8; LIGHT_BYTES],
+        light: &DirectionalLight,
     ) -> Result<Self, RenderError> {
         let count = u32::try_from(records.len()).map_err(|_| RenderError::SceneCapacity)?;
         let bytes = u64::from(count) * 16;
@@ -204,7 +204,7 @@ impl StarPrepared {
         view: &SyntheticView,
         previous: &SyntheticView,
         extent: [u32; 2],
-        light: &[u8; LIGHT_BYTES],
+        light: &DirectionalLight,
     ) -> bool {
         self.daylight.update(light);
         let Some(bytes) = self.view_bytes(view, previous, extent) else {

@@ -123,6 +123,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 gpu_present_ns: None,
                 gpu_contribution_ns: None,
                 surface_presented: false,
+                surface_fault: None,
                 timing_fault: false,
                 native_segment: None,
                 timing_requested: self.timing_requested,
@@ -158,14 +159,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         let mut target =
             SpriteTarget::prepare(prepared, self.render_extent, CaptureSource::Sdr, None)
-                .map_err(|error| format!("capture sprite target: {error:?}"))?;
+                .map_err(|error| FrameError::Gpu(format!("capture sprite target: {error:?}")))?;
         let frame = self
             .source
             .sprites(source, 1.0, target.extent)
             .map_err(FrameError::Scene)?;
         let upload = prepared
             .upload(&self.queue, &mut target, frame)
-            .map_err(|error| format!("capture sprite update: {error:?}"))?;
+            .map_err(|error| FrameError::Gpu(format!("capture sprite update: {error:?}")))?;
         self.dropped_capture_rows = self
             .dropped_capture_rows
             .saturating_add(u64::from(upload.dropped));
@@ -191,7 +192,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.contribution.as_deref_mut(),
                 contribution_frame(&target, self.generation, time),
             )
-            .map_err(|error| format!("capture sprite encode: {error:?}"))?;
+            .map_err(|error| FrameError::Gpu(format!("capture sprite encode: {error:?}")))?;
         let submitted = self.queue.submit([encoder.finish()]);
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(false);

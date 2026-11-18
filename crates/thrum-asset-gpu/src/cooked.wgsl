@@ -106,7 +106,7 @@ fn cooked_box_exit(origin: vec3<f32>, direction: vec3<f32>) -> vec2<f32> {
     // Sky light approximated as uniform radiance E_up / pi over the upper hemisphere only; the
     // isotropic phase integrates that half sphere to E_up / (2 pi) of in-scattered radiance. The
     // sky term is not shadowed by the volume itself (diagnostic consumer).
-    let ambient = ambient_irradiance(vec3(0.0, 1.0, 0.0)) / (2.0 * 3.14159265359);
+    let ambient = ambient_source(vec3(0.0, 1.0, 0.0)) / (2.0 * 3.14159265359);
     let isotropic = 1.0 / (4.0 * 3.14159265359);
     var transmittance = 1.0;
     var radiance = vec3(0.0);

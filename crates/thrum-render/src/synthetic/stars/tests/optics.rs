@@ -5,7 +5,7 @@ use std::time::Duration;
 use glam::{Mat3, Quat, Vec3};
 use wgpu::{self as gpu, util::DeviceExt};
 
-use super::{LIGHT_BYTES, SCENE_FORMAT, StarPrepared, SyntheticView, metal};
+use super::{DirectionalLight, SCENE_FORMAT, StarPrepared, SyntheticView, metal};
 
 const DEPTH: gpu::TextureFormat = gpu::TextureFormat::Depth32Float;
 const STORAGE: f32 = 64.0;
@@ -56,7 +56,7 @@ impl Probe {
                 [x, y, z, flux[i]]
             }),
             device.limits().max_storage_buffer_binding_size,
-            &[0; LIGHT_BYTES],
+            &DirectionalLight::default(),
         )
         .expect("production star pipeline");
         let shader = device.create_shader_module(gpu::ShaderModuleDescriptor {

@@ -33,7 +33,7 @@ fn shader_input_counts(atmosphere: bool, shadows: bool, cloud: bool) -> [u32; 2]
     let shadows = u32::from(shadows);
     let cloud = u32::from(cloud);
     [
-        5 + shadows + atmosphere + cloud,
+        6 + shadows + atmosphere + cloud,
         4 + 5 * atmosphere + shadows * (2 + atmosphere) + cloud,
     ]
 }

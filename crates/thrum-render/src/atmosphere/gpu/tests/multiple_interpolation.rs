@@ -286,7 +286,7 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("M diagnostic atmosphere fixture"),
-            size: crate::synthetic::LIGHT_BYTES as u64,
+            size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });

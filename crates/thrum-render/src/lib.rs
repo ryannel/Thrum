@@ -19,6 +19,7 @@ pub mod frame;
 pub mod graph;
 mod graph_record;
 pub mod history;
+mod light;
 pub mod present;
 pub mod runtime;
 pub mod sprite;

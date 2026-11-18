@@ -1,6 +1,6 @@
 @group(0) @binding(1) var sky: texture_2d<f32>;
 @group(0) @binding(2) var lut_sampler: sampler;
-@group(0) @binding(3) var<storage,read_write> directional: array<vec4<f32>,13>;
+@group(0) @binding(3) var<storage,read_write> environment_light: EnvironmentLight;
 var<workgroup> irradiance: array<vec4<f32>,64>;
 var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 
@@ -84,8 +84,8 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Every lane has consumed the shared meter before this scratch reuse.
     workgroupBarrier();
     if index==0u {
-        directional[3]=vec4(decode_sky_light(irradiance[0],solar),1.0);
-        for(var i=0u;i<9u;i++) { directional[4u+i]=coefficients[i]; }
+        environment_light.horizontal_irradiance=vec4(decode_sky_light(irradiance[0],solar),1.0);
+        environment_light.sky_diffuse=coefficients;
     }
     workgroupBarrier();
     irradiance[index]=vec4(select(0.0,1.0,any(probe<vec3(0.0))),min(probe.x,min(probe.y,probe.z)),0.0,0.0);
@@ -98,7 +98,7 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
         workgroupBarrier();
     }
     if index==0u {
-        directional[3].w+=irradiance[0].x;
-        directional[4].w=irradiance[0].y;
+        environment_light.horizontal_irradiance.w+=irradiance[0].x;
+        environment_light.sky_diffuse[0].w=irradiance[0].y;
     }
 }

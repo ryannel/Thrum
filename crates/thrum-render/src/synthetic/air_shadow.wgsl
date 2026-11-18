@@ -13,12 +13,9 @@ struct ShadowCascades {
     horizon: vec4<f32>,
     near_partition: vec4<f32>,
 }
-struct DirectionalSource {
-    direction_to_light: vec4<f32>,
-}
 @group(0) @binding(0) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(1) var shadow_maps: texture_depth_2d_array;
-@group(0) @binding(2) var<uniform> light: DirectionalSource;
+@group(0) @binding(2) var<uniform> light: DirectionalLight;
 
 // Must match `air_shadow::SIZE`; the pass draws one fullscreen triangle into it.
 const SIZE: f32 = 512.0;

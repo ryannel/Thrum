@@ -483,7 +483,7 @@ fn terminal_ground_uses_local_sun(fixture: &Fixture) {
 fn cache_lifecycle(fixture: &Fixture) {
     let directional = fixture.device.create_buffer(&wgpu::BufferDescriptor {
         label: None,
-        size: crate::synthetic::LIGHT_BYTES as u64,
+        size: crate::light::ENVIRONMENT_BYTES,
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
         mapped_at_creation: false,
     });

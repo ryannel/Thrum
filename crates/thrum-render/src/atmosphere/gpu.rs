@@ -85,14 +85,14 @@ impl AtmospherePrepared {
     pub(crate) fn products(
         &self,
         device: &wgpu::Device,
-        directional: &wgpu::Buffer,
+        environment_light: &wgpu::Buffer,
         exposure: &[wgpu::Buffer; 2],
         far_aerial: bool,
     ) -> super::EnvironmentProducts {
         if far_aerial {
-            super::products::create_with_far(self, device, directional, exposure, true)
+            super::products::create_with_far(self, device, environment_light, exposure, true)
         } else {
-            super::products::create(self, device, directional, exposure)
+            super::products::create(self, device, environment_light, exposure)
         }
     }
 
@@ -114,7 +114,7 @@ impl AtmospherePrepared {
         generation: u64,
         frame: AtmosphereFrame,
         view: &SyntheticView,
-        directional: &wgpu::Buffer,
+        environment_light: &wgpu::Buffer,
         exposure_samples: &[wgpu::Buffer; 2],
     ) -> Self {
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
@@ -208,7 +208,7 @@ impl AtmospherePrepared {
             exposure_samples,
         );
         let (diffuse_pipeline, diffuse_group) =
-            prepare_diffuse(device, &uniform, &views[2], &sampler, directional);
+            prepare_diffuse(device, &uniform, &views[2], &sampler, environment_light);
         let (aerial_pipeline, aerial_group) =
             prepare_aerial(device, &uniform, &views, &aerial_views, &sampler, &night);
         let reflection = ReflectionPrepared::new(device, &uniform, &views[2], &sampler);
@@ -428,7 +428,7 @@ fn prepare_diffuse(
     uniform: &wgpu::Buffer,
     sky: &wgpu::TextureView,
     sampler: &wgpu::Sampler,
-    directional: &wgpu::Buffer,
+    environment_light: &wgpu::Buffer,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
     let visibility = wgpu::ShaderStages::COMPUTE;
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -443,7 +443,7 @@ fn prepare_diffuse(
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage { read_only: false },
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(crate::synthetic::LIGHT_BYTES as u64),
+                    min_binding_size: wgpu::BufferSize::new(crate::light::ENVIRONMENT_BYTES),
                 },
                 count: None,
             },
@@ -469,6 +469,8 @@ fn prepare_diffuse(
                 ),
                 "\n",
                 include_str!("irradiance.wgsl"),
+                "\n",
+                include_str!("../environment_light.wgsl"),
                 "\n",
                 include_str!("diffuse.wgsl")
             )
@@ -501,7 +503,7 @@ fn prepare_diffuse(
             },
             wgpu::BindGroupEntry {
                 binding: 3,
-                resource: directional.as_entire_binding(),
+                resource: environment_light.as_entire_binding(),
             },
         ],
     });

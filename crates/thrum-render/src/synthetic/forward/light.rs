@@ -9,6 +9,7 @@ pub(in crate::synthetic) type AerialBindings<'a> = (
 
 pub(in crate::synthetic) struct LightBindings<'a> {
     pub(in crate::synthetic) directional: &'a wgpu::Buffer,
+    pub(in crate::synthetic) environment_light: &'a wgpu::Buffer,
     pub(in crate::synthetic) local: &'a wgpu::Buffer,
     pub(in crate::synthetic) heads: &'a wgpu::Buffer,
     pub(in crate::synthetic) indices: &'a wgpu::Buffer,
@@ -42,6 +43,10 @@ impl LightBindings<'_> {
             wgpu::BindGroupEntry {
                 binding: 3,
                 resource: self.indices.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: crate::light::ENVIRONMENT_BINDING,
+                resource: self.environment_light.as_entire_binding(),
             },
         ];
         if let Some(atmosphere) = self.atmosphere {

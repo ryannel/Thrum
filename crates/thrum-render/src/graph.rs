@@ -537,6 +537,7 @@ pub struct CompiledGraph {
     /// Passes removed because no output consumes them.
     pub culled_passes: usize,
     pipeline_pass_count: usize,
+    pre_acquire_pipeline_pass_count: Option<usize>,
     passes: Vec<CompiledPass>,
     resources: Vec<Resource>,
     owner: Arc<()>,
@@ -882,6 +883,11 @@ impl CompiledGraph {
     pub(crate) fn pipeline_pass_count(&self) -> usize {
         self.pipeline_pass_count
     }
+
+    pub(crate) fn pipeline_pass_count_before_acquire(&self) -> usize {
+        self.pre_acquire_pipeline_pass_count
+            .unwrap_or_else(|| self.pipeline_pass_count())
+    }
 }
 
 impl FrameGraph {
@@ -971,6 +977,12 @@ impl FrameGraph {
             return Err(GraphError::SurfacePhase);
         }
         plan.pre_acquire_passes = Some(boundary);
+        plan.pre_acquire_pipeline_pass_count = Some(
+            plan.pass_order[..boundary]
+                .iter()
+                .filter(|&&index| self.passes[index].pipeline.is_some())
+                .count(),
+        );
         plan.surface_resource = Some(surface.clone());
         Ok(plan)
     }
@@ -1542,6 +1554,7 @@ impl FrameGraph {
             attachment_storage: self.attachment_storage(&order),
             pass_order: order.clone(),
             culled_passes: self.passes.len() - order.len(),
+            pre_acquire_pipeline_pass_count: None,
             pipeline_pass_count: order
                 .iter()
                 .filter(|&&index| self.passes[index].pipeline.is_some())

@@ -17,9 +17,9 @@ use crate::contribution::{ContributionPasses, SceneContribution};
 use crate::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
+    present::{PresentError, PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic,
+        CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic, RenderError,
         SceneApplyReport, SceneTimingLayout, SyntheticScene, SyntheticView, pass_durations,
     },
     timing::{GpuTimings, TimingError},
@@ -197,6 +197,13 @@ pub enum FrameError {
     Scene(String),
     /// GPU preparation, recording, polling or readback failure.
     Gpu(String),
+    /// Surface encoding failed permanently for this prepared frame.
+    SurfaceEncode {
+        /// Drive outcome, including the kind of surface fault.
+        report: Box<DriveReport>,
+        /// Original failure at the renderer boundary.
+        error: RenderError,
+    },
     /// A dedicated native command buffer failed in this platform generation.
     NativeCommandBuffer {
         /// Platform generation whose queue must no longer be used.
@@ -211,6 +218,7 @@ impl std::fmt::Display for FrameError {
             Self::World(message) => write!(f, "frame world: {message}"),
             Self::Scene(message) => write!(f, "frame scene: {message}"),
             Self::Gpu(message) => write!(f, "frame GPU: {message}"),
+            Self::SurfaceEncode { error, .. } => write!(f, "frame surface encode: {error:?}"),
             Self::NativeCommandBuffer { generation } => write!(
                 f,
                 "native command buffer failed in device generation {generation}"
@@ -220,14 +228,58 @@ impl std::fmt::Display for FrameError {
     }
 }
 impl std::error::Error for FrameError {}
-impl From<String> for FrameError {
-    fn from(message: String) -> Self {
-        Self::Gpu(message)
+
+/// Why the surface pass could not be encoded for a frame.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SurfaceFault {
+    /// The slot has no presentation binding for the current presenter.
+    MissingBinding,
+    /// The bound target belongs to a different preparation.
+    StaleBinding,
+    /// The acquired surface size differs from the current presenter size.
+    ExtentMismatch,
+    /// The surface pass could not reserve its timing queries.
+    Timing(TimingError),
+    /// The prepared graph has no matching surface recorder or attachments.
+    Graph,
+    /// Another renderer failure prevented the surface pass.
+    Render,
+}
+
+impl SurfaceFault {
+    fn from_encode(error: &RenderError) -> Self {
+        match error {
+            RenderError::StaleTarget | RenderError::Present(PresentError::StaleTarget) => {
+                Self::StaleBinding
+            }
+            RenderError::Present(PresentError::Extent) => Self::ExtentMismatch,
+            RenderError::Timing(error) | RenderError::Present(PresentError::Timing(error)) => {
+                Self::Timing(*error)
+            }
+            RenderError::GraphPassMismatch
+            | RenderError::Graph(_)
+            | RenderError::Present(PresentError::GraphPassMismatch | PresentError::Graph(_)) => {
+                Self::Graph
+            }
+            _ => Self::Render,
+        }
+    }
+
+    fn is_transient(self) -> bool {
+        matches!(self, Self::StaleBinding | Self::ExtentMismatch)
     }
 }
-impl From<&'static str> for FrameError {
-    fn from(message: &'static str) -> Self {
-        Self::InvalidState(message)
+
+fn surface_encode_outcome(
+    report: &DriveReport,
+    error: Option<RenderError>,
+) -> Result<(), FrameError> {
+    match error {
+        Some(error) => Err(FrameError::SurfaceEncode {
+            report: Box::new(*report),
+            error,
+        }),
+        None => Ok(()),
     }
 }
 
@@ -296,6 +348,8 @@ pub struct FrameSample {
     pub gpu_contribution_ns: Option<f64>,
     /// This frame also wrote an acquired platform surface.
     pub surface_presented: bool,
+    /// Surface encode refusal, if the scene completed without presentation.
+    pub surface_fault: Option<SurfaceFault>,
     /// The GPU frame completed but its optional timing batch was unusable.
     pub timing_fault: bool,
     /// Whether this frame requested GPU timestamps when it was encoded.
@@ -362,6 +416,8 @@ pub struct DriveReport {
     pub submitted: bool,
     /// An acquired platform surface received this frame in the same submission.
     pub surface_presented: bool,
+    /// Surface encode refusal for this drive, if any.
+    pub surface_fault: Option<SurfaceFault>,
     /// A fresh optional view was skipped; a stale scene may still be submitted.
     pub dropped_view: bool,
     /// CPU wall time for the entire callback, including nonblocking GPU polling.
@@ -895,7 +951,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Some(profile) => Some(
                 SurfacePresenter::prepare(capabilities, config.render_extent, profile)
                     .await
-                    .map_err(|error| format!("surface prepare: {error:?}"))?,
+                    .map_err(|error| match error {
+                        PresentError::Extent => FrameError::InvalidState("invalid surface extent"),
+                        PresentError::UnsupportedFormat => {
+                            FrameError::InvalidState("unsupported surface format")
+                        }
+                        error => FrameError::Gpu(format!("surface prepare: {error:?}")),
+                    })?,
             ),
             None => None,
         };
@@ -970,7 +1032,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Some(profile) => Some(
                 SurfacePresenter::prepare(capabilities, extent, profile)
                     .await
-                    .map_err(|error| format!("sprite surface prepare: {error:?}"))?,
+                    .map_err(|error| match error {
+                        PresentError::Extent => FrameError::InvalidState("invalid surface extent"),
+                        PresentError::UnsupportedFormat => {
+                            FrameError::InvalidState("unsupported surface format")
+                        }
+                        error => FrameError::Gpu(format!("sprite surface prepare: {error:?}")),
+                    })?,
             ),
             None => None,
         };
@@ -1440,9 +1508,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .region(CreationPhase::Transition, "resize-surface");
         self.presenter
             .as_mut()
-            .ok_or_else(|| "host has no surface presenter".to_owned())?
+            .ok_or(FrameError::InvalidState("host has no surface presenter"))?
             .resize(&self.device, extent)
-            .map_err(|error| FrameError::Gpu(format!("surface resize: {error:?}")))?;
+            .map_err(|error| match error {
+                PresentError::Extent => FrameError::InvalidState("invalid surface extent"),
+                error => FrameError::Gpu(format!("surface resize: {error:?}")),
+            })?;
         preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
         self.presenter_generation += 1;
         if self.native_witness_report().is_some() {
@@ -1506,7 +1577,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// update. A display callback may resample a complete publication with a
     /// new interpolation fraction. Overload is explicit.
     /// # Errors
-    /// Returns a clock, simulation or GPU fault; never silently skips an update.
+    /// Returns a clock, simulation or GPU fault. A surface encode error can
+    /// return after the scene completed recording and was submitted.
     pub fn drive(
         &mut self,
         now: Duration,
@@ -1567,6 +1639,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             projection_lost_ticks: advanced.projection_lost_ticks,
             submitted: false,
             surface_presented: false,
+            surface_fault: None,
             dropped_view: advanced.skipped_publications != 0,
             wall: Duration::ZERO,
         };
@@ -1617,13 +1690,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
-        if self.presenter.is_some()
-            && surface.is_none_or(|surface| {
-                self.presenter
-                    .as_ref()
-                    .is_none_or(|presenter| presenter.extent() != surface.extent)
-            })
-        {
+        if self.presenter.is_some() && surface.is_none() {
             self.dropped_views += 1;
             self.dropped_surface += 1;
             report.dropped_view = true;
@@ -1832,6 +1899,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 gpu_present_ns: None,
                 gpu_contribution_ns: None,
                 surface_presented: false,
+                surface_fault: None,
                 timing_fault: false,
                 native_segment: None,
                 timing_requested: self.timing_requested,
@@ -1907,7 +1975,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .three_d()
             .map(|target| target.reserve_native(self.scene.view.history_reset()))
             .transpose()
-            .map_err(|error| format!("native reserve: {error:?}"))?
+            .map_err(|_| FrameError::InvalidState("native candidate already encoded"))?
             .flatten();
         let mut segments = Vec::new();
         if let FrameTarget::ThreeD(target) = &mut slot.target {
@@ -1955,7 +2023,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     },
                 ),
             ),
-            _ => Err(crate::synthetic::RenderError::StaleTarget),
+            _ => Err(RenderError::StaleTarget),
         };
         if let Err(error) = encoded {
             drop(encoder);
@@ -1966,7 +2034,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
             self.flush_staged_uploads()?;
-            discarded.map_err(|timing| format!("render timing discard: {timing:?}"))?;
+            discarded
+                .map_err(|timing| FrameError::Gpu(format!("render timing discard: {timing:?}")))?;
             return Err(FrameError::Gpu(format!("render encode: {error:?}")));
         }
         Ok(RecordedScene {
@@ -2032,34 +2101,48 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return Err(error);
         }
 
-        let surface_presented = self
-            .presenter
-            .as_ref()
-            .zip(slot.presentation.as_ref())
-            .zip(surface)
-            .is_some_and(|((presenter, binding), surface)| {
-                let surface = (presenter, binding, surface.view, surface.extent);
-                let timings = sample.timing_requested.then_some(&mut slot.timings);
-                match (&self.prepared, &slot.target) {
-                    (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => scene
-                        .encode_surface(
-                            target,
-                            &mut encoder,
-                            surface,
-                            timings,
-                            capture_slot.is_some(),
-                        ),
-                    (PreparedRenderer::TwoD(scene), FrameTarget::TwoD(target)) => scene.present(
-                        &mut encoder,
-                        target,
-                        timings,
-                        capture_slot.is_some(),
-                        surface,
-                    ),
-                    _ => Err(crate::synthetic::RenderError::StaleTarget),
+        // The presenter validates its binding, attachments and timing slot
+        // before opening a pass. The portable scene can still be submitted
+        // independently when one of those checks fails.
+        let (surface_presented, surface_error) =
+            match (self.presenter.as_ref(), slot.presentation.as_ref(), surface) {
+                (Some(presenter), Some(binding), Some(surface)) => {
+                    let surface = (presenter, binding, surface.view, surface.extent);
+                    let timings = sample.timing_requested.then_some(&mut slot.timings);
+                    let encoded = match (&self.prepared, &slot.target) {
+                        (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => scene
+                            .encode_surface(
+                                target,
+                                &mut encoder,
+                                surface,
+                                timings,
+                                capture_slot.is_some(),
+                            ),
+                        (PreparedRenderer::TwoD(scene), FrameTarget::TwoD(target)) => scene
+                            .present(
+                                &mut encoder,
+                                target,
+                                timings,
+                                capture_slot.is_some(),
+                                surface,
+                            ),
+                        _ => Err(RenderError::StaleTarget),
+                    };
+                    match encoded {
+                        Ok(()) => (true, None),
+                        Err(error) => {
+                            let fault = SurfaceFault::from_encode(&error);
+                            report.surface_fault = Some(fault);
+                            (false, (!fault.is_transient()).then_some(error))
+                        }
+                    }
                 }
-                .is_ok()
-            });
+                (Some(_), None, Some(_)) => {
+                    report.surface_fault = Some(SurfaceFault::MissingBinding);
+                    (false, None)
+                }
+                _ => (false, None),
+            };
         if self.presenter.is_some() && !surface_presented {
             self.dropped_surface = self.dropped_surface.saturating_add(1);
             report.dropped_view = true;
@@ -2075,10 +2158,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             slot.timings
                 .discard_unsubmitted(self.generation)
-                .map_err(|error| format!("native presentation discard: {error:?}"))?;
+                .map_err(|error| {
+                    FrameError::Gpu(format!("native presentation discard: {error:?}"))
+                })?;
+            self.history_reset_pending = true;
             self.flush_staged_uploads()?;
             report.wall = wall_start.elapsed();
-            return Ok(());
+            return surface_encode_outcome(report, surface_error);
         }
         if let Err(error) = if sample.timing_requested {
             slot.timings.finish_render(self.generation, &encoder)
@@ -2093,8 +2179,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
             self.flush_staged_uploads()?;
-            discarded
-                .map_err(|timing| format!("failed timing discard after {error:?}: {timing:?}"))?;
+            discarded.map_err(|timing| {
+                FrameError::Gpu(format!("failed timing discard after {error:?}: {timing:?}"))
+            })?;
             return Err(FrameError::Gpu(format!("finish timestamps: {error:?}")));
         }
         if let Some(index) = capture_slot
@@ -2145,6 +2232,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             sample.wall.saturating_sub(sample.tick_cpu)
         };
         sample.surface_presented = surface_presented;
+        sample.surface_fault = report.surface_fault;
         sample.submission_order = self.next_submission_order;
         self.submitted_clock = Some(SubmittedFrameClock {
             tick: sample.tick,
@@ -2179,7 +2267,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.history_reset_pending = false;
         self.submitted_view_history_epoch = view_history_epoch;
         self.last_view_source = Some(source);
-        Ok(())
+        surface_encode_outcome(report, surface_error)
     }
 
     /// Render and read back the current committed scene once for visual evidence.
@@ -2302,7 +2390,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.render_extent[0],
             self.render_extent[1],
         )
-        .map_err(|error| format!("capture target: {error:?}"))?;
+        .map_err(|error| FrameError::Gpu(format!("capture target: {error:?}")))?;
         if let Err(error) = self.prepared.update_frame(
             &self.queue,
             &mut target,
@@ -2339,7 +2427,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 None,
                 &mut Vec::new(),
             )
-            .map_err(|error| format!("capture render/readback: {error:?}"))?;
+            .map_err(|error| FrameError::Gpu(format!("capture render/readback: {error:?}")))?;
         let submitted = self.queue.submit([encoder.finish()]);
         self.prepared.submit_mesh_rows();
         if let Some(contribution) = self.contribution.as_mut() {
@@ -2378,11 +2466,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.device
             .poll(wgpu::PollType::Poll)
-            .map_err(|error| format!("capture poll: {error:?}"))?;
-        Ok(pending
+            .map_err(|error| FrameError::Gpu(format!("capture poll: {error:?}")))?;
+        pending
             .pixels
             .try_collect(self.generation)
-            .map_err(|error| format!("capture collect: {error:?}"))?)
+            .map_err(|error| FrameError::Gpu(format!("capture collect: {error:?}")))
     }
 
     fn wait(&self, submitted: wgpu::SubmissionIndex, operation: &str) -> Result<(), FrameError> {
@@ -2391,7 +2479,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 submission_index: Some(submitted),
                 timeout: Some(GPU_WAIT),
             })
-            .map_err(|error| format!("{operation} poll: {error:?}"))?;
+            .map_err(|error| FrameError::Gpu(format!("{operation} poll: {error:?}")))?;
         Ok(())
     }
 
@@ -2425,7 +2513,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.check_native_completion()?;
         self.device
             .poll(wgpu::PollType::Poll)
-            .map_err(|error| format!("GPU poll: {error:?}"))?;
+            .map_err(|error| FrameError::Gpu(format!("GPU poll: {error:?}")))?;
         // Inspect every completed native segment before resolving any slot's
         // queries: a later failed slot must also forbid earlier readback work.
         self.check_native_completion()?;

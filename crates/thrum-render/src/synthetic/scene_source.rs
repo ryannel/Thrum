@@ -158,6 +158,10 @@ fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
             "\n",
             include_str!("../atmosphere/irradiance.wgsl"),
             "\n",
+            include_str!("../directional_light.wgsl"),
+            "\n",
+            include_str!("../environment_light.wgsl"),
+            "\n",
             include_str!("../synthetic.wgsl")
         ),
         aerial,
