@@ -625,8 +625,8 @@
           "check": "cargo test --locked --offline -p thrum-water --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-checks.txt",
           "verdict": "",
           "review": ""
         },
@@ -637,8 +637,8 @@
           "ask": "Is there any map, poll or readback in `thrum-water` or the example that waits for the GPU? Is the counter raised at every place that could?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-checks.txt",
           "verdict": "",
           "review": ""
         },
@@ -648,8 +648,8 @@
           "check": "cargo test --locked --offline -p thrum-water --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-checks.txt",
           "verdict": "",
           "review": ""
         },
@@ -660,8 +660,8 @@
           "ask": "Read the test. Is the energy bound worked out from the wave field and the thrust, and would a body driven by a fixed bobbing schedule fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-checks.txt",
           "verdict": "",
           "review": ""
         },
@@ -670,8 +670,8 @@
           "statement": "A float and the craft rise, pitch and roll with the waves under them: a float lifts as a crest reaches it and tilts down its face, the craft pitches into a head sea and rolls in a beam sea, and nothing slides, jitters or lags the water. This holds at rest, at 5 m/s and at 15 m/s, in a trade wind and in a gale.",
           "inspect": "`realtime` sequences from a chase view and a side view, at each speed in each sea: the waterline on the hull and on one float.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-metal.json",
           "verdict": "",
           "review": ""
         },
@@ -682,8 +682,8 @@
           "ask": "Does the float in the current feel it only through the query's answers and the example's own drag, with nothing moving it directly?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-checks.txt",
           "verdict": "",
           "review": ""
         },
@@ -693,8 +693,8 @@
           "check": "node scripts/check_water_browser.mjs --case bodies",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5-chrome.json",
           "verdict": "",
           "review": ""
         },
@@ -703,8 +703,8 @@
           "statement": "The engine owns the query and nothing of the bodies: hydrostatics, drag, thrust and the rigid-body step are the example's.",
           "ask": "Does `thrum-water` hold any hydrostatics, drag, thrust or rigid-body step? Does the example reach the water only through the public body record, query points and mailbox?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M5.md",
           "verdict": "",
           "review": ""
         },
@@ -713,8 +713,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

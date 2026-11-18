@@ -6258,6 +6258,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M5-motion.tar.zst",
+      "size": 226725024,
+      "sha256": "670fa8bb6960d5a3160f98adb877d78b26647c579c5f928395a2e71b53786c44",
+      "date": "2026-11-18T18:52:31.182325+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,

@@ -2951,6 +2951,16 @@
         },
         "evidence": "../evidence/WATERS/M12.md"
       },
+      "waters_floating_bodies": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "builder_inspected_review_owed",
+        "scope": "WATERS M5: capacity-bounded tick query, asynchronous GPU readback, public mailbox and example-owned craft and buoy dynamics. Wake and surf query inputs belong to M6 and M13.",
+        "correctness": "Metal wave and map conformance, age and generation lifecycle, calm and gale rigid-body checks, lake shelter and current carriage. Hardware WebGPU returns body replies and counts fallback across a deliberate hitch.",
+        "visuals": "Submitted 1440p Metal motion records cover side and chase views in trade wind and gale at 0, 5 and 15 m/s. Formal milestone review is pending.",
+        "device": "M3 Max Metal and hardware Chrome WebGPU. Capture-off named query timing is diagnostic under concurrent load. Empty Sun shadow timestamps prevented whole-frame timer qualification.",
+        "evidence": "../evidence/WATERS/M5.md"
+      },
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",
       "decision": "selected",

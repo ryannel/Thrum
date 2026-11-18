@@ -482,3 +482,9 @@
   previous submitted level for motion. Metal passed 40 fractional-stage samples. The calm shoreline
   uses an optical path fade at the depth cut and a rounded, locally refined pond bank.
   [Target captures and stage series](../../evidence/WATERS/M4-review-fixes.md).
+
+- 2026-11-18 Built M5's tick query, mapped mailbox and example-owned hull dynamics.
+  Metal passed query, expiry, refusal, draft, gale, sheltered-lake and current checks. Hardware Chrome
+  delivered body replies and counted the unavailable station uses across a deliberate hitch.
+  [M5 evidence](../../evidence/WATERS/M5.md) links twelve elapsed-time sequences and the capture-off cost.
+  Empty Sun shadow timestamps prevented a complete native or portable GPU timing report.
