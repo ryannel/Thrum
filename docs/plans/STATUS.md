@@ -275,7 +275,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - SHOWCASE's design: Design Changes Requested · [design](SHOWCASE/DESIGN.md) · [plan](SHOWCASE/PLAN.md)
 - A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand (WATERS M4): Not Started · [plan](WATERS/PLAN.md)
-- SCENE-VIEWS's design: Design Ready for Review · [design](SCENE-VIEWS/DESIGN.md) · [plan](SCENE-VIEWS/PLAN.md)
+- The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed (SCENE-VIEWS M3): Not Started · [plan](SCENE-VIEWS/PLAN.md) · [latest review](../evidence/SCENE-VIEWS/M3-review.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
 - A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): In Progress · [plan](SESSION/PLAN.md)
 - On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws (RAY-TRACING M1): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../evidence/RAY-TRACING/M1-review.md)
@@ -339,7 +339,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5), 11 Nov · [review](../evidence/ATMOSPHERE/M5-review.md)
 - The existing frame lifecycle runs through one split graph (APPLE-TILE M2), 11 Nov · [review](../evidence/APPLE-TILE/M2-review.md)
 - Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1), 11 Nov · [review](../evidence/APPLE-PRESENTATION/M1-review.md)
-- The latest build report: [2026-11-13](../evidence/build-reports/2026-11-13.md)
 
 ## All modules
 
@@ -360,7 +359,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; ATMOSPHERE M10 for the populated valley's motion review; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Design Changes Requested |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M4 of 16 · Not Started |
-| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | Design Ready for Review |
+| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M3 of 3 · Not Started |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Changes Requested |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Waiting: On Dependency, WATERS:M9 |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
