@@ -1,6 +1,6 @@
 {
-  "revision": "d7732ff2ed9423217c48c81a740c4c990099a55e",
-  "native_binary_sha256": "2c1a2d7e73a13b83daa28f4a0cdd1e083da7b882d0c2f488477c9883788b950d",
+  "revision": "6ad433e059470186e2bcd25a101078f778f32d26",
+  "native_binary_sha256": "01b9e9594efc8e4a9fba004eeea7ef5588d643ce975cd8e92013dd94f2aa3662",
   "scene_cooked_root": "3083a794f837963050dae3e566c788d6a9aad7fa7479309a46c1540cb0654643",
   "metal_routes": {
     "flythrough": {
@@ -275,8 +275,8 @@
     "night-upslope": "33217376ca0581a665c5caf3c8efc1ae2a08be5d6a59f6cc358841b405b461f1"
   },
   "chrome": {
-    "revision": "d7732ff2ed9423217c48c81a740c4c990099a55e",
-    "wasm_sha256": "61ee59546500d3fe78695c8ea4b6c36054995e3e28c4dbcfcc64de25ce95be0e",
+    "revision": "6ad433e059470186e2bcd25a101078f778f32d26",
+    "wasm_sha256": "3f61b9a04ae1d2b48fe94c51cf817c7fcf525e2392a68ae6235d2915731081ff",
     "matching_submissions": 1471,
     "matching_submission_ordinal_identity": [
       "source_tick",
@@ -295,19 +295,19 @@
       "passed": true,
       "failures": [],
       "load_start": [
-        11.0859375,
-        14.310546875,
-        15.5400390625
+        4.50927734375,
+        5.77392578125,
+        6.85595703125
       ],
       "builds": {
-        "commit": "d7732ff2ed9423217c48c81a740c4c990099a55e",
-        "main_base": "f8828d5f369823f1eac5c9acee453c949759525e",
-        "origin_main_at_run": "f8828d5f369823f1eac5c9acee453c949759525e",
-        "dirty": true,
+        "commit": "6ad433e059470186e2bcd25a101078f778f32d26",
+        "main_base": "e376ff423695e121d3072a45eda350d42ac30ab6",
+        "origin_main_at_run": "e376ff423695e121d3072a45eda350d42ac30ab6",
+        "dirty": false,
         "built_by_this_run": false,
-        "thrum_cook_sha256": "761e9c13460b23efa5ddcf5da367b9b35cbc74eefa69dc7022fe82ec18997434",
-        "v1_game_sha256": "2c1a2d7e73a13b83daa28f4a0cdd1e083da7b882d0c2f488477c9883788b950d",
-        "wasm_sha256": "61ee59546500d3fe78695c8ea4b6c36054995e3e28c4dbcfcc64de25ce95be0e"
+        "thrum_cook_sha256": "722901952b0d5ccca94a561cd73b021a592dfca6ea128cbdfb2b7a3e6aea5177",
+        "v1_game_sha256": "01b9e9594efc8e4a9fba004eeea7ef5588d643ce975cd8e92013dd94f2aa3662",
+        "wasm_sha256": "3f61b9a04ae1d2b48fe94c51cf817c7fcf525e2392a68ae6235d2915731081ff"
       },
       "source_root": "3083a794f837963050dae3e566c788d6a9aad7fa7479309a46c1540cb0654643",
       "retinted_root": "57d08854c5c27e50598b6110aeb9dfdb87a6312f3b668ae72442a766b0a5bc90",
@@ -498,9 +498,9 @@
         "over": []
       },
       "load_end": [
-        9.4091796875,
-        13.60693359375,
-        15.2421875
+        4.09375,
+        5.5546875,
+        6.73828125
       ]
     }
   }

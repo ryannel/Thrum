@@ -71,3 +71,7 @@
   `b7ef2ce595cafc0379e326b2b71def0f3ab8992055552dd9d85e2c4dd2676d8f` to
   `e7a63b2de2a200c2f0b714f8a9920c2749518c6282cb9b4f48b9446e0e5d5854`.
   The six real-time arms are recorded under load. [Evidence](../../evidence/SHOWCASE/M5.md)
+- 2026-11-18 Retook all six real-time arms from clean revision `6ad433e05` with MESH-SHADING
+  and WATERS integrated. The same build reproduced all retained fixed route images and both
+  sets of six stops byte for byte. Exit parity passed.
+  [Evidence](../../evidence/SHOWCASE/M5.md)
