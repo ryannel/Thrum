@@ -26,7 +26,57 @@
   "milestones": {
     "M1": {
       "definitions": "83e6388a39ef138682a25d8f446311b5a511ac4813e6d24bb42282128e494596",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "aa79c981394f0338f329aaad7470c10f57de0489",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md",
+          "items": {
+            "M1.1": "fail",
+            "M1.2": "fail",
+            "M1.3": "pass",
+            "M1.4": "fail",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Idle secondary view starts an empty cooked compute pass",
+              "item": "M1.4",
+              "repeat": false
+            },
+            {
+              "name": "Finite far plane lacks rejection and crossing coverage",
+              "item": "M1.2",
+              "repeat": false
+            },
+            {
+              "name": "Test gate bypasses registry device creation",
+              "item": "M1.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 133692,
+            "cached": 3512192,
+            "output": 9198,
+            "turns": 1
+          },
+          "at": "2026-11-18T10:44:04Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 2 Must F",

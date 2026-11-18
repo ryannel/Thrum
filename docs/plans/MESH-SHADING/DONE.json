@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "CONTENT-LOOP:M2",
@@ -20,10 +20,10 @@
           "ask": "Is there one function in the registry that turns a launch's list into the device, shared with `ray-query`, and do the Mac window, the capture runner and the test gate each make their device through it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m11-launch-admission",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -32,10 +32,10 @@
           "ask": "Does the proof assert that the cull rejected meshlets for each reason (the cone, each plane) on that path, with a count that is not zero, so the equality is not vacuous? Is the cull's rule one function text compiled into both the compute pass and the object stage?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m12-object-stage-culling",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -46,8 +46,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M1.md#m13-frame-contract",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -56,10 +56,10 @@
           "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages, the stages cannot draw a portable frame, and a fallback is never silent?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m14-path-selection",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -69,8 +69,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M1.md#m15-pipeline-preparation",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -81,8 +81,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M1.md#m16-per-mesh-eligibility",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -93,8 +93,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M1.md#m17-material-installation",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -104,8 +104,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M1.md#m18-residency-and-upload",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -114,8 +114,25 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Idle secondary view starts an empty cooked compute pass",
+          "item": "M1.4",
+          "repeat": false
+        },
+        {
+          "name": "Finite far plane lacks rejection and crossing coverage",
+          "item": "M1.2",
+          "repeat": false
+        },
+        {
+          "name": "Test gate bypasses registry device creation",
+          "item": "M1.1",
+          "repeat": false
         }
       ]
     },
