@@ -14,30 +14,30 @@
           "check": "python3 scripts/session_match.py image --target mac-metal",
           "ask": "Read the harness. Is the image restored in a different process from the one that wrote it, into a runtime with a different world epoch? Does the restored world step through thrum_core::sim's registered runtime? Are the digests compared with SIM-2D's retained files, unchanged in git since SIM-2D was accepted? Is an image taken at tick 0 and at more than one later tick, with reused slots and despawned bodies counted above zero at the later ones?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/image-mac-metal.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
           "statement": "As Wasm in Chrome, the reference crowd stepped to the same ticks writes images byte for byte equal to the Mac's, and a world restored there from the Mac's image steps the rest of both traces to the retained digests.",
           "check": "python3 scripts/session_match.py image --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/image-chrome-webgpu.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
           "statement": "In the iPhone simulator, the reference crowd stepped to the same ticks writes images byte for byte equal to the Mac's, and a world restored there from the Mac's image steps the rest of both traces to the retained digests.",
           "check": "python3 scripts/session_match.py image --target ios-sim",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/image-ios-sim.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
@@ -45,10 +45,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_image",
           "ask": "Read the test. Does it cover, one at a time, each kind in the design's list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Does any encoded value pass through the machine's width or std::hash? Does thrum-core name anything of the reference crowd?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/core-checks.txt",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
@@ -56,10 +56,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_image_untrusted",
           "ask": "Read the test. Does it drive the restore the session will use, with each kind of input in the statement generated? Is the whole image validated before any part of the world is replaced? Is there a stdin target for the image decoder, in the style of thrum-network's?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/core-checks.txt",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.6",
@@ -67,10 +67,10 @@
           "check": "python3 scripts/session_match.py identity",
           "ask": "Is the identity derived when the game is built from the sources the design lists, with no number a person raises? Does it also cover the game's action wire and the toolchain? Does the command make each change in a scratch copy outside the tree and fail if any leaves the identity unchanged? Do the Chrome and simulator image runs show an image written under the Mac's identity accepted there?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/identity-mac-metal.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.7",
@@ -78,20 +78,20 @@
           "check": "python3 scripts/session_match.py image-costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/image-costs-mac-metal.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.8",
           "statement": "For the reference crowd at 2,000, 5,000 and 10,000 bodies, the time to restore an image in Chrome is on record from two separate runs, each row with build, browser version and load. The figures are baselines: none decides the result.",
           "check": "python3 scripts/session_match.py image-costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/image-costs-chrome-webgpu.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.9",
@@ -99,20 +99,20 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this milestone change any item, test or comparison of SIM-2D's?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M1/sim2d-mac-metal.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,

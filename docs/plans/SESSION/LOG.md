@@ -88,3 +88,8 @@
   should before the work exists. The verifier items were not dry-run, so as not to take the GPU.
   `./dev check-docs` fails on ten older links in `CREATOR`, `CULLING` and `CLOUDS` files and on nothing here.
   The revised design needs a design review.
+- 2026-11-18 Built portable images for registered worlds, with paired codecs and bounded validation before install.
+  The Mac, Chrome Wasm and iPhone simulator each restored six Crowd and Mixed images and matched 1,000 retained
+  checkpoints. Chrome and the simulator wrote bytes equal to the Mac's. Core tests, identity controls and the
+  Mac SIM-2D conformance run passed. The [M1 proof](../../evidence/SESSION/M1.md) records target revisions and
+  both Mac and Chrome cost runs. The exact-image verifier is provided by the shared main-branch check.
