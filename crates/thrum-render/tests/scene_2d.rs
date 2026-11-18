@@ -16,7 +16,7 @@ use thrum_render::{
     },
     runtime::{FrameHost, SceneKind, SpriteSceneRequests, SurfaceOutput},
     sprite::{SpriteRect, SpriteRow, SpriteScene},
-    synthetic::{CaptureSource, CullMode, DisplayOverlay, Reconstruction},
+    synthetic::{CaptureSource, CullMode, Reconstruction},
 };
 
 const EXTENT: [u32; 2] = [64, 48];
@@ -154,7 +154,7 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
             true,
             CullMode::Frustum,
             Reconstruction::Taau,
-            DisplayOverlay::Off,
+            thrum_render::synthetic::DisplayOverlay::Off,
         );
         let mut scene = scene;
         scene
@@ -269,7 +269,7 @@ fn rejects_each_3d_request_without_changing_the_sprite_scene() {
     let Some(gpu) = thrum_test_support::gpu("2D admission", Some(wgpu::Backend::Metal)) else {
         return;
     };
-    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
+    let (device, queue, caps) = fixture::metal(&gpu, fixture::RECIPES[0], 1);
     let (source, sprites) = inputs();
     let mut host = fixture::host(&caps, &queue, EXTENT, source.clone(), sprites.sheet.clone());
     let reference = fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr).rgba;
@@ -354,6 +354,13 @@ fn assert_unchanged(host: &mut fixture::Host, device: &wgpu::Device, reference: 
             .pass_names()
             .collect::<Vec<_>>(),
         PLAIN
+    );
+    assert_eq!(
+        host.scene_graph_variant(true)
+            .expect("inspect the prepared capture graph")
+            .pass_names()
+            .collect::<Vec<_>>(),
+        CAPTURE
     );
     assert_eq!(
         fixture::capture(host, device, EXTENT, CaptureSource::Sdr).rgba,
