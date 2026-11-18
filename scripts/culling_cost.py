@@ -35,6 +35,11 @@ def summary(rows):
         result[name]['paired_O_minus_F_ms'] = statistics.median(p['Occlusion'] - p['Frustum'] for p in pairs)
         result[name]['paired_F_minus_D_ms'] = statistics.median(p['Frustum'] - p['Direct'] for p in pairs)
     result['nonempty_prepasses'] = sum(m['Occlusion']['counts']['prepass'] > 0 for m in ticks.values())
+    result['hidden_with_nonempty_prepass'] = sum(
+        modes['Occlusion']['counts']['prepass'] > 0
+        and modes['Occlusion']['counts']['drawn'] < modes['Frustum']['counts']['drawn']
+        for modes in ticks.values()
+    )
     return result
 
 
@@ -75,8 +80,7 @@ def main():
                     raise showcase.Failure(f'bench failed: {run / name}')
             rows = [json.loads(line) for line in (run / name / 'rows.jsonl').read_text().splitlines()]
             result = summary(rows)
-            if args.exit and (not result['nonempty_prepasses']
-                              or not result['occlusion_hides_slots']['ticks']
+            if args.exit and (not result['hidden_with_nonempty_prepass']
                               or not result['open_no_occlusion_saving']['ticks']):
                 raise showcase.Failure(f'{name}: missing prepass, cover or open samples')
             report['runs'][name] = {'header': rows[0], 'summary': result,

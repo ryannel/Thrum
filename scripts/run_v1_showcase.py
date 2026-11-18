@@ -1259,6 +1259,19 @@ def culling(args):
                 if rows[-1].get('compared') != expected_frames or rows[-1].get('equal') is not True:
                     raise Failure(f'{recipe}: incomplete route')
                 report['recipes'][recipe] = {'header': rows[0], **rows[-1]}
+                if args.exit:
+                    expected_recipe = {'portable': 'Ok(Portable)', 'apple-tile': 'Ok(AppleTile)'}
+                    if rows[0]['recipe'] != expected_recipe[recipe]:
+                        raise Failure(f'{recipe}: the Metal oracle ran {rows[0]["recipe"]}')
+                    caster_passes = {}
+                    for mode in ('Frustum', 'Occlusion'):
+                        samples = [row for row in rows[1:-1] if row['mode'] == mode]
+                        populated = sum((row['counts'] or {}).get('active') == 10_000 for row in samples)
+                        caster_passes[mode] = sum('synthetic Sun caster cull' in (row['pass_gpu_ns'] or {})
+                                                  for row in samples)
+                        if populated != expected_frames or not caster_passes[mode]:
+                            raise Failure(f'{recipe} {mode}: missing exit population or Sun caster cull')
+                    report['recipes'][recipe]['sun_caster_cull_samples'] = caster_passes
         else:
             report['modes'] = {}
             for mode in ('direct', 'default', 'frustum', 'occlusion'):
@@ -1276,6 +1289,12 @@ def culling(args):
                 if f'culling={resolved}' not in record['header']['culling']:
                     raise Failure(f'Chrome {mode} did not resolve to {resolved}')
                 report['modes'][mode] = {'resolved': resolved, 'header': record['header'], 'checkpoints': []}
+                if args.exit:
+                    report['modes'][mode]['exit'] = record['exit']
+                    if (record['exit']['row_generation'] != route_file['cooked_generation']
+                            or (mode != 'direct' and record['exit']['active'] != 10_000)
+                            or record['exit']['mover'] == record['checkpoints'][0]['mover']):
+                        raise Failure(f'Chrome {mode} did not draw the populated exit with moving entities')
                 for index, checkpoint in enumerate(route_file['checkpoints']):
                     name = checkpoint['name']
                     captured = record['checkpoints'][index]
