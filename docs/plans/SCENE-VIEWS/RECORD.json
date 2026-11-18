@@ -321,6 +321,36 @@
         "by": "plan",
         "task": "SCENE-VIEWS M3 is blocked on M3.4 only: the builder wants every other builder paused for a quiet capture-off Metal timin",
         "at": "2026-11-18T10:26:13Z"
+      },
+      "ready_for_review": {
+        "commit": "c08d14b1060da9e3c6a67250383bdc124ab87f97",
+        "checked": "675c1a21d6cbc1a31df093be8e9ff847b1b06169",
+        "at": "2026-11-18T12:00:55Z",
+        "reused": [
+          "Test command",
+          "M3.4"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 915254,
+          "cached": 58107136,
+          "output": 90117,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 1921018,
+          "cached": 113443456,
+          "output": 182722,
+          "turns": 4
+        }
       }
     }
   },
