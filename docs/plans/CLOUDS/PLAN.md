@@ -26,6 +26,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
+- Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for M17, just before the module closes, on the lead's decision of 18 November; every sky until then shows those flaws.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones. Fog waits for `ATMOSPHERE` M8, and the sea for `WATERS` M8.
 
 ## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
@@ -39,16 +40,11 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 
-The work is on `build/clouds` at `f38c7d77ad24`, unmerged; read its handoff with
-`git show f38c7d77ad24:docs/evidence/CLOUDS/M3-handoff.md`. Its turrets, billow volume, trace, compose, capture
-routes and the checks that handoff lists stand. What remains is [the lit plane](DESIGN.md#cloud-light), which
-drew the bright underside and the dark stripe: [the controls](../../evidence/CLOUDS/M3-plane/README.md) hold
-the cause, and a probe of the rule as modes 20 to 22. `cloud_solar_source` in `layer/scattering.wgsl` infers
-the plane from `above`, which `cloud_coarse_above` in `layer.wgsl` reads from three columns a sample: both
-go, and the plane comes from the type's turn. The form and the plane are then settled. One capture pass with
-the rule in covers every inspected item and the cost record; only the turn is left to tune by eye, against
-M3.1 to M3.3. Looks under the inferred plane do not count. A frame over the refresh interval takes the first
-risk's remedies and stops nothing. Leave `Orders` and `medium.rs` alone: M14.13 removes them.
+The work is on `build/clouds` at `5f84d354a3bf`, unmerged; read its handoff with
+`git show 5f84d354a3bf:docs/evidence/CLOUDS/M3-handoff.md`. Each cloud's form has moved to M17, and M3.1 asks
+only for the sky at a glance, which the retained type-plane captures at erosion 0.61 show. Every other item
+keeps the proof that handoff lists: mark each from it, and capture and tune nothing more. No new look belongs
+here. Leave `Orders` and `medium.rs` alone: M14.13 removes them.
 
 ## M4 The same sky and the same shade draw in Chrome
 
@@ -100,6 +96,13 @@ If the handover shows in M15.4 or M15.13, the eighth risk gives the fixes in ord
 ## M11 Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore
 
 `examples/water` is `WATERS`': add the selection and its surface field and change nothing else of that module's.
+
+## M17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
+
+[Risk 2](DESIGN.md#risks) holds what M3 found and what its looks ruled out. The records are
+`docs/evidence/CLOUDS/M3-erosion/` and `M3-type-plane/`, whose archives hold the opacity observer, the point
+march and the capture scripts. Find each flaw's cause with those controls before any look. If the cause needs
+a mechanism the design lacks, end `BLOCKED` with `needs_context` and the cause.
 
 ## M12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 

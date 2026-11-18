@@ -29,7 +29,9 @@ that day again after M3 stopped on repeated domes and shelves: a cell's column i
 [a billow field](#one-density-in-m¹), in place of one dome with a fretted skin (part XVIII). Revised that
 day once more after [that revision's review](../../evidence/CLOUDS/design-review.md) (two findings): every
 level of [the weather map](#the-weather-map) holds the query's own column at its texel's centre, and one
-clearing factor takes a cell's coverage to zero with its thickness.
+clearing factor takes a cell's coverage to zero with its thickness. Revised 18 November 2026 on the lead's
+decision to park the form of a single cloud: M3 closes on the sky at a glance and M17 judges each cloud, from
+the diagnosis in [risk 2](#risks). No mechanism and no interface changed.
 
 ## The request
 
@@ -1456,7 +1458,9 @@ silhouette across its width, both scaled to 1.
   and 99.23 m. Cloud lies somewhere in 0.33 of those texels, and 0.60 of them have a clear centre. The
   review's two texels are stored as the query answers at their centres: clear, and 154.75 m thick.
 - **Unrun:** the engine's light on the new form, which part XIX takes up; the detail noise; a view from the
-  ground; motion; the far level's clouds as drawn. M3.1 and M3.2 judge those in the engine.
+  ground; motion; the far level's clouds as drawn. M3.1 and M3.2 judge those in the engine. The view from the
+  ground then showed what this part did not: shelves, folds and repeats on the turrets
+  ([risk 2](#risks)), which M17.1 judges.
 
 From [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) on Metal and `lit_plane_proof.py`, both of 18
 November, after M3 stopped a second time, on a bright underside under a dark stripe toward the noon Sun
@@ -1608,15 +1612,46 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    in sixteen), a coarser far step, fewer local samples with a finer near level. M3 tries the ones its record
    points at and records what each did to the cost and to the look. Building goes on either way; what remains
    over the refresh interval is written up as a follow-up for the performance phase.
-2. **Procedural cumulus reads as repeated shapes.** M3's first form did, through three looks: one dome a
-   cell, so domes, lenses and shelves. Turrets and the billow field replace it (part XVIII). Early sign: M3's
-   stills. The look is tuned against M3's list with a fresh opinion, in the turret rule's constants, the shape
-   noise's octaves and the type's depths. If clouds still share an outline, the fixes in order: a wider spread
-   of turret heights and widths; a coarser first octave; turrets with lives of their own, by the cell rule one
-   level down. Never one dome a cell again, and never a form only the trace has: the query, the map, the Sun's
-   path and the trace read one density. The map level whose texel is wider than a turret holds
-   [a sample of them](#the-weather-map), so a far cloud's heaps are fewer and broader than a near one's and
-   change where it crosses into that level. If M3.2's crops show where that begins, the fixes in order: a
+2. **Procedural cumulus reads as repeated shapes, and a single cloud shows shelves and folds.** M3's first
+   form did, through three looks: one dome a cell, so domes, lenses and shelves. Turrets and the billow field
+   replace it (part XVIII). On Metal they gave a sky that reads as scattered cumulus at a glance, with separate
+   clouds, varied sizes, solid interiors and parallax, and left four flaws in a cloud seen alone: stacked
+   level shelves under the large clouds toward the Sun; a lip or level band under an isolated one; a hooked
+   fold or squared break in the near cloud's lower edge across the Sun; and caps, wedges and cones that repeat
+   in the middle distance. The lead parked the cue on 18 November 2026, after five rounds of looks. M3.1
+   judges the sky at a glance, and **M17** judges each cloud (M17.1), after the rest of the module's sky is
+   built. Until M17 is Done the four flaws are known: they fail no inspected item of another milestone, and
+   a reviewer who sees them says so and judges the item's own list.
+
+   What M3 found, in `docs/evidence/CLOUDS/M3-erosion/README.md` and `M3-type-plane/README.md` (they land
+   with M3; before that, `git show 5f84d354a3bf:<path>`):
+   - The fold is in the density and not in the light. It is in the trace's opacity before light is composed,
+     and turning the lit plane by 0.25, 0.50 and 0.75 changed its brightness and not its outline. The shelves
+     stayed through those turns too.
+   - The CPU point march draws the same break with no weather map and no mip: 82 px at the profile's erosion
+     of 0.61, against 108 px on Metal; 80 px with the detail noise at its mean; 2 px with nothing eroded. So
+     the shape noise held against the column profile cuts it, and the detail noise and the map's filtering do
+     not. What makes Metal's break larger was not found.
+   - On the CPU the break shrinks only below an erosion of about 0.3: 66 px at 0.30, 20 at 0.20, 8 at 0.10.
+     The one Metal look at 0.20 kept the shelves, the break and the repeated caps, and smoothed the far side
+     into domes and a cone. Its opacity was not read back, so those CPU figures do not describe it. Erosion
+     strength alone is ruled out.
+   - Also tried, each leaving shelves or repeats: a wider pitch; deeper, and then uniformly drawn, mature
+     depths; a doubled shape-noise wavelength with a stronger taper; lower water with a longer base fade; a
+     higher clearing threshold; coverage blended in the march.
+   - Not explained: the stacked shelves toward the Sun. Opacity saturates there where near and far clouds
+     overlap, so a shelf may be one cloud's own terraces, where a lobe several hundred metres wide is cut
+     along a level of the column profile, or a farther cloud standing under a nearer one. Nor is the repeat
+     of caps and cones explained.
+
+   M17 starts from causes, as [the lit plane](#cloud-light) was found: a control on the point march or the
+   opacity observer that removes one flaw, before any look on Metal. The candidate fixes, none yet tried
+   against a named cause: a wider spread of turret heights and widths; a coarser first octave; turrets with
+   lives of their own, by the cell rule one level down. A cause that asks for a mechanism this design lacks
+   ends `BLOCKED` for a planner. Never one dome a cell again, and never a form only the trace has: the query,
+   the map, the Sun's path and the trace read one density, and M17.4 holds the changed form to that. The map
+   level whose texel is wider than a turret holds [a sample of them](#the-weather-map), so a far cloud's
+   heaps are fewer and broader than a near one's and change where it crosses into that level. If M3.2's crops show where that begins, the fixes in order: a
    fade between the two levels across a band at the finer one's edge; then the levels' texels and sizes,
    which are profile constants. Never a column the query does not give: no share standing in for turrets, and
    no turret field smoothed for a far level.
@@ -1694,7 +1729,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 - **The bar.** [How the module is proved](#how-the-module-is-proved) governs every milestone not yet Done.
   A builder tunes the look against the inspection list, with a fresh opinion, and records what it changed. A
   reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
-  end `BLOCKED`.
+  end `BLOCKED`. Until M17 is Done, the form flaws [risk 2](#risks) names fail no item but M17.1.
 
 ## Open questions
 
@@ -1708,6 +1743,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 | Does the Sun term give clouds their brightness and relief with nothing tuned, and if not, which constant moves? | M3's stills, then M5's at a low Sun; the builder records any constant it changed |
 | Does a far side at a low Sun stay dark enough under a plane held for the whole cloud? | M5's stills at a 10° and a 4° Sun |
 | Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | M7's time-lapse |
+| What draws the shelves, the fold and the repeated caps on turrets, when the lit plane and the erosion strength do not? | M17 finds each cause by a control before any look ([risk 2](#risks)) |
 | Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | M3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | M1 measures first, beside part G's 1,025 |

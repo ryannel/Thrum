@@ -467,3 +467,11 @@
   for a layered type and halfway to the Sun for a heaped one, with no depth read for it.
   [The record](../../evidence/CLOUDS/M3-plane/README.md#the-decision) holds the figures, the routes not taken and what it costs.
   Risk 12 is written again, and M3.3's question gains the plane. No interface or Done item changed. The design needs a review.
+
+- 2026-11-18 Plan, answering M3's third block (`needs_context`; work on `build/clouds` at `5f84d354a3bf`, unmerged). Lead decision:
+  "Move M3.1's form cue (domes, shelves, the silhouette break) out of M3 into a later CLOUDS milestone that comes after the other
+  cloud work", after about 12 h of look tuning and one Metal trial of erosion 0.20 that did not clear it. M3.1 is written again to
+  ask for the sky at a glance, which the retained captures show. M17 is new, between M11 and M12, with the form cue as M17.1, a
+  Chrome look, a regression look and the query tests. [Risk 2](DESIGN.md#risks) carries the erosion diagnosis, what was tried and
+  what is unexplained; until M17 the named flaws fail no other item. No mechanism, interface or Done item changed, and no new look
+  is planned in M3. The design needs a review.
