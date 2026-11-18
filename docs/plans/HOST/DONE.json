@@ -24,8 +24,8 @@
           "statement": "One function in `thrum-render`'s capabilities owns the device request: adapter choice, features, limits, an optional restriction that can only lower limits and remove features, the fault watch, the SDR surface-format preference and the retrying surface configure. The Mac window, the browser page, the kit capture, the iPhone app and the game's captures and benches call it: `device-request` is at zero in their sources.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-app/src examples/v1-game/src examples/v1-game/benches examples/v1-game-ios/src",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/HOST/M1-metal.md",
           "verdict": "",
           "review": ""
         },
@@ -36,8 +36,8 @@
           "lock": "gpu",
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/HOST/M1-metal.md",
           "verdict": "",
           "review": ""
         },
@@ -48,8 +48,8 @@
           "lock": "gpu",
           "ask": "Do the Mac window, the browser page and the iPhone app each install the recipe's one watch and no handler of their own? Does the test raise a real validation error on a device and see the process survive and the error recorded? Is the path by which a delayed execution error retires the generation and resets its histories still there, as C07 requires?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/HOST/M1-metal.md",
           "verdict": "",
           "review": ""
         },
