@@ -140,7 +140,9 @@ impl Field {
             ],
             threshold: h(4),
             radius: self.profile.pitch * (0.3 + 0.5 * h(7).powi(2)),
-            depth: h(8).powi(2),
+            // The life envelope already biases young and old cells toward
+            // shallow profiles. Sample the authored mature depth range evenly.
+            depth: h(8),
         }
     }
 
