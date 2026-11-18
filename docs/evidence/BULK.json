@@ -4491,6 +4491,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-type-plane/captures.tar",
+      "size": 3634462720,
+      "sha256": "ea287bd17a9158eccb15c0e268a7af26687b64b1ffd366159651b21fd652393c",
+      "date": "2026-11-18T20:59:39.324921+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CONTENT-LOOP/M2/realtime/frames.zst",
       "size": 476272219,
       "sha256": "c5a4e429f941846c02aa8576fd2178d7d10bd52e542cd978c5cae282c40db686",

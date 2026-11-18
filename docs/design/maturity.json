@@ -2805,11 +2805,11 @@
         "record": "../evidence/CLOUDS/M2.md"
       },
       "sky_evidence": {
-        "implementation": "Opt-in Sky with complete half-extent refresh, display-time motion, lent lighting and bounded air parts. Cleared turrets supply the CPU query and every weather-map level. A prepared billow volume serves the trace and coarse Sun paths, and Sky alone prepares detail noise.",
+        "implementation": "Opt-in Sky with complete half-extent refresh, display-time motion, lent lighting and bounded air parts. The resolved cloud type sets the diffuse light plane for the whole cloud. Cleared turrets supply the CPU query and every weather-map level. A prepared billow volume serves the trace and coarse Sun paths, and Sky alone prepares detail noise.",
         "correctness": "Apple M3 Max Metal builder checks passed for point-centred weather columns, integer cell identity, wind motion and reset, absent graph and storage, Beer transport and one air composition, and both recipes' shadow-only byte equality with erosion-changing probes. Clearing continuity passed in the CPU query.",
-        "visuals": "Metal stills show shrinking clouds and diminishing contrast at about 150 km. Consecutive pan and walk frames retain stable outlines, and the first cut frame has complete sharp contours. Three turret looks retained shelves and bright undersides below dark stripes in the toward-Sun frames.",
-        "device": "Apple M3 Max Metal with WebGPU-default-limit admission. The first visible submission cost 47.984 ms under load against an 8.333 ms panel interval. The record covers engine output and GPU measurements on this Mac.",
-        "record": "../evidence/CLOUDS/M3-turrets/README.md"
+        "visuals": "Metal stills show coherent light on the clouds and terrain, clean ridge occlusion, and shrinking clouds with diminishing contrast near 150 km. Inspected pan and walk frames retain stable outlines, and the first cut frame has complete sharp contours. Shelves and flattened folds remain in the type-set plane captures.",
+        "device": "Apple M3 Max Metal with WebGPU-default-limit admission. The first visible submission cost 42.770 ms under load against an 8.333 ms panel interval. The record covers engine output and GPU measurements on this Mac.",
+        "record": "../evidence/CLOUDS/M3-type-plane/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",

@@ -507,3 +507,9 @@
   the distant haze, and first-frame cost. Three turret looks still show shelves and a bright underside
   in the toward-Sun views. Isolating beam, diffuse and ambient places the strongest stripe in solar diffuse.
   M3.1 and M3.3 remain open. The [handoff](../../evidence/CLOUDS/M3-handoff.md) records the stop and next diagnosis.
+
+- 2026-11-18 M3 sets the diffuse plane from the resolved type at `8fd3e8108`, removing three column reads per lit sample.
+  [Metal proof](../../evidence/CLOUDS/M3-type-plane/README.md) passes the lighting and ridge checks, and refreshes the horizon and motion evidence.
+  The [first visible submission](../../evidence/CLOUDS/M3-cost.md) cost 42.770 ms under load. The cost check and its refusal passed.
+  M3.1 still shows shelves and an overhead fold at turns 0.25, 0.50 and 0.75. The fold survives in the trace's opacity.
+  The plan limits tuning to the turn. The [handoff](../../evidence/CLOUDS/M3-handoff.md) records the remaining form problem.
