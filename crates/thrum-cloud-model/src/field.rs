@@ -94,6 +94,9 @@ pub struct Field {
 }
 
 impl Field {
+    /// Lattice spacing in metres of the broad density noise shared by CPU and GPU.
+    pub const SHAPE_NOISE_METRES: f64 = 400.0;
+
     /// Create a stateless field with at least two type rows.
     /// # Errors
     /// Rejects invalid dimensions, water content, radii or shares.
@@ -204,8 +207,7 @@ impl Field {
                         age = phase;
                     }
                     coverage = coverage.max(d);
-                    depth = depth
-                        .max((t.depth[0] + (t.depth[1] - t.depth[0]) * cell.depth) * d.powf(0.7));
+                    depth = depth.max((t.depth[0] + (t.depth[1] - t.depth[0]) * cell.depth) * d);
                 }
             }
         }
@@ -272,7 +274,10 @@ impl Field {
         let air = state.to_air([point[0], point[2]]);
         let p = state.parameters();
         let extinction = self.kind(p.kind).extinction();
-        let shape_noise = self.noise([air[0] / 200.0, point[1] / 200.0, air[1] / 200.0], 40);
+        let shape_noise = self.noise(
+            [air[0], point[1], air[1]].map(|coordinate| coordinate / Self::SHAPE_NOISE_METRES),
+            40,
+        );
         let detail = match fidelity {
             Density::Uneroded => 0.0,
             Density::Coarse => self.profile.detail_mean,

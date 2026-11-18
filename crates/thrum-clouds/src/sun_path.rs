@@ -14,6 +14,14 @@ pub(crate) const PATH_PASSES: [&str; 3] = [
 pub(crate) const GROUND_PASS: &str = "cloud ground field";
 pub(crate) const FAR_PASS: &str = "cloud far transmittance";
 
+fn shader() -> String {
+    format!(
+        "const CLOUD_SHAPE_METRES:f32={};\n{}",
+        thrum_cloud_model::Field::SHAPE_NOISE_METRES,
+        include_str!("sun_path.wgsl"),
+    )
+}
+
 /// One camera-following window of Sun-ray columns.
 #[derive(Clone, Copy, Debug)]
 pub struct SunLevel {
@@ -140,7 +148,7 @@ impl SunPath {
         };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cloud Sun path"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("sun_path.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(shader().into()),
         });
         let pipelines = std::array::from_fn(|i| {
             device.compute(&wgpu::ComputePipelineDescriptor {
@@ -375,7 +383,9 @@ impl SunPath {
                         weather.profile().size as f32,
                     ];
                 }
-                let noise = origin.map(|x| (x / 200.0).floor());
+                let shape_metres = thrum_cloud_model::Field::SHAPE_NOISE_METRES;
+                let shape_origin = origin.map(|x| x / shape_metres);
+                let noise = shape_origin.map(f64::floor);
                 if noise.iter().any(|x| x.abs() > f64::from(i32::MAX - 1024)) {
                     return Err(Error::Unsupported("Sun noise addressing"));
                 }
@@ -401,8 +411,8 @@ impl SunPath {
                     ],
                     erosion: [
                         model.detail_mean as f32,
-                        (origin[0] / 200.0 - noise[0]) as f32,
-                        (origin[1] / 200.0 - noise[1]) as f32,
+                        (shape_origin[0] - noise[0]) as f32,
+                        (shape_origin[1] - noise[1]) as f32,
                         0.0,
                     ],
                     noise: [

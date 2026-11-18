@@ -65,7 +65,8 @@ fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
     if sigma<=0.0 || cloud.physical.x<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let signal=min(1.0,sigma/cloud.physical.x);
-    let shape=mix(cloud_noise(point,200.0,40u),0.5,clamp((footprint-100.0)/300.0,0.0,1.0));
+    let shape_fade=clamp((footprint/CLOUD_SHAPE_METRES-0.5)/1.5,0.0,1.0);
+    let shape=mix(cloud_noise(point,CLOUD_SHAPE_METRES,40u),0.5,shape_fade);
     let detail=mix(cloud_noise(point,25.0,41u),cloud.physical.z,clamp(footprint/50.0,0.0,1.0));
     let threshold=cloud.physical.y*shape;
     let shaped=max(0.0,(signal-threshold)/(1.0-threshold));
