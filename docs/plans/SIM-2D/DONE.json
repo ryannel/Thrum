@@ -377,7 +377,7 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As hard to get wrong as Rapier's `enhanced-determinism` build or Photon Quantum's fixed-point API, where the operations that differ between machines are simply not on offer. A rule that breaks the profile fails `./dev check` with a message that names the class, and the guide is enough to write a rule package without reading engine source.",
       "findings": [
         {
