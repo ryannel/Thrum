@@ -201,20 +201,20 @@
           "statement": "On the Mac, motion sequences show no ghosting or crawl: pans and translating lights, a reveal behind a moving prop, a spawn, a held-camera star field with no shimmer, and a time-of-day scrub with no brightness lag.",
           "inspect": "Capture each of the five sequences with the Mac real-time engine capture, TAAU on, and the same sequences with it off. Judge each from its captured frames, as the design's motion review says: runs of consecutive frames in their captured order and timing, on beside off, in native-size crops of trailing edges, the revealed background, the spawned object's first frames, individual stars, and the sky during the scrub. An agent judges this, with no playback and no human observer (owner, 18 November 2026: \"agents can judge\"). Say which frames you read for each of the five.",
           "target": "mac-metal",
-      "evidence": "docs/evidence/APPLE-PRESENTATION/m3/motion-20261118/README.md#mac-metal-and-portable-taau",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m3/motion-20261118/README.md#mac-metal-and-portable-taau",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "D3.3c",
           "statement": "In Chrome the same five sequences show no ghosting, crawl, shimmer or brightness lag.",
           "inspect": "Capture the five sequences with Chrome real-time capture, TAAU on and off, and judge the same crops the same way, from the captured frames. Say which frames you read for each of the five, and note any sequence where Chrome differs from the Mac.",
           "target": "chrome-webgpu",
-      "evidence": "docs/evidence/APPLE-PRESENTATION/m3/motion-20261118/README.md#chrome-webgpu",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m3/motion-20261118/README.md#chrome-webgpu",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "D3.4",
@@ -245,7 +245,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
       "findings": [
         {

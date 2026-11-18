@@ -301,6 +301,35 @@
         "by": "plan",
         "task": "Unblock APPLE-PRESENTATION M3. The builder blocked it as needs_human_feedback, asking for an observer to watch all five ",
         "at": "2026-11-18T20:41:20Z"
+      },
+      "ready_for_review": {
+        "commit": "627af9fc6b21dc370641d6d1c1139582d7b687b9",
+        "checked": "c2fb235d937d07d472ad3afb1e7875a7d092e9fc",
+        "at": "2026-11-18T22:13:53Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 680543,
+          "cached": 48624256,
+          "output": 76935,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 680543,
+          "cached": 48624256,
+          "output": 76935,
+          "turns": 2
+        }
       }
     },
     "M4": {
