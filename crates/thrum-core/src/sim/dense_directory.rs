@@ -79,7 +79,7 @@ impl DenseDirectory {
         reader: &mut crate::profile::StateReader<'_>,
         capacity: usize,
     ) -> Result<Self, crate::profile::StateDecodeError> {
-        use crate::profile::{StateDecodeError as Error, StateEncode};
+        use crate::profile::{StateDecode, StateDecodeError as Error};
 
         let capacity_wire = u64::try_from(capacity).expect("world capacity fits u64");
         if u64::decode(reader)? != capacity_wire {

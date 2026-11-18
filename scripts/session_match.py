@@ -2,6 +2,7 @@
 """Headless SESSION checks on the registered reference crowd."""
 
 import argparse
+import fcntl
 import hashlib
 import itertools
 import json
@@ -116,16 +117,33 @@ def reference_rows():
         yield trace, path, conformance.references(path)[10_000]
 
 
-def trace_images(native, receiver, scratch, reference):
+def mac_capture(native, revision, name, mixed):
+    # Each target compares with one Mac writer at this revision. Keep distinct
+    # target checks from running that same long trace concurrently.
+    cache = SCRATCH / "mac-images" / f"{revision}-{native.artifact_hash}"
+    cache.mkdir(parents=True, exist_ok=True)
+    record = cache / f"{name}.json"
+    with (cache / f"{name}.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if record.exists():
+            return json.loads(record.read_text())
+        packet = native.invoke("capture", 10_000, mixed, IMAGE_TICKS)
+        temporary = record.with_suffix(".json.partial")
+        temporary.write_text(json.dumps(packet))
+        temporary.replace(record)
+        return packet
+
+
+def trace_images(native, receiver, scratch, revision, reference):
     trace, path, expected = reference
     name, mixed = trace["name"], trace["variant"]
     target = receiver.target
     print(f"{target}: write {name} images", file=sys.stderr, flush=True)
     if receiver is native:
-        host = local = native.invoke("capture", 10_000, mixed, IMAGE_TICKS)
+        host = local = mac_capture(native, revision, name, mixed)
     else:
         with ThreadPoolExecutor(max_workers=1) as pool:
-            pending = pool.submit(native.invoke, "capture", 10_000, mixed, IMAGE_TICKS)
+            pending = pool.submit(mac_capture, native, revision, name, mixed)
             local = receiver.invoke("capture", 10_000, mixed, IMAGE_TICKS)
             host = pending.result()
     assert host["identity"] == local["identity"], "rule-set identity differs across builds"
@@ -169,12 +187,12 @@ def trace_images(native, receiver, scratch, reference):
     return proofs
 
 
-def images(target, scratch):
+def images(target, scratch, revision):
     native = Runner("mac-metal", scratch)
     receiver = native if target == "mac-metal" else Runner(target, scratch)
     references = list(reference_rows())
     with ThreadPoolExecutor(max_workers=2 if receiver is native else 1) as pool:
-        pending = [pool.submit(trace_images, native, receiver, scratch, reference)
+        pending = [pool.submit(trace_images, native, receiver, scratch, revision, reference)
                    for reference in references]
         proofs = [row for trace in pending for row in trace.result()]
     return {"rows": proofs, "mac_writer": native.record(), **receiver.record()}
@@ -265,7 +283,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix=f"{args.action}-{args.target}-", dir=SCRATCH) as directory:
         scratch = Path(directory)
         if args.action == "image":
-            record = images(args.target, scratch)
+            record = images(args.target, scratch, provenance["commit"])
         elif args.action == "image-costs":
             record = costs(args.target, scratch, provenance)
         else:

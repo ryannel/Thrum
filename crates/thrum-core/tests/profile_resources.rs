@@ -1,7 +1,7 @@
 //! Profile resource preflight covers queued edits, tentative writes and merges.
 use thrum_core::{
     Handle, StableId, WorldEpoch,
-    profile::{Digest, Number, StateDecodeError, StateEncode, StateReader},
+    profile::{Digest, Number, StateDecode, StateDecodeError, StateEncode, StateReader},
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, Edit, EditError,
         EditWriter, ExecutionMode, Executor, GameRuntime, RegisteredSystem, RegisteredWorldError,
@@ -15,6 +15,8 @@ impl StateEncode for Scalar {
     fn encode(&self, digest: &mut Digest<'_>) {
         self.0.encode(digest);
     }
+}
+impl StateDecode for Scalar {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         Ok(Self(Number::decode(reader)?))
     }
@@ -27,6 +29,8 @@ impl StateEncode for Resources {
     fn encode(&self, digest: &mut Digest<'_>) {
         self.0.encode(digest);
     }
+}
+impl StateDecode for Resources {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         Ok(Self(<[[Number; 2]; 2]>::decode(reader)?))
     }
@@ -73,7 +77,7 @@ impl TickGame for Rules {
     ) {
         candidate.resources.0[1][1] = output.expect("callback output");
     }
-    fn profile_resources<'a>(&self, candidate: &'a Candidate) -> Option<&'a dyn StateEncode> {
+    fn profile_resources<'a>(&self, candidate: &'a Candidate) -> Option<&'a dyn StateDecode> {
         self.profile.then_some(&candidate.resources)
     }
     fn apply(&mut self, _: &WorldRead<'_>, _: u64, candidate: &Candidate) {

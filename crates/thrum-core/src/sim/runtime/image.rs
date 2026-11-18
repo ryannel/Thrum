@@ -1,4 +1,4 @@
-use crate::profile::{Digest, StateDecodeError, StateEncode, StateReader};
+use crate::profile::{Digest, StateDecode, StateDecodeError, StateEncode, StateReader};
 use crate::sim::ComponentSchemaId;
 
 use super::{GameRuntime, TickGame};
@@ -62,7 +62,7 @@ impl<G: TickGame> GameRuntime<G> {
     pub fn write_world_image(
         &self,
         identity: RuleSetIdentity,
-        resources: &impl StateEncode,
+        resources: &impl StateDecode,
         output: &mut Vec<u8>,
     ) -> Result<(), WorldImageError> {
         self.assert_usable();
@@ -91,7 +91,7 @@ impl<G: TickGame> GameRuntime<G> {
     /// # Errors
     /// Byte, schema, rule-set or limit validation failed, or the runtime has
     /// already holds a world. Neither world nor resources are changed on refusal.
-    pub fn restore_world_image<R: StateEncode>(
+    pub fn restore_world_image<R: StateDecode>(
         &mut self,
         identity: RuleSetIdentity,
         resources: &mut R,

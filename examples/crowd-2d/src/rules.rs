@@ -1,7 +1,10 @@
 use std::{any::Any, num::NonZeroUsize};
 use thrum_core::{
     ActorId, Handle, Origin, PeerId, StableId, WorldEpoch,
-    profile::{Digest, Number as N, StateDecodeError, StateEncode, StateReader, Vector, random},
+    profile::{
+        Digest, Number as N, StateDecode, StateDecodeError, StateEncode, StateReader, Vector,
+        random,
+    },
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, Edit, EditWriter,
         EntityWriter, Executor, GameRuntime, HistoryGame, InputFrame, ReadPermit, RegisteredSystem,
@@ -36,6 +39,11 @@ impl StateEncode for Body {
         self.player.encode(digest);
         self.health.encode(digest);
     }
+    fn is_finite(&self) -> bool {
+        self.position.is_finite() && self.velocity.is_finite() && self.radius.is_finite()
+    }
+}
+impl StateDecode for Body {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         let body = Self {
             position: Vector::decode(reader)?,
@@ -61,9 +69,6 @@ impl StateEncode for Body {
         }
         Ok(body)
     }
-    fn is_finite(&self) -> bool {
-        self.position.is_finite() && self.velocity.is_finite() && self.radius.is_finite()
-    }
 }
 
 /// Authority resources restored with world history.
@@ -85,6 +90,14 @@ impl StateEncode for Resources {
         self.next_id.encode(digest);
         self.hits.encode(digest);
     }
+    fn is_finite(&self) -> bool {
+        self.controls.is_finite()
+            && self.sequences.is_finite()
+            && self.next_id.is_finite()
+            && self.hits.is_finite()
+    }
+}
+impl StateDecode for Resources {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         Ok(Self {
             controls: <[[N; 2]; 4]>::decode(reader)?,
@@ -92,12 +105,6 @@ impl StateEncode for Resources {
             next_id: u64::decode(reader)?,
             hits: u64::decode(reader)?,
         })
-    }
-    fn is_finite(&self) -> bool {
-        self.controls.is_finite()
-            && self.sequences.is_finite()
-            && self.next_id.is_finite()
-            && self.hits.is_finite()
     }
 }
 
@@ -438,7 +445,7 @@ impl TickGame for Crowd {
         candidate.swept_only_hits = 0;
     }
     fn reset_parallel_output(&self, _output: &mut ()) {}
-    fn profile_resources<'a>(&self, candidate: &'a Candidate) -> Option<&'a dyn StateEncode> {
+    fn profile_resources<'a>(&self, candidate: &'a Candidate) -> Option<&'a dyn StateDecode> {
         Some(&candidate.resources)
     }
     fn merge_parallel(

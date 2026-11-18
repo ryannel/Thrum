@@ -135,27 +135,9 @@ impl<'a> Digest<'a> {
 
 /// A fixed-width state encoding. Implementations must encode every field and
 /// propagate the validity of nested values. Raw floats and usize have no implementation.
-/// Both halves are required, including for game resources.
-///
-/// ```compile_fail,E0046
-/// use thrum_core::profile::{Digest, StateEncode};
-/// struct Resource(u32);
-/// impl StateEncode for Resource {
-///     fn encode(&self, sink: &mut Digest<'_>) {
-///         self.0.encode(sink);
-///     }
-/// }
-/// ```
 pub trait StateEncode {
     /// Append canonical bytes, with lengths encoded as u64.
     fn encode(&self, digest: &mut Digest<'_>);
-    /// Read the canonical encoding of one value.
-    ///
-    /// # Errors
-    /// The value is truncated, invalid, or exceeds the reader's allocation budget.
-    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError>
-    where
-        Self: Sized;
     /// Whether all nested profile values are finite. The default validates the
     /// complete encoding. An override must propagate every nested value's validity.
     fn is_finite(&self) -> bool {
@@ -164,14 +146,57 @@ pub trait StateEncode {
         digest.1
     }
 }
+
+/// The reversible state encoding required for a registered portable component
+/// or game resource.
+///
+/// ```compile_fail,E0277
+/// use thrum_core::{
+///     profile::{Digest, StateEncode},
+///     sim::{ComponentRegistry, ComponentSchemaId},
+/// };
+/// #[derive(Clone, Copy)]
+/// struct EncodeOnly(u32);
+/// impl StateEncode for EncodeOnly {
+///     fn encode(&self, sink: &mut Digest<'_>) {
+///         self.0.encode(sink);
+///     }
+/// }
+/// ComponentRegistry::default().register_profile::<EncodeOnly>(ComponentSchemaId(1));
+/// ```
+///
+/// ```compile_fail,E0277
+/// use thrum_core::profile::{Digest, StateDecode, StateEncode};
+/// struct Resource(u32);
+/// impl StateEncode for Resource {
+///     fn encode(&self, sink: &mut Digest<'_>) {
+///         self.0.encode(sink);
+///     }
+/// }
+/// let _: &dyn StateDecode = &Resource(1);
+/// ```
+pub trait StateDecode: StateEncode {
+    /// Read the exact canonical encoding of one value.
+    ///
+    /// # Errors
+    /// The value is truncated, invalid, or exceeds the reader's allocation budget.
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError>
+    where
+        Self: Sized;
+}
+
 macro_rules! integers {
-    ($($ty:ty),*) => { $(impl StateEncode for $ty {
-        fn encode(&self, digest: &mut Digest<'_>) { digest.bytes(&self.to_le_bytes()); }
-        fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
-            Ok(Self::from_le_bytes(reader.read()?))
+    ($($ty:ty),*) => { $(
+        impl StateEncode for $ty {
+            fn encode(&self, digest: &mut Digest<'_>) { digest.bytes(&self.to_le_bytes()); }
+            fn is_finite(&self) -> bool { true }
         }
-        fn is_finite(&self) -> bool { true }
-    })* };
+        impl StateDecode for $ty {
+            fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+                Ok(Self::from_le_bytes(reader.read()?))
+            }
+        }
+    )* };
 }
 integers!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 impl StateEncode for bool {
@@ -181,6 +206,8 @@ impl StateEncode for bool {
     fn encode(&self, digest: &mut Digest<'_>) {
         u8::from(*self).encode(digest);
     }
+}
+impl StateDecode for bool {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         match u8::decode(reader)? {
             0 => Ok(false),
@@ -201,6 +228,8 @@ impl<T: StateEncode, const N: usize> StateEncode for [T; N] {
     fn is_finite(&self) -> bool {
         self.iter().all(StateEncode::is_finite)
     }
+}
+impl<T: StateDecode, const N: usize> StateDecode for [T; N] {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         if u64::decode(reader)? != u64::try_from(N).expect("array length fits u64") {
             return Err(StateDecodeError::Invalid);
@@ -225,6 +254,8 @@ impl StateEncode for Number {
     fn is_finite(&self) -> bool {
         self.0.is_finite()
     }
+}
+impl StateDecode for Number {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         let value = Self(f32::from_bits(u32::decode(reader)?));
         if value.is_finite() {
@@ -242,6 +273,8 @@ impl StateEncode for Vector {
     fn is_finite(&self) -> bool {
         self.x.is_finite() && self.y.is_finite()
     }
+}
+impl StateDecode for Vector {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         Ok(Self {
             x: Number::decode(reader)?,

@@ -397,7 +397,7 @@ pub trait TickGame {
     fn profile_resources<'a>(
         &self,
         _candidate: &'a Self::Candidate,
-    ) -> Option<&'a dyn crate::profile::StateEncode> {
+    ) -> Option<&'a dyn crate::profile::StateDecode> {
         None
     }
 

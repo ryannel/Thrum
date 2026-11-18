@@ -1,4 +1,4 @@
-use crate::profile::{Digest, StateDecodeError as DecodeError, StateEncode, StateReader};
+use crate::profile::{Digest, StateDecode, StateDecodeError as DecodeError, StateReader};
 
 use super::{DenseDirectory, IdIndex, RegisteredWorld, Slot, StableId, StorageColumn, tick_index};
 use crate::sim::{ComponentSchemaId, WorldImageError};

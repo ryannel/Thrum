@@ -1,6 +1,6 @@
 use thrum_core::{
     Handle, StableId, WorldEpoch,
-    profile::{Digest, Number, StateDecodeError, StateEncode, StateReader},
+    profile::{Digest, Number, StateDecode, StateDecodeError, StateEncode, StateReader},
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, Edit, EditWriter,
         Executor, GameRuntime, RegisteredSystem, RegisteredWorldError, Stage, SystemId, SystemSpec,
@@ -14,6 +14,8 @@ impl StateEncode for Scalar {
     fn encode(&self, digest: &mut Digest<'_>) {
         self.0.encode(digest);
     }
+}
+impl StateDecode for Scalar {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         Ok(Self(Number::decode(reader)?))
     }

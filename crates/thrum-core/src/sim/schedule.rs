@@ -89,7 +89,7 @@ impl ComponentRegistry {
     ///
     /// # Errors
     /// The type or schema is already registered.
-    pub fn register_profile<T: Copy + Send + Sync + crate::profile::StateEncode + 'static>(
+    pub fn register_profile<T: Copy + Send + Sync + crate::profile::StateDecode + 'static>(
         &mut self,
         schema: ComponentSchemaId,
     ) -> Result<ComponentKey, RegistrationError> {
@@ -103,7 +103,7 @@ impl ComponentRegistry {
     /// # Errors
     /// The type or schema is already registered.
     pub fn register_indexed_profile<
-        T: Copy + PartialEq + Send + Sync + crate::profile::StateEncode + 'static,
+        T: Copy + PartialEq + Send + Sync + crate::profile::StateDecode + 'static,
     >(
         &mut self,
         schema: ComponentSchemaId,
@@ -114,7 +114,7 @@ impl ComponentRegistry {
         Ok(key)
     }
 
-    fn attach_profile<T: Copy + Send + Sync + crate::profile::StateEncode + 'static>(&mut self) {
+    fn attach_profile<T: Copy + Send + Sync + crate::profile::StateDecode + 'static>(&mut self) {
         self.entries.last_mut().expect("new entry").profile = Some(ProfileComponent {
             valid: |value| {
                 value
