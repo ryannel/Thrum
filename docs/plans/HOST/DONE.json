@@ -70,8 +70,8 @@
           "statement": "On the iPhone simulator the game starts, draws the cooked scene with the ASTC profile, rotates and resumes from the background.",
           "inspect": "the simulator run at the claimed commit: engine output at start, after a rotation and after background and foreground, with the game's report of its texture profile and limits. Function only",
           "target": "ios-sim",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/HOST/M1-proof.md",
           "verdict": "",
           "review": ""
         },
