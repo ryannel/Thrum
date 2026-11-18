@@ -9,3 +9,7 @@
   owner's frame job and reply (review finding M03) are shared in M4 with a new item, M4.5. Settled with
   `TEST-SUPPORT`: the recipe takes an optional restriction, which only lowers limits and removes features, for
   tests that need a reduced device. A recorded uncaptured error leaves C07's generation reset as it is.
+- 2026-11-19 Built M1's shared device request, fault watch and SDR surface configuration.
+  Verified native limits and restriction refusal on Metal, loss and recovery in the Mac window and
+  Chrome, and cooked ASTC engine output through rotation and foregrounding in the iPhone simulator.
+  The registered image baselines are covered by the shared main-branch check. [Evidence](../../evidence/HOST/M1-proof.md)

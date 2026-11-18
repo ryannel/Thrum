@@ -60,8 +60,8 @@
           "lock": "gpu",
           "ask": "Read the runner. Does it run the loss and recovery checks `PLATFORM-RUNTIME-MAC` and the web shell left, unedited, in a real window and a real browser?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/HOST/M1-proof.md",
           "verdict": "",
           "review": ""
         },

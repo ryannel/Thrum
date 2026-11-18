@@ -656,12 +656,12 @@
     },
     "host_device_recipe": {
       "implementation": "Shared native and portable device requests, capability restrictions, generation fault watch and SDR surface configuration.",
-      "functional_validation": "Metal verified adapter limits, restricted-profile refusal and real validation and device loss. The original Mac window recovery audit passed. The iPhone 18 Pro simulator selected cooked ASTC and submitted through rotation and background and foreground.",
+      "functional_validation": "Metal verified adapter limits, restricted-profile refusal, uncaptured validation and real device loss. The original Mac window recovery audit and eight existing Chrome lifecycle cases passed. The iPhone 18 Pro simulator selected cooked ASTC and submitted through rotation and background and foreground.",
       "experienced_quality": "Builder inspected the Mac window recovery excerpt and the simulator's three submitted engine stills.",
       "platform_performance": {
         "mac": "Functional Metal and window recovery evidence",
         "windows": "not_run",
-        "browser": "not_run",
+        "browser": "Chrome 157 on M3 Max Metal, WebGPU startup, loss and recovery function",
         "ios": "iPhone 18 Pro simulator function only",
         "android": "not_run"
       },
