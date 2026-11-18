@@ -5,7 +5,7 @@
 
 use std::time::{Duration, Instant};
 
-use thrum_core::sim::WorldLifecycle;
+use thrum_core::sim::{WorldLaneFault, WorldLifecycle};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
@@ -212,32 +212,53 @@ impl<G: Game> Offscreen<G> {
         let (edits, paused) = self.game.take_edits();
         G::apply(&mut self.host, edits)?;
         if let Some(paused) = paused {
-            let world = self.game.world().ok_or("game has no world lifecycle")?;
             let request = if paused {
                 WorldLifecycle::Pause
             } else {
                 WorldLifecycle::Resume
             };
-            world
-                .request_lifecycle(request)
-                .map_err(|e| format!("lifecycle request: {e:?}"))?;
-            let deadline = Instant::now() + Duration::from_secs(5);
-            loop {
-                if world
-                    .poll_lifecycle_reply()
-                    .map_err(|e| format!("lifecycle reply: {e:?}"))?
-                    .is_some_and(|reply| reply.request == request)
-                {
-                    break;
-                }
-                if Instant::now() >= deadline {
-                    return Err("world lifecycle timeout".to_owned());
-                }
-                std::thread::sleep(Duration::from_millis(1));
-            }
+            self.world_transition(request)?;
             self.game.observe_paused(paused);
         }
         Ok(())
+    }
+
+    /// Recover a currently overloaded running world through its drain and resume barriers.
+    /// A render report can outlive an overload, so the current world status decides.
+    /// # Errors
+    /// Returns a world fault, refused transition or acknowledgement timeout.
+    pub fn recover_world_overload(&self) -> Result<Option<u64>, String> {
+        let world = self.game.world().ok_or("game has no world lifecycle")?;
+        match world.check_health() {
+            Ok(_) => Ok(None),
+            Err(WorldLaneFault::Overload(refused_ticks)) => {
+                self.world_transition(WorldLifecycle::Pause)?;
+                self.world_transition(WorldLifecycle::Resume)?;
+                Ok(Some(refused_ticks))
+            }
+            Err(error) => Err(error.to_string()),
+        }
+    }
+
+    fn world_transition(&self, request: WorldLifecycle) -> Result<(), String> {
+        let world = self.game.world().ok_or("game has no world lifecycle")?;
+        world
+            .request_lifecycle(request)
+            .map_err(|e| format!("lifecycle request: {e:?}"))?;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            if world
+                .poll_lifecycle_reply()
+                .map_err(|e| format!("lifecycle reply: {e:?}"))?
+                .is_some_and(|reply| reply.request == request)
+            {
+                return Ok(());
+            }
+            if Instant::now() >= deadline {
+                return Err("world lifecycle timeout".to_owned());
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
     }
 
     /// Enable the renderer's three-slot tap without creating another GPU owner.

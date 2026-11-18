@@ -203,6 +203,8 @@ def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
         for key in ['ring_omissions', 'writer_omissions']:
             if runtime.get(key):
                 conditions.append(f'{key}: {runtime[key]}')
+        if runtime.get('world_overload_recoveries'):
+            conditions.append(f"world overload recoveries: {len(runtime['world_overload_recoveries'])}")
         if 'Err' in runtime.get('writer_result', {}):
             conditions.append(f"writer result: {runtime['writer_result']['Err']}")
         raise CaptureUnjudged('; '.join(conditions) or 'runtime complete: false')

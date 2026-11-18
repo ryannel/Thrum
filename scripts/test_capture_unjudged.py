@@ -38,6 +38,7 @@ if case == 'backend': runtime['backend']='Vulkan'
 if case == 'ring': runtime['ring_omissions']=1
 if case == 'writer': runtime['writer_result']={'Err':'writer deadline'}
 if case == 'interval': runtime['interval_complete']=False
+if case == 'overload': runtime['world_overload_recoveries']=[{'refused_ticks':20}]
 if case == 'join': runtime['images']=[{'submission_id':99}]
 if case == 'image-count': runtime['opportunities']=[{'submitted':True, 'submission_id':1}]
 if case == 'source': runtime['pixel_source']='NativeHistory'
@@ -52,20 +53,22 @@ if case == 'hash':
 pathlib.Path(os.environ['THRUM_CAPTURE_RUNTIME'], 'runtime.json').write_text(json.dumps(runtime))
 ''')
             binary.chmod(0o755)
-            for case in ['complete', 'ring', 'writer', 'interval', 'image-count', 'backend', 'join', 'source',
+            for case in ['complete', 'ring', 'writer', 'interval', 'overload', 'image-count', 'backend', 'join', 'source',
                          'encoded-bytes', 'hash', 'crash', 'missing', 'expired-wait']:
                 with self.subTest(case=case):
                     output = root / case
                     result = subprocess.run([sys.executable, str(capture.ROOT / 'scripts/capture_v1_runtime.py'),
                         '--binary', str(binary), '--output', str(output), '--case', 'off', '--defer'],
                         env=dict(os.environ, CAPTURE_TEST_OUTCOME=case), capture_output=True, text=True, timeout=30)
-                    expected = 0 if case == 'complete' else 75 if case in ['ring', 'writer', 'interval', 'image-count'] else 1
+                    expected = 0 if case == 'complete' else 75 if case in ['ring', 'writer', 'interval', 'overload', 'image-count'] else 1
                     self.assertEqual(result.returncode, expected, result.stderr)
                     manifest = json.loads((output / 'manifest.json').read_text())
                     if expected == 75:
                         self.assertFalse(manifest['complete'])
                         self.assertTrue(manifest['could_not_judge'])
                         self.assertTrue(manifest['incomplete_conditions'])
+                        if case == 'overload':
+                            self.assertIn('world overload recoveries: 1', manifest['incomplete_conditions'])
                     if case not in ('crash', 'missing', 'expired-wait'):
                         final = subprocess.run([sys.executable, str(capture.ROOT / 'scripts/capture_v1_runtime.py'),
                             '--output', str(output), '--finalize', '--verify-only'], capture_output=True, timeout=30)

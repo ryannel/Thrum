@@ -549,6 +549,7 @@ async fn record(
     let mut recovery = native_recovery::Recovery::new(recovery_mode);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
+    let mut overload_recoveries = Vec::new();
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
     loop {
         if mode == "still" || scenario == "clouds-still" {
@@ -620,6 +621,17 @@ async fn record(
         let report = driver.step_for(&opportunity)?;
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
+        if motion_capture
+            && running
+            && report.overload.is_some()
+            && let Some(refused_ticks) = driver.recover_world_overload()?
+        {
+            overload_recoveries.push(json!({
+                "observed_ns": returned.as_nanos(),
+                "resumed_ns": origin.elapsed().as_nanos(),
+                "refused_ticks": refused_ticks,
+            }));
+        }
         if observer_only
             && report.submitted
             && trace
@@ -677,6 +689,7 @@ async fn record(
             }
             .is_some_and(|start| origin.elapsed() >= start + Duration::from_secs(1)));
     let complete = interval_complete
+        && overload_recoveries.is_empty()
         && writer_result.is_ok()
         && (!capture
             || (trace.images.len() == submitted
@@ -700,6 +713,7 @@ async fn record(
     result["display_phase_counts"] = phase_counts;
     result["gpu_pass_timing"] = json!(!motion_capture);
     result["observer_only"] = json!(observer_only);
+    result["world_overload_recoveries"] = json!(overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
     result["admission_policy"] = json!(admission.policy);
     result["admission_waits"] = json!(admission.waits);
