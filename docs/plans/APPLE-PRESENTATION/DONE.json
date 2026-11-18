@@ -245,7 +245,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
+      "status": "in_progress",
       "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
       "findings": [
         {
@@ -258,17 +258,7 @@
           "item": "D3.3c",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_human_feedback",
-        "what": "Have an observer watch all five TAAU on/off pairs at 1\u00d7 for Mac and Chrome and record the cue judgments for D3.3 and D3.3c.",
-        "work": {
-          "commit": "52aca86ee61fba101a701e734299c89ee59be725",
-          "branch": "build/apple-presentation",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/APPLE-PRESENTATION/M3-handoff.md"
-      }
+      ]
     },
     {
       "id": "M4",
@@ -276,7 +266,7 @@
       "items": [
         {
           "id": "D4.1",
-          "statement": "On the Mac, on both native recipes, the render extent is the window's backing size: at 1280\u00d7720 and 1920\u00d71080 points and at full screen the submitted frame covers every backing pixel with no band, one render pixel to one output pixel at scale 1.0, and no host is created at the old fixed 640\u00d7360 unless a caller names that extent.",
+          "statement": "On the Mac, on both native recipes, the render extent is the window's backing size: at 1280×720 and 1920×1080 points and at full screen the submitted frame covers every backing pixel with no band, one render pixel to one output pixel at scale 1.0, and no host is created at the old fixed 640×360 unless a caller names that extent.",
           "check": "python3 scripts/apple_presentation.py extent --target mac-metal",
           "lock": "gpu",
           "ask": "Does the arm read the submitted frame through engine capture's tap at each size, and compare the extent the host resolved with the window's backing size? Do offscreen, capture and exact-baseline paths still name their own extents, so that no retained image moved?",
@@ -288,7 +278,7 @@
         },
         {
           "id": "D4.2",
-          "statement": "On the iPhone simulator the render extent follows the oriented surface in portrait and in landscape, and the band and the moir\u00e9 the G3b route recorded are gone. Function only.",
+          "statement": "On the iPhone simulator the render extent follows the oriented surface in portrait and in landscape, and the band and the moiré the G3b route recorded are gone. Function only.",
           "check": "python3 scripts/apple_presentation.py extent --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
@@ -392,7 +382,7 @@
         },
         {
           "id": "D5.3",
-          "statement": "At every scale, motion, the sky, aerial lookups and reconstruction address the drawn subrectangle only: M1's zero-motion and sky-pan witnesses hold, a border outside the subrectangle filled with a marker colour changes no output pixel, and material sampling uses the mip bias log2(render/output) \u2212 1 from the view record.",
+          "statement": "At every scale, motion, the sky, aerial lookups and reconstruction address the drawn subrectangle only: M1's zero-motion and sky-pan witnesses hold, a border outside the subrectangle filled with a marker colour changes no output pixel, and material sampling uses the mip bias log2(render/output) − 1 from the view record.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test dynamic_scale",
           "lock": "gpu",
           "ask": "Read the test. Is the marker border written into the attachments themselves, outside the subrectangle, at each of the five scales, and compared against a run without it over the whole output?",
