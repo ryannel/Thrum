@@ -38,7 +38,6 @@
       // Bound on waiting for GPU completions to free a frame slot before a step. Waiting never changes a step's
       // world time, so the bound only refuses a stalled GPU; a shared, contended GPU can stall for some periods.
       const SLOT_WAIT_MS = 500;
-      const FRAME_CAP = 560;
       const status = document.querySelector("#status");
       const record = { done: false, error: null, header: null, steps: [], samples: {}, checkpoints: [], waiting: null };
       window.thrumRoute = record;
@@ -121,7 +120,7 @@
             if (drain === DRAIN_STEPS) fail(`routed ticks without a sample after ${DRAIN_STEPS} drain steps: ${missing.join(",")}`);
             drain += 1;
           }
-          if (++frames > FRAME_CAP) fail(`the route exceeded ${FRAME_CAP} frames`);
+          if (++frames > last + DRAIN_STEPS) fail(`the route exceeded ${last + DRAIN_STEPS} frames`);
           const slot = await pace(game, deadline);
           if (hidden || document.hidden) fail("the page was hidden during the route");
           record.slot_waits += slot.waits;
