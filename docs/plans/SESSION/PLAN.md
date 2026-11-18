@@ -25,13 +25,17 @@ was thrown away on purpose, so build from the design.
 
 Criteria: M1.1–M1.10 in the done-when file.
 
-`SIM-2D` left the state encoding and the digest in `thrum-core`, the reference crowd in `examples/crowd-2d` with
-its runners for the three targets in `crowd-2d-run`, and `scripts/sim2d_conformance.py`. The runtime's capture
-and restore in `crates/thrum-core/src/sim/runtime.rs` and `registered_world.rs` work inside one runtime only; the
-image is that operation through bytes. This milestone edits `thrum-core` and the crowd's component types under
-[seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-session): `SIM-2D`'s items, tests and retained files stay as
-they are. Both of those files are already flagged by the repository check for their size, so the image goes in
-files of its own. New packages are registered in `.config/architecture.toml`.
+A first build is on main, and [its review](../../evidence/SESSION/M1-review.md) says what it left wrong: the
+image is in `crates/thrum-core/src/sim/runtime/image.rs` and `registered_world/image.rs`, its tests are
+`crates/thrum-core/tests/world_image*`, and the three-target proofs are `examples/match-proof` with
+`scripts/session_match.py`. `SIM-2D` left the state encoding and the digest in `thrum-core`, the reference
+crowd in `examples/crowd-2d` with its runners in `crowd-2d-run`, and `scripts/sim2d_conformance.py`. This
+milestone edits `thrum-core` and the crowd's types under
+[seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-session). `SIM-2D`'s items, trace comparisons and retained
+files stay as they are, and a test it was accepted with changes only to give its types the decoding half and
+follow the encoding interface, with every assertion, input and expected value kept. The crowd's `control`
+field is `SIM-2D`'s negative control, a fault its conformance run injects on purpose, and stays out of
+[the identity](DESIGN.md#9-negotiation-and-leaving).
 
 ## M2 Four players on a simulated bad connection steer one crowd of 10,000, and every player's copy stays identical
 

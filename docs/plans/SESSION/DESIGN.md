@@ -352,10 +352,20 @@ digest: each component and resource type gains the decoding half of `SIM-2D`'s s
 refuses a rule set whose type has one half without the other. It is built by this module's M1 builder under
 [a seam ruling](../ARCHITECTURE.md#seam-rulings-for-session). `SIM-2D`'s retained digests do not move.
 
+**One boundary asks for both halves.** Registering a component under the profile, and naming a rule set's
+authority resources, each require the encoding and the decoding together, so any rule set that can be digested
+can be sent. The types registered before this module, the crowd's and the fixtures of `thrum-core`'s tests, gain
+the decoding half in M1, and that is the one change the seam ruling allows to a test `SIM-2D` was accepted with:
+its assertions, inputs and expected values stay. A second registration for types that can be sent, leaving the
+old one as it was, was weighed and left out. It would keep those fixtures untouched at the price of two kinds
+of rule set, one of which no match can take, and of a refusal that moves from where a type is registered to
+wherever a match is first put together.
+
 **An image is checked whole before it replaces anything.** It names the rule-set identity and the tick it was
 taken at, its lengths are bounded by the match's settings, and a client that cannot decode all of it keeps the
 world it had and asks again. The bytes come from the host, which is the authority, and are still untrusted as
-bytes.
+bytes. A refusal leaves the runtime that was offered the image as it was, able to take a good image next, so a
+refusal is only ever proved on a runtime that would have accepted the image intact.
 
 **The host never waits.** It writes the image in one pass at a barrier into a buffer the session owns, then goes
 on stepping; the pieces leave as the reliable lane has room, and the client's ring starts at `b + 1`. Factorio
@@ -422,6 +432,17 @@ package's sources and constants, the engine sources its results depend on (the p
 the queries), the toolchain, and the game's action wire. It is derived from those when the game is built, never
 kept by hand, and is the same on every target for one commit. A host refuses a client whose value differs. This
 is [the addition to C13](#interfaces) the module list asked this design to propose.
+
+**Everything a tick reads is in the world or in the identity.** The world holds what the digest covers and the
+image carries. Whatever else the rules read is the rule set, and the identity names it. So a rule package that
+can be set up to compute differently is a different rule set under each setting, and each states its own
+identity: the value derived at build time, combined with every setting its rules read that its world does not
+hold. The reference crowd is the case in hand. One flag chooses between the rules of its Crowd and Mixed traces,
+and the flag cannot join the world without moving `SIM-2D`'s retained digests, so Crowd and Mixed are two rule
+sets with two identities, and a runtime set up for one refuses an image written by the other before it steps. A
+setting a game wants to change during a match belongs in the world, as an authority resource. A value the rules
+read that is in neither place lets two peers accept one image and then differ, which is the fault this rule
+exists to stop.
 
 **The protocol identity** covers the envelope and every message this module defines. It is a number in
 `thrum-network`, raised by whoever changes the wire.
@@ -645,6 +666,9 @@ envelope.
   M5 record that offset. How it feels is the owner's to judge in the game.
 - One match has one crowd. A peer that cannot step it at the pace of play is dropped; the match does not slow
   down for it.
+- A setting the rules read, such as a mode or a difficulty, goes in the world as an authority resource or in
+  [the rule set's identity](#9-negotiation-and-leaving). Every component and resource type registered under
+  the profile supplies the decoding half with the encoding.
 
 ## Cost
 

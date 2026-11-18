@@ -1535,6 +1535,10 @@ tests passing.
    write [a world image](SESSION/DESIGN.md#7-the-world-image-and-the-baseline) and to be built from one in
    another process. The image carries exactly what the digest covers. A type that supplies one half of the
    encoding without the other does not compile into a rule set, so every later rule package supplies both.
+   The types registered under the profile before this ruling, the crowd's and the fixtures of `thrum-core`'s
+   tests, gain the decoding half in the same milestone. A test `SIM-2D` was accepted with may change for that
+   alone: its types gain the decoding half and its code follows the encoding interface's new signatures, and
+   no test, assertion, input or expected value is removed or altered.
 2. **The reference crowd in a match, in `SESSION:M4`** (`SIM-2D`; `examples/crowd-2d`). The player's movement
    becomes one function in the rule package, called by the crowd's own rule and by
    [the predicted controller](SESSION/DESIGN.md#11-the-predicted-controller). It is a change of shape only: the
@@ -2735,3 +2739,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   still wanted, and only a sitting a design names, as `SHOWCASE` M8's, pauses the others
   ([settings](../../ORCHESTRATE.md#targets)). `SCENE-VIEWS` M3.4 was written again to it. No interface,
   contract or exact baseline changed, and no item of another module.
+- 2026-11-18 `SESSION` M1's review found that [ruling 1](#seam-rulings-for-session) asked for two things no build
+  could give together: a compiler that refuses a type with half the encoding, and `SIM-2D`'s accepted tests
+  left as they were, whose fixtures register such types. The ruling now says those fixtures gain the decoding
+  half and nothing else in an accepted test changes. `SESSION`'s design also has a rule set's settings in its
+  identity, so the crowd's Crowd and Mixed rules state two. No item of `SIM-2D`, contract or exact baseline
+  changed.

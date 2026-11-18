@@ -96,3 +96,22 @@
 - 2026-11-18 M1.2 now runs both Chrome captures and all six restores under one Chrome lock after the Mac
   images are ready. The revised check matched all six images and 1,000 retained checkpoints in under
   22 minutes including lock wait. The [M1 proof](../../evidence/SESSION/M1.md) records the retry.
+- 2026-11-18 M1's first [review](../../evidence/SESSION/M1-review.md) failed on M1.5, M1.6, M1.7 and M1.9, and
+  sent the last to a planner. Diagnosis: the plan was at fault. M1.4 and seam ruling 1 have the compiler refuse
+  a type with half the encoding, while the M1 note and M1.9 froze `SIM-2D`'s tests, whose fixtures in
+  `crates/thrum-core/tests` register such types. No build passes both.
+- 2026-11-18 Planner's ruling: one boundary. Profile registration and the resource hook ask for both halves,
+  and an accepted `SIM-2D` test may change only to give its types the decoding half and follow the encoding
+  interface. The fixture edits in `95ed6591b` and `6be22749e` are of that kind. A second registration for
+  sendable types was left out: two kinds of rule set, and a later refusal. Mechanism 7, ruling 1, the M1 note
+  and M1.9 say so; M1.9 now asks about assertions, inputs and expected values, not any edit.
+- 2026-11-18 The M1.6 finding was a gap in the design: an identity derived at build time cannot tell Crowd from
+  Mixed, which one run-time flag selects, and the digest does not hold the flag. Mechanism 9 now puts
+  everything a tick reads in the world or in the identity, so the two are two rule sets. M1.6 was written
+  again with both identities and the refusal each way. The flag could not join the world: `SIM-2D`'s retained
+  digests would move.
+- 2026-11-18 M1.5 was written again so a refusal is proved on a runtime that then installs the intact image;
+  as it stood, a destination that refuses everything passed it. M1.7 is unchanged: the missed flag on the
+  image-writing tick is a defect in `scripts/session_match.py` against the item as written. M1.1 to M1.4, M1.8
+  and M1.10 are unchanged. Check commands are the approved ones and were not run again, so as not to take
+  Chrome and the simulator. The revised design needs a design review.
