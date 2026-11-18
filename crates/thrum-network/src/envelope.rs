@@ -79,7 +79,7 @@ impl TryFrom<u8> for Kind {
 /// sender sequence, acknowledgement and state before payload admission.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Header {
-    /// One of the fourteen first-version application kinds.
+    /// A registered application message kind.
     pub kind: Kind,
     /// Match-scoped identity; zero for initial Hello.
     pub match_id: [u8; 16],
@@ -94,6 +94,7 @@ pub struct Header {
 }
 
 /// Borrowed, structurally decoded message. No payload array is allocated.
+#[derive(Clone, Copy)]
 pub struct Message<'a> {
     /// Validated fixed envelope header.
     pub header: Header,
@@ -114,7 +115,7 @@ pub enum EnvelopeError {
     Magic,
     /// Protocol major is not one.
     Version,
-    /// Kind is outside the fourteen selected first-version values.
+    /// Kind is outside the registered values.
     ReservedKind,
     /// Flags or reserved header bytes are nonzero.
     ReservedField,
@@ -134,9 +135,7 @@ impl std::fmt::Display for EnvelopeError {
             }
             Self::Magic => f.write_str("The four-byte `ENG1` magic is absent"),
             Self::Version => f.write_str("Protocol major is not one"),
-            Self::ReservedKind => {
-                f.write_str("Kind is outside the fourteen selected first-version values")
-            }
+            Self::ReservedKind => f.write_str("Kind is outside the registered values"),
             Self::ReservedField => f.write_str("Flags or reserved header bytes are nonzero"),
             Self::HelloIdentity => {
                 f.write_str("Initial Hello carries a nonzero identity, sequence, tick or ACK")

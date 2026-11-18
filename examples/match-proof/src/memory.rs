@@ -198,7 +198,7 @@ impl Player {
         let now = player_time(self.index, time);
         let before = self.client.world().tick();
         let engine = self.client.world().engine.total;
-        let measured = (run.costs && before >= 600 && before % 16 == 0).then(Instant::now);
+        let measured = (run.costs && before >= 600 && before.is_multiple_of(16)).then(Instant::now);
         if measured.is_some() {
             allocation::begin();
         }
@@ -387,7 +387,23 @@ fn condition(profile: &str, seed: u64) -> Result<Conditioner, String> {
 ///
 /// # Panics
 /// A registered proof schema or bounded proof counter is invalid.
-pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
+pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, MemoryProofError> {
+    execute(run).map_err(MemoryProofError)
+}
+
+/// A headless match could not establish its required endpoint and witnesses.
+#[derive(Debug)]
+pub struct MemoryProofError(String);
+
+impl std::fmt::Display for MemoryProofError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for MemoryProofError {}
+
+fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
     let settings = Settings {
         repeats: if run.costs { 8 } else { run.repeats },
         ..Settings::default()
@@ -417,6 +433,7 @@ pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
     let mut stretch_start = 0;
     let mut stretch = Vec::new();
     let mut admissions = [0; SLOTS];
+    let mut local_admitted = 0;
     let mut state = Timing::default();
     let mut time = 0;
     let limit = (run.ticks + 4_000) * u64::from(settings.tick_us);
@@ -439,7 +456,7 @@ pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
             host.stage_local(tick, axes(run.seed, 0, tick), [])
                 .map_err(|error| error.to_string())?;
         }
-        let measured = (run.costs && before >= 600 && before % 16 == 0).then(Instant::now);
+        let measured = (run.costs && before >= 600 && before.is_multiple_of(16)).then(Instant::now);
         if measured.is_some() {
             allocation::begin();
         }
@@ -455,6 +472,7 @@ pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
             return Err(error);
         }
         if tick > before {
+            local_admitted += u64::from(run.listen && host.admissions()[0]);
             for (count, own) in admissions.iter_mut().zip(host.admissions()) {
                 if tick > stretch_start + 600 {
                     *count += u64::from(own);
@@ -497,21 +515,24 @@ pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
             }
         }
 
-        if run.stall && state.stalled_at.is_none() && tick >= run.ticks / 2 && !state.stalled {
+        if run.stall
+            && state.stalled_at.is_none()
+            && tick >= run.ticks / 2
+            && state.stall_us.is_none()
+        {
             for player in &mut players {
                 player.memory.stall(true);
             }
             state.stalled_at = Some(time);
-            state.stalled = true;
         }
-        if state
-            .stalled_at
-            .is_some_and(|start| time >= start + 2_000_000)
+        if let Some(start) = state.stalled_at
+            && time >= start + 2_000_000
         {
             for player in &mut players {
                 player.memory.stall(false);
             }
             state.stalled_at = None;
+            state.stall_us = Some([start, time]);
         }
 
         if let Some(pool) = &pool {
@@ -574,9 +595,11 @@ pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
         .collect::<Vec<_>>();
     Ok(json!({
         "profile": run.profile, "seed": run.seed, "bodies": run.bodies, "ticks": run.ticks,
-        "repeats": run.repeats, "stalled": state.stalled,
+        "repeats": settings.repeats, "stall_us": state.stall_us,
+        "rule_set": crate::identity(false),
         "final_digest": final_digest, "baseline_digest": baseline_digest, "checkpoints": *checkpoint,
         "listen_host": run.listen, "host_epoch": host.world().epoch(),
+        "host_local_admitted": local_admitted,
         "stretch": stretch, "peers": peers,
         "host_tick": host_probe.json(),
         "host_barrier_to_send_ns": host.world().barrier_send.json(),
@@ -588,6 +611,6 @@ pub fn run_memory(run: MemoryRun<'_>) -> Result<Value, String> {
 #[derive(Default)]
 struct Timing {
     started: bool,
-    stalled: bool,
     stalled_at: Option<u64>,
+    stall_us: Option<[u64; 2]>,
 }

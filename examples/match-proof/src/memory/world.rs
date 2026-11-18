@@ -13,7 +13,7 @@ use thrum_network::{
 pub(super) struct NoActions;
 
 impl ActionWire<()> for NoActions {
-    fn encode(&self, _: &(), _: &mut [u8]) -> Result<(u32, usize), InputCodecError> {
+    fn encode(&self, (): &(), _: &mut [u8]) -> Result<(u32, usize), InputCodecError> {
         Err(InputCodecError::InvalidAction)
     }
     fn decode(&self, _: ActionView<'_>) -> Result<(), InputCodecError> {

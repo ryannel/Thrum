@@ -11,7 +11,8 @@ pub(super) const INPUT_PREFIX: usize = 16;
 pub(super) const PROTOCOL_CLOSE: u32 = 1;
 pub(super) const RESPONSE_CLOSE: u32 = 2;
 pub(super) const TIMEOUT_CLOSE: u32 = 3;
-pub(super) const MAX_SET: usize = 1 + 8 + 4 * (1 + 3 * 2 + 8 + 8 + 1 + 8 * (6 + MAX_ACTION_BYTES));
+pub(super) const MAX_SET: usize =
+    1 + 8 + SLOTS * (1 + 3 * 2 + 10 + 10 + 1 + MAX_ACTIONS * (6 + MAX_ACTION_BYTES));
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(super) struct Connection {
@@ -154,7 +155,7 @@ pub(super) fn read_axes(input: &mut Read<'_>) -> Option<[f32; 3]> {
 pub(super) fn action<A>(out: &mut Vec<u8>, value: &A, wire: &impl ActionWire<A>) -> Option<()> {
     let mut bytes = [0; MAX_ACTION_BYTES];
     let (schema, size) = wire.encode(value, &mut bytes).ok()?;
-    if schema == 0 || size > bytes.len() {
+    if size > bytes.len() {
         return None;
     }
     out.extend(schema.to_le_bytes());
@@ -166,7 +167,7 @@ pub(super) fn action<A>(out: &mut Vec<u8>, value: &A, wire: &impl ActionWire<A>)
 pub(super) fn read_action<A>(input: &mut Read<'_>, wire: &impl ActionWire<A>) -> Option<A> {
     let schema_id = u32::from_le_bytes(input.fixed()?);
     let size = usize::from(input.u16()?);
-    if schema_id == 0 || size > MAX_ACTION_BYTES {
+    if size > MAX_ACTION_BYTES {
         return None;
     }
     wire.decode(ActionView {

@@ -5,7 +5,9 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import shutil
 import subprocess
+import tempfile
 import time
 
 import sim2d_conformance as conformance
@@ -38,7 +40,11 @@ def run(artifact, profile, ticks, bodies, *, costs=False, stall=False):
     assert len({record["host_epoch"], *(peer["world_epoch"] for peer in peers)}) == 5
     assert all(peer["restored"][:2] == [0, record["baseline_digest"]] for peer in peers)
     assert all(peer["digest_ticks"] == len(checkpoints) for peer in peers)
-    assert record["stalled"] == stall
+    stall_us = record["stall_us"]
+    if stall:
+        assert 2_000_000 <= stall_us[1] - stall_us[0] < 2_009_000
+    else:
+        assert stall_us is None
     record["digest_ticks_compared_per_peer"] = len(checkpoints)
     record["digest_trace_sha256"] = hashlib.sha256(json.dumps(checkpoints).encode()).hexdigest()
     record["elapsed_s"] = time.monotonic() - start
@@ -139,10 +145,13 @@ def costs(artifact):
 
 def proof(scenario, output, build):
     provenance = conformance.identity()
-    artifact = build("mac-metal")
-    artifact_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
     actions = {"steady": steady, "lead": lead, "costs": costs}
-    records = actions[scenario](artifact)
+    SCRATCH.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f"{scenario}-", dir=SCRATCH) as directory:
+        artifact = Path(directory) / "match-proof"
+        shutil.copy2(build("mac-metal"), artifact)
+        artifact_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        records = actions[scenario](artifact)
     packet = {
         **provenance, "target": "mac-metal", "build": "release", "artifact_sha256": artifact_hash,
         "one_way_ms_jitter_ms_loss_ppm": SHAPES,

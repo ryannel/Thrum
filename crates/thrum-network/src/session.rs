@@ -90,6 +90,9 @@ pub trait World {
     fn identity(&self) -> RuleSetIdentity;
     /// Commit one tick, atomically on error. Slot frames carry held axes even
     /// when the player supplied no timed frame. Joined is a bit per slot.
+    ///
+    /// # Errors
+    /// The world refused the candidate without committing it.
     fn step(
         &mut self,
         frames: &[InputFrame<Self::Action>; SLOTS],
@@ -98,8 +101,14 @@ pub trait World {
     /// Current world digest.
     fn digest(&self) -> u64;
     /// Write the current committed world image into reusable storage.
+    ///
+    /// # Errors
+    /// The authority world was not encodable.
     fn image(&self, destination: &mut Vec<u8>) -> Result<(), Self::Error>;
     /// Install an image atomically, checking the expected tick before publication.
+    ///
+    /// # Errors
+    /// The image was incompatible, invalid, or belonged to a different tick.
     fn restore(&mut self, tick: u64, image: &[u8]) -> Result<(), Self::Error>;
     /// Observe the authority's pre-tick barrier for instrumentation.
     fn barrier(&mut self, _tick: u64) {}

@@ -49,6 +49,7 @@ struct Peer<A> {
     stepped: u64,
     reliable: u64,
     packet: u64,
+    last_datagram: Option<u64>,
     margin: i16,
     margin_sequence: u64,
     late: u64,
@@ -248,6 +249,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             stepped: 0,
             reliable: 0,
             packet: 0,
+            last_datagram: None,
             margin: 0,
             margin_sequence: 0,
             late: 0,
@@ -326,6 +328,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
 
     fn commit(&mut self) -> bool {
         let tick = self.world.tick() + 1;
+        self.world.barrier(tick);
         let mut results = [SlotResult::default(); SLOTS];
         let frames = std::array::from_fn(|slot| {
             let input = self
@@ -352,7 +355,6 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             }
             admitted
         });
-        self.world.barrier(tick);
         if let Err(error) = self.world.step(&frames, self.joined) {
             self.state = HostState::Ended(EndReason::AuthorityStep);
             self.step_error = Some(error);
@@ -429,6 +431,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             }
             if now >= peer.deadline {
                 peer.link.close(wire::TIMEOUT_CLOSE);
+            }
+            if let Some(slot) = peer.slot
+                && !peer.link.is_open()
+            {
+                self.ready[slot] = false;
             }
         }
         peers.retain(|peer| peer.deadline > now || peer.slot.is_some());
@@ -713,19 +720,27 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             if ending.is_some() || lag > 188 || bytes + SET_PREFIX + HEADER_BYTES > DATAGRAM_LIMIT {
                 lane = Lane::Reliable;
                 next = next.max(peer.reliable + 1);
-            } else if !fresh_tick && (peer.held == tick || peer.offered == tick) {
+            } else if !fresh_tick
+                && (peer.held == tick
+                    || peer.last_datagram.is_some_and(|last| {
+                        now.saturating_sub(last) < u64::from(self.settings.tick_us)
+                    }))
+            {
                 continue;
             }
             let count = pack(
                 &mut self.packet,
                 &self.sets,
                 next,
+                peer.stepped
+                    .saturating_add(u64::from(self.settings.backlog)),
                 lane,
                 peer.margin,
                 peer.margin_sequence,
             );
             if count == 0 && !(fresh_tick && lane == Lane::Datagram) {
                 if let Some(reason) = ending
+                    && peer.held.max(peer.reliable) >= tick
                     && wire::send(
                         &peer.link,
                         Lane::Reliable,
@@ -760,6 +775,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                         peer.reliable = last;
                         peer.reliable_sets += count as u64;
                     } else {
+                        peer.last_datagram = Some(now);
                         peer.datagram_sizes[count] += 1;
                     }
                     offered |= fresh_tick && last == tick;
@@ -775,9 +791,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
 }
 
 fn pending(sets: &VecDeque<StoredSet>, next: u64) -> impl Iterator<Item = &StoredSet> {
-    let index = sets
-        .front()
-        .map_or(0, |first| next.saturating_sub(first.tick)) as usize;
+    let index = usize::try_from(
+        sets.front()
+            .map_or(0, |first| next.saturating_sub(first.tick)),
+    )
+    .unwrap_or(usize::MAX);
     sets.iter().skip(index)
 }
 
@@ -785,6 +803,7 @@ fn pack(
     packet: &mut Vec<u8>,
     sets: &VecDeque<StoredSet>,
     next: u64,
+    through: u64,
     lane: Lane,
     margin: i16,
     sequence: u64,
@@ -799,7 +818,7 @@ fn pack(
     };
     let mut count = 0;
     for set in pending(sets, next) {
-        if packet.len() + set.bytes.len() + 2 + HEADER_BYTES > cap {
+        if set.tick > through || packet.len() + set.bytes.len() + 2 + HEADER_BYTES > cap {
             break;
         }
         packet.extend(

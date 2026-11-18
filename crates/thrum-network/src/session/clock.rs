@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use super::Settings;
 
 pub(super) const INITIAL_BUFFER: u64 = 4;
@@ -42,6 +44,7 @@ pub(super) struct Clock {
     arrival: Option<(u64, u64)>,
     on_time: u16,
     skipping: bool,
+    drawn_edge: Cell<Option<(u64, f64)>>,
 }
 
 impl Clock {
@@ -57,6 +60,7 @@ impl Clock {
             arrival: None,
             on_time: 0,
             skipping: false,
+            drawn_edge: Cell::new(None),
         }
     }
 
@@ -83,8 +87,13 @@ impl Clock {
     // Interpolation cannot cross the committed endpoint between polls.
     pub(super) fn sample(&self, now: u64, committed: u64, settings: Settings) -> Playout {
         let elapsed = now.saturating_sub(self.at) as f64 / f64::from(settings.tick_us);
+        let wanted = self.position + elapsed * self.rate;
+        let position = wanted.min(committed as f64);
+        if wanted > position && self.drawn_edge.get().is_none_or(|(at, _)| now >= at) {
+            self.drawn_edge.set(Some((now, position)));
+        }
         Playout {
-            position: (self.position + elapsed * self.rate).min(committed as f64),
+            position,
             rate: self.rate,
         }
     }
@@ -98,6 +107,10 @@ impl Clock {
         mut commit: impl FnMut() -> bool,
     ) {
         let elapsed = now.saturating_sub(self.at);
+        let drawn_edge = self
+            .drawn_edge
+            .take()
+            .filter(|(at, _)| (self.at..=now).contains(at));
         self.at = now;
         self.skip = None;
         self.completed_stall = None;
@@ -135,7 +148,14 @@ impl Clock {
             1.0
         };
         let travel_rate = if self.stall.is_some() { 0.0 } else { self.rate };
-        let desired = self.position + elapsed as f64 * travel_rate / f64::from(settings.tick_us);
+        let advance =
+            |microseconds| microseconds as f64 * travel_rate / f64::from(settings.tick_us);
+        let mut desired = self.position + advance(elapsed);
+        // Frames already drawn at the committed edge cannot borrow time from
+        // the part of the interval they spent there.
+        if let Some((at, edge)) = drawn_edge {
+            desired = desired.min(edge + advance(now - at));
+        }
         let mut committed = stepped;
         for _ in 0..settings.catch_up {
             if committed >= held || desired < committed as f64 || !commit() {

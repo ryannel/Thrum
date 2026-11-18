@@ -60,9 +60,14 @@ struct Baseline {
     bytes: Vec<u8>,
 }
 
-struct Stored {
+enum Payload<A> {
+    Encoded(Vec<u8>),
+    Ready(Box<wire::Set<A>>),
+}
+
+struct Stored<A> {
     tick: u64,
-    bytes: Vec<u8>,
+    payload: Payload<A>,
 }
 
 /// One replica. Its world only changes by restoring a link baseline or
@@ -103,8 +108,10 @@ struct Replica<W: World, Codec> {
     world: W,
     codec: Codec,
     axes: [[f32; 3]; SLOTS],
-    sets: Vec<Option<Stored>>,
+    sets: Vec<Option<Stored<W::Action>>>,
     spare: Vec<Vec<u8>>,
+    // Preserve the boxes at the high-water mark of the bounded receive buffer.
+    ready_spare: Vec<Box<wire::Set<W::Action>>>,
     waiting_frames: VecDeque<(u64, u64)>,
     waiting_commands: VecDeque<u64>,
     results: VecDeque<ResultEvent>,
@@ -129,6 +136,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                 axes: [[0.0; 3]; SLOTS],
                 sets: Vec::new(),
                 spare: Vec::new(),
+                ready_spare: Vec::new(),
                 waiting_frames: VecDeque::new(),
                 waiting_commands: VecDeque::new(),
                 results: VecDeque::new(),
@@ -172,6 +180,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
 
     /// Limit this client's redundant frames within the host's advertised maximum.
     /// The newest frame is always retained even if the caller passes zero.
+    #[must_use]
     pub fn with_repeat_limit(mut self, depth: u8) -> Self {
         self.repeat_limit = depth.max(1);
         let limit = self.settings.map_or(self.repeat_limit, |settings| {
@@ -260,6 +269,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
     /// Last observed authority tick in a set.
     pub fn newest(&self) -> u64 {
         self.newest
+    }
+
+    /// Highest tick for which a client holds all earlier sets.
+    pub fn held(&self) -> u64 {
+        self.held
     }
 
     /// Read the next resolved result. Poll this as part of consuming session events.
@@ -580,7 +594,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         if tick == 0 || tick > u64::MAX - 100_000 {
             return None;
         }
-        let stepped = self.replica.world.tick();
+        let stepped = self.replica.world.tick().max(self.baseline_tick);
         let cap = u64::from(settings.backlog);
         // Check message bounds before any set from it enters the queue.
         let mut encoded = Read::new(bytes);
@@ -602,7 +616,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             if tick <= self.held {
                 self.obsolete += 1;
             } else if tick <= stepped + cap {
-                let index = (tick % cap) as usize;
+                let index = usize::try_from(tick % cap).expect("bounded backlog");
                 if self.replica.sets[index].is_none() {
                     let mut saved = self
                         .replica
@@ -610,7 +624,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                         .pop()
                         .unwrap_or_else(|| Vec::with_capacity(64));
                     saved.extend(set);
-                    self.replica.sets[index] = Some(Stored { tick, bytes: saved });
+                    self.replica.sets[index] = Some(Stored {
+                        tick,
+                        payload: Payload::Encoded(saved),
+                    });
                 }
             }
             self.newest = self.newest.max(tick);
@@ -618,10 +635,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         }
         while self.held < stepped + cap {
             let next = self.held + 1;
-            if self.replica.sets[(next % cap) as usize]
-                .as_ref()
-                .is_none_or(|set| set.tick != next)
-            {
+            if !self.replica.hold(next, self.slot)? {
                 break;
             }
             self.held = next;
@@ -639,9 +653,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             if self.held > prior {
                 clock.observe(self.held, now, settings);
             }
-            clock.advance(now, stepped, self.held, settings, || {
-                replica.commit(self.slot)
-            });
+            clock.advance(now, stepped, self.held, settings, || replica.commit());
             self.state = if clock.skip.is_some() {
                 ClientState::Behind
             } else {
@@ -649,7 +661,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             };
         } else if self.held - stepped > u64::from(settings.behind) {
             for _ in 0..settings.catch_up {
-                if !replica.commit(self.slot) {
+                if !replica.commit() {
                     break;
                 }
             }
@@ -768,31 +780,61 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
 }
 
 impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
-    fn commit(&mut self, slot: usize) -> bool {
-        let tick = self.world.tick() + 1;
-        let index = (tick % self.sets.len() as u64) as usize;
-        let Some(mut stored) = self.sets[index].take() else {
-            return false;
-        };
-        let set = wire::read_set(&stored.bytes, tick, self.axes, &self.codec);
-        stored.bytes.clear();
-        self.spare.push(stored.bytes);
-        let Some(set) = set else {
-            self.fault = Some(ClientState::Closed(CloseReason::Protocol));
-            return false;
-        };
-        if self.world.step(&set.frames, set.joined).is_err() {
-            self.fault = Some(ClientState::Diverged(tick));
-            return false;
+    fn hold(&mut self, tick: u64, slot: usize) -> Option<bool> {
+        let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
+        if self.sets[index].as_ref().is_none_or(|set| set.tick != tick) {
+            return Some(false);
         }
-        if let Some(expected) = set.digest
-            && self.world.digest() != expected
-        {
-            self.fault = Some(ClientState::Diverged(tick));
-            return false;
-        }
-        self.axes = set.frames.map(|frame| frame.axes);
+        let Some(Stored {
+            payload: Payload::Encoded(mut bytes),
+            ..
+        }) = self.sets[index].take()
+        else {
+            return None;
+        };
+        let set = wire::read_set(&bytes, tick, self.axes, &self.codec);
+        bytes.clear();
+        self.spare.push(bytes);
+        let set = set?;
         let result = set.results[slot];
+        self.resolve(tick, result)?;
+        self.axes = std::array::from_fn(|slot| set.frames[slot].axes);
+        let ready = if let Some(mut ready) = self.ready_spare.pop() {
+            *ready = set;
+            ready
+        } else {
+            Box::new(set)
+        };
+        self.sets[index] = Some(Stored {
+            tick,
+            payload: Payload::Ready(ready),
+        });
+        Some(true)
+    }
+
+    fn resolve(&mut self, tick: u64, result: wire::SlotResult) -> Option<()> {
+        let first = result
+            .last_command
+            .saturating_sub(u64::from(result.commands).saturating_sub(1));
+        let commands = usize::from(result.commands);
+        if commands > self.waiting_commands.len()
+            || self
+                .waiting_commands
+                .iter()
+                .take(commands)
+                .copied()
+                .ne((first..=result.last_command).take(commands))
+        {
+            return None;
+        }
+        if result.frame != 0
+            && self
+                .waiting_frames
+                .binary_search(&(tick, result.frame))
+                .is_err()
+        {
+            return None;
+        }
         while self
             .waiting_frames
             .front()
@@ -809,19 +851,40 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
                 disposition,
             });
         }
-        if result.commands != 0 {
-            let first = result.last_command + 1 - u64::from(result.commands);
-            for sequence in first..=result.last_command {
-                if self.waiting_commands.pop_front() != Some(sequence) {
-                    self.fault = Some(ClientState::Closed(CloseReason::Protocol));
-                    return false;
-                }
-                self.results.push_back(ResultEvent {
-                    input: Input::Command(sequence),
-                    disposition: Disposition::Committed(tick),
-                });
-            }
+        for sequence in self.waiting_commands.drain(..commands) {
+            self.results.push_back(ResultEvent {
+                input: Input::Command(sequence),
+                disposition: Disposition::Committed(tick),
+            });
         }
-        true
+        Some(())
+    }
+
+    fn commit(&mut self) -> bool {
+        let tick = self.world.tick() + 1;
+        let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
+        if self.sets[index]
+            .as_ref()
+            .is_none_or(|set| set.tick != tick || !matches!(set.payload, Payload::Ready(_)))
+        {
+            return false;
+        }
+        let Some(Stored {
+            payload: Payload::Ready(set),
+            ..
+        }) = self.sets[index].take()
+        else {
+            unreachable!("checked next ready set")
+        };
+        let stepped = self.world.step(&set.frames, set.joined).is_ok();
+        let agrees = stepped
+            && set
+                .digest
+                .is_none_or(|expected| self.world.digest() == expected);
+        self.ready_spare.push(set);
+        if !agrees {
+            self.fault = Some(ClientState::Diverged(tick));
+        }
+        agrees
     }
 }
