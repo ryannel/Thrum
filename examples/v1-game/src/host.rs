@@ -657,14 +657,16 @@ impl FrameHost {
         setup: GameSetup,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
     ) -> Result<Self, runtime::FrameError> {
+        use runtime::FrameError;
+
         if !capabilities.matches(device) {
-            return Err(runtime::FrameError::InvalidState(
+            return Err(FrameError::InvalidState(
                 "capability record does not match the host device",
             ));
         }
         if let Some(scale) = setup.sprite_scale {
             if rows.is_some() || setup.cooked_mesh_rows == MeshRowSource::Cooked {
-                return Err(runtime::FrameError::InvalidState(
+                return Err(FrameError::InvalidState(
                     "2D scene refuses cooked placements",
                 ));
             }
@@ -675,14 +677,13 @@ impl FrameHost {
                 || setup.content != GameContent::Grid
                 || setup.route_overlay != RouteOverlay::Off
             {
-                return Err(runtime::FrameError::InvalidState(
+                return Err(FrameError::InvalidState(
                     "2D scene refuses 3D content settings",
                 ));
             }
-            let world = WorldPort::Inline(Box::new(WorldDriver::new(
-                setup.content,
-                RouteOverlay::Off,
-            )?));
+            let world = WorldPort::Inline(Box::new(
+                WorldDriver::new(setup.content, RouteOverlay::Off).map_err(FrameError::World)?,
+            ));
             let inner = Runtime::new_2d(
                 capabilities,
                 queue,
@@ -707,7 +708,7 @@ impl FrameHost {
                 visual_product: None,
             });
         }
-        let mut scene = GameScene::scene(config.render_extent, setup)?;
+        let mut scene = GameScene::scene(config.render_extent, setup).map_err(FrameError::Scene)?;
         #[cfg(not(target_arch = "wasm32"))]
         let rows = if rows.is_none() && setup.cooked_mesh_rows == MeshRowSource::Cooked {
             Some(
@@ -715,7 +716,7 @@ impl FrameHost {
                     setup.content,
                     device.limits().max_storage_buffer_binding_size,
                 )
-                .map_err(|error| error.to_string())?,
+                .map_err(|error| FrameError::Scene(error.to_string()))?,
             )
         } else {
             rows
@@ -724,7 +725,9 @@ impl FrameHost {
             let slots = scene
                 .meshes
                 .as_ref()
-                .ok_or("cooked rows require a mesh selection")?
+                .ok_or(FrameError::InvalidState(
+                    "cooked rows require a mesh selection",
+                ))?
                 .slots
                 .clone();
             scene.meshes = Some(rows.selection(slots));
@@ -736,22 +739,27 @@ impl FrameHost {
                 light_samples: 3,
                 refresh_stride: 1,
             });
-        let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Off {
-            WorldDriver::new(setup.content, setup.route_overlay)?
-        } else {
-            WorldDriver::selected(
-                setup.content,
-                setup.route_overlay,
-                Some(setup.cloud_weather),
-            )?
-        }));
+        let world = WorldPort::Inline(Box::new(
+            if setup.clouds == crate::CloudSelection::Off {
+                WorldDriver::new(setup.content, setup.route_overlay)
+            } else {
+                WorldDriver::selected(
+                    setup.content,
+                    setup.route_overlay,
+                    Some(setup.cloud_weather),
+                )
+            }
+            .map_err(FrameError::World)?,
+        ));
         let shade = if setup.clouds == crate::CloudSelection::Off {
             None
         } else {
             let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
-                .map_err(|e| e.to_string())?;
+                .map_err(|error| FrameError::Scene(error.to_string()))?;
             Some(if let Some(profile) = cloud_sky {
-                shade.with_sky(profile).map_err(|e| e.to_string())?
+                shade
+                    .with_sky(profile)
+                    .map_err(|error| FrameError::Scene(error.to_string()))?
             } else {
                 shade
             })
@@ -768,8 +776,7 @@ impl FrameHost {
             scene,
             1.0 / 16_000.0,
         )
-        .await
-        .map_err(|error| error.to_string())?;
+        .await?;
         let mut host = Self {
             cooked_rows: rows,
             inner,
@@ -779,7 +786,9 @@ impl FrameHost {
             visual_product: None,
         };
         if let Some(shade) = shade {
-            host.inner.set_scene_contribution(Box::new(shade))?;
+            host.inner
+                .set_scene_contribution(Box::new(shade))
+                .map_err(FrameError::Scene)?;
         }
         Ok(host)
     }
