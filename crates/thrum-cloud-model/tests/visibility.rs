@@ -77,15 +77,16 @@ fn ground_integrals_range_and_cell_quadrature() {
         surface: None,
         ground: None,
     };
-    let from = [-1000.0, 700.0, 0.0];
-    let to = [1000.0, 1100.0, 0.0];
+    // This diagonal intersects the deeper turret at weather time 720 s.
+    let from = [-1000.0, 700.0, 500.0];
+    let to = [1000.0, 1100.0, 500.0];
     // Test-owned trapezoid quadrature, rather than the model's midpoint rule.
     let length = 2000.0_f64.hypot(400.0);
     let mut own = 0.0;
     for i in 0..=20_000 {
         let t = f64::from(i) / 20_000.0;
         own += field.density(
-            [-1000.0 + 2000.0 * t, 700.0 + 400.0 * t, 0.0],
+            std::array::from_fn(|axis| from[axis] + (to[axis] - from[axis]) * t),
             &cells,
             Density::Coarse,
             |_| None,
