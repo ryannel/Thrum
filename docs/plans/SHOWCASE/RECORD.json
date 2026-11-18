@@ -26,7 +26,53 @@
   "milestones": {
     "M5": {
       "definitions": "e887bfb04e741697fcde34c26ab2462e7cc708cbd18eb8ab0b8258101013ebd7",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "f90bd8767d977c78e88dd1398143bbd334ca36f2",
+          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "items": {
+            "M5.1": "pass",
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "pass",
+            "M5.5": "pass",
+            "M5.6": "pass",
+            "M5.7": "pass",
+            "M5.8": "fail",
+            "M5.9": "fail",
+            "M5.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Mac balloon motion holds and jumps",
+              "item": "M5.8",
+              "repeat": false
+            },
+            {
+              "name": "Chrome balloon motion stalls during the flythrough",
+              "item": "M5.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 154198,
+            "cached": 4682752,
+            "output": 13176,
+            "turns": 1
+          },
+          "at": "2026-11-18T00:40:07Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
