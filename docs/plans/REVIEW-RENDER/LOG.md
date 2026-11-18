@@ -23,3 +23,8 @@
   and its pixels. M1.5 is rewritten to match, and module-list ruling 4 and the decision say the same. Suggestion
   taken: the plan no longer tells builders to run the verifier before landing, since exact images are proved once
   on main. The design review is owed.
+- 2026-11-18 Built M1. The CPU and atmosphere now each write a whole light record, and surface encode
+  faults reach the drive and completed frame. Surface lighting takes both positions and the cooked
+  volume reads the ambient source once. Verified the three pre-split pixel fixtures byte for byte,
+  exercised all three surface fault kinds, and ran the cooked game draw on Metal. The registered
+  baselines use the shared main-branch proof. [Evidence](../../evidence/REVIEW-RENDER/M1.md).
