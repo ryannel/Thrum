@@ -34,3 +34,7 @@
   M4.7's check gained `--full`. Plain `verify` now asks the run on main and draws nothing, and M4.7 needs a real
   run with `THRUM_GAMES` pointing at nothing. Its statement did not change. The other verifier items lost their
   `lock` and one simulator item moved to the `simulator` lock.
+- 2026-11-18 M2 moved the mixed-mesh field to `thrum-fixtures` and routed the temporal witness, cloud shader and
+  crowd trace through their owning packages. Both boundary rules are at zero, nine Metal visibility tests passed,
+  and the engine built 214 test and bench executables with both game directories absent. The release Wasm bundle
+  emitted the original witness bytes. The shared main-branch check supplies exact images. [Evidence](../../evidence/GAME-SPLIT/M2.md)
