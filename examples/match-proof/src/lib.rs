@@ -34,7 +34,7 @@ pub fn restore_in_browser(
     bytes: &[u8],
     last: u32,
 ) -> Result<String, wasm_bindgen::JsError> {
-    image::restore(count, mixed, bytes, last)
+    restore(count, mixed, bytes, last)
         .map_err(|error| wasm_bindgen::JsError::new(&error.to_string()))
 }
 
