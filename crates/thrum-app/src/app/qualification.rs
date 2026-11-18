@@ -56,9 +56,11 @@ impl WindowExtentCapture {
         use winit::platform::macos::WindowExtMacOS;
         match self.window {
             ExtentWindow::Points([width, height]) => {
-                // Window creation can constrain its content to the visible screen.
-                // Request the prescribed size on the live AppKit window as well.
-                let _ = window.request_inner_size(winit::dpi::LogicalSize::new(width, height));
+                // An oversized qualification window can extend past the monitor.
+                // AppKit otherwise clamps its height to the visible frame.
+                let points = winit::dpi::LogicalSize::new(width, height);
+                window.set_min_inner_size(Some(points));
+                let _ = window.request_inner_size(points);
             }
             ExtentWindow::Fullscreen => {
                 // Establish the fullscreen backing before preparing the surface and host.

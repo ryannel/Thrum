@@ -176,11 +176,11 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
             &device,
             &queue,
             super::FrameConfig {
+                render_extent: extent,
                 surface: Some(thrum_render::present::SurfaceProfile {
                     format: wgpu::TextureFormat::Bgra8Unorm,
                     extent,
                 }),
-                ..Default::default()
             },
         )
         .await
@@ -251,11 +251,11 @@ fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
             &device,
             &queue,
             super::FrameConfig {
+                render_extent: extent,
                 surface: Some(thrum_render::present::SurfaceProfile {
                     format: wgpu::TextureFormat::Bgra8Unorm,
                     extent,
                 }),
-                ..Default::default()
             },
         )
         .await

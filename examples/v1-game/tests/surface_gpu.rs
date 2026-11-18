@@ -79,11 +79,11 @@ async fn render_surface(
         device,
         queue,
         v1_game::FrameConfig {
+            render_extent: [640, 360],
             surface: Some(SurfaceProfile {
                 format,
                 extent: [SIZE, SIZE],
             }),
-            ..Default::default()
         },
     )
     .await
@@ -225,11 +225,11 @@ fn unavailable_surface_drops_only_views_and_resize_reuses_preparation() {
             &device,
             &queue,
             v1_game::FrameConfig {
+                render_extent: [640, 360],
                 surface: Some(SurfaceProfile {
                     format: wgpu::TextureFormat::Bgra8Unorm,
                     extent: [SIZE, SIZE],
                 }),
-                ..Default::default()
             },
         )
         .await

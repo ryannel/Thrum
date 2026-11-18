@@ -1986,6 +1986,7 @@ async function qualifyExtent(cdp, origin, output, timeout, wasm) {
         prepare_ms: row.frame.resize_prepare_ms, generation: row.frame.generation };
     }, timeout, `DPR ${dpr} ${label} submissions`);
     try {
+      await cdp.call('Page.enable', {}, sessionId);
       await installWasmReceipt(cdp, sessionId);
       await setViewport(720);
       await cdp.call('Page.navigate', { url: `${origin}/?extent-probe&reconstruction=taau` }, sessionId);
