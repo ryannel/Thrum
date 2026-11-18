@@ -31,7 +31,10 @@ day once more after [that revision's review](../../evidence/CLOUDS/design-review
 level of [the weather map](#the-weather-map) holds the query's own column at its texel's centre, and one
 clearing factor takes a cell's coverage to zero with its thickness. Revised 18 November 2026 on the lead's
 decision to park the form of a single cloud: M3 closes on the sky at a glance and M17 judges each cloud, from
-the diagnosis in [risk 2](#risks). No mechanism and no interface changed.
+the diagnosis in [risk 2](#risks). No mechanism and no interface changed. Revised that day after the review
+of that parking (two findings; `git show 061432e11:docs/evidence/CLOUDS/design-review.md`): M17 judges the
+form in [a sky of weather alone](#risks), with no library shape in it, on both targets from both heights, and
+the flaws are excused only until M17 starts.
 
 ## The request
 
@@ -777,7 +780,10 @@ depth, the beam's lobe), keeps one term for every consumer, and says in the evid
   through the day. A type between the two turns its plane by its share of cells, and the weather state ramps
   a type, so the plane never changes across a cloud or in a step. This is how shipped clouds are lit: by the
   optical depth toward the Sun, with no surface found in the volume, so a sample's light falls smoothly from
-  the lit side of its Sun column to the far side whatever the cloud's shape.
+  the lit side of its Sun column to the far side whatever the cloud's shape. That much is the published
+  practice. The halfway turn is not: it is Thrum's own choice among the planes
+  [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) compared on Metal (part XIX), and it is the
+  constant a builder tunes by eye ([risk 12](#risks)).
   No depth sets the plane. The first design inferred it at each sample, from the cloud above the sample
   against the cloud between it and the Sun. In a cloud of heaps those two depths say where the gaps are, not
   which way a surface faces: along a base the column overhead is deep and the path to the Sun slips between
@@ -1460,7 +1466,7 @@ silhouette across its width, both scaled to 1.
 - **Unrun:** the engine's light on the new form, which part XIX takes up; the detail noise; a view from the
   ground; motion; the far level's clouds as drawn. M3.1 and M3.2 judge those in the engine. The view from the
   ground then showed what this part did not: shelves, folds and repeats on the turrets
-  ([risk 2](#risks)), which M17.1 judges.
+  ([risk 2](#risks)), which M17.1 and M17.2 judge.
 
 From [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) on Metal and `lit_plane_proof.py`, both of 18
 November, after M3 stopped a second time, on a bright underside under a dark stripe toward the noon Sun
@@ -1619,9 +1625,19 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    level shelves under the large clouds toward the Sun; a lip or level band under an isolated one; a hooked
    fold or squared break in the near cloud's lower edge across the Sun; and caps, wedges and cones that repeat
    in the middle distance. The lead parked the cue on 18 November 2026, after five rounds of looks. M3.1
-   judges the sky at a glance, and **M17** judges each cloud (M17.1), after the rest of the module's sky is
-   built. Until M17 is Done the four flaws are known: they fail no inspected item of another milestone, and
-   a reviewer who sees them says so and judges the item's own list.
+   judges the sky at a glance, and **M17** judges each cloud, after the rest of the module's sky is built.
+
+   M17 judges the clouds that failed. By then the fair preset places library shapes among its procedural
+   clouds, and at a placed share of 1 it holds no procedural heap at all, so a sky judged with shapes in it
+   could pass on their heaps while the turrets kept every flaw. M17.1 on the Mac and M17.2 in Chrome
+   therefore take the fair preset with the placed share at 0 and no directed shape, which is
+   [a sky of weather alone](#placed-volumes) and the sky M3 stopped on, from 2 m and from 40 m on both
+   targets. M17.3 then looks at the presets as they ship, shapes included.
+
+   The flaws are excused only until M17 starts. In a milestone built before it (M3 to M16, and M11) the four
+   are known: they fail no inspected item, and a reviewer who sees them says so and judges the item's own
+   list. From M17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
+   inspected item whose view shows it, in M17 and in M12.
 
    What M3 found, in `docs/evidence/CLOUDS/M3-erosion/README.md` and `M3-type-plane/README.md` (they land
    with M3; before that, `git show 5f84d354a3bf:<path>`):
@@ -1648,7 +1664,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    opacity observer that removes one flaw, before any look on Metal. The candidate fixes, none yet tried
    against a named cause: a wider spread of turret heights and widths; a coarser first octave; turrets with
    lives of their own, by the cell rule one level down. A cause that asks for a mechanism this design lacks
-   ends `BLOCKED` for a planner. Never one dome a cell again, and never a form only the trace has: the query,
+   ends `BLOCKED` with `needs_context` and the cause, for a planner. Never one dome a cell again, and never a form only the trace has: the query,
    the map, the Sun's path and the trace read one density, and M17.4 holds the changed form to that. The map
    level whose texel is wider than a turret holds [a sample of them](#the-weather-map), so a far cloud's
    heaps are fewer and broader than a near one's and change where it crosses into that level. If M3.2's crops show where that begins, the fixes in order: a
@@ -1729,7 +1745,8 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 - **The bar.** [How the module is proved](#how-the-module-is-proved) governs every milestone not yet Done.
   A builder tunes the look against the inspection list, with a fresh opinion, and records what it changed. A
   reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
-  end `BLOCKED`. Until M17 is Done, the form flaws [risk 2](#risks) names fail no item but M17.1.
+  end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a milestone built before M17.
+  From M17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud.
 
 ## Open questions
 

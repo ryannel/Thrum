@@ -1849,12 +1849,12 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "Fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time: rounded heaps of different heights on one base, relief that reads as billows, and no two clouds in a view alike.",
+      "quality_bar": "Fair-weather cumulus as in Red Dead Redemption 2 or Horizon Forbidden West, looked at one cloud at a time, with no library shape standing in for the procedural clouds: rounded heaps of different heights on one base, relief that reads as billows, and no two clouds in a view alike.",
       "items": [
         {
           "id": "M17.1",
-          "statement": "At noon under the fair preset, from 2 m and from 40 m, each cloud holds up when it is looked at alone. The larger clouds are clusters of rounded heaps of different heights, tops billow, edges break up, and outlines differ from cloud to cloud. No cloud has a stacked shelf, a lip or level band under it, or a fold or squared break in its outline, and no dome, lens, cap or cone repeats across the sky.",
-          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, looking toward, across and away from the Sun, from 2 m and from 40 m. Judge each frame whole, comparing the outlines of its clouds with one another, and in native-size crops of a near cloud's edge, base and top and of the middle distance.",
+          "statement": "At noon under the fair preset with the placed share at 0 and no directed shape, so that every cloud in the sky is procedural, from 2 m and from 40 m, each cloud holds up when it is looked at alone. The larger clouds are clusters of rounded heaps of different heights, tops billow, edges break up, and outlines differ from cloud to cloud. No cloud has a stacked shelf, a lip or level band under it, or a fold or squared break in its outline, and no dome, lens, cap or cone repeats across the sky.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, with the placed share at 0, looking toward, across and away from the Sun, from 2 m and from 40 m. Judge each frame whole, comparing the outlines of its clouds with one another, and in native-size crops of a near cloud's edge, base and top and of the middle distance.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1863,8 +1863,8 @@
         },
         {
           "id": "M17.2",
-          "statement": "In Chrome at noon the fair sky passes M17.1's list.",
-          "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at M17.1's three views from 2 m. Judge them by that list, then compare native-size crops with the Mac's.",
+          "statement": "In Chrome at noon the same sky, the fair preset with the placed share at 0 and no directed shape, passes M17.1's list from 2 m and from 40 m.",
+          "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at M17.1's six views, toward, across and away from the Sun from 2 m and from 40 m, with the placed share at 0. Judge them by that list, whole and in the same native-size crops, then compare the crops with the Mac's.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -1873,8 +1873,8 @@
         },
         {
           "id": "M17.3",
-          "statement": "The changed form costs the rest of the sky nothing that shows: at noon the fair sky's horizon still passes M3.2's list, at a 10\u00b0 Sun the fair sky passes M5.3's, and at noon the broken and the overcast presets pass M7.1's.",
-          "inspect": "Capture `fixed` stills of the fair sky along the horizon at noon and toward, across and away from a 10\u00b0 Sun, and of the broken and the overcast presets at noon from 2 m and from 40 m. Judge them by those lists.",
+          "statement": "The changed form costs the rest of the sky nothing that shows. With the presets as they ship, library shapes included: at noon the fair sky's horizon still passes M3.2's list; at a 10\u00b0 Sun the fair sky passes M5.3's, and its library clouds still read as one sky with the procedural clouds around them; at noon the broken and the overcast presets pass M7.1's. No procedural cloud in the fair sky's views shows a flaw M17.1 names.",
+          "inspect": "Capture `fixed` stills of the fair sky along the horizon at noon and toward, across and away from a 10\u00b0 Sun, and of the broken and the overcast presets at noon from 2 m and from 40 m, all at the presets' own placed share. Judge them by those lists, and the 10\u00b0 stills also in native-size crops where a library cloud meets a procedural one.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

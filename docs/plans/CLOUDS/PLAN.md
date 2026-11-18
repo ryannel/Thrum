@@ -101,8 +101,8 @@ If the handover shows in M15.4 or M15.13, the eighth risk gives the fixes in ord
 
 [Risk 2](DESIGN.md#risks) holds what M3 found and what its looks ruled out. The records are
 `docs/evidence/CLOUDS/M3-erosion/` and `M3-type-plane/`, whose archives hold the opacity observer, the point
-march and the capture scripts. Find each flaw's cause with those controls before any look. If the cause needs
-a mechanism the design lacks, end `BLOCKED` with `needs_context` and the cause.
+march and the capture scripts. Find each flaw's cause with those controls before any look. M17.1 and M17.2
+judge a sky of weather alone, the placed share at 0: the sky M3 stopped on.
 
 ## M12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 

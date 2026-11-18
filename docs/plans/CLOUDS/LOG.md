@@ -475,3 +475,9 @@
   Chrome look, a regression look and the query tests. [Risk 2](DESIGN.md#risks) carries the erosion diagnosis, what was tried and
   what is unexplained; until M17 the named flaws fail no other item. No mechanism, interface or Done item changed, and no new look
   is planned in M3. The design needs a review.
+
+- 2026-11-18 Plan, resolving the two findings of the design review of the parking. M17.1 and M17.2 judge the fair preset with the
+  placed share at 0, a sky of weather alone, from 2 m and from 40 m on both targets, and the form flaws are excused only until M17
+  starts. M17.3 looks at the presets as they ship. The earlier attribution suggestion on the lit plane is taken. M3 and M4 are
+  unchanged, and no mechanism or interface changed. [The record](../../evidence/CLOUDS/M17-plan.md) holds each finding and its
+  answer. The design needs a review.
