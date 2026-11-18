@@ -1,8 +1,4 @@
-use std::{
-    fmt::Write,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{cell::RefCell, fmt::Write, rc::Rc, time::Duration};
 
 use thrum_app::sky::StillWorld;
 use thrum_asset::{BrowserFetch, DevClient};
@@ -80,9 +76,23 @@ fn terrain_camera(eye: [f32; 3], direction: [f32; 3]) -> SyntheticView {
     .expect("terrain perspective")
 }
 
-fn terrain_scene(view: SyntheticView) -> SyntheticScene {
+fn lit_scene(view: &SyntheticView) -> SyntheticScene {
+    let mut scene = SyntheticScene::grid(1).expect("scene");
+    scene.view = *view;
+    scene.sun_shadows = true;
+    scene.instances[0].current[3] = [0.0, 0.75, 0.0, 1.0];
+    scene.instances[0].previous = scene.instances[0].current;
+    scene.local_lights = vec![SyntheticPointLight {
+        position: [2.0, 2.5, 4.0],
+        radius: 8.0,
+        candela: [500.0, 350.0, 50.0],
+    }];
+    scene
+}
+
+fn terrain_scene(view: &SyntheticView) -> SyntheticScene {
     let mut scene = SyntheticScene::grid(4).expect("terrain scene");
-    scene.view = view;
+    scene.view = *view;
     scene.sun_shadows = true;
     scene.materials[0].base_rgba = [0.8, 0.8, 0.8, 1.0];
     // The Metal witness's distant receivers and hills. A no-Sun-map render
@@ -123,7 +133,7 @@ struct Probe {
     request: Option<SecondaryViewRequest>,
     slot: Option<SecondaryView>,
     pipeline: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
-    output: Arc<Mutex<Option<wgpu::Buffer>>>,
+    output: Rc<RefCell<Option<wgpu::Buffer>>>,
 }
 
 impl Probe {
@@ -270,7 +280,7 @@ impl SceneContribution for Probe {
             cache: None,
         });
         self.pipeline = Some((pipeline, group));
-        *self.output.lock().expect("output witness") = Some(buffer);
+        *self.output.borrow_mut() = Some(buffer);
         Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
@@ -308,26 +318,13 @@ struct Fixture<'a> {
 impl Fixture<'_> {
     async fn draw(
         &self,
-        terrain: Option<(SyntheticScene, FrameLighting)>,
-        view: SyntheticView,
-        request: Option<SecondaryViewRequest>,
+        scene: SyntheticScene,
+        lighting: FrameLighting,
+        request: Option<&SecondaryViewRequest>,
         extent: [u32; 2],
         cooked: Option<&RemoteFeed>,
         expected_path: Option<CookedDrawPath>,
     ) -> Vec<u8> {
-        let (scene, lighting) = terrain.unwrap_or_else(|| {
-            let mut scene = SyntheticScene::grid(1).expect("scene");
-            scene.view = view;
-            scene.sun_shadows = true;
-            scene.instances[0].current[3] = [0.0, 0.75, 0.0, 1.0];
-            scene.instances[0].previous = scene.instances[0].current;
-            scene.local_lights = vec![SyntheticPointLight {
-                position: [2.0, 2.5, 4.0],
-                radius: 8.0,
-                candela: [500.0, 350.0, 50.0],
-            }];
-            (scene, LIGHT)
-        });
         let positions = if cooked.is_some() {
             Vec::new()
         } else {
@@ -350,7 +347,7 @@ impl Fixture<'_> {
                 },
                 StillWorld::default(),
                 Source {
-                    view,
+                    view: scene.view,
                     lighting,
                     positions,
                 },
@@ -371,12 +368,12 @@ impl Fixture<'_> {
             parts.push(Box::new(assets));
             stats
         });
-        let output = Arc::new(Mutex::new(None));
+        let output = Rc::new(RefCell::new(None));
         parts.push(Box::new(Probe {
-            request,
+            request: request.copied(),
             slot: None,
             pipeline: None,
-            output: Arc::clone(&output),
+            output: Rc::clone(&output),
         }));
         host.set_scene_contribution(Box::new(SceneContributions::new(parts)))
             .expect("view and main fixture");
@@ -442,7 +439,7 @@ impl Fixture<'_> {
                 );
             }
         }
-        let buffer = output.lock().expect("observer").clone().expect("output");
+        let buffer = output.take().expect("output");
         retire::copy_buffer(self.device, self.queue, &buffer).await
     }
 }
@@ -530,12 +527,19 @@ pub(super) async fn prove(
                 .with_shadows(cascades, 128.0)
                 .expect("profile");
             let main = fixture
-                .draw(None, ordinary, None, [SIDE; 2], cooked, path)
+                .draw(lit_scene(&ordinary), LIGHT, None, [SIDE; 2], cooked, path)
                 .await;
             let scales: &[u32] = if cooked.is_some() { &[2] } else { &[1, 4] };
             for scale in scales {
                 let view = fixture
-                    .draw(None, hidden, Some(request), [SIDE * scale; 2], cooked, path)
+                    .draw(
+                        lit_scene(&hidden),
+                        LIGHT,
+                        Some(&request),
+                        [SIDE * scale; 2],
+                        cooked,
+                        path,
+                    )
                     .await;
                 let (covered, maxima) = compare(&main, &view);
                 writeln!(report, "{name}, 1/{scale} extent, {cascades} cascades: {covered} covered, max colour/depth steps {maxima:?}")
@@ -559,7 +563,14 @@ pub(super) async fn prove(
                 ("least size", small, path == Some(CookedDrawPath::Indirect)),
             ] {
                 let output = fixture
-                    .draw(None, hidden, Some(request), [64; 2], cooked, path)
+                    .draw(
+                        lit_scene(&hidden),
+                        LIGHT,
+                        Some(&request),
+                        [64; 2],
+                        cooked,
+                        path,
+                    )
                     .await;
                 let clear = output
                     .as_chunks::<32>()
@@ -590,13 +601,13 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
     let raised = terrain_camera([16.0, 1080.0, 0.0], [-16.0, -1080.0, -3000.0]);
     let mirror_main = terrain_camera([16.0, 10.0, 0.0], [-2.0, -1.7, -1.0]);
     let mirror = terrain_camera([16.0, 0.0, 0.0], [-2.0, 1.7, -1.0]);
-    let old_texel = |view: SyntheticView, direction: Vec3| {
+    let old_texel = |view: &SyntheticView, direction: Vec3| {
         let eye = Vec3::from_array(view.camera_position());
         let matrix = glam::camera::rh::view::look_at_mat4(eye, eye + direction, Vec3::Y);
         (matrix.inverse().w_axis.x / 32.0).round()
     };
-    let main_texel = old_texel(mirror_main, Vec3::new(-2.0, -1.7, -1.0));
-    let mirror_texel = old_texel(mirror, Vec3::new(-2.0, 1.7, -1.0));
+    let main_texel = old_texel(&mirror_main, Vec3::new(-2.0, -1.7, -1.0));
+    let mirror_texel = old_texel(&mirror, Vec3::new(-2.0, 1.7, -1.0));
     assert_ne!(
         main_texel.to_bits(),
         mirror_texel.to_bits(),
@@ -620,17 +631,10 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
         ("80 m raised and repitched", high, raised),
         ("texel-edge mirror pair", mirror_main, mirror),
     ] {
-        let mut clear_scene = terrain_scene(view);
+        let mut clear_scene = terrain_scene(&view);
         clear_scene.sun_shadows = false;
         let clear = fixture
-            .draw(
-                Some((clear_scene, light)),
-                view,
-                None,
-                [SIDE; 2],
-                None,
-                None,
-            )
+            .draw(clear_scene, light, None, [SIDE; 2], None, None)
             .await;
         let inverse = Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
         for count in 0..=2 {
@@ -638,14 +642,7 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
                 .with_sun_shadow_profile(count, 128.0)
                 .expect("main profile");
             let expected = fixture
-                .draw(
-                    Some((terrain_scene(ordinary), light)),
-                    ordinary,
-                    None,
-                    [SIDE; 2],
-                    None,
-                    None,
-                )
+                .draw(terrain_scene(&ordinary), light, None, [SIDE; 2], None, None)
                 .await;
             let mut distant_shadowed = 0;
             for (index, (shadow, clear)) in expected
@@ -683,9 +680,9 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
             for scale in [1, 4] {
                 let actual = fixture
                     .draw(
-                        Some((terrain_scene(main), light)),
-                        main,
-                        Some(request),
+                        terrain_scene(&main),
+                        light,
+                        Some(&request),
                         [SIDE * scale; 2],
                         None,
                         None,

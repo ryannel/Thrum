@@ -37,6 +37,9 @@ extern "C" {
 ///
 /// # Errors
 /// Reports failure to create a browser WebGPU device.
+///
+/// # Panics
+/// Panics if WebGPU selects a different recipe or a comparison fails.
 pub async fn prove_views(store: String) -> Result<String, JsValue> {
     std::panic::set_hook(Box::new(|info| console_error(&info.to_string())));
     let gpu = thrum_test_support::browser_gpu()
@@ -218,6 +221,13 @@ impl Fixture<'_> {
         );
         let mut parts: Vec<Box<dyn thrum_render::contribution::SceneContribution>> =
             vec![Box::new(panel::PanelDraw::new(panel))];
+        #[cfg_attr(
+            target_arch = "wasm32",
+            expect(
+                clippy::arc_with_non_send_sync,
+                reason = "the same witness also runs on native Metal"
+            )
+        )]
         let air = Arc::new(Mutex::new(None));
         if let Some(pool) = pool {
             parts.push(Box::new(pool));
