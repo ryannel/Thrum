@@ -209,7 +209,7 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "In scenes built so the answer is plain, the Sun visibility the scene's shader computes under `Traced` is that answer: a point under the middle of a slab is dark and a point well clear of it is lit, on terrain, on a prop and on a mover, with the Sun 1°, 10° and 45° up and overhead, and at a receiver beyond the cascades' reach. At 10 km and at 20 km from the scene's origin, a broad panel stands the design's supported separation in front of a wall, with the Sun beyond it: the wall behind the panel's middle is dark, and the wall beside the panel is lit.",
+          "statement": "In scenes built so the answer is plain, the Sun visibility the scene's shader computes under `Traced` is that answer: a point under the middle of a slab is dark and a point well clear of it is lit, on terrain, on a prop and on a mover, with the Sun 1\u00b0, 10\u00b0 and 45\u00b0 up and overhead, and at a receiver beyond the cascades' reach. At 10 km and at 20 km from the scene's origin, a broad panel stands the design's supported separation in front of a wall, with the Sun beyond it: the wall behind the panel's middle is dark, and the wall beside the panel is lit.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_shadow_cases_gpu",
           "ask": "Is the value the operation the forward pass compiles, evaluated at the point on the receiving surface itself, so that a ray started beyond the panel would fail?",
           "lock": "gpu",

@@ -25,57 +25,57 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "0a2d88dd5587d5d0b61b2f30b44b9213493cbdd2d5311b406d825ef1f639b3e2",
+      "definitions": "310d5332a76cdfead7b95aa849560605b01fae15604d075533b2f5a0aed15130",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix",
+        "at": "2026-11-18T00:31:49Z"
       }
     },
     "M2": {
-      "definitions": "28440813f77a72321f41a7ebe3a566c4909c5a580665b6de7e481e434a0cdcf3",
+      "definitions": "5151390330b47a9c6f53113d5819c9e78d796250e6268a6e0ccc4dfae94282c3",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix",
+        "at": "2026-11-18T00:31:49Z"
       }
     },
     "M3": {
-      "definitions": "0e6409f7c9d5b9cd9732446c8369756001eb0b56710d12ee0b3b5b1b906f5447",
+      "definitions": "b04510737680d47a16e271c050406122cf9203d36f69d004f68219272560f624",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix",
+        "at": "2026-11-18T00:31:49Z"
       }
     },
     "M4": {
-      "definitions": "da8c92b84dd70649ba9045c58ededbcf7ddc5fc35ea0612efe8d8da9a1eb9bb6",
+      "definitions": "162e320c181705928b6ffc0fad31e83888a5d9da20bdcdd650b64c560e8ee327",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix",
+        "at": "2026-11-18T00:31:49Z"
       }
     },
     "M5": {
-      "definitions": "7edc411c3a06507bb6734a4e9dece6fea4f8e6047b8216acf7d5080f0d8fb46c",
+      "definitions": "e0a7de8b6425b4c4dc4139ef10d2ed1cd9f4997f74122611f5a4cdec07ca3277",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix",
+        "at": "2026-11-18T00:31:49Z"
       }
     },
     "M6": {
-      "definitions": "43410d5f8cac86189850eb544665ba242a96855781bbe0d1dbe44086baa3b71b",
+      "definitions": "59e60ece30c3864a7407108bacb2c2998840e8a0d489edf5736e14ccd51e6b8a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix",
+        "at": "2026-11-18T00:31:49Z"
       }
     }
   },
@@ -87,10 +87,14 @@
     {
       "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
       "at": "2026-11-17T23:05:22Z"
+    },
+    {
+      "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 7 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nAlso apply the owner's 17 Nov bar now in ORCHESTRATE.md: visual work passes on shipped-game look and speed with performance tripwires; references diagnose, never gate; proof proportional to risk.",
+      "at": "2026-11-18T00:31:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T23:05:22Z"
+    "at": "2026-11-18T00:31:49Z"
   }
 }
