@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Capture-off paired valley route costs. Run under agent_loop.py lock gpu."""
+import argparse
 import json
 import os
-from pathlib import Path
 import statistics
 import run_v1_showcase as showcase
 
@@ -39,17 +39,26 @@ def summary(rows):
 
 
 def main():
-    run = showcase.new_run('culling-cost')
-    route = json.loads(showcase.MOVING_ROUTE.read_text())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--exit', action='store_true', help='measure the populated exit flythrough')
+    args = parser.parse_args()
+    scene = 'exit' if args.exit else 'valley'
+    authored_route = showcase.EXIT_FLYTHROUGH if args.exit else showcase.MOVING_ROUTE
+    run = showcase.new_run(f'culling-cost-{scene}')
+    print(run, flush=True)
+    route = json.loads(authored_route.read_text())
     route['render_extent'] = [1920, 1080]
     route_path = run / 'route.json'
     showcase.write_json(route_path, route)
-    report = {'commit': showcase.git('rev-parse', 'HEAD'), 'contended': True,
+    report = {'commit': showcase.git('rev-parse', 'HEAD'), 'contended': True, 'scene': scene,
               'capture': 'off', 'extent': route['render_extent'], 'order': 'rotating each tick',
-              'warmup_ticks': 179, 'runs': {}}
+              'warmup_ticks': route['origin_tick'] - 1, 'runs': {},
+              'authored_route_sha256': showcase.sha256(authored_route),
+              'measured_route_sha256': showcase.sha256(route_path)}
     report['builds'] = showcase.identities(web=False, built=False)
+    source = showcase.copy_source(run, exit_assets=showcase.EXIT_SOURCE) if args.exit else showcase.SOURCE
     with open(run / 'cook.log', 'w') as log:
-        if showcase.bounded([str(showcase.COOK), 'cook', str(showcase.SOURCE), str(run / 'store')], log, 120):
+        if showcase.bounded([str(showcase.COOK), 'cook', str(source), str(run / 'store')], log, 120):
             raise showcase.Failure('cook failed')
     report['cooked_root'] = showcase.store_root(run / 'store')
     if report['cooked_root'] != route['cooked_root']:
@@ -57,7 +66,7 @@ def main():
     for number in (1, 2):
         for recipe in ('portable', 'apple-tile'):
             name = f'{recipe}-{number}'
-            env = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(run / 'store'),
+            env = dict(os.environ, WGPU_BACKEND='metal', THRUM_SCENE=scene, THRUM_ASSET_STORE=str(run / 'store'),
                        THRUM_CAPTURE_ROUTE=str(route_path), THRUM_CULLING_OUTPUT=str(run / name),
                        THRUM_RECIPE=recipe, THRUM_CULLING_TIMING='on', THRUM_VALLEY_MESHES='off')
             with open(run / f'{name}.log', 'w') as log:
@@ -65,7 +74,14 @@ def main():
                                      '--bench', 'valley_culling'], log, 1200, env=env, cwd=showcase.REPO):
                     raise showcase.Failure(f'bench failed: {run / name}')
             rows = [json.loads(line) for line in (run / name / 'rows.jsonl').read_text().splitlines()]
-            report['runs'][name] = {'header': rows[0], 'summary': summary(rows)}
+            result = summary(rows)
+            if args.exit and (not result['nonempty_prepasses']
+                              or not result['occlusion_hides_slots']['ticks']
+                              or not result['open_no_occlusion_saving']['ticks']):
+                raise showcase.Failure(f'{name}: missing prepass, cover or open samples')
+            report['runs'][name] = {'header': rows[0], 'summary': result,
+                                    'rows_sha256': showcase.sha256(run / name / 'rows.jsonl'),
+                                    'load_end': os.getloadavg()}
             showcase.write_json(run / 'run.json', report)
     print(run / 'run.json')
 
