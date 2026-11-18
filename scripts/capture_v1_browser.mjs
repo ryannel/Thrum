@@ -81,7 +81,8 @@ if (args.scene === 'exit' || spoolRaw) {
   manifest.record_limit = args.scene === 'exit' ? 1800 : args.atmosphere !== 'off' ? 1024 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
-  manifest.export_slots = spoolRaw && frameBytes <= 1280 * 720 * 4 ? 64 : 24;
+  manifest.export_slots = spoolRaw && frameBytes <= 1280 * 720 * 4
+    ? (args.atmosphere !== 'off' ? 128 : 64) : 24;
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
 manifest.effect = args.effect;

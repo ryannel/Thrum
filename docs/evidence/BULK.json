@@ -3955,6 +3955,22 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M6/metal-ground-pan-1x.mp4",
+      "size": 1635460,
+      "sha256": "f36bbd9decc1a750ff1b72121c0a070e2eaf3d673b6ab198fd999cc8c66d188d",
+      "date": "2026-11-18T22:53:39.654377+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M6/metal-scrub-1x.mp4",
+      "size": 3422214,
+      "sha256": "289006fbe2b55dfac794203bf6adb1aa1224e9875f54baba6977cc3435ac5859",
+      "date": "2026-11-18T22:52:56.549815+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/ATMOSPHERE/M9-images/native/sun-sdr/checkpoint-0-png/after.png",
       "size": 2660096,
       "sha256": "599aa56d52c8ddd0cc3aa4f5fdeb9d9b295b87538ea400c7018e6bb99e6a72cd",

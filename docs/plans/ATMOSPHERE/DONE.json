@@ -298,7 +298,7 @@
           "statement": "The same review passes in Chrome on the same route and scrub.",
           "inspect": "Capture the same stops and scrub with Chrome fixed-time and real-time capture, TAAU on. Judge the same list, and note any stop where Chrome and the Mac differ in more than texture profile.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M6/README.md#six-held-chrome-stops",
           "verdict": "",
           "review": "",
           "builder_result": "open"

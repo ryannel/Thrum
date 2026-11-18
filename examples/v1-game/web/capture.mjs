@@ -13,7 +13,8 @@ const atmosphere = query.get('atmosphere') ?? 'off';
 const heldSetup = witness !== 'off' || atmosphere !== 'off';
 const atmosphereMotion = atmosphere === 'scrub' || atmosphere === 'ground-pan';
 const configuredExportSlots = Number(query.get('export-slots'));
-const exportSlots = (scene === 'exit' || heldSetup) && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
+const allowedExportSlots = atmosphereMotion ? [24, 64, 128] : [24, 64];
+const exportSlots = (scene === 'exit' || heldSetup) && allowedExportSlots.includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
   (scene === 'exit' || heldSetup);
 const useAnimationFrame = (scene === 'exit' || atmosphereMotion) && mode === 'realtime' &&

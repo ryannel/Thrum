@@ -99,6 +99,8 @@ def validate(record):
     if not all(record[key] for key in ('starting_revision', 'final_revision', 'cooked_root', 'harness_sha256',
                                        'host', 'load_class', 'history')):
         raise ValueError('missing build, load class or history')
+    if record['harness_sha256'] != sha(ROOT / 'examples/v1-game/examples/atmosphere_cost.rs'):
+        raise ValueError('route timing harness differs from the retained measurement')
     configs = {}
     values = {arm: {stop: [] for stop in STOPS} for arm in set(ORDER)}
     for run in record['runs']:
