@@ -26,7 +26,10 @@ near and far fog [share one Sun term](#condensate-that-meets-the-ground-mist-fog
 [one boundary rule for every consumer](#cloud-light), what each integrator reads, and part XVII. Revised
 that day again after M3 stopped on repeated domes and shelves: a cell's column is
 [a cluster of turrets](#one-weather-field-in-the-air-frame) and the shape noise is
-[a billow field](#one-density-in-m¹), in place of one dome with a fretted skin (part XVIII).
+[a billow field](#one-density-in-m¹), in place of one dome with a fretted skin (part XVIII). Revised that
+day once more after [that revision's review](../../evidence/CLOUDS/design-review.md) (two findings): every
+level of [the weather map](#the-weather-map) holds the query's own column at its texel's centre, and one
+clearing factor takes a cell's coverage to zero with its thickness.
 
 ## The request
 
@@ -400,16 +403,19 @@ with no GPU:
 - **Turrets.** A heaped cloud is several rising heaps of different heights on one base, and its outline is
   theirs. The **turret field** is a second, finer lattice in the air frame, hash-named as the cells' is. Each
   site holds one rounded cap with its own centre, width and height: a few tall and wide, most low and narrow.
-  The field is a function of the air-frame point alone and takes no time, so a cell's envelope raises and
-  lowers the turrets under it. A cell's thickness at a point is the lesser of two: its **dome**, which rises
-  from the cell's rim to its depth at its centre and is the most the cell can hold there, and its depth times
-  its envelope times the turret field. What that leaves thinner than a least share of the cell's depth clears
-  smoothly to nothing, so no sheet or lip stands between turrets or round a rim. The field is read with a
-  footprint, as noise is: as the footprint grows past a turret's width the field tends to one share, so a
-  reader too coarse to resolve a turret sees none and nothing aliases. A point query's footprint is zero.
-  The turret pitch, the least share and that one share are profile constants, as the lattice is. One dome a
-  cell, the rule this replaces, gave every cloud the same outline at a different size
-  ([part XVIII](#check-that-it-can-work)).
+  The field is a function of the air-frame point alone. It takes no time, so a cell's envelope raises and
+  lowers the turrets under it. It takes no footprint, so every reader gets the same value at the same point:
+  the query, and each level of [the weather map](#the-weather-map). A cell's thickness at a point is the
+  lesser of two: its **dome**, which rises from the cell's rim to its depth at its centre and is the most the
+  cell can hold there, and its depth times its envelope times the turret field. What that leaves thinner than
+  a least share of the cell's depth is cleared by one **clearing factor**, which rises smoothly from 0 at the
+  least share to 1 a little above it. The factor multiplies the cell's thickness and its coverage alike,
+  before overlapping cells are combined. So no sheet or lip stands between turrets or round a rim, and a cell
+  that grows through the least share brings its coverage up from zero with its thickness. Coverage left whole
+  wherever any thickness stood would switch a cell on in what a game reads: by 0.27 at one cell's centre
+  however small the step, where under the factor the change shrinks with the step (part XVIII). The turret pitch, the least share and the
+  factor's width are profile constants, as the lattice is. One dome a cell, the rule this replaces, gave every
+  cloud the same outline at a different size ([part XVIII](#check-that-it-can-work)).
 - **The deck.** Layered cloud is a sheet whose thickness follows a smooth evolving noise against a threshold set
   by coverage and type: gaps at a broken deck, none at overcast.
 - **Types** are game data: a table along the type axis giving base height, depth range, liquid water content,
@@ -578,9 +584,31 @@ a clear one with its top at its base, and, apart from it, two presentation value
 placed shape and the weight of its volume form. Compute passes in `simulate` evaluate the same cell, turret and deck rules as the CPU. Because the map lives in
 the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
 the map is refreshed in parts. A coarse level of the tallest top in each region lets a ray step across empty
-air: a region is empty where its tallest top is no higher than the base. Each level reads the turret
-field at its own texel as the footprint, so a level whose texel is wider than a turret holds none, and a cloud
-that far off takes its form from the shape noise alone.
+air: a region is empty where its tallest top is no higher than the base.
+
+**Every level holds the query's column.** On each level a texel holds the field's column at its own centre:
+the point query's answer there, turrets and clearing included. It is never an average over the texel, and
+never a column made by a rule the query does not have. So a centre the query calls clear is stored clear, a
+centre it calls cloudy is stored with its thickness, and the map's check compares the two at the centre on
+every level. What is drawn between centres is the filter's, as
+[what a query promises](#one-weather-field-in-the-air-frame) says.
+
+A level whose texel is wider than a turret, as the first profile's 1,600 m level is against a 1,300 m pitch,
+samples turrets it cannot resolve. It holds the columns its centres land on and misses the rest, and the
+filter joins what it holds into broader heaps than the near levels draw, carved by the same shape noise.
+Three things make that sound ([part XVIII](#check-that-it-can-work)):
+
+- **It keeps the sky's amount.** Over 96 km of the fair sky the far centres are cloudy at 0.131 of points
+  where the field is at 0.128, and the mean thickness is 99 m in both.
+- **It does not flicker.** A level moves by whole texels, so a centre is a fixed point of the air frame, and
+  there the field is continuous in weather time: a far texel's column rises and falls smoothly.
+- **One rule serves every texel.** A share standing in for the turrets a level cannot resolve does not: of
+  the review's two far texels, one needs a share of at most 0.42 to stay clear and the other more than 0.75
+  to keep any cloud.
+
+What the sample changes is a far cloud's heaps: 0.60 of the far texels with cloud somewhere in them have a
+clear centre, so the far level draws fewer and broader heaps, and they change where a cloud drifts from one
+level into the next. M3.2 judges both, and [the second risk](#risks) gives the fixes.
 
 **The map holds nothing of the ground.** With ground condensate a texel also holds each ground row's **air
 factors**, and only those: its extent and the cut of its noise. A row's
@@ -594,8 +622,8 @@ air, never in frames: half a second of weather in the first profile, which is 2 
 every frame at 60×. The Sun's path is bounded the same way, level by level. So a time-lapse refreshes more each
 frame and replaces no texel with one further on in the weather than real time would.
 
-The GPU column matches the CPU evaluator at texel centres, at the tick each part was written, within a tolerance
-that M2 measures first and then asserts; that no part is older than its bound is asserted apart from it.
+The GPU column matches the CPU evaluator at texel centres, on every level, at the tick each part was written, within a tolerance
+that M2 measured and its test states; that no part is older than its bound is asserted apart from it.
 
 ### The Sun's path: one optical-depth product
 
@@ -1399,13 +1427,24 @@ silhouette across its width, both scaled to 1.
   three looks at other pitches, depths and tapers could not change. Its 200 m noise moves that outline 0.036
   of the cloud's height from a single smooth hump, and two clouds' outlines lie 0.074 apart. The same domes
   under a billow field with a 900 m coarsest lobe: 0.062 and 0.138, and the picture is the same domes, lumpier.
-  Turrets under the dome with the same billow field: 0.094 and 0.258, with 2.8 separate tops a cloud for 1.9,
+  Turrets under the dome with the same billow field: 0.090 and 0.243, with 2.8 separate tops a cloud for 1.9,
   and the picture is clusters of heaps, no two alike. In a strip of sky where cells overlap, the built form
   shows the shelf, a shallow cell's dome standing out under a deep one's; with turrets the same two cells are
   low heaps beside a taller one. The drawn
   column is 0.46 to 0.51 of the query's in all three, so the bound a query promises is no looser than it was.
+- **The clearing, in what a game reads.** One mature cell at its own centre, its envelope moved across the
+  value where the turret under it reaches the least share. With the clearing factor on coverage and thickness
+  alike, a step of ±0.02 in the envelope moves coverage 0.0098, and each halving of the step quarters that, to
+  0.00015 at ±0.0025; thickness goes the same way, 11 m to 0.18 m. With coverage whole wherever thickness
+  stands, the rule the review found, coverage moves 0.29 to 0.28 at every step: a switch.
+  [The review's probe](../../evidence/CLOUDS/design-review/turret-query-probe.py), run against the corrected
+  model, finds no jump.
+- **The far level holds the query's column.** Over a 96 km square of the fair sky, the query every 100 m is
+  cloudy at 0.1275 of points with a mean thickness of 99.22 m; at the 3,600 centres of 1,600 m texels, 0.1308
+  and 99.23 m. Cloud lies somewhere in 0.33 of those texels, and 0.60 of them have a clear centre. The
+  review's two texels are stored as the query answers at their centres: clear, and 154.75 m thick.
 - **Unrun:** the engine's light on the new form, so the level band across M3's clouds is not explained here;
-  the detail noise; a view from the ground; motion; turrets at the map's far levels. M3.1 and M3.2 judge those
+  the detail noise; a view from the ground; motion; the far level's clouds as drawn. M3.1 and M3.2 judge those
   in the engine.
 
 ## The system as it runs
@@ -1543,9 +1582,12 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    noise's octaves and the type's depths. If clouds still share an outline, the fixes in order: a wider spread
    of turret heights and widths; a coarser first octave; turrets with lives of their own, by the cell rule one
    level down. Never one dome a cell again, and never a form only the trace has: the query, the map, the Sun's
-   path and the trace read one density. Past the map level whose texel is wider than a turret, a cloud's
-   form is the shape noise's alone; if M3.2's crops show where that begins, the fix is in the levels' texels
-   and sizes, which are profile constants.
+   path and the trace read one density. The map level whose texel is wider than a turret holds
+   [a sample of them](#the-weather-map), so a far cloud's heaps are fewer and broader than a near one's and
+   change where it crosses into that level. If M3.2's crops show where that begins, the fixes in order: a
+   fade between the two levels across a band at the finer one's edge; then the levels' texels and sizes,
+   which are profile constants. Never a column the query does not give: no share standing in for turrets, and
+   no turret field smoothed for a far level.
    Three failed looks on one cue go to the log and end `BLOCKED`.
 3. **The reconstructed layer ghosts or crawls.** Early sign: M3's pan. Fallback: refresh every texel every
    frame at a lower layer scale, which removes the layer's history from the picture.
@@ -1632,7 +1674,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
 | Does the Sun term give clouds their brightness and relief with nothing tuned, and if not, which constant moves? | M3's stills, then M5's at a low Sun; the builder records any constant it changed |
 | Does the lit plane hold steady where the map's column and the eroded cloud disagree? | M3's stills, then M5's at a low Sun |
 | Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | M7's time-lapse |
-| Does a far cloud keep its form past the map level whose texel is wider than a turret? | M3.2's crops |
+| Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | M3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | M1 measures first, beside part G's 1,025 |
 | Does the incident-light meter already see cloud shade? | M8 reads the code and measures |

@@ -451,3 +451,12 @@
   is a billow field in one tiling volume, as shipped clouds form theirs. A billow field on the dome alone left the dome. M3.1 is written
   again to name the cue. M2.2's test compares each map level with the model's column at that level's footprint; its statement stands.
   The level dark band is not explained: risk 12 says what to do first. No interface or Done item changed. The design needs a review.
+
+- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../evidence/CLOUDS/design-review.md)'s two findings on the turret
+  revision. MF1: no share stands in for unresolved turrets. The turret field takes no footprint, and every level of
+  [the weather map](DESIGN.md#the-weather-map) holds the query's column at its texel's centre, as M2 built it; the far level samples
+  turrets, which M3.2 judges. This replaces the entry above's footprint comparison: M2.2's test compares at centres, as written. MF2:
+  one clearing factor scales a cell's coverage with its thickness before cells combine. [Part XVIII](../../evidence/CLOUDS/design-proof/cloud-shape-proof.txt)
+  is corrected and holds both cases; its turret figures moved to 0.090 and 0.243. M3.15 is new. The review listed no Suggestions; of
+  MF1's two routes the point column was taken, since an area value needs a second rule and a new M2 test. No interface or Done item
+  changed. The design needs a review.

@@ -596,6 +596,18 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M3.15",
+          "statement": "Turrets keep what a game reads from the weather. At a point where a growing cell passes the turret clearing, each halving of the step in its envelope shrinks the largest change in coverage, in thickness, in top and in column optical depth by at least the factor the test states, and a coverage that switches on at the clearing fails that assertion. On every level of the GPU weather map, under a profile whose turrets are narrower than the coarsest level's texel, each texel holds the CPU query's column at its own centre within the tolerance the test states, and the coarsest level's centres include clear ones and cloudy ones.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test turret_query && cargo test --locked --offline -p thrum-clouds --test weather_map_gpu",
+          "ask": "Do M1.4's and M2.2's tests still assert what M1 and M2 left, with only expected values, probe points and a stated tolerance moved? Does the map test compare each texel with the point query at its centre, and never with an average or a footprint?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
