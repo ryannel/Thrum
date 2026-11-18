@@ -98,6 +98,12 @@ pub(super) fn record(
     };
     let checkpoints_dir = directory.join("checkpoints");
     std::fs::create_dir(&checkpoints_dir).map_err(|error| error.to_string())?;
+    let last_route_tick = route.keys.last().map_or(0, |key| key.tick);
+    let windows = capture_windows(last_route_tick)?;
+    let windows_dir = directory.join("windows");
+    if !windows.is_empty() {
+        std::fs::create_dir(&windows_dir).map_err(|error| error.to_string())?;
+    }
     let mut log = File::create(directory.join("route.jsonl")).map_err(|error| error.to_string())?;
     write_json_line(
         &mut log,
@@ -117,7 +123,7 @@ pub(super) fn record(
             "presentation_lead_ns": 0,
         }),
     )?;
-    let last = route.origin_tick + route.keys.last().map_or(0, |key| key.tick);
+    let last = route.origin_tick + last_route_tick;
     let mut checkpoints = route.checkpoints.clone().into_iter().peekable();
     host.resume(Duration::ZERO)?;
     let mut pending = Some(route.clone());
@@ -132,9 +138,18 @@ pub(super) fn record(
             break;
         }
         let time = Duration::from_secs_f64(host.route_step_ms(phi) / 1000.0);
-        let capture = checkpoints
-            .peek()
-            .is_some_and(|checkpoint| route.origin_tick + checkpoint.tick == tick + 1);
+        let next_tick = tick + 1;
+        let window = next_tick
+            .checked_sub(route.origin_tick)
+            .is_some_and(|routed| {
+                windows
+                    .iter()
+                    .any(|[first, last]| (*first..=*last).contains(&routed))
+            });
+        let capture = window
+            || checkpoints
+                .peek()
+                .is_some_and(|checkpoint| route.origin_tick + checkpoint.tick == tick + 1);
         if capture {
             host.enable_submitted_capture_from(tick + 1, source)?;
         }
@@ -186,26 +201,26 @@ pub(super) fn record(
                 "checkpoint": checkpoint,
             }),
         )?;
-        if let Some(name) = checkpoint {
+        if capture {
             let mut image = target.submitted_image(host, sample.submission_order, source)?;
-            std::fs::write(checkpoints_dir.join(format!("{name}.identity.json")),
-                serde_json::to_vec_pretty(&serde_json::json!({"source_tick":image.source.tick,"epoch":image.source.epoch,
-                    "timeline":image.source.timeline,"alpha_bits":image.sample.presentation_alpha.to_bits(),
-                    "history_epoch":image.history_epoch,"submission_id":image.sample.submission_order,
-                    "exposure_gpu_words":image.exposure_gpu_words,"capture_source":format!("{source:?}"),
-                    "device_generation":image.device_generation,"presenter_generation":image.presenter_generation,"headroom":1}))
-                    .map_err(|error| error.to_string())?).map_err(|error| error.to_string())?;
-            let suffix = if source == CaptureSource::Sdr {
-                "rgba8"
-            } else {
-                "rgba16f"
-            };
-            std::fs::write(
-                checkpoints_dir.join(format!("{name}.{suffix}")),
-                &image.rgba,
-            )
-            .map_err(|error| error.to_string())?;
-            if source == CaptureSource::Sdr {
+            let identity = serde_json::json!({"source_tick":image.source.tick,"epoch":image.source.epoch,
+                "timeline":image.source.timeline,"alpha_bits":image.sample.presentation_alpha.to_bits(),
+                "history_epoch":image.history_epoch,"submission_id":image.sample.submission_order,
+                "exposure_gpu_words":image.exposure_gpu_words,"capture_source":format!("{source:?}"),
+                "device_generation":image.device_generation,"presenter_generation":image.presenter_generation,"headroom":1});
+            if window {
+                retain_image(
+                    &windows_dir,
+                    &format!("tick-{:06}", frame.tick),
+                    source,
+                    &identity,
+                    &image.rgba,
+                )?;
+            }
+            if let Some(name) = &checkpoint {
+                retain_image(&checkpoints_dir, name, source, &identity, &image.rgba)?;
+            }
+            if let (Some(name), CaptureSource::Sdr) = (&checkpoint, source) {
                 for pixel in image.rgba.as_chunks_mut::<4>().0 {
                     pixel.swap(0, 2);
                 }
@@ -217,7 +232,9 @@ pub(super) fn record(
             }
             host.recycle_submitted_image(image);
             host.disable_submitted_capture();
-            if std::env::var("THRUM_CAPTURE_PRESENT_CONTROL").as_deref() == Ok("on") {
+            if let Some(name) = checkpoint
+                && std::env::var("THRUM_CAPTURE_PRESENT_CONTROL").as_deref() == Ok("on")
+            {
                 let pixels = target.surface_pixels(device, queue)?;
                 std::fs::write(
                     checkpoints_dir.join(format!("{name}.surface-bgra8")),
@@ -231,6 +248,42 @@ pub(super) fn record(
         return Err(format!("route ended before checkpoint {}", missed.name));
     }
     Ok(())
+}
+
+fn capture_windows(last_tick: u64) -> Result<Vec<[u64; 2]>, String> {
+    let Some(value) = std::env::var_os("THRUM_CAPTURE_WINDOWS") else {
+        return Ok(Vec::new());
+    };
+    let windows: Vec<[u64; 2]> =
+        serde_json::from_str(value.to_str().ok_or("capture windows must be UTF-8")?)
+            .map_err(|error| format!("capture windows: {error}"))?;
+    if windows
+        .iter()
+        .any(|[first, last]| first > last || *last > last_tick)
+    {
+        return Err(format!(
+            "capture windows must be ordered endpoints within 0..={last_tick}"
+        ));
+    }
+    Ok(windows)
+}
+
+fn retain_image(
+    directory: &Path,
+    name: &str,
+    source: CaptureSource,
+    identity: &serde_json::Value,
+    rgba: &[u8],
+) -> Result<(), String> {
+    let suffix = if source == CaptureSource::Sdr {
+        "rgba8"
+    } else {
+        "rgba16f"
+    };
+    let identity = serde_json::to_vec_pretty(identity).map_err(|error| error.to_string())?;
+    std::fs::write(directory.join(format!("{name}.identity.json")), identity)
+        .and_then(|()| std::fs::write(directory.join(format!("{name}.{suffix}")), rgba))
+        .map_err(|error| error.to_string())
 }
 
 fn write_ppm(path: &Path, extent: [u32; 2], bgra: &[u8]) -> Result<(), String> {

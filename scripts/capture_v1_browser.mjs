@@ -14,6 +14,7 @@ const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 args.effect = 'off';
+args['retain-raw'] = 'off';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -27,6 +28,8 @@ if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid 
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
 if (!['off','pan','reveal','spawn','stars','scrub'].includes(args.witness) || (args.witness !== 'off' && args.mode !== 'realtime')) throw new Error('Invalid reconstruction witness/mode');
 if (!['off','slab','depth-only'].includes(args.effect)) throw new Error('Invalid effect diagnostic');
+if (!['off', 'on'].includes(args['retain-raw']) || (args['retain-raw'] === 'on' &&
+    (args.scene !== 'exit' || args.mode !== 'realtime' || args.control !== 'ordinary'))) throw new Error('Raw retention requires a realtime exit capture');
 const output = path.resolve(args.output);
 const tmp = await fs.realpath('tmp');
 if (!output.startsWith(tmp + path.sep) || !args.output) throw new Error('Use a new output directory under tmp/');
@@ -81,6 +84,7 @@ execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle]);
 manifest.launcher = { sha256: sha(await fs.readFile(launcher)), scope: 'LaunchServices app identity, preflight must be false before starting Chrome; no permission request' };
 let child, cdp, server, cook, ended = false, failure;
 const spoolRaw = args.scene === 'exit' && args.mode === 'realtime' && args.control === 'ordinary';
+const retainRaw = args['retain-raw'] === 'on';
 const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
 const { receive, pending } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, { slow: args.control === 'slow', rawSpool });
@@ -175,7 +179,11 @@ try {
           raw = await decompress(await fs.readFile(path.join(output, row.file)));
         }
         if (raw.length !== frameBytes || sha(raw) !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
-        if (spoolRaw) {
+        if (retainRaw) {
+          row.file = path.basename(spoolPath);
+          row.offset = i * frameBytes;
+          row.bytes = frameBytes;
+        } else if (spoolRaw) {
           const encoded = await compress(raw, { level: 1 });
           const packed = path.join(output, row.file);
           await fs.writeFile(packed, encoded, { flag: 'wx' });
@@ -184,12 +192,13 @@ try {
         }
       }
       const syncStart = performance.now();
-      for (const row of manifest.records) {
+      if (retainRaw) await rawSpool.sync();
+      else for (const row of manifest.records) {
         const file = await fs.open(path.join(output, row.file), 'r+');
         try { await file.sync(); } finally { await file.close(); }
       }
       manifest.final_sync_ms = performance.now() - syncStart;
-      if (spoolRaw) await fs.unlink(spoolPath);
+      if (spoolRaw && !retainRaw) await fs.unlink(spoolPath);
       manifest.complete = true;
     }
   }
@@ -208,7 +217,7 @@ finally {
   if (manifest.permission_preflight?.screen_recording_before !== false) manifest.complete = false;
   manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: route.render_extent[0] * 4, extent: route.render_extent };
-  manifest.spool_encoding = spoolRaw ? 'raw with deferred gzip' : 'live gzip';
+  manifest.spool_encoding = retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
   manifest.encoded_bytes = manifest.records.reduce((total, row) => total + row.bytes, 0);
   await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
 }

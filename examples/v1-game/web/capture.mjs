@@ -190,6 +190,7 @@ try {
     throw new Error('expected incomplete interval after pending-readback device loss');
   }
   const start = performance.now();
+  if (useAnimationFrame) record.elapsed_origin_ms = start;
   if (control === 'saturation') {
     withholdUntil = start + 2000;
     record.actions.push({ kind: 'withhold readback collection', start_ms: start, end_ms: withholdUntil });
@@ -234,6 +235,7 @@ try {
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
+    if (control === 'off' && scene === 'exit') opportunity.presented = Number(game.presented());
     record.opportunities.push(opportunity);
     ordinal++;
     if (mode === 'realtime' && !useAnimationFrame) ordinal = Math.max(ordinal, Math.floor((performance.now() - start) * 60 / 1000));

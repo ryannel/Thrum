@@ -1,0 +1,19 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "3083a794f837963050dae3e566c788d6a9aad7fa7479309a46c1540cb0654643",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [1, 2],
+  "origin_tick": 31,
+  "start": {"solar_hours": 12},
+  "render_extent": [1280, 720],
+  "keys": [
+    {"tick": 0, "eye": [0, 244.9226672381398, 16], "yaw_degrees": 0, "pitch_degrees": -3.0127875},
+    {"tick": 1, "eye": [0, 244.9226672381398, 16], "yaw_degrees": 0, "pitch_degrees": 0},
+    {"tick": 1202, "eye": [0, 244.9226672381398, 16], "yaw_degrees": 0, "pitch_degrees": 0}
+  ],
+  "cuts": [],
+  "checkpoints": [],
+  "overlay": "off"
+}

@@ -11,6 +11,9 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
                                    visible check: the cooked valley on both targets, not a fallback
   startup [--runs N]               Chrome startup proxy: N fresh browsers, navigation to first observed cooked draw
   moving                           moving proof route (seam 8): native and Chrome twice each, compared per tick
+  ticks [--route flythrough|held] [--window FIRST LAST] [--phase PHASE]
+                                   native fixed route and exact submitted images in inclusive route-tick windows
+  motion [--check]                 record or check the six real-time exit tripwire arms
 """
 
 import argparse
@@ -18,8 +21,10 @@ import base64
 import hashlib
 import http.server
 import json
+import math
 import os
 import shutil
+import shlex
 import signal
 import struct
 import subprocess
@@ -31,6 +36,8 @@ import urllib.parse
 import webbrowser
 import zlib
 from pathlib import Path
+
+import showcase_motion
 
 REPO = Path(__file__).resolve().parent.parent
 PARAMS = REPO / 'examples/v1-game/params'
@@ -44,6 +51,9 @@ WASM = WEB / 'v1_game_bg.wasm'
 CHECKER = REPO / 'scripts/check_v1_browser.mjs'
 BASELINE = REPO / 'docs/evidence/v1-workload/g7-showcase-baseline.json'
 EXIT_BASELINE = REPO / 'docs/evidence/SHOWCASE/M5-exit-baseline.json'
+EXIT_FLYTHROUGH = REPO / 'examples/v1-game/routes/exit-flythrough.json'
+EXIT_HELD = EXIT_FLYTHROUGH.with_name('exit-held.json')
+M5_RUNS = REPO / 'tmp/showcase-m5'
 TOOLCHAIN = 'stable'
 
 # Route order. Each stop's frame on both targets comes from applying its preset: native capture with
@@ -119,9 +129,9 @@ def git(*args):
     return subprocess.run(['git', *args], cwd=REPO, capture_output=True, text=True, check=True).stdout.strip()
 
 
-def new_run(command):
-    RUNS.mkdir(parents=True, exist_ok=True)
-    run = RUNS / f'{command}-{time.strftime("%Y%m%d-%H%M%S")}'
+def new_run(command, parent=RUNS):
+    parent.mkdir(parents=True, exist_ok=True)
+    run = parent / f'{command}-{time.strftime("%Y%m%d-%H%M%S")}'
     run.mkdir()
     return run
 
@@ -485,6 +495,8 @@ def solid_texture(rgb):
 def check(args):
     if args.exit:
         return check_exit(args)
+    if args.refresh_baseline is not None:
+        raise Failure('--refresh-baseline requires --exit')
     stops = route()
     origin = Path(args.source).resolve()
     baseline_path = Path(args.baseline).resolve()
@@ -657,6 +669,8 @@ def check_exit(args):
         raise Failure('exit parity uses its own pinned source and baseline')
     if args.save_baseline == EXIT_BASELINE.exists():
         raise Failure('use --save-baseline exactly once to calibrate the exit check')
+    if args.refresh_baseline is not None and (args.save_baseline or not args.refresh_baseline.strip()):
+        raise Failure('--refresh-baseline requires a calibrated baseline and a nonempty cause')
     run = new_run('exit-check')
     source = copy_source(run, exit_assets=EXIT_SOURCE)
     report = {'passed': False, 'failures': [], 'load_start': os.getloadavg()}
@@ -751,7 +765,9 @@ def check_exit(args):
             save_baseline(EXIT_BASELINE, grids, identity, report, run)
         elif not args.save_baseline:
             baseline = report['baseline'] = compare_baseline(EXIT_BASELINE, grids, identity, thresholds)
-            if baseline['status'] != 'compared' or baseline['over']:
+            if args.refresh_baseline is not None and not failures:
+                refresh_exit_baseline(fixed, grids, report, run, args.refresh_baseline.strip())
+            elif baseline['status'] != 'compared' or baseline['over']:
                 failures.append('exit baseline failed')
     except (Failure, OSError, ValueError, KeyError) as error:
         report['failures'].append(str(error))
@@ -762,6 +778,162 @@ def check_exit(args):
     if not report['passed']:
         raise Failure(f'{", ".join(report["failures"])} (see {run / "run.json"})')
     print(f'PASS: {run / "run.json"}')
+
+
+def refresh_exit_baseline(saved, grids, report, run, cause):
+    if 'refresh' in saved:
+        raise Failure('the M5 exit baseline has already been refreshed')
+    delta = report['baseline']
+    if not any(any(values) for values in delta['stops'].values()):
+        raise Failure('no exit baseline grid moved')
+    saved['refresh'] = {
+        'cause': cause,
+        'before_builds': saved['builds'],
+        'after_builds': report['builds'],
+        'before_file_sha256': sha256(EXIT_BASELINE),
+        'run': run.name,
+        'grid_difference': delta['stops'],
+        'over_thresholds': delta['over'],
+    }
+    saved['grids'] = {target: {stop: pack(cells) for stop, cells in stops.items()}
+                      for target, stops in grids.items()}
+    temporary = EXIT_BASELINE.with_suffix('.partial')
+    temporary.write_text(json.dumps(saved, indent=1) + '\n')
+    temporary.replace(EXIT_BASELINE)
+    delta['refreshed_sha256'] = sha256(EXIT_BASELINE)
+
+
+def locked_capture(resource, command):
+    script = os.environ.get('ORCHESTRATE_SCRIPT')
+    if not script:
+        raise Failure('set ORCHESTRATE_SCRIPT to agent_loop.py for the capture resource locks')
+    return [sys.executable, script, 'lock', resource, '--', *command]
+
+
+def cook_exit(run, source, expected_root):
+    store = run / 'store'
+    with (run / 'cook.log').open('w') as log:
+        if bounded([str(COOK), 'cook', str(source), str(store)], log, 120, cwd=REPO):
+            raise Failure(f'exit cook failed (see {run / "cook.log"})')
+    if store_root(store) != expected_root:
+        raise Failure('exit cooked root differs from the route')
+    return store
+
+
+def ticks(args):
+    route_path = EXIT_HELD if args.route == 'held' else EXIT_FLYTHROUGH
+    route = showcase_motion.load(route_path)
+    last = route['keys'][-1]['tick']
+    windows = args.window
+    if any(not 0 <= first <= end <= last for first, end in windows):
+        raise Failure(f'--window requires ordered route ticks between 0 and {last}')
+    if args.phase is not None and not 0 < args.phase < 1:
+        raise Failure('--phase must be between zero and one')
+    command = locked_capture('gpu', [str(GAME)])
+    run = new_run(f'ticks-{args.route}', M5_RUNS)
+    print(run, flush=True)
+    if not args.no_build:
+        build(run, web=False)
+    builds = identities(web=False, built=not args.no_build)
+    store = cook_exit(run, copy_source(run, exit_assets=EXIT_SOURCE), route['cooked_root'])
+    frames = run / 'frames'
+    env = dict(os.environ, WGPU_BACKEND='metal', THRUM_ASSET_STORE=str(store), THRUM_SCENE='exit',
+               THRUM_RECIPE='portable', THRUM_RECONSTRUCTION='off', THRUM_ROUTE_OVERLAY='off',
+               THRUM_CAPTURE_SOURCE='sdr', THRUM_CAPTURE_DISPLAY_OVERLAY='off',
+               THRUM_CAPTURE_ROUTE=str(route_path), THRUM_CAPTURE_SCENE=str(frames),
+               THRUM_CAPTURE_WINDOWS=json.dumps(windows))
+    env.pop('THRUM_CAPTURE_PHASE', None)
+    if args.phase is not None:
+        env['THRUM_CAPTURE_PHASE'] = str(args.phase)
+    with (run / 'capture.log').open('w') as log:
+        if bounded(command, log, 2400, cwd=REPO, env=env):
+            raise Failure(f'fixed Metal route failed (see {run / "capture.log"})')
+    header, *rows = map(json.loads, (frames / 'route.jsonl').read_text().splitlines())
+    phase = args.phase if args.phase is not None else route['phase'][0] / route['phase'][1]
+    origin = route['origin_tick']
+    if (header['backend'] != 'Metal' or header['mode'] != 'fixed' or len(rows) != last + 1
+            or any(row['route_tick'] != i or row['tick'] != origin + i
+                   or not math.isclose(row['alpha'], phase, abs_tol=1e-4)
+                   or row['submission'] != rows[0]['submission'] + i
+                   for i, row in enumerate(rows))):
+        raise Failure('fixed Metal route did not retain one submission for every routed tick at the requested phase')
+    retained = {}
+    for row in rows:
+        chosen = any(first <= row['route_tick'] <= end for first, end in windows)
+        requested = []
+        if chosen:
+            requested.append(frames / 'windows' / f'tick-{row["tick"]:06}')
+        if row['checkpoint']:
+            requested.append(frames / 'checkpoints' / row['checkpoint'])
+        for stem in requested:
+            identity = showcase_motion.load(stem.with_suffix('.identity.json'))
+            pixels = stem.with_suffix('.rgba8')
+            if (identity['source_tick'] != row['tick'] or identity['alpha_bits'] != row['alpha_bits']
+                    or identity['submission_id'] != row['submission']
+                    or pixels.stat().st_size != math.prod(route['render_extent']) * 4):
+                raise Failure(f'{stem}: submitted image does not match the route log')
+            retained[str(pixels.relative_to(run))] = sha256(pixels)
+    write_json(run / 'run.json', {'builds': builds, 'route': args.route, 'route_sha256': sha256(route_path),
+                                  'cooked_root': route['cooked_root'], 'phase': phase, 'windows': windows,
+                                  'source_ticks': [origin, origin + last], 'retained_rgba_sha256': retained})
+    print(f'PASS: {len(rows)} consecutive routed submissions, {len(retained)} images; {run / "run.json"}')
+
+
+def motion_pair(run, pair, common, on, off, resource, env=None):
+    commands = [shlex.join([*common, '--output', str(run / f'{pair}-{mode}'), *options])
+                for mode, options in [('on', on), ('off', off)]]
+    # The second arm still supplies evidence if the first finished the route with export omissions.
+    command = locked_capture(resource, ['/bin/sh', '-c', '\n'.join(commands)])
+    with (run / f'{pair}.log').open('w') as log:
+        if bounded(command, log, 2400, cwd=REPO, env=env):
+            raise Failure(f'{pair} capture-off arm failed (see {run / f"{pair}.log"})')
+
+
+def motion(args):
+    if args.check:
+        showcase_motion.verify(showcase_motion.load(showcase_motion.RECORD))
+        print(f'PASS: {showcase_motion.RECORD.relative_to(REPO)}')
+        return
+    if git('status', '--porcelain'):
+        raise Failure('commit all tracked and untracked changes before recording motion')
+    locked_capture('gpu', [])  # Check lock support before the build.
+    run = new_run('motion', M5_RUNS)
+    print(run, flush=True)
+    revision = git('rev-parse', 'HEAD')
+    digest = showcase_motion.input_digest()
+    build(run, web=True)
+    builds = identities(web=True, built=True)
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    route = showcase_motion.load(EXIT_FLYTHROUGH)
+    store = cook_exit(run, source, route['cooked_root'])
+    width, height = map(str, route['render_extent'])
+    native = [sys.executable, 'scripts/capture_v1_runtime.py', '--mode', 'realtime', '--binary', str(GAME),
+              '--extent', width, height, '--recipe', 'portable', '--reconstruction', 'off', '--overlay', 'off',
+              '--store', str(store), '--defer']
+    env = dict(os.environ, WGPU_BACKEND='metal', THRUM_CAPTURE_ENCODING='raw')
+    for pair, options in [('mac-route', ['--case', 'exit-route', '--route', str(EXIT_FLYTHROUGH)]),
+                          ('mac-held', ['--case', 'exit-drift'])]:
+        motion_pair(run, pair, [*native, *options], [], ['--observer-only'], 'gpu', env)
+    chrome = ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'realtime', '--scene', 'exit',
+              '--overlay', 'off', '--route-file', str(EXIT_FLYTHROUGH), '--web-root', str(WEB),
+              '--assets-source', str(source), '--cook', str(COOK)]
+    motion_pair(run, 'chrome-route', chrome, ['--retain-raw', 'on'], ['--control', 'off'], 'chrome')
+    if (builds['commit'] != revision or git('rev-parse', 'HEAD') != revision
+            or git('status', '--porcelain') or showcase_motion.input_digest() != digest):
+        raise Failure('the checkout changed during motion recording')
+    arms = {}
+    for pair in showcase_motion.COMPARISONS:
+        for mode in ('on', 'off'):
+            name = f'{pair}-{mode}'
+            arms[name] = showcase_motion.record_arm(run / name, pair == 'chrome-route', mode == 'on', builds)
+    record = {'builds': builds, 'input_sha256': digest, 'cooked_root': route['cooked_root'], 'arms': arms,
+              'timeline_columns': ['elapsed_ms', 'committed_tick', 'phase (capture-on only)'],
+              'longest_interval_columns': ['duration_ms', 'start_elapsed_ms', 'start_tick', 'end_tick']}
+    showcase_motion.verify(record)
+    temporary = run / showcase_motion.RECORD.name
+    write_json(temporary, record)
+    temporary.replace(showcase_motion.RECORD)
+    print(f'PASS: {showcase_motion.RECORD.relative_to(REPO)}')
 
 
 def spread(values):
@@ -1200,6 +1372,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
     commands.add_parser('layout', help='verify the reproducible exit layout against the shipped terrain')
+    fixed = commands.add_parser('ticks', help='record the Metal exit route in fixed mode')
+    fixed.add_argument('--route', choices=('flythrough', 'held'), default='flythrough')
+    fixed.add_argument('--window', nargs=2, action='append', type=int, default=[], metavar=('FIRST', 'LAST'),
+                       help='retain every submission in this inclusive route-tick window (repeatable)')
+    fixed.add_argument('--phase', type=float, help='override the route presentation phase')
+    fixed.add_argument('--no-build', action='store_true', help='use an existing native build for diagnostics')
+    motion_command = commands.add_parser('motion', help='record paired real-time exit motion tripwires')
+    motion_command.add_argument('--check', action='store_true', help='check the retained record without building')
     for name in ('mac', 'chrome', 'check', 'startup', 'moving', 'culling', 'reconstruction'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
@@ -1215,6 +1395,8 @@ def main():
                                            help='write the baseline after a passing run (a reviewed, recorded act); '
                                                 'drift from the old baseline alone does not block it')
     commands.choices['check'].add_argument('--exit', action='store_true', help='check the populated exit scene')
+    commands.choices['check'].add_argument('--refresh-baseline', metavar='CAUSE',
+                                           help='refresh the calibrated exit grids after all three controls pass')
     commands.choices['check'].add_argument('--baseline', default=str(BASELINE),
                                            help='baseline file to compare with or save, relative to the current directory '
                                                 '(default: the checked-in one)')
@@ -1230,8 +1412,8 @@ def main():
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
         {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving, 'culling': culling,
-         'reconstruction': reconstruction, 'layout': layout}[args.command](args)
-    except Failure as error:
+         'reconstruction': reconstruction, 'layout': layout, 'ticks': ticks, 'motion': motion}[args.command](args)
+    except (Failure, OSError, ValueError, KeyError, TypeError, StopIteration) as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)
 
