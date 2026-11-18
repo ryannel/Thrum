@@ -103,12 +103,12 @@
       }
     },
     "M6": {
-      "definitions": "283b930db48a1fd9b5a1d51019fe1168fc64e7b6b68517f28373a0da062ed5fd",
+      "definitions": "df3fb4363f8ee3d712337257a97d41a0ce803459aa9701548934d54dfd187701",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes: one Must Fix in M6.4, wh",
-        "at": "2026-11-18T09:30:51Z"
+        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix f",
+        "at": "2026-11-18T10:42:13Z"
       }
     },
     "M7": {
@@ -208,12 +208,12 @@
       }
     },
     "M10": {
-      "definitions": "3916123c6c723504d8ddb31623e3c9e591d5c086c8af5959dcd0f2dcb3ae485c",
+      "definitions": "8f4676b34a39ae409040005004b4e648ac14c7dea48e49fbc36febbf1146b689",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "SHOWCASE M5 is blocked needing a dependency: 'Fix the Sun-shadow discontinuity and the remaining frame stalls, then veri",
-        "at": "2026-11-18T08:48:12Z"
+        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix f",
+        "at": "2026-11-18T10:42:13Z"
       }
     }
   },
@@ -277,11 +277,15 @@
     {
       "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes: one Must Fix in M6.4, where the fixed H5 numeric comparison rejects a contribution that reads the reflection cube correctly. The cause is gating a handoff on a numeric reference, which the owner's 17 Nov bar rules out: references diagnose, they don't gate. Fix it by checking the handoff by what it is, not by matching a reference: the contribution binds and samples the producer's cube and table (a structural or probe check that a wrong binding, wrong mip or swapped face would fail), plus the visual inspection list. Keep any f64 comparison as a recorded diagnostic with no pass threshold. Don't add new numeric gates elsewhere. Say which Suggestions you took and why.",
       "at": "2026-11-18T09:30:51Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T10:42:13Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T09:30:51Z"
+    "at": "2026-11-18T10:42:13Z"
   },
   "design_history": [
     {
