@@ -608,3 +608,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   sixth guard made through the library. M6.4 written again; M6.7 added for the rule on Metal, with a question that reads both
   tests. The reflection radiance cases stay in the contract, with the reason written down. The review had no new Suggestions. M9's
   note in the plan shrank to its review link. No Done item changed.
+- 2026-11-18 Added M10, ahead of M6, for the lead's task: `SHOWCASE` M5 ended blocked on "Fix the Sun-shadow discontinuity and
+  the remaining frame stalls", and the lead asked for "the smallest milestone item that fixes it without changing the meaning of
+  registered exact references". Read from the code and the layout, not yet from a run: balloons enter the top-down caster height
+  map, the far march reads each as a tower, and a tower appears in one tick as a balloon crosses a texel centre
+  ([arithmetic](../../evidence/ATMOSPHERE/design-proof/horizon-columns.txt)). Selected: a scene marks a mesh row aloft, and the
+  height layer leaves it out. M10's builder confirms the cause first and ends `BLOCKED` if the strip stays. Researched Unreal's
+  far shadow cascades and height-field shadowing. The design has not been reviewed since this change.

@@ -16,9 +16,11 @@ shared sky, Sun, light-transmittance and environment-reflection products."
 14 November for haze, fog and shafts of light; it is track 2 and follows G3s.
 [The air at the ground](#the-air-at-the-ground) governs M9, added the same day. M9 is built before M6: it
 corrects the aerial product where the view meets the ground, which every scene at sea level shows.
+[What the caster height map holds](#what-the-caster-height-map-holds) governs M10, added on 18 November for a
+defect `SHOWCASE` M5 found on the populated valley. M10 is built before M6 and waits on nothing.
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
-plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (M6, M7 and M8) the
+plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (M10, M6, M7 and M8) the
 look and the speed decide: each is judged against its inspection list at the bar of shipped games, with cost as
 tripwire records. An f64 reference is a diagnostic for a picture that looks wrong, and none is a pass mark.
 [Closing G3s](#closing-g3s) and [How the view volume is proved](#how-the-view-volume-is-proved) apply it; the
@@ -823,6 +825,130 @@ the first section says.
 
 **Risk.** Shadow defects have consumed days here before. If the review fails on one item twice, the builder stops
 and reports it instead of opening a new shadow method; a new method is a re-plan with its own cost account.
+
+## What the caster height map holds
+
+M10, added on 18 November 2026. `SHOWCASE` M5 ended blocked on it: its builder's words were "Fix the Sun-shadow
+discontinuity and the remaining frame stalls". The stalls are `SHOWCASE`'s to record; the shadow is this
+module's, which owns the direct-Sun path to receivers.
+
+### Cue
+
+A balloon adrift over the valley shades the ground beneath it with a shadow of its own shape while it is near
+the camera, and with nothing once the ground is beyond the Sun cascades. It never lays a hard dark bar across
+the far ground, and no bar blinks on or off as it drifts. Ridges and mesas shade the far ground as they do
+today. Range: the exit scene's 1,500 balloons, 8 to 23 m across and 65 to 295 m above the terrain, at every
+hour the Sun is up, on the Mac and in Chrome.
+
+### What is wrong today
+
+On the Mac, on the exit flythrough, a dark stair-stepped strip appears across lit ground between committed
+ticks 233 and 234 and stays. A fixed capture with every tick submitted reproduces it, so no missed frame
+causes it ([the record](../../evidence/SHOWCASE/M5-motion-diagnostics.md#reproduced-shadow-transition),
+[the four ticks](../../evidence/SHOWCASE/M5-motion-fixed-shadow-crop.png)). `SHOWCASE` M5's reviewer had
+already noted long ground shadows with "coarse stair steps and broad straight sides" at the shelf and slope
+checkpoints.
+
+The cause below is read from the code and the layout. No run has yet confirmed it, which is why M10's builder
+confirms it first.
+
+- The Sun's three depth layers are drawn from one caster set (`synthetic/scene_graph.rs`, the passes
+  `synthetic Sun shadow near`, `far` and `synthetic Sun horizon heights`). So the third, the top-down caster
+  height map, holds the top of every balloon.
+- Beyond the cascades' reach, which is 512 m past the near plane in a scene that sets no profile, as the exit
+  scene does not, `horizon_visibility` in `synthetic.wgsl` marches that map toward the Sun as a height field:
+  one height for each 32 m texel, read at the nearest texel and taken to be solid down to the ground. A
+  balloon 200 m up is then a tower 32 m square and 200 m tall, and it shades a strip 32 m wide and
+  200 m / tan(Sun elevation) long. The nearest-texel read is what cuts the strip's edge into stairs.
+- The layer is rasterised at texel centres, which stay put in the world because the layer is laid out in
+  whole texels. A balloon is narrower than a texel, so it is in the layer only while it covers a centre. Its
+  drift of 0.4 to 3 cm a tick carries its edge across one, and the whole tower appears or goes in one tick.
+  With each balloon taken as a disc, about 280 of the 1,500 cover a centre at a time, and one starts or stops
+  about every second tick somewhere in the valley
+  ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/horizon-columns.txt)). It happens with the camera
+  held still too.
+
+### Research
+
+- A height field holds one height for each point of the ground, so it can stand for terrain and for what
+  rises from it, and for nothing that has air beneath it. Height-field and horizon shadows are a terrain
+  method wherever they are used
+  ([Snyder and Nowrouzezahrai 2008](https://diglib.eg.org/handle/10.2312/CGF.v27i4pp1275-1283), abstract only).
+- Engines that keep a cheaper shadow for long range choose its casters. Unreal's far shadow cascades draw
+  only what is marked: landscape is in by default and a mesh joins through its own "Far Shadow" setting
+  ([FShadowCascadeSettings](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/FShadowCascadeSettings),
+  [forum, UE 5.3](https://forums.unrealengine.com/t/setting-far-shadow-property-in-c-on-static-mesh-actor-dynamically-spawned-at-runtime/1622509)).
+  Small or flying things cast inside the dynamic shadow distance and not beyond it.
+
+### Mechanism
+
+**The caster height map is the terrain horizon: it holds the ground and what stands on it.** A scene marks a
+mesh row of its entities as **aloft**. An aloft row is drawn into both Sun cascades exactly as now and is
+never drawn into the height layer. A row is not aloft unless marked, so a scene that marks nothing records the
+same three layers and draws the same bytes. The exit scene marks its balloon row.
+
+So beyond the cascades an aloft caster casts no shadow. Inside them it casts as it does today, and its shadow
+fades with the receiver's depth over the last tenth of the reach, as every cascade shadow already does.
+
+| Option | Why not |
+|---|---|
+| Leave out whatever moved this tick | A paused balloon would grow its tower back, and a still thing that floats is as wrong as a moving one |
+| Lengthen the cascades' reach until the far ground is inside them | Two 1024² maps over kilometres lose the contact shadows near the camera, and the tower is still there past the new reach |
+| A second layer for the underside of floating casters | A new shadow method. By [this module's rule](#closing-g3s) that is a re-plan with its own cost account |
+| Filter or soften the height read | The tower stays a tower with a soft edge, and still blinks |
+
+What does not change:
+
+- The fits. `caster_depth`, `caster_height` and the Sun sample uniform keep every caster, aloft or not: the
+  cascades need them, and for the height march the larger bound only lets a march run a little longer. The
+  shader does not change.
+- Culling. An aloft row is left out of the height layer in the same way under Direct, Frustum and Occlusion,
+  so [CULLING's equalities](../CULLING/DESIGN.md) hold.
+- Readers of the layer. The air's shadow heights, a secondary view and `RAY-TRACING`'s traced method read the
+  one layer the frame recorded, as before.
+
+Limits, known and not built here. Only entity mesh rows can be marked. A contribution's own casters, terrain
+and cooked placements, all enter the layer as today, so a placed thing that floats would still drop a tower,
+a steady one. Nothing in the valley does. A balloon's shadow on ground past the reach is absent, as past any
+engine's shadow distance; whether the exit scene wants a longer reach is `SHOWCASE`'s choice of profile, judged
+on the finished image in its M8.
+
+### Check that it can work
+
+The strip can only come from the height layer: it lies on receivers past the reach, where `sun_visibility`
+returns `horizon_visibility` alone, and that function reads nothing but layer 2. With the balloon row out of
+the layer, the layer holds terrain and the still props. Those do not move, and a camera move shifts the layer
+by whole texels, so no texel changes from tick to tick and no far shadow can blink. The still props are a
+few metres tall and the march already allows 4 m for a texel's slope, so they add little, and what they add
+is steady.
+
+**If the cause is another.** The builder first marks the balloon row and replays committed ticks 228 to 240
+on the exit camera with every tick submitted. If the strip still appears, the reading above is wrong: the
+builder writes what each layer holds at ticks 233 and 234 in the log and ends `BLOCKED`. It does not open
+another shadow method.
+
+### Exact baselines
+
+No registered scene has a marked row, so no registered reference moves, and M10.3 holds that. `SHOWCASE`'s own
+exit baseline, coarse grids of its six stops, may move at a stop where a tower's strip stood; `SHOWCASE` M5
+replaces it by its own rule.
+
+### Cost
+
+A scene that marks a row draws that row's bucket in two Sun passes in place of three. A scene that marks
+nothing pays nothing. No figure is asked for.
+
+### How it is proved
+
+- **M10.1**, a test on Metal: with one caster marked aloft above the ground and one unmarked standing on it,
+  the height layer read back equals that of the same scene without the marked caster, and both cascades equal
+  those of the same scene with it unmarked, under each culling mode.
+- **M10.2**, a reviewer's inspection of the exit flythrough with every tick submitted: no strip under a
+  balloon on the far ground, none appearing or vanishing, the near balloons' shadows and the ridges' far
+  shadows still there.
+- **M10.3**, the exact-baseline verifier.
+
+Chrome runs the same route code and shader. `SHOWCASE` M5.9 looks at it there.
 
 ## The view volume: haze, fog and light near the camera
 

@@ -41,3 +41,10 @@
   world overload recovery. The six refreshed Chrome stops match the retained bytes. Complete
   captures still show intermittent submission gaps under shared load.
   [Motion diagnostics](../../evidence/SHOWCASE/M5-motion-diagnostics.md)
+- 2026-11-18 Re-planned M5 for the lead's task, which answers its `needs_dependency` block. The shadow strip at committed
+  ticks 233 to 234 is `ATMOSPHERE`'s, planned there as M10, and M5 now waits for `ATMOSPHERE:M10`. The lead, on the
+  whole-frame gaps: "treat them as a tripwire record labelled with load, not a gate. Rewrite M5.8/M5.9 so they don't block
+  on host scheduling noise." M5.8 and M5.9 are written again to judge motion tick by tick from `fixed` captures of every
+  tick, and M5.11 is new: the real-time takes as a tripwire record. The design gains
+  [Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine). Changing two items clears M5's proof, so its
+  builder claims M5.1 to M5.7 and M5.10 again from the evidence the first review passed. Not yet design-reviewed.

@@ -15,22 +15,24 @@ The launch, the six stops and the route check were built before the loop as mile
 - Assumption: the 8,500 still entities are desert props (boulders, scrub, cacti and standing rocks) and the 1,500 movers are hot-air balloons adrift over the valley. No entity is a character or an animal, because an entity cannot turn or animate in V1. The layout is generated data, so another concept that only translates swaps in by regenerating.
 - Assumption: the exit scene holds exactly 10,000 entities and 1,500 movers, the counts the game already steps, inside the brief's "1,000–2,000 movers".
 - Assumption: "MetalFX, EDR and a quality governor" stay in the exit, so M7 and M8 wait for `APPLE-PRESENTATION`'s last milestone, M11, and through it for M4 to M12. Closing V1 without them would change the exit, which is the owner's call.
-- Assumption: M5 and M6 start as soon as cooked mesh rows (`CONTENT-LOOP:M2`) and culling (`CULLING:M3`) are Done, so the scene is built while the other modules finish. M7 waits for the milestones it builds on (`APPLE-TILE` M12, `APPLE-PRESENTATION`'s last, `ATMOSPHERE` M6 and `CONTENT-LOOP` M3), and only M8 for every module's last milestone. The other choice holds all four until then.
+- Assumption: M5 and M6 start as soon as cooked mesh rows (`CONTENT-LOOP:M2`) and culling (`CULLING:M3`) are Done, so the scene is built while the other modules finish; M5 closes after `ATMOSPHERE:M10`, the shadow fix its review needs. M7 waits for the milestones it builds on (`APPLE-TILE` M12, `APPLE-PRESENTATION`'s last, `ATMOSPHERE` M6 and `CONTENT-LOOP` M3), and only M8 for every module's last milestone. The other choice holds all four until then.
 - Assumption: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how.
 - Assumption: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing.
+- Assumption: before M8 the movers' motion is judged tick by tick, from captures of every tick, and real-time takes are a tripwire record labelled with the machine's load (the lead's reading of the owner's bar of 17 November). Stutter at 1x is judged in M8, with the other builders paused. The other choice judges real-time takes in M5, which waits for a quiet machine.
 - Assumption: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it.
 
 ## M5 The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome
 
-Criteria: M5.1–M5.10 in the done-when file.
-
-- [ ] Add the exit scene as a third game content, chosen by name on the Mac and in Chrome, with the grid and field contents and every existing configuration left exactly as they are.
-- [ ] Sweep first: give the 10,000 entities stand-in meshes at three or more triangle counts and record whole-frame GPU time by the [sizing rule](DESIGN.md#props-are-cooked-mesh-rows-sized-by-measurement). Choose the prop set from the result.
-- [ ] Extend the generator to author the props and the layout: still props on the terrain by a density that falls with distance, movers on closed loops clear of the ground, at most 21 meshes. Keep the valley's source files and cooked root unchanged.
-- [ ] Add the one registered rule that moves each mover along its loop, and put the exit scene through the corrected-run replay test and a simulated hour.
-- [ ] Draw the entities as cooked mesh rows on the bucket route, with the scene's default mode, on the Mac and in Chrome.
-- [ ] Author the exit flythrough route. Add `layout` and `check --exit` to the launcher, with the no-entities control, thresholds set by the fixed rule and the exit baseline file.
-- [ ] Capture the stops and the flythrough on both targets and get a fresh opinion on the placement and the movers before claiming.
+The scene, layout, mover rule, route and checks are built and on main (`1556e66d0`), and M5.1 to M5.7 and M5.10
+passed [the first review](../../evidence/SHOWCASE/M5-review.md). Claim those again from their evidence, renewing
+only what has changed since. What is left is motion: read
+[Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine) and
+[the handoff](../../evidence/SHOWCASE/M5-handoff.md) first. `ATMOSPHERE` M10 took the false strip off the far
+ground and marked the balloon row in `exit_scene.rs`. If `check --exit` now reports drift from the exit baseline
+at a stop, look at the frames, replace the baseline with `--save-baseline` and log the cause; the thresholds
+stay. `scripts/capture_v1_runtime.py` and `scripts/capture_v1_browser.mjs` already take `--mode fixed` with the
+exit route. `motion` is a new launcher command: it takes M5.11's arms and writes
+`docs/evidence/SHOWCASE/M5-motion-record.json`, and `motion --check` reads that file and starts nothing.
 
 ## M6 The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome
 
@@ -54,7 +56,7 @@ Criteria: M7.1–M7.11 in the done-when file.
 
 Criteria: M8.1–M8.11 in the done-when file.
 
-- [ ] Capture stops and motion on all three rows from the exit configuration. Get a fresh opinion against M8.1–M8.5, fix what it finds, and repeat while it finds things that matter.
+- [ ] Capture stops and motion on all three rows from the exit configuration. Take the real-time captures in the sitting with the other builders paused: end `BLOCKED` asking the lead for it, as the project settings say. Get a fresh opinion against M8.1–M8.5, fix what it finds, and repeat while it finds things that matter.
 - [ ] Do everything else, then the two attended items in one sitting: presented intervals and windowed startup on both recipes, then Chrome's visible window.
 - [ ] Write [the exit record](DESIGN.md#the-exit-record) with the visual digest, platform status, known defects and device runs owed.
 - [ ] Bring the maturity ledger's G7 rows and the README to match the record.

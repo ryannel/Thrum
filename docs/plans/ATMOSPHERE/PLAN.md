@@ -1,7 +1,7 @@
 # ATMOSPHERE plan
 
-Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9, M6, M7, M8.
-[Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 to M9 · [log](LOG.md) ·
+Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9, M10, M6, M7, M8.
+[Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 to M10 · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
 ## Open for the owner
@@ -18,6 +18,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
 - Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.
 - Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. The check of 17 November (`docs/evidence/ATMOSPHERE/haze-kind-check.md`) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
+- Assumption: with its false strip gone (M10), a balloon casts no shadow on ground beyond the Sun's shadow maps, about 512 m from the camera in the exit scene. The other choices are a longer reach for that scene, which `SHOWCASE` may set and its M8 judges, or a new far-shadow method for things in the air, which is a re-plan with its own cost.
 - Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -46,6 +47,15 @@ holds its criteria, the finished work and the work left.
 
 ## M9 Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome
 [review](../../evidence/ATMOSPHERE/M9-review.md)
+
+## M10 A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow
+
+Read [What the caster height map holds](DESIGN.md#what-the-caster-height-map-holds) first, and confirm the
+cause before building anything, as it says. `scripts/capture_v1_runtime.py --case exit-route --mode fixed`
+replays the exit camera tick by tick. A scene's mesh table is `SyntheticMeshes`. The bucket route's caster draws are in `synthetic/mesh_route.rs`, which is `CULLING`'s, and
+the balloon row is marked in `examples/v1-game/src/exit_scene.rs`, which is `SHOWCASE`'s:
+[the ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-m10) says what may change in each. M10.1's test is
+in the library and its name contains `aloft_casters`, which the check filters on.
 
 ## M6 The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes
 

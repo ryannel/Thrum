@@ -4,7 +4,8 @@
 [module list](../ARCHITECTURE.md) · [the brief](../BRIEF.md). Governed by
 [the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md), which built the launch and the six-stop route,
 by C04, C05, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), and by
-[exact baselines](../ARCHITECTURE.md#exact-baselines).
+[exact baselines](../ARCHITECTURE.md#exact-baselines). Revised on 18 November 2026 after M5's first review:
+[Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before M8.
 
 ## The request
 
@@ -66,7 +67,7 @@ the exit.
 | Cue | Where it must read | Range | Plausible wrong substitute, and what rejects it |
 |---|---|---|---|
 | **S1 A populated place** | The six stops and the exit flythrough, Mac and Chrome | Dawn to night; near ground to the far slopes | 10,000 entities that exist and are not seen, as today. Rejected by in-view counts at each stop and inspected frames |
-| **S2 Things move** | A held view and the flythrough, in real time | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test and a real-time capture |
+| **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and M8's real-time review |
 | **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback, or a comparison that cannot see a missing prop. Rejected by the game's own report and a no-entities control |
 | **S4 Culling is never seen** | The flythrough with movers moving | Frustum and Occlusion; both recipes; Chrome | Equality on a scene with nothing hidden. Rejected by a non-empty prepass and hidden slots in the rows |
 | **S5 Smooth** | The built-in 120 Hz panel; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie. Rejected by capture-off frame records and OS-reported presented intervals |
@@ -199,6 +200,42 @@ the flythrough with movers moving, on both recipes, and at checkpoints in Chrome
 - **Tripwire.** A row about a quarter slower than M5's baseline at the same stop is investigated (brief decision
   3). No figure is a gate.
 
+### Motion on a shared machine
+
+M5's first review failed its two motion items on real-time takes: a held image for 49.81 ms and a step after
+an 86.31 ms gap on the Mac, and a 92.8 ms gap in Chrome, every submitted image retained
+([review](../../evidence/SHOWCASE/M5-review.md)). The follow-up found two different things
+([diagnostics](../../evidence/SHOWCASE/M5-motion-diagnostics.md)).
+
+- **A shadow that blinks on, in the renderer.** A dark strip appears on the Mac between committed ticks 233
+  and 234 with every tick submitted. It is `ATMOSPHERE`'s, fixed by its M10
+  ([what the caster height map holds](../ATMOSPHERE/DESIGN.md#what-the-caster-height-map-holds)), which M5
+  waits for.
+- **Whole-frame gaps, from the machine.** Complete takes still held gaps: 121.8 and 176.1 ms in Chrome, 54 and
+  70 ms on the Mac, and gaps with capture off as well. Every arm was taken while other builders compiled and
+  tested, at load averages of 4 to 55. Nothing on a shared machine separates the engine's share of such a gap
+  from the scheduler's, and [the project settings](../../../ORCHESTRATE.md) make a timing inside a milestone a
+  tripwire for that reason.
+
+So motion is proved in two parts, and the project's rule for timing decides which part can fail a milestone.
+
+1. **What the engine draws at each tick is judged, and gates.** M5.8 and M5.9 capture the flythrough and the
+   held view in `fixed` mode with every tick submitted, on the Mac and in Chrome. That sequence is the same
+   whatever the machine is doing, so a pop, a jump, a mover through terrain or a shadow that blinks is the
+   engine's and is a finding.
+2. **How evenly real time delivers those frames is recorded, and does not gate before M8.** M5.11 keeps
+   real-time takes on both targets with capture-off arms back to back, their timelines and the load. Its
+   check fails on a missing arm or field, on a take whose world stopped early, and on a median interval more
+   than twice that of the retained arm it repeats. Those arms held the requested 60 Hz: medians of 16.8 and
+   16.7 ms on the Mac and 16.7 ms in Chrome. A long interval in the record is investigated when it is not
+   explained by load, and is never a finding by itself.
+
+In M5, M6 and M7 a reviewer who sees a step in a real-time take reads the take's timeline first. A step the
+elapsed time between two submissions accounts for is a recorded gap. A step it does not account for, or
+content that differs from the `fixed` capture of the same tick, is a finding. Stutter at 1x is judged in M8.2
+and M8.5, and on the built-in display in M8.6 and M8.7. M8 is this module's last milestone, so its real-time
+takes are made in the sitting the project settings give a last milestone, with the other builders paused.
+
 ### Defects found in another module's code
 
 Assembly finds defects no single module could. The builder fixes one in place when the fix keeps that module's
@@ -251,7 +288,8 @@ before it trusts any frame.
 - Every landing here changes covered paths, so every milestone carries the verifier and the builder runs it
   before `land`.
 - This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in M5 and
-  extended to one per row in M7. Each replacement is logged with its cause and hashes.
+  extended to one per row in M7. Each replacement is logged with its cause and hashes. `ATMOSPHERE` M10 takes
+  a balloon's false strip off the far ground, so the exit's may be replaced once in M5 for that cause.
 
 ## Risks
 
@@ -270,8 +308,9 @@ before it trusts any frame.
 ## Proof and builder handoff
 
 - **Targets.** `mac-metal` on both recipes, and `chrome-webgpu`. The iPhone simulator is not a row.
-- **Capture.** T2 engine capture: `fixed` for stops and checkpoints, `realtime` for motion, on the Mac and in
-  Chrome. Frame records are taken with capture off.
+- **Capture.** T2 engine capture on the Mac and in Chrome: `fixed` for stops, checkpoints and M5's tick-by-tick
+  motion, `realtime` for M5.11's record and for motion from M6 on, read as
+  [Motion on a shared machine](#motion-on-a-shared-machine) says. Frame records are taken with capture off.
 - **Reaching the targets.** GPU runs hold the `gpu` lock. Chrome and Instruments start outside the Codex sandbox
   by an approval for each run. A builder refused one leaves the item open and says so. A reviewer refused one has
   the review moved to Claude; a reviewer never judges the builder's captures in place of its own.
