@@ -64,7 +64,10 @@ const manifest = { complete: false, target: 'chrome-webgpu', source: args.source
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (args.scene === 'exit') {
   manifest.record_limit = 1800;
-  manifest.export_slots = 24;
+  // A suspended request still owns its image. Give the 720p motion take a
+  // bounded backlog without increasing the larger or fixed capture profiles.
+  manifest.export_slots = args.mode === 'realtime' && args.control === 'ordinary' &&
+    frameBytes <= 1280 * 720 * 4 ? 64 : 24;
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
 manifest.effect = args.effect;

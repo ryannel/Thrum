@@ -8,7 +8,8 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
-const exportSlots = scene === 'exit' && query.get('export-slots') === '24' ? 24 : 8;
+const configuredExportSlots = Number(query.get('export-slots'));
+const exportSlots = scene === 'exit' && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
 const witness = query.get('witness') ?? 'off';
 const useAnimationFrame = scene === 'exit' && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');

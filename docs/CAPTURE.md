@@ -260,7 +260,7 @@ continuous evidence while the ordinary page loop continues. Each session preflig
 at 16 GiB. Consecutive content qualification must use the consuming workload and retain every attempt.
 
 For `--scene exit --mode realtime`, the ordinary and capture-off arms use the page's animation-frame
-callbacks with GPU pass timing disabled. The ordinary arm transfers up to 24 reusable typed arrays
+callbacks with GPU pass timing disabled. The ordinary 720p SDR arm transfers up to 64 reusable typed arrays
 through a dedicated upload worker. The receiver writes originals at their submission offsets in one
 bounded disk spool. It verifies and compresses each original after the page signals completion.
 
