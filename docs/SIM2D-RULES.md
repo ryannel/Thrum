@@ -50,7 +50,7 @@ fields and lints. Keep platform runners in separate ordinary packages.
 From the repository root:
 
 ```sh
-rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim
+rustup target add --toolchain stable wasm32-unknown-unknown aarch64-apple-ios-sim
 python3 scripts/sim2d_profile.py sync
 python3 scripts/sim2d_profile.py check
 python3 scripts/sim2d_profile.py controls

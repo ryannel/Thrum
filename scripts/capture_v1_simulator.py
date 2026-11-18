@@ -123,7 +123,7 @@ def main():
                 if path.is_file() and path.suffix in ('.rs', '.wgsl', '.toml', '.swift', '.py', '.json'):
                     report['source_files'][str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
         env = dict(os.environ, RUSTC_WRAPPER='')
-        rustc = run(['rustup', 'which', '--toolchain', '1.99.1', 'rustc'])
+        rustc = run(['rustup', 'which', '--toolchain', 'stable', 'rustc'])
         env.update(RUSTC=rustc, PATH=str(Path(rustc).parent) + os.pathsep + env['PATH'])
         if not args.no_build:
             run(['examples/v1-game-ios/ios/build-simulator.sh'], env, 600)

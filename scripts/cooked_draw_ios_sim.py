@@ -81,7 +81,7 @@ def main():
         env = dict(os.environ, RUSTC_WRAPPER='')
         run(['examples/v1-game-ios/ios/build-simulator.sh'], env, 300)
         store = out / 'store'
-        rustc = run(['rustup', 'which', '--toolchain', '1.99.1', 'rustc'])
+        rustc = run(['rustup', 'which', '--toolchain', 'stable', 'rustc'])
         env.update(RUSTC=rustc, PATH=str(Path(rustc).parent) + os.pathsep + env['PATH'])
         if args.visuals:
             from cooked_draw_fixture import sources, cook

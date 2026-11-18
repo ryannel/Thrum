@@ -685,7 +685,7 @@ impl SkyGame {
             });
         game.kept = Some(Box::new(move || {
             kept.lock()
-                .map(|stats| {
+                .map_or_else(|_| Vec::new(), |stats| {
                     kept_errors(&stats, &mut shown)
                         .into_iter()
                         .map(|(generation, error)| {
@@ -693,7 +693,6 @@ impl SkyGame {
                         })
                         .collect()
                 })
-                .unwrap_or_default()
         }));
         #[cfg(target_arch = "wasm32")]
         return Ok(game);

@@ -208,9 +208,10 @@ pub fn check(history: &[Run], run: &Run, rules: &[Rule]) -> Verdict {
 
 /// Read a history file; a missing file is an empty history and malformed lines are skipped.
 pub fn load_history(path: &Path) -> Vec<Run> {
-    std::fs::read_to_string(path)
-        .map(|text| text.lines().filter_map(Run::parse).collect())
-        .unwrap_or_default()
+    std::fs::read_to_string(path).map_or_else(
+        |_| Vec::new(),
+        |text| text.lines().filter_map(Run::parse).collect(),
+    )
 }
 
 /// Append `run` to a history file.

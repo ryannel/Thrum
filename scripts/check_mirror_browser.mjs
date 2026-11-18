@@ -13,7 +13,7 @@ const output = path.resolve(process.env.THRUM_MIRROR_OUTPUT ?? `tmp/scene-views-
 await fs.mkdir(output, { recursive: true });
 const probeFiles = new Map();
 if (mode === 'view') {
-  const rustc = execFileSync('rustup', ['which', '--toolchain', '1.99.1', 'rustc'], { encoding: 'utf8' }).trim();
+  const rustc = execFileSync('rustup', ['which', '--toolchain', 'stable', 'rustc'], { encoding: 'utf8' }).trim();
   const env = { ...process.env, PATH: `${path.dirname(rustc)}:${process.env.PATH}` };
   const messages = execFileSync('cargo', ['test', '--no-run', '--locked', '--offline', '--release',
     '-p', 'mirror-scene', '--test', 'pool_gpu', '--target', 'wasm32-unknown-unknown',

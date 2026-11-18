@@ -16,6 +16,7 @@ import stat
 import tomllib
 
 
+# Release provenance names one exact Rust release; development follows the stable channel.
 VERSION = "1.99.1"
 TARGET = "aarch64-apple-darwin"
 CHANNEL = f"channel-rust-{VERSION}.toml"

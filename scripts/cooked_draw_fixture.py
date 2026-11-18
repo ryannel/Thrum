@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def environment():
     env = dict(os.environ, RUSTC_WRAPPER='')
-    rustc = subprocess.check_output(['rustup', 'which', '--toolchain', '1.99.1', 'rustc'], text=True).strip()
+    rustc = subprocess.check_output(['rustup', 'which', '--toolchain', 'stable', 'rustc'], text=True).strip()
     env.update(RUSTC=rustc, PATH=str(Path(rustc).parent) + os.pathsep + env['PATH'])
     return env
 

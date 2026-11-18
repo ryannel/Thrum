@@ -18,7 +18,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-RUST = Path(subprocess.check_output(["rustup", "which", "--toolchain", "1.99.1", "rustc"], text=True).strip()).parent
+RUST = Path(subprocess.check_output(["rustup", "which", "--toolchain", "stable", "rustc"], text=True).strip()).parent
 ENV = dict(os.environ, PATH=f"{RUST}:{os.environ['PATH']}", RUSTC_WRAPPER="")
 
 

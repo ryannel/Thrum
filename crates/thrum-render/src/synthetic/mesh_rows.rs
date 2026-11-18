@@ -160,8 +160,7 @@ impl MeshRows {
     pub fn report(&self) -> MeshRowReport {
         self.0
             .lock()
-            .map(|state| state.report.clone())
-            .unwrap_or_default()
+            .map_or_else(|_| MeshRowReport::default(), |state| state.report.clone())
     }
 
     /// Queue geometry prepared by the publication owner. An offered publication

@@ -11,7 +11,7 @@ limit=${1:-180}
 repo=$(cd "$(dirname "$0")/.." && pwd)
 work="$repo/tmp/g5-browser-client/page-$(date +%s)"
 mkdir -p "$work"
-PATH="$(dirname "$(rustup which --toolchain 1.99.1 rustc)"):$PATH"
+PATH="$(dirname "$(rustup which --toolchain stable rustc)"):$PATH"
 export PATH
 cd "$repo"
 if lsof -nP -iTCP:8000 -sTCP:LISTEN >/dev/null 2>&1; then

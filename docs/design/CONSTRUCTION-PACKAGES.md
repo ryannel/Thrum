@@ -19,7 +19,7 @@ remain the destination and extension map. A richer provider does not inherit rea
 
 | Area | Concrete initial selection | Implementation/qualification obligation |
 | --- | --- | --- |
-| Host/targets | Rust 1.99.1, winit 0.30.13, wgpu 30.0.1; V1 proof on this M3 Max, the iOS simulator and Chrome; other named candidates after V1 on rented hardware | Resolve/pin full dependency/native toolchains, compile adapters, then qualify actual target behavior |
+| Host/targets | stable Rust (1.99.1 minimum), winit 0.30.13, wgpu 30.0.1; V1 proof on this M3 Max, the iOS simulator and Chrome; other named candidates after V1 on rented hardware | Resolve/pin full dependency/native toolchains, compile adapters, then qualify actual target behavior |
 | Source/world/storage | Ordinary working files admitted as one immutable native source snapshot; private hecs 0.11.2; finite TRS envelope; restart/visible stop-load for first substantive replacement | [FOUNDATION-SPEC](FOUNDATION-SPEC.md): implement native admission/recovery, world and save failure traces; browser authoring follows a named need, while browser play cache and player save remain in scope |
 | Rendering/media | WGSL/Naga ABI, finite material/pipeline plan, Rec.709 photometric transport and joint single-scatter air/fog | [RENDER-SPEC](RENDER-SPEC.md): codec/layout, pipeline preparation, numerical/visual and per-device proof |
 | Play/environment | Rapier adapter, owned clip/IK runtime, Recast/Detour navigation; prescribed sea and finite shallow operator with explicit validity | [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md): implement exact selected operators, compile/notice checks and coupled numerical/cost proof |

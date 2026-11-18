@@ -154,7 +154,7 @@ def main():
     record = {'candidate_commit': args.candidate_commit, 'control_commit': args.control_commit,
         'source_diff': git('diff', args.candidate_commit, args.control_commit),
         'binary_sha256': {n: sha(getattr(args, n)) for n in ('candidate', 'control')},
-        'profile': 'release', 'features': 'default', 'compiler': subprocess.check_output(['rustup', 'run', '1.99.1', 'rustc', '-Vv'], text=True),
+        'profile': 'release', 'features': 'default', 'compiler': subprocess.check_output(['rustup', 'run', 'stable', 'rustc', '-Vv'], text=True),
         'route_sha256': sha(route), 'cooked_root': store_root(args.store), 'runner_sha256': sha(Path(__file__)),
         'started_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
         'pairs': [], 'control_differing_routes': 0, 'passed': False}

@@ -25,7 +25,7 @@ TASK = ROOT / 'tmp/t2-capture-m3'
 def prepare():
     TASK.mkdir(parents=True, exist_ok=True)
     with (TASK / 'proof-build.log').open('w') as log:
-        subprocess.run(['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline',
+        subprocess.run(['rustup', 'run', 'stable', 'cargo', 'build', '--release', '--locked', '--offline',
             '-p', 'v1-game', '--features', 'draw-probe,thrum-render/creation-counters', '-p', 'thrum-cook'],
             cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=600)
         subprocess.run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(TASK / 'valley')],

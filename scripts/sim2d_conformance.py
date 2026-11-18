@@ -54,7 +54,7 @@ def identity():
             "dirty": bool(command(["git", "status", "--porcelain"])),
             "utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "machine": platform.platform(), "load": os.getloadavg(),
-            "rustc": command(["rustup", "run", "1.99.1", "rustc", "--version"]).strip()}
+            "rustc": command(["rustup", "run", "stable", "rustc", "--version"]).strip()}
 
 
 def build_settings(manifest, lock, packages):
@@ -103,9 +103,9 @@ def runner_graph(tree, packages):
 
 def source_inputs():
     """Portable, inspectable inputs of the package-scoped runner build."""
-    metadata = json.loads(command(["rustup", "run", "1.99.1", "cargo", "metadata", "--locked", "--offline", "--format-version", "1"]))
+    metadata = json.loads(command(["rustup", "run", "stable", "cargo", "metadata", "--locked", "--offline", "--format-version", "1"]))
     packages = {p["id"]: p for p in metadata["packages"]}
-    tree = command(["rustup", "run", "1.99.1", "cargo", "tree", "--locked", "--offline", "-p", RUNNER,
+    tree = command(["rustup", "run", "stable", "cargo", "tree", "--locked", "--offline", "-p", RUNNER,
                     "--target", "all", "--edges", "normal,build", "--prefix", "depth", "--no-dedupe", "--format", "|{p}|{f}"])
     selected, graph = runner_graph(tree, packages)
     identities = {(packages[p]["name"], packages[p]["version"], packages[p]["source"]) for p in selected}
@@ -127,13 +127,13 @@ def source_key(inputs=None):
 
 
 def build(target, debug=False):
-    args = ["rustup", "run", "1.99.1", "cargo", "build", "--locked", "--offline", "-p", RUNNER]
+    args = ["rustup", "run", "stable", "cargo", "build", "--locked", "--offline", "-p", RUNNER]
     if not debug:
         args.append("--release")
     triple = {"ios-sim": "aarch64-apple-ios-sim", "chrome-webgpu": "wasm32-unknown-unknown"}.get(target)
     if triple:
         args += ["--target", triple]
-    environment = dict(os.environ, RUSTC=command(["rustup", "which", "--toolchain", "1.99.1", "rustc"]).strip())
+    environment = dict(os.environ, RUSTC=command(["rustup", "which", "--toolchain", "stable", "rustc"]).strip())
     environment.setdefault("RUSTC_WRAPPER", "")
     subprocess.run(args, cwd=ROOT, env=environment, check=True)
     profile = "debug" if debug else "release"
@@ -347,7 +347,7 @@ def record_trace(trace_name, destination):
 
 def allocation_counts():
     """Count optimized warmed calls; no count is a pass/fail threshold."""
-    args = ["rustup", "run", "1.99.1", "cargo", "test", "--locked", "--offline", "--release",
+    args = ["rustup", "run", "stable", "cargo", "test", "--locked", "--offline", "--release",
             "-p", "thrum-sim2d", "--test", "allocations", "--", "--nocapture"]
     output = command(args)
     counts = {name: int(count) for name, count in re.findall(r"^(.+): (\d+) allocations per warmed call$", output, re.MULTILINE)}

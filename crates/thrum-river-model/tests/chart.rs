@@ -5,7 +5,6 @@
 #![expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::needless_range_loop,
     clippy::unwrap_used,
     reason = "test arithmetic over cell indices"
 )]
@@ -81,7 +80,7 @@ fn the_stored_chart_is_the_solve_and_its_wet_cells_are_the_solvers() {
     let (s, _, chart, map) = prepared();
     let z = s.grid().heights();
     let mut wet = 0;
-    for i in 0..z.len() {
+    for (i, _) in z.iter().enumerate() {
         let chart_wet = chart.footprint[i] && chart.levels[i] > z[i];
         if s.is_held(i) {
             // The lake's cells the river runs into are the lake's water in the solve.
@@ -103,7 +102,7 @@ fn the_stored_chart_is_the_solve_and_its_wet_cells_are_the_solvers() {
     }
     println!("{wet} wet cells, all the solver's");
     // The hollow, cut off by ground, is dry in the chart and in the map.
-    for i in 0..z.len() {
+    for (i, _) in z.iter().enumerate() {
         let p = s.grid().point(i);
         if (p[0] - HOLLOW[0]).hypot(p[1] - HOLLOW[1]) < 1.0 {
             assert!(!(chart.footprint[i] && chart.levels[i] > z[i]));
@@ -125,7 +124,7 @@ fn the_map_takes_the_chart_and_joins_it_to_the_lake_at_both_ends_of_its_stage() 
         map.set_stage(0, stage).unwrap();
         let basin = LAKE + stage;
         let (mut joined, mut plain) = (0, 0);
-        for i in 0..z.len() {
+        for (i, _) in z.iter().enumerate() {
             if !chart.footprint[i] {
                 continue;
             }

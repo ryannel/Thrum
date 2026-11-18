@@ -109,7 +109,7 @@ def run(args, engine=ROOT):
                 code = 0
             else:
                 env = dict(os.environ, CARGO_TARGET_DIR=str(stage / "target"), RUSTC_WRAPPER="")
-                cargo = ["rustup", "run", "1.99.1", "cargo"]
+                cargo = ["rustup", "run", "stable", "cargo"]
                 build = subprocess.run([*cargo, "build", "--offline", "--manifest-path", str(game / "Cargo.toml")], cwd=game, env=env)
                 record["build_exit_code"] = build.returncode
                 if build.returncode:

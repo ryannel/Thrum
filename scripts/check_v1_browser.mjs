@@ -1957,7 +1957,7 @@ async function main() {
     execFileSync('sh', ['examples/v1-game/web/build.sh'], { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
   if (args.case === 'exit-scene' && args.cook === 'target/debug/thrum-cook') {
-    execFileSync('rustup', ['run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
+    execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
   }
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -2041,7 +2041,7 @@ async function main() {
           await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
           if (mode === 'effect-after-opaque') {
             await cdp.call('Page.navigate', { url: 'about:blank' }, sessionId);
-            if (args.cook === 'target/debug/thrum-cook') execFileSync('rustup', ['run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
+            if (args.cook === 'target/debug/thrum-cook') execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
             const fixed = path.join(output, 'effect-after-opaque-fixed');
             const log = await fs.open(path.join(output, 'effect-fixed.log'), 'w');
             try {

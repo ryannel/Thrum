@@ -5,7 +5,6 @@
 #![expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::needless_range_loop,
     clippy::unwrap_used,
     clippy::print_stdout,
     reason = "test arithmetic over cell indices; helpers report what they measured"
@@ -56,7 +55,7 @@ fn water_at_rest_over_a_rough_bed_with_dry_ground_stays_at_rest() {
     }
     let mut worst_level = 0.0_f64;
     let mut worst_q = 0.0_f64;
-    for i in 0..nx * nz {
+    for (i, _) in heights.iter().enumerate().take(nx * nz) {
         if heights[i] < level {
             worst_level = worst_level.max((state.depth[i] + heights[i] - level).abs());
         } else {

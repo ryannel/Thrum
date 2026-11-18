@@ -2,7 +2,7 @@
 set -euo pipefail
 cd -- "$(dirname -- "$0")"
 # Use rustup explicitly: some machines put a standalone Cargo ahead of its shims.
-thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
+thrum_rustc="$(rustup which --toolchain stable rustc)"
 export PATH="$(dirname -- "$thrum_rustc"):$PATH"
 # Keep machine-wide Cargo wrappers opt-in for this reproducible launcher.
 # An explicitly supplied RUSTC_WRAPPER still takes precedence.
@@ -26,4 +26,4 @@ esac
 if [ -n "$scene_folder" ]; then
   "${THRUM_PYTHON:-python3}" scripts/scene_package.py --lock "$scene_folder" >/dev/null || exit 1
 fi
-exec rustup run 1.99.1 cargo run --locked --offline --quiet --package xtask -- "$@"
+exec rustup run stable cargo run --locked --offline --quiet --package xtask -- "$@"

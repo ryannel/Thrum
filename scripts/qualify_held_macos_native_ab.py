@@ -34,7 +34,7 @@ _TARGET = "aarch64-apple-darwin"
 
 def _selected_sources():
     rustc = Path(subprocess.check_output(
-        ["rustup", "which", "--toolchain", "1.99.1", "rustc"], text=True,
+        ["rustup", "which", "--toolchain", "stable", "rustc"], text=True,
     ).strip())
     clang = Path(subprocess.check_output(["xcrun", "--find", "clang"], text=True).strip())
     sdk = Path(subprocess.check_output(
@@ -115,7 +115,7 @@ def main():
                 "reusedSealedRoot": args.resume_owner is not None,
             }
         wrapper_build = [
-            "rustup", "run", "1.99.1", "cargo", "build", "--locked", "--offline",
+            "rustup", "run", "stable", "cargo", "build", "--locked", "--offline",
             "--target", _TARGET, "-p", "xtask", "--bin", "rustc_receipt",
         ]
         outer_env = {**os.environ, "RUSTC_WRAPPER": "",
@@ -159,7 +159,7 @@ def main():
         if args.fault_guard:
             env["THRUM_TEST_KILL_HELD_GUARD_DURING_BUILD"] = "1"
         command = [
-            "rustup", "run", "1.99.1", "cargo", "test", "--locked", "--offline",
+            "rustup", "run", "stable", "cargo", "test", "--locked", "--offline",
             "-p", "thrum-cook",
             "admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary",
             "--", "--ignored", "--nocapture",

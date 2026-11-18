@@ -8,8 +8,8 @@ and incomplete intervals fail explicitly.
 Build and cook in this worktree:
 
 ```sh
-rustup run 1.99.1 cargo build --locked --offline --release -p v1-game
-rustup run 1.99.1 cargo build --locked --offline -p thrum-cook
+rustup run stable cargo build --locked --offline --release -p v1-game
+rustup run stable cargo build --locked --offline -p thrum-cook
 target/debug/thrum-cook cook examples/v1-game/assets/showcase tmp/t2-capture-m0/valley
 ```
 
@@ -229,7 +229,7 @@ Build the portable game and cooker, then choose a new output directory under `tm
 
 ```sh
 sh examples/v1-game/web/build.sh
-rustup run 1.99.1 cargo build --locked --offline -p thrum-cook
+rustup run stable cargo build --locked --offline -p thrum-cook
 python3 "${ORCHESTRATE_LOOP:?Set ORCHESTRATE_LOOP from the installed build-milestone skill}" lock gpu --worktree . -- node scripts/capture_v1_browser.mjs --mode realtime --output tmp/t2-capture-m1/my-route
 python3 scripts/package_v1_browser.py --output tmp/t2-capture-m1/my-route
 ```

@@ -52,7 +52,7 @@
       "functional_validation": "M1 and M2 were independently reviewed on Metal, including stored-format equality, slot lifetime and absence, view-local light and shadow products, direct and indirect cooked draws, and composition from main-view marker colours. M3 exercises both knob endpoints on both Metal recipes with actual main draw-buffer equality and a pool-footprint image comparison. Chrome WebGPU matches its own main draw for entities and cooked placements to zero stored colour and depth steps, and passes both marker exposures.",
       "experienced_quality": "M2 passed noon, dawn, dusk and night mirror inspections and five elapsed-time motion routes on Mac Metal Portable. M3 builder inspected eight Chrome fixed poses and ten elapsed-time routes at noon and dusk against Metal Portable. AppleTile visual inspection is not claimed.",
       "platform_performance": {
-        "mac_portable": "Contended capture-off 2560×1440 paired timestamps on Apple M3 Max. Median whole pass sums for zero, one and two views were 9.80, 12.28 and 13.41 ms in the mirror and 11.35, 17.05 and 22.40 ms in the 100,513-instance field.",
+        "mac_portable": "Contended capture-off 2560\u00d71440 paired timestamps on Apple M3 Max. Median whole pass sums for zero, one and two views were 9.80, 12.28 and 13.41 ms in the mirror and 11.35, 17.05 and 22.40 ms in the 100,513-instance field.",
         "mac_apple_tile": "Same device and paired workload, AppleTile selected. The mirror medians were 9.86, 13.41 and 14.90 ms and the field medians were 11.32, 16.55 and 21.82 ms. Contention and the second slot's extra work are recorded.",
         "browser": "No browser performance qualification.",
         "ios": "No simulator or physical iPhone qualification."
@@ -971,7 +971,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "BASELINE-SPEC.md": "79af35ffe0bf3db508aa4833b250667679b947f1d0ba88ac4d19be02f01f36a9",
+        "BASELINE-SPEC.md": "a50adc0252a039ee4b7bbf94b7ed6714bccbba10ec0d5c8010ba6fd357593fc5",
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
@@ -1076,7 +1076,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "BASELINE-SPEC.md": "79af35ffe0bf3db508aa4833b250667679b947f1d0ba88ac4d19be02f01f36a9",
+        "BASELINE-SPEC.md": "a50adc0252a039ee4b7bbf94b7ed6714bccbba10ec0d5c8010ba6fd357593fc5",
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
         "RENDER-SPEC.md": "146e7dfc5b3e7fe8145e51e4755e1ea8a55885a6b0300fc1f7387cbc24ad78de"
       },
@@ -3128,7 +3128,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "BASELINE-SPEC.md": "79af35ffe0bf3db508aa4833b250667679b947f1d0ba88ac4d19be02f01f36a9"
+        "BASELINE-SPEC.md": "a50adc0252a039ee4b7bbf94b7ed6714bccbba10ec0d5c8010ba6fd357593fc5"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Trace/evidence/package schemas, scoped validators and exact platform packaging steps.",
@@ -4157,7 +4157,7 @@
     "contract_revision": "C4",
     "contract_sha256": "acb7b7df1b7454deac4f57add7825e4ed5d2ae5ac9285d19bd3ba51d43c42e1c",
     "specifications": {
-      "BASELINE-SPEC.md": "79af35ffe0bf3db508aa4833b250667679b947f1d0ba88ac4d19be02f01f36a9",
+      "BASELINE-SPEC.md": "a50adc0252a039ee4b7bbf94b7ed6714bccbba10ec0d5c8010ba6fd357593fc5",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
       "RENDER-SPEC.md": "146e7dfc5b3e7fe8145e51e4755e1ea8a55885a6b0300fc1f7387cbc24ad78de",
       "PLAY-ENVIRONMENT-SPEC.md": "a95416862dbcf3705224e5fccdb770abb494a917825333ba0bdcb60a6a2c3134",
@@ -4532,10 +4532,10 @@
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
       "ARCHITECTURE-BRIEF.md": "84521bc5f05fb54fc2a8b572d06fa40df4b406193f4c947d674cc6ae44a05dc0",
       "ARCHITECTURE-DECISIONS.md": "53802e616018f1f3080a394a4178261ba228bd27c63e84962665c3b26428c46d",
-      "BASELINE-SPEC.md": "79af35ffe0bf3db508aa4833b250667679b947f1d0ba88ac4d19be02f01f36a9",
+      "BASELINE-SPEC.md": "a50adc0252a039ee4b7bbf94b7ed6714bccbba10ec0d5c8010ba6fd357593fc5",
       "CAPABILITY-SURVEY.md": "6d04e99e2d9717091f5047bee86ceaf73892f9d8a43365512be9e76c98f2ed76",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
-      "CONSTRUCTION-PACKAGES.md": "9ea1d68812ae04250f6c5477e32a9e90d90c6bf31f811f0bea39ee1bde3d84df",
+      "CONSTRUCTION-PACKAGES.md": "d05ed55c5611e89d487197fe7ce7faec5f9302389f579cd8f2e8972853a2d82a",
       "CONTRACTS.md": "acb7b7df1b7454deac4f57add7825e4ed5d2ae5ac9285d19bd3ba51d43c42e1c",
       "DESIGN-PROGRAMME.md": "f33d149acdd44599c7b5900e4d52e64f403cf2d026d1275facc8954f29b029f9",
       "ENGINE-EXPERIENCE.md": "71dd5bd287d5b2f8eca1ac9e06db4c2257adf322944da9401afc64a00a5ce7cd",

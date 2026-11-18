@@ -2,13 +2,13 @@
 set -euo pipefail
 cd -- "$(dirname -- "$0")/../../.."
 
-thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
+thrum_rustc="$(rustup which --toolchain stable rustc)"
 export PATH="$(dirname -- "$thrum_rustc"):$PATH"
 export RUSTC="$thrum_rustc"
 thrum_plist=examples/v1-game-ios/ios/Info.plist
 thrum_min_ios="$(plutil -extract MinimumOSVersion raw -expect string "$thrum_plist")"
 export IPHONEOS_DEPLOYMENT_TARGET="$thrum_min_ios"
-rustup run 1.99.1 cargo build --locked --offline --release --package v1-game-ios --lib --target aarch64-apple-ios-sim
+rustup run stable cargo build --locked --offline --release --package v1-game-ios --lib --target aarch64-apple-ios-sim
 
 thrum_target="${CARGO_TARGET_DIR:-$PWD/target}"
 thrum_out="$thrum_target/v1-game-ios-sim"

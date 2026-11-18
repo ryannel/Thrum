@@ -488,7 +488,7 @@ impl SceneContribution for DiagnosticEffect {
         });
         let mut pipelines = Vec::new();
         let mut groups = Vec::new();
-        for index in 0..8 {
+        for (index, pass) in graph.passes.iter().enumerate().take(8) {
             let source = shader(index);
             let module = surface
                 .device
@@ -497,7 +497,7 @@ impl SceneContribution for DiagnosticEffect {
                     source: wgpu::ShaderSource::Wgsl(source.into()),
                 });
             let pipeline = surface.device.compute(&wgpu::ComputePipelineDescriptor {
-                label: Some(&graph.passes[index].name),
+                label: Some(&pass.name),
                 layout: None,
                 module: &module,
                 entry_point: Some("main"),
@@ -554,7 +554,7 @@ impl SceneContribution for DiagnosticEffect {
                         surface
                             .device
                             .create_bind_group(&wgpu::BindGroupDescriptor {
-                                label: Some(&graph.passes[index].name),
+                                label: Some(&pass.name),
                                 layout: &layout,
                                 entries: &entries,
                             }),

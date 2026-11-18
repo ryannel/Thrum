@@ -16,7 +16,7 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "tmp/transport"
-RUST_BIN = Path(subprocess.check_output(["rustup", "which", "--toolchain", "1.99.1", "rustc"], text=True).strip()).parent
+RUST_BIN = Path(subprocess.check_output(["rustup", "which", "--toolchain", "stable", "rustc"], text=True).strip()).parent
 ENV = {**os.environ, "PATH": str(RUST_BIN) + os.pathsep + os.environ["PATH"], "RUSTC_WRAPPER": ""}
 SIM = "47494973-E92C-4194-9DE7-3C557951B608"
 

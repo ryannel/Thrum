@@ -54,13 +54,13 @@ def configuration_errors(directory, manifest, allowed):
 
 def clippy(manifest, target, profile):
     rustc = Path(subprocess.check_output(
-        ["rustup", "which", "--toolchain", "1.99.1", "rustc"], text=True).strip())
+        ["rustup", "which", "--toolchain", "stable", "rustc"], text=True).strip())
     # Match ./dev when a standalone compiler or Clippy is ahead of the rustup shims.
     environment = dict(os.environ, RUSTC=str(rustc), RUSTC_WRAPPER="",
                        PATH=os.pathsep.join([str(rustc.parent), os.environ["PATH"]]),
                        CLIPPY_CONF_DIR=str(manifest.parent))
     triple = "host-tuple" if target == "native" else target
-    result = subprocess.run(["rustup", "run", "1.99.1", "cargo", "clippy", "--offline",
+    result = subprocess.run(["rustup", "run", "stable", "cargo", "clippy", "--offline",
                              "--manifest-path", str(manifest), "--target", triple, "--profile", profile,
                              "--all-targets", "--no-deps", "--",
                              *[flag for lint in LINTS for flag in ["-F", f"clippy::{lint}"]]],

@@ -1319,7 +1319,7 @@ impl RegisteredWorld {
         if !self.has_changes_since(since, current) {
             return false;
         }
-        for word in 0..self.change_frames[0].words.len() {
+        for (word, _) in self.change_frames[0].words.iter().enumerate() {
             let mut changed = 0;
             for tick in since + 1..=current {
                 changed |= self.change_frames[change_frame_index(tick)].words[word];

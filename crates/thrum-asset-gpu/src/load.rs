@@ -161,8 +161,7 @@ impl Mailbox {
         let superseded = self
             .0
             .lock()
-            .map(|mut slot| slot.replace(Ok(set)))
-            .unwrap_or_default();
+            .map_or_else(|_| None, |mut slot| slot.replace(Ok(set)));
         drop(superseded);
     }
 
@@ -505,8 +504,7 @@ impl Loader {
             let shown = rows
                 .shown
                 .lock()
-                .map(|shown| shown.clone())
-                .unwrap_or_default();
+                .map_or_else(|_| Vec::default(), |shown| shown.clone());
             let retained: HashMap<_, _> = shown.iter().cloned().collect();
             for (index, name) in rows.names.iter().enumerate() {
                 let hash = source

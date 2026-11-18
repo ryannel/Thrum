@@ -8,7 +8,6 @@
 //! The expected heights are worked out here from Manning's relation at the solver's own depths
 //! and speeds, with this file's arithmetic, not the solver's.
 #![expect(
-    clippy::needless_range_loop,
     clippy::cast_precision_loss,
     reason = "test arithmetic; the test reports what it checked"
 )]
@@ -39,7 +38,7 @@ fn the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the
     let z = grid.heights();
     let (mut worst, mut most_share, mut checked) = (0.0f64, 0.0f64, 0);
     let (mut riffle, mut pool) = (Vec::new(), Vec::new());
-    for i in 0..z.len() {
+    for (i, _) in z.iter().enumerate() {
         let gains = s.gains[i];
         if !s.wet[i] {
             // A dry cell carries none.
@@ -155,7 +154,7 @@ fn each_sample_of_a_river_file_carries_its_own_gains() {
             } else {
                 &r.upper[k - 1].gains
             };
-            for i in 0..z.len() {
+            for (i, _) in z.iter().enumerate() {
                 if r.footprint[i] && x.wet[i] && x.reach_of[i].is_some() {
                     assert_eq!(gains[i], x.gains[i]);
                     compared += 1;

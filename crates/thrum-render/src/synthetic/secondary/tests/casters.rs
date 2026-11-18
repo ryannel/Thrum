@@ -263,8 +263,8 @@ fn scene() -> SyntheticScene {
     scene.instances[3] = box_instance(3, [2.0, 3.0, 30.0], [-1.0, 3.0, 1.0]);
     // Every outlier is far outside both light volumes, but still inside the
     // shared height field, so admission cannot silently remove it first.
-    for slot in 4..68 {
-        scene.instances[slot] = box_instance(
+    for (slot, instance) in scene.instances.iter_mut().enumerate().take(68).skip(4) {
+        *instance = box_instance(
             u32::try_from(slot).expect("small scene"),
             [4000.0 + slot as f32 * 10.0, 0.0, 4000.0],
             [0.5; 3],

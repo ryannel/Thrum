@@ -133,9 +133,9 @@ impl Layer {
         ];
         reads[0].range = 0..4;
         reads[1].range = 0..4;
-        for resource in 3..6 {
+        for (resource, entry) in graph.resources.iter().enumerate().take(6).skip(3) {
             let mut read = access(resource, AccessKind::SampledRead);
-            if let ResourceDescriptor::Texture { layers, .. } = graph.resources[resource].0 {
+            if let ResourceDescriptor::Texture { layers, .. } = entry.0 {
                 read.range = 0..u64::from(layers);
             }
             reads.push(read);

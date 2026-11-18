@@ -31,7 +31,7 @@ def build_base():
         with tarfile.open(fileobj=io.BytesIO(archive)) as tree:
             tree.extractall(source, filter='data')
     env = dict(os.environ, RUSTC_WRAPPER='')
-    run(['rustup', 'run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'v1-game', '-p', 'thrum-cook'], source, env)
+    run(['rustup', 'run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'v1-game', '-p', 'thrum-cook'], source, env)
     return source
 
 
@@ -55,7 +55,7 @@ def equal_route(first, second):
 def off_parity(target, output):
     base = build_base()
     env = dict(os.environ, RUSTC_WRAPPER='')
-    run(['rustup', 'run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'v1-game', '-p', 'thrum-cook'], env=env)
+    run(['rustup', 'run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'v1-game', '-p', 'thrum-cook'], env=env)
     store = TASK / 'store'
     if not (store / 'manifest.json').exists():
         run([ROOT / 'target/debug/thrum-cook', 'cook', ROOT / 'examples/v1-game/assets/showcase', store])
@@ -106,7 +106,7 @@ def cost(target, output):
         run(['sh', 'examples/v1-game/web/build.sh'], env=dict(os.environ, RUSTC_WRAPPER=''))
         run(['node', 'scripts/check_v1_browser.mjs', '--case', 'environment-cost', '--output', output / 'browser'])
         return
-    run(['rustup', 'run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '--release', '-p', 'v1-game', '-p', 'thrum-cook'], env=dict(os.environ, RUSTC_WRAPPER=''))
+    run(['rustup', 'run', 'stable', 'cargo', 'build', '--locked', '--offline', '--release', '-p', 'v1-game', '-p', 'thrum-cook'], env=dict(os.environ, RUSTC_WRAPPER=''))
     store = TASK / 'store'
     if not store.exists():
         run([ROOT / 'target/release/thrum-cook', 'cook', ROOT / 'examples/v1-game/assets/showcase', store])

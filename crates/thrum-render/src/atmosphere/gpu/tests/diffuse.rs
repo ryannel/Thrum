@@ -457,8 +457,8 @@ pub(in crate::atmosphere) fn integrate(
                     for (i, value) in b.iter().enumerate() {
                         result.coefficients[i][c] += energy * value;
                     }
-                    for i in 0..14 {
-                        result.direct[i][c] += energy * dot(n, normal(i)).max(0.0);
+                    for (i, direct) in result.direct.iter_mut().enumerate().take(14) {
+                        direct[c] += energy * dot(n, normal(i)).max(0.0);
                     }
                 }
             }

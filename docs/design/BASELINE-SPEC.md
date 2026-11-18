@@ -144,8 +144,8 @@ acceptance is [agent visual review](AI-DEVELOPMENT.md#visual-review-and-human-st
 
 ## Concrete host and delivery selection
 
-Select Rust 1.99.1 as the initial compiler candidate, pinned by exact rust-toolchain release when implementation
-starts; matching rustfmt/clippy accompany it. A resolved Cargo.lock, dependency checksums/features and native SDK/NDK
+Development follows the stable Rust channel (owner, 18 Nov 2026), with 1.99.1 as the minimum `rust-version`;
+matching rustfmt/clippy accompany it. A release build records the exact compiler version it used. A resolved Cargo.lock, dependency checksums/features and native SDK/NDK
 versions belong to every reproducible build. A pinned choice is not evidence that the full dependency set compiles.
 [The official Rust release](https://blog.rust-lang.org/2026/10/15/Rust-1.99.1/) establishes version availability.
 

@@ -44,7 +44,7 @@ WASM = WEB / 'v1_game_bg.wasm'
 CHECKER = REPO / 'scripts/check_v1_browser.mjs'
 BASELINE = REPO / 'docs/evidence/v1-workload/g7-showcase-baseline.json'
 EXIT_BASELINE = REPO / 'docs/evidence/SHOWCASE/M5-exit-baseline.json'
-TOOLCHAIN = '1.99.1'
+TOOLCHAIN = 'stable'
 
 # Route order. Each stop's frame on both targets comes from applying its preset: native capture with
 # THRUM_CAPTURE_PARAMS, Chrome through the checker's route case. Values live only in the presets.

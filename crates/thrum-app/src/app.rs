@@ -1226,7 +1226,10 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 return;
             }
             UserEvent::FilesSaved => {
-                let kinds = self.watch.as_ref().map(FileWatch::take).unwrap_or_default();
+                let kinds = self
+                    .watch
+                    .as_ref()
+                    .map_or_else(Default::default, FileWatch::take);
                 if let Err(error) = file_watch::deliver(self, kinds, true) {
                     self.error = Some(error);
                     event_loop.exit();

@@ -29,12 +29,12 @@ THRUM_ASSET_STORE=tmp/v1-valley THRUM_SCENE=valley cargo run --locked -p v1-game
 
 These are the real cooker and game binary. The scene is still a visual work in progress; transport remains after V1.
 
-Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or newer:
+Install stable Rust through rustup (with rustfmt and Clippy) and Python 3.11 or newer:
 
 ```sh
-rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
-rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim
-rustup run 1.99.1 cargo fetch --locked
+rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+rustup target add --toolchain stable wasm32-unknown-unknown aarch64-apple-ios-sim
+rustup run stable cargo fetch --locked
 ./dev check
 ```
 

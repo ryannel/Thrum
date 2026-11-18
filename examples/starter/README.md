@@ -13,7 +13,7 @@ On a Mac, from the repository root:
 ./dev starter
 ```
 
-If this is a fresh checkout, first run `rustup run 1.99.1 cargo fetch --locked` once (see
+If this is a fresh checkout, first run `rustup run stable cargo fetch --locked` once (see
 [CONTRIBUTING](../../CONTRIBUTING.md)). `./dev starter` is `./dev scene examples/starter`, which:
 
 1. builds `thrum-starter` and the `thrum-cook` cooker in release mode;
@@ -95,9 +95,9 @@ After that first run, rebuild, format and lint without opening a window (before 
 package is not in `Cargo.lock` yet):
 
 ```sh
-rustup run 1.99.1 cargo build --locked --release -p thrum-<name>
-rustup run 1.99.1 cargo fmt -p thrum-<name>
-rustup run 1.99.1 cargo clippy --locked -p thrum-<name> --all-targets -- -D warnings
+rustup run stable cargo build --locked --release -p thrum-<name>
+rustup run stable cargo fmt -p thrum-<name>
+rustup run stable cargo clippy --locked -p thrum-<name> --all-targets -- -D warnings
 ```
 
 Count your lines after formatting, since rustfmt can add some.
@@ -235,8 +235,8 @@ Wasm, cooks and watches `assets/`, and serves the page and asset store on loopba
 Install the matching tools first, from the repository root:
 
 ```sh
-rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
-rustup run 1.99.1 cargo install wasm-bindgen-cli --version 0.2.129 --locked
+rustup target add --toolchain stable wasm32-unknown-unknown
+rustup run stable cargo install wasm-bindgen-cli --version 0.2.129 --locked
 ```
 
 Keep the scene command running while the page is open; Ctrl-C stops both servers and the watcher.

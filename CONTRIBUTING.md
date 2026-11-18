@@ -1,7 +1,7 @@
 # Contributing to Thrum
 
-Use Rust 1.99.1 and Python 3.11+. `./dev` selects the pinned Rust toolchain even if a standalone
-Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. Run `rustup run 1.99.1 cargo fetch --locked` once on a clean copy; checks then use locked offline Cargo commands.
+Use stable Rust and Python 3.11+. `./dev` selects the stable rustup toolchain even if a standalone
+Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. Run `rustup run stable cargo fetch --locked` once on a clean copy; checks then use locked offline Cargo commands.
 
 The Bash `./dev` launcher defaults to an empty `RUSTC_WRAPPER`, overriding machine-wide Cargo wrapper configuration.
 Set `RUSTC_WRAPPER` explicitly when opting into a compiler wrapper for a particular invocation.
@@ -23,7 +23,7 @@ fingerprints after revision changes; the gate therefore does not reuse that quer
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before `./dev check`, run
-`rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim`
+`rustup target add --toolchain stable wasm32-unknown-unknown aarch64-apple-ios-sim`
 to install the rule guard's cross-compilation targets.
 For actual Chrome function: build with `sh examples/v1-game/web/build.sh`, then run
 `node scripts/check_v1_browser.mjs --case all --output tmp/browser-check` (new output directory, Node 24, this M3 Max).
@@ -33,7 +33,7 @@ The compile alone proves no browser runtime behavior. The GitHub Actions
 workflow is manual-only by owner decision; it describes Linux, macOS and Windows checks, plus Wasm
 compilation. Run `./dev check` locally before committing. A configured job is not evidence it has run.
 On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets
-`aarch64-apple-ios`, `aarch64-apple-ios-sim` and `aarch64-linux-android` installed with `rustup target add --toolchain 1.99.1`.
+`aarch64-apple-ios`, `aarch64-apple-ios-sim` and `aarch64-linux-android` installed with `rustup target add --toolchain stable`.
 It compiles only `thrum-core`; app packages, native activity/UI, devices and lifecycle remain separate checks.
 `THRUM_PYTHON` can select the Python executable. Build products use `target/`, or an explicitly
 owned `CARGO_TARGET_DIR`. `cargo clean` affects that build directory; inspect ownership before cleanup.

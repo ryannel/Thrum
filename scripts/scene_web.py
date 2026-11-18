@@ -18,7 +18,7 @@ def main(folder):
     scene_output = Path(os.environ.get('THRUM_SCENE_OUTPUT', str(target / 'scenes' / package))).resolve()
     web = scene_output / 'web'
     web.mkdir(parents=True, exist_ok=True)
-    cargo = ['rustup', 'run', '1.99.1', 'cargo']
+    cargo = ['rustup', 'run', 'stable', 'cargo']
     subprocess.run(cargo + ['build', '--locked', '--offline', '--release', '-p', package,
                            '--bin', binary, '--target', 'wasm32-unknown-unknown'], check=True)
     bindgen = shutil.which('wasm-bindgen') or str(Path.home() / '.cargo/bin/wasm-bindgen')

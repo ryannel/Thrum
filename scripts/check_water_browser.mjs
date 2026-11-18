@@ -172,8 +172,8 @@ try {
   };
   for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
   if(mode==='first-frame'||mode==='frames'){
-    const rustc=execFileSync('rustup',['which','--toolchain','1.99.1','rustc'],{encoding:'utf8'}).trim();
-    execFileSync('rustup',['run','1.99.1','cargo','build','--release','--locked','--offline','-p','water-scene','--example','field_oracle'],{stdio:'inherit',env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}});
+    const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
+    execFileSync('rustup',['run','stable','cargo','build','--release','--locked','--offline','-p','water-scene','--example','field_oracle'],{stdio:'inherit',env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}});
     await capture('first',0,true);
     if(mode==='frames'){
       await capture('between',1000/240,true);await capture('repeat',0,true);const beforeHide=await capture('next',1000/120,true);

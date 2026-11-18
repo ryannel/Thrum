@@ -516,10 +516,9 @@ fn judge(case: &str, counters: &Value, offenders: &[Value], peer: &Value) -> Vec
             expect(offenders.len() == 1, "expected one offender link");
             for o in offenders {
                 expect(o["reliable"] == 1, "the partial message was delivered");
-                let events: Vec<&str> = o["events"]
-                    .as_array()
-                    .map(|e| e.iter().map(|e| e[1].as_str().unwrap_or("")).collect())
-                    .unwrap_or_default();
+                let events: Vec<&str> = o["events"].as_array().map_or_else(Vec::new, |e| {
+                    e.iter().map(|e| e[1].as_str().unwrap_or("")).collect()
+                });
                 expect(
                     events == ["Open", "Closed(Peer(9))"],
                     "the stall did not end with the offender's close",

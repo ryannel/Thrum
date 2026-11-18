@@ -342,20 +342,18 @@ impl Target {
         main: &wgpu::ShaderModule,
         secondary_source: Option<&str>,
     ) -> MeshPipelines {
-        let secondary = secondary_source
-            .map(|source| {
-                let module = self
-                    .device
-                    .create_shader_module(wgpu::ShaderModuleDescriptor {
-                        label: Some("cooked secondary mesh"),
-                        source: wgpu::ShaderSource::Wgsl(source.into()),
-                    });
-                self.secondary
-                    .iter()
-                    .map(|view| mesh_pipeline(&self.device, view, &module))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let secondary = secondary_source.map_or_else(Default::default, |source| {
+            let module = self
+                .device
+                .create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label: Some("cooked secondary mesh"),
+                    source: wgpu::ShaderSource::Wgsl(source.into()),
+                });
+            self.secondary
+                .iter()
+                .map(|view| mesh_pipeline(&self.device, view, &module))
+                .collect()
+        });
         MeshPipelines {
             main: mesh_pipeline(&self.device, &self.main, main),
             secondary,

@@ -22,9 +22,9 @@ cargo_target=$build_root
 if [ -n "$features" ]; then
   cargo_target=$build_root/v1-game-dev-material
 fi
-rustc_path=$(rustup which rustc --toolchain 1.99.1)
+rustc_path=$(rustup which rustc --toolchain stable)
 # shellcheck disable=SC2086 # $features is empty or one flag and its value
-RUSTC="$rustc_path" rustup run 1.99.1 cargo build -p v1-game --lib --release --target wasm32-unknown-unknown --locked --offline --target-dir "$cargo_target" $features
+RUSTC="$rustc_path" rustup run stable cargo build -p v1-game --lib --release --target wasm32-unknown-unknown --locked --offline --target-dir "$cargo_target" $features
 mkdir -p "$build_root/$web"
 if command -v wasm-bindgen >/dev/null 2>&1; then
   bindgen_bin=wasm-bindgen
