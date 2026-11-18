@@ -144,6 +144,14 @@ impl InstanceUpload {
         self.active_count
     }
 
+    /// The accepted rows and logical slots the vertex stage will actually read.
+    pub(super) fn active_rows(&self) -> impl Iterator<Item = (u32, &[u8; abi::INSTANCE_BYTES])> {
+        self.physical_to_slot[..self.active_count as usize]
+            .iter()
+            .copied()
+            .zip(self.packed.as_chunks::<{ abi::INSTANCE_BYTES }>().0)
+    }
+
     pub(super) fn two_sided_count(&self) -> usize {
         self.active_two_sided
     }

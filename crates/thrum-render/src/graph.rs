@@ -32,6 +32,8 @@ pub use texture::TextureKind;
 /// Immutable physical properties required to reuse a transient allocation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResourceDescriptor {
+    /// A device-owned acceleration structure, with a single unit of validity.
+    AccelerationStructure,
     /// A buffer, with ranges expressed in bytes.
     Buffer {
         /// Total byte capacity.
@@ -64,6 +66,7 @@ pub enum ResourceDescriptor {
 impl ResourceDescriptor {
     fn units(&self) -> u64 {
         match self {
+            Self::AccelerationStructure => 1,
             Self::Buffer { bytes, .. } => *bytes,
             Self::Texture {
                 layers,
@@ -90,6 +93,9 @@ impl ResourceDescriptor {
     }
     fn supports(&self, kind: AccessKind) -> bool {
         match self {
+            Self::AccelerationStructure => {
+                matches!(kind, AccessKind::AccelerationBuild | AccessKind::RayQuery)
+            }
             Self::Buffer { usage, .. } => match kind {
                 AccessKind::CopyRead => usage.contains(wgpu::BufferUsages::COPY_SRC),
                 AccessKind::CopyWrite => usage.contains(wgpu::BufferUsages::COPY_DST),
@@ -100,6 +106,7 @@ impl ResourceDescriptor {
                 AccessKind::VertexRead => usage.contains(wgpu::BufferUsages::VERTEX),
                 AccessKind::IndexRead => usage.contains(wgpu::BufferUsages::INDEX),
                 AccessKind::IndirectRead => usage.contains(wgpu::BufferUsages::INDIRECT),
+                AccessKind::AccelerationInput => usage.contains(wgpu::BufferUsages::BLAS_INPUT),
                 _ => false,
             },
             Self::Texture { usage, .. } => match kind {
@@ -154,6 +161,12 @@ pub enum ResourceScope {
 /// Declared GPU usage. Attachment load both reads and writes its subresource.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AccessKind {
+    /// Vertex or index input to an acceleration structure build.
+    AccelerationInput,
+    /// Acceleration structure produced by a build.
+    AccelerationBuild,
+    /// Read of a completed acceleration structure by a shader.
+    RayQuery,
     /// Copy source.
     CopyRead,
     /// Copy destination, defining the full selected range.
@@ -184,6 +197,7 @@ impl AccessKind {
         matches!(
             self,
             Self::CopyWrite
+                | Self::AccelerationBuild
                 | Self::StorageWrite
                 | Self::StorageReadWrite
                 | Self::AttachmentClear
@@ -193,7 +207,7 @@ impl AccessKind {
     fn reads(self) -> bool {
         !matches!(
             self,
-            Self::CopyWrite | Self::StorageWrite | Self::AttachmentClear
+            Self::CopyWrite | Self::StorageWrite | Self::AttachmentClear | Self::AccelerationBuild
         )
     }
     fn compatible_buffer_usage(self, other: Self) -> bool {
@@ -274,9 +288,24 @@ pub(crate) enum PassKind {
     Compute,
     Copy,
     Native,
+    AccelerationBuild,
 }
 
 fn pass_kind(pass: &Pass) -> Option<PassKind> {
+    if pass
+        .accesses
+        .iter()
+        .any(|access| access.kind == AccessKind::AccelerationBuild)
+    {
+        return (pass.pipeline.is_none()
+            && pass.accesses.iter().all(|access| {
+                matches!(
+                    access.kind,
+                    AccessKind::AccelerationBuild | AccessKind::AccelerationInput
+                )
+            }))
+        .then_some(PassKind::AccelerationBuild);
+    }
     let attachment = pass.accesses.iter().any(|access| {
         matches!(
             access.kind,

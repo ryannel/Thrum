@@ -22,7 +22,11 @@ impl OffscreenTarget {
             .filter(|(_, pass)| {
                 matches!(
                     pass.kind,
-                    Some(crate::graph::PassKind::Copy | crate::graph::PassKind::Native)
+                    Some(
+                        crate::graph::PassKind::Copy
+                            | crate::graph::PassKind::Native
+                            | crate::graph::PassKind::AccelerationBuild
+                    )
                 )
             })
             .map(|(_, pass)| pass.name.clone())

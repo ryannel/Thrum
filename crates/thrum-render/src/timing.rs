@@ -36,7 +36,7 @@ pub enum PassExecution {
     Timed(f64),
     /// Declared in this graph but skipped at runtime.
     NotRun,
-    /// Executed transfer without timestamp counters.
+    /// Executed without timestamp counters.
     Unmeasured,
 }
 
@@ -104,8 +104,8 @@ impl SceneGpuTimings {
             .map(|p| p.nanoseconds)
     }
 
-    /// Scene pass sum; surface is reported separately. Untimed transfer and
-    /// query-readback commands are outside this sum, never inferred as zero.
+    /// Scene pass sum; surface is reported separately. Untimed commands are
+    /// outside this sum, never inferred as zero.
     pub fn sum(&self) -> f64 {
         self.passes
             .iter()
@@ -357,9 +357,9 @@ impl GpuTimings {
         })
     }
 
-    /// Adjacent valid pass boundaries from the last collected batch. No extra
-    /// GPU markers/resources/submission: a copy between the passes is included.
-    pub(crate) fn gap_between(&self, before: &str, after: &str) -> Option<f64> {
+    /// Nanoseconds from the end of one pass to the start of the next in the
+    /// last collected batch. Overlapping intervals produce a negative gap.
+    pub fn gap_between(&self, before: &str, after: &str) -> Option<f64> {
         let enabled = self.enabled.as_ref()?;
         let index =
             enabled.results.windows(2).position(|pair| {

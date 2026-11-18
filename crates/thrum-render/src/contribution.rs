@@ -119,6 +119,8 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 /// Read-only description of a prepared scene's forward pass.
 #[derive(Clone)]
 pub struct SceneSurface<'a> {
+    /// Whether the prepared scene uses ray queries.
+    pub ray_demand: bool,
     /// Prepared pipeline surfaces for all slots, lent only to a contribution
     /// that opts in through [`SceneContribution::secondary_views_enabled`].
     pub secondary_surfaces: Vec<SecondarySceneSurface<'a>>,

@@ -9,7 +9,7 @@ impl PreparedSynthetic {
         };
         let start = crate::runtime::Instant::now();
         let switched = rows
-            .record(&mut self.mesh_arena, queue)
+            .record(&mut self.mesh_arena, self.capabilities.device(), queue)
             .map_err(|_| RenderError::SceneCapacity)?;
         rows.observe(start.elapsed());
         if switched {
@@ -43,6 +43,7 @@ impl PreparedSynthetic {
         queue: &wgpu::Queue,
     ) -> Result<bool, RenderError> {
         if self.key.device_generation != previous.key.device_generation
+            || self.mesh_arena.ray_demand() != previous.mesh_arena.ray_demand()
             || !self
                 .row_updates
                 .as_ref()

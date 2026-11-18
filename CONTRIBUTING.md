@@ -116,6 +116,14 @@ build trees, transcripts, every rejected asset or bulk captures. [Storage rules]
 cover promotion and closeout. There is no remote or release configuration implied by this scaffold;
 package publication is disabled pending a deliberate distribution and licensing decision.
 
+The macOS V1 game accepts the comma-separated `THRUM_HARDWARE` launch list. A bare name
+such as `ray-query` is required. A trailing `?` makes it preferred, as in
+`THRUM_HARDWARE='ray-query?'`. Captures require all listed hardware. For a window launch,
+the registry can decline an unavailable preference or retry a failed request once without
+preferences. A host can supply typed requests through `Game::hardware_requests`.
+Enabling ray queries admits the device feature. Scene preparation separately decides whether
+to allocate and rebuild a ray structure.
+
 ## Exact image baselines and the reference guard
 
 No exact-image proof is needed before a merge. After merges, the main-branch check `exact-images` runs

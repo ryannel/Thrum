@@ -11,9 +11,12 @@ fn main() {
         Err(std::env::VarError::NotPresent) => String::new(),
         Err(error) => report_capture_failure(&format!("THRUM_HARDWARE: {error}")),
     };
-    let hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
+    let mut hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
         .unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
+        for request in &mut hardware {
+            request.required = true;
+        }
         let scenario = std::env::var("THRUM_CAPTURE_CASE").unwrap_or_else(|_| "pan".to_owned());
         let (wait, hold, recovery) =
             capture_admission().unwrap_or_else(|error| report_capture_failure(&error));
@@ -36,6 +39,9 @@ fn main() {
         return;
     }
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_SCENE") {
+        for request in &mut hardware {
+            request.required = true;
+        }
         if let Err(error) = pollster::block_on(capture::run(output.into(), &hardware)) {
             report_capture_failure(&error);
         }

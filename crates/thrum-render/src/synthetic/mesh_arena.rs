@@ -18,6 +18,8 @@
 
 use std::ops::Range;
 
+use super::{RenderError, raytrace::MeshStructure};
+
 /// One mesh vertex in local space, packed as the 48 bytes the camera and
 /// Sun caster shaders fetch.
 #[repr(C)]
@@ -191,6 +193,8 @@ pub(super) struct MeshArena {
     dirty_vertices: Vec<Range<usize>>,
     dirty_indices: Vec<Range<usize>>,
     gpu: Option<ArenaBuffers>,
+    ray_meshes: Option<Vec<MeshStructure>>,
+    initial_ray_builds: bool,
     live: bool,
     live_geometry: Vec<std::sync::Arc<super::SyntheticMesh>>,
 }
@@ -206,6 +210,8 @@ impl MeshArena {
             dirty_vertices: Vec::new(),
             dirty_indices: Vec::new(),
             gpu: None,
+            ray_meshes: None,
+            initial_ray_builds: false,
             live: false,
             live_geometry: Vec::new(),
         };
@@ -228,6 +234,45 @@ impl MeshArena {
 
     pub(super) fn rows(&self) -> &[MeshRow] {
         &self.rows
+    }
+
+    pub(super) fn enable_ray_demand(&mut self, device: &wgpu::Device) -> Result<(), RenderError> {
+        self.ray_meshes = Some(
+            self.rows
+                .iter()
+                .map(|&row| MeshStructure::new(device, row))
+                .collect::<Result<_, _>>()?,
+        );
+        self.initial_ray_builds = true;
+        Ok(())
+    }
+
+    pub(super) fn ray_demand(&self) -> bool {
+        self.ray_meshes.is_some()
+    }
+
+    pub(super) fn mesh_structures(&self) -> &[MeshStructure] {
+        self.ray_meshes.as_deref().unwrap_or_default()
+    }
+
+    pub(super) fn pending_mesh_builds(&self) -> impl Iterator<Item = &MeshStructure> {
+        self.mesh_structures()
+            .iter()
+            .take(if self.initial_ray_builds {
+                self.rows.len()
+            } else {
+                0
+            })
+    }
+
+    pub(super) fn install_mesh_structure(&mut self, mesh: MeshId, structure: MeshStructure) {
+        if let Some(meshes) = &mut self.ray_meshes {
+            meshes[mesh.row() as usize] = structure;
+        }
+    }
+
+    pub(super) fn submit_mesh_builds(&mut self) {
+        self.initial_ray_builds = false;
     }
 
     pub(super) fn enable_live(&mut self) {
@@ -383,7 +428,12 @@ impl MeshArena {
         };
         let usage = wgpu::BufferUsages::STORAGE
             | wgpu::BufferUsages::COPY_DST
-            | wgpu::BufferUsages::COPY_SRC;
+            | wgpu::BufferUsages::COPY_SRC
+            | if self.ray_demand() {
+                wgpu::BufferUsages::BLAS_INPUT
+            } else {
+                wgpu::BufferUsages::empty()
+            };
         self.gpu = Some(ArenaBuffers {
             vertices: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("synthetic mesh arena vertices"),

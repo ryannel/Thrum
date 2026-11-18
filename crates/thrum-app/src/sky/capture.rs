@@ -179,51 +179,26 @@ pub async fn headless_device()
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::METAL;
     let instance = wgpu::Instance::new(descriptor);
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions {
+    let (_, device, queue, capabilities) = DeviceCapabilities::open_generation(
+        &instance,
+        &wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             ..Default::default()
-        })
-        .await
-        .map_err(HeadlessDeviceError::Adapter)?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter)
-                | DeviceCapabilities::requested_content_features(&adapter),
+        },
+        1,
+        &[],
+        |adapter| wgpu::DeviceDescriptor {
+            required_features: DeviceCapabilities::requested_timing_features(adapter)
+                | DeviceCapabilities::requested_content_features(adapter),
             ..Default::default()
-        })
-        .await
-        .map_err(HeadlessDeviceError::Device)?;
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
+        },
+    )
+    .await?;
     Ok((device, queue, capabilities))
 }
 
 /// Failure opening the sky kit's headless Metal device.
-#[derive(Debug)]
-pub enum HeadlessDeviceError {
-    /// No suitable Metal adapter could be opened.
-    Adapter(wgpu::RequestAdapterError),
-    /// The adapter could not create a device with the requested features.
-    Device(wgpu::RequestDeviceError),
-}
-
-impl std::fmt::Display for HeadlessDeviceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Adapter(error) => write!(f, "Metal adapter request failed ({error})"),
-            Self::Device(error) => write!(f, "Metal device request failed ({error})"),
-        }
-    }
-}
-
-impl std::error::Error for HeadlessDeviceError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Adapter(error) => Some(error),
-            Self::Device(error) => Some(error),
-        }
-    }
-}
+pub type HeadlessDeviceError = thrum_render::capabilities::HardwareLaunchError;
 
 /// Encode tightly packed RGBA8 display pixels as an RGB PNG with stored (uncompressed)
 /// deflate blocks: larger than a compressed file, but exact and dependency-free.

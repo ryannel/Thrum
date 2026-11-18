@@ -194,6 +194,10 @@ impl TransformHistory {
         self.write_serials(queue, reset);
     }
 
+    pub(super) fn presentation_alpha(&self) -> f32 {
+        self.presentation_alpha
+    }
+
     fn write_serials(&self, queue: &wgpu::Queue, reset: bool) {
         // A prepared cut hides previous transforms for this sample alone.
         // A capture or abandoned encoder cannot retire the submitted serial.

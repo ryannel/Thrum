@@ -13,8 +13,8 @@ use crate::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SurfaceParts,
 };
 use crate::graph::{
-    CompiledGraph, CompiledPass, GraphColorAttachment, GraphDepthAttachment, GraphError,
-    GraphTextures, PipelineKey, ResourceId,
+    CompiledPass, GraphColorAttachment, GraphDepthAttachment, GraphError, GraphTextures,
+    PipelineKey, ResourceId,
 };
 use crate::graph_record::{ExecutableGraph, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
@@ -45,6 +45,9 @@ mod mesh_arena;
 mod mesh_route;
 pub mod mesh_rows;
 mod native_witness;
+mod raytrace;
+#[cfg(all(feature = "creation-counters", target_os = "macos"))]
+pub use raytrace::RayStructureInstance;
 mod readback;
 mod scene_apply;
 mod scene_graph;
@@ -107,6 +110,9 @@ pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 /// Immutable CPU scene, converted at prepare time rather than each draw.
 #[derive(Clone, Debug)]
 pub struct SyntheticScene {
+    /// Ask preparation for a scene-wide ray structure for diagnostics.
+    /// Devices without ray queries prepare the ordinary scene.
+    pub ray_structure: bool,
     /// Optional Sun-path optical-depth provider. Presence is fixed at prepare
     /// time. Metadata and same-sized contents may change on the live frame.
     pub sun_optical_depth: Option<SunOpticalDepth>,
@@ -306,6 +312,7 @@ impl SyntheticScene {
             camera_culling: CullMode::Direct,
             star_catalogue: None,
             meshes: None,
+            ray_structure: false,
         })
     }
 }
@@ -604,6 +611,7 @@ pub struct PreparedSynthetic {
     /// it holds the cube (row 0) and its orthographic winding (row 1) over
     /// shared vertices.
     mesh_arena: MeshArena,
+    ray_structure: Option<raytrace::SceneStructure>,
     row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
@@ -1133,6 +1141,16 @@ impl PreparedSynthetic {
             packed_materials.extend_from_slice(&material.pack(&classes)?);
         }
         let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
+        let ray_demand = scene.ray_structure
+            && capabilities
+                .features()
+                .contains(wgpu::Features::EXPERIMENTAL_RAY_QUERY);
+        let ray_structure = ray_demand
+            .then(|| raytrace::SceneStructure::new(device, instance_count))
+            .transpose()?;
+        if ray_demand {
+            mesh_arena.enable_ray_demand(device)?;
+        }
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let material_buffer = storage_buffer(
             device,
@@ -1722,6 +1740,7 @@ impl PreparedSynthetic {
                 .and_then(|meshes| meshes.updates.clone())
                 .map(|updates| mesh_rows::LiveRows::new(updates, &mut mesh_arena)),
             mesh_arena,
+            ray_structure,
             bucket_route,
             caster_boxes,
             shadow_members,
@@ -2043,6 +2062,7 @@ impl PreparedSynthetic {
 
     /// Advance retained camera, transform and exposure sides after successful submission.
     pub fn commit_frame(&mut self) {
+        self.mesh_arena.submit_mesh_builds();
         if let Some(atmosphere) = self.atmosphere.as_mut() {
             atmosphere.commit();
         }
@@ -2151,33 +2171,6 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
-    fn check_owner(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
-        if !Arc::ptr_eq(&self.owner, &target.prepared_owner)
-            || target.generation != self.key.device_generation
-        {
-            return Err(RenderError::StaleTarget);
-        }
-        Ok(())
-    }
-    fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
-        self.check_owner(target)?;
-        if target.frame_revision != self.frame_revision {
-            return Err(RenderError::StaleTarget);
-        }
-        Ok(())
-    }
-    /// Inspect the prepared scene or its scene-plus-readback graph.
-    /// # Errors
-    /// Refuses a stale target generation or invalid typed resource/pass declarations.
-    pub fn graph(
-        &self,
-        target: &OffscreenTarget,
-        readback: bool,
-    ) -> Result<CompiledGraph, RenderError> {
-        self.check_target(target)?;
-        Ok(target.graph(readback).plan().clone())
-    }
-
     /// Encode an already prepared draw. The caller owns submission and device
     /// polling. Skipping or failing this method cannot advance view histories.
     /// # Errors

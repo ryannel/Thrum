@@ -93,6 +93,35 @@ enum AttachmentUse {
 }
 
 impl PreparedSynthetic {
+    pub(super) fn check_owner(&self, target: &super::OffscreenTarget) -> Result<(), RenderError> {
+        if !std::sync::Arc::ptr_eq(&self.owner, &target.prepared_owner)
+            || target.generation != self.key.device_generation
+        {
+            return Err(RenderError::StaleTarget);
+        }
+        Ok(())
+    }
+
+    pub(super) fn check_target(&self, target: &super::OffscreenTarget) -> Result<(), RenderError> {
+        self.check_owner(target)?;
+        if target.frame_revision != self.frame_revision {
+            return Err(RenderError::StaleTarget);
+        }
+        Ok(())
+    }
+
+    /// Inspect the prepared scene or its scene-plus-readback graph.
+    /// # Errors
+    /// Refuses a stale target generation or invalid typed resource/pass declarations.
+    pub fn graph(
+        &self,
+        target: &super::OffscreenTarget,
+        readback: bool,
+    ) -> Result<CompiledGraph, RenderError> {
+        self.check_target(target)?;
+        Ok(target.graph(readback).plan().clone())
+    }
+
     fn append_forward_epilogues(
         &self,
         graph: &mut FrameGraph,
@@ -187,7 +216,10 @@ impl PreparedSynthetic {
             let bytes = buffer.size();
             graph
                 .resource(
-                    ResourceDescriptor::Buffer { bytes, usage },
+                    ResourceDescriptor::Buffer {
+                        bytes,
+                        usage: usage | (buffer.usage() & wgpu::BufferUsages::BLAS_INPUT),
+                    },
                     ResourceScope::Imported { initialized: true },
                 )
                 .map(|resource| Access::new(resource, 0..bytes, kind))
@@ -312,6 +344,7 @@ impl PreparedSynthetic {
             atmosphere_inputs,
             mut late_uniforms,
         } = self.append_frame_environment(&mut graph, &mut prepared_keys, &mut accesses)?;
+        self.append_ray_structure(&mut graph, &mesh)?;
         let contribution_start = accesses.len();
         let effect_resources =
             self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
@@ -1242,28 +1275,13 @@ impl PreparedSynthetic {
                         frame.tone(pass)
                     })
                 }
-                None if pass.name == super::native_witness::RESET => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
-                        frame
-                            .native
-                            .ok_or(RenderError::GraphPassMismatch)?
-                            .reset(frame.encoder);
-                        Ok(())
-                    })
+                None if pass.kind == Some(PassKind::AccelerationBuild) => {
+                    super::raytrace::binding(id)
                 }
-                None if pass.name == super::native_witness::PASS => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Native, |frame, _| {
-                        let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
-                        native.encode(
-                            &frame.target.device,
-                            frame.encoder,
-                            frame
-                                .segments
-                                .as_deref_mut()
-                                .ok_or(RenderError::GraphPassMismatch)?,
-                        );
-                        Ok(())
-                    })
+                None if pass.name == super::native_witness::RESET
+                    || pass.name == super::native_witness::PASS =>
+                {
+                    Self::bind_native(id, pass.kind)
                 }
                 None if pass.kind == Some(PassKind::Copy)
                     && pass.name == camera_culling::STATS_PASS =>
@@ -1300,5 +1318,30 @@ impl PreparedSynthetic {
             bindings.push(binding);
         }
         graph.bind(bindings).map_err(RenderError::Graph)
+    }
+
+    fn bind_native(id: usize, kind: Option<PassKind>) -> RecordBinding<SceneFamily> {
+        if kind == Some(PassKind::Native) {
+            RecordBinding::<SceneFamily>::new(id, PassKind::Native, |frame, _| {
+                let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
+                native.encode(
+                    &frame.target.device,
+                    frame.encoder,
+                    frame
+                        .segments
+                        .as_deref_mut()
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                );
+                Ok(())
+            })
+        } else {
+            RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
+                frame
+                    .native
+                    .ok_or(RenderError::GraphPassMismatch)?
+                    .reset(frame.encoder);
+                Ok(())
+            })
+        }
     }
 }

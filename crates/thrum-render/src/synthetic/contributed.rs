@@ -141,6 +141,7 @@ impl PreparedSynthetic {
     /// The forward pass a [`SceneContribution`] draws into.
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {
+            ray_demand: self.mesh_arena.ray_demand(),
             secondary_surfaces: Vec::new(),
             secondary_views: &self.secondary_handles,
             sun_optical_depth: self.cloud.is_some(),

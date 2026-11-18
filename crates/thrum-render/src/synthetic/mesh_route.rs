@@ -93,6 +93,10 @@ pub(super) struct BucketRoute {
 }
 
 impl BucketRoute {
+    pub(super) fn mesh_for_slot(&self, slot: u32) -> MeshId {
+        self.slot_meshes[slot as usize]
+    }
+
     pub(super) fn refresh_rows(
         &mut self,
         arena: &MeshArena,

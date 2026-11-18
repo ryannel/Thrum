@@ -242,6 +242,29 @@ impl DeviceCapabilities {
         requests: &[HardwareRequest],
         descriptor: impl Fn(&wgpu::Adapter) -> wgpu::DeviceDescriptor<'static>,
     ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
+        Self::open_generation_with_feature_mask(
+            instance,
+            options,
+            generation,
+            requests,
+            descriptor,
+            wgpu::Features::all(),
+        )
+        .await
+    }
+
+    /// Open the same recipe with a restricted experimental adapter offer.
+    ///
+    /// # Errors
+    /// Reports adapter or device failures and names refused required hardware.
+    pub async fn open_generation_with_feature_mask(
+        instance: &wgpu::Instance,
+        options: &wgpu::RequestAdapterOptions<'_, '_>,
+        generation: u64,
+        requests: &[HardwareRequest],
+        descriptor: impl Fn(&wgpu::Adapter) -> wgpu::DeviceDescriptor<'static>,
+        feature_mask: wgpu::Features,
+    ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
         for (index, request) in requests.iter().enumerate() {
             if requests[..index]
                 .iter()
@@ -259,7 +282,7 @@ impl DeviceCapabilities {
             let (request, selections) = plan(
                 descriptor(&adapter),
                 requests,
-                adapter.features(),
+                adapter.features() & feature_mask,
                 &adapter.limits(),
                 retry.as_deref(),
             )?;

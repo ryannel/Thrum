@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use super::{MeshRowError, MeshRowGeometry, MeshRowStatus, MeshRows, ROW_WRITE_BYTES};
 use crate::synthetic::mesh_arena::{ArenaLimits, MeshArena, MeshId, MeshRow};
+use crate::synthetic::raytrace::MeshStructure;
 
 #[derive(Default)]
 struct Space {
@@ -51,6 +52,8 @@ struct Replacement {
     geometry: MeshRowGeometry,
     row: MeshRow,
     old: Option<MeshRow>,
+    ray: Option<MeshStructure>,
+    build_ray: bool,
 }
 
 pub(in crate::synthetic) struct LiveRows {
@@ -165,6 +168,8 @@ impl LiveRows {
             },
             geometry,
             old: None,
+            ray: None,
+            build_ray: false,
         })
     }
 
@@ -172,10 +177,14 @@ impl LiveRows {
     pub(in crate::synthetic) fn record(
         &mut self,
         arena: &mut MeshArena,
+        device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<bool, MeshRowError> {
         self.recorded = 0;
         self.switching = false;
+        for row in &mut self.rows {
+            row.build_ray = false;
+        }
         let updates = self.updates.clone();
         let mut state = updates.0.lock().map_err(|_| MeshRowError::UnknownMesh)?;
         let Some(publication) = state.pending.as_mut() else {
@@ -227,13 +236,16 @@ impl LiveRows {
             for replacement in &mut self.rows {
                 let old = arena.switch(replacement.id, replacement.row)?;
                 replacement.old.get_or_insert(old);
+                if let Some(structure) = replacement.ray.take() {
+                    arena.install_mesh_structure(replacement.id, structure);
+                }
             }
             self.switching = true;
             return Ok(true);
         }
         let buffers = arena.buffers().ok_or(MeshRowError::Capacity)?;
         let mut offset = 0;
-        for replacement in &self.rows {
+        for replacement in &mut self.rows {
             for (bytes, buffer, destination) in [
                 (
                     &replacement.geometry.vertices,
@@ -260,8 +272,24 @@ impl LiveRows {
                 }
                 offset += bytes.len() as u64;
             }
+            if arena.ray_demand() && self.cursor < offset && self.cursor + self.recorded >= offset {
+                if replacement.ray.is_none() {
+                    replacement.ray = Some(
+                        MeshStructure::new(device, replacement.row)
+                            .map_err(|_| MeshRowError::Capacity)?,
+                    );
+                }
+                replacement.build_ray = true;
+            }
         }
         Ok(false)
+    }
+
+    pub(in crate::synthetic) fn pending_ray_builds(&self) -> impl Iterator<Item = &MeshStructure> {
+        self.rows
+            .iter()
+            .filter(|row| row.build_ray)
+            .filter_map(|row| row.ray.as_ref())
     }
 
     pub(in crate::synthetic) fn submitted(&mut self) {
