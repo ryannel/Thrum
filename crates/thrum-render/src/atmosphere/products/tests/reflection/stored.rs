@@ -28,26 +28,21 @@ const DIRECTIONS: [[f32; 3]; 6] = [
     [0.0, 0.0, -1.0],
 ];
 
-fn fixture() -> (
+fn fixture(
+    gpu: thrum_test_support::Gpu,
+) -> (
     wgpu::Device,
     wgpu::Queue,
     SyntheticScene,
     PreparedSynthetic,
     OffscreenTarget,
 ) {
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
     pollster::block_on(async {
-        let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
-        descriptor.backends = wgpu::Backends::METAL;
-        let instance = wgpu::Instance::new(descriptor);
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
-        let caps = DeviceCapabilities::capture(&adapter, &device, 140);
+        let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 140);
         let scene = SyntheticScene::grid(1).unwrap();
         let mut prepared =
             PreparedSynthetic::prepare_with_capabilities(&caps, &queue, &scene, lighting(1.0), 1.0)
@@ -84,7 +79,10 @@ fn table_query(x: f64, y: f64) -> [f32; 4] {
 
 #[test]
 fn metal_split_sum_reads_stored_table() {
-    let (device, queue, _, prepared, _) = fixture();
+    let Some(gpu) = thrum_test_support::gpu("H5 stored table", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let (device, queue, _, prepared, _) = fixture(gpu);
     let surface = prepared.scene_surface(&queue);
     let table = &surface.environment.as_ref().unwrap().reflection.dfg;
     let texels = reference::read_texture(&device, &queue, &reference::reader(&device), table, 0);
@@ -296,7 +294,10 @@ fn check_cube(
 
 #[test]
 fn metal_reflection_reads_stored_cube() {
-    let (device, queue, scene, mut prepared, mut target) = fixture();
+    let Some(gpu) = thrum_test_support::gpu("H5 stored cube", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let (device, queue, scene, mut prepared, mut target) = fixture(gpu);
     let surface = prepared.scene_surface(&queue);
     write_cube(
         &device,

@@ -29,8 +29,9 @@ def capture(args):
         if args.target == 'mac-metal':
             native_case = scenario if fixed else f'atmosphere-{scenario}'
             command = [sys.executable, 'scripts/capture_v1_runtime.py', '--binary', str(args.binary),
-                       '--store', str(args.store), '--case', native_case, '--admission', 'wait',
-                       '--defer', *common]
+                       '--store', str(args.store), '--case', native_case, '--defer', *common]
+            if not fixed:
+                command += ['--admission', 'wait']
         else:
             command = ['node', 'scripts/capture_v1_browser.mjs', '--cook', str(args.cook),
                        '--web-root', str(args.web_root), '--atmosphere', scenario, *common]
