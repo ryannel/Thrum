@@ -4,7 +4,7 @@ use thrum_render::{
     graph::{AccessKind as A, ResourceDescriptor as D, ResourceScope as S, TextureKind as K},
 };
 
-pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> EffectGraph {
+pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
     let textures: Vec<_> = gpu
         .weather
         .textures()
@@ -64,6 +64,8 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> EffectGraph {
             S::Imported { initialized: true },
         ));
     }
+    let shape_noise = resources.len();
+    resources.push(gpu.sun.shape_noise.resource());
     let access = |resource, range, kind| EffectAccess {
         resource,
         range,
@@ -104,6 +106,7 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> EffectGraph {
                     A::StorageWrite,
                 ),
                 access(12 + i, 0..gpu.sun.uniforms()[i].size(), A::UniformRead),
+                gpu.sun.shape_noise.read(shape_noise),
             ],
         });
     }
@@ -137,13 +140,16 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> EffectGraph {
             access(7, 48..52, A::StorageWrite),
         ],
     });
-    EffectGraph {
-        resources,
-        passes,
-        opaque_reads: vec![
-            access(6, 0..1, A::SampledRead),
-            access(7, 0..gpu.sun.mapping().size(), A::UniformRead),
-        ],
-        after_opaque: Vec::new(),
-    }
+    (
+        EffectGraph {
+            resources,
+            passes,
+            opaque_reads: vec![
+                access(6, 0..1, A::SampledRead),
+                access(7, 0..gpu.sun.mapping().size(), A::UniformRead),
+            ],
+            after_opaque: Vec::new(),
+        },
+        shape_noise,
+    )
 }

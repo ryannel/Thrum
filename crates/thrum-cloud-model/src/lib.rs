@@ -5,6 +5,7 @@
 mod field;
 mod ground;
 mod medium;
+mod noise;
 mod optics;
 mod shape;
 mod state;
@@ -13,6 +14,7 @@ mod visibility;
 pub use field::{Cell, Column, Conformance, Density, Field, Profile, Sample, Type};
 pub use ground::{Affinity, Fog, Ground, GroundProfile, GroundState, Surface, SurfacePoint};
 pub use medium::{Coefficients, Handover, Light};
+pub use noise::{DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHAPE_SIZE};
 pub use optics::{Orders, Phase, PhaseTable, Segment};
 pub use shape::{Footprint, Shape};
 pub use state::{Directed, Parameters, State};

@@ -11,9 +11,9 @@ fn procedural_edges_are_removed_rather_than_uniformly_attenuated() {
     let mut removed = [0; 2];
     let mut retained = [0; 2];
     let mut different = 0;
-    for x in -40..=40 {
-        for y in 0..=50 {
-            let p = [f64::from(x) * 35.5, 700.0 + f64::from(y) * 10.0, 417.0];
+    for x in -80..=80 {
+        for y in 0..=100 {
+            let p = [f64::from(x) * 17.75, 700.0 + f64::from(y) * 5.0, 417.0];
             let u = field.density(p, &state, Density::Uneroded, |_| None, 0.0);
             let densities = [Density::Coarse, Density::Full]
                 .map(|f| field.density(p, &state, f, |_| None, 0.0));
@@ -29,7 +29,7 @@ fn procedural_edges_are_removed_rather_than_uniformly_attenuated() {
     }
     assert!(removed.iter().all(|&n| n > 100), "{removed:?}");
     assert!(retained.iter().all(|&n| n > 100), "{retained:?}");
-    assert!(different > 100);
+    assert!(different > 100, "detail changed {different} edge samples");
 }
 
 #[test]

@@ -1,3 +1,4 @@
+use crate::noise::{Noise, SHAPE_PERIOD, SHAPE_SIZE};
 use crate::{Error, RowStamp, WeatherMap};
 use thrum_cloud_model::State;
 use thrum_render::{
@@ -48,7 +49,6 @@ struct Uniform {
     direction: [f32; 4],
     physical: [f32; 4],
     erosion: [f32; 4],
-    noise: [u32; 4],
     rows: [u32; 4],
 }
 
@@ -61,6 +61,8 @@ pub struct SunPath {
     params: Vec<wgpu::Buffer>,
     pipelines: [wgpu::ComputePipeline; 3],
     groups: Vec<wgpu::BindGroup>,
+    pub(crate) shape_noise: Noise,
+    noise_preparation: Option<wgpu::CommandBuffer>,
     clock: EffectState,
     origins: [[f64; 2]; 3],
     pending_origins: [[f64; 2]; 3],
@@ -140,8 +142,17 @@ impl SunPath {
         };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cloud Sun path"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("sun_path.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(
+                concat!(
+                    include_str!("sun_path.wgsl"),
+                    "\n",
+                    include_str!("erosion.wgsl")
+                )
+                .into(),
+            ),
         });
+        let shape_noise = Noise::new(device, SHAPE_SIZE, "cloud shape noise");
+        let noise_preparation = Some(shape_noise.prepare(device, weather.seed(), "shape"));
         let pipelines = std::array::from_fn(|i| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(["cloud Sun path", GROUND_PASS, FAR_PASS][i]),
@@ -203,6 +214,14 @@ impl SunPath {
                         binding: 3,
                         resource: wgpu::BindingResource::TextureView(&product_views[i]),
                     },
+                    wgpu::BindGroupEntry {
+                        binding: 9,
+                        resource: wgpu::BindingResource::TextureView(&shape_noise.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 10,
+                        resource: wgpu::BindingResource::Sampler(&shape_noise.sampler),
+                    },
                 ],
             }));
         }
@@ -256,6 +275,8 @@ impl SunPath {
             params,
             pipelines,
             groups,
+            shape_noise,
+            noise_preparation,
             clock: EffectState::new(0),
             origins: [[0.0; 2]; 3],
             pending_origins: [[0.0; 2]; 3],
@@ -268,6 +289,12 @@ impl SunPath {
             last_weather_time: 0.0,
             pending_time: 0.0,
         })
+    }
+
+    pub(crate) fn prepare_noise(&mut self, queue: &wgpu::Queue) {
+        if let Some(command) = self.noise_preparation.take() {
+            queue.submit([command]);
+        }
     }
 
     /// Register the ground field with the atmosphere; no CPU-fed copy is made.
@@ -375,10 +402,6 @@ impl SunPath {
                         weather.profile().size as f32,
                     ];
                 }
-                let noise = origin.map(|x| (x / 200.0).floor());
-                if noise.iter().any(|x| x.abs() > f64::from(i32::MAX - 1024)) {
-                    return Err(Error::Unsupported("Sun noise addressing"));
-                }
                 let uniform = Uniform {
                     weather: w,
                     origin: [
@@ -401,15 +424,9 @@ impl SunPath {
                     ],
                     erosion: [
                         model.detail_mean as f32,
-                        (origin[0] / 200.0 - noise[0]) as f32,
-                        (origin[1] / 200.0 - noise[1]) as f32,
-                        0.0,
-                    ],
-                    noise: [
-                        noise[0] as i32 as u32,
-                        0,
-                        noise[1] as i32 as u32,
-                        weather.seed(),
+                        (origin[0].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
+                        (origin[1].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
+                        self.profile.levels[i].texel as f32,
                     ],
                     rows: [start, count, self.profile.levels[i].slices, 0],
                 };
@@ -437,12 +454,12 @@ impl SunPath {
                 direction: [0.0; 4],
                 physical: [self.profile.size as f32, 0.0, 0.0, 0.0],
                 erosion: [0.0; 4],
-                noise: [0; 4],
                 rows: [0; 4],
             };
             queue.write_buffer(&self.params[3], 0, bytemuck::bytes_of(&uniform));
         }
         self.write_mapping(queue, state, time, heights, cut);
+        self.prepare_noise(queue);
         Ok(())
     }
 

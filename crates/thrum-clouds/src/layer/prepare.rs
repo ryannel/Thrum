@@ -2,6 +2,7 @@ use super::{
     AfterOpaqueKind, COMPOSE, Error, Layer, SceneSurface, SkyProfile, TRACE, Uniform, WeatherMap,
     declaration,
 };
+use crate::noise::{DETAIL_SIZE, Noise};
 
 impl Layer {
     pub(crate) fn new(
@@ -23,6 +24,7 @@ impl Layer {
             return Err(Error::Unsupported("cloud layer extent or march controls"));
         }
         let device = surface.device;
+        let detail_noise = Noise::new(device, DETAIL_SIZE, "cloud detail noise");
         let environment = surface.environment_products().ok_or(Error::Unsupported(
             "cloud Sky requires the physical environment",
         ))?;
@@ -92,6 +94,14 @@ impl Layer {
                 texture_entry(7, false),
                 super::light::storage_entry(9, true),
                 super::light::storage_entry(10, true),
+                Noise::sampled(11),
+                Noise::sampled(12),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 13,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
                 wgpu::BindGroupLayoutEntry {
                     binding: 8,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -144,6 +154,20 @@ impl Layer {
             binding: 10,
             resource: lighting.ambient.as_entire_binding(),
         });
+        entries.extend([
+            wgpu::BindGroupEntry {
+                binding: 11,
+                resource: wgpu::BindingResource::TextureView(&sun.shape_noise.view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 12,
+                resource: wgpu::BindingResource::TextureView(&detail_noise.view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 13,
+                resource: wgpu::BindingResource::Sampler(&sun.shape_noise.sampler),
+            },
+        ]);
         let trace_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(TRACE),
             layout: &trace_layout,
@@ -176,6 +200,9 @@ impl Layer {
             &input,
         );
         let temporal = super::temporal::Temporal::new(surface, &params, &textures, &compose_layout);
+        surface
+            .queue
+            .submit([detail_noise.prepare(device, weather.seed(), "detail")]);
         Ok(Self {
             profile,
             environment,
@@ -187,6 +214,7 @@ impl Layer {
             params,
             queue: surface.queue.clone(),
             textures,
+            detail_noise,
             trace,
             compose,
             trace_group,
@@ -197,7 +225,7 @@ impl Layer {
 
 pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
     format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         environment.shader_source,
         include_str!("params.wgsl"),
         include_str!("../layer.wgsl"),
@@ -205,6 +233,7 @@ pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentPr
         include_str!("scattering.wgsl"),
         include_str!("transport.wgsl"),
         include_str!("sun.wgsl"),
+        include_str!("../erosion.wgsl"),
     )
 }
 

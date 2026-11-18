@@ -1,4 +1,5 @@
 //! Visible transport, recorded after the scene's opaque and celestial passes.
+use crate::noise::{DETAIL_PERIOD, Noise, SHAPE_PERIOD};
 use crate::{Error, WeatherMap};
 use thrum_cloud_model::State;
 use thrum_render::{
@@ -70,7 +71,7 @@ struct Uniform {
     heights: [f32; 4],
     settings: [u32; 4],
     temporal: [u32; 4],
-    noise: [u32; 4],
+    noise: [f32; 4],
     inverse_raster: [[f32; 4]; 4],
     previous_raster: [[f32; 4]; 4],
 }
@@ -94,6 +95,7 @@ pub(crate) struct Layer {
     params: wgpu::Buffer,
     queue: wgpu::Queue,
     textures: [wgpu::Texture; 2],
+    detail_noise: Noise,
     trace: wgpu::ComputePipeline,
     compose: wgpu::RenderPipeline,
     trace_group: wgpu::BindGroup,
@@ -101,7 +103,12 @@ pub(crate) struct Layer {
 }
 
 impl Layer {
-    pub(crate) fn append_graph(&self, graph: &mut EffectGraph, epoch: u64) {
+    pub(crate) fn append_graph(
+        &self,
+        graph: &mut EffectGraph,
+        epoch: u64,
+        shape_noise: EffectAccess,
+    ) {
         let first = graph.resources.len();
         for (i, texture) in self.textures.iter().enumerate() {
             graph.resources.push((
@@ -150,6 +157,9 @@ impl Layer {
             view: None,
         });
         reads.extend((first..first + 2).map(|i| access(i, AccessKind::StorageWrite)));
+        let detail = graph.resources.len();
+        graph.resources.push(self.detail_noise.resource());
+        reads.extend([shape_noise, self.detail_noise.read(detail)]);
         let phase = graph.resources.len();
         graph.resources.push((
             ResourceDescriptor::Buffer {
@@ -302,7 +312,7 @@ impl Layer {
         let previous = self.committed.map_or(travel, |old| old.travel);
         let previous_raster = self.committed.map_or(frame.view_proj, |old| old.raster);
         // Preserve the air lattice at long travel without subtracting large
-        // rounded floats in the shader. Noise keeps the anchor's hash words.
+        // rounded floats in the shader. Noise keeps the anchor's wrapped phase.
         let anchor = std::array::from_fn::<_, 2, _>(|i| {
             ((f64::from(frame.camera[[0, 2][i]]) - travel[i]) / 200.0).floor() * 200.0
         });
@@ -361,10 +371,10 @@ impl Layer {
                 ),
             ],
             noise: [
-                (anchor[0] / 200.0) as i64 as u32,
-                (anchor[1] / 200.0) as i64 as u32,
-                (anchor[0] / 25.0) as i64 as u32,
-                (anchor[1] / 25.0) as i64 as u32,
+                (anchor[0].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
+                (anchor[1].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
+                (anchor[0].rem_euclid(DETAIL_PERIOD) / DETAIL_PERIOD) as f32,
+                (anchor[1].rem_euclid(DETAIL_PERIOD) / DETAIL_PERIOD) as f32,
             ],
             inverse_raster: glam::Mat4::from_cols_array_2d(&frame.view_proj)
                 .inverse()
@@ -446,6 +456,7 @@ impl Layer {
             ));
         }
         resources.extend([
+            ("cloud detail noise".into(), self.detail_noise.bytes()),
             ("cloud layer parameters".into(), self.params.size()),
             ("cloud phase tables".into(), self.lighting.phase.size()),
             (

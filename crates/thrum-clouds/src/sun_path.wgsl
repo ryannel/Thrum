@@ -1,6 +1,6 @@
 struct Params {
     weather: array<vec4<f32>,4>, origin:vec4<f32>, direction:vec4<f32>,
-    physical:vec4<f32>, erosion:vec4<f32>, noise:vec4<u32>, rows:vec4<u32>,
+    physical:vec4<f32>, erosion:vec4<f32>, rows:vec4<u32>,
 };
 @group(0) @binding(0) var<uniform> p:Params;
 @group(0) @binding(1) var columns:texture_2d_array<f32>;
@@ -12,22 +12,10 @@ struct Params {
 @group(0) @binding(7) var ground_field:texture_storage_2d<rgba16float,write>;
 struct Mapping {region:vec4<f32>,plane_drift:vec4<f32>,path_border:vec4<f32>,far_value:vec4<f32>,near:vec4<f32>,middle:vec4<f32>};
 @group(0) @binding(8) var<storage,read_write> mapping:Mapping;
+@group(0) @binding(9) var shape_noise: texture_3d<f32>;
+@group(0) @binding(10) var noise_sampler: sampler;
 
 fn smooth_unit(x:f32)->f32 {let a=clamp(x,0.0,1.0);return a*a*(3.0-2.0*a);}
-fn hash(i:u32,j:u32,g:u32,stream:u32)->f32 {
-    var x=i*0x9e3779b1u+j*0x85ebca77u+g*0xc2b2ae3du+(stream+131u*p.noise.w)*0x27d4eb2fu;
-    x=x^(x>>15u);x=x*0x2c1b3c6du;x=x^(x>>12u);x=x*0x297a2d39u;x=x^(x>>15u);
-    return f32(x)*0.00000000023283064365386963;
-}
-fn shape_noise(point:vec3<f32>)->f32 {
-    let local=point/200.0+vec3<f32>(p.erosion.y,0.0,p.erosion.z);
-    let offset=vec3<i32>(floor(local));let f=vec3<f32>(smooth_unit(fract(local.x)),smooth_unit(fract(local.y)),smooth_unit(fract(local.z)));
-    var n=0.0;
-    for(var x=0;x<=1;x++){for(var y=0;y<=1;y++){for(var z=0;z<=1;z++){
-        let w=select(vec3<f32>(1.0)-f,f,vec3<bool>(x!=0,y!=0,z!=0));
-        n+=w.x*w.y*w.z*hash(p.noise.x+u32(offset.x+x),u32(offset.y+y),p.noise.z+u32(offset.z+z),40u);
-    }}}return n;
-}
 fn bilinear(field:texture_2d_array<f32>,coordinate:vec2<f32>,level:i32)->vec4<f32> {
     let dimensions=vec2<i32>(textureDimensions(field));
     let q=coordinate-0.5;let lo=vec2<i32>(floor(q));let f=fract(q);
@@ -58,11 +46,9 @@ fn column_density(point:vec3<f32>)->f32 {
 fn density(point:vec3<f32>)->f32 {
     let sigma=column_density(point);
     if sigma<=0.0 || p.physical.z<=0.0 || p.physical.w==0.0 {return sigma;}
-    let signal=min(1.0,sigma/p.physical.z);
-    let threshold=p.physical.w*shape_noise(point);
-    let shaped=max(0.0,(signal-threshold)/(1.0-threshold));
-    let eroded=max(0.0,shaped-p.physical.w*p.erosion.x*(1.0-shaped));
-    return sigma*min(1.0,eroded/signal);
+    let uv = point / 6400.0 + vec3(p.erosion.y, 0.0, p.erosion.z);
+    let billow = textureSampleLevel(shape_noise, noise_sampler, uv, erosion_mip(p.erosion.w, 50.0)).r;
+    return cloud_erode(sigma, p.physical.z, p.physical.w, billow, p.erosion.x);
 }
 @compute @workgroup_size(8,8)
 fn path(@builtin(global_invocation_id) id:vec3<u32>) {

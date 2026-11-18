@@ -235,6 +235,7 @@ impl SceneContribution for Shade {
         )
         .map_err(|e| e.to_string())?;
         sun.rebuild(surface.generation, 1);
+        sun.prepare_noise(surface.queue);
         let sky = self
             .sky
             .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
@@ -256,6 +257,7 @@ impl SceneContribution for Shade {
                 )
             })
             .collect();
+        resources.push(("cloud shape noise".into(), sun.shape_noise.bytes()));
         resources.extend(
             weather
                 .uniforms()
@@ -290,9 +292,13 @@ impl SceneContribution for Shade {
     }
     fn effect_graph(&self) -> EffectGraph {
         self.gpu.as_ref().map_or_else(EffectGraph::default, |gpu| {
-            let mut graph = graph::declaration(gpu, self.generation);
+            let (mut graph, shape_noise) = graph::declaration(gpu, self.generation);
             if let Some(sky) = &gpu.sky {
-                sky.append_graph(&mut graph, self.generation);
+                sky.append_graph(
+                    &mut graph,
+                    self.generation,
+                    gpu.sun.shape_noise.read(shape_noise),
+                );
             }
             graph
         })

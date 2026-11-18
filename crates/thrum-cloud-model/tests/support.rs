@@ -28,6 +28,9 @@ pub fn field(seed: u32, erosion: f64) -> Field {
         seed,
         Profile {
             pitch: 1300.0,
+            turret_pitch: 340.0,
+            turret_least: 0.18,
+            turret_fade: 0.12,
             period: 1600.0,
             detail_mean: 0.5,
             erosion,

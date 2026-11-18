@@ -13,6 +13,9 @@ fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
     };
     let model = Profile {
         pitch: 1000.0,
+        turret_pitch: 260.0,
+        turret_least: 0.18,
+        turret_fade: 0.12,
         period: 1800.0,
         detail_mean: 0.5,
         erosion: 0.4,
@@ -141,20 +144,27 @@ fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
                 if visible {
                     assert!(input.sky_products().is_some());
                     assert!(names.iter().any(|n| n.contains("cloud trace")));
+                    assert!(
+                        input
+                            .resource_bytes()
+                            .iter()
+                            .any(|(name, _)| name == "cloud detail noise")
+                    );
                 } else {
                     assert!(!names.iter().any(|n| n.contains("cloud trace")
                         || n.contains("cloud resolve")
                         || n.contains("cloud compose")
                         || n.contains("hemisphere")));
                     assert!(input.sky_products().is_none());
+                    let resources = input.resource_bytes();
                     assert!(
-                        input
-                            .resource_bytes()
+                        resources
                             .iter()
-                            .all(|(name, _)| !name.contains("layer")
-                                && !name.contains("noise")
-                                && !name.contains("phase"))
+                            .any(|(name, _)| name == "cloud shape noise")
                     );
+                    assert!(resources.iter().all(|(name, _)| !name.contains("layer")
+                        && !name.contains("detail noise")
+                        && !name.contains("phase")));
                 }
                 products.push(shadow_scene::ground(&device, &queue, &input));
             }

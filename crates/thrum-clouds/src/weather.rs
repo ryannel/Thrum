@@ -39,6 +39,7 @@ struct Uniform {
     vertical: [f32; 4],
     noise: [u32; 4],
     rows: [u32; 4],
+    turret: [f32; 4],
 }
 
 struct Pending {
@@ -197,7 +198,7 @@ impl WeatherMap {
             .map(|_| {
                 device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("weather integer texel axes"),
-                    size: u64::from(profile.size) * 16,
+                    size: u64::from(profile.size) * 32,
                     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                     mapped_at_creation: false,
                 })
@@ -304,7 +305,7 @@ impl WeatherMap {
             self.pending.origins[level] = origin;
             let reset = step == EffectStep::Reset || !same_origin(self.origins[level], origin);
             if reset {
-                let axes = texel_axes(origin, *texel, self.model.pitch, self.profile.size)?;
+                let axes = texel_axes(origin, *texel, self.model, self.profile.size)?;
                 queue.write_buffer(&self.axes[level], 0, bytemuck::cast_slice(&axes));
             }
             let rows = &mut self.pending.stamps[level];
@@ -526,6 +527,12 @@ fn pack(
             ((state.time() / model.period - generation) * 4_294_967_296.0).floor() as u32,
         ],
         rows,
+        turret: [
+            model.turret_least as f32,
+            model.turret_fade as f32,
+            0.0,
+            0.0,
+        ],
     })
 }
 
@@ -534,16 +541,30 @@ fn pack(
     clippy::cast_sign_loss,
     reason = "validated integer lattice words and fractions narrow independently, without subtracting large GPU positions"
 )]
-fn texel_axes(origin: [f64; 2], texel: f64, pitch: f64, size: u32) -> Result<Vec<[u32; 2]>, Error> {
+fn texel_axes(
+    origin: [f64; 2],
+    texel: f64,
+    model: Profile,
+    size: u32,
+) -> Result<Vec<[u32; 4]>, Error> {
     let mut output = Vec::with_capacity(size as usize * 2);
     for base in origin {
         for i in 0..size {
-            let coordinate = (base + (f64::from(i) + 0.5) * texel) / pitch;
-            let cell = coordinate.floor();
-            if !cell.is_finite() || cell.abs() > f64::from(i32::MAX - 1024) {
-                return Err(Error::Unsupported("weather texel axis addressing"));
+            let point = base + (f64::from(i) + 0.5) * texel;
+            let mut axis = [0; 4];
+            for (words, pitch) in axis
+                .chunks_exact_mut(2)
+                .zip([model.pitch, model.turret_pitch])
+            {
+                let coordinate = point / pitch;
+                let cell = coordinate.floor();
+                if !cell.is_finite() || cell.abs() > f64::from(i32::MAX - 1024) {
+                    return Err(Error::Unsupported("weather texel axis addressing"));
+                }
+                words[0] = cell as i32 as u32;
+                words[1] = ((coordinate - cell) as f32).to_bits();
             }
-            output.push([cell as i32 as u32, ((coordinate - cell) as f32).to_bits()]);
+            output.push(axis);
         }
     }
     Ok(output)

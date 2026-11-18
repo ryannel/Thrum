@@ -1,5 +1,6 @@
 //! GPU weather products. The game supplies the field's type data and committed state.
 mod layer;
+mod noise;
 mod shade;
 mod sun_path;
 mod weather;

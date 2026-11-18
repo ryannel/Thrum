@@ -30,6 +30,12 @@ impl Type {
 pub struct Profile {
     /// Horizontal lattice pitch, metres.
     pub pitch: f64,
+    /// Pitch of the finer air-frame turret lattice, metres.
+    pub turret_pitch: f64,
+    /// A turret's thickness share at which its column starts to appear.
+    pub turret_least: f64,
+    /// Thickness share over which coverage and thickness fade in together.
+    pub turret_fade: f64,
     /// Generation period, weather seconds.
     pub period: f64,
     /// Detail erosion at its mean, 0..=1.
@@ -100,6 +106,12 @@ impl Field {
     pub fn new(seed: u32, profile: Profile, types: Vec<Type>) -> Result<Self, Error> {
         if !profile.pitch.is_finite()
             || profile.pitch <= 0.0
+            || !profile.turret_pitch.is_finite()
+            || profile.turret_pitch <= 0.0
+            || !unit(profile.turret_least)
+            || !unit(profile.turret_fade)
+            || profile.turret_fade == 0.0
+            || profile.turret_least + profile.turret_fade > 1.0
             || !profile.period.is_finite()
             || profile.period <= 0.0
             || !unit(profile.detail_mean)
@@ -174,6 +186,7 @@ impl Field {
     pub fn column(&self, air: [f64; 2], time: f64, parameters: Parameters) -> Column {
         let t = self.kind(parameters.kind);
         let site = air.map(|p| (p / self.profile.pitch).floor() as i64);
+        let turret = self.turret(air);
         let mut coverage: f64 = 0.0;
         let mut depth: f64 = 0.0;
         let mut age = 0.0;
@@ -199,13 +212,18 @@ impl Field {
                     let r2 = ((air[0] - cell.centre[0]).powi(2)
                         + (air[1] - cell.centre[1]).powi(2))
                         / radius.powi(2);
-                    let d = envelope * (1.0 - r2).max(0.0) * (1.0 - t.deck);
+                    let dome = envelope * (1.0 - r2).max(0.0) * (1.0 - t.deck);
+                    let share = dome.powf(0.7).min(envelope * turret);
+                    let clearing =
+                        smooth((share - self.profile.turret_least) / self.profile.turret_fade);
+                    let d = dome * clearing;
                     if d > coverage {
                         age = phase;
                     }
                     coverage = coverage.max(d);
-                    depth = depth
-                        .max((t.depth[0] + (t.depth[1] - t.depth[0]) * cell.depth) * d.powf(0.7));
+                    depth = depth.max(
+                        (t.depth[0] + (t.depth[1] - t.depth[0]) * cell.depth) * share * clearing,
+                    );
                 }
             }
         }
@@ -244,6 +262,32 @@ impl Field {
         }
     }
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "lattice indices are floor coordinates"
+    )]
+    fn turret(&self, air: [f64; 2]) -> f64 {
+        let position = air.map(|x| x / self.profile.turret_pitch);
+        let site = position.map(|x| x.floor() as i64);
+        let local = position.map(|x| x - x.floor());
+        let mut cap: f64 = 0.0;
+        for x in -1..=1 {
+            for z in -1..=1 {
+                let i = site[0].wrapping_add(x);
+                let j = site[1].wrapping_add(z);
+                let random = |stream| self.random(i, j, 7, stream);
+                let rank = random(73).powf(1.6);
+                // A cap fits within its site's one-ring neighbourhood.
+                let radius = ((0.45 + 0.45 * rank) * (0.85 + 0.3 * random(72))).min(1.0);
+                let dx = local[0] - x as f64 - random(70);
+                let dz = local[1] - z as f64 - random(71);
+                let r2 = (dx * dx + dz * dz) / (radius * radius);
+                cap = cap.max((0.3 + 0.7 * rank) * (1.0 - r2).max(0.0).sqrt());
+            }
+        }
+        cap
+    }
+
     /// One density function shared by all consumers. `volume` resolves the voxel
     /// slab for a directed shape; absent slabs use the bounded column form.
     /// `weight` blends volume and column forms of the same condensate once.
@@ -272,17 +316,24 @@ impl Field {
         let air = state.to_air([point[0], point[2]]);
         let p = state.parameters();
         let extinction = self.kind(p.kind).extinction();
-        let shape_noise = self.noise([air[0] / 200.0, point[1] / 200.0, air[1] / 200.0], 40);
-        let detail = match fidelity {
-            Density::Uneroded => 0.0,
-            Density::Coarse => self.profile.detail_mean,
-            Density::Full => self.noise([air[0] / 25.0, point[1] / 25.0, air[1] / 25.0], 41),
-        };
+        let point_air = [air[0], point[1], air[1]];
+        let noise = std::cell::LazyCell::new(|| {
+            let shape = self.shape_noise(point_air);
+            let detail = match fidelity {
+                Density::Full => self.detail_noise(point_air),
+                _ => self.profile.detail_mean,
+            };
+            (shape, detail)
+        });
         let erode = |sigma| {
-            if matches!(fidelity, Density::Uneroded) {
+            if sigma <= 0.0
+                || extinction <= 0.0
+                || self.profile.erosion == 0.0
+                || matches!(fidelity, Density::Uneroded)
+            {
                 sigma
             } else {
-                self.erode(sigma, extinction, shape_noise, detail)
+                self.erode(sigma, extinction, noise.0, noise.1)
             }
         };
         let column = self.column(air, state.time(), p);
@@ -311,18 +362,12 @@ impl Field {
     }
 
     fn erode(&self, sigma: f64, extinction: f64, shape: f64, detail: f64) -> f64 {
-        if sigma <= 0.0 || extinction <= 0.0 || self.profile.erosion == 0.0 {
-            return sigma;
-        }
-        // The envelope and vertical profile form a signal swept through fixed
-        // air-frame noise. Remapping removes weak edges entirely and leaves
-        // solid interiors intact. The hash noise is strictly below one.
         let signal = (sigma / extinction).min(1.0);
-        let threshold = self.profile.erosion * shape;
-        let shaped = ((signal - threshold) / (1.0 - threshold)).max(0.0);
-        // Detail acts only on the remaining edge, and never on a solid core.
+        let threshold = self.profile.erosion * (1.0 - shape);
+        let edge = (1.0 - threshold).clamp(0.0001, 0.12);
+        let shaped = ((signal - threshold) / edge).clamp(0.0, 1.0);
         let eroded = (shaped - self.profile.erosion * detail * (1.0 - shaped)).max(0.0);
-        sigma * (eroded / signal).min(1.0)
+        sigma * eroded
     }
 
     /// Midpoint f64 path reference, for any direction. The caller states a finite
@@ -394,7 +439,7 @@ impl Field {
         clippy::cast_sign_loss,
         reason = "hash deliberately wraps integer coordinates to 32 bits"
     )]
-    fn random(&self, i: i64, j: i64, g: i64, stream: u32) -> f64 {
+    pub(crate) fn random(&self, i: i64, j: i64, g: i64, stream: u32) -> f64 {
         let mut x = (i as u32)
             .wrapping_mul(0x9e37_79b1)
             .wrapping_add((j as u32).wrapping_mul(0x85eb_ca77))

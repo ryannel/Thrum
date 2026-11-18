@@ -9,22 +9,11 @@
 @group(2) @binding(7) var sun_far:texture_2d_array<f32>;
 struct CloudMapping {region:vec4<f32>,plane_drift:vec4<f32>,path_border:vec4<f32>,far_value:vec4<f32>,near:vec4<f32>,middle:vec4<f32>}
 @group(2) @binding(8) var<uniform> mapping:CloudMapping;
+@group(2) @binding(11) var shape_noise: texture_3d<f32>;
+@group(2) @binding(12) var detail_noise: texture_3d<f32>;
+@group(2) @binding(13) var noise_sampler: sampler;
 
 fn cloud_smooth(x:f32)->f32 {let a=clamp(x,0.0,1.0);return a*a*(3.0-2.0*a);}
-fn cloud_hash(i:u32,j:u32,g:u32,stream:u32)->f32 {
-    var x=i*0x9e3779b1u+j*0x85ebca77u+g*0xc2b2ae3du+(stream+131u*cloud.settings.x)*0x27d4eb2fu;
-    x=x^(x>>15u);x=x*0x2c1b3c6du;x=x^(x>>12u);x=x*0x297a2d39u;x=x^(x>>15u);
-    return f32(x)*0.00000000023283064365386963;
-}
-fn cloud_noise(point:vec3<f32>,scale:f32,stream:u32)->f32 {
-    let p=point/scale;let lo=vec3<i32>(floor(p));let f=vec3(cloud_smooth(fract(p.x)),cloud_smooth(fract(p.y)),cloud_smooth(fract(p.z)));
-    var n=0.0;
-    for(var x=0;x<=1;x++){for(var y=0;y<=1;y++){for(var z=0;z<=1;z++){
-        let w=select(vec3(1.0)-f,f,vec3<bool>(x!=0,y!=0,z!=0));
-        let base=select(cloud.noise.zw,cloud.noise.xy,stream==40u);
-        n+=w.x*w.y*w.z*cloud_hash(base.x+u32(lo.x+x),u32(lo.y+y),base.y+u32(lo.z+z),stream);
-    }}}return n;
-}
 fn cloud_bilinear(field:texture_2d_array<f32>,coordinate:vec2<f32>,level:i32)->vec4<f32> {
     let size=vec2<i32>(textureDimensions(field));let p=coordinate-0.5;let lo=vec2<i32>(floor(p));let f=fract(p);
     return mix(mix(textureLoad(field,clamp(lo,vec2(0),size-1),level,0),textureLoad(field,clamp(lo+vec2(1,0),vec2(0),size-1),level,0),f.x),mix(textureLoad(field,clamp(lo+vec2(0,1),vec2(0),size-1),level,0),textureLoad(field,clamp(lo+vec2(1),vec2(0),size-1),level,0),f.x),f.y);
@@ -64,13 +53,11 @@ fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
 }
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
     if sigma<=0.0 || cloud.physical.x<=0.0 || cloud.physical.y==0.0 {return sigma;}
-    let signal=min(1.0,sigma/cloud.physical.x);
-    let shape=mix(cloud_noise(point,200.0,40u),0.5,clamp((footprint-100.0)/300.0,0.0,1.0));
-    let detail=mix(cloud_noise(point,25.0,41u),cloud.physical.z,clamp(footprint/50.0,0.0,1.0));
-    let threshold=cloud.physical.y*shape;
-    let shaped=max(0.0,(signal-threshold)/(1.0-threshold));
-    let eroded=max(0.0,shaped-cloud.physical.y*detail*(1.0-shaped));
-    return sigma*min(1.0,eroded/signal);
+    let shape_uv = point / 6400.0 + vec3(cloud.noise.x, 0.0, cloud.noise.y);
+    let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
+    let shape = textureSampleLevel(shape_noise, noise_sampler, shape_uv, erosion_mip(footprint, 50.0)).r;
+    let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
+    return cloud_erode(sigma, cloud.physical.x, cloud.physical.y, shape, detail);
 }
 
 fn cloud_sun_depths(world:vec3<f32>)->vec2<f32> {

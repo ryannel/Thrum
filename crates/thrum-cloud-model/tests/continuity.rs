@@ -16,6 +16,9 @@ fn field() -> Field {
         7,
         Profile {
             pitch: 1300.0,
+            turret_pitch: 340.0,
+            turret_least: 0.18,
+            turret_fade: 0.12,
             period: 1600.0,
             detail_mean: 0.5,
             erosion: 0.3,
@@ -168,8 +171,9 @@ fn birth_and_death_are_resolved_and_a_switched_cell_fails_each_quantity() {
             } else {
                 field.column(cell.centre, time, parameters(0.8, 0.0))
             };
-            birth_samples += usize::from(phase > 0.0 && phase < 0.05 && c.coverage > 0.0);
-            death_samples += usize::from(phase > 0.95 && phase < 1.0 && c.coverage > 0.0);
+            // Turrets reach the clearing share after the life envelope opens.
+            birth_samples += usize::from(phase > 0.0 && phase < 0.25 && c.coverage > 0.0);
+            death_samples += usize::from(phase > 0.75 && phase < 1.0 && c.coverage > 0.0);
             if i > 0 {
                 accumulate(&mut maxima, previous, values(c));
             }

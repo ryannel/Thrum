@@ -6,12 +6,13 @@ struct Params {
     vertical: vec4<f32>,
     noise: vec4<u32>,
     rows: vec4<u32>,
+    turret: vec4<f32>,
 };
 @group(0) @binding(0) var<uniform> p: Params;
 @group(0) @binding(1) var columns: texture_storage_2d_array<rgba32float,write>;
 @group(0) @binding(2) var optical: texture_storage_2d_array<rgba32float,write>;
 @group(0) @binding(3) var identities: texture_storage_2d_array<rgba32uint,write>;
-@group(0) @binding(4) var<storage,read> axes:array<vec2<u32>>;
+@group(0) @binding(4) var<storage,read> axes:array<vec4<u32>>;
 
 fn hash(i:u32,j:u32,g:u32,stream:u32)->u32 {
     var x=i*0x9e3779b1u+j*0x85ebca77u+g*0xc2b2ae3du+(stream+131u*p.integers.w)*0x27d4eb2fu;
@@ -19,6 +20,23 @@ fn hash(i:u32,j:u32,g:u32,stream:u32)->u32 {
 }
 fn random(i:u32,j:u32,g:u32,stream:u32)->f32 {return f32(hash(i,j,g,stream))*0.00000000023283064365386963;}
 fn smooth_unit(x:f32)->f32 {let a=clamp(x,0.0,1.0);return a*a*(3.0-2.0*a);}
+fn turret_cap(site: vec2<u32>, local: vec2<f32>) -> f32 {
+    var cap = 0.0;
+    for (var x = -1; x <= 1; x++) {
+        for (var z = -1; z <= 1; z++) {
+            let i = site.x + u32(x);
+            let j = site.y + u32(z);
+            let rank = pow(random(i, j, 7u, 73u), 1.6);
+            let radius = min(1.0, (0.45 + 0.45 * rank) * (0.85 + 0.3 * random(i, j, 7u, 72u)));
+            let centre = vec2<f32>(f32(x), f32(z)) +
+                vec2<f32>(random(i, j, 7u, 70u), random(i, j, 7u, 71u));
+            let delta = local - centre;
+            let r2 = dot(delta, delta) / (radius * radius);
+            cap = max(cap, (0.3 + 0.7 * rank) * sqrt(max(0.0, 1.0 - r2)));
+        }
+    }
+    return cap;
+}
 fn noise(point:vec3<f32>)->f32 {
     let offset=vec3<i32>(floor(point));let f=vec3<f32>(smooth_unit(fract(point.x)),smooth_unit(fract(point.y)),smooth_unit(fract(point.z)));
     var n=0.0;
@@ -32,10 +50,10 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     if id.x>=p.rows.z || id.y>=p.rows.y {return;}
     let row=(p.rows.x+id.y)%p.rows.z;
     let coordinate=p.origin.xy+(vec2<f32>(f32(id.x),f32(row))+0.5)*p.origin.w;
-    let cell_offset=vec2<i32>(floor(coordinate));
     let ax=axes[id.x];let az=axes[p.rows.z+row];
     let site=vec2<u32>(ax.x,az.x);
     let local=vec2<f32>(bitcast<f32>(ax.y),bitcast<f32>(az.y));
+    let turret = turret_cap(vec2<u32>(ax.z, az.z), bitcast<vec2<f32>>(vec2<u32>(ax.w, az.w)));
     var coverage=0.0;var depth=0.0;var age=0.0;var generation_mask=0u;
     for(var di=-1;di<=1;di++){for(var dj=-1;dj<=1;dj++){
         let i=site.x+u32(di);let j=site.y+u32(dj);
@@ -54,11 +72,14 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
             let radius=(0.3+0.5*r*r)*(0.5+0.5*envelope);
             let centre=vec2<f32>(f32(di),f32(dj))+vec2<f32>(random(i,j,g,5u),random(i,j,g,6u));
             let delta=local-centre;
-            let d=envelope*max(0.0,1.0-dot(delta,delta)/(radius*radius))*(1.0-p.vertical.x);
+            let dome=envelope*max(0.0,1.0-dot(delta,delta)/(radius*radius))*(1.0-p.vertical.x);
+            let share=min(pow(dome,0.7),envelope*turret);
+            let clearing=smooth_unit((share-p.turret.x)/p.turret.y);
+            let d=dome*clearing;
             if d>coverage {age=phase;}
             coverage=max(coverage,d);
             let h=random(i,j,g,8u);
-            depth=max(depth,mix(p.physical.y,p.physical.z,h)*pow(d,0.7));
+            depth=max(depth,mix(p.physical.y,p.physical.z,h)*share*clearing);
         }
     }}
     let rem=vec2<f32>(vec2<i32>(p.integers.xy)-vec2<i32>(p.noise.xy)*4);

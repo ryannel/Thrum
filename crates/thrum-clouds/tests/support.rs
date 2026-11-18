@@ -17,6 +17,9 @@ fn data() -> (Profile, Vec<Type>) {
     (
         Profile {
             pitch: 1000.0,
+            turret_pitch: 300.0,
+            turret_least: 0.18,
+            turret_fade: 0.12,
             period: 1800.0,
             detail_mean: 0.5,
             erosion: 0.4,
@@ -119,6 +122,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
             map.submitted();
             let outputs = read(&device, &queue, map.textures());
             for (level, origin) in origins.iter().enumerate() {
+                let mut clear_and_cloudy = [0usize; 2];
                 for y in 0..256 {
                     let stamp = map.row_stamps()[level][y];
                     assert!(
@@ -148,6 +152,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
                             f32::from_bits(words(1, 0)),
                             f32::from_bits(words(1, 1)),
                         ];
+                        clear_and_cloudy[usize::from(actual[2] > 0.0)] += 1;
                         for j in 0..6 {
                             largest[j] = largest[j].max((f64::from(actual[j]) - values[j]).abs());
                         }
@@ -192,6 +197,16 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
                                 );
                             }
                         }
+                    }
+                }
+                if level + 1 == origins.len() {
+                    assert!(map.profile().texels[level] > profile.turret_pitch * 2.0);
+                    assert!(
+                        clear_and_cloudy.into_iter().all(|n| n > 0),
+                        "{clear_and_cloudy:?}"
+                    );
+                    if index == 0 {
+                        println!("coarsest level clear/cloudy texel centres: {clear_and_cloudy:?}");
                     }
                 }
             }

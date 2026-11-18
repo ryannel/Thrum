@@ -22,6 +22,9 @@ pub fn shade_config() -> ShadeConfig {
         seed: 39,
         model: Profile {
             pitch: 4600.0,
+            turret_pitch: 1300.0,
+            turret_least: 0.18,
+            turret_fade: 0.12,
             period: 1800.0,
             detail_mean: 0.5,
             erosion: 0.61,
