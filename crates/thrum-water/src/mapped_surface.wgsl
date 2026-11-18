@@ -20,9 +20,9 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>) -> f32 {
     // under the displaced point, where the opaque depth actually cuts it.
     let ground = map_cell(world.xz);
     if ground.inside { depth = world.y - ground.bed; }
-    let contact = smoothstep(0.0, 0.024, depth);
-    let shallow = smoothstep(0.024, 0.28, depth);
-    return contact * mix(0.52, 1.0, shallow);
+    let contact = smoothstep(0.0, 0.018, depth);
+    let shallow = smoothstep(0.018, 0.12, depth);
+    return contact * mix(0.50, 1.0, shallow);
 }
 
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
