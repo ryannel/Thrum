@@ -154,7 +154,7 @@
         {
           "verdict": "fail",
           "commit": "098e5c73a36403431772c434c3e927b9ce3907c7",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md",
+          "review": "docs/evidence/MESH-SHADING/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -194,6 +194,38 @@
             "turns": 1
           },
           "at": "2026-11-18T17:38:47Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "389c7ec51090fab31c038433144687b5bf92a145",
+          "review": "docs/evidence/MESH-SHADING/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 164378,
+            "cached": 4690432,
+            "output": 10575,
+            "turns": 1
+          },
+          "at": "2026-11-18T22:18:04Z"
         }
       ],
       "authorised": {
@@ -229,6 +261,13 @@
           "output": 184541,
           "turns": 4
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "389c7ec51090fab31c038433144687b5bf92a145",
+        "review": "docs/evidence/MESH-SHADING/M2-review.md",
+        "checked": "d57b16d86471a4c0d14b6d9d0449c34619936d6d",
+        "at": "2026-11-18T22:18:04Z"
       }
     },
     "M3": {

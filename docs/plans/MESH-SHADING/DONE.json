@@ -122,7 +122,7 @@
     {
       "id": "M2",
       "name": "The valley's terrain and cooked meshes draw through the object and mesh stages in the main view and the Sun's shadow maps, through edits and device loss, with the cost of both paths on record",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [],
@@ -160,7 +160,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M2/shadow-parity.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/MESH-SHADING/M2-review.md"
         },
         {
@@ -204,7 +204,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/MESH-SHADING/M2.md#m27-valley-cost",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/MESH-SHADING/M2-review.md"
         },
         {
@@ -227,18 +227,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": "docs/evidence/MESH-SHADING/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Low-Sun parity accepts a one-sided stage caster",
-          "item": "M2.3",
-          "repeat": false
-        },
-        {
-          "name": "Cost rows omit path-dependent resident draw buffers",
-          "item": "M2.7",
-          "repeat": false
         }
       ]
     },
