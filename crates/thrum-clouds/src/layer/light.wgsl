@@ -10,13 +10,22 @@ fn cloud_phase_row(row:u32,s2:f32)->f32 {
     let start=row*entries+lo;
     return mix(cloud_phase[start],cloud_phase[start+1u],at-f32(lo));
 }
-fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec4<f32> {
+fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec2<f32> {
     // |ray-sun|^2/4 preserves the forward peak where 1-dot loses digits.
     let s2=clamp(dot(ray-sun,ray-sun)*0.25,0.0,1.0);
     let row=u32(cloud.erosion.x);
     let first=mix(cloud_phase_row(row,s2),cloud_phase_row(row+1u,s2),cloud.erosion.y);
-    return vec4(first,cloud_hg_phase(s2,CLOUD_LATER_G.x),cloud_hg_phase(s2,CLOUD_LATER_G.y),cloud_hg_phase(s2,CLOUD_LATER_G.z));
+    return vec2(first,cloud_hg_phase(s2,cloud.erosion.z*cloud.scattering.z));
 }
-fn cloud_source(solar:vec3<f32>,phases:vec4<f32>,sun_depth:f32,vertical_depths:vec2<f32>)->vec3<f32> {
-    return cloud_order_source(solar,phases,sun_depth,vertical_depths,cloud.erosion.z,cloud_ambient[0].rgb,cloud_ambient[1].rgb);
+fn cloud_source(solar:vec3<f32>,phases:vec2<f32>,sun_depths:vec2<f32>,
+                vertical_depths:vec2<f32>,ray:vec3<f32>,distance:f32,transmission:f32)->vec3<f32> {
+    // The first profile's near/far medium handover ends at 500 m.
+    let boundary=cloud_smooth((distance-500.0)/500.0);
+    let g=cloud.erosion.z;
+    let depth=-log(transmission);
+    let direct=cloud_solar_source(phases,sun_depths,vertical_depths.x,-ray,depth,boundary,
+        mapping.path_border.xyz,cloud.scattering.xyz,g);
+    let diffuse_depth=0.75*(1.0-g)*vertical_depths;
+    let ambient=cloud_ambient[0].rgb/(1.0+diffuse_depth.x)+cloud_ambient[1].rgb/(1.0+diffuse_depth.y);
+    return solar*direct+ambient;
 }

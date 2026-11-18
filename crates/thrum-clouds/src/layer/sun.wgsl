@@ -29,7 +29,7 @@ fn cloud_path_nodes(field:texture_2d_array<f32>,pixel:vec2<i32>,first:i32)->vec4
     }
     return result;
 }
-fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32)->f32 {
+fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32)->vec2<f32> {
     let count=textureNumLayers(field)*4u;
     let q=clamp((cloud.heights.y-height)/(cloud.heights.y-cloud.heights.x),0.0,1.0)*f32(count-1u);
     let pixel=uv*vec2<f32>(textureDimensions(field))-0.5;
@@ -42,5 +42,11 @@ fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32)->f32 {
     let c=cloud_path_nodes(field,lo+vec2(0,1),first);
     let d=cloud_path_nodes(field,lo+vec2(1),first);
     let vertical=mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
-    return cloud_path_cubic(vertical,fract(q));
+    let last=i32(textureNumLayers(field))-1;
+    let limit=vec2<i32>(textureDimensions(field))-1;
+    let whole_a=textureLoad(field,clamp(lo,vec2(0),limit),last,0).w;
+    let whole_b=textureLoad(field,clamp(lo+vec2(1,0),vec2(0),limit),last,0).w;
+    let whole_c=textureLoad(field,clamp(lo+vec2(0,1),vec2(0),limit),last,0).w;
+    let whole_d=textureLoad(field,clamp(lo+vec2(1),vec2(0),limit),last,0).w;
+    return vec2(cloud_path_cubic(vertical,fract(q)),mix(mix(whole_a,whole_b,f.x),mix(whole_c,whole_d,f.x),f.y));
 }

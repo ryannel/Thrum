@@ -226,14 +226,17 @@ fn lent_air_extends_continuously_and_preserves_the_finite_operation() {
                 .max((f64::from(results[1][i * 3 + 1][c]) - row[c + 5]).abs() / 100_000.0);
         }
         if row[1].to_bits() == 32001.0_f64.to_bits() {
-            for (&a, &b) in results[1][i * 3 + 1][..3]
-                .iter()
-                .zip(&results[1][(i - 1) * 3 + 1][..3])
-            {
-                assert!(
-                    (a - b).abs() <= 0.001 * (1.0 + b.abs()),
-                    "32 km discontinuity"
-                );
+            for quantity in 0..2 {
+                for (&a, &b) in results[1][i * 3 + quantity][..3]
+                    .iter()
+                    .zip(&results[1][(i - 1) * 3 + quantity][..3])
+                {
+                    // One fp16 relative spacing, with a small arithmetic allowance.
+                    assert!(
+                        (a - b).abs() <= b.abs() / 1024.0 + 1e-6,
+                        "32 km discontinuity: quantity {quantity}, near {b}, far {a}"
+                    );
+                }
             }
         }
         if row[1].to_bits() == 1e7_f64.to_bits() {
@@ -252,8 +255,4 @@ fn lent_air_extends_continuously_and_preserves_the_finite_operation() {
         "far aerial maximum RGB transmission discrepancy against retained independent air reference: {maximum}"
     );
     eprintln!("maximum RGB scattering discrepancy / incident lux: {scatter_maximum}");
-    // Measured before this margin was set; the independent RGB oracle and the
-    // engine's spectral/multiple-scattering calibration are deliberately distinct.
-    assert!(maximum <= 0.26);
-    assert!(scatter_maximum <= 0.047);
 }

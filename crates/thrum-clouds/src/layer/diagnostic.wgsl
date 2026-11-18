@@ -14,7 +14,7 @@ fn observe() {
     observation[2]=vec4(sun,cloud.erosion.z);
     observation[3]=vec4(environment_sky_radiance(ray),cloud.heights.z);
     observation[4]=cloud_ambient[0];observation[5]=cloud_ambient[1];
-    observation[6]=phase;
+    observation[6]=vec4(phase,cloud.scattering.xy);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=max(0.0,(cloud.heights.x-camera.y)/ray.y);
@@ -29,22 +29,16 @@ fn observe() {
         let sigma=cloud_density(point,at/f32(textureDimensions(transport).y));
         if sigma>0.0 {
             let world=camera+ray*at;
-            let reach=min(120.0,(cloud.heights.y-point.y)/max(0.1,sun.y));
-            var local=0.0;
-            for(var j=0u;j<cloud.settings.y;j++) {
-                local+=cloud_density(point+sun*((f32(j)+0.5)*reach/f32(cloud.settings.y)),at/f32(textureDimensions(transport).y))*reach/f32(cloud.settings.y);
-            }
-            var tau=cloud_sun_tau(world);
-            if cloud.settings.y>0u {tau=local+cloud_sun_tau(world+sun*reach);}
+            let sun_depths=cloud_local_sun(point,world,at/f32(textureDimensions(transport).y));
             let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-            let source=cloud_source(solar,phase,tau,column.yz);
+            let source=cloud_source(solar,phase,sun_depths,column.yz,ray,at,transmission);
             let segment=cloud_beer(sigma,sigma*source,step);
             let air=environment_aerial(world,vec2(0.5));
             let offset=8u+count*8u;
             observation[offset]=vec4(world,at);
-            observation[offset+1u]=vec4(sigma,tau,step,transmission);
+            observation[offset+1u]=vec4(sigma,sun_depths.x,step,transmission);
             observation[offset+2u]=column;
-            observation[offset+3u]=vec4(solar,0.0);
+            observation[offset+3u]=vec4(solar,sun_depths.y);
             observation[offset+4u]=vec4(source,0.0);
             observation[offset+5u]=vec4(segment.scattering,segment.transmittance);
             observation[offset+6u]=vec4(air.transmission,0.0);

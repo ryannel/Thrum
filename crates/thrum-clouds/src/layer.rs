@@ -64,6 +64,7 @@ struct Uniform {
     weather: [[f32; 4]; 4],
     physical: [f32; 4],
     erosion: [f32; 4],
+    scattering: [f32; 4],
     drift: [f32; 4],
     heights: [f32; 4],
     settings: [u32; 4],
@@ -312,6 +313,7 @@ impl Layer {
         });
         let stride = self.profile.refresh_stride;
         let heights = weather.height_range();
+        let (phase, scattering) = self.lighting.type_parameters(state.parameters().kind);
         let uniform = Uniform {
             weather: std::array::from_fn(|i| {
                 [
@@ -327,7 +329,8 @@ impl Layer {
                 model.detail_mean as f32,
                 kind.droplet_radius as f32,
             ],
-            erosion: self.lighting.type_parameters(state.parameters().kind),
+            erosion: phase,
+            scattering,
             drift: [
                 (travel[0] + anchor[0]) as f32,
                 (travel[1] + anchor[1]) as f32,

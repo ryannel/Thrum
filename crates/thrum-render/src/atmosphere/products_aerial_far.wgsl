@@ -22,7 +22,8 @@ fn environment_aerial(world_point: vec3<f32>, uv: vec2<f32>) -> EnvironmentAeria
     let boundary_remaining=sample_sun_transmittance(altitude(at_boundary),boundary_mu,surface_transmittance,aerial_sampler);
     let boundary_transmission=clamp(infinity/max(boundary_remaining,vec3(1e-20)),vec3(0.0),vec3(1.0));
     let weight=clamp((boundary_transmission-transmission)/max(boundary_transmission-infinity,vec3(1e-8)),vec3(0.0),vec3(1.0));
-    return EnvironmentAerial(transmission,mix(boundary.scatter,environment_sky_radiance(direction),weight));
+    let continued=boundary.transmission*clamp(transmission/max(boundary_transmission,vec3(1e-20)),vec3(0.0),vec3(1.0));
+    return EnvironmentAerial(continued,mix(boundary.scatter,environment_sky_radiance(direction),weight));
 }
 
 fn environment_aerial_volume(world_point: vec3<f32>, uv: vec2<f32>) -> EnvironmentAerial {

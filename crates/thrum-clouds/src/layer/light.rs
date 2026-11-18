@@ -1,6 +1,6 @@
 //! Preparation-time droplet tables and frame-local cloud-free hemisphere light.
 use crate::{Error, WeatherMap};
-use thrum_cloud_model::{Orders, Phase, PhaseTable};
+use thrum_cloud_model::{Phase, PhaseTable};
 use thrum_render::{atmosphere::EnvironmentProducts, contribution::SceneSurface};
 
 pub(super) const PASS: &str = "cloud hemisphere light";
@@ -122,13 +122,28 @@ impl Lighting {
         clippy::cast_sign_loss,
         reason = "validated type axis selects bounded phase rows and shader floats"
     )]
-    pub(super) fn type_parameters(&self, kind: f64) -> [f32; 4] {
+    pub(super) fn type_parameters(&self, kind: f64) -> ([f32; 4], [f32; 4]) {
         let axis = kind * (self.phases.len() - 1) as f64;
         let low = (axis.floor() as usize).min(self.phases.len() - 2);
         let weight = axis - low as f64;
-        let mean = self.phases[low].mean_cosine() * (1.0 - weight)
-            + self.phases[low + 1].mean_cosine() * weight;
-        [low as f32, weight as f32, mean as f32, ENTRIES as f32]
+        let blend = |parameter: fn(Phase) -> f64| {
+            (parameter(self.phases[low]) * (1.0 - weight)
+                + parameter(self.phases[low + 1]) * weight) as f32
+        };
+        (
+            [
+                low as f32,
+                weight as f32,
+                blend(Phase::mean_cosine),
+                ENTRIES as f32,
+            ],
+            [
+                blend(Phase::forward_share),
+                blend(|phase| phase.parameters()[3]),
+                blend(Phase::broad_mean_cosine),
+                0.0,
+            ],
+        )
     }
 
     pub(super) fn encode(
@@ -155,18 +170,4 @@ pub(super) fn storage_entry(binding: u32, read_only: bool) -> wgpu::BindGroupLay
         },
         count: None,
     }
-}
-
-pub(super) fn shader() -> String {
-    let vec4 = |v: [f64; 4]| format!("vec4<f32>({},{},{},{})", v[0], v[1], v[2], v[3]);
-    format!(
-        "const CLOUD_WEIGHTS:vec4<f32>={};\nconst CLOUD_BRANCHES:vec4<f32>={};\nconst CLOUD_LATER_G:vec3<f32>=vec3<f32>({},{},{});\n{}\n{}",
-        vec4(Orders::WEIGHTS),
-        vec4(Orders::EXTINCTION),
-        Orders::LATER_G[0],
-        Orders::LATER_G[1],
-        Orders::LATER_G[2],
-        include_str!("light.wgsl"),
-        include_str!("scattering.wgsl")
-    )
 }

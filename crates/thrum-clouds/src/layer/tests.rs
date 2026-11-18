@@ -18,6 +18,7 @@ fn shader_record_matches_rust_offsets() {
         std::mem::offset_of!(Uniform, weather),
         std::mem::offset_of!(Uniform, physical),
         std::mem::offset_of!(Uniform, erosion),
+        std::mem::offset_of!(Uniform, scattering),
         std::mem::offset_of!(Uniform, drift),
         std::mem::offset_of!(Uniform, heights),
         std::mem::offset_of!(Uniform, settings),

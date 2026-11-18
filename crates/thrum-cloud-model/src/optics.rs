@@ -117,10 +117,23 @@ impl Phase {
 
     /// Closed-form mean cosine of the point-source phase.
     pub fn mean_cosine(self) -> f64 {
+        (1.0 - self.weight) * self.hg + self.weight * self.broad_mean_cosine()
+    }
+
+    /// Mean cosine of the broad Draine lobe alone.
+    pub fn broad_mean_cosine(self) -> f64 {
         let g = self.draine;
-        let d = g * (1.0 + self.alpha * (3.0 + 2.0 * g * g) / 5.0)
-            / (1.0 + self.alpha * (1.0 + 2.0 * g * g) / 3.0);
-        (1.0 - self.weight) * self.hg + self.weight * d
+        g * (1.0 + self.alpha * (3.0 + 2.0 * g * g) / 5.0)
+            / (1.0 + self.alpha * (1.0 + 2.0 * g * g) / 3.0)
+    }
+
+    /// Second Legendre moment of the point-source mixture.
+    pub fn forward_share(self) -> f64 {
+        let g2 = self.draine * self.draine;
+        let c2 = (1.0 + 2.0 * g2) / 3.0;
+        let c4 = (8.0 * g2 * g2 + 20.0 * g2 + 7.0) / 35.0;
+        let broad = (g2 + self.alpha * (1.5 * c4 - 0.5 * c2)) / (1.0 + self.alpha * c2);
+        (1.0 - self.weight) * self.hg * self.hg + self.weight * broad
     }
 
     /// Disc-averaged phase by polar quadrature, with solid-angle weights.

@@ -48,7 +48,9 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
     return result;
 }
 fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
-    let sigma=cloud_column(point).x;
+    return cloud_detail(cloud_column(point).x,point,footprint);
+}
+fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
     if sigma<=0.0 || cloud.physical.x<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let signal=min(1.0,sigma/cloud.physical.x);
     let shape=mix(cloud_noise(point,200.0,40u),0.5,clamp((footprint-100.0)/300.0,0.0,1.0));
@@ -59,15 +61,14 @@ fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     return sigma*min(1.0,eroded/signal);
 }
 
-fn cloud_sun_tau(world:vec3<f32>)->f32 {
-    if world.y>=cloud.heights.y {return 0.0;}
+fn cloud_sun_depths(world:vec3<f32>)->vec2<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
     let near=(point-mapping.near.xy)/mapping.near.z;
     let nw=cloud_smooth(min(min(near.x,near.y),min(1.0-near.x,1.0-near.y))/0.15);
     if nw==1.0 {return cloud_path_sample(sun_near,near,world.y);}
     let middle=(point-mapping.middle.xy)/mapping.middle.z;
     let mw=cloud_smooth(min(min(middle.x,middle.y),min(1.0-middle.x,1.0-middle.y))/0.15);
-    var tau=0.0;
+    var tau=vec2(0.0);
     if mw==1.0 {tau=cloud_path_sample(sun_middle,middle,world.y);}
     else {
         let region=vec4(mapping.region.xy,mapping.region.z-mapping.region.x,0.0);
@@ -76,6 +77,19 @@ fn cloud_sun_tau(world:vec3<f32>)->f32 {
     }
     if nw>0.0 {tau=mix(tau,cloud_path_sample(sun_near,near,world.y),nw);}
     return tau;
+}
+
+fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,footprint:f32)->vec2<f32> {
+    if cloud.settings.y==0u {return cloud_sun_depths(world);}
+    let path=mapping.path_border.xyz;
+    let reach=min(120.0,(cloud.heights.y-point.y)/path.y);
+    let step=reach/f32(cloud.settings.y);
+    var local=0.0;
+    for(var j=0u;j<cloud.settings.y;j++) {
+        local+=cloud_density(point+path*((f32(j)+0.5)*step),footprint)*step;
+    }
+    let depths=cloud_sun_depths(world+path*reach);
+    return vec2(local+depths.x,max(local+depths.x,depths.y));
 }
 
 fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray:vec3<f32>,uv:vec2<f32>)->CloudTransport {
@@ -120,21 +134,13 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let at=distance+step*0.5;let point=air_camera+ray*at;
         let column=cloud_column(point);
         if column.x>0.0 {
-            let sigma=cloud_density(point,at/f32(size.y));
+            let footprint=at/f32(size.y);
+            let sigma=cloud_detail(column.x,point,footprint);
             if sigma>0.0 {
-                let sun=atmosphere.sun_lux.xyz;
                 let world=camera+ray*at;
-                var tau=0.0;
-                if cloud.settings.y>0u {
-                    let reach=min(120.0,(cloud.heights.y-point.y)/max(0.1,sun.y));
-                    var local=0.0;
-                    for(var j=0u;j<cloud.settings.y;j++) {
-                        local+=cloud_density(point+sun*((f32(j)+0.5)*reach/f32(cloud.settings.y)),at/f32(size.y))*reach/f32(cloud.settings.y);
-                    }
-                    tau=local+cloud_sun_tau(world+sun*reach);
-                }else {tau=cloud_sun_tau(world);}
+                let sun_depths=cloud_local_sun(point,world,footprint);
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-                let source=cloud_source(solar,phase,tau,column.yz);
+                let source=cloud_source(solar,phase,sun_depths,column.yz,ray,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
                 // A part spans at most 0.25 of the lent air's optical depth.
