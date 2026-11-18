@@ -66,6 +66,7 @@ Run `THRUM_WATER_BODIES=gale ./dev scene examples/water` for the craft and eight
 `calm`, `trade` or `gale` and optionally set `THRUM_WATER_SPEED=5` or `15`,
 `THRUM_WATER_HEADING=beam`, `THRUM_WATER_VIEW=chase`, or `THRUM_WATER_LOCATION=lake`.
 In Chrome the corresponding URL options are `?bodies=gale&speed=5&heading=beam&view=chase`.
+At zero speed the launch is held horizontally so the waterline shows pitch and roll in place.
 The panel controls speed, camera and Sun and shows refused requests, late points, unavailable
 uses and blocking reads.
 

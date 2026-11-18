@@ -226,12 +226,16 @@ impl Body {
             // The speed governor acts along the shaft. Feed forward the
             // resistance at the currently wetted stations, which varies
             // considerably between the crest and trough of a head sea.
-            let shaft = self
-                .propulsion
-                .try_normalize()
-                .unwrap_or_else(|| forward.with_y(0.0).normalize_or_zero());
-            let error = (self.propulsion - self.velocity).dot(shaft);
-            let thrust = shaft * (3.5 * error - force.dot(shaft)).clamp(-16.0, 16.0);
+            let thrust = if let Some(shaft) = self.propulsion.try_normalize() {
+                let error = (self.propulsion - self.velocity).dot(shaft);
+                shaft * (3.5 * error - force.dot(shaft)).clamp(-16.0, 16.0)
+            } else {
+                // The zero-speed inspection uses a moored craft, with heave,
+                // pitch and roll free and only its horizontal drift held.
+                -(force + 3.5 * self.velocity)
+                    .with_y(0.0)
+                    .clamp_length_max(16.0)
+            };
             force += thrust;
             work.motor = (thrust.dot(self.velocity) * dt).max(0.0);
             // Keep the commanded heading while leaving pitch and roll free.
