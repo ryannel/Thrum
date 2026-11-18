@@ -96,7 +96,8 @@ impl VisualPrepareInputs {
         let presenter = crate::present::SurfacePresenter::prepare(&capabilities, extent, profile)
             .await
             .map_err(|error| FrameError::Gpu(format!("extent presenter: {error:?}")))?;
-        let mut candidate = self.prepare(lighting, exposure, None).await?;
+        // Extent preparation nests the full scene preparation future.
+        let mut candidate = Box::pin(self.prepare(lighting, exposure, None)).await?;
         candidate
             .scene
             .as_mut()
