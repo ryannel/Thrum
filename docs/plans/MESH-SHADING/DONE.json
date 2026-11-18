@@ -158,8 +158,8 @@
           "ask": "Would a caster drawn one-sided, or with another placement's transform, fail this proof at the low Sun?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2/shadow-parity.log",
           "verdict": "fail",
           "review": "docs/evidence/MESH-SHADING/M2-review.md"
         },
@@ -202,8 +202,8 @@
           "check": "python3 scripts/mesh_stage_cost.py valley",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M2.md#m27-valley-cost",
           "verdict": "fail",
           "review": "docs/evidence/MESH-SHADING/M2-review.md"
         },
