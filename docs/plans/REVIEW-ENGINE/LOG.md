@@ -1,5 +1,10 @@
 # REVIEW-ENGINE log
 
+- 2026-11-18 M5 shares the deferred tick's undo, prepares each cook source once and packs six sea transforms per band.
+  On the Mac, undo copies fell to zero across three replay depths and all six cooked addresses matched.
+  The sea suite passed with its original bounds. FFT allocations fell from 49.5 to 27 MiB plus a 1 KiB table.
+  [M5 evidence](../../evidence/REVIEW-ENGINE/M5/README.md) records the contended Metal samples and the shared exact-image check.
+
 - 2026-11-17 M4 requires reportable errors at the tick, replay and inline clock boundaries.
   On `ac95a0a10`, 14 core integration and 12 clocked-world tests passed on mac-metal.
   The refusal tests recover the original game value and confirm tick and replay retries.

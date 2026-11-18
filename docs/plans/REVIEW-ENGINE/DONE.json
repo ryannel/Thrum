@@ -283,8 +283,8 @@
           "check": "cargo test --locked --offline -p thrum-core --test deferred_undo_cost",
           "ask": "Does the test count bytes copied across replays of different depth? Is the last tick's undo still the one a publication after the replay uses?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M5/README.md",
           "verdict": "",
           "review": ""
         },
@@ -294,8 +294,8 @@
           "check": "cargo test --locked --offline -p thrum-cook --test decode_once",
           "ask": "Does the test compare content addresses of every profile's product before and after, for a texture and a volume? The mip filter's odd-size and alpha handling change bytes and are not part of this item: were they left alone?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M5/README.md",
           "verdict": "",
           "review": ""
         },
@@ -306,8 +306,8 @@
           "lock": "gpu",
           "ask": "Does the record give the sea's GPU memory before and after against the design's account, and the paired GPU time of the cascade passes? Was any bound in `SEA`'s tests changed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M5/README.md; docs/evidence/REVIEW-ENGINE/M5/metal-cascade-ms.csv; docs/evidence/REVIEW-ENGINE/M5/metal-resource-bytes.csv",
           "verdict": "",
           "review": ""
         },
@@ -316,8 +316,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     }
