@@ -513,3 +513,8 @@
   The [first visible submission](../../evidence/CLOUDS/M3-cost.md) cost 42.770 ms under load. The cost check and its refusal passed.
   M3.1 still shows shelves and an overhead fold at turns 0.25, 0.50 and 0.75. The fold survives in the trace's opacity.
   The plan limits tuning to the turn. The [handoff](../../evidence/CLOUDS/M3-handoff.md) records the remaining form problem.
+
+- 2026-11-18 The lead's one [Metal look at erosion 0.20](../../evidence/CLOUDS/M3-erosion/README.md#metal-trial-at-020) completed all seven fixed views.
+  The builder and independent inspector still saw shelves, an overhead silhouette break and repeated caps.
+  M3.1 remains open. The branch restores 0.61 for the prior passing proofs.
+  The lead's next step is to move the form cue to a later milestone.

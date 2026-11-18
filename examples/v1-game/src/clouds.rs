@@ -27,7 +27,7 @@ pub fn shade_config() -> ShadeConfig {
             turret_fade: 0.12,
             period: 1800.0,
             detail_mean: 0.5,
-            erosion: 0.20,
+            erosion: 0.61,
         },
         types: vec![
             Type {

@@ -4411,6 +4411,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-erosion/metal-020/captures.tar",
+      "size": 29880320,
+      "sha256": "ee7b17dcfe0c89b636ab88fb8fa61f583cc25bb0a07710c62d8bbe64a0353689",
+      "date": "2026-11-18T22:13:14.418594+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/M3-lighting-diagnosis/snapshots.tar.gz",
       "size": 7141860,
       "sha256": "106e53492b7cf0a4187b571bf50dc6f2e248daa7e3ce4c73cc4742b0e89a08e8",
