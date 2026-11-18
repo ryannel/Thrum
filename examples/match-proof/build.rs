@@ -69,6 +69,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let output = PathBuf::from(std::env::var_os("OUT_DIR").expect("Cargo supplies OUT_DIR"));
-    fs::write(output.join("rule-set-id"), hash.finalize())?;
+    for variant in ["crowd", "mixed"] {
+        let mut identity = hash.clone();
+        identity.update(variant.as_bytes());
+        fs::write(
+            output.join(format!("rule-set-{variant}")),
+            identity.finalize(),
+        )?;
+    }
     Ok(())
 }

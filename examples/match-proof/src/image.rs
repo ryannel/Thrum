@@ -1,13 +1,15 @@
 use crowd_2d::{Candidate, Crowd, Simulation, frames};
 use serde_json::{Value, json};
-use thrum_core::sim::{GameRuntime, HistoryGame, StructuralChange};
+use thrum_core::sim::{
+    GameRuntime, HistoryGame, RuleSetIdentity, StructuralChange, WorldImageError,
+};
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use super::{RULE_SET, hex, identity};
+use super::{hex, rule_set};
 
 const IMAGE_LIMIT: usize = 4 * 1024 * 1024;
 const SOURCE_EPOCH: u128 = 101;
@@ -33,11 +35,16 @@ fn digest(runtime: &GameRuntime<Crowd>, game: &Crowd) -> String {
     )
 }
 
-fn snapshot(simulation: &Simulation, buffer: &mut Vec<u8>, tick_ns: u128) -> Value {
+fn snapshot(
+    simulation: &Simulation,
+    identity: RuleSetIdentity,
+    buffer: &mut Vec<u8>,
+    tick_ns: u128,
+) -> Value {
     let start = Instant::now();
     simulation
         .runtime
-        .write_world_image(RULE_SET, &simulation.game.resources, buffer)
+        .write_world_image(identity, &simulation.game.resources, buffer)
         .expect("write portable crowd");
     let write_ns = start.elapsed().as_nanos();
     let view = simulation.runtime.read();
@@ -64,6 +71,7 @@ fn snapshot(simulation: &Simulation, buffer: &mut Vec<u8>, tick_ns: u128) -> Val
 /// The reference trace or its image encoder fails.
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn capture(count: u32, mixed: bool, ticks: &[u32]) -> String {
+    let identity = rule_set(mixed);
     let mut simulation = if mixed {
         Simulation::mixed(count, SOURCE_EPOCH)
     } else {
@@ -96,25 +104,31 @@ pub fn capture(count: u32, mixed: bool, ticks: &[u32]) -> String {
             u64::from(target),
             "ordered capture ticks"
         );
-        let mut row = snapshot(&simulation, &mut buffer, tick_ns);
+        let mut row = snapshot(&simulation, identity, &mut buffer, tick_ns);
         row["despawned"] = json!(despawned);
         rows.push(row);
     }
-    json!({"identity": identity(), "rows": rows}).to_string()
+    json!({"identity": hex(&identity.0), "rows": rows}).to_string()
 }
 
 /// Install a Mac image in a fresh runtime and continue the corrected trace.
 ///
+/// # Errors
+/// The runtime refuses an incompatible or invalid image.
+///
 /// # Panics
-/// The reference runtime rejects the image or a trace tick.
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
-pub fn restore(count: u32, mixed: bool, image: &[u8], last: u32) -> String {
+/// A reference trace tick fails.
+pub fn restore(
+    count: u32,
+    mixed: bool,
+    image: &[u8],
+    last: u32,
+) -> Result<String, WorldImageError> {
     let (mut runtime, mut game, mut candidate) =
         Simulation::image_parts(count, DESTINATION_EPOCH, mixed);
+    let identity = rule_set(mixed);
     let start = Instant::now();
-    runtime
-        .restore_world_image(RULE_SET, &mut game.resources, image, IMAGE_LIMIT)
-        .expect("restore Mac image in fresh runtime");
+    runtime.restore_world_image(identity, &mut game.resources, image, IMAGE_LIMIT)?;
     let restore_ns = start.elapsed().as_nanos();
     let start_tick = runtime.tick();
     let initial = digest(&runtime, &game);
@@ -127,8 +141,8 @@ pub fn restore(count: u32, mixed: bool, image: &[u8], last: u32) -> String {
             checkpoints.push((tick, digest(&runtime, &game)));
         }
     }
-    json!({
-        "identity": identity(),
+    Ok(json!({
+        "identity": hex(&identity.0),
         "tick": start_tick,
         "epoch": u64::try_from(runtime.epoch().0).expect("proof epoch fits u64"),
         "initial": initial,
@@ -136,5 +150,5 @@ pub fn restore(count: u32, mixed: bool, image: &[u8], last: u32) -> String {
         "checkpoints": checkpoints,
         "restore_ns": u64::try_from(restore_ns).expect("timing fits u64"),
     })
-    .to_string()
+    .to_string())
 }

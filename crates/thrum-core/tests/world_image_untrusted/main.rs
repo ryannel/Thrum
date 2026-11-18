@@ -69,11 +69,18 @@ fn set_payload_length(bytes: &mut [u8]) {
     bytes[40..48].copy_from_slice(&payload.to_le_bytes());
 }
 
+fn install_intact(world: &mut GameRuntime<Rules>, game: &mut Rules, valid: &[u8], expected: u64) {
+    world
+        .restore_world_image(IDENTITY, &mut game.resource, valid, LIMIT)
+        .expect("the same destination accepts the unaltered image after the refusals");
+    assert_eq!(digest(world, game), expected);
+}
+
 #[test]
 fn every_truncation_and_trailing_data_leave_authority_intact() {
     let (host, rules) = runtime(1, true);
     let valid = image(&host, &rules);
-    let (mut world, mut game) = runtime(2, true);
+    let (mut world, mut game) = runtime(2, false);
     for end in 0..valid.len() {
         refuse(&mut world, &mut game, &valid[..end], LIMIT);
         if end >= 48 {
@@ -82,17 +89,19 @@ fn every_truncation_and_trailing_data_leave_authority_intact() {
             refuse(&mut world, &mut game, &corrected_length, LIMIT);
         }
     }
-    let mut trailing = valid;
+    let mut trailing = valid.clone();
     trailing.push(0);
+    refuse(&mut world, &mut game, &trailing, LIMIT);
     set_payload_length(&mut trailing);
     refuse(&mut world, &mut game, &trailing, LIMIT);
+    install_intact(&mut world, &mut game, &valid, digest(&host, &rules));
 }
 
 #[test]
 fn rejects_wrong_identity_and_lengths_without_allocating() {
     let (host, rules) = runtime(1, true);
     let valid = image(&host, &rules);
-    let (mut world, mut game) = runtime(2, true);
+    let (mut world, mut game) = runtime(2, false);
     assert_eq!(
         refuse(&mut world, &mut game, &valid, valid.len() - 1),
         (WorldImageError::Decode(StateDecodeError::Limit), 0)
@@ -115,13 +124,14 @@ fn rejects_wrong_identity_and_lengths_without_allocating() {
         refuse(&mut world, &mut game, &valid, valid.len()).0,
         WorldImageError::Decode(StateDecodeError::Limit)
     );
+    install_intact(&mut world, &mut game, &valid, digest(&host, &rules));
 }
 
 #[test]
 fn random_images_and_mutated_structural_fields_are_refused() {
     let (host, rules) = runtime(1, true);
     let valid = image(&host, &rules);
-    let (mut world, mut game) = runtime(2, true);
+    let (mut world, mut game) = runtime(2, false);
     let mut random = 0xa51d_c328_u32;
     for size in (0..=LIMIT + 1).step_by(13).chain([LIMIT + 1]) {
         let bytes: Vec<_> = (0..size)
@@ -165,4 +175,5 @@ fn random_images_and_mutated_structural_fields_are_refused() {
         bytes[offset] = value;
         refuse(&mut world, &mut game, &bytes, LIMIT);
     }
+    install_intact(&mut world, &mut game, &valid, digest(&host, &rules));
 }

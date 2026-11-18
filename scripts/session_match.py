@@ -287,14 +287,41 @@ def costs(target, scratch, provenance):
                 row["tripwires"].append("host tick with image write exceeded its 60 Hz period")
         rows.append(row)
 
-    for first, second in zip(rows[:3], rows[3:], strict=True):
-        for field in ("image_bytes", "restore_ns", "write_ns"):
+    for first, second in zip(rows[:len(COST_SIZES)], rows[len(COST_SIZES):], strict=True):
+        for field in ("image_bytes", "restore_ns", "write_ns", "tick_with_write_ns"):
             if field in first and second[field] * 4 >= first[field] * 5 and second[field] > first[field]:
                 second["tripwires"].append(f"{field} at least a quarter above the previous run")
     return {
         "rows": rows, "mac_writer": native.record(), **receiver.record(),
         "tripwire_scope": "Wire bandwidth and join scaling apply to later transport runs.",
     }
+
+
+def variant_restores(binary, scratch, identities):
+    count, tick = COST_SIZES[0], COST_TICK
+    results = []
+    for source, destination in (("crowd", "mixed"), ("mixed", "crowd")):
+        capture = json.loads(conformance.command([binary, "capture", count, str(source == "mixed").lower(), tick]))
+        row, = capture["rows"]
+        raw = bytes.fromhex(row["image"])
+        assert raw[8:40].hex() == capture["identity"] == identities[source]
+        image = scratch / f"{source}.bin"
+        image.write_bytes(raw)
+
+        def restore(variant):
+            return json.loads(conformance.command([binary, "restore", count, str(variant == "mixed").lower(),
+                                                   image, tick]))
+
+        matching = restore(source)
+        assert matching["initial"] == row["digest"] and matching["identity"] == identities[source]
+        refused = restore(destination)
+        refusal_pid = refused.pop("pid")
+        assert refused == {"refusal": "rule_set"}
+        results.append({"source": source, "destination": destination, "tick": tick,
+                        "source_identity": identities[source], "destination_identity": identities[destination],
+                        "matching_digest": matching["initial"], "refusal": refused["refusal"],
+                        "capture_pid": capture["pid"], "matching_pid": matching["pid"], "refusal_pid": refusal_pid})
+    return results
 
 
 def identity(scratch):
@@ -309,10 +336,15 @@ def identity(scratch):
 
     def compiled(output):
         binary = build("mac-metal", tree, scratch / output)
-        return json.loads(conformance.command([binary, "identity"]))["identity"]
+        packet = json.loads(conformance.command([binary, "identity"]))
+        identities = {variant: packet[variant] for variant in ("crowd", "mixed")}
+        assert identities["crowd"] != identities["mixed"], "Crowd and Mixed share a rule-set identity"
+        return binary, identities
 
-    first, second = compiled("first"), compiled("second")
+    binary, first = compiled("first")
+    _, second = compiled("second")
     assert first == second, "independent builds differ"
+    restores = variant_restores(binary, scratch, first)
     controls = [
         ("rules", "examples/crowd-2d/src/rules.rs", "N::from_i32(12)", "N::from_i32(13)"),
         ("engine profile", "crates/thrum-core/src/profile.rs", "0xd256_d193", "0xd256_d191"),
@@ -325,11 +357,14 @@ def identity(scratch):
         original = path.read_text()
         assert before in original, f"missing control input in {filename}"
         path.write_text(original.replace(before, after, 1))
-        value = compiled("second")
-        assert value != first, f"{label} change did not change identity"
-        changed.append({"control": label, "file": filename, "identity": value})
+        _, value = compiled("second")
+        assert all(value[variant] != original_identity for variant, original_identity in first.items()), (
+            f"{label} change did not change both identities"
+        )
+        changed.append({"control": label, "file": filename, "identities": value})
         path.write_text(original)
-    return {"standalone_builds": [first, second], "controls": changed, "build": "release"}
+    return {"standalone_builds": [first, second], "controls": changed, "variant_restores": restores,
+            "source_copy_outside_checkout": True, "build": "release"}
 
 
 def main():
@@ -340,7 +375,8 @@ def main():
     args = parser.parse_args()
     provenance = conformance.identity()
     SCRATCH.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=f"{args.action}-{args.target}-", dir=SCRATCH) as directory:
+    scratch_root = None if args.action == "identity" else SCRATCH
+    with tempfile.TemporaryDirectory(prefix=f"thrum-{args.action}-{args.target}-", dir=scratch_root) as directory:
         scratch = Path(directory)
         if args.action == "image":
             record = images(args.target, scratch, provenance["commit"])
@@ -349,6 +385,7 @@ def main():
         else:
             if args.target != "mac-metal":
                 parser.error("the identity build controls run on the Mac")
+            assert not scratch.resolve().is_relative_to(ROOT.resolve()), "identity controls require external scratch"
             record = identity(scratch)
     output = args.output or SCRATCH / f"{args.action}-{args.target}.json"
     output.parent.mkdir(parents=True, exist_ok=True)

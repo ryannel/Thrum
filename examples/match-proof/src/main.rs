@@ -8,7 +8,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect::<Vec<_>>()
         .as_slice()
     {
-        ["identity"] => serde_json::json!({"identity": match_proof::identity()}),
+        ["identity"] => serde_json::json!({
+            "crowd": match_proof::identity(false),
+            "mixed": match_proof::identity(true),
+        }),
         ["capture", count, mixed, ticks] => {
             let ticks = ticks
                 .split(',')
@@ -22,12 +25,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         ["restore", count, mixed, path, last] => {
             let image = std::fs::read(path)?;
-            serde_json::from_str(&match_proof::restore(
-                count.parse()?,
-                mixed.parse()?,
-                &image,
-                last.parse()?,
-            ))?
+            match match_proof::restore(count.parse()?, mixed.parse()?, &image, last.parse()?) {
+                Ok(record) => serde_json::from_str(&record)?,
+                Err(thrum_core::sim::WorldImageError::RuleSet) => {
+                    serde_json::json!({"refusal": "rule_set"})
+                }
+                Err(error) => return Err(error.into()),
+            }
         }
         _ => return Err("expected identity, capture or restore".into()),
     };

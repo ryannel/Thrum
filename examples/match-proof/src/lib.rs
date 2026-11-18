@@ -1,16 +1,43 @@
 //! Headless reference crowd proof through the registered session world.
 
 mod image;
-pub use image::{capture, restore};
+pub use image::capture;
+#[cfg(not(target_arch = "wasm32"))]
+pub use image::restore;
 
 use thrum_core::sim::RuleSetIdentity;
 
-const RULE_SET: RuleSetIdentity =
-    RuleSetIdentity(*include_bytes!(concat!(env!("OUT_DIR"), "/rule-set-id")));
+fn rule_set(mixed: bool) -> RuleSetIdentity {
+    let bytes = if mixed {
+        include_bytes!(concat!(env!("OUT_DIR"), "/rule-set-mixed"))
+    } else {
+        include_bytes!(concat!(env!("OUT_DIR"), "/rule-set-crowd"))
+    };
+    RuleSetIdentity(*bytes)
+}
 
-/// Rule-set identity embedded in this build, in hexadecimal.
-pub fn identity() -> String {
-    hex(&RULE_SET.0)
+/// Configured Crowd or Mixed rule-set identity, in hexadecimal.
+pub fn identity(mixed: bool) -> String {
+    hex(&rule_set(mixed).0)
+}
+
+/// Install a Mac image in a fresh browser runtime and continue the trace.
+///
+/// # Errors
+/// The runtime refuses an incompatible or invalid image.
+///
+/// # Panics
+/// A reference trace tick fails.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn restore(
+    count: u32,
+    mixed: bool,
+    bytes: &[u8],
+    last: u32,
+) -> Result<String, wasm_bindgen::JsError> {
+    image::restore(count, mixed, bytes, last)
+        .map_err(|error| wasm_bindgen::JsError::new(&error.to_string()))
 }
 
 fn hex(bytes: &[u8]) -> String {
