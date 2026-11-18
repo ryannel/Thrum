@@ -32,7 +32,7 @@ const PAGE: SourceTick = SourceTick {
     timeline: 1,
 };
 const LIGHT: FrameLighting = FrameLighting::Photometric(PhotometricEnvironment {
-    toward_sun: [0.0, 0.8, 0.6],
+    toward_sun: [0.0, 1.0, 0.0],
     sun_lux: 45_000.0,
     sun_colour: [1.0; 3],
     ambient_lux: [1800.0; 3],
@@ -88,10 +88,17 @@ impl FrameWorld for World {
     }
 }
 
-pub(super) struct Source(Arc<Mutex<SyntheticView>>);
+pub(super) struct Source {
+    view: Arc<Mutex<SyntheticView>>,
+    shadow_caster: bool,
+}
 impl SceneSource<SourceTick> for Source {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
-        into.extract(*page, [0.0; 3], |_| {})
+        into.extract(*page, [0.0; 3], |sink| {
+            if self.shadow_caster {
+                assert!(sink.push(0, 1, 1, [-0.65, 10.0, 0.0], 1));
+            }
+        })
     }
     fn frame(
         &self,
@@ -101,7 +108,7 @@ impl SceneSource<SourceTick> for Source {
         _: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
         Ok(SceneFrame {
-            view: *self.0.lock().expect("view"),
+            view: *self.view.lock().expect("view"),
             lighting: LIGHT,
         })
     }
@@ -119,6 +126,7 @@ pub(super) struct Fixture {
     root: PathBuf,
     pub(super) placements: Vec<MeshPlacement>,
     pub(super) count_cull: bool,
+    shadow_caster: bool,
 }
 
 impl Fixture {
@@ -160,7 +168,8 @@ impl Fixture {
                 &source.join("meshes/small.gltf"),
                 vec![
                     serde_json::json!({"mesh":0}),
-                    serde_json::json!({"mesh":0, "translation":[0.42, 0.8, 0.28], "scale":[0.4, 0.4, 0.4]}),
+                    // An off-camera roof casts toward the right half of the receiver.
+                    serde_json::json!({"mesh":0, "translation":[0.5, 8.0, 0.0], "scale":[0.7, 0.7, 0.7]}),
                 ],
             );
         }
@@ -188,6 +197,7 @@ impl Fixture {
             root,
             placements,
             count_cull: case == "cull-equal",
+            shadow_caster: case == "parity",
         }
     }
 
@@ -272,6 +282,11 @@ impl Gpu {
         scene.view = initial;
         scene.sun_shadows = true;
         scene.instances[0].ids[3] = 0;
+        if fixture.shadow_caster {
+            let model = glam::Mat4::from_scale(glam::Vec3::new(0.8, 0.5, 1.4)).to_cols_array_2d();
+            scene.instances[0].current = model;
+            scene.instances[0].previous = model;
+        }
         let mut host = pollster::block_on(FrameHost::new(
             &self.capabilities,
             &self.queue,
@@ -283,7 +298,10 @@ impl Gpu {
                 }),
             },
             World,
-            Source(Arc::clone(&view)),
+            Source {
+                view: Arc::clone(&view),
+                shadow_caster: fixture.shadow_caster,
+            },
             scene,
             1.0,
         ))
