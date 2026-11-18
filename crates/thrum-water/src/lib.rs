@@ -88,7 +88,6 @@ pub struct Water {
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
     invalid: bool,
-    previous_levels: Option<[f32; map_gpu::BODY_LIMIT]>,
 }
 impl Water {
     /// Declare a sea surface for the selected map body. Stage changes are read at frame boundaries.
@@ -172,7 +171,6 @@ impl Water {
             previous: None,
             recorded: (0.0, 0, 0.0),
             invalid: true,
-            previous_levels: None,
         })
     }
     /// Read-only preparation report handle; no per-frame polling is required by the water.
@@ -232,7 +230,6 @@ impl SceneContribution for Water {
             resources: self.resource_bytes(),
         };
         self.previous = None;
-        self.previous_levels = None;
         Ok(())
     }
     fn effect_graph(&self) -> EffectGraph {
@@ -253,7 +250,7 @@ impl SceneContribution for Water {
         let map = self.map.lock().expect("water map lock");
         let row = map.row(self.body, [0.0; 2]);
         if let Some(gpu) = &mut p.map {
-            gpu.upload(&p.queue, &map, self.previous_levels);
+            gpu.record(&p.queue, &map, frame.time);
         }
         drop(map);
         self.recorded = (now, frame.time.tick, row.level);
@@ -331,11 +328,9 @@ impl SceneContribution for Water {
     fn submitted(&mut self, history_advanced: bool) {
         if history_advanced {
             self.previous = Some(self.recorded);
-            self.previous_levels = self
-                .prepared
-                .as_ref()
-                .and_then(|p| p.map.as_ref())
-                .map(map_gpu::MapGpu::levels);
+            if let Some(map) = self.prepared.as_mut().and_then(|p| p.map.as_mut()) {
+                map.commit();
+            }
         }
     }
 }

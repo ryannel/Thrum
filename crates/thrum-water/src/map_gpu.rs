@@ -1,6 +1,7 @@
 //! Prepared map products and the shared camera-independent WGSL sampler.
 use crate::WaterError;
 use bytemuck::{Pod, Zeroable};
+use thrum_render::contribution::EffectTime;
 use thrum_water_model::{BodyKind, Map};
 use wgpu::util::DeviceExt;
 
@@ -30,8 +31,59 @@ pub struct MapGpu {
     pub(crate) texture: wgpu::Texture,
     pub(crate) info: wgpu::Buffer,
     revision: Option<u64>,
+    uploaded_stages: [f64; BODY_LIMIT],
+    recorded: Option<StageEndpoints>,
+    submitted: Option<StageEndpoints>,
+    previous_levels: Option<[f32; BODY_LIMIT]>,
     record: MapRecord,
     support: Vec<[f32; 4]>,
+}
+
+#[derive(Clone, Copy)]
+struct StageEndpoints {
+    time: EffectTime,
+    from: [f64; BODY_LIMIT],
+    to: [f64; BODY_LIMIT],
+}
+
+impl StageEndpoints {
+    fn record(time: EffectTime, current: [f64; BODY_LIMIT], previous: Option<&Self>) -> Self {
+        let Some(previous) =
+            previous.filter(|p| p.time.epoch == time.epoch && p.time.timeline == time.timeline)
+        else {
+            return Self {
+                time,
+                from: current,
+                to: current,
+            };
+        };
+        if previous.time.tick == time.tick {
+            // Resampling a tick keeps its endpoints, even if new edits arrived.
+            return Self { time, ..*previous };
+        }
+        let from = if previous.time.tick.checked_add(1) == Some(time.tick) {
+            previous.to
+        } else {
+            current
+        };
+        Self {
+            time,
+            from,
+            to: current,
+        }
+    }
+
+    fn stages(&self) -> [f64; BODY_LIMIT] {
+        let alpha = f64::from(self.time.alpha);
+        if alpha >= 1.0 {
+            return self.to;
+        }
+        std::array::from_fn(|id| (self.to[id] - self.from[id]).mul_add(alpha, self.from[id]))
+    }
+}
+
+fn stages(map: &Map) -> [f64; BODY_LIMIT] {
+    std::array::from_fn(|id| map.body(id).map_or(0.0, |body| body.stage.value))
 }
 
 /// WGSL declarations and sampling functions, with map resources in group 3.
@@ -193,10 +245,15 @@ impl MapGpu {
             texture,
             info,
             revision: None,
+            uploaded_stages: [0.0; BODY_LIMIT],
+            recorded: None,
+            submitted: None,
+            previous_levels: None,
             record,
             support,
         };
-        gpu.upload(queue, map, None);
+        let authored = stages(map);
+        gpu.upload(queue, map, authored, authored);
         Ok(gpu)
     }
 
@@ -222,30 +279,54 @@ impl MapGpu {
         ]
     }
 
-    pub(crate) fn levels(&self) -> [f32; BODY_LIMIT] {
-        self.record.bodies.map(|b| b.level[0] + b.level[1])
+    pub(crate) fn record(&mut self, queue: &wgpu::Queue, map: &Map, time: EffectTime) {
+        let authored = stages(map);
+        let recorded = StageEndpoints::record(time, authored, self.submitted.as_ref());
+        self.upload(queue, map, authored, recorded.stages());
+        self.recorded = Some(recorded);
+    }
+
+    pub(crate) fn commit(&mut self) {
+        self.submitted = self.recorded;
+        self.previous_levels = Some(self.record.bodies.map(|b| b.level[0] + b.level[1]));
     }
 
     #[expect(
         clippy::cast_possible_truncation,
         reason = "prepared water rows are read in GPU metres"
     )]
-    pub(crate) fn upload(
+    fn upload(
         &mut self,
         queue: &wgpu::Queue,
         map: &Map,
-        previous: Option<[f32; BODY_LIMIT]>,
+        authored: [f64; BODY_LIMIT],
+        displayed: [f64; BODY_LIMIT],
     ) {
-        let changed = self.revision != Some(map.spatial_revision());
+        let revision = map.spatial_revision();
+        let displayed_bits = displayed.map(f64::to_bits);
+        let uploaded_bits = self.uploaded_stages.map(f64::to_bits);
+        let changed = self.revision != Some(revision) || uploaded_bits != displayed_bits;
+        let sample = (changed && authored.map(f64::to_bits) != displayed_bits).then(|| {
+            let count = self.record.size_count_sea[2] as usize;
+            map.sample_stages(&displayed[..count])
+                .expect("bounded tick stages")
+        });
+        let map = sample.as_ref().unwrap_or(map);
         let mut write = changed;
         for id in 0..self.record.size_count_sea[2] as usize {
             let body = map.body(id).expect("prepared body");
             let record = &mut self.record.bodies[id];
+            let chart = record.layers[0] == 2;
+            let level = [body.level as f32, body.stage.value as f32];
+            let spatial = self.revision.is_none()
+                || uploaded_bits[id] != displayed_bits[id]
+                || record.level[0].to_bits() != level[0].to_bits()
+                || chart && changed;
             if changed {
-                record.level[0] = body.level as f32;
-                record.level[1] = body.stage.value as f32;
+                record.level[..2].copy_from_slice(&level);
                 record.gains = body.gains.map(|g| g as f32);
-                let chart = record.layers[0] == 2;
+            }
+            if spatial {
                 let origins = map.support_origins(id);
                 for (pixel, origin) in self.support.iter_mut().zip(origins) {
                     *pixel = origin.map_or([0.0; 4], |i| {
@@ -272,14 +353,17 @@ impl MapGpu {
                     write_layer(queue, &self.texture, record.layers[2] + 1, &self.support);
                 }
             }
-            let old = previous.map_or(record.level[0] + record.level[1], |p| p[id]);
+            let old = self
+                .previous_levels
+                .map_or(record.level[0] + record.level[1], |p| p[id]);
             write |= record.level[2].to_bits() != old.to_bits();
             record.level[2] = old;
         }
         if write {
             queue.write_buffer(&self.info, 0, bytemuck::bytes_of(&self.record));
         }
-        self.revision = Some(map.spatial_revision());
+        self.revision = Some(revision);
+        self.uploaded_stages = displayed;
     }
 }
 

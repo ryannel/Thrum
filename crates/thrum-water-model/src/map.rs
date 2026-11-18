@@ -1,5 +1,6 @@
 use crate::{Bed, Hollows, HollowsProfile, WaterError};
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 /// Bounded additive stage in metres.
 #[derive(Clone, Copy, Debug)]
@@ -139,13 +140,14 @@ pub struct MapSample {
 }
 
 /// Prepared water and its current stage connectivity. No graphics device is used.
+#[derive(Clone)]
 pub struct Map {
-    pub(crate) bed: Bed,
+    pub(crate) bed: Arc<Bed>,
     pub(crate) bodies: Vec<Body>,
     pub(crate) profile: Profile,
-    pub(crate) surf: Option<crate::surf::Surf>,
+    pub(crate) surf: Option<Arc<crate::surf::Surf>>,
     // Each margin centre remembers the water centre whose row it carries.
-    pub(crate) support: Vec<Vec<Option<usize>>>,
+    pub(crate) support: Vec<Arc<[Option<usize>]>>,
     /// Number of stage requests held at a range endpoint.
     pub clamped_stages: u64,
     pub(crate) hollows_profile: HollowsProfile,
@@ -217,7 +219,7 @@ impl Map {
             return Err(WaterError::new("profile", "invalid margin or swash ratio"));
         }
         let mut map = Self {
-            bed,
+            bed: Arc::new(bed),
             bodies,
             profile,
             surf: None,
@@ -305,6 +307,37 @@ impl Map {
             self.rebuild();
         }
         Ok(())
+    }
+
+    /// Sample bounded stages for presentation, sharing unchanged connectivity
+    /// and leaving the source map's tick state untouched. The stage slice
+    /// supplies one value per declaration in body order.
+    /// # Errors
+    /// Refuses a wrong stage count or a nonfinite stage.
+    pub fn sample_stages(&self, stages: &[f64]) -> Result<Self, WaterError> {
+        if stages.len() != self.bodies.len() || stages.iter().any(|value| !value.is_finite()) {
+            return Err(WaterError::new("stage sample", "invalid stage values"));
+        }
+        let mut sample = self.clone();
+        let mut changed = false;
+        for (body, &stage) in sample.bodies.iter_mut().zip(stages) {
+            if !matches!(body.kind, BodyKind::Hollows(_)) {
+                let stage = stage.clamp(body.stage.min, body.stage.max);
+                changed |= stage.to_bits() != body.stage.value.to_bits();
+                body.stage.value = stage;
+            }
+        }
+        if changed {
+            sample.spatial_revision = sample.spatial_revision.wrapping_add(1);
+            for (id, body) in sample.bodies.iter().enumerate() {
+                if body.stage.value.to_bits() != self.bodies[id].stage.value.to_bits()
+                    || matches!(body.kind, BodyKind::Chart(_))
+                {
+                    sample.support[id] = sample.build_support(id);
+                }
+            }
+        }
+        Ok(sample)
     }
 
     /// Recompute every body's own gains from its declared fetch and the world's forcing.
@@ -586,40 +619,42 @@ impl Map {
     pub(crate) fn rebuild(&mut self) {
         self.spatial_revision = self.spatial_revision.wrapping_add(1);
         self.support = (0..self.bodies.len())
-            .map(|id| {
-                let wet = self.flood(id);
-                let mut origins: Vec<_> = wet
-                    .iter()
-                    .enumerate()
-                    .map(|(i, &w)| w.then_some(i))
-                    .collect();
-                let mut q: VecDeque<_> = wet
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(i, &w)| w.then_some(i))
-                    .collect();
-                while let Some(i) = q.pop_front() {
-                    for (j, weights) in self.bed.connections(i) {
-                        let h = self.bed.heights[j];
-                        let row = self.row(
-                            id,
-                            self.bed
-                                .point(origins[i].expect("queued centre has origin")),
-                        );
-                        if origins[j].is_none()
-                            && !self.waits(id, j)
-                            && h >= row.level
-                            && self.bed.reaches(i, weights, row.level)
-                            && h <= row.level + self.profile.margin_height
-                        {
-                            origins[j] = origins[i];
-                            q.push_back(j);
-                        }
-                    }
-                }
-                origins
-            })
+            .map(|id| self.build_support(id))
             .collect();
+    }
+
+    fn build_support(&self, id: usize) -> Arc<[Option<usize>]> {
+        let wet = self.flood(id);
+        let mut origins: Vec<_> = wet
+            .iter()
+            .enumerate()
+            .map(|(i, &w)| w.then_some(i))
+            .collect();
+        let mut q: VecDeque<_> = wet
+            .iter()
+            .enumerate()
+            .filter_map(|(i, &w)| w.then_some(i))
+            .collect();
+        while let Some(i) = q.pop_front() {
+            for (j, weights) in self.bed.connections(i) {
+                let h = self.bed.heights[j];
+                let row = self.row(
+                    id,
+                    self.bed
+                        .point(origins[i].expect("queued centre has origin")),
+                );
+                if origins[j].is_none()
+                    && !self.waits(id, j)
+                    && h >= row.level
+                    && self.bed.reaches(i, weights, row.level)
+                    && h <= row.level + self.profile.margin_height
+                {
+                    origins[j] = origins[i];
+                    q.push_back(j);
+                }
+            }
+        }
+        origins.into()
     }
 
     /// Every chart's banks hold its water over the stage ranges, as preparation checks them.

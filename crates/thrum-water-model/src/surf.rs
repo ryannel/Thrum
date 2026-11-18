@@ -106,16 +106,16 @@ impl Map {
                 .map(Some)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        self.surf = Some(Surf {
+        self.surf = Some(std::sync::Arc::new(Surf {
             profile,
             transforms,
             pyramid: BedPyramid::new(&self.bed),
-        });
+        }));
         Ok(())
     }
 
     fn shore_bed(&self, id: usize) -> crate::Bed {
-        let mut bed = self.bed.clone();
+        let mut bed = self.bed.as_ref().clone();
         let body = &self.bodies[id];
         if matches!(body.kind, BodyKind::Basin { .. }) {
             // Reuse the map's strict wet topology, including its chart barriers.
