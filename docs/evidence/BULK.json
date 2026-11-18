@@ -5643,6 +5643,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SCENE-VIEWS/M2/capture-metal.zip",
+      "size": 619717700,
+      "sha256": "0d05f894900ad2d2acefef33a869d503a0b1358b3de2a0acde12ef0ba7670e71",
+      "date": "2026-11-18T00:34:17.540968+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-chrome-flythrough.mp4",
       "size": 39483340,
       "sha256": "ba2d004eff57c6d3f74f470bd4c9b6572b18ea52b6d2d4d7530673395152b976",

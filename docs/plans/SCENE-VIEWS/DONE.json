@@ -195,8 +195,8 @@
           "ask": "Is the reference the main view from the view's camera, on the same cooked path and shadow profile? If the indirect path could not hold a second set of culling buffers, does the view resolve to the direct path and report that it did?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "",
           "review": ""
         },
@@ -206,8 +206,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_optin_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "",
           "review": ""
         },
@@ -218,8 +218,8 @@
           "ask": "Are `V`, `B` and `W` stored colours of the scene's ordinary main view with the pool's effect off, composed by the test without the pool's shader, with the allowance worked out from stored steps and printed beside the difference? Is the pool the example's own effect, with no type or file of it in an engine crate?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "",
           "review": ""
         },
@@ -228,8 +228,8 @@
           "statement": "Each thing round the pool meets its reflection. The tower, the rocks at the pool's edge and the post standing in the water join their reflections at the waterline with no gap, overlap or sliver of the ground below, from 1.5 m and from 10 m, and stay whole in the pool when the camera looks down so that they leave the frame.",
           "inspect": "`fixed` stills from 1.5 m and 10 m at noon with the tower in frame and with the camera tilted down until it is out of frame, and a `realtime` tilt between the two: each waterline, the post, and the pool's edge.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "",
           "review": ""
         },
@@ -238,8 +238,8 @@
           "statement": "The reflection is in the scene's light. In the pool the tower shows its Sun-lit and shaded sides, the shadows on the ground and on the tower lie where the direct view shows them, the lamp lights the ground round it at dusk and at night, and the far hill carries its haze: at dawn, noon, dusk and night.",
           "inspect": "`fixed` stills at the four hours from 1.5 m, each with the direct view of the same things in frame: lit and shaded sides, each shadow, the lamp's pool of light and the hill, in the scene and in the mirror.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "",
           "review": ""
         },
@@ -248,8 +248,8 @@
           "statement": "The reflection is steady and of its frame. As the camera pans, tilts and orbits, as the Sun is scrubbed through an hour and as a mover crosses behind the pool, nothing in the mirror flickers, pops or trails its source by a frame, and no shadow in it appears or changes as its caster comes on screen.",
           "inspect": "`realtime` sequences of a pan, a tilt, an orbit, the time scrub and the mover, with temporal sampling off: consecutive frames at the waterlines and at the shadows in the mirror.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "",
           "review": ""
         },
@@ -258,8 +258,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

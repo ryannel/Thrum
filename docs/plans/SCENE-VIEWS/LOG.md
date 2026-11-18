@@ -260,3 +260,8 @@
 - 2026-11-16 The review made no suggestion beyond its resolution. Not run by the planner: any GPU check, so
   M1.1's displaced and edge cases are unrun on a GPU, and the exact-baseline verifier, so that no retained
   image moves is a reproduction's expectation until M1.10 runs.
+- 2026-11-18 M2 draws cooked placements in secondary views with independent indirect arguments,
+  and the mirror example composes the camera's air with the plane's reflected colour.
+  The Metal checks passed on Portable and Apple Tile. The fixed checkpoints and five elapsed
+  routes were inspected at 2560×1440 from the merged build. The exact-image check runs on main.
+  [M2 evidence](../../evidence/SCENE-VIEWS/M2/README.md)
