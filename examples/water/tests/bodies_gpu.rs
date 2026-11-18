@@ -1,5 +1,8 @@
 //! Classify submitted pixels against the f64 map and the opaque arm.
+use std::sync::{Arc, Mutex};
 use support::island;
+use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
+use thrum_water_model::Map;
 mod support;
 
 #[test]
@@ -92,4 +95,62 @@ fn submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge() {
             );
         },
     );
+}
+
+#[test]
+fn no_lower_sea_sheet_is_hidden_under_the_lake() {
+    island::with_cooked_island("no_lower_sea_sheet_is_hidden_under_the_lake", || {
+        let dry = water_scene::island::map(water_scene::island::Wind::Calm).expect("island map");
+        let mut bodies = (0..3)
+            .map(|id| dry.body(id).expect("island body").clone())
+            .collect::<Vec<_>>();
+        // Both meshes span this column and the dry bed is below both levels.
+        // From below, an unmasked sea would win the reverse-Z test.
+        bodies[0].level = 9.25;
+        let map = Map::prepare(dry.bed().clone(), bodies, dry.profile()).expect("overlap fixture");
+        let centre = map.sample([183.0, 5.0]).expect("water");
+        assert_eq!(centre.body, 1);
+        assert!(centre.bed.expect("bed") < 8.7);
+        let spectrum = thrum_sea_model::Spectrum::build(&water_scene::island::Wind::Calm.forcing())
+            .expect("zero waves");
+        let water = thrum_water::Water::mapped(
+            Arc::new(Mutex::new(map)),
+            spectrum,
+            thrum_water::Profile::default(),
+        )
+        .expect("mapped surface");
+        let report = water.report();
+        let eye = [183.0, 8.7, 5.0];
+        let target = [183.0, 17.0, 4.999];
+        let camera = Camera::look_at(eye, target, 50.0);
+        let game = SkyGame::new(Controls::new(), camera, |_, sky| {
+            sky.temporal_inputs = true;
+            sky.sun_elevation_degrees = 60.0;
+        })
+        .with_ground(None)
+        .with_meshes(vec![MeshPlacement::new("meshes/island", "textures/white")])
+        .expect("opaque island")
+        .with_contribution(Box::new(water), || ContentStatus::Drawn(1));
+        let mut fixture = support::Fixture::from_game([160, 96], game, report);
+        fixture.warm_cooked();
+        fixture.frame(0.2);
+        let depth = fixture.witness()[48 * 160 + 80][1];
+        assert!(depth > 0.0, "a surface writes the centre depth");
+        let view = thrum_render::synthetic::SyntheticView::perspective(
+            eye,
+            target,
+            [0.0, 1.0, 0.0],
+            50_f32.to_radians(),
+            160.0 / 96.0,
+            0.1,
+            30_000.0,
+        )
+        .expect("overlap view");
+        let view = glam::Mat4::from_cols_array_2d(&view.view_proj_columns());
+        let level = support::world_at(view, [160, 96], [80, 48], depth).y;
+        assert!(
+            (level - 12.0).abs() < 0.015,
+            "only the lake may write here; a second sea sheet would read 9.25 m, got {level}"
+        );
+    });
 }

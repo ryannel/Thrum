@@ -25,9 +25,6 @@ pub struct Profile {
     /// Deep-water backscatter divided by extinction, RGB in zero through one.
     /// The game supplies its water type; the default is a pure absorber.
     pub deep_scatter: [f32; 3],
-    /// Diffuse bed reflectance for thin, mapped water before scene refraction.
-    /// A zero value leaves the bed proxy off.
-    pub shoal_bed: [f32; 3],
 }
 
 /// Invalid water configuration or unavailable preparation dependency.
@@ -56,7 +53,7 @@ impl std::fmt::Display for WaterError {
             Self::UnsupportedBody => f.write_str("this surface profile requires a sea body"),
             Self::InvalidSpectrum(reason) => write!(f, "water spectrum: {reason}"),
             Self::InvalidOptics => {
-                f.write_str("water scatter and bed reflectance must be finite in zero through one")
+                f.write_str("water deep scatter must be finite in zero through one")
             }
             Self::InvalidLevel => f.write_str("water level must be finite"),
             Self::UnsupportedMap(reason) => f.write_str(reason),
@@ -129,7 +126,6 @@ impl Water {
         if profile
             .deep_scatter
             .iter()
-            .chain(&profile.shoal_bed)
             .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
         {
             return Err(WaterError::InvalidOptics);
@@ -282,7 +278,7 @@ impl SceneContribution for Water {
             self.long_variances,
             self.height_rms,
             self.layer_heights,
-            self.profile,
+            self.profile.deep_scatter,
         );
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));

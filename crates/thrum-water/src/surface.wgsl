@@ -9,7 +9,7 @@ struct ViewAuxRecord {
 }
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
-struct Parameters { level_dt_reset: vec4<f32>, gains: vec4<f32>, lengths: vec4<f32>, cache: array<vec4<f32>,8>, long_covariance:array<vec4<f32>,8>, scatter:vec4<f32>, heights:vec4<f32>, shoal_bed:vec4<f32>, }
+struct Parameters { level_dt_reset: vec4<f32>, gains: vec4<f32>, lengths: vec4<f32>, cache: array<vec4<f32>,8>, long_covariance:array<vec4<f32>,8>, scatter:vec4<f32>, heights:vec4<f32>, }
 @group(3) @binding(0) var<uniform> water: Parameters;
 struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32>, }
 @group(3) @binding(1) var cascades:texture_2d_array<f32>;
@@ -191,11 +191,10 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let gl=2.0*nl/(nl+sqrt(a2+(1.0-a2)*nl*nl));
     let fh=water_fresnel(max(dot(v,h),0.0));
     light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
-    light=shallow_colour(row,input.world,nv,incident,fresnel,light);
     let uv=input.clip.xy*view_aux.viewport_inv_viewport.zw;
     let air=environment_aerial(input.world,uv);
     let colour=(light*air.transmission+air.scatter)*environment_storage_scale();
     var motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
     if water.level_dt_reset.z>0.5 {motion=vec2(65504.0);}
-    return Output(vec4(colour,1.0),motion,clamp(fresnel+0.1,0.0,1.0));
+    return Output(vec4(colour,surface_opacity(row,input.world)),motion,clamp(fresnel+0.1,0.0,1.0));
 }

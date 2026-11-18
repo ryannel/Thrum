@@ -14,7 +14,6 @@ pub(super) struct Parameters {
     pub(super) long_covariance: [[f32; 4]; 8],
     pub(super) scatter: [f32; 4],
     pub(super) heights: [f32; 4],
-    pub(super) shoal_bed: [f32; 4],
 }
 #[expect(
     clippy::cast_possible_truncation,
@@ -56,7 +55,7 @@ impl Parameters {
         long_variances: [[f32; 4]; 8],
         height_rms: f32,
         heights: [f32; 4],
-        profile: super::Profile,
+        deep_scatter: [f32; 3],
     ) -> Self {
         Self {
             level_dt_reset: [
@@ -78,18 +77,12 @@ impl Parameters {
             }),
             long_covariance: long_variances,
             scatter: [
-                profile.deep_scatter[0],
-                profile.deep_scatter[1],
-                profile.deep_scatter[2],
+                deep_scatter[0],
+                deep_scatter[1],
+                deep_scatter[2],
                 height_rms,
             ],
             heights,
-            shoal_bed: [
-                profile.shoal_bed[0],
-                profile.shoal_bed[1],
-                profile.shoal_bed[2],
-                0.0,
-            ],
         }
     }
 }

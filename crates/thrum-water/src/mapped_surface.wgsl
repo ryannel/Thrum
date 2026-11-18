@@ -11,21 +11,16 @@ fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
 }
 fn tail_gain(row: SurfaceRow) -> f32 { return row.gains.w; }
 
-fn shallow_colour(row: SurfaceRow, world: vec3<f32>, facing: f32, incident: vec3<f32>, fresnel: f32, light: vec3<f32>) -> vec3<f32> {
-    // A diffuse, authored bed proxy fades through the thin sheet; actual
-    // transmitted scene colour and refracted depth belong to the gather.
+fn surface_opacity(row: SurfaceRow, world: vec3<f32>) -> f32 {
+    // Blend the optically thin edge with the already rendered ground at the
+    // same pixel. The displaced sheet still writes scene depth.
     var depth = world.y - row.bed;
-    if all(water.shoal_bed.rgb == vec3(0.0)) || depth > 3.0 { return light; }
+    if depth > 2.0 { return 1.0; }
     // Ownership stays at rest. Thin-sheet appearance uses the bed directly
     // under the displaced point, where the opaque depth actually cuts it.
     let ground = map_cell(world.xz);
     if ground.inside { depth = world.y - ground.bed; }
-    let path = max(0.0, depth) / max(0.36, facing);
-    let transmission = exp(-path * vec3(4.0, 2.8, 2.2));
-    let reflected_bed = incident * water.shoal_bed.rgb / 3.14159265;
-    let deep_scatter = incident * water.scatter.rgb / 3.14159265;
-    let water_colour = light + (1.0-fresnel) * (reflected_bed - deep_scatter) * transmission;
-    return mix(reflected_bed, water_colour, smoothstep(0.0, 0.12, depth));
+    return smoothstep(0.0, 0.28, depth);
 }
 
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {

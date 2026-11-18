@@ -159,8 +159,7 @@ pub fn build(
 ) -> Result<(SkyGame, SharedReport, SharedMap), Box<dyn Error>> {
     let map = Arc::new(Mutex::new(map(wind)?));
     let spectrum = Spectrum::build(&wind.forcing()).map_err(|e| format!("{e:?}"))?;
-    let mut profile = crate::profile(&spectrum);
-    profile.shoal_bed = [0.37, 0.295, 0.18];
+    let profile = crate::profile(&spectrum);
     let water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
     let report = water.report();
     let display_map = Arc::clone(&map);

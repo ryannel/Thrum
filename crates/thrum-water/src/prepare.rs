@@ -178,10 +178,11 @@ pub(super) fn new(
     let targets: Vec<_> = surface
         .color_formats
         .iter()
-        .map(|f| {
+        .enumerate()
+        .map(|(i, f)| {
             Some(wgpu::ColorTargetState {
                 format: *f,
-                blend: None,
+                blend: (i == 0 && map_gpu.is_some()).then_some(wgpu::BlendState::ALPHA_BLENDING),
                 write_mask: wgpu::ColorWrites::ALL,
             })
         })

@@ -68,8 +68,7 @@ fn gpu_parameter_size_and_member_offsets_match_the_actual_shader() {
             std::mem::offset_of!(Parameters, cache),
             std::mem::offset_of!(Parameters, long_covariance),
             std::mem::offset_of!(Parameters, scatter),
-            std::mem::offset_of!(Parameters, heights),
-            std::mem::offset_of!(Parameters, shoal_bed)
+            std::mem::offset_of!(Parameters, heights)
         ]
     );
 }
