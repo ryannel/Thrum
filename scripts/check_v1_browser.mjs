@@ -1950,7 +1950,7 @@ async function cleanup(child, exited, cdp, server, profile) {
   if (failures.length) throw new Error(`Cleanup failed; profile preserved at ${profile}: ${failures.join('; ')}`);
 }
 
-async function qualifyExtent(cdp, origin, output, timeout) {
+async function qualifyExtent(cdp, origin, output, timeout, wasm) {
   const arms = [];
   for (const dpr of [1, 2]) {
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
@@ -1986,9 +1986,11 @@ async function qualifyExtent(cdp, origin, output, timeout) {
         prepare_ms: row.frame.resize_prepare_ms, generation: row.frame.generation };
     }, timeout, `DPR ${dpr} ${label} submissions`);
     try {
+      await installWasmReceipt(cdp, sessionId);
       await setViewport(720);
       await cdp.call('Page.navigate', { url: `${origin}/?extent-probe&reconstruction=taau` }, sessionId);
       const initial = await steady(null, 'initial');
+      const wasmHash = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
       await setViewport(869);
       const resized = await steady(initial.backing, 'resized');
       const [first, second] = resized.frames;
@@ -1997,7 +1999,7 @@ async function qualifyExtent(cdp, origin, output, timeout) {
           resized.generation !== initial.generation || !Number.isFinite(resized.prepare_ms)) {
         throw new Error(`DPR ${dpr}: resize did not reset exactly the first new-grid frame: ${JSON.stringify(resized)}`);
       }
-      arms.push({ dpr, initial, resized });
+      arms.push({ dpr, wasm_sha256: wasmHash, initial, resized });
     } finally {
       await cdp.call('Target.closeTarget', { targetId });
     }
@@ -2094,7 +2096,7 @@ async function main() {
     let assetsSource;
     if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     for (const mode of modes) {
-      if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms']));
+      if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
       else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
