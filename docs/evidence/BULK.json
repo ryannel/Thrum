@@ -3850,6 +3850,14 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M10/exit-fixed.tar.zst",
+      "size": 228797894,
+      "sha256": "acac34aaaf4a5fd5a41910992dcafec1044cd843ad0054b74e9befc666b589b2",
+      "date": "2026-11-18T10:59:55.734722+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/ATMOSPHERE/M5-review/metal-low-off-realtime-r2-1.25.png",
       "size": 3010188,
