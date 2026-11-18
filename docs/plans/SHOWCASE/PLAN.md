@@ -6,7 +6,8 @@ record. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the crite
 
 The launch, the six stops and the route check were built before the loop as milestones M1 to M4
 ([record](../../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)), so this plan starts at M5. Read
-[Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
+[Mechanisms](DESIGN.md#mechanisms), [Limits for every milestone](DESIGN.md#limits-for-every-milestone),
+[Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
 
 ## Open for the human
@@ -18,58 +19,48 @@ The launch, the six stops and the route check were built before the loop as mile
 - Assumption: M5 and M6 start as soon as cooked mesh rows (`CONTENT-LOOP:M2`) and culling (`CULLING:M3`) are Done, so the scene is built while the other modules finish; M5 closes after `ATMOSPHERE:M10`, the shadow fix its review needs. M7 waits for the milestones it builds on (`APPLE-TILE` M12, `APPLE-PRESENTATION`'s last, `ATMOSPHERE` M6 and `CONTENT-LOOP` M3), and only M8 for every module's last milestone. The other choice holds all four until then.
 - Assumption: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how.
 - Assumption: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing.
-- Assumption: before M8 the movers' motion is judged tick by tick, from captures of every tick, and real-time takes are a tripwire record labelled with the machine's load (the lead's reading of the owner's bar of 17 November). Stutter at 1x is judged in M8, with the other builders paused. The other choice judges real-time takes in M5, which waits for a quiet machine.
+- Assumption: before M8 the movers' motion is judged tick by tick, from captures of every tick, and real-time takes are a tripwire record labelled with the machine's load (the lead's reading of the owner's bar of 17 November). Stutter at 1x is judged in M8, with the other builders paused. A late frame in M7's records that the load makes impossible to explain is listed as unresolved and answered in that M8 sitting. The other choice judges real-time takes in M5 and wants a cause for every late frame in M7, and each waits for a quiet machine.
 - Assumption: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it.
 
 ## M5 The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome
 
 The scene, layout, mover rule, route and checks are built and on main (`1556e66d0`), and M5.1 to M5.7 and M5.10
 passed [the first review](../../evidence/SHOWCASE/M5-review.md). Claim those again from their evidence, renewing
-only what has changed since. What is left is motion: read
-[Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine) and
-[the handoff](../../evidence/SHOWCASE/M5-handoff.md) first. `ATMOSPHERE` M10 took the false strip off the far
-ground and marked the balloon row in `exit_scene.rs`. If `check --exit` now reports drift from the exit baseline
-at a stop, look at the frames, replace the baseline with `--save-baseline` and log the cause; the thresholds
-stay. `scripts/capture_v1_runtime.py` and `scripts/capture_v1_browser.mjs` already take `--mode fixed` with the
-exit route. `motion` is a new launcher command: it takes M5.11's arms and writes
-`docs/evidence/SHOWCASE/M5-motion-record.json`, and `motion --check` reads that file and starts nothing.
+only what has changed since. What is left is motion and, if a stop moved, the exit baseline: read
+[Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine) first.
+[The handoff](../../evidence/SHOWCASE/M5-handoff.md) is history. Its shadow task became `ATMOSPHERE` M10, which
+took the false strip off the far ground and marked the balloon row in `exit_scene.rs`, and its retakes are
+M5.11.
+
+The launcher gains three things. `ticks` drives the native route recorder for M5.8, on the flythrough or the
+held route, with the windows and the phase its caller names, so that a reviewer takes its own.
+`scripts/capture_v1_runtime.py --mode fixed` cannot give that sequence, and
+`scripts/capture_v1_browser.mjs --mode fixed` with the exit route already gives Chrome's. `motion` takes M5.11's
+six arms and writes `docs/evidence/SHOWCASE/M5-motion-record.json`; `motion --check` reads that file, computes
+the input digest and starts nothing. Take the arms last, on a branch that holds main, and land the record with
+nothing else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames, then add and
+use [the refresh](DESIGN.md#the-route-check-sees-a-missing-prop): `--save-baseline` is the first calibration
+only, and refuses a baseline that exists.
 
 ## M6 The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome
 
-Criteria: M6.1–M6.6 in the done-when file.
-
-- [ ] Run `CULLING`'s equality command on the exit scene and flythrough: Frustum and Occlusion against bucket-ordered Direct, on both native recipes and in Chrome, with the movers moving.
-- [ ] Record paired whole-GPU rows on the flythrough in two runs and set the exit scene's default by `CULLING`'s rule. Report the mode on both targets.
-- [ ] Capture the flythrough and a fast yaw in real time on both targets for the reviewer.
+`CULLING` owns the equality command, its comparisons and the rule that sets the default. This milestone runs
+them on the exit scene and changes none of them. If equality fails, stop and diagnose.
 
 ## M7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 
-Criteria: M7.1–M7.11 in the done-when file.
-
-- [ ] Write the exit configuration: one file with every selection each row makes and the value the game must report for it, taken from the owning modules' closing records. Make `mac`, `chrome` and every check read it.
-- [ ] Add the game's report of what it resolved, natively and on the page, and the `exit --row` command that compares it with the file. Show that a removed selection and a fallback each fail.
-- [ ] Compare the three rows at the stops, set thresholds by the fixed rule and keep one baseline per row.
-- [ ] Prove the exit's clauses in the exit scene on each target: time controls, live edits, the profiler and no pipeline creation in play. Prove the controls are the same set on both targets.
-- [ ] Record whole frames with capture off over the flythrough and a day cycle on each row, and the startup proxies. List every late frame and find its cause.
+The exit configuration's entries are taken from the owning modules' closing records. `exit` and `frames` are new
+launcher commands. M7.9 and M7.10 take their records while other builders work:
+[Frame records, startup and hitches](DESIGN.md#frame-records-startup-and-hitches) says what a late frame's
+investigation may end in, and each entry carried to M8.13 keeps its row and its place. If M7.1 fails, end
+`BLOCKED needs_dependency` at once.
 
 ## M8 The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written
 
-Criteria: M8.1–M8.11 in the done-when file.
-
-- [ ] Capture stops and motion on all three rows from the exit configuration. Take the real-time captures in the sitting with the other builders paused: end `BLOCKED` asking the lead for it, as the project settings say. Get a fresh opinion against M8.1–M8.5, fix what it finds, and repeat while it finds things that matter.
-- [ ] Do everything else, then the two attended items in one sitting: presented intervals and windowed startup on both recipes, then Chrome's visible window.
-- [ ] Write [the exit record](DESIGN.md#the-exit-record) with the visual digest, platform status, known defects and device runs owed.
-- [ ] Bring the maturity ledger's G7 rows and the README to match the record.
-
-Stop rules, for every milestone:
-- With the exit scene unselected, every existing configuration must prepare, step and draw exactly as before. If one does not, stop and fix that first.
-- If a change fails an exact test, a baseline or a witness another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`.
-- A defect in another module's code is fixed in place only when the fix keeps that module's design, tests and exact comparisons true, and is noted in both logs. Otherwise write the proposal and end `BLOCKED needs_dependency`.
-- The game gets no height function. Anything that needs the ground's height is decided in the generator.
-- A mover that needs to turn, a prop that needs a texture or a level of detail is a proposal in the log, not work here.
-- In M6, change no culling code or comparison. If equality fails, stop and diagnose; never widen a comparison.
-- In M7, if M7.1 fails because `APPLE-PRESENTATION` has no M11 or it is not Done, end `BLOCKED needs_dependency` at once.
-- Never tune a parity threshold. If a control does not fail as it must, the metric goes back to the design.
-- A tripwire that trips is investigated. Record only runs of the commit being claimed, with their load.
-- Run the verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
-- Chrome and Instruments start outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute another target's result.
+The order is part of this milestone. First do everything that needs neither a quiet machine nor the display.
+Then end `BLOCKED` asking the lead for the sitting with the other builders paused, as the project settings say.
+In that one sitting take the real-time captures of M8.2, M8.3 and M8.5, the two attended records of M8.6 and
+M8.7 on the unlocked built-in display, and what M8.13's carried entries need. Before the first day-cycle take,
+write the storage record that [the design's open questions](DESIGN.md#open-questions) name. Get a fresh opinion
+against M8.1 to M8.5, fix what it finds, and repeat while it finds things that matter. Last, write
+[the exit record](DESIGN.md#the-exit-record) and bring the maturity ledger's G7 rows and the README to match it.

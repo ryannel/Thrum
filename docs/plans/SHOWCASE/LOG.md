@@ -48,3 +48,14 @@
   tick, and M5.11 is new: the real-time takes as a tripwire record. The design gains
   [Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine). Changing two items clears M5's proof, so its
   builder claims M5.1 to M5.7 and M5.10 again from the evidence the first review passed. Not yet design-reviewed.
+- 2026-11-18 Revised for [the design review](../../evidence/SHOWCASE/design-review.md) of `e289340c01cb`, 4 Must Fix.
+  MF1: M5.8's Mac sequence comes from the native route recorder, extended to keep windows of consecutive ticks,
+  with the strip judged at phase 0.9999 too; M5.9 reads Chrome's source ticks. MF2: the exit baseline is replaced
+  by a refresh that keeps identity and thresholds (M5.5), since `--save-baseline` refuses an existing file.
+  MF3: M5.11's record carries a digest of the build and route inputs, which the check recomputes and `reads`
+  lists. MF4: M7.9 and M7.10 may list a late frame as unresolved under load, and the new M8.13 answers it.
+- 2026-11-18 Same revision, the review's Suggestions. Taken: the three-row comparison's encoding and headroom are
+  named (S1); stale text is gone (M11 unplanned, M8's item range, the verifier before `land`, per-run sandbox
+  approvals). Taken in part: day-cycle storage is an open question M8's builder answers with T2's storage record
+  (S2), because no sweep exists to measure. The plan's step lists became notes and its stop rules moved to the
+  design as [Limits for every milestone](DESIGN.md#limits-for-every-milestone). Not yet design-reviewed.

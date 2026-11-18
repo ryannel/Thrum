@@ -56,10 +56,10 @@
         },
         {
           "id": "M5.5",
-          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric, with thresholds set once by the route decision's fixed rule. Three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities. The stop frames are kept as this module's exit baseline.",
+          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric, with thresholds set once by the route decision's fixed rule. Three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities. The stop frames are kept as this module's exit baseline. If `ATMOSPHERE` M10's shadow correction moved a stop, the baseline was replaced by the launcher's refresh, which keeps the saved identity and thresholds, passes the three controls and records each moved grid and the cause in the baseline file.",
           "check": "python3 scripts/run_v1_showcase.py check --exit",
           "lock": "gpu",
-          "ask": "Was each threshold set by the fixed rule from the first run that passed all three controls, and left alone afterwards? Does the no-entities control fail at every stop that has entities in view?",
+          "ask": "Was each threshold set by the fixed rule from the first run that passed all three controls, and left alone afterwards? Does the no-entities control fail at every stop that has entities in view? If the baseline file changed after its calibration, are its identity and thresholds the calibrated ones, and does its refresh record name the grids that moved and the shadow correction as their cause?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -90,7 +90,7 @@
         {
           "id": "M5.8",
           "statement": "On the Mac the movers drift continuously along the exit flythrough and in a held view of the densest group of movers. From one tick to the next none pops in or out, jumps or passes through terrain, each mover's shadow, where it has one, moves with it, and no shadow appears or vanishes.",
-          "inspect": "Capture both with T2 engine capture in `fixed` mode with every tick submitted, at least twenty seconds of world time each. Judge runs of consecutive frames whole and in native-size crops of single movers and their shadows, with committed ticks 228 to 240 of the flythrough and the stretch round its `balloons` checkpoint among them.",
+          "inspect": "Record the exit flythrough, and a route that holds the held view, with the native route recorder: T2 engine capture in `fixed` mode, one fresh tick for each submission, at least 1,200 consecutive routed ticks each. Read each take's log first: it lists every routed tick once, in order, at the take's phase. Then judge windows of consecutive ticks, with every tick's submitted image retained, whole and in native-size crops of single movers and their shadows. Judge at least committed ticks 228 to 240 of the flythrough, at the route's phase and at phase 0.9999, where the strip was reproduced; the stretch round its `balloons` checkpoint; and windows of your own choosing across both takes.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -100,7 +100,7 @@
         {
           "id": "M5.9",
           "statement": "In Chrome the six stops show the same props and movers as the Mac, with none missing, and along the exit flythrough the movers drift from one tick to the next without popping in or out or jumping.",
-          "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, the flythrough with every tick submitted. Judge the stops whole and in native-size crops beside the Mac's at the same stop, and runs of consecutive flythrough frames, with the stretch round the `balloons` checkpoint among them.",
+          "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first: a record that repeats a tick, with the next carrying two, is the page deferring a due tick under load, and is noted and not counted as a jump. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -119,10 +119,17 @@
         },
         {
           "id": "M5.11",
-          "statement": "Real-time takes are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. Every arm gives its build, its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only on a missing arm, field or load, on a take whose world stopped before its route or its twenty seconds ended, or on a take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/M5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
+          "statement": "Real-time takes of the build this milestone claims are on record as a tripwire, each with a capture-off arm run back to back: the exit flythrough and the held view on the Mac, and the flythrough in Chrome. All six arms ran from one commit with nothing uncommitted. The record gives that commit, each program's hash and a digest of the build and route inputs there (the tracked files under `crates/` and `examples/v1-game/`, and `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`), and for every arm its longest intervals between frames and the machine's load before and after. A capture-on take also keeps its timeline of submissions (elapsed time, committed tick and phase) and says whether it was complete. No interval decides this item. The check fails only when that digest, computed again from the checkout it runs in, differs from the record's; on a missing arm, field or load; on an arm whose world stopped before its route or its twenty seconds ended; or on a capture-on take whose median interval is more than twice that of the arm it repeats in `docs/evidence/SHOWCASE/M5-motion-diagnostics.json` (`elapsed-exit-route`, `elapsed-exit-drift`, `current-chrome`).",
           "check": "python3 scripts/run_v1_showcase.py motion --check",
           "reads": [
             "scripts/run_v1_showcase.py",
+            "scripts/capture_v1_runtime.py",
+            "scripts/capture_v1_browser.mjs",
+            "crates/",
+            "examples/v1-game/",
+            "Cargo.toml",
+            "Cargo.lock",
+            "rust-toolchain.toml",
             "docs/evidence/SHOWCASE/M5-motion-record.json",
             "docs/evidence/SHOWCASE/M5-motion-diagnostics.json"
           ],
@@ -320,10 +327,10 @@
         },
         {
           "id": "M7.9",
-          "statement": "On the Mac, for both recipes, a whole-frame record covers the exit flythrough and one full day cycle with capture off: each frame's CPU stages, named GPU passes and callback interval from the frame host, with build, recipe and load. Every frame that missed its opportunity is listed with its cause, and startup to the first exit-scene frame is recorded as a labelled proxy.",
+          "statement": "On the Mac, for both recipes, a whole-frame record covers the exit flythrough and one full day cycle with capture off: each frame's CPU stages, named GPU passes and callback interval from the frame host, with build, recipe and load. Every frame that missed its opportunity is listed with its duration, its place on the route or in the day, and what its investigation found: a cause, or, where the record cannot tell the machine's share of the delay from the engine's, that it is unresolved under the recorded load, with the evidence read. Startup to the first exit-scene frame is recorded as a labelled proxy.",
           "check": "python3 scripts/run_v1_showcase.py frames --target mac-metal",
           "lock": "gpu",
-          "ask": "Is each late frame's cause named, and either fixed, proposed to its owning module in the log, or shown by the recorded load to lie outside the game? Is any row about a quarter slower than M5's baseline at the same stop, and if so is it explained?",
+          "ask": "Does each late frame have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the game, or the mark unresolved under load, with the evidence read, kept for M8.13? Is load alone given as a cause anywhere? Is any row about a quarter slower than M5's baseline at the same stop, and if so is it explained?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -332,10 +339,10 @@
         },
         {
           "id": "M7.10",
-          "statement": "In Chrome a whole-frame record covers the exit flythrough and one full day cycle: the page's frame-callback intervals and the GPU pass times the browser allows, with build and load. Every long interval is listed with its cause, and startup to the first exit-scene frame is recorded as a labelled proxy.",
+          "statement": "In Chrome a whole-frame record covers the exit flythrough and one full day cycle: the page's frame-callback intervals and the GPU pass times the browser allows, with build and load. Every long interval is listed with its duration, its place on the route or in the day, and what its investigation found: a cause, or, where the record cannot tell the machine's share of the delay from the page's, that it is unresolved under the recorded load, with the evidence read. Startup to the first exit-scene frame is recorded as a labelled proxy.",
           "check": "python3 scripts/run_v1_showcase.py frames --target chrome-webgpu",
           "lock": "chrome",
-          "ask": "Is each long interval's cause named, and either fixed, proposed to its owning module in the log, or shown to lie outside the page?",
+          "ask": "Does each long interval have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the page, or the mark unresolved under load, with the evidence read, kept for M8.13? Is load alone given as a cause anywhere?",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -494,6 +501,16 @@
           "builder_result": "open",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M8.13",
+          "statement": "Every late frame and long interval that M7.9 and M7.10 carried as unresolved under load is answered from the records and takes of the sitting with the other builders paused, at the place on the flythrough or in the day cycle where it occurred: it did not recur there, or it recurred and has a cause that is fixed, proposed to its owning module, or shown to lie outside the game or the page.",
+          "ask": "Take the carried entries one at a time. Does a record or take from the paused sitting cover the place each occurred, on the row it occurred on? Is each answered as not recurring, or with a cause?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "failed_reviews": 0,

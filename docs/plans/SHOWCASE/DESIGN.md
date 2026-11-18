@@ -5,7 +5,10 @@
 [the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md), which built the launch and the six-stop route,
 by C04, C05, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), and by
 [exact baselines](../ARCHITECTURE.md#exact-baselines). Revised on 18 November 2026 after M5's first review:
-[Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before M8.
+[Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before M8. Revised again that
+day for [the design review](../../evidence/SHOWCASE/design-review.md) of that revision: how each target produces
+a tick-by-tick sequence, what build a timing record is of, how the exit baseline is replaced, and what M7 does
+with a late frame it cannot explain.
 
 ## The request
 
@@ -168,9 +171,9 @@ default so that exact baselines hold. No one place says which of them the showca
 - "The same scene" means the same cooked publication, layout, route and controls. Texture variant, reconstructor
   and display range differ by row, and the record says how.
 
-The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record. Its
-M4 to M11 have no done-when entries yet, so M7 cannot be built until they are planned and Done. M7 carries a check
-that fails until then.
+The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record, so
+M7 depends on that module's last milestone, M11, and M7.1 checks the five milestones M7 builds on in the record
+files.
 
 ### The route check sees a missing prop
 
@@ -180,6 +183,25 @@ third control beside the diagnostic scene and the retinted texture: the same sto
 fail at every stop that has entities in view. If it does not, the metric goes back to design (a finer grid) and is
 not tuned to pass. Thresholds are set once for the exit store's root by the route decision's fixed rule. The exit
 has its own baseline file; the bare valley's check and baseline are untouched.
+
+**Replacing the exit baseline.** `check --exit --save-baseline` is the first calibration and nothing else: it
+refuses to run while a baseline exists, and with the file deleted it would compute the thresholds again. A
+reviewed change that moves a stop, as `ATMOSPHERE` M10's shadow correction may, needs a refresh, which the
+launcher gains the first time one is needed. The refresh requires the existing baseline and refuses a run whose
+identity (comparator, frames, cooked root and presets) differs from the saved one. It judges parity and the
+three controls by the saved thresholds, and replaces the grids only when all pass. It keeps the identity and the
+thresholds, and writes into the baseline file a record of the refresh: the cause, the builds before and after,
+and for each target and stop how far the grid moved, marking those over the thresholds. The cause and the old
+and new file hashes go in the log. From M7 the same refresh serves each row's baseline.
+
+**Three rows, one encoding (M7).** The rows are compared as 8-bit sRGB submitted output after tone mapping,
+before display: T2's `sdr` source in Chrome and on the Mac's portable row. The Apple row keeps EDR selected and
+is captured at headroom 1, where
+[`APPLE-PRESENTATION`'s EDR transform](../APPLE-PRESENTATION/DESIGN.md#the-edr-transform-and-its-h--1-identity-m6)
+is the SDR curve term for term, and its submitted float frame is encoded to 8 bits for the comparison, within
+one code of the SDR path's. What that row shows above headroom 1 is compared by nothing here: the exit record
+cites `APPLE-PRESENTATION`'s own EDR evidence for it. The comparison's record names each row's source and
+headroom. If a row cannot give this encoding, that is a proposal in the log, not a second metric.
 
 ### Culling on the assembled scene
 
@@ -192,7 +214,16 @@ the flythrough with movers moving, on both recipes, and at checkpoints in Chrome
 
 - **Unattended (M7).** With capture off, the frame host's completed samples over the flythrough and one full day
   cycle, per row: CPU stages, GPU passes by name and the callback interval, with build and load. Every frame that
-  missed its opportunity is listed with a cause. Startup to the first exit-scene frame is a labelled proxy.
+  missed its opportunity is listed with its duration, its place on the route or in the day and what its
+  investigation found. Startup to the first exit-scene frame is a labelled proxy.
+- **What an investigation can end in.** M7's records are taken while other builders work. The investigation
+  reads the late frame's own stage and pass times, its neighbours and the load. Where a stage or pass of the
+  engine's or the page's accounts for the delay, that is its **cause**, and it is fixed or proposed to its owning
+  module. Where the record shows the delay lay outside the game, it says how. Where the frame's own work was
+  ordinary and the time went between callbacks, the record shows the gap and cannot say whose it was: the frame
+  is listed as **unresolved under load**, with the evidence read, and carried to M8. Load is never a cause by
+  itself. It is the reason a cause could not be established. M8.13 answers every carried frame from the sitting
+  with the other builders paused: it did not recur at that place, or it recurred and gets a cause there.
 - **On the built-in display (M8, attended setup).** The Mac's presented-time witness, as `PLATFORM-RUNTIME-MAC`
   qualifies it, over the flythrough on both recipes with capture off, and windowed startup. For Chrome, the page's
   frame-callback intervals in a visible window. No presented-time witness exists for Chrome, and the record says
@@ -219,22 +250,62 @@ an 86.31 ms gap on the Mac, and a 92.8 ms gap in Chrome, every submitted image r
 
 So motion is proved in two parts, and the project's rule for timing decides which part can fail a milestone.
 
-1. **What the engine draws at each tick is judged, and gates.** M5.8 and M5.9 capture the flythrough and the
-   held view in `fixed` mode with every tick submitted, on the Mac and in Chrome. That sequence is the same
-   whatever the machine is doing, so a pop, a jump, a mover through terrain or a shadow that blinks is the
-   engine's and is a finding.
+1. **What the engine draws at each tick is judged, and gates.** M5.8 and M5.9 judge sequences in which every
+   world tick is submitted once, on the Mac and in Chrome. Such a sequence is the same whatever the machine is
+   doing, so a pop, a jump, a mover through terrain or a shadow that blinks is the engine's and is a finding.
 2. **How evenly real time delivers those frames is recorded, and does not gate before M8.** M5.11 keeps
    real-time takes on both targets with capture-off arms back to back, their timelines and the load. Its
-   check fails on a missing arm or field, on a take whose world stopped early, and on a median interval more
-   than twice that of the retained arm it repeats. Those arms held the requested 60 Hz: medians of 16.8 and
-   16.7 ms on the Mac and 16.7 ms in Chrome. A long interval in the record is investigated when it is not
-   explained by load, and is never a finding by itself.
+   check fails on a record of another build, on a missing arm or field, on an arm whose world stopped early,
+   and on a median interval more than twice that of the retained arm it repeats. Those arms held the requested
+   60 Hz: medians of 16.8 and 16.7 ms on the Mac and 16.7 ms in Chrome. A long interval in the record is
+   looked into when the take's own timeline points at the engine, and is never a finding by itself.
+
+**How each target produces a tick-by-tick sequence.**
+
+- **Mac.** T2's `fixed` runner, `capture_v1_runtime.py --mode fixed`, cannot give one. Its loop ends after 480
+  opportunities, four seconds, and it advances the world from elapsed host time, so a slow readback changes
+  which ticks are submitted. The native route recorder can (`examples/v1-game/src/bin/window/route.rs`, started
+  with `THRUM_CAPTURE_ROUTE`). It gives the world a synthetic time one tick on from the last, at a chosen phase,
+  reads T2's submitted-image tap, and refuses a step that did not submit exactly one fresh tick. It logs every
+  routed tick with its submission, and today keeps pixels only at a route's named checkpoints.
+- **Windows.** M5 extends the recorder to keep the submitted image of every tick inside **windows**, runs of
+  consecutive routed ticks that the caller names, each image with the identity a checkpoint has. A take's span
+  comes from its log: one line for each routed tick, in order, at one phase. A judge names its own windows, so
+  no stretch of a take is the builder's choice alone. The route slice built this recorder and other modules'
+  scripts drive it for registered checkpoint bytes, so a run that names no window records exactly as before.
+- **The two takes.** The flythrough is `exit-flythrough.json`, 1,350 ticks. The held view is a second route
+  file, pinned to the exit root, that holds the pose of the `exit-drift` case for at least 1,200 ticks. Both fit
+  the recorder's 1,800-tick limit for an exit route.
+- **Phase.** A route file's phase is one half. The strip was reproduced at route ticks 202 to 203, committed
+  ticks 233 to 234, at phase 0.9999, which `THRUM_CAPTURE_PHASE` sets
+  ([record](../../evidence/SHOWCASE/M5-motion-diagnostics.json), `fixed_shadow_diagnostic`). That window is
+  judged at both phases, because a fault that shows near the end of a tick can hide at its middle.
+- **Chrome.** `capture_v1_browser.mjs --mode fixed` gives the page a synthetic 60 Hz time at each callback, at
+  phase one half, and retains every submission with its source tick. Under load the page can defer a due tick
+  to the next callback ([ruling](../ARCHITECTURE.md#a-fixed-capture-that-stalls)): one record repeats a tick
+  and the next carries two. That is a step of the page's clock and not of the scene. A judge reads a run's
+  source ticks first, judges on runs whose ticks advance one at a time, and does not count a deferred tick as a
+  jump.
+
+**What build a timing record is of.** A record that names a build proves nothing if the check never looks: a
+change to a frame driver after the arms were taken would leave the record, the launcher and the check's result
+as they were. So `motion` refuses a tree with uncommitted changes, builds both programs from it, and takes all
+six arms from that one commit. The record holds the commit, each program's hash, and one digest of the build and
+route inputs there: the tracked files under `crates/` and `examples/v1-game/`, which hold the routes, and
+`Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`. `motion --check` computes that digest again from the
+checkout it runs in, without building, and fails when it differs. M5.11's `reads` lists the same paths, so a
+pass is not reused once one of them changes. Other modules land changes to those paths most hours, and a record
+cannot outlive one. So the arms are the milestone's last act, taken on a branch that already holds main, and
+landed with nothing else. If another landing gets in first, the check fails on main and the six arms, a few
+minutes of takes, are taken again. Nothing else is proved twice.
 
 In M5, M6 and M7 a reviewer who sees a step in a real-time take reads the take's timeline first. A step the
 elapsed time between two submissions accounts for is a recorded gap. A step it does not account for, or
-content that differs from the `fixed` capture of the same tick, is a finding. Stutter at 1x is judged in M8.2
-and M8.5, and on the built-in display in M8.6 and M8.7. M8 is this module's last milestone, so its real-time
-takes are made in the sitting the project settings give a last milestone, with the other builders paused.
+content that differs from the tick-by-tick capture of the same tick, is a finding. A late frame in M7's frame
+records is handled as [Frame records, startup and hitches](#frame-records-startup-and-hitches) says. Stutter at
+1x is judged in M8.2 and M8.5, and on the built-in display in M8.6 and M8.7. M8 is this module's last milestone,
+so its real-time takes and frame records, the two attended ones included, are made in the sitting the project
+settings give a last milestone, with the other builders paused.
 
 ### Defects found in another module's code
 
@@ -260,8 +331,8 @@ owner's page and is not edited.
   pixels beyond 700 m; a 20 m balloon is still five pixels at 5 km. Small props stay near, and movers can fill the
   far valley.
 - **Bounded movers.** A loop that is a function of the tick cannot drift. A test steps one simulated hour.
-- **Baselines.** With the exit content unselected nothing in the covered configurations changes, and the verifier
-  proves it at every landing.
+- **Baselines.** With the exit content unselected nothing in the covered configurations changes, and the
+  main-branch check `exact-images` proves it after every landing.
 
 ## The system as it runs
 
@@ -285,11 +356,31 @@ before it trusts any frame.
 
 - No registered exact baseline moves. The valley's source root, the grid and field contents and the default
   output stay as they are.
-- Every landing here changes covered paths, so every milestone carries the verifier and the builder runs it
-  before `land`.
+- Every landing here changes covered paths, so every milestone carries a verifier item. It passes from the
+  main-branch check `exact-images`, which runs on main after the merge
+  ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). No builder runs the verifier before a merge.
 - This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in M5 and
-  extended to one per row in M7. Each replacement is logged with its cause and hashes. `ATMOSPHERE` M10 takes
-  a balloon's false strip off the far ground, so the exit's may be replaced once in M5 for that cause.
+  extended to one per row in M7. `ATMOSPHERE` M10 takes a balloon's false strip off the far ground, so the
+  exit's may be replaced once in M5 for that cause, by
+  [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds.
+
+## Limits for every milestone
+
+- **Nothing that exists changes.** With the exit scene unselected, every existing configuration prepares, steps
+  and draws exactly as before, because exact baselines pin them. If one does not, stop and fix that first.
+- **Another module's comparison is not edited.** If a change fails an exact test, a baseline or a witness
+  another module owns, write the proposal in the log and end `BLOCKED`
+  ([rule 1](../ARCHITECTURE.md#exact-baselines)).
+- **Exact images are proved on main.** A verifier item passes from the main-branch check `exact-images`. Do not
+  run the verifier before a merge.
+- **The game gets no height function.** Anything that needs the ground's height is decided in the generator,
+  so that two copies cannot disagree.
+- **Entities stay as V1 has them.** A mover that needs to turn, or a prop that needs a texture or a level of
+  detail, is a proposal in the log and not work here.
+- **M6 changes no culling code or comparison.** If equality fails, stop and diagnose. Never widen a comparison.
+- **No parity threshold is tuned.** If a control does not fail as it must, the metric comes back to this design.
+- **A tripwire that trips is investigated.** A record is of the commit being claimed, with its load.
+- **No target stands in for another.** If Chrome or Instruments will not start, leave the item open and say so.
 
 ## Risks
 
@@ -301,7 +392,7 @@ before it trusts any frame.
    for `ATMOSPHERE` or the forward pass, handled as above.
 4. **A row falls back silently.** Mitigation: the resolved report and a control with one selection removed.
 5. **Shared files move under the builder.** `scripts/run_v1_showcase.py` and the game's sources are edited by
-   other modules. Integrate sequentially and rerun the checks after every rebase.
+   other modules. Integrate sequentially. After a rebase, rerun only what the script says failed.
 6. **The built-in display is not free when M8 is ready.** Its two attended items are done in one sitting, batched
    with other modules' attended items.
 
@@ -309,11 +400,13 @@ before it trusts any frame.
 
 - **Targets.** `mac-metal` on both recipes, and `chrome-webgpu`. The iPhone simulator is not a row.
 - **Capture.** T2 engine capture on the Mac and in Chrome: `fixed` for stops, checkpoints and M5's tick-by-tick
-  motion, `realtime` for M5.11's record and for motion from M6 on, read as
-  [Motion on a shared machine](#motion-on-a-shared-machine) says. Frame records are taken with capture off.
-- **Reaching the targets.** GPU runs hold the `gpu` lock. Chrome and Instruments start outside the Codex sandbox
-  by an approval for each run. A builder refused one leaves the item open and says so. A reviewer refused one has
-  the review moved to Claude; a reviewer never judges the builder's captures in place of its own.
+  motion, which on the Mac comes from the native route recorder; `realtime` for M5.11's record and for motion
+  from M6 on. [Motion on a shared machine](#motion-on-a-shared-machine) says how each is produced and read.
+  Frame records are taken with capture off.
+- **Reaching the targets.** A Mac GPU run holds the `gpu` lock and a run that starts Chrome holds `chrome`. The
+  project runs Codex with `danger-full-access`, so Chrome and Instruments start without an approval. A reviewer
+  takes its own captures and never judges the builder's in place of them. If a reviewer cannot start a target,
+  the review moves to Claude.
 - **Attended setup.** Two items in M8 need the built-in display unlocked and awake. The agent runs and reviews;
   the owner does nothing else. Console state is recorded and is never a pass condition elsewhere.
 - **Storage.** Scratch in `tmp/showcase-<milestone>/`; selected evidence in `docs/evidence/SHOWCASE/`.
@@ -323,3 +416,8 @@ before it trusts any frame.
 - Whether Occlusion or Frustum is the exit scene's default. M6's paired rows settle it.
 - Whether the frame holds the refresh interval under the full exit configuration. M7's records settle it; the
   remedy is content, by regenerating.
+- How long a day-cycle sweep runs, and what its captures may store. The exit scene has a solar-time control and
+  no sweep yet. M7 builds the sweep for its capture-off records, which store no images. M8's real-time day-cycle
+  takes run longer than T2's four-second case, so before the first one its builder writes the storage record
+  [T2's design](../T2-CAPTURE/DESIGN.md) asks of a longer session: extent, duration, expected peak from the
+  bytes M5's takes measured for each frame, the excerpts kept and the expiry.
