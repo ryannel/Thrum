@@ -683,7 +683,7 @@ impl<'a> Scene<'a> {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                 view_formats: &[],
             })
-            .create_view(&Default::default());
+            .create_view(&wgpu::TextureViewDescriptor::default());
     }
 }
 

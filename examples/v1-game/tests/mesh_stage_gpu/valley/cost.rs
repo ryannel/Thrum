@@ -153,7 +153,9 @@ fn route_cost() {
                     .expect("submit")
                     .submitted
             );
-            let mut copy = gpu.device.create_command_encoder(&Default::default());
+            let mut copy = gpu
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             copy.copy_buffer_to_buffer(witness, 0, readback, 0, witness.size());
             let bytes = read_buffer(&gpu, copy, readback);
             let sample = valley.complete();
@@ -167,7 +169,7 @@ fn route_cost() {
             );
             let shadows: Vec<_> = PASSES[2..]
                 .iter()
-                .zip(bytes.chunks_exact(80))
+                .zip(bytes.as_chunks::<80>().0)
                 .map(|(pass, bytes)| {
                     let view = matrix(bytes);
                     json!({"pass": pass,

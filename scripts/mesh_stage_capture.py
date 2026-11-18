@@ -50,26 +50,28 @@ def main():
     route = json.loads((ROOT / "examples/v1-game/routes/moving-v1.json").read_text())
     route["overlay"] = "off"
     route["render_extent"] = [1280, 720]
-    route_file = output / "route.json"
-    route_file.write_text(json.dumps(route, indent=2) + "\n")
-    for arm in ("mesh", "indexed"):
-        arm_env = dict(env)
-        arm_env.pop("THRUM_VALLEY_MESH_STAGE_PROBE", None)
-        arm_env.pop("THRUM_HARDWARE", None)
-        if arm == "mesh":
-            arm_env.update(THRUM_HARDWARE="mesh-stages", THRUM_VALLEY_MESH_STAGE_PROBE="culled")
-        destination = output / f"realtime-{arm}"
-        subprocess.run([
-            sys.executable, str(ROOT / "scripts/capture_v1_runtime.py"), "--binary",
-            str(ROOT / "target/release/v1-game"), "--store", str(store),
-            "--output", str(destination), "--case", "route", "--route", str(route_file),
-            "--mode", "realtime", "--recipe", "apple-tile", "--extent", "1280", "720",
-            "--admission", "wait",
-        ], cwd=ROOT, env=arm_env, check=True)
-        path = json.loads((destination / "cooked-path.json").read_text())
-        expected = "MeshStages" if arm == "mesh" else "Indirect"
-        if path["resolved_path"] != f"Some({expected})" or path["recipe"] != "Some(AppleTile)":
-            raise ValueError(f"unexpected resolved path: {path}")
+    for light, hour in (("low-sun", 17.3), ("noon", 12)):
+        route["start"]["solar_hours"] = hour
+        route_file = output / f"route-{light}.json"
+        route_file.write_text(json.dumps(route, indent=2) + "\n")
+        for arm in ("mesh", "indexed"):
+            arm_env = dict(env)
+            arm_env.pop("THRUM_VALLEY_MESH_STAGE_PROBE", None)
+            arm_env.pop("THRUM_HARDWARE", None)
+            if arm == "mesh":
+                arm_env.update(THRUM_HARDWARE="mesh-stages", THRUM_VALLEY_MESH_STAGE_PROBE="culled")
+            destination = output / f"realtime-{light}-{arm}"
+            subprocess.run([
+                sys.executable, str(ROOT / "scripts/capture_v1_runtime.py"), "--binary",
+                str(ROOT / "target/release/v1-game"), "--store", str(store),
+                "--output", str(destination), "--case", "route", "--route", str(route_file),
+                "--mode", "realtime", "--recipe", "apple-tile", "--extent", "1280", "720",
+                "--admission", "wait",
+            ], cwd=ROOT, env=arm_env, check=True)
+            path = json.loads((destination / "cooked-path.json").read_text())
+            expected = "MeshStages" if arm == "mesh" else "Indirect"
+            if path["resolved_path"] != f"Some({expected})" or path["recipe"] != "Some(AppleTile)":
+                raise ValueError(f"unexpected resolved path: {path}")
 
 
 if __name__ == "__main__":

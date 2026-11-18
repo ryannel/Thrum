@@ -1,4 +1,5 @@
 use std::{
+    io::Write as _,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -188,7 +189,7 @@ impl<'a> Valley<'a> {
 
     fn complete(&mut self) -> FrameSample {
         let deadline = Instant::now() + Duration::from_secs(25);
-        let sample = loop {
+        loop {
             self.gpu
                 .device
                 .poll(wgpu::PollType::Poll)
@@ -198,8 +199,7 @@ impl<'a> Valley<'a> {
             }
             assert!(Instant::now() < deadline, "GPU timing deadline");
             std::thread::yield_now();
-        };
-        sample
+        }
     }
 
     fn image(&mut self, sample: &FrameSample) -> SubmittedImage {
@@ -218,6 +218,19 @@ impl<'a> Valley<'a> {
         }
     }
 
+    fn save_stop(&mut self, sample: &FrameSample, name: &str) -> serde_json::Value {
+        let image = self.image(sample);
+        std::fs::write(output().join(name), &image.rgba).expect("fixed stop");
+        self.host.recycle_submitted_image(image);
+        self.host.disable_submitted_capture();
+        let stats = self.stats.lock().expect("resolved cooked draw path");
+        serde_json::json!({
+            "file": name, "path": format!("{:?}", stats.draw_path),
+            "mesh_stage_draws": stats.mesh_stage_draws, "indirect_draws": stats.indexed_indirect_draws,
+            "submission": sample.submission_order,
+        })
+    }
+
     fn read_texture(
         &self,
         texture: &wgpu::Texture,
@@ -233,7 +246,10 @@ impl<'a> Valley<'a> {
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let mut encoder = self.gpu.device.create_command_encoder(&Default::default());
+        let mut encoder = self
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 aspect,
@@ -269,7 +285,7 @@ fn drawable(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
         })
-        .create_view(&Default::default())
+        .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
 #[test]
@@ -349,11 +365,16 @@ fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, witness: 
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let mut copy = gpu.device.create_command_encoder(&Default::default());
+        let mut copy = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         copy.copy_buffer_to_buffer(counts, 0, &readback, 0, counts.size());
         let words: Vec<_> = read_buffer(gpu, copy, &readback)
-            .chunks_exact(4)
-            .map(|bytes| u32::from_le_bytes(bytes.try_into().expect("one counter")))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .copied()
+            .map(u32::from_le_bytes)
             .collect();
         assert!(words[0] > 0);
         assert!(
@@ -361,7 +382,11 @@ fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, witness: 
             "vacuous shadow cull: {words:?}"
         );
         assert_eq!(words[7], 0, "shadow caster used a cone test");
-        println!("Sun {hour} h, mesh workgroups launched and six plane rejection counts {words:?}");
+        writeln!(
+            std::io::stdout(),
+            "Sun {hour} h, mesh workgroups launched and six plane rejection counts {words:?}"
+        )
+        .expect("cull counts");
     }
     maps
 }
@@ -411,6 +436,47 @@ fn fixed_stops() {
     for path in [CookedDrawPath::Indirect, CookedDrawPath::MeshStages] {
         for hour in [12.0, 17.3] {
             let mut valley = Valley::new(&gpu, path, true, extent, hour, false);
+            let authored = valley.host.scene_camera().expect("authored camera");
+            for (index, (label, eye, target)) in [
+                (
+                    "inside-sphere",
+                    [-3.4, 241.373_73, -5.0],
+                    [3.8, 240.65, -7.0],
+                ),
+                ("inside-rock", [3.8, 240.645_98, -7.0], [-3.4, 241.37, -5.0]),
+                ("overlook", [26.0, 258.0, 110.0], [0.0, 240.92, -60.0]),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let camera = v1_game::SceneCamera::perspective(
+                    eye,
+                    target,
+                    46.0_f32.to_radians(),
+                    0.1,
+                    30_000.0,
+                )
+                .expect("checked inspection viewpoint");
+                valley
+                    .host
+                    .set_scene_camera(camera)
+                    .expect("inspection view");
+                valley.frame(Duration::ZERO, Witness::None);
+                valley
+                    .host
+                    .enable_submitted_capture_from(1000 + index as u64, CaptureSource::Sdr)
+                    .expect("T2 inspection stop tap");
+                let (sample, _) = valley.frame(Duration::ZERO, Witness::None);
+                let mut frame = valley.save_stop(&sample, &format!("{path:?}-{hour}-{label}.rgba"));
+                frame["solar_hours"] = serde_json::json!(hour);
+                frame["camera_eye"] = serde_json::json!(eye);
+                frame["viewpoint"] = serde_json::json!(label);
+                frames.push(frame);
+            }
+            valley
+                .host
+                .set_scene_camera(authored)
+                .expect("restore authored route camera");
             let route = valley.install_route(hour);
             for tick in 0..=360 {
                 let stop = [0, 90, 180, 200, 201, 230, 290, 340, 360].contains(&tick);
@@ -424,18 +490,14 @@ fn fixed_stops() {
                 let (sample, _) = valley.frame(time, Witness::None);
                 assert_eq!(sample.tick, route.origin_tick + tick);
                 if stop {
-                    let image = valley.image(&sample);
-                    let name = format!("{path:?}-{hour}-{tick}.rgba");
-                    std::fs::write(folder.join(&name), &image.rgba).expect("fixed stop");
-                    valley.host.recycle_submitted_image(image);
-                    valley.host.disable_submitted_capture();
-                    let stats = valley.stats.lock().expect("resolved cooked draw path");
+                    let mut frame =
+                        valley.save_stop(&sample, &format!("{path:?}-{hour}-{tick}.rgba"));
                     let pose = route.pose(sample.tick, sample.presentation_alpha);
-                    frames.push(serde_json::json!({
-                        "file": name, "route_tick": tick, "solar_hours": hour, "path": format!("{:?}", stats.draw_path),
-                        "mesh_stage_draws": stats.mesh_stage_draws, "indirect_draws": stats.indexed_indirect_draws,
-                        "camera_eye": pose.eye, "history_epoch": pose.epoch, "submission": sample.submission_order,
-                    }));
+                    frame["route_tick"] = serde_json::json!(tick);
+                    frame["solar_hours"] = serde_json::json!(hour);
+                    frame["camera_eye"] = serde_json::json!(pose.eye);
+                    frame["history_epoch"] = serde_json::json!(pose.epoch);
+                    frames.push(frame);
                 }
             }
         }
