@@ -31,3 +31,6 @@
   as the pass interval it is." `MeshStages` is met only on Apple tile, and the GPU figure is named the
   timed-pass span. [What changed, finding by finding](../../evidence/MESH-SHADING/design-review-3-resolution.md).
   The design review is owed.
+- 2026-11-18 The M1 builder verified opt-in Apple tile forward mesh stages on Apple M3 Max Metal. The proof
+  exercised admission, culling, the submitted frame contract, fallback, material installation and upload budgets.
+  The shared `exact-images` check runs after integration. [Metal results and images](../../evidence/MESH-SHADING/M1.md).

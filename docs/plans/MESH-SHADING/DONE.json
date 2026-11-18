@@ -20,8 +20,8 @@
           "ask": "Is there one function in the registry that turns a launch's list into the device, shared with `ray-query`, and do the Mac window, the capture runner and the test gate each make their device through it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m11-launch-admission",
           "verdict": "",
           "review": ""
         },
@@ -32,8 +32,8 @@
           "ask": "Does the proof assert that the cull rejected meshlets for each reason (the cone, each plane) on that path, with a count that is not zero, so the equality is not vacuous? Is the cull's rule one function text compiled into both the compute pass and the object stage?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m12-object-stage-culling",
           "verdict": "",
           "review": ""
         },
@@ -44,8 +44,8 @@
           "ask": "Would a mesh stage that wrote a wrong normal, motion delta or history flag across a visible area fail at the stated tolerances? Does the proof show where the pixels it does not judge lie, and not assume it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m13-frame-contract",
           "verdict": "",
           "review": ""
         },
@@ -56,8 +56,8 @@
           "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages, the stages cannot draw a portable frame, and a fallback is never silent?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m14-path-selection",
           "verdict": "",
           "review": ""
         },
@@ -67,8 +67,8 @@
           "check": "python3 scripts/mesh_stage_proof.py prepared",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m15-pipeline-preparation",
           "verdict": "",
           "review": ""
         },
@@ -79,8 +79,8 @@
           "ask": "Is eligibility decided when the mesh is staged, before a buffer is made for it, against the limits of the device generation and not the adapter's?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m16-per-mesh-eligibility",
           "verdict": "",
           "review": ""
         },
@@ -91,8 +91,8 @@
           "ask": "Does the proof read the edit from pixels a stage pipeline drew, and not only from the reload's outcome?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m17-material-installation",
           "verdict": "",
           "review": ""
         },
@@ -102,8 +102,8 @@
           "check": "python3 scripts/mesh_stage_proof.py residency",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m18-residency-and-upload",
           "verdict": "",
           "review": ""
         },
@@ -112,8 +112,8 @@
           "statement": "No exact baseline moves: with no request, and on the direct and indirect paths, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
