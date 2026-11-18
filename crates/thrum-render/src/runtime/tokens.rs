@@ -119,6 +119,27 @@ struct ReadyFrame<'a, W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
+    /// Copy the three caster view uniforms from this recording, in map order.
+    /// Used by offline geometry diagnostics on a separate untimed submission.
+    #[cfg(feature = "creation-counters")]
+    pub fn copy_shadow_view_witness(&mut self, output: &wgpu::Buffer) -> Option<u64> {
+        let ready = self.ready.as_mut()?;
+        let views = ready.host.prepared.shadow_view_witness()?;
+        let bytes = views.iter().map(|view| view.size()).sum();
+        if bytes > output.size() || !output.usage().contains(wgpu::BufferUsages::COPY_DST) {
+            return None;
+        }
+        let mut offset = 0;
+        for view in views {
+            ready
+                .recorded
+                .encoder
+                .copy_buffer_to_buffer(view, 0, output, offset, view.size());
+            offset += view.size();
+        }
+        Some(bytes)
+    }
+
     /// Whether a scene is ready for the platform to acquire a drawable.
     pub fn can_acquire_surface(&self) -> bool {
         self.ready.is_some()

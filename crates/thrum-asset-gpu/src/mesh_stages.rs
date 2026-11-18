@@ -1,6 +1,6 @@
 //! The opted-in forward mesh pipeline and the limits on each mesh's storage and draw.
 
-use thrum_render::contribution::SceneSurface;
+use thrum_render::contribution::{SceneShadowSurface, SceneSurface};
 use thrum_render::runtime::DeviceSite;
 
 use crate::material::MeshSurface;
@@ -19,7 +19,7 @@ pub(crate) fn prepare(
     target: &MeshSurface,
     source: &str,
     config: &crate::CookedConfig,
-) -> Result<(Layout, wgpu::RenderPipeline), String> {
+) -> Result<Prepared, String> {
     use std::future::Future as _;
     let scopes = [
         wgpu::ErrorFilter::OutOfMemory,
@@ -37,6 +37,10 @@ pub(crate) fn prepare(
     #[cfg(not(feature = "draw-probe"))]
     let entry = "cooked_mesh";
     let pipeline = layout.compile(surface.device, target, source, entry);
+    let shadow = surface
+        .shadow
+        .as_ref()
+        .map(|shadow| layout.compile_shadow(surface.device, shadow));
     // Native Metal validates synchronously. Pop in stack order even when a scope has failed.
     let mut failure = None;
     for scope in scopes.into_iter().rev() {
@@ -51,7 +55,20 @@ pub(crate) fn prepare(
         };
         failure.get_or_insert(error);
     }
-    failure.map_or(Ok((layout, pipeline)), Err)
+    failure.map_or(
+        Ok(Prepared {
+            layout,
+            forward: pipeline,
+            shadow,
+        }),
+        Err,
+    )
+}
+
+pub(crate) struct Prepared {
+    pub(crate) layout: Layout,
+    pub(crate) forward: wgpu::RenderPipeline,
+    pub(crate) shadow: Option<wgpu::RenderPipeline>,
 }
 
 pub(crate) fn groups(meshlets: u32) -> u32 {
@@ -112,6 +129,8 @@ pub(crate) struct Layout {
     pipeline: wgpu::PipelineLayout,
     #[cfg(feature = "draw-probe")]
     rejections: Option<wgpu::Buffer>,
+    #[cfg(feature = "draw-probe")]
+    shadow_rejections: Option<wgpu::Buffer>,
 }
 
 impl Layout {
@@ -135,7 +154,8 @@ impl Layout {
             count: None,
         });
         #[cfg(feature = "draw-probe")]
-        let (entries, rejections) = rejection_layout(surface, config, &default_entries);
+        let (entries, rejections, shadow_rejections) =
+            rejection_layout(surface, config, &default_entries);
         #[cfg(not(feature = "draw-probe"))]
         let entries = {
             let _ = config;
@@ -165,6 +185,8 @@ impl Layout {
             pipeline,
             #[cfg(feature = "draw-probe")]
             rejections,
+            #[cfg(feature = "draw-probe")]
+            shadow_rejections,
         }
     }
 
@@ -186,8 +208,9 @@ impl Layout {
             report
         };
         let shader = format!(
-            "enable wgpu_mesh_shader;\n{source}\n{}\n{}\n{report}",
+            "enable wgpu_mesh_shader;\n{source}\n{}\n{}\n{}\n{report}",
             include_str!("meshlet_cull.wgsl"),
+            include_str!("mesh_stage_streams.wgsl"),
             include_str!("mesh_stages.wgsl"),
         );
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -221,6 +244,69 @@ impl Layout {
         })
     }
 
+    fn compile_shadow(
+        &self,
+        device: &DeviceSite,
+        surface: &SceneShadowSurface<'_>,
+    ) -> wgpu::RenderPipeline {
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("cooked mesh-stage Sun casters"),
+            bind_group_layouts: &[
+                Some(surface.view_layout),
+                None,
+                None,
+                None,
+                Some(&self.group),
+            ],
+            immediate_size: 0,
+        });
+        let report = NO_REJECTION_REPORT;
+        #[cfg(feature = "draw-probe")]
+        let report = if self.shadow_rejections.is_some() {
+            &rejection_shader(8)
+        } else {
+            report
+        };
+        let shader = format!(
+            "{}{report}",
+            concat!(
+                "enable wgpu_mesh_shader;\n",
+                include_str!("shadow.wgsl"),
+                "\n",
+                include_str!("meshlet_cull.wgsl"),
+                "\n",
+                include_str!("mesh_stage_streams.wgsl"),
+                "\n",
+                include_str!("mesh_stage_shadow.wgsl"),
+                "\n",
+            )
+        );
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("cooked mesh-stage Sun casters"),
+            source: wgpu::ShaderSource::Wgsl(shader.into()),
+        });
+        device.mesh(&wgpu::MeshPipelineDescriptor {
+            label: Some("cooked mesh-stage Sun casters"),
+            layout: Some(&layout),
+            task: Some(wgpu::TaskState {
+                module: &module,
+                entry_point: Some("shadow_object"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            mesh: wgpu::MeshState {
+                module: &module,
+                entry_point: Some("shadow_mesh"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: None,
+            primitive: crate::draw::caster_primitive(),
+            depth_stencil: Some(crate::draw::caster_depth(surface)),
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        })
+    }
+
     pub(crate) fn bind(
         &self,
         device: &wgpu::Device,
@@ -233,10 +319,16 @@ impl Layout {
         #[cfg(feature = "draw-probe")]
         let entries: Vec<_> = entries
             .into_iter()
-            .chain(self.rejections.iter().map(|buffer| wgpu::BindGroupEntry {
-                binding: 7,
-                resource: buffer.as_entire_binding(),
-            }))
+            .chain(
+                [(7, &self.rejections), (8, &self.shadow_rejections)]
+                    .into_iter()
+                    .filter_map(|(binding, buffer)| {
+                        Some(wgpu::BindGroupEntry {
+                            binding,
+                            resource: buffer.as_ref()?.as_entire_binding(),
+                        })
+                    }),
+            )
             .collect();
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("cooked mesh stages"),
@@ -247,15 +339,27 @@ impl Layout {
 }
 
 #[cfg(feature = "draw-probe")]
+fn rejection_shader(binding: u32) -> String {
+    format!(
+        "@group(4) @binding({binding}) var<storage, read_write> counts: array<atomic<u32>, {CULL_OUTCOMES}>;
+         fn cooked_report_rejection(reason: u32) {{ atomicAdd(&counts[reason], 1u); }}"
+    )
+}
+
+#[cfg(feature = "draw-probe")]
 fn rejection_layout(
     surface: &SceneSurface<'_>,
     config: &crate::CookedConfig,
     defaults: &[wgpu::BindGroupLayoutEntry; 7],
-) -> (Vec<wgpu::BindGroupLayoutEntry>, Option<wgpu::Buffer>) {
+) -> (
+    Vec<wgpu::BindGroupLayoutEntry>,
+    Option<wgpu::Buffer>,
+    Option<wgpu::Buffer>,
+) {
     let mut entries = defaults.to_vec();
-    let rejections = config.mesh_stage_rejections.as_ref().map(|witness| {
+    let mut make = |binding, witness: &std::sync::Arc<std::sync::Mutex<Option<wgpu::Buffer>>>| {
         entries.push(wgpu::BindGroupLayoutEntry {
-            binding: 7,
+            binding,
             visibility: wgpu::ShaderStages::TASK,
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Storage { read_only: false },
@@ -276,8 +380,17 @@ fn rejection_layout(
             *witness = Some(buffer.clone());
         }
         buffer
-    });
-    (entries, rejections)
+    };
+    let rejections = config
+        .mesh_stage_rejections
+        .as_ref()
+        .map(|witness| make(7, witness));
+    let shadow_rejections = config
+        .mesh_stage_shadow_rejections
+        .as_ref()
+        .filter(|_| surface.shadow.is_some())
+        .map(|witness| make(8, witness));
+    (entries, rejections, shadow_rejections)
 }
 
 pub(crate) fn draw(pass: &mut wgpu::RenderPass<'_>, bind: &wgpu::BindGroup, meshlets: u32) {

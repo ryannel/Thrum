@@ -27,6 +27,7 @@ pub struct SceneGpuTimings {
     unmeasured: Vec<String>,
     not_run: Vec<String>,
     effect_boundary: Option<f64>,
+    timed_pass_span: Option<f64>,
 }
 
 /// Named pass execution, preserving the difference between a skip and a zero timestamp delta.
@@ -47,6 +48,7 @@ impl SceneGpuTimings {
             unmeasured: Vec::new(),
             not_run: Vec::new(),
             effect_boundary: None,
+            timed_pass_span: None,
         }
     }
 
@@ -64,6 +66,15 @@ impl SceneGpuTimings {
     }
     pub(crate) fn set_effect_boundary(&mut self, value: Option<f64>) {
         self.effect_boundary = value;
+    }
+    pub(crate) fn set_timed_pass_span(&mut self, value: Option<f64>) {
+        self.timed_pass_span = value;
+    }
+    /// First timed pass begin to output consumer end, including intervening work.
+    /// Queued writes before the first pass are outside the interval.
+    #[must_use]
+    pub fn timed_pass_span_nanoseconds(&self) -> Option<f64> {
+        self.timed_pass_span
     }
     /// Upper bracket from the preceding timed pass's end through the first late pass.
     /// Includes a requested refraction copy, the pass boundary and that render pass's work.
@@ -235,6 +246,7 @@ struct Enabled {
     names: PassNames,
     results: Vec<PassTiming>,
     preceding_gaps: Vec<Option<f64>>,
+    timed_pass_span: Option<f64>,
     completion: Completion,
     phase: Phase,
 }
@@ -343,6 +355,10 @@ pub struct GpuTimings {
     enabled: Option<Enabled>,
 }
 impl GpuTimings {
+    pub(crate) fn timed_pass_span(&self) -> Option<f64> {
+        self.enabled.as_ref()?.timed_pass_span
+    }
+
     pub(crate) fn gap_before(&self, name: &str) -> Option<f64> {
         let enabled = self.enabled.as_ref()?;
         let index = enabled
@@ -426,6 +442,7 @@ impl GpuTimings {
                 names: PassNames::with_capacity(max_passes as usize),
                 results: Vec::with_capacity(max_passes as usize),
                 preceding_gaps: Vec::with_capacity(max_passes as usize),
+                timed_pass_span: None,
                 completion: Completion::new(),
                 phase: Phase::Recording,
             }),
@@ -664,6 +681,8 @@ impl GpuTimings {
         };
         enabled.results.clear();
         enabled.preceding_gaps.clear();
+        enabled.timed_pass_span = None;
+        let mut first_start = None;
         let mut previous_end = None;
         let mut invalid = None;
         for (index, name) in enabled.names.iter().enumerate() {
@@ -676,6 +695,12 @@ impl GpuTimings {
                     .expect("query scalar"),
             );
             if start != 0 && start != u64::MAX && end != u64::MAX && end >= start {
+                first_start.get_or_insert(start);
+                if name.as_ref() == crate::present::PASS_NAME {
+                    enabled.timed_pass_span = first_start
+                        .and_then(|first| end.checked_sub(first))
+                        .map(|ticks| ticks as f64 * enabled.period);
+                }
                 enabled.preceding_gaps.push(
                     previous_end
                         .map(|previous| {
@@ -704,6 +729,7 @@ impl GpuTimings {
         if let Some((start, end)) = invalid {
             enabled.results.clear();
             enabled.preceding_gaps.clear();
+            enabled.timed_pass_span = None;
             return Err(TimingError::InvalidTimestamp { start, end });
         }
         Ok(Some(&enabled.results))

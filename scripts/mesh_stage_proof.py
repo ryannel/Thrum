@@ -14,6 +14,7 @@ from cooked_draw_parity import png
 
 ROOT = Path(__file__).resolve().parents[1]
 SIDE = 128
+VALLEY_CASES = ("valley-cull-equal", "shadow-equal", "shadow-parity")
 
 
 def frame(output, name, attachment):
@@ -126,25 +127,66 @@ def material_witnesses(output):
                               installed_after_discard_pixels=len(second))))
 
 
+def cook_valley(store):
+    subprocess.run([
+        "cargo", "run", "--locked", "--offline", "-p", "thrum-cook", "--",
+        "cook", "examples/v1-game/assets/showcase", str(store),
+    ], cwd=ROOT, check=True)
+
+
+def shadow_parity(output):
+    for hour in (12, 17.3):
+        images = [(output / f"shadow-{hour}-{path}.raw").read_bytes()
+                  for path in ("indexed", "stages")]
+        for layer, label in enumerate(("near", "far", "height")):
+            start = layer * 1024 ** 2 * 4
+            end = start + 1024 ** 2 * 4
+            indexed, stages = [list(struct.iter_unpack("<I", image[start:end])) for image in images]
+            coverage = sum(a != (0,) for a in indexed)
+            coverage_changes = sum((a == (0,)) != (b == (0,))
+                                   for a, b in zip(indexed, stages, strict=True))
+            # Independently compiled vertex and mesh stages evaluate the same f32
+            # clip-position expression. Admit four final Depth32Float rounding steps.
+            deltas = [abs(a[0] - b[0]) for a, b in zip(indexed, stages, strict=True)
+                      if a != (0,) and b != (0,)]
+            failures = sum(delta > 4 for delta in deltas)
+            print(json.dumps(dict(hour=hour, map=label, coverage=coverage,
+                                  coverage_changes=coverage_changes, maximum_ulp=max(deltas, default=0),
+                                  tolerance_ulp=4, failures=failures, edge_exclusions=0)))
+            if not coverage or coverage_changes or failures:
+                raise AssertionError(f"{hour} h {label} shadow map differs from the indexed caster")
+
+
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("case", choices=("selection", "prepared", "eligibility", "residency",
-                                         "cull-equal", "parity", "material"))
+                                         "cull-equal", "parity", "material", "edit", "lifecycle",
+                                         "shadows-off", *VALLEY_CASES))
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if os.uname().sysname != "Darwin":
         parser.error("MESH-SHADING M1 proofs require macOS Metal")
-    scratch = ROOT / "tmp/mesh-shading-M1"
+    valley = args.case in VALLEY_CASES
+    milestone = "M2" if valley or args.case in ("edit", "lifecycle", "shadows-off") else "M1"
+    scratch = ROOT / f"tmp/mesh-shading-{milestone}"
     scratch.mkdir(parents=True, exist_ok=True)
     output = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix=f"{args.case}-", dir=scratch))
     output.mkdir(parents=True, exist_ok=True)
     print(f"proof output {output}", flush=True)
     print(subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(), flush=True)
+    env = {**os.environ, "THRUM_REQUIRE_GPU": "1", "THRUM_MESH_STAGE_PROOF_DIR": str(output)}
+    if valley:
+        store = output / "store"
+        cook_valley(store)
+        env.update(THRUM_SCENE="valley", THRUM_STARS="off", THRUM_MESH_STAGE_VALLEY_STORE=str(store))
+    case = "publication_edit" if args.case == "edit" else args.case.replace("-", "_")
     subprocess.run([
         "cargo", "test", "--locked", "--offline", "-p", "v1-game", "--features", "draw-probe",
-        "--test", "mesh_stage_gpu", "metal::" + args.case.replace("-", "_"), "--", "--exact", "--nocapture",
-    ], cwd=ROOT, env={**os.environ, "THRUM_REQUIRE_GPU": "1",
-                      "THRUM_MESH_STAGE_PROOF_DIR": str(output)}, check=True)
+        "--test", "mesh_stage_gpu", ("valley::" if valley else "metal::") + case,
+        "--", "--exact", "--nocapture", *(["--ignored"] if valley else []),
+    ], cwd=ROOT, env=env, check=True)
+    if args.case == "shadow-parity":
+        shadow_parity(output)
     if args.case == "parity":
         compare(output, "parity", [(phase, f"{phase}-indexed", f"{phase}-mesh") for phase in ("warm", "history", "cut")])
         scene_witnesses(output)

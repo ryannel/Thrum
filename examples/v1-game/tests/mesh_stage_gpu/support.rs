@@ -133,6 +133,7 @@ pub(super) struct Fixture {
     pub(super) count_cull: bool,
     parity_depth: Option<f32>,
     pub(super) secondary_request: Option<Arc<Mutex<Option<SecondaryViewRequest>>>>,
+    pub(super) shadows: bool,
 }
 
 impl Fixture {
@@ -179,7 +180,11 @@ impl Fixture {
         }
         let mut placements = vec![MeshPlacement::new("meshes/small", "textures/checker")];
         if mixed {
-            let divisions = if case == "residency" { 160 } else { 128 };
+            let divisions = match case {
+                "residency" => 160,
+                "edit" => 8,
+                _ => 128,
+            };
             demo::write_grid_gltf(&source.join("meshes"), "large", divisions, 0.18).expect("large");
             placements[0] = placements[0].clone().at([-1.15, 0.0, 0.0]);
             placements
@@ -207,11 +212,33 @@ impl Fixture {
                 _ => None,
             },
             secondary_request: None,
+            shadows: true,
         }
     }
 
     pub(super) fn store(&self) -> PathBuf {
         self.root.join("store")
+    }
+
+    pub(super) fn publish_edit(&self, divisions: Option<u32>, height: f32) -> u64 {
+        let source = self.root.join("source");
+        let meshes = source.join("meshes");
+        if let Some(divisions) = divisions {
+            demo::write_grid_gltf(&meshes, "large", divisions, height).expect("edited grid");
+        } else {
+            std::fs::remove_file(meshes.join("large.gltf")).expect("remove placed product");
+        }
+        let mut cooker = Cooker::open(CookConfig {
+            source,
+            store: self.store(),
+            profiles: vec![Profile::Portable],
+            quality: Quality::Fast,
+            durability: Durability::Process,
+        })
+        .expect("edit cooker");
+        let report = cooker.cook_all().expect("cook edit");
+        assert!(report.failed.is_empty(), "{:?}", report.failed);
+        report.published.expect("published edit").generation
     }
 
     pub(super) fn mesh(&self, name: &str) -> thrum_asset::MeshProduct {
@@ -242,22 +269,37 @@ impl Drop for Fixture {
 }
 
 pub(super) struct Gpu {
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    capabilities: DeviceCapabilities,
+    gate: thrum_test_support::Gpu,
+    pub(super) device: wgpu::Device,
+    pub(super) queue: wgpu::Queue,
+    pub(super) capabilities: DeviceCapabilities,
 }
 
 impl Gpu {
     pub(super) fn new(stages: bool, recipe: &str, restrict: impl Fn(&mut wgpu::Limits)) -> Self {
         let gate = thrum_test_support::gpu("mesh-stage proof", Some(wgpu::Backend::Metal))
             .expect("Metal required for MESH-SHADING");
+        Self::generation(gate, stages, recipe, 1, restrict)
+    }
+
+    pub(super) fn replacement(&self, restrict: impl Fn(&mut wgpu::Limits)) -> Self {
+        Self::generation(self.gate.fresh_adapter(), true, "apple-tile", 2, restrict)
+    }
+
+    fn generation(
+        gate: thrum_test_support::Gpu,
+        stages: bool,
+        recipe: &str,
+        generation: u64,
+        restrict: impl Fn(&mut wgpu::Limits),
+    ) -> Self {
         let hardware =
             HardwareRequest::parse(if stages { "mesh-stages" } else { "" }).expect("hardware");
         let (device, queue, capabilities) = gate
             .device_with_hardware_adjusted(
                 thrum_test_support::Profile::Portable,
                 &thrum_test_support::Restriction::default(),
-                1,
+                generation,
                 &hardware,
                 |descriptor| restrict(&mut descriptor.required_limits),
             )
@@ -267,6 +309,7 @@ impl Gpu {
             .with_recipe_override(recipe)
             .expect("native recipe");
         Self {
+            gate,
             device,
             queue,
             capabilities,
@@ -284,7 +327,7 @@ impl Gpu {
         let view = Arc::new(Mutex::new(initial));
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = initial;
-        scene.sun_shadows = true;
+        scene.sun_shadows = fixture.shadows;
         scene.instances[0].ids[3] = 0;
         let lighting = if let Some(tau) = fixture.parity_depth {
             // A small field of direct-Sun optical depth puts the cooked checker in light and
@@ -586,6 +629,43 @@ impl Scene<'_> {
     }
 }
 
+impl<'a> Scene<'a> {
+    pub(super) fn replace_device(&mut self, gpu: &'a Gpu) {
+        let inputs = self.host.device_prepare_inputs().expect("retained inputs");
+        let mut replacement = pollster::block_on(inputs.prepare(
+            &gpu.capabilities,
+            &gpu.queue,
+            Some(SurfaceProfile {
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                extent: [SIDE; 2],
+            }),
+        ))
+        .expect("prepared replacement");
+        self.gpu.device.destroy();
+        self.host
+            .publish_device(&mut replacement)
+            .expect("publish replacement");
+        self.gpu = gpu;
+        self.output = gpu
+            .device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("replacement proof drawable"),
+                size: wgpu::Extent3d {
+                    width: SIDE,
+                    height: SIDE,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&Default::default());
+    }
+}
+
 fn read(gpu: &Gpu, texture: &wgpu::Texture) -> Vec<u8> {
     let stride = SIDE * 8;
     let buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {
@@ -612,7 +692,11 @@ fn read(gpu: &Gpu, texture: &wgpu::Texture) -> Vec<u8> {
     read_buffer(gpu, encoder, &buffer)
 }
 
-fn read_buffer(gpu: &Gpu, encoder: wgpu::CommandEncoder, buffer: &wgpu::Buffer) -> Vec<u8> {
+pub(super) fn read_buffer(
+    gpu: &Gpu,
+    encoder: wgpu::CommandEncoder,
+    buffer: &wgpu::Buffer,
+) -> Vec<u8> {
     let (send, receive) = std::sync::mpsc::channel();
     encoder.map_buffer_on_submit(buffer, wgpu::MapMode::Read, .., move |result| {
         send.send(result).expect("map");

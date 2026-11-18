@@ -28,6 +28,7 @@ pub(crate) struct Pipelines {
     stage_cull: bool,
     pub(crate) indexed_path: CookedDrawPath,
     shadow: Option<wgpu::RenderPipeline>,
+    stage_shadow: Option<wgpu::RenderPipeline>,
     secondary_shadows: Vec<Option<wgpu::RenderPipeline>>,
     secondary_cull: Option<SecondaryCull>,
     volume: wgpu::RenderPipeline,
@@ -286,11 +287,13 @@ impl Pipelines {
             .as_ref()
             .map(|source| format!("{source}\n{cooked}"));
         let mut mesh = target.meshes(&module, secondary_source.as_deref());
+        let mut stage_shadow = None;
         if config.draw_path == CookedDrawPath::MeshStages && fallback.is_none() {
             match crate::mesh_stages::prepare(surface, &target.main, &source, config) {
-                Ok((layout, pipeline)) => {
-                    target.stages = Some(layout);
-                    mesh.stages = Some(pipeline);
+                Ok(prepared) => {
+                    target.stages = Some(prepared.layout);
+                    mesh.stages = Some(prepared.forward);
+                    stage_shadow = prepared.shadow;
                 }
                 Err(reason) => *fallback = Some(reason),
             }
@@ -439,6 +442,7 @@ impl Pipelines {
                 })
                 .collect(),
             secondary_cull,
+            stage_shadow,
             shadow: surface
                 .shadow
                 .as_ref()
@@ -849,22 +853,38 @@ impl Pipelines {
     }
 
     pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
-        Self::draw_casters(bound, pass, self.shadow.as_ref(), None);
+        Self::draw_casters(
+            bound,
+            pass,
+            self.shadow.as_ref(),
+            self.stage_shadow.as_ref(),
+            None,
+        );
     }
 
     fn draw_casters(
         bound: &Bound,
         pass: &mut wgpu::RenderPass<'_>,
         pipeline: Option<&wgpu::RenderPipeline>,
+        stage_pipeline: Option<&wgpu::RenderPipeline>,
         cascade: Option<SecondaryShadowCascade>,
     ) {
         let Some(pipeline) = pipeline else { return };
-        pass.set_pipeline(pipeline);
+        let mut stages = None;
         for mesh in &bound.meshes {
             if !mesh
                 .caster_bounds
                 .is_some_and(|bounds| cascade.is_none_or(|cascade| cascade.overlaps(bounds)))
             {
+                continue;
+            }
+            let stage = mesh.stage.as_ref().zip(stage_pipeline);
+            if stages != Some(stage.is_some()) {
+                pass.set_pipeline(stage.map_or(pipeline, |(_, pipeline)| pipeline));
+                stages = Some(stage.is_some());
+            }
+            if let Some((group, _)) = stage {
+                crate::mesh_stages::draw(pass, group, mesh.meshlets);
                 continue;
             }
             pass.set_vertex_buffer(0, mesh.vertex[0].slice(..));
@@ -986,23 +1006,32 @@ fn shadow_pipeline(
                 }),
             ],
         },
-        // Cooked terrain is an open heightfield. Near or below the horizon its
-        // Sun-facing faces are grazing slivers that rasterize with holes, while
-        // the faces a ray enters through face away from the Sun. Both bound the
-        // solid, so draw both.
-        primitive: wgpu::PrimitiveState { cull_mode: None, ..Default::default() },
-        depth_stencil: Some(wgpu::DepthStencilState {
-            format: surface.depth_format,
-            depth_write_enabled: Some(true),
-            depth_compare: Some(wgpu::CompareFunction::Greater),
-            stencil: wgpu::StencilState::default(),
-            bias: wgpu::DepthBiasState::default(),
-        }),
+        primitive: caster_primitive(),
+        depth_stencil: Some(caster_depth(surface)),
         multisample: wgpu::MultisampleState::default(),
         fragment: None,
         multiview_mask: None,
         cache: None,
     })
+}
+
+pub(crate) fn caster_primitive() -> wgpu::PrimitiveState {
+    // At low Sun the terrain's Sun-facing faces are grazing slivers. The
+    // faces aimed away from the Sun must also rasterize to close the caster.
+    wgpu::PrimitiveState {
+        cull_mode: None,
+        ..Default::default()
+    }
+}
+
+pub(crate) fn caster_depth(surface: &SceneShadowSurface<'_>) -> wgpu::DepthStencilState {
+    wgpu::DepthStencilState {
+        format: surface.depth_format,
+        depth_write_enabled: Some(true),
+        depth_compare: Some(wgpu::CompareFunction::Greater),
+        stencil: wgpu::StencilState::default(),
+        bias: wgpu::DepthBiasState::default(),
+    }
 }
 
 fn cooked_source(cloud: bool) -> String {

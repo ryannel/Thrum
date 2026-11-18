@@ -837,7 +837,13 @@ impl PreparedSynthetic {
                 format: shadow::FORMAT,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT
                     | wgpu::TextureUsages::TEXTURE_BINDING
-                    | if cfg!(all(test, feature = "creation-counters")) {
+                    | if cfg!(feature = "creation-counters")
+                        && (cfg!(test)
+                            || self
+                                .capabilities
+                                .features()
+                                .contains(wgpu::Features::EXPERIMENTAL_MESH_SHADER))
+                    {
                         wgpu::TextureUsages::COPY_SRC
                     } else {
                         wgpu::TextureUsages::empty()

@@ -165,6 +165,12 @@ impl<'a> AdvancedFrame<'a> {
 /// One unsubmitted engine scene token, held across late drawable acquisition.
 pub struct EncodedFrame<'a>(runtime::EncodedFrame<'a, WorldPort, GameScene>);
 impl EncodedFrame<'_> {
+    /// Copy the caster view uniforms of this encoded diagnostic frame.
+    #[cfg(feature = "draw-probe")]
+    pub fn copy_shadow_view_witness(&mut self, output: &wgpu::Buffer) -> Option<u64> {
+        self.0.copy_shadow_view_witness(output)
+    }
+
     /// Whether the engine recorded a view that can use a drawable.
     pub fn can_acquire_surface(&self) -> bool {
         self.0.can_acquire_surface()
@@ -498,6 +504,12 @@ impl FrameHost {
     /// Read-only temporal inputs of the latest in-flight submitted frame.
     pub fn submitted_temporal_witness(&self) -> Option<&wgpu::Texture> {
         self.inner.submitted_temporal_witness()
+    }
+    /// Read-only Sun depth layers of the latest submitted diagnostic frame.
+    #[cfg(feature = "draw-probe")]
+    #[must_use]
+    pub fn submitted_shadow_witness(&self) -> Option<&wgpu::Texture> {
+        self.inner.submitted_shadow_witness()
     }
     /// Discover the attached effects' runtime quality controls.
     pub fn quality_knobs(&self) -> Vec<thrum_render::contribution::QualityKnob> {

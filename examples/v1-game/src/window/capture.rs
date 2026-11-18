@@ -1017,6 +1017,24 @@ pub(super) fn prepare_route(
                 if generation != route.cooked_generation {
                     return Err("routed capture generation mismatch".to_owned());
                 }
+                #[cfg(feature = "draw-probe")]
+                if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
+                    let report = json!({
+                        "generation": generation,
+                        "recipe": format!("{:?}", stats.recipe),
+                        "requested_path": format!("{:?}", stats.requested_draw_path),
+                        "resolved_path": format!("{:?}", stats.draw_path),
+                        "fallback": stats.draw_fallback,
+                        "mesh_stage_draws": stats.mesh_stage_draws,
+                        "indexed_indirect_draws": stats.indexed_indirect_draws,
+                        "mesh_stage_exclusions": stats.mesh_stage_exclusions,
+                    });
+                    std::fs::write(
+                        Path::new(&output).join("cooked-path.json"),
+                        report.to_string(),
+                    )
+                    .map_err(|error| error.to_string())?;
+                }
                 break;
             }
         }

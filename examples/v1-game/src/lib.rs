@@ -49,6 +49,9 @@ pub use projection::{GameProjection, ProjectionGap};
 pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]
 pub use scene::{exit_authority, simulation_with_count};
+#[cfg(feature = "draw-probe")]
+#[doc(hidden)]
+pub use showcase::valley_config;
 #[doc(hidden)]
 pub use showcase::{CookedValleyError, prepare_cooked_valley};
 #[cfg(target_os = "macos")]

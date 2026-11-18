@@ -1076,6 +1076,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// [`crate::synthetic::DisplayOverlay::TemporalInputs`] to declare the diagnostic reader.
     #[must_use]
     pub fn submitted_temporal_witness(&self) -> Option<&wgpu::Texture> {
+        self.latest_submitted_target()?.temporal_witness()
+    }
+
+    /// Queue-ordered depth layers of the latest submitted diagnostic frame.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn submitted_shadow_witness(&self) -> Option<&wgpu::Texture> {
+        self.latest_submitted_target()?.shadow_witness()
+    }
+
+    fn latest_submitted_target(&self) -> Option<&OffscreenTarget> {
         self.slots
             .iter()
             .filter_map(|slot| match &slot.state {
@@ -1085,7 +1096,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 SlotState::Free => None,
             })
             .max_by_key(|(order, _)| *order)
-            .and_then(|(_, target)| target.temporal_witness())
+            .map(|(_, target)| target)
     }
 
     /// Outcomes of the optional labelled native copy/select diagnostic.
@@ -2163,6 +2174,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                                     Some(slot.timings.gap_before(name)? + scene.get(name)?)
                                 });
                                 scene.set_effect_boundary(boundary);
+                                scene.set_timed_pass_span(slot.timings.timed_pass_span());
                                 scene.unmeasured(slot.target.untimed_pass_names(
                                     slot.timing_readback,
                                     sample.surface_presented,

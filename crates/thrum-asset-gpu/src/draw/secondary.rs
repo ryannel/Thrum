@@ -162,6 +162,7 @@ impl Pipelines {
             bound,
             pass,
             self.secondary_shadows[index].as_ref(),
+            None,
             Some(cascade),
         );
     }

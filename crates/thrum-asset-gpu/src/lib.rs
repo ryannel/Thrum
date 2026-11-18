@@ -201,6 +201,9 @@ pub struct CookedConfig {
     /// Optional diagnostic counter buffer written by the object stage.
     #[cfg(feature = "draw-probe")]
     pub mesh_stage_rejections: Option<Arc<Mutex<Option<wgpu::Buffer>>>>,
+    /// Optional aggregate object-stage counters for the Sun's maps.
+    #[cfg(feature = "draw-probe")]
+    pub mesh_stage_shadow_rejections: Option<Arc<Mutex<Option<wgpu::Buffer>>>>,
     /// Entity mesh rows participating in the same publication as every other reader.
     pub rows: Option<rows::CookedRows>,
     /// Opt-in one-shot staging fill fault, absent from ordinary builds.
@@ -242,6 +245,8 @@ impl CookedConfig {
             fail_mesh_pipeline: false,
             #[cfg(feature = "draw-probe")]
             mesh_stage_rejections: None,
+            #[cfg(feature = "draw-probe")]
+            mesh_stage_shadow_rejections: None,
             rows: None,
             #[cfg(feature = "fault-probe")]
             fault: None,

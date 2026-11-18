@@ -122,7 +122,7 @@ fn prepared() {
         .find(|r| r.label == "contribution")
         .expect("prepared contribution pipeline ledger");
     assert!(
-        row.render >= 2 && row.compute >= 1 && row.mesh == 1,
+        row.render >= 2 && row.compute >= 1 && row.mesh == 2,
         "{ready}"
     );
     scene.frame();
@@ -485,6 +485,158 @@ fn material() {
     scene.frame().save("material", "after-discard");
     assert_promoted(&scene, blue);
     assert_eq!(scene.host.creation_report().violations, 0);
+}
+
+#[test]
+fn shadows_off() {
+    let mut fixture = support::Fixture::new("shadows-off", false);
+    fixture.shadows = false;
+    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let mut culled = gpu.scene(&fixture, MeshStages, true, false);
+    let mut unculled = gpu.scene(&fixture, MeshStages, false, false);
+    let frame = culled.frame();
+    frame.equal(&unculled.frame());
+    let gpu = frame.sample.gpu_pass_ns.expect("GPU timings");
+    assert!(gpu.passes().iter().all(
+        |pass| !pass.name.contains("Sun shadow") && !pass.name.contains("Sun horizon heights")
+    ));
+    let ledger = culled.host.creation_report();
+    let row = ledger
+        .pipelines
+        .iter()
+        .find(|row| row.label == "contribution")
+        .expect("contribution pipeline creation");
+    assert_eq!(row.mesh, 1, "{ledger}");
+    assert_eq!(
+        culled.stats.lock().expect("draw counts").mesh_stage_draws,
+        1
+    );
+    println!(
+        "shadows disabled, one mesh pipeline and one forward mesh draw, no Sun map pass; submitted bytes match"
+    );
+}
+
+#[test]
+fn publication_edit() {
+    let mut fixture = support::Fixture::new("edit", true);
+    let mut second = fixture.placements[1].clone();
+    second.transform[3][0] = 0.8;
+    second.transform[3][2] = -1.8;
+    fixture.placements.push(second);
+    let gpu = support::Gpu::new(true, "apple-tile", |limits| {
+        limits.max_task_workgroup_total_count = 1;
+    });
+    let mut live = gpu.scene(&fixture, MeshStages, false, false);
+    let initial = live.frame();
+    assert_eq!(live.stats.lock().expect("stats").mesh_stage_draws, 3);
+    let mut previous = initial.colour;
+    let mut generation = 1;
+    let mut failures = 0;
+    for (divisions, height, expected_draws) in [
+        (Some(16), 0.43, 3),
+        (Some(128), 0.84, 1),
+        (None, 0.0, 1),
+        (Some(12), 0.62, 3),
+    ] {
+        let published = fixture.publish_edit(divisions, height);
+        let deadline = Instant::now() + Duration::from_secs(20);
+        loop {
+            let image = live.frame();
+            let stats = live.stats.lock().expect("stats");
+            if stats.drawn == Some(published) {
+                assert!(divisions.is_some(), "refused publication was installed");
+                assert_eq!(stats.mesh_stage_draws, expected_draws);
+                assert_eq!(
+                    stats.swaps.last().expect("switch record").generation,
+                    published
+                );
+                assert_ne!(
+                    image.colour, previous,
+                    "switch submission still drew old bytes"
+                );
+                assert_eq!(stats.last_frame_history, Some(false));
+                drop(stats);
+                // Fresh preparation of the same immutable generation checks that the live
+                // switch used its complete vertex and meshlet streams on this submission.
+                let mut fresh = gpu.scene(&fixture, MeshStages, false, false);
+                assert_eq!(
+                    image.colour,
+                    fresh.frame().colour,
+                    "mixed publication bytes"
+                );
+                println!(
+                    "publication {published} switched on submission {} with {expected_draws} mesh-stage draws",
+                    image.sample.submission_order
+                );
+                previous = image.colour;
+                generation = published;
+                break;
+            }
+            assert_eq!(stats.drawn, Some(generation));
+            assert_eq!(image.colour, previous, "pre-switch frame used edited data");
+            if stats.failures > failures {
+                assert!(divisions.is_none(), "{:?}", stats.errors);
+                failures = stats.failures;
+                println!(
+                    "publication {published} refused on submission {}, retained {generation}: {:?}",
+                    image.sample.submission_order, stats.errors
+                );
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "waiting for publication {published}"
+            );
+        }
+    }
+}
+
+#[test]
+fn lifecycle() {
+    let fixture = support::Fixture::new("lifecycle", true);
+    let restrict = |limits: &mut wgpu::Limits| limits.max_task_workgroup_total_count = 1;
+    let old = support::Gpu::new(true, "apple-tile", restrict);
+    let replacement = old.replacement(restrict);
+    let mut scene = old.scene(&fixture, MeshStages, true, false);
+    let baseline = scene.frame().colour;
+    let receipt = scene.host.creation_report();
+    let serial = scene
+        .reload
+        .request(edit("replacement-red", [1200.0, 0.0, 0.0]));
+    await_candidate_off_frame(&scene, &receipt);
+    discard_candidate(&mut scene, serial);
+    let edited = scene.frame().colour;
+    assert_ne!(edited, baseline);
+    assert_promoted(&scene, serial);
+    scene.replace_device(&replacement);
+    let deadline = Instant::now() + Duration::from_secs(20);
+    loop {
+        let actual = scene.frame();
+        let stats = scene.stats.lock().expect("draw stats");
+        if stats.drawn_device_generation == Some(2) {
+            assert_eq!(stats.draw_path, Some(MeshStages));
+            assert_eq!(stats.mesh_stage_draws, 1);
+            assert!(stats.indexed_indirect_draws > 0);
+            if actual.colour == edited {
+                assert_eq!(scene.reload.accepted().as_deref(), Some("replacement-red"));
+                println!(
+                    "generation 2 reproduced the whole edited frame from generation 1 on both draw paths, submission {}",
+                    actual.sample.submission_order
+                );
+                break;
+            }
+            assert_eq!(
+                actual.colour, baseline,
+                "replacement used a partial material candidate"
+            );
+        }
+        assert!(
+            Instant::now() < deadline,
+            "replacement did not restore the accepted material"
+        );
+    }
+    scene.discard();
+    assert_eq!(scene.frame().colour, edited);
 }
 
 fn discard_candidate(scene: &mut support::Scene<'_>, serial: u64) {

@@ -2361,6 +2361,10 @@ const fn draw_witness_usage() -> wgpu::BufferUsages {
 
 #[cfg(feature = "creation-counters")]
 impl PreparedSynthetic {
+    pub(crate) fn shadow_view_witness(&self) -> Option<Vec<&wgpu::Buffer>> {
+        Some(self.shadow.as_ref()?.caster_views())
+    }
+
     pub(crate) fn main_draw_witness<'a>(
         &'a self,
         target: &'a OffscreenTarget,
@@ -2450,6 +2454,15 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 impl OffscreenTarget {
+    #[cfg(feature = "creation-counters")]
+    pub(crate) fn shadow_witness(&self) -> Option<&wgpu::Texture> {
+        let texture = self.textures.texture(self.ids.shadow.as_ref()?)?;
+        texture
+            .usage()
+            .contains(wgpu::TextureUsages::COPY_SRC)
+            .then_some(texture)
+    }
+
     pub(crate) fn reserve_native(&self, cut: bool) -> Result<Option<NativeFrame>, RenderError> {
         self.native
             .as_ref()

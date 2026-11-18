@@ -205,7 +205,8 @@ impl ShadowPrepared {
             label: Some("synthetic Sun cascade view"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
+                visibility: wgpu::ShaderStages::VERTEX
+                    | super::forward::mesh_stage_visibility(device.features()),
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
