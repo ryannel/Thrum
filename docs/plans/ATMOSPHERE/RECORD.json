@@ -103,21 +103,21 @@
       }
     },
     "M6": {
-      "definitions": "f2db8f4422f39ff81c19a442bf8e90574148c80afc119382fd2c8c1524960d25",
+      "definitions": "47dc7b097ad69cf0d5952f9e1aee2f2197fe8730a8e2809b316495331427fbcc",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix f",
+        "at": "2026-11-18T01:21:27Z"
       }
     },
     "M7": {
-      "definitions": "3321c400d0f557fff259922088106ba97efc538f58a24401b0b08a750370359d",
+      "definitions": "8e0d7a8bb83dae0cce8bc847bfbea9e2c04ec7dd7d4cf44e39191fcd5708dd24",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix f",
+        "at": "2026-11-18T01:21:27Z"
       }
     },
     "M8": {
@@ -252,11 +252,15 @@
     {
       "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
       "at": "2026-11-17T23:05:22Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T01:21:27Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T23:05:22Z"
+    "at": "2026-11-18T01:21:27Z"
   },
   "design_history": [
     {
