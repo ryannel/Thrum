@@ -238,12 +238,12 @@
       }
     },
     "M3": {
-      "definitions": "ef22da5996ddd5f9dd8e2c7f57902f2bf9247174a4f1ef49293207c13d5a415f",
+      "definitions": "4253cc345df7ea05a3d0aab3ac6f8cd74f7b5590fbf3e1c4cd4ba478198a3148",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS M3. The builder wrote: a planner decision reopening the Metal trials for the toward-Sun diffuse-light cor",
-        "at": "2026-11-18T20:02:47Z"
+        "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shap",
+        "at": "2026-11-18T22:24:57Z"
       }
     },
     "M4": {
@@ -524,6 +524,15 @@
         "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
         "at": "2026-11-17T23:05:22Z"
       }
+    },
+    "M17": {
+      "definitions": "6978a8afc69764027b592d9361a2f85285c072ae1707cdd55690d9f27743c8bc",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shap",
+        "at": "2026-11-18T22:24:57Z"
+      }
     }
   },
   "briefs": [
@@ -606,11 +615,15 @@
     {
       "task": "Unblock CLOUDS M3. The builder wrote: a planner decision reopening the Metal trials for the toward-Sun diffuse-light correction would unblock M3. Its handoff, docs/evidence/CLOUDS/M3-handoff.md on branch build/clouds at f38c7d77ad24 (read it with `git show`), lists three failed turret looks: a shelf/stripe and a bright toward-Sun underside, with the strongest stripe in solar diffuse. It also names the controls that would isolate the cause. This is the second three-look stop in M3 today, after the shape representation change, so don't plan another round of looks. Decide on evidence: either name the cause (the builder's controls are a cheap way to measure it) and a correction grounded in how shipped real-time cloud renderers light the toward-Sun underside, or, if the cause can't be pinned cheaply, move the toward-Sun underside cue out of M3 into a later milestone so that M3 lands with what already passes. Record which you chose and why. The bar is a plausible shipped-game look at the plan's frame cost; references diagnose, never gate.",
       "at": "2026-11-18T20:02:47Z"
+    },
+    {
+      "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shape, then lighting, then form. The one authorised Metal trial of the CPU-diagnosed erosion correction did not clear it; see docs/evidence/CLOUDS/M3-handoff.md on build/clouds at 5f84d354a3bf (read it with `git show`). Move M3.1's form cue (domes, shelves, the silhouette break) out of M3 into a later CLOUDS milestone that comes after the other cloud work, carrying the erosion diagnosis and what was tried, so M3 can be reviewed and merge with everything that already passes. Keep it the smallest plan change, and change no interface. Don't plan new looks inside M3.",
+      "at": "2026-11-18T22:24:57Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T20:02:47Z"
+    "at": "2026-11-18T22:24:57Z"
   },
   "design_history": [
     {
