@@ -3,25 +3,25 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/SCENE-VIEWS/design-review.md",
-    "commit": "1d79f4d19a6b691ec8f37712f44b8de0d17e31ec",
-    "hash": "d7bb301178f4bba48da67f4be36938e1fdc2e06d9856c2985a49b4cb3e3079a1",
+    "commit": "5006e94c7affbfaa2df26f91703d0da301ef8bb5",
+    "hash": "345d4be20f115d7b7234e57d7969377a42cb743aa67cd981df656d7ec3af9e35",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-astra",
     "effort": "high",
     "observed": {
-      "model": "gpt-6-astra",
+      "model": "gpt-6.2-astra",
       "effort": "high"
     },
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 105023,
-      "cached": 1280256,
-      "output": 5945,
+      "input": 78865,
+      "cached": 786304,
+      "output": 3999,
       "turns": 1
     },
-    "at": "2026-11-16T14:58:12Z"
+    "at": "2026-11-18T10:30:04Z"
   },
   "milestones": {
     "M1": {
@@ -496,6 +496,29 @@
         "turns": 1
       },
       "at": "2026-11-16T14:10:28Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/SCENE-VIEWS/design-review-7.md",
+      "commit": "1d79f4d19a6b691ec8f37712f44b8de0d17e31ec",
+      "hash": "d7bb301178f4bba48da67f4be36938e1fdc2e06d9856c2985a49b4cb3e3079a1",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 105023,
+        "cached": 1280256,
+        "output": 5945,
+        "turns": 1
+      },
+      "at": "2026-11-16T14:58:12Z"
     }
   ]
 }
