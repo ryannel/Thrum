@@ -48,7 +48,11 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>, view_y: f32) -> f32 {
     // A glancing ray travels farther through the thin sheet. Let the ground
     // contribution decay continuously with that path to the bed.
     let path = max(0.0, depth) / max(0.15, abs(view_y));
-    return 1.0 - 0.72 * exp2(-27.0 * path);
+    let opacity = 1.0 - 0.72 * exp2(-27.0 * path);
+    // A still interface has a readable reflection at contact. Moving swash
+    // loses visible coverage as the advancing sheet runs out of thickness.
+    let agitation = smoothstep(0.0, 0.4, length(water.heights));
+    return opacity * mix(1.0, smoothstep(0.0, 0.12, depth), agitation);
 }
 
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
