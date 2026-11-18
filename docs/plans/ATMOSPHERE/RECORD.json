@@ -206,6 +206,15 @@
         "checked": "05ac8f6e0ae1fbedfc3c36f974229fe8d8ec2877",
         "at": "2026-11-16T13:11:17Z"
       }
+    },
+    "M10": {
+      "definitions": "3916123c6c723504d8ddb31623e3c9e591d5c086c8af5959dcd0f2dcb3ae485c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "SHOWCASE M5 is blocked needing a dependency: 'Fix the Sun-shadow discontinuity and the remaining frame stalls, then veri",
+        "at": "2026-11-18T08:48:12Z"
+      }
     }
   },
   "briefs": [
@@ -260,11 +269,15 @@
     {
       "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-18T07:27:48Z"
+    },
+    {
+      "task": "SHOWCASE M5 is blocked needing a dependency: 'Fix the Sun-shadow discontinuity and the remaining frame stalls, then verify continuous motion on Metal and Chrome.' Handoff: docs/evidence/SHOWCASE/M5-handoff.md on build/showcase (1556e66d0). Add the Sun-shadow fix to the module that owns the Sun-shadow renderer (a strip appears on Metal at committed ticks 233-234 on the exit camera, reproduced with every tick submitted), as the smallest milestone item that fixes it without changing the meaning of registered exact references.\n\nLead: under the owner's 17 Nov bar, the whole-frame gaps (121.8 and 176.1 ms in Chrome, also seen with capture off on the Mac) were measured while several builders shared this machine; treat them as a tripwire record labelled with load, not a gate. Rewrite M5.8/M5.9 so they don't block on host scheduling noise. Unblock SHOWCASE M5 once the shadow item exists.",
+      "at": "2026-11-18T08:48:12Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T07:27:48Z"
+    "at": "2026-11-18T08:48:12Z"
   },
   "design_history": [
     {
