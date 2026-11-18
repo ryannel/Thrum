@@ -150,7 +150,7 @@ fn prepare_showcase_with_volume(
 /// # Errors
 /// Returns an invalid authored camera or placement.
 #[doc(hidden)]
-pub fn valley_config(
+pub(crate) fn valley_config(
     source: CookedSource,
 ) -> Result<(SceneCamera, thrum_asset_gpu::CookedConfig), CookedValleyError> {
     let recipe: Recipe = serde_json::from_str(include_str!("../assets/showcase/scene.json"))

@@ -49,11 +49,19 @@ pub use projection::{GameProjection, ProjectionGap};
 pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]
 pub use scene::{exit_authority, simulation_with_count};
-#[cfg(feature = "draw-probe")]
-#[doc(hidden)]
-pub use showcase::valley_config;
 #[doc(hidden)]
 pub use showcase::{CookedValleyError, prepare_cooked_valley};
+/// Authored valley configuration for qualification through the ordinary game host.
+///
+/// # Errors
+/// Returns an invalid authored camera or placement.
+#[cfg(all(target_os = "macos", feature = "draw-probe"))]
+#[doc(hidden)]
+pub fn valley_config(
+    source: thrum_asset_gpu::CookedSource,
+) -> Result<(SceneCamera, thrum_asset_gpu::CookedConfig), CookedValleyError> {
+    showcase::valley_config(source)
+}
 #[cfg(target_os = "macos")]
 pub use window::{
     CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RuntimeCaptureOutput,
