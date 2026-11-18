@@ -165,8 +165,14 @@ impl Fixture {
         SkyGame::apply(&mut self.host, edits).expect("apply");
     }
     pub(crate) fn frame(&mut self, seconds: f64) -> FrameSample {
+        self.submit_frame(seconds, true)
+    }
+    pub(crate) fn frame_without_timings(&mut self, seconds: f64) -> FrameSample {
+        self.submit_frame(seconds, false)
+    }
+    fn submit_frame(&mut self, seconds: f64, timings: bool) -> FrameSample {
         let begin = std::time::Instant::now();
-        self.host.set_timing_requested(true);
+        self.host.set_timing_requested(timings);
         let view = self
             .output
             .create_view(&wgpu::TextureViewDescriptor::default());

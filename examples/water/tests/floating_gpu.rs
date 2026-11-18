@@ -51,6 +51,7 @@ struct BodyRecord {
     least_contact: Option<f64>,
     gpu_points: u64,
     worst_energy_overage: f64,
+    max_draft_error: f64,
 }
 
 #[test]
@@ -83,6 +84,9 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
             body.correlation[1] += step.heave * step.heave;
             body.correlation[2] += step.waterline * step.waterline;
             body.gpu_points += u64::from(step.gpu_points);
+            body.max_draft_error = body
+                .max_draft_error
+                .max((step.heave - step.waterline).abs());
             if step.tick % 120 == 1 {
                 if let Some(begin) = body.energy {
                     let overage = step.energy - begin - body.input;
@@ -105,7 +109,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
         let begin = std::time::Instant::now();
         let baseline = observe_pose()[0].position.x;
         for frame in 0..=seconds * 60 {
-            host.frame(f64::from(frame) * 0.016_666_667);
+            host.frame_without_timings(f64::from(frame) * 0.016_666_667);
             let poses = observe_pose();
             for body in &poses {
                 assert!(
@@ -137,13 +141,19 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
                 "body {id} at {speed} m/s tracks at {tracking}"
             );
             assert!(
+                body.max_draft_error < 1.6,
+                "body {id} at {speed} m/s departed from its draft by {} m",
+                body.max_draft_error,
+            );
+            assert!(
                 body.gpu_points >= (record.tick - 2) * 6,
                 "missing GPU samples for body {id}: {}",
                 body.gpu_points
             );
             eprintln!(
-                "gale {speed} m/s, body {id}: least contact {:.4} m, tracking {tracking:.4}, GPU stations {}, maximum unaccounted energy {:.4} J/kg",
+                "gale {speed} m/s, body {id}: least contact {:.4} m, peak draft error {:.4} m, tracking {tracking:.4}, GPU stations {}, maximum unaccounted energy {:.4} J/kg",
                 body.least_contact.expect("observed contact"),
+                body.max_draft_error,
                 body.gpu_points,
                 body.worst_energy_overage
             );

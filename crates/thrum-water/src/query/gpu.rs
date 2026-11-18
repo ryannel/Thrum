@@ -308,23 +308,7 @@ impl Readback {
         let maps = state.maps.clone();
         drop(state);
         let seconds = thrum_sea::display_seconds(time);
-        let origin = work[0].2[0].points[0].position;
         let frame_offset = (1.0 - f64::from(time.alpha)) * time.tick_duration.as_secs_f64();
-        let components: Vec<_> = spectrum
-            .long
-            .iter()
-            .map(|component| {
-                let [x, z] = component.wave_vector;
-                Component {
-                    vector: [x as f32, z as f32],
-                    amplitude: component.amplitude as f32,
-                    phase: component.anchored_phase(origin.map(f64::from), seconds) as f32,
-                    omega: component.frequency() as f32,
-                    inverse_k: x.hypot(z).recip() as f32,
-                    padding: [0.0; 2],
-                }
-            })
-            .collect();
         let lengths_chop = std::array::from_fn(|i| {
             spectrum
                 .cascades
@@ -333,6 +317,22 @@ impl Readback {
         });
         let profile = map.profile();
         for (slot, tick, bodies) in work {
+            let origin = bodies[0].points[0].position;
+            let components: Vec<_> = spectrum
+                .long
+                .iter()
+                .map(|component| {
+                    let [x, z] = component.wave_vector;
+                    Component {
+                        vector: [x as f32, z as f32],
+                        amplitude: component.amplitude as f32,
+                        phase: component.anchored_phase(origin.map(f64::from), seconds) as f32,
+                        omega: component.frequency() as f32,
+                        inverse_k: x.hypot(z).recip() as f32,
+                        padding: [0.0; 2],
+                    }
+                })
+                .collect();
             let points: Vec<_> = bodies
                 .iter()
                 .flat_map(|body| &body.points)
