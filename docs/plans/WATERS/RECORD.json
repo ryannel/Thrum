@@ -474,7 +474,53 @@
     },
     "M4": {
       "definitions": "185b802f8410ecd281a19b3675f06f8c78bad46cdb96019c53e3c142442a8e98",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c7654cc9e9bccbc336a633a05b31941327de35cb",
+          "review": "docs/evidence/WATERS/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "pass",
+            "M4.3": "fail",
+            "M4.4": "pass",
+            "M4.5": "pass",
+            "M4.6": "fail",
+            "M4.7": "pass",
+            "M4.8": "pass",
+            "M4.9": "pass",
+            "M4.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Lake stage jumps to the tick endpoint at fractional presentation times",
+              "item": "M4.6",
+              "repeat": false
+            },
+            {
+              "name": "Diffuse foreground shorelines lack a readable contact line",
+              "item": "M4.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 121674,
+            "cached": 2099328,
+            "output": 8429,
+            "turns": 1
+          },
+          "at": "2026-11-18T14:33:34Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",

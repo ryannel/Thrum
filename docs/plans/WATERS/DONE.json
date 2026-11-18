@@ -489,8 +489,8 @@
     {
       "id": "M4",
       "name": "A lake lies in a hollow of the hills and the sea meets a beach: each ends where the ground rises, the lake stays calm while the sea runs, and waves fade as the water shallows and run the waterline up and down the sand",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -505,8 +505,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -517,18 +517,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.3",
           "statement": "The example has an island the example makes: a beach, a lake in the hills above the sea, and a pond. At noon, from each shore at 2 m and from the hill at 40 m, each water lies level in its place and meets the ground in a clean line that follows the terrain: no stair-step from the map's cells, no sliver of water on dry ground, none missing at the edge, and no sheet between the lake and the sea.",
           "inspect": "`fixed` stills of the beach, the lake's shore and the pond from 2 m, and of all three from 40 m on the hill: each waterline, close and at a distance, and the ground between the lake and the sea.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-visual.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -539,8 +539,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -549,8 +549,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-visual.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -558,10 +558,10 @@
           "check": "cargo test --locked --offline -p water-scene --test stage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-checks.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.7",
@@ -571,8 +571,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-chrome.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.8",
@@ -582,8 +582,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.9",
@@ -592,8 +592,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.10",
@@ -604,8 +604,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M4-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Lake stage jumps to the tick endpoint at fractional presentation times",
+          "item": "M4.6",
+          "repeat": false
+        },
+        {
+          "name": "Diffuse foreground shorelines lack a readable contact line",
+          "item": "M4.3",
+          "repeat": false
         }
       ]
     },
