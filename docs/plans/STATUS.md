@@ -334,7 +334,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1), 11 Nov · [review](../evidence/APPLE-PRESENTATION/M1-review.md)
 - The valley selects a recipe and stores only actual future inputs (APPLE-TILE M1), 11 Nov · [review](../evidence/APPLE-TILE/M1-review.md)
 - The starter scene runs in Chrome from one command, with its controls and live asset edits (CREATOR M1), 11 Nov · [review](../evidence/CREATOR/M1-review.md)
-- A repeatable offscreen valley proves the comparison path (APPLE-TILE M0), 11 Nov · [review](../evidence/APPLE-TILE/M0-review.md)
 - The latest build report: [2026-11-13](../evidence/build-reports/2026-11-13.md)
 
 ## All modules
