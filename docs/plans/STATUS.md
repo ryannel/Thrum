@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-12 of 33 modules done · 13 in progress · 8 to come
+13 of 33 modules done · 12 in progress · 8 to come
 
 ### Needs you now
 
@@ -274,12 +274,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The same sea draws in Chrome from one command (WATERS M3): In Progress · [plan](WATERS/PLAN.md) · [latest review](../evidence/WATERS/M3-review.md)
 - The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed (SCENE-VIEWS M3): In Progress · [plan](SCENE-VIEWS/PLAN.md) · [latest review](../evidence/SCENE-VIEWS/M3-review.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
-- A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide (SIM-2D M3): Ready for Review · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M3-review.md)
+- A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): Not Started · [plan](SESSION/PLAN.md)
 - On the Mac, the moving 10,000-entity scene is held in a ray-tracing structure, rebuilt every frame at the poses that frame draws (RAY-TRACING M1): Not Started · [plan](RAY-TRACING/PLAN.md)
 - On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces (MESH-SHADING M1): Not Started · [plan](MESH-SHADING/PLAN.md)
 
 ### Recently done
 
+- A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide (SIM-2D M3), 18 Nov · [review](../evidence/SIM-2D/M3-review.md)
 - A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them (SCENE-VIEWS M2), 18 Nov · [review](../evidence/SCENE-VIEWS/M2-review.md)
 - Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for (REVIEW-ENGINE M5), 18 Nov · [review](../evidence/REVIEW-ENGINE/M5-review.md)
 - A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum (REVIEW-ENGINE M4), 18 Nov · [review](../evidence/REVIEW-ENGINE/M4-review.md)
@@ -359,10 +360,10 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Changes Requested |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Waiting: On Dependency, WATERS:M9 |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
-| 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M3 of 3 · Ready for Review |
+| 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Waiting: On Dependency, SIM-2D:M3 |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M1 of 7 · Not Started |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, TEST-SUPPORT:M2, GAME-SPLIT:M3 |
