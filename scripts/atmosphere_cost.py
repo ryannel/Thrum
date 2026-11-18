@@ -10,13 +10,15 @@ import statistics
 import subprocess
 from pathlib import Path
 
+from run_v1_showcase import store_root
+
 ROOT = Path(__file__).resolve().parent.parent
 RECORD = ROOT / 'docs/evidence/ATMOSPHERE/M6-cost.json'
 STOPS = ('sunrise', 'noon', 'sunset-clear-sun', 'sunset-sun', 'twilight', 'night-upslope')
 PASSES = (
     'atmosphere transmittance', 'atmosphere multiple scattering', 'atmosphere ground irradiance',
     'atmosphere sky view', 'atmosphere diffuse irradiance', 'atmosphere aerial perspective',
-    'atmosphere DFG integration', 'atmosphere stars',
+    'atmosphere DFG integration', 'atmosphere stars', 'synthetic Sun air shadow heights',
     *(f'atmosphere reflection mip {i}' for i in range(7)),
 )
 ORDER = ('starting', 'final', 'final', 'starting')
@@ -35,16 +37,18 @@ def measure(args):
     environment = dict(os.environ, THRUM_SCENE='valley', THRUM_RECONSTRUCTION='taau',
                        THRUM_RECIPE='portable', THRUM_ASSET_STORE=str(args.store.resolve()))
     report = {
-        'scope': 'Capture-off 1080p Metal, whole GPU timed-pass span and named graph timestamps. '
+        'scope': 'Capture-off 1080p Metal with an offscreen presenter, whole GPU timed-pass span and named graph timestamps. '
                  'Each stop has a fresh renderer and a settled cooked-valley interval. '
                  'Startup work before confirmed cooked residency is labelled on each frame.',
         'host': platform.platform(), 'load_class': 'shared builder load',
         'starting_revision': args.starting_revision, 'final_revision': args.final_revision,
+        'cooked_root': store_root(args.store.resolve()),
         'harness_sha256': sha(ROOT / 'examples/v1-game/examples/atmosphere_cost.rs'),
         'history': [
-            'M1 had a noon callback p95 change of 22.66 to 25.15 ms with the same GPU path under investigation. '
+            'M1 reported a noon scene GPU pass-sum p95 change of 22.66 to 25.15 ms. '
             'See ../v1-workload/G3S-HANDOFF.md, lines 847–877.',
-            'M2 recorded midnight 1080p scene GPU pass sums with stars on and off under shared load of 27.67–29.37. '
+            'M2 recorded midnight 1080p scene GPU pass-sum p50/p95 of 3.94–4.39/4.52–9.17 ms '
+            'with stars on and 5.76–5.89/6.81–10.59 ms with stars off, under shared load of 27.67–29.37. '
             'See ../v1-workload/G3S-HANDOFF.md, lines 704–722.',
         ],
         'runs': [],
@@ -85,7 +89,8 @@ def summary(row):
 def validate(record):
     if tuple(run['arm'] for run in record['runs']) != ORDER:
         raise ValueError('missing alternating start/final timing arms')
-    if not all(record[key] for key in ('starting_revision', 'final_revision', 'harness_sha256', 'host', 'load_class', 'history')):
+    if not all(record[key] for key in ('starting_revision', 'final_revision', 'cooked_root', 'harness_sha256',
+                                       'host', 'load_class', 'history')):
         raise ValueError('missing build, load class or history')
     configs = {}
     values = {arm: {stop: [] for stop in STOPS} for arm in set(ORDER)}

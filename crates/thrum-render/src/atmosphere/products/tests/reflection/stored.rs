@@ -47,19 +47,22 @@ fn fixture(
     );
     pollster::block_on(async {
         let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 140);
-        let scene = SyntheticScene::grid(1).unwrap();
+        let scene = SyntheticScene::grid(1).expect("unit grid fixture");
         let mut prepared =
             PreparedSynthetic::prepare_with_capabilities(&caps, &queue, &scene, lighting(1.0), 1.0)
                 .await
-                .unwrap();
-        let target = OffscreenTarget::new(&device, &prepared, 8, 8).unwrap();
+                .expect("prepared atmosphere fixture");
+        let target = OffscreenTarget::new(&device, &prepared, 8, 8).expect("offscreen fixture");
         filtered::submit(&device, &queue, &mut prepared, &target);
         (device, queue, scene, prepared, target)
     })
 }
 
 fn lighting(lux: f32) -> FrameLighting {
-    FrameLighting::Atmosphere(AtmosphereFrame::new([1.0, 0.0, 0.0], lux, [1.0; 3], 2.0, 1).unwrap())
+    FrameLighting::Atmosphere(
+        AtmosphereFrame::new([1.0, 0.0, 0.0], lux, [1.0; 3], 2.0, 1)
+            .expect("valid physical Sun fixture"),
+    )
 }
 
 fn bound(values: &[f64], stored_rounding: f64) -> f64 {
