@@ -15,6 +15,7 @@ from cooked_draw_parity import png
 ROOT = Path(__file__).resolve().parents[1]
 SIDE = 128
 VALLEY_CASES = ("valley-cull-equal", "shadow-equal", "shadow-parity")
+GRAZING_SUN_HOUR = 6.01  # Mirrored by the valley submission harness.
 
 
 def frame(output, name, attachment):
@@ -135,26 +136,48 @@ def cook_valley(store):
 
 
 def shadow_parity(output):
-    for hour in (12, 17.3):
-        images = [(output / f"shadow-{hour}-{path}.raw").read_bytes()
-                  for path in ("indexed", "stages")]
-        for layer, label in enumerate(("near", "far", "height")):
-            start = layer * 1024 ** 2 * 4
-            end = start + 1024 ** 2 * 4
-            indexed, stages = [list(struct.iter_unpack("<I", image[start:end])) for image in images]
-            coverage = sum(a != (0,) for a in indexed)
-            coverage_changes = sum((a == (0,)) != (b == (0,))
-                                   for a, b in zip(indexed, stages, strict=True))
-            # Independently compiled vertex and mesh stages evaluate the same f32
-            # clip-position expression. Admit four final Depth32Float rounding steps.
-            deltas = [abs(a[0] - b[0]) for a, b in zip(indexed, stages, strict=True)
-                      if a != (0,) and b != (0,)]
-            failures = sum(delta > 4 for delta in deltas)
-            print(json.dumps(dict(hour=hour, map=label, coverage=coverage,
-                                  coverage_changes=coverage_changes, maximum_ulp=max(deltas, default=0),
-                                  tolerance_ulp=4, failures=failures, edge_exclusions=0)))
-            if not coverage or coverage_changes or failures:
-                raise AssertionError(f"{hour} h {label} shadow map differs from the indexed caster")
+    for hour in (12, 17.3, GRAZING_SUN_HOUR):
+        rows = compare_shadow_maps(output, hour, "stages")
+        if any(not row["coverage"] or shadow_differs(row) for row in rows):
+            raise AssertionError(f"{hour} h: a stage shadow map differs from the indexed caster")
+    one_sided = compare_shadow_maps(output, GRAZING_SUN_HOUR, "one-sided")
+    wrong_transform = compare_shadow_maps(output, GRAZING_SUN_HOUR, "wrong-transform")
+    if not any(row["map"] == "far" and shadow_differs(row) for row in one_sided):
+        raise AssertionError("the grazing Sun's far cascade accepted a one-sided caster")
+    if not any(shadow_differs(row) for row in wrong_transform):
+        raise AssertionError("the grazing Sun's maps accepted a wrong placement transform")
+
+
+def shadow_differs(row):
+    return row["coverage_changes"] or row["failures"]
+
+
+def compare_shadow_maps(output, hour, arm):
+    layer_bytes = 1024 ** 2 * 4
+    images = [memoryview((output / f"shadow-{hour}-{path}.raw").read_bytes())
+              for path in ("indexed", arm)]
+    if any(len(image) != 3 * layer_bytes for image in images):
+        raise AssertionError("wrong Sun map extent")
+    rows = []
+    for layer, label in enumerate(("near", "far", "height")):
+        interval = slice(layer * layer_bytes, (layer + 1) * layer_bytes)
+        indexed, candidate = [struct.iter_unpack("<I", image[interval]) for image in images]
+        coverage = coverage_changes = maximum = failures = 0
+        # Independently compiled vertex and mesh stages evaluate the same f32
+        # clip-position expression. Admit four final Depth32Float rounding steps.
+        for (a,), (b,) in zip(indexed, candidate, strict=True):
+            coverage += a != 0
+            coverage_changes += (a == 0) != (b == 0)
+            if a and b and a != b:
+                delta = abs(a - b)
+                maximum = max(maximum, delta)
+                failures += delta > 4
+        row = dict(hour=hour, arm=arm, map=label, coverage=coverage,
+                   coverage_changes=coverage_changes, maximum_ulp=maximum,
+                   tolerance_ulp=4, failures=failures, edge_exclusions=0)
+        print(json.dumps(row))
+        rows.append(row)
+    return rows
 
 
 def main():

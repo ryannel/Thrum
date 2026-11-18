@@ -101,6 +101,31 @@ impl Bound {
     }
 
     #[cfg(feature = "draw-probe")]
+    fn draw_residency(&self) -> crate::draw_probe::DrawResidency {
+        let mut sizes = crate::draw_probe::DrawResidency {
+            visibility: self.visible.as_ref().map_or(0, wgpu::Buffer::size),
+            volume_uniform: self.volume.as_ref().map_or(0, |(_, buffer)| buffer.size()),
+            ..Default::default()
+        };
+        for mesh in &self.meshes {
+            sizes.instances += mesh.instance.size();
+            sizes.materials += mesh.material_bytes;
+            for indirect in mesh.indirect.iter().chain(&mesh.secondary) {
+                sizes.indirect_arguments += indirect.draws.size();
+                sizes.cull_uniforms += indirect.cull_uniform.size();
+            }
+            if let Some(buffer) = mesh
+                .probe
+                .as_ref()
+                .and_then(crate::draw_probe::Bound::indirect_buffer)
+            {
+                sizes.indirect_arguments += buffer.size();
+            }
+        }
+        sizes
+    }
+
+    #[cfg(feature = "draw-probe")]
     pub(crate) fn probe_commands(&self) -> Vec<String> {
         self.meshes
             .iter()
@@ -144,6 +169,8 @@ struct BoundMesh {
     #[cfg(feature = "draw-probe")]
     probe: Option<crate::draw_probe::Bound>,
     material: wgpu::BindGroup,
+    #[cfg(feature = "draw-probe")]
+    material_bytes: u64,
     stage: Option<wgpu::BindGroup>,
     indirect: Option<IndirectMesh>,
     secondary: Vec<IndirectMesh>,
@@ -645,6 +672,8 @@ impl Pipelines {
                         probe.bind(&self.device, &self.queue, placement_index, mesh.index_count)
                     }),
                     material,
+                    #[cfg(feature = "draw-probe")]
+                    material_bytes: material_buffer.size(),
                     stage,
                     indirect,
                     secondary,
@@ -852,14 +881,42 @@ impl Pipelines {
         pass.dispatch_workgroups(mesh.meshlets.div_ceil(64), 1, 1);
     }
 
-    pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
+    #[cfg(feature = "draw-probe")]
+    pub(crate) fn draw_residency(
+        &self,
+        bound: &Bound,
+        set: &ResidentSet,
+        readback: Option<&wgpu::Buffer>,
+    ) -> crate::draw_probe::DrawResidency {
+        let mut sizes = bound.draw_residency();
+        sizes.cull_uniforms += self
+            .secondary_cull
+            .iter()
+            .flat_map(|cull| &cull.records)
+            .map(wgpu::Buffer::size)
+            .sum::<u64>();
+        sizes.visibility += readback.map_or(0, wgpu::Buffer::size);
+        sizes.sampled_textures = self
+            .defaults
+            .iter()
+            .map(wgpu::TextureView::texture)
+            .chain(set.meshes.iter().map(|(_, texture)| &texture.texture))
+            .chain(set.volume.iter().map(|volume| &volume.texture))
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .map(crate::draw_probe::texture_bytes)
+            .sum();
+        sizes
+    }
+
+    pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) -> usize {
         Self::draw_casters(
             bound,
             pass,
             self.shadow.as_ref(),
             self.stage_shadow.as_ref(),
             None,
-        );
+        )
     }
 
     fn draw_casters(
@@ -868,16 +925,15 @@ impl Pipelines {
         pipeline: Option<&wgpu::RenderPipeline>,
         stage_pipeline: Option<&wgpu::RenderPipeline>,
         cascade: Option<SecondaryShadowCascade>,
-    ) {
-        let Some(pipeline) = pipeline else { return };
+    ) -> usize {
+        let Some(pipeline) = pipeline else { return 0 };
         let mut stages = None;
-        for mesh in &bound.meshes {
-            if !mesh
-                .caster_bounds
+        let mut draws = 0;
+        for mesh in bound.meshes.iter().filter(|mesh| {
+            mesh.caster_bounds
                 .is_some_and(|bounds| cascade.is_none_or(|cascade| cascade.overlaps(bounds)))
-            {
-                continue;
-            }
+        }) {
+            draws += 1;
             let stage = mesh.stage.as_ref().zip(stage_pipeline);
             if stages != Some(stage.is_some()) {
                 pass.set_pipeline(stage.map_or(pipeline, |(_, pipeline)| pipeline));
@@ -893,6 +949,7 @@ impl Pipelines {
             // Camera meshlet culling cannot determine visibility from the Sun.
             pass.draw_indexed(0..mesh.index_count, 0, 0..1);
         }
+        draws
     }
 
     /// Draw meshes with the scene's fragment (through `mesh` when a replacement is drawn this

@@ -3,6 +3,53 @@
 mod error;
 pub use error::DrawProbeError;
 
+/// A deliberate defect in the mesh-stage Sun caster.
+#[derive(Clone, Copy, Debug)]
+pub enum ShadowFault {
+    /// Rasterize only front faces.
+    CullBackFaces,
+    /// Substitute the terrain's identity model for every placement model.
+    IdentityPlacement,
+}
+
+/// Logical byte sizes of cooked draw resources outside the mesh product buffers.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct DrawResidency {
+    /// Per-placement transform and history buffers.
+    pub instances: u64,
+    /// Per-placement material buffers.
+    pub materials: u64,
+    /// Indexed argument buffers, including those for prepared secondary views.
+    pub indirect_arguments: u64,
+    /// Per-placement cull uniforms and secondary view records.
+    pub cull_uniforms: u64,
+    /// Visible count buffer and its readback destination.
+    pub visibility: u64,
+    /// Bound volume uniform, if present.
+    pub volume_uniform: u64,
+    /// Unpadded bytes of distinct sampled draw textures including material defaults.
+    pub sampled_textures: u64,
+}
+
+pub(crate) fn texture_bytes(texture: &wgpu::Texture) -> u64 {
+    let format = texture.format();
+    let (block_width, block_height) = format.block_dimensions();
+    let block_bytes = u64::from(
+        format
+            .block_copy_size(None)
+            .expect("sampled colour texture"),
+    );
+    (0..texture.mip_level_count())
+        .map(|level| {
+            let extent = texture.size().mip_level_size(level, texture.dimension());
+            u64::from(extent.width.div_ceil(block_width))
+                * u64::from(extent.height.div_ceil(block_height))
+                * u64::from(extent.depth_or_array_layers)
+                * block_bytes
+        })
+        .sum()
+}
+
 /// Probe-only command selection, supplied explicitly before attaching the contribution.
 #[derive(Clone, Debug)]
 pub enum Probe {

@@ -8,7 +8,7 @@ use thrum_asset::{AssetStore, MeshProduct, Profile};
 use thrum_asset_gpu::CookedDrawPath::{Indirect, MeshStages};
 use v1_game::SurfaceOutput;
 
-use super::{Gpu, Valley, Witness, output, read_buffer, store};
+use super::{Gpu, SunProbe, Valley, Witness, output, read_buffer, store};
 
 const PASSES: [&str; 5] = [
     "contribution compute",
@@ -113,7 +113,7 @@ fn route_cost() {
     // Keep both timing arms on the same hardware generation profile.
     let gpu = Gpu::new(true, "apple-tile", |_| {});
     let extent = [width, width * 9 / 16];
-    let mut valley = Valley::new(&gpu, path, true, extent, 12.0, false);
+    let mut valley = Valley::new(&gpu, path, true, extent, 12.0, SunProbe::None);
     let route = valley.install_route(12.0);
     let meshes = geometry();
     let mut frames = Vec::new();
@@ -201,6 +201,20 @@ fn route_cost() {
                 })
                 .collect();
             let stats = valley.stats.lock().expect("draw observations");
+            let bytes = stats.draw_residency;
+            let buffer_bytes = stats.mesh_buffer_bytes
+                + bytes.instances
+                + bytes.materials
+                + bytes.indirect_arguments
+                + bytes.cull_uniforms
+                + bytes.visibility
+                + bytes.volume_uniform;
+            assert_eq!(stats.sun_caster_draws.len(), PASSES[2..].len());
+            let caster_draws: serde_json::Map<_, _> = PASSES[2..]
+                .iter()
+                .zip(&stats.sun_caster_draws)
+                .map(|(&pass, &draws)| (pass.to_owned(), json!(draws)))
+                .collect();
             frames.push(json!({
                 "route_tick": relative_tick, "submission": sample.submission_order,
                 "timed_pass_span_ns": span, "frame_cpu_ns": (sample.upload_cpu + sample.encode_cpu).as_nanos(),
@@ -209,8 +223,16 @@ fn route_cost() {
                 "view_update_cpu_ns": sample.view_update_ns,
                 "passes_ns": timings, "surface_consumer_ns": sample.gpu_present_ns,
                 "forward_draws": stats.mesh_stage_draws + stats.indexed_indirect_draws + stats.indexed_direct_draws,
-                "draws_per_sun_map": meshes.len(),
+                "draws_per_sun_map": caster_draws,
                 "mesh_buffer_bytes": stats.mesh_buffer_bytes, "mesh_stage_bytes": stats.mesh_stage_bytes,
+                "resident_draw_buffer_bytes": buffer_bytes,
+                "resident_draw_resource_bytes": buffer_bytes + bytes.sampled_textures,
+                "draw_resource_breakdown": {
+                    "instances": bytes.instances, "materials": bytes.materials,
+                    "indirect_arguments": bytes.indirect_arguments, "cull_uniforms": bytes.cull_uniforms,
+                    "visibility": bytes.visibility, "volume_uniform": bytes.volume_uniform,
+                    "sampled_textures": bytes.sampled_textures,
+                },
             }));
         }
     }

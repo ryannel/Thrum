@@ -42,3 +42,7 @@
   Metal's mixed-stage binding defect. Target proofs cover culling, shadow depth, publication and device
   replacement. The paired timing records load and the repeated CPU tripwire investigation.
   [Target results and captures](../../evidence/MESH-SHADING/M2.md).
+- 2026-11-18 M2 review fixes add a grazing-Sun valley case on Apple M3 Max Metal. Production
+  casters match, and the one-sided and wrong-transform controls fail. The paired cost record
+  also counts resident cooked draw resources and reports recorded Sun-map draws.
+  [Target results](../../evidence/MESH-SHADING/M2.md).

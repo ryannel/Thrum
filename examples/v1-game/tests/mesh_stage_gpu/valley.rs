@@ -1,11 +1,11 @@
 use std::{
     io::Write as _,
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
-use thrum_asset_gpu::{CookedAssets, CookedDrawPath, CookedStats};
+use thrum_asset_gpu::{CookedAssets, CookedDrawPath, CookedStats, draw_probe::ShadowFault};
 use thrum_render::{
     present::SurfaceProfile,
     runtime::{FrameSample, SubmittedImage},
@@ -17,6 +17,9 @@ use super::support::{Gpu, read_buffer};
 
 const ROUTE: &str = include_str!("../../routes/moving-v1.json");
 const PROOF_EXTENT: [u32; 2] = [320, 180];
+// At this authored viewpoint the rising Sun is ~0.106° above the horizon.
+// The far cascade sees terrain whose stored depth depends on the back faces.
+const GRAZING_SUN_HOUR: f32 = 6.01;
 
 mod cost;
 
@@ -48,6 +51,13 @@ enum Witness {
     Temporal,
 }
 
+#[derive(Clone, Copy)]
+enum SunProbe {
+    None,
+    Rejections,
+    Fault(ShadowFault),
+}
+
 impl<'a> Valley<'a> {
     fn new(
         gpu: &'a Gpu,
@@ -55,14 +65,16 @@ impl<'a> Valley<'a> {
         cull: bool,
         extent: [u32; 2],
         hour: f32,
-        shadow_counts: bool,
+        sun_probe: SunProbe,
     ) -> Self {
         let (camera, mut cooked) = v1_game::valley_config(store().into()).expect("authored valley");
         cooked.draw_path = path;
         cooked.mesh_stage_cull = cull;
         let counts = Arc::new(Mutex::new(None));
-        if shadow_counts {
-            cooked.mesh_stage_shadow_rejections = Some(Arc::clone(&counts));
+        match sun_probe {
+            SunProbe::None => {}
+            SunProbe::Rejections => cooked.mesh_stage_shadow_rejections = Some(Arc::clone(&counts)),
+            SunProbe::Fault(fault) => cooked.mesh_stage_shadow_fault = Some(fault),
         }
         let cooked = CookedAssets::new(cooked).expect("valley residency");
         let stats = cooked.stats();
@@ -300,7 +312,7 @@ fn valley_cull_equal() {
             cull,
             PROOF_EXTENT,
             12.0,
-            false,
+            SunProbe::None,
         );
         let route = valley.install_route(12.0);
         valley
@@ -351,8 +363,8 @@ fn valley_cull_equal() {
     }
 }
 
-fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, witness: bool) -> Vec<u8> {
-    let mut valley = Valley::new(gpu, path, cull, PROOF_EXTENT, hour, witness);
+fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, probe: SunProbe) -> Vec<u8> {
+    let mut valley = Valley::new(gpu, path, cull, PROOF_EXTENT, hour, probe);
     let counts = valley.shadow_counts.lock().expect("shadow counts").clone();
     if let Some(counts) = &counts {
         gpu.queue.write_buffer(counts, 0, &[0; 32]);
@@ -396,8 +408,20 @@ fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, witness: 
 fn shadow_equal() {
     let gpu = Gpu::new(true, "apple-tile", |_| {});
     for hour in [12.0, 17.3] {
-        let all = shadow_maps(&gpu, CookedDrawPath::MeshStages, false, hour, false);
-        let culled = shadow_maps(&gpu, CookedDrawPath::MeshStages, true, hour, true);
+        let all = shadow_maps(
+            &gpu,
+            CookedDrawPath::MeshStages,
+            false,
+            hour,
+            SunProbe::None,
+        );
+        let culled = shadow_maps(
+            &gpu,
+            CookedDrawPath::MeshStages,
+            true,
+            hour,
+            SunProbe::Rejections,
+        );
         assert_eq!(all.len(), 3 * 1024 * 1024 * 4);
         assert!(
             all == culled,
@@ -412,18 +436,36 @@ fn shadow_equal() {
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn shadow_parity() {
     let gpu = Gpu::new(true, "apple-tile", |_| {});
-    for hour in [12.0, 17.3] {
-        let indexed = shadow_maps(&gpu, CookedDrawPath::Indirect, false, hour, false);
-        let stages = shadow_maps(&gpu, CookedDrawPath::MeshStages, false, hour, false);
-        save_shadow_pair(&output(), hour, &indexed, &stages);
+    for hour in [12.0, 17.3, GRAZING_SUN_HOUR] {
+        let indexed = shadow_maps(&gpu, CookedDrawPath::Indirect, false, hour, SunProbe::None);
+        let stages = shadow_maps(
+            &gpu,
+            CookedDrawPath::MeshStages,
+            false,
+            hour,
+            SunProbe::None,
+        );
+        save_shadow_maps(hour, "indexed", &indexed);
+        save_shadow_maps(hour, "stages", &stages);
+    }
+    for (name, fault) in [
+        ("one-sided", ShadowFault::CullBackFaces),
+        ("wrong-transform", ShadowFault::IdentityPlacement),
+    ] {
+        let maps = shadow_maps(
+            &gpu,
+            CookedDrawPath::MeshStages,
+            false,
+            GRAZING_SUN_HOUR,
+            SunProbe::Fault(fault),
+        );
+        save_shadow_maps(GRAZING_SUN_HOUR, name, &maps);
     }
 }
 
-fn save_shadow_pair(root: &Path, hour: f32, indexed: &[u8], stages: &[u8]) {
-    assert_eq!(indexed.len(), 3 * 1024 * 1024 * 4);
-    assert_eq!(stages.len(), indexed.len());
-    std::fs::write(root.join(format!("shadow-{hour}-indexed.raw")), indexed).expect("indexed maps");
-    std::fs::write(root.join(format!("shadow-{hour}-stages.raw")), stages).expect("mesh maps");
+fn save_shadow_maps(hour: f32, arm: &str, maps: &[u8]) {
+    assert_eq!(maps.len(), 3 * 1024 * 1024 * 4);
+    std::fs::write(output().join(format!("shadow-{hour}-{arm}.raw")), maps).expect("Sun maps");
 }
 
 #[test]
@@ -435,7 +477,7 @@ fn fixed_stops() {
     let mut frames = Vec::new();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::MeshStages] {
         for hour in [12.0, 17.3] {
-            let mut valley = Valley::new(&gpu, path, true, extent, hour, false);
+            let mut valley = Valley::new(&gpu, path, true, extent, hour, SunProbe::None);
             let authored = valley.host.scene_camera().expect("authored camera");
             for (index, (label, eye, target)) in [
                 (

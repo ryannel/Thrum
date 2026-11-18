@@ -31,6 +31,9 @@ def summarize(frames):
             for name in frames[0]["passes_ns"]
         },
         "mesh_buffer_bytes": frames[0]["mesh_buffer_bytes"],
+        "mesh_stage_bytes": frames[0]["mesh_stage_bytes"],
+        "resident_draw_buffer_bytes": frames[0]["resident_draw_buffer_bytes"],
+        "resident_draw_resource_bytes": frames[0]["resident_draw_resource_bytes"],
         "forward_draws": frames[0]["forward_draws"],
         "draws_per_sun_map": frames[0]["draws_per_sun_map"],
     }
@@ -55,8 +58,29 @@ def run(command, root, env, arm, width, repeat):
     data.update(load=witness, load_samples=(folder / "system-iostat.txt").read_text(),
                 repeat=repeat)
     if arm != "counts":
+        for frame in data["frames"]:
+            verify_residency(frame, arm)
         data["summary"] = summarize(data["frames"])
     return data
+
+
+def verify_residency(frame, arm):
+    sizes = frame["draw_resource_breakdown"]
+    buffers = frame["mesh_buffer_bytes"] + sum(
+        size for resource, size in sizes.items() if resource != "sampled_textures"
+    )
+    if buffers != frame["resident_draw_buffer_bytes"]:
+        raise ValueError("inconsistent cooked draw buffer residency")
+    if buffers + sizes["sampled_textures"] != frame["resident_draw_resource_bytes"]:
+        raise ValueError("inconsistent cooked draw resource residency")
+    if min(sizes["instances"], sizes["materials"], sizes["sampled_textures"]) <= 0:
+        raise ValueError("missing shared cooked draw resources")
+    indexed_cull = sizes["indirect_arguments"] > 0 and sizes["cull_uniforms"] > 0
+    if arm == "indexed":
+        if not indexed_cull or sizes["visibility"] <= 0 or frame["mesh_stage_bytes"] != 0:
+            raise ValueError("missing indexed draw residency")
+    elif sizes["indirect_arguments"] or sizes["cull_uniforms"] or frame["mesh_stage_bytes"] <= 0:
+        raise ValueError("unexpected mesh-stage draw residency")
 
 
 def compare(runs):
@@ -101,6 +125,10 @@ def main():
         "target": "mac-metal",
         "mode": "release; 60 Hz fixed world route with capture off; every route tick submitted",
         "frame_cpu_scope": "Game frame upload plus encode through queue submission. Query readback and replay are excluded.",
+        "residency_scope": "Logical buffer sizes and unpadded sampled texture bytes for the active cooked draw set "
+                           "and its draw state, including the visible counter and readback if allocated. "
+                           "Excludes the staging ring, renderer-owned resources (including the borrowed view uniform), "
+                           "and driver padding and opaque allocations.",
         "timed_pass_span_scope": "First timed pass begin to surface consumer end, including inter-pass time.",
         "outside_timed_pass_span": {
             "both": "Queued view, instance, light and Sun map uniform writes before the first pass.",

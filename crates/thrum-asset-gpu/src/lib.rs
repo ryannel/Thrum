@@ -204,6 +204,9 @@ pub struct CookedConfig {
     /// Optional aggregate object-stage counters for the Sun's maps.
     #[cfg(feature = "draw-probe")]
     pub mesh_stage_shadow_rejections: Option<Arc<Mutex<Option<wgpu::Buffer>>>>,
+    /// Negative control for mesh-stage Sun caster parity.
+    #[cfg(feature = "draw-probe")]
+    pub mesh_stage_shadow_fault: Option<draw_probe::ShadowFault>,
     /// Entity mesh rows participating in the same publication as every other reader.
     pub rows: Option<rows::CookedRows>,
     /// Opt-in one-shot staging fill fault, absent from ordinary builds.
@@ -247,6 +250,8 @@ impl CookedConfig {
             mesh_stage_rejections: None,
             #[cfg(feature = "draw-probe")]
             mesh_stage_shadow_rejections: None,
+            #[cfg(feature = "draw-probe")]
+            mesh_stage_shadow_fault: None,
             rows: None,
             #[cfg(feature = "fault-probe")]
             fault: None,
@@ -390,6 +395,12 @@ pub struct CookedStats {
     pub mesh_buffer_bytes: u64,
     /// Bytes of additional meshlet storage in distinct drawn mesh products.
     pub mesh_stage_bytes: u64,
+    /// Logical bytes of the cooked draw resources in the submitted resident set.
+    #[cfg(feature = "draw-probe")]
+    pub draw_residency: draw_probe::DrawResidency,
+    /// Cooked draws issued by the main Sun caster contribution in the latest submission.
+    #[cfg(feature = "draw-probe")]
+    pub sun_caster_draws: Vec<usize>,
     /// Resident position and attribute buffers with storage usage.
     pub mesh_stage_vertex_streams: usize,
     /// Candidate recorded by the latest encoding, including an encoding that was discarded.
@@ -453,6 +464,8 @@ fn product_profiles(kind: thrum_asset::ProductKind, features: wgpu::Features) ->
 
 /// Loader thread and channels for one device generation.
 struct Live {
+    #[cfg(feature = "draw-probe")]
+    sun_caster_draws: std::cell::RefCell<Vec<usize>>,
     generation: u64,
     ray_queue: Option<wgpu::Queue>,
     stop: Arc<AtomicBool>,
@@ -797,6 +810,8 @@ impl CookedAssets {
         let readback = (pipelines.indexed_path == CookedDrawPath::Indirect)
             .then(|| Readback::new(surface.device));
         Live {
+            #[cfg(feature = "draw-probe")]
+            sun_caster_draws: std::cell::RefCell::default(),
             generation: surface.generation,
             ray_queue: surface.ray_demand.then(|| surface.queue.clone()),
             stop,
@@ -865,10 +880,20 @@ impl CookedAssets {
                 live.pipelines = pipelines;
                 live.secondary_views = Vec::with_capacity(surface.secondary_surfaces.len());
                 live.tentative = None;
+                #[cfg(feature = "draw-probe")]
+                live.sun_caster_draws.get_mut().clear();
                 if let Some((set, bound)) = live.current.as_mut() {
                     *bound =
                         live.pipelines
                             .bind(set, &self.config.meshes, self.config.volume.as_ref());
+                    #[cfg(feature = "draw-probe")]
+                    if let Ok(mut stats) = self.stats.lock() {
+                        stats.draw_residency = live.pipelines.draw_residency(
+                            bound,
+                            set,
+                            live.readback.as_ref().map(|readback| &readback.buffer),
+                        );
+                    }
                 }
                 if let Some(pending) = live.pending.as_mut() {
                     pending.bound = None;
@@ -891,6 +916,8 @@ impl CookedAssets {
                     {
                         stats.submitted_ray_builds = 0;
                         stats.ray_mesh_storage.clear();
+                        stats.draw_residency = draw_probe::DrawResidency::default();
+                        stats.sun_caster_draws.clear();
                     }
                 }
                 self.live = None;
@@ -1089,6 +1116,8 @@ impl SceneContribution for CookedAssets {
             }
             live.pending = None;
         }
+        #[cfg(feature = "draw-probe")]
+        live.sun_caster_draws.get_mut().clear();
         let mut tentative = Tentative {
             view_offset: frame.view_uniform_offset,
             material: live.material.is_some(),
@@ -1206,7 +1235,11 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            live.pipelines.draw_shadow(bound, pass);
+            let draws = live.pipelines.draw_shadow(bound, pass);
+            #[cfg(not(feature = "draw-probe"))]
+            let _ = draws;
+            #[cfg(feature = "draw-probe")]
+            live.sun_caster_draws.borrow_mut().push(draws);
         }
     }
 
@@ -1238,6 +1271,10 @@ impl SceneContribution for CookedAssets {
             stats.indexed_indirect_draws = indirect;
             stats.indexed_direct_draws = direct;
             stats.meshlet_compute_cull = compute;
+            #[cfg(feature = "draw-probe")]
+            stats
+                .sun_caster_draws
+                .clone_from(live.sun_caster_draws.get_mut());
             stats.secondary_draw_paths.clear();
             if let Some(path) = view_path {
                 stats
@@ -1313,6 +1350,11 @@ impl SceneContribution for CookedAssets {
                     stats.probe_commands = bound.probe_commands();
                     stats.probe_resources = bound.probe_resources();
                     stats.probe_resources.1 |= live.readback.is_some();
+                    stats.draw_residency = live.pipelines.draw_residency(
+                        &bound,
+                        &set,
+                        live.readback.as_ref().map(|readback| &readback.buffer),
+                    );
                 }
                 stats.drawn = Some(set.generation);
                 set.report_mesh_storage(&self.config.meshes, &mut stats);

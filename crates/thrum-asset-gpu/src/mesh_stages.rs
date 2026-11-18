@@ -41,7 +41,7 @@ pub(crate) fn prepare(
     let shadow = surface
         .shadow
         .as_ref()
-        .map(|shadow| layout.compile_shadow(surface.device, shadow));
+        .map(|shadow| layout.compile_shadow(surface.device, shadow, config));
     // Native Metal validates synchronously. Pop in stack order even when a scope has failed.
     let mut failure = None;
     for scope in scopes.into_iter().rev() {
@@ -270,6 +270,7 @@ impl Layout {
         &self,
         device: &DeviceSite,
         surface: &SceneShadowSurface<'_>,
+        config: &crate::CookedConfig,
     ) -> wgpu::RenderPipeline {
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("cooked mesh-stage Sun casters"),
@@ -303,6 +304,27 @@ impl Layout {
                 "\n",
             )
         );
+        let primitive = crate::draw::caster_primitive();
+        #[cfg(not(feature = "draw-probe"))]
+        let _ = config;
+        #[cfg(feature = "draw-probe")]
+        let (primitive, shader) = match config.mesh_stage_shadow_fault {
+            Some(crate::draw_probe::ShadowFault::CullBackFaces) => (
+                wgpu::PrimitiveState {
+                    cull_mode: Some(wgpu::Face::Back),
+                    ..primitive
+                },
+                shader,
+            ),
+            Some(crate::draw_probe::ShadowFault::IdentityPlacement) => (
+                primitive,
+                shader.replace(
+                    "caster_position(mesh_position(vertex), mesh_placement.model)",
+                    "light_view_projection * vec4<f32>(mesh_position(vertex), 1.0)",
+                ),
+            ),
+            None => (primitive, shader),
+        };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cooked mesh-stage Sun casters"),
             source: wgpu::ShaderSource::Wgsl(shader.into()),
@@ -321,7 +343,7 @@ impl Layout {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: None,
-            primitive: crate::draw::caster_primitive(),
+            primitive,
             depth_stencil: Some(crate::draw::caster_depth(surface)),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
