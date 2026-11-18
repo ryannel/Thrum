@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 // Exact submitted canvas records. Packaging and elapsed-time inspection use the saved timeline.
 import fs from 'node:fs/promises';
+import { loadavg } from 'node:os';
 import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
-import { gunzip } from 'node:zlib';
+import { gunzip, gzip } from 'node:zlib';
 import { captureReceiver } from './browser_capture_receiver.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
 const decompress = promisify(gunzip);
+const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 args.effect = 'off';
@@ -75,7 +77,10 @@ execFileSync('/usr/bin/swiftc', ['-module-cache-path', path.join(output, 'swift-
 execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle]);
 manifest.launcher = { sha256: sha(await fs.readFile(launcher)), scope: 'LaunchServices app identity, preflight must be false before starting Chrome; no permission request' };
 let child, cdp, server, cook, ended = false, failure;
-const { receive, pending, bytes: encodedBytes } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, args.control === 'slow');
+const spoolRaw = args.scene === 'exit' && args.mode === 'realtime' && args.control === 'ordinary';
+const spoolPath = path.join(output, 'frames.rgba');
+const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
+const { receive, pending } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, { slow: args.control === 'slow', rawSpool });
 try {
   ({ server, origin: manifest.origin } = await serve(files, receive));
   const serving = await serveCooked(args, output); cook = serving.cook;
@@ -102,9 +107,23 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
+  const completionSignal = args.scene === 'exit' && args.mode === 'realtime' &&
+    (args.control === 'ordinary' || args.control === 'off');
+  let captureDone = false;
+  if (completionSignal) {
+    await cdp.call('Target.activateTarget', { targetId });
+    await cdp.call('Runtime.enable', {}, sessionId);
+    await cdp.call('Runtime.addBinding', { name: 'thrumCaptureDone' }, sessionId);
+    cdp.event = event => {
+      if (event.sessionId === sessionId && event.method === 'Runtime.bindingCalled' &&
+          event.params.name === 'thrumCaptureDone') captureDone = true;
+    };
+  }
+  manifest.load_before = loadavg();
   await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
+    if (completionSignal && !captureDone) return undefined;
     if (args.control === 'loss' && !destroyed) {
       const state = await cdp.call('Runtime.evaluate', { expression: 'window.thrumCapture?.waiting', returnByValue: true }, sessionId);
       if (state.result.value === 'destroy-pending') { await destroyActualDevice(cdp, sessionId, undefined, () => {}); destroyed = true; }
@@ -112,6 +131,7 @@ try {
     const r = await cdp.call('Runtime.evaluate', { expression: 'window.thrumCapture?.done ? JSON.stringify(window.thrumCapture) : null', returnByValue: true }, sessionId);
     return r.result.value ? JSON.parse(r.result.value) : undefined;
   }, 180000, 'submitted-output route');
+  manifest.load_after = loadavg();
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
   if (args.witness !== 'off' && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
   await Promise.all(pending);
@@ -133,26 +153,47 @@ try {
       if (record.final_report.presented - record.initial_report.presented !== manifest.records.length) throw new Error('Submission tail or head missing');
       const ids = manifest.records.map(row => row.submission_id);
       if (!ids.length || ids.some((id, i) => i > 0 && id !== ids[i - 1] + 1)) throw new Error('Noncontiguous submission IDs');
+      if (record.final_report.timestamp_clamps || (record.final_report.overload_events && args.control !== 'stall')) throw new Error('Runtime clamped/overloaded');
+      if (args.control === 'resize' && new Set(manifest.records.map(row => row.presenter_generation)).size < 2) throw new Error('Resize did not change presenter generation');
+      const spoolFrame = rawSpool && Buffer.allocUnsafe(frameBytes);
+      for (const [i, row] of manifest.records.entries()) {
+        if (row.submission_id !== record.images[i].submission_id || !row.surface_presented) throw new Error('Image join/surface mismatch');
+        if (i > 0 && row.submit_ms <= manifest.records[i - 1].submit_ms) throw new Error('Nonmonotonic submit time');
+        let raw;
+        if (rawSpool) {
+          let offset = 0;
+          while (offset < frameBytes) {
+            const { bytesRead } = await rawSpool.read(spoolFrame, offset, frameBytes - offset, i * frameBytes + offset);
+            if (bytesRead === 0) throw new Error('Short raw spool frame');
+            offset += bytesRead;
+          }
+          raw = spoolFrame;
+        } else {
+          raw = await decompress(await fs.readFile(path.join(output, row.file)));
+        }
+        if (raw.length !== frameBytes || sha(raw) !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
+        if (spoolRaw) {
+          const encoded = await compress(raw, { level: 1 });
+          const packed = path.join(output, row.file);
+          await fs.writeFile(packed, encoded, { flag: 'wx' });
+          if (sha(await decompress(await fs.readFile(packed))) !== row.rgba_sha256) throw new Error('Lossless archive verification failed');
+          row.bytes = encoded.length;
+        }
+      }
       const syncStart = performance.now();
       for (const row of manifest.records) {
         const file = await fs.open(path.join(output, row.file), 'r+');
         try { await file.sync(); } finally { await file.close(); }
       }
       manifest.final_sync_ms = performance.now() - syncStart;
-      for (const [i, row] of manifest.records.entries()) {
-        if (row.submission_id !== record.images[i].submission_id || !row.surface_presented) throw new Error('Image join/surface mismatch');
-        if (i > 0 && row.submit_ms <= manifest.records[i - 1].submit_ms) throw new Error('Nonmonotonic submit time');
-        const raw = await decompress(await fs.readFile(path.join(output, row.file)));
-        if (raw.length !== frameBytes || sha(raw) !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
-      }
-      if (record.final_report.timestamp_clamps || (record.final_report.overload_events && args.control !== 'stall')) throw new Error('Runtime clamped/overloaded');
-      if (args.control === 'resize' && new Set(manifest.records.map(row => row.presenter_generation)).size < 2) throw new Error('Resize did not change presenter generation');
+      if (spoolRaw) await fs.unlink(spoolPath);
       manifest.complete = true;
     }
   }
 } catch (error) { failure ??= error; }
 finally {
   await Promise.all(pending);
+  await rawSpool?.close();
   cook?.kill();
   try { await cleanup(child, () => ended, cdp, server, profile); } catch (error) { failure ??= error; }
   try {
@@ -164,8 +205,9 @@ finally {
   if (manifest.permission_preflight?.screen_recording_before !== false) manifest.complete = false;
   manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: route.render_extent[0] * 4, extent: route.render_extent };
-  manifest.encoded_bytes = encodedBytes();
+  manifest.spool_encoding = spoolRaw ? 'raw with deferred gzip' : 'live gzip';
+  manifest.encoded_bytes = manifest.records.reduce((total, row) => total + row.bytes, 0);
   await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
 }
 if (failure) throw failure;
-console.log(`PASS ${manifest.observer_only ? "capture-off observer arm;" : manifest.negative_control_pass ? "negative control, incomplete capture;" : "complete capture;"} ${manifest.records.length} exact submitted images, ${encodedBytes()} encoded bytes`);
+console.log(`PASS ${manifest.observer_only ? "capture-off observer arm;" : manifest.negative_control_pass ? "negative control, incomplete capture;" : "complete capture;"} ${manifest.records.length} exact submitted images, ${manifest.encoded_bytes} encoded bytes`);

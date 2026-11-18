@@ -89,6 +89,9 @@ Additional cases use the same binary:
 - `--case off`: matched pan with capture disabled; no tap buffers or writer queue.
 - `--case variants`: semantic noon/night/noon edits at one and three seconds, using the prepared star variants.
 - `--case route --route examples/v1-game/routes/moving-v1.json`: validates the cooked root and runs the checked route on the resident world lane. Use a route copy with a 1920×1080 render extent for this full-resolution driver. The initial hold precedes normal world resume, and the final hold follows the last authored tick.
+- `--case exit-route --route examples/v1-game/routes/exit-flythrough.json` and `--case exit-drift`: in
+  real time these request 60 Hz with GPU pass timing disabled. The output still records actual elapsed
+  submissions and world ticks. `--observer-only` runs the same scenario without image readback or a spool writer.
 
 `--params PATH` selects a checked parameter file before warmup. `--source scene-linear` captures the existing
 RGBA16Float scene colour after its last writer, including stars at night. It preserves all eight stored bytes
@@ -255,6 +258,11 @@ allowance is 32 full frames, in addition to the renderer's 11 frame buffers and 
 An export deadline, ring exhaustion, missing submission, write failure or output allowance refusal invalidates
 continuous evidence while the ordinary page loop continues. Each session preflights 16 GiB free and caps output
 at 16 GiB. Consecutive content qualification must use the consuming workload and retain every attempt.
+
+For `--scene exit --mode realtime`, the ordinary and capture-off arms use the page's animation-frame
+callbacks with GPU pass timing disabled. The ordinary arm transfers up to 24 reusable typed arrays
+through a dedicated upload worker. The receiver writes originals at their submission offsets in one
+bounded disk spool. It verifies and compresses each original after the page signals completion.
 
 `manifest.json` pins source files, actual served Wasm/JS/route hashes, cooked root/generation, GPU/browser, launcher,
 flags, encoding and permission/lock observations. `runtime.json` retains opportunities, world clocks, pauses,

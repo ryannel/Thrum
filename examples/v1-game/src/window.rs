@@ -30,6 +30,18 @@ pub enum NativeRecovery {
 /// Environment setting parsed by the binary before starting the capture adapter.
 pub const NATIVE_RECOVERY_VARIABLE: &str = "THRUM_CAPTURE_NATIVE_RECOVERY";
 
+/// Process-edge selection for the capture observer comparison.
+pub const CAPTURE_OBSERVER_VARIABLE: &str = "THRUM_CAPTURE_OBSERVER_ONLY";
+
+/// Whether a runtime capture records pixels or observes submission cadence alone.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeCaptureOutput {
+    /// Keep every submitted image.
+    Images,
+    /// Run the same scenario without the image readback and writer.
+    ObserverOnly,
+}
+
 /// Run a declared unattended capture scenario through the ordinary game.
 /// # Errors
 /// Returns GPU, control, readback or output failure.
@@ -39,8 +51,9 @@ pub fn run_runtime_capture(
     wait: bool,
     hold_full: std::time::Duration,
     recovery: NativeRecovery,
+    capture_output: RuntimeCaptureOutput,
 ) -> Result<(), String> {
-    capture::run(output, scenario, wait, hold_full, recovery)
+    capture::run(output, scenario, wait, hold_full, recovery, capture_output)
 }
 
 const KEY_A: u8 = 1;

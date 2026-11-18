@@ -374,6 +374,11 @@ impl<G: Game> Offscreen<G> {
     pub fn output(&self) -> &wgpu::Texture {
         &self.output
     }
+
+    /// Collect optional GPU pass timings, which have their own resolve and readback.
+    pub fn set_timing_requested(&mut self, requested: bool) {
+        self.host.set_timing_requested(requested);
+    }
 }
 
 fn presenter_output(

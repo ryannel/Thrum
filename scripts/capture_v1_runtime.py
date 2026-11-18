@@ -102,7 +102,7 @@ def read_exact(stream, length):
 
 def finalize(output, manifest, runtime, verify_only=False):
     records = validate_source(output, manifest, runtime)
-    if runtime["scenario"] == "off":
+    if runtime["scenario"] == "off" or runtime.get("observer_only"):
         manifest.update(complete=True, packaging_pending=False, records=[])
         return
     frame_bytes = manifest['extent'][0] * manifest['extent'][1] * manifest.get('bytes_per_pixel', 4)
@@ -206,7 +206,7 @@ def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
         if 'Err' in runtime.get('writer_result', {}):
             conditions.append(f"writer result: {runtime['writer_result']['Err']}")
         raise CaptureUnjudged('; '.join(conditions) or 'runtime complete: false')
-    if runtime["scenario"] == "off":
+    if runtime["scenario"] == "off" or runtime.get("observer_only"):
         if images or spool_bytes:
             raise ValueError("capture-off row produced pixels")
         return []
@@ -260,6 +260,9 @@ def run(args):
         return
     if output.exists():
         raise ValueError("output must be a new directory")
+    observer_only = getattr(args, "observer_only", False)
+    if observer_only and (args.case not in ("exit-route", "exit-drift") or args.mode != "realtime"):
+        raise ValueError("--observer-only requires realtime exit motion")
     output.parent.mkdir(parents=True, exist_ok=True)
     if shutil.disk_usage(output.parent).free < ALLOWANCE:
         raise ValueError("less than declared 16 GiB free space")
@@ -289,6 +292,7 @@ def run(args):
         "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted([*(ROOT / "crates").rglob("*.wgsl"), *(ROOT / "crates").rglob("*.metal")])},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
+        "observer_only": observer_only,
         "record_limit": 4096 if args.case in ('clouds-drift','clouds-route','exit-route','exit-drift') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
@@ -328,6 +332,10 @@ def run(args):
     manifest['screen_recording_preflight_error'] = manifest['permission_before']['error']
     environment = dict(os.environ, THRUM_CAPTURE_RUNTIME=str(output), THRUM_CAPTURE_CASE=args.case, THRUM_CAPTURE_MODE=args.mode, THRUM_CAPTURE_SOURCE=args.source, THRUM_CAPTURE_RUNTIME_PARAMS=str(args.params.resolve()))
     environment['THRUM_CAPTURE_ADMISSION'] = manifest['admission_policy']
+    if observer_only:
+        environment['THRUM_CAPTURE_OBSERVER_ONLY'] = '1'
+    else:
+        environment.pop('THRUM_CAPTURE_OBSERVER_ONLY', None)
     environment['THRUM_CAPTURE_EXTENT'] = ','.join(map(str,extent))
     for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
         if getattr(args,option,None) is not None:
@@ -391,6 +399,8 @@ def run(args):
         if returncode:
             raise ValueError(f"game failed: exit {returncode}; see stderr.txt")
         runtime = json.loads((output / "runtime.json").read_text())
+        if runtime.get('observer_only', False) != observer_only:
+            raise ValueError('capture observer arm differs from request')
         if runtime.get('admission_policy', 'omit') != manifest['admission_policy']:
             raise ValueError('capture admission policy differs from request')
         manifest['admission_waits'] = runtime.get('admission_waits', [])
@@ -456,6 +466,7 @@ if __name__ == "__main__":
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")
     parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
+    parser.add_argument("--observer-only", action="store_true", help="leave the capture tap off during realtime exit motion")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
     parser.add_argument('--extent', type=int, nargs=2, default=[1920,1080], metavar=('WIDTH','HEIGHT'))
     parser.add_argument('--admission', choices=['omit', 'wait'], default='omit',

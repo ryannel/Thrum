@@ -53,5 +53,6 @@ pub use scene::{exit_authority, simulation_with_count};
 pub use showcase::{CookedValleyError, prepare_cooked_valley};
 #[cfg(target_os = "macos")]
 pub use window::{
-    NATIVE_RECOVERY_VARIABLE, NativeRecovery, capture_game, run_runtime_capture, run_window,
+    CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RuntimeCaptureOutput,
+    capture_game, run_runtime_capture, run_window,
 };

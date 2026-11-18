@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { captureReceiver } from './browser_capture_receiver.mjs';
 import { uploadCapture } from '../examples/v1-game/web/capture_upload.mjs';
 
-async function fixture(t, dropAcknowledgement = false) {
+async function fixture(t, dropAcknowledgement = false, spoolRaw = false) {
   await fs.mkdir('tmp', { recursive: true });
   const output = await fs.mkdtemp('tmp/capture-upload-test-');
   await fs.mkdir(path.join(output, 'frames'));
@@ -16,7 +16,8 @@ async function fixture(t, dropAcknowledgement = false) {
   const image = { pixels, metadata: JSON.stringify({ submission_id: 42, tick: 17 }) };
   const manifest = { records: [], export_peak: 0, output_allowance: 4 * pixels.length };
   const failures = [];
-  const receiver = captureReceiver(output, pixels.length, manifest, error => failures.push(error));
+  const rawSpool = spoolRaw ? await fs.open(path.join(output, 'frames.rgba'), 'wx+') : undefined;
+  const receiver = captureReceiver(output, pixels.length, manifest, error => failures.push(error), { rawSpool });
   const server = http.createServer((request, response) => {
     if (dropAcknowledgement) {
       const end = response.end;
@@ -41,6 +42,7 @@ async function fixture(t, dropAcknowledgement = false) {
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
     await Promise.all(receiver.pending);
+    await rawSpool?.close();
     await fs.rm(output, { recursive: true });
   });
   return { output, image, manifest, failures, receiver, origin, server };
@@ -74,6 +76,28 @@ test('a lost acknowledgement retries identical bytes and stores exactly one fram
   assert.equal(f.manifest.records.length, 1);
   assert.equal(f.manifest.records[0].submission_id, 42);
   assert.equal((await fs.readdir(path.join(f.output, 'frames'))).length, 1);
+  assert.deepEqual(f.failures, []);
+});
+
+test('the raw spool preserves bytes and identity across an acknowledgement retry', async t => {
+  const f = await fixture(t, true, true);
+  await uploadCapture(0, f.image);
+  assert.equal(f.manifest.export_replays, 1);
+  assert.equal(f.manifest.records.length, 1);
+  const record = f.manifest.records[0];
+  assert.equal(record.submission_id, 42);
+  assert.deepEqual(await fs.readFile(path.join(f.output, 'frames.rgba')), f.image.pixels);
+  assert.deepEqual(f.failures, []);
+});
+
+test('raw spool offsets preserve submission order when requests arrive out of order', async t => {
+  const f = await fixture(t, false, true);
+  const second = { pixels: Buffer.alloc(f.image.pixels.length, 19), metadata: '{"submission_id":43}' };
+  await uploadCapture(1, second);
+  await uploadCapture(0, f.image);
+  const source = await fs.readFile(path.join(f.output, 'frames.rgba'));
+  assert.deepEqual(source, Buffer.concat([f.image.pixels, second.pixels]));
+  assert.deepEqual(f.manifest.records.map(record => record.submission_id), [42, 43]);
   assert.deepEqual(f.failures, []);
 });
 

@@ -1,6 +1,6 @@
 // A separate capture driver. The deterministic route page keeps its original refusals.
 import init, { create_route_game, fetch_cooked_valley } from './v1_game.js';
-import { uploadCapture } from './capture_upload.mjs';
+import { startCaptureUploadWorker, uploadCapture } from './capture_upload.mjs';
 const record = { done: false, complete: false, opportunities: [], images: [], actions: [], export_peak: 0 };
 window.thrumCapture = record;
 const query = new URL(location.href).searchParams;
@@ -10,6 +10,8 @@ const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
 const exportSlots = scene === 'exit' && query.get('export-slots') === '24' ? 24 : 8;
 const witness = query.get('witness') ?? 'off';
+const useAnimationFrame = scene === 'exit' && mode === 'realtime' &&
+  (control === 'ordinary' || control === 'off');
 if (!['day', 'night', 'noon', 'exit'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -17,14 +19,20 @@ let hidden = document.hidden;
 document.addEventListener('visibilitychange', () => { hidden ||= document.hidden; });
 let game;
 const inflight = new Set();
+const reusablePixels = [];
+let uploadWorker;
 let exportError;
 let withholdUntil = 0;
 const fail = message => { throw new Error(message); };
 function drain() {
   if (control === 'off' || performance.now() < withholdUntil) return;
   for (;;) {
-    const image = game.next_submitted_image();
-    if (!image) return;
+    const pixels = reusablePixels.pop();
+    const image = game.next_submitted_image(pixels);
+    if (!image) {
+      if (pixels) reusablePixels.push(pixels);
+      return;
+    }
     const metadata = JSON.parse(image.metadata);
     metadata.available_ms = performance.now();
     if (inflight.size >= exportSlots) {
@@ -32,7 +40,13 @@ function drain() {
       continue;
     }
     record.images.push(metadata);
-    const task = uploadCapture(record.images.length - 1, image, retry => (record.export_retries ??= []).push(retry))
+    const ordinal = record.images.length - 1;
+    const upload = uploadWorker ? uploadWorker.upload(ordinal, image).then(reply => {
+      reusablePixels.push(reply.pixels);
+      if (reply.retries.length) (record.export_retries ??= []).push(...reply.retries);
+      if (reply.error) throw new Error(reply.error);
+    }) : uploadCapture(ordinal, image, retry => (record.export_retries ??= []).push(retry));
+    const task = upload
       .catch(error => { exportError = String(error); }).finally(() => inflight.delete(task));
     inflight.add(task);
     record.export_peak = Math.max(record.export_peak, inflight.size);
@@ -52,8 +66,14 @@ try {
   if (query.get('overlay') === 'off') { route.overlay = 'off'; text = JSON.stringify(route); }
   record.effective_route = route;
   record.scene = scene;
+  if (useAnimationFrame && control === 'ordinary') {
+    uploadWorker = await startCaptureUploadWorker();
+    const bytes = route.render_extent[0] * route.render_extent[1] * (source === 'scene-linear' ? 8 : 4);
+    for (let index = 0; index < exportSlots; index++) reusablePixels.push(new Uint8Array(bytes));
+  }
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit');
+  if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
   if (!['off','slab','depth-only'].includes(effect)) fail('Unknown effect diagnostic');
@@ -119,11 +139,14 @@ try {
   record.start_after_ms = performance.now();
   record.base_world_ms = base;
   record.mode = mode;
+  record.gpu_pass_timing = !useAnimationFrame;
   record.witness = witness;
   record.extent = route.render_extent;
   record.ui = { included: 'canvas scene and engine route overlay', excluded: 'DOM, browser and native UI' };
   record.device_pixel_ratio = devicePixelRatio;
-  record.scheduling = mode === 'fixed' ? 'visible headless page, synthetic 60 Hz samples with explicit GPU/export waits' : 'visible headless page, timer opportunities at 60 Hz, ordinary lifecycle policy';
+  record.scheduling = useAnimationFrame ? 'visible headless page, browser animation-frame callbacks and elapsed time' :
+    mode === 'fixed' ? 'visible headless page, synthetic 60 Hz samples with explicit GPU/export waits' :
+    'visible headless page, timer opportunities at 60 Hz, ordinary lifecycle policy';
   if (control === 'loss') {
     game.set_paused(false, base);
     game.frame(base + 1000 / 60);
@@ -180,6 +203,8 @@ try {
     if (mode === 'fixed') {
       while (!game.route_slot_ready()) { drain(); await wait(1); }
       while (inflight.size > 0) { drain(); await wait(1); }
+    } else if (useAnimationFrame) {
+      await new Promise(requestAnimationFrame);
     } else if (performance.now() < due) { drain(); await wait(Math.min(4, due - performance.now())); continue; }
     const requested = performance.now();
     if (!acted && control === 'stall' && requested - start > 1500) {
@@ -207,11 +232,13 @@ try {
     }
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
-    record.opportunities.push({ ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() });
+    const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
+    record.opportunities.push(opportunity);
     ordinal++;
-    if (mode === 'realtime') ordinal = Math.max(ordinal, Math.floor((performance.now() - start) * 60 / 1000));
+    if (mode === 'realtime' && !useAnimationFrame) ordinal = Math.max(ordinal, Math.floor((performance.now() - start) * 60 / 1000));
     if (control !== 'saturation' || performance.now() - start > 2000) drain();
-    await wait(mode === 'fixed' ? 1 : 0);
+    if (useAnimationFrame) opportunity.drain_finished_ms = performance.now();
+    if (!useAnimationFrame) await wait(mode === 'fixed' ? 1 : 0);
   }
   const drainStart = performance.now();
   for (;;) {
@@ -228,7 +255,9 @@ try {
   record.complete = true;
 } catch (error) { record.error = String(error); }
 finally {
+  uploadWorker?.close();
   game?.end_submitted_capture();
   record.done = true;
   document.querySelector('#status').textContent = JSON.stringify({ complete: record.complete, error: record.error });
+  window.thrumCaptureDone?.('');
 }

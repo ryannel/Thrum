@@ -9,7 +9,7 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
 // An acknowledgement may be lost after storage. Replays must match both the
 // original submitted bytes and metadata, and never create a second frame.
-export function captureReceiver(output, frameBytes, manifest, failed, slow = false) {
+export function captureReceiver(output, frameBytes, manifest, failed, { slow = false, rawSpool } = {}) {
   const recordLimit = manifest.record_limit ?? 1024;
   const exportSlots = manifest.export_slots ?? 8;
   let active = 0, outputBytes = 0;
@@ -40,11 +40,20 @@ export function captureReceiver(output, frameBytes, manifest, failed, slow = fal
         } else {
           const stored = (async () => {
             if (slow) await new Promise(resolve => setTimeout(resolve, 500));
-            const encoded = await compress(raw, { level: 1 });
+            const encoded = rawSpool ? raw : await compress(raw, { level: 1 });
             outputBytes += encoded.length;
             if (outputBytes > manifest.output_allowance) throw new Error('Output allowance exhausted');
             const file = `frames/${String(ordinal).padStart(6, '0')}.rgba.gz`;
-            await fs.writeFile(path.join(output, file), encoded, { flag: 'wx' });
+            if (rawSpool) {
+              let written = 0;
+              while (written < frameBytes) {
+                const result = await rawSpool.write(raw, written, frameBytes - written, ordinal * frameBytes + written);
+                if (result.bytesWritten === 0) throw new Error('Short raw spool write');
+                written += result.bytesWritten;
+              }
+            } else {
+              await fs.writeFile(path.join(output, file), encoded, { flag: 'wx' });
+            }
             headers.set(ordinal, header);
             manifest.records[ordinal] = { ...metadata, ordinal, file, rgba_sha256: digest, bytes: encoded.length };
           })();
@@ -62,5 +71,5 @@ export function captureReceiver(output, frameBytes, manifest, failed, slow = fal
     pending.add(work); work.then(() => pending.delete(work));
     return true;
   }
-  return { receive, pending, bytes: () => outputBytes };
+  return { receive, pending };
 }

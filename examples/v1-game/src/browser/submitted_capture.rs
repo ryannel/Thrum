@@ -4,6 +4,11 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 impl BrowserGame {
+    /// Select a motion capture without the optional GPU pass timing observer.
+    pub fn capture_without_pass_timings(&mut self) {
+        self.shell.update_profiler(self.demo.model_mut(), false);
+    }
+
     /// Start submitted-output capture with three GPU slots and eight CPU buffers.
     /// # Errors
     /// Refuses a lost device, an active session or allocation failure.
@@ -23,10 +28,14 @@ impl BrowserGame {
     }
 
     /// Export one image and its immutable submission identity without a redraw.
-    /// The JS typed array owns a copy, so the renderer lease returns immediately.
+    /// Copy into a correctly sized caller-owned array or allocate one for this
+    /// image. The renderer lease returns immediately.
     /// # Errors
     /// Refuses loss, retired generation, mapping or JS object construction failure.
-    pub fn next_submitted_image(&mut self) -> Result<JsValue, JsValue> {
+    pub fn next_submitted_image(
+        &mut self,
+        reuse: Option<js_sys::Uint8Array>,
+    ) -> Result<JsValue, JsValue> {
         let Some(image) = self.shell.next_submitted_image().map_err(super::js_error)? else {
             return Ok(JsValue::UNDEFINED);
         };
@@ -46,7 +55,14 @@ impl BrowserGame {
             "submit_ms": image.submitted_elapsed.as_secs_f64() * 1000.0,
             "surface_presented": image.sample.surface_presented,
         });
-        let pixels = js_sys::Uint8Array::from(image.rgba.as_slice());
+        let pixels = if let Some(reuse) =
+            reuse.filter(|buffer| buffer.length() as usize == image.rgba.len())
+        {
+            reuse.copy_from(&image.rgba);
+            reuse
+        } else {
+            js_sys::Uint8Array::from(image.rgba.as_slice())
+        };
         self.shell.recycle_submitted_image(image);
         let result = js_sys::Object::new();
         js_sys::Reflect::set(&result, &"metadata".into(), &metadata.to_string().into())?;

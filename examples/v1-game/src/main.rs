@@ -10,12 +10,18 @@ fn main() {
         let scenario = std::env::var("THRUM_CAPTURE_CASE").unwrap_or_else(|_| "pan".to_owned());
         let (wait, hold, recovery) =
             capture_admission().unwrap_or_else(|error| report_capture_failure(&error));
+        let capture_output = match std::env::var(v1_game::CAPTURE_OBSERVER_VARIABLE).as_deref() {
+            Ok("1") => v1_game::RuntimeCaptureOutput::ObserverOnly,
+            Err(std::env::VarError::NotPresent) => v1_game::RuntimeCaptureOutput::Images,
+            _ => report_capture_failure("capture observer arm must be 1 when set"),
+        };
         if let Err(error) = v1_game::run_runtime_capture(
             std::path::Path::new(&output),
             &scenario,
             wait,
             hold,
             recovery,
+            capture_output,
         ) {
             report_capture_failure(&error);
         }

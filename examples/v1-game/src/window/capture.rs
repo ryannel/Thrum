@@ -3,6 +3,7 @@
 mod admission;
 mod native_recovery;
 
+use super::RuntimeCaptureOutput;
 use serde_json::{Value, json};
 use std::io::Write;
 use std::{
@@ -31,6 +32,7 @@ pub(super) fn run(
     wait: bool,
     hold_full: Duration,
     recovery: super::NativeRecovery,
+    capture_output: RuntimeCaptureOutput,
 ) -> Result<(), String> {
     if !matches!(
         scenario,
@@ -58,7 +60,16 @@ pub(super) fn run(
     let scenario = scenario.to_owned();
     std::thread::Builder::new()
         .name("thrum-headless-render".to_owned())
-        .spawn(move || pollster::block_on(record(&output, &scenario, wait, hold_full, recovery)))
+        .spawn(move || {
+            pollster::block_on(record(
+                &output,
+                &scenario,
+                wait,
+                hold_full,
+                recovery,
+                capture_output,
+            ))
+        })
         .map_err(|e| e.to_string())?
         .join()
         .map_err(|_| "capture render owner panicked".to_owned())?
@@ -485,6 +496,7 @@ async fn record(
     wait: bool,
     hold_full: Duration,
     recovery_mode: super::NativeRecovery,
+    capture_output: RuntimeCaptureOutput,
 ) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
     let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
@@ -500,9 +512,17 @@ async fn record(
         &queue,
         extent,
     )?;
+    let motion_capture = mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift");
+    if motion_capture {
+        driver.set_timing_requested(false);
+    }
     let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
     reset_native_capture(&mut driver);
-    let capture = scenario != "off";
+    let observer_only = capture_output == RuntimeCaptureOutput::ObserverOnly;
+    if observer_only && !motion_capture {
+        return Err("observer-only control requires realtime exit motion".to_owned());
+    }
+    let capture = scenario != "off" && !observer_only;
     if capture {
         enable_stage_capture(&mut driver, 1, source)?;
     }
@@ -519,7 +539,10 @@ async fn record(
     } else {
         Timebase::Elapsed
     };
-    let mut clock = OpportunityClock::new(origin, 120, timebase)?;
+    // Match the 60 Hz world and Chrome motion take. The native window and
+    // existing 120 Hz capture scenarios keep their own opportunity cadence.
+    let requested_hz = if motion_capture { 60 } else { 120 };
+    let mut clock = OpportunityClock::new(origin, requested_hz, timebase)?;
     let mut running = false;
     let mut night_variant = false;
     let mut stalled = false;
@@ -597,6 +620,15 @@ async fn record(
         let report = driver.step_for(&opportunity)?;
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
+        if observer_only
+            && report.submitted
+            && trace
+                .route_last_tick
+                .is_some_and(|tick| report.tick >= tick)
+            && trace.route_finished_at.is_none()
+        {
+            trace.route_finished_at = Some(returned);
+        }
         if t >= 3.0 && report.submitted && final_hold.is_none() {
             final_hold = Some(origin.elapsed());
         }
@@ -656,7 +688,7 @@ async fn record(
         "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
         "recipe":format!("{:?}",capabilities.recipe()),"registry_digest":capabilities.registry_digest(),"unified_memory":capabilities.unified_memory(),"enabled_features":format!("{:?}",capabilities.features()),
-        "extent":extent,"requested_hz":120,"interval_end_ns":interval_end_ns,
+        "extent":extent,"requested_hz":requested_hz,"interval_end_ns":interval_end_ns,
         "last_scenario_ns":last_sample_time.as_nanos(),"duration_including_drain_ns":origin.elapsed().as_nanos(),
         "world_origin_before_run_ns":origin.saturating_duration_since(driver.origin()).as_nanos(),
         "route":route,
@@ -666,6 +698,8 @@ async fn record(
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
+    result["gpu_pass_timing"] = json!(!motion_capture);
+    result["observer_only"] = json!(observer_only);
     result["interval_complete"] = json!(interval_complete);
     result["admission_policy"] = json!(admission.policy);
     result["admission_waits"] = json!(admission.waits);
