@@ -235,7 +235,7 @@ pub fn build_paired(
         let craft = &mut fleet.current[0];
         let speed = *speed_value.lock().expect("speed control");
         craft.propulsion = forward * f64::from(speed);
-        let _answers = advance_fleet(
+        let answers = advance_fleet(
             &mut fleet.current,
             number,
             step,
@@ -252,12 +252,14 @@ pub fn build_paired(
                 .map(|body| body.request(number, step))
                 .collect(),
         );
+        #[cfg(not(target_arch = "wasm32"))]
+        drop(answers);
         #[cfg(target_arch = "wasm32")]
         {
             // Retain a sliding window for status readers, including deliveries
             // on ticks followed by ticks with no reply in the same frame.
             const REPLY_HISTORY: usize = 64;
-            for answer in _answers {
+            for answer in answers {
                 if fleet.reply_ages.len() == REPLY_HISTORY {
                     fleet.reply_ages.pop_front();
                 }
@@ -341,7 +343,11 @@ fn browser_status(stats: thrum_water::query::QueryStats, fleet: &Fleet) {
         ("ageOlder", stats.age_older),
     ];
     for (name, value) in fields {
-        let _ = js_sys::Reflect::set(&report, &name.into(), &(value as f64).into());
+        drop(js_sys::Reflect::set(
+            &report,
+            &name.into(),
+            &(value as f64).into(),
+        ));
     }
     let poses = js_sys::Array::new();
     let replies = js_sys::Array::new();
@@ -364,7 +370,11 @@ fn browser_status(stats: thrum_water::query::QueryStats, fleet: &Fleet) {
         reply.push(&(used as f64).into());
         replies.push(&reply);
     }
-    let _ = js_sys::Reflect::set(&report, &"poses".into(), &poses);
-    let _ = js_sys::Reflect::set(&report, &"replies".into(), &replies);
-    let _ = js_sys::Reflect::set(&js_sys::global(), &"waterBodyStatus".into(), &report);
+    drop(js_sys::Reflect::set(&report, &"poses".into(), &poses));
+    drop(js_sys::Reflect::set(&report, &"replies".into(), &replies));
+    drop(js_sys::Reflect::set(
+        &js_sys::global(),
+        &"waterBodyStatus".into(),
+        &report,
+    ));
 }
