@@ -61,7 +61,7 @@ fn check_consumer(@builtin(global_invocation_id) id: vec3<u32>) {
 "
 );
 
-fn reader(device: &wgpu::Device) -> wgpu::ComputePipeline {
+pub(in crate::atmosphere) fn reader(device: &wgpu::Device) -> wgpu::ComputePipeline {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("reflection sampled readback"),
         source: wgpu::ShaderSource::Wgsl(READ.into()),
@@ -76,7 +76,7 @@ fn reader(device: &wgpu::Device) -> wgpu::ComputePipeline {
     })
 }
 
-fn read_texture(
+pub(in crate::atmosphere) fn read_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     pipeline: &wgpu::ComputePipeline,

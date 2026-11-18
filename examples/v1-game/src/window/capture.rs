@@ -48,6 +48,8 @@ pub(super) fn run(
             | "reconstruction-pan"
             | "reconstruction-stars"
             | "reconstruction-scrub"
+            | "atmosphere-scrub"
+            | "atmosphere-ground-pan"
             | "clouds-drift"
             | "clouds-still"
             | "checkpoint"
@@ -494,7 +496,11 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
     (!active_world || scenario == "reconstruction-pan")
         && !matches!(
             scenario,
-            "reconstruction-stars" | "reconstruction-scrub" | "exit-stop"
+            "reconstruction-stars"
+                | "reconstruction-scrub"
+                | "exit-stop"
+                | "atmosphere-scrub"
+                | "atmosphere-ground-pan"
         )
 }
 
@@ -549,7 +555,11 @@ async fn record(
     let (adapter, device, queue, capabilities) = metal_device(&instance, 1, hardware).await?;
     let game = capture_game(output, scenario, capture_output)?;
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
-    let motion_capture = mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift");
+    let motion_capture = mode == "realtime"
+        && matches!(
+            scenario,
+            "exit-route" | "exit-drift" | "atmosphere-scrub" | "atmosphere-ground-pan"
+        );
     if motion_capture {
         driver.set_timing_requested(false);
     }
@@ -864,6 +874,24 @@ fn lighting_edits<G: Game>(
     origin: Instant,
 ) -> Result<(), String> {
     let t = scenario_time.as_secs_f64();
+    if matches!(scenario, "atmosphere-scrub" | "atmosphere-ground-pan") {
+        let (solar, yaw) = if scenario == "atmosphere-scrub" {
+            let progress = ((t - 1.0) / 8.0).clamp(0.0, 1.0);
+            (
+                5.0 + 19.0 * progress,
+                -45.0 + 22.5 * (std::f64::consts::TAU * progress).sin(),
+            )
+        } else {
+            let progress = ((t - 1.0) / 5.0).clamp(0.0, 1.0);
+            (17.4 + 0.4 * progress, -110.0 + 40.0 * progress)
+        };
+        driver.parameters(&json!({"sky.solar_time":solar,"camera.yaw":yaw}).to_string())?;
+        trace.controls.push(
+            json!({"kind":scenario,"scenario_ns":scenario_time.as_nanos(),
+            "accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar,"yaw_degrees":yaw}),
+        );
+        return Ok(());
+    }
     let night = (1.0..3.0).contains(&t);
     let solar = if scenario == "variants" && night != *night_variant {
         *night_variant = night;
@@ -911,6 +939,8 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
         "exit-drift" => (25.0, 23.0, 23.0),
+        "atmosphere-scrub" => (11.0, 10.0, 0.0),
+        "atmosphere-ground-pan" => (8.0, 7.0, 0.0),
         "route" => (8.4, 8.0, f64::INFINITY),
         _ => (6.0, 4.0, 3.0),
     }
@@ -953,6 +983,8 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "clouds-drift"
                 | "exit-route"
                 | "exit-drift"
+                | "atmosphere-scrub"
+                | "atmosphere-ground-pan"
         )
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());

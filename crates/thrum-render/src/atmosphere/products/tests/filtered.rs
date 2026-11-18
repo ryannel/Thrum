@@ -89,7 +89,7 @@ impl Field {
 }
 
 // One representable RGBA16Float interval at the stored magnitude, then decoded.
-fn stored_step(value: f64, scale: f64) -> f64 {
+pub(super) fn stored_step(value: f64, scale: f64) -> f64 {
     let stored = (value * scale).abs();
     let exponent = stored.log2().floor().max(-14.0);
     2.0_f64.powf(exponent - 10.0) / scale
