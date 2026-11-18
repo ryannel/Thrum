@@ -179,17 +179,8 @@ mod view_knobs_gpu {
             .collect()
     }
 
-    #[test]
-    fn quality_controls_change_only_the_reflection_on_both_recipes() {
-        let Some(gpu) = thrum_test_support::gpu("mirror view knobs", Some(wgpu::Backend::Metal))
-        else {
-            return;
-        };
-        let (device, queue) = gpu.device(
-            thrum_test_support::Profile::Portable,
-            &thrum_test_support::Restriction::default(),
-        );
-        let output = device
+    fn output_view(device: &wgpu::Device) -> wgpu::TextureView {
+        device
             .create_texture(&wgpu::TextureDescriptor {
                 label: Some("quality witness output"),
                 size: wgpu::Extent3d {
@@ -204,7 +195,54 @@ mod view_knobs_gpu {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                 view_formats: &[],
             })
-            .create_view(&wgpu::TextureViewDescriptor::default());
+            .create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
+    fn verify_viewport(
+        host: &mut Host,
+        observation: &Mutex<Observation>,
+        surface: &SurfaceOutput<'_>,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        witness: &wgpu::Buffer,
+        viewport_report: &wgpu::Buffer,
+        recipe: &str,
+    ) {
+        let extent = host
+            .quality_knobs()
+            .into_iter()
+            .find(|knob| knob.name.ends_with("view extent percent"))
+            .expect("extent control");
+        observation.lock().expect("observation").measure_viewport = true;
+        for value in [25, 100] {
+            host.set_quality_knob(&extent.name, value)
+                .expect("set active viewport");
+            drop(sample(host, device, surface, witness));
+            let [width, height, inside, outside] = read_viewport(device, queue, viewport_report);
+            assert_eq!([width, height], EXTENT);
+            assert!(inside + outside > 0, "{recipe}: empty reflection");
+            assert_eq!(
+                outside > 0,
+                value == 100,
+                "{recipe}: pixels outside quarter viewport"
+            );
+            eprintln!(
+                "{recipe} {value}%: {width}x{height} targets, {inside} covered inside quarter viewport, {outside} outside"
+            );
+        }
+    }
+
+    #[test]
+    fn quality_controls_change_only_the_reflection_on_both_recipes() {
+        let Some(gpu) = thrum_test_support::gpu("mirror view knobs", Some(wgpu::Backend::Metal))
+        else {
+            return;
+        };
+        let (device, queue) = gpu.device(
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        );
+        let output = output_view(&device);
         let surface = SurfaceOutput {
             view: &output,
             extent: EXTENT,
@@ -390,29 +428,16 @@ mod view_knobs_gpu {
             }
             let (restored, _, _) = sample(&mut host, &device, &surface, &witness);
             assert_eq!(restored, before, "restore every setting byte for byte");
-            let extent = host
-                .quality_knobs()
-                .into_iter()
-                .find(|knob| knob.name.ends_with("view extent percent"))
-                .expect("extent control");
-            observation.lock().expect("observation").measure_viewport = true;
-            for value in [25, 100] {
-                host.set_quality_knob(&extent.name, value)
-                    .expect("set active viewport");
-                drop(sample(&mut host, &device, &surface, &witness));
-                let [width, height, inside, outside] =
-                    read_viewport(&device, &queue, &viewport_report);
-                assert_eq!([width, height], EXTENT);
-                assert!(inside + outside > 0, "{recipe}: empty reflection");
-                assert_eq!(
-                    outside > 0,
-                    value == 100,
-                    "{recipe}: pixels outside quarter viewport"
-                );
-                eprintln!(
-                    "{recipe} {value}%: {width}x{height} targets, {inside} covered inside quarter viewport, {outside} outside"
-                );
-            }
+            verify_viewport(
+                &mut host,
+                &observation,
+                &surface,
+                &device,
+                &queue,
+                &witness,
+                &viewport_report,
+                recipe,
+            );
         }
     }
 }
