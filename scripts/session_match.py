@@ -71,30 +71,27 @@ class Runner:
             subprocess.run([str(bindgen), "--target", "web", "--out-dir", str(self.web),
                             str(self.artifact)], check=True)
             self.loaded_wasm_hash = sha(self.web / "match_proof_bg.wasm")
-            shutil.copyfile(ROOT / "examples/match-proof/browser.js", self.web / "browser.js")
+            for name in ("browser.js", "image_worker.js"):
+                shutil.copyfile(ROOT / "examples/match-proof" / name, self.web / name)
             self.browser_version = conformance.command([CHROME, "--version"]).strip()
             conformance.SCRATCH.mkdir(parents=True, exist_ok=True)
 
-    def invoke(self, operation, count, mixed, data, last=None, files=()):
+    def browser_call(self, method, arguments, files, *, requests=()):
+        names = [file.name for file in files]
+        for file in files:
+            shutil.copyfile(file, self.web / file.name)
+        (self.web / "images.json").write_text(json.dumps({"images": names, "requests": requests}))
+        packet = json.loads(conformance.device_command("chrome", [
+            "node", "scripts/sim2d_browser.mjs", self.web,
+            json.dumps({"method": method, "args": arguments}), "browser",
+        ]))
+        self.user_agent = packet["userAgent"]
+        return packet["result"]
+
+    def invoke(self, operation, count, mixed, data, last=None):
         if self.web:
-            if operation == "restore":
-                files = (data,)
-                data = data.name
-            names = [file.name for file in files]
-            for file in files:
-                shutil.copyfile(file, self.web / file.name)
-            (self.web / "images.json").write_text(json.dumps(names))
-            arguments = [count, mixed, data]
-            if operation == "capture":
-                arguments.append(names)
-            else:
-                arguments.append(last)
-            packet = json.loads(conformance.device_command("chrome", [
-                "node", "scripts/sim2d_browser.mjs", self.web,
-                json.dumps({"method": operation, "args": arguments}), "browser",
-            ]))
-            self.user_agent = packet["userAgent"]
-            return packet["result"]
+            assert operation == "restore", "Chrome image capture uses the batch"
+            return self.browser_call(operation, [count, mixed, data.name, last], [data])
 
         data = ",".join(map(str, data)) if operation == "capture" else data
         arguments = [self.artifact, operation, count, str(mixed).lower(), data]
@@ -140,26 +137,10 @@ def mac_capture(native, revision, name, mixed):
         return packet
 
 
-def trace_images(native, receiver, scratch, revision, reference):
+def check_trace_images(native, receiver, reference, host, local, restore):
     trace, path, expected = reference
-    name, mixed = trace["name"], trace["variant"]
+    name = trace["name"]
     target = receiver.target
-    print(f"{target}: write {name} images", file=sys.stderr, flush=True)
-    if receiver is native:
-        host = local = mac_capture(native, revision, name, mixed)
-    elif receiver.web:
-        host = mac_capture(native, revision, name, mixed)
-        files = []
-        for row in host["rows"]:
-            image = scratch / f"{name}-{row['tick']}.bin"
-            image.write_bytes(bytes.fromhex(row["image"]))
-            files.append(image)
-        local = receiver.invoke("capture", 10_000, mixed, IMAGE_TICKS, files=files)
-    else:
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            pending = pool.submit(mac_capture, native, revision, name, mixed)
-            local = receiver.invoke("capture", 10_000, mixed, IMAGE_TICKS)
-            host = pending.result()
     assert host["identity"] == local["identity"], "rule-set identity differs across builds"
     assert [row["tick"] for row in host["rows"]] == list(IMAGE_TICKS), "Mac image ticks"
     assert [row["tick"] for row in local["rows"]] == list(IMAGE_TICKS), "target image ticks"
@@ -176,10 +157,7 @@ def trace_images(native, receiver, scratch, revision, reference):
         if tick:
             assert origin["reused"] > 0 and origin["despawned"] > 0, (name, tick, origin["reused"], origin["despawned"])
             assert origin["digest"] == retained[tick], f"{name} tick {tick}: writer digest differs"
-        image = scratch / f"{name}-{tick}.bin"
-        image.write_bytes(raw)
-        print(f"{target}: restore {name} at tick {tick} through {expected['ticks']}", file=sys.stderr, flush=True)
-        result = receiver.invoke("restore", 10_000, mixed, image, expected["ticks"])
+        result = restore(tick, raw)
         assert result["identity"] == host["identity"] and result["epoch"] != origin["epoch"]
         if receiver is native:
             assert result["pid"] != host["pid"], "restore must run in a separate process"
@@ -204,6 +182,65 @@ def trace_images(native, receiver, scratch, revision, reference):
     return proofs
 
 
+def trace_images(native, receiver, scratch, revision, reference):
+    trace, _, expected = reference
+    name, mixed = trace["name"], trace["variant"]
+    target = receiver.target
+    print(f"{target}: write {name} images", file=sys.stderr, flush=True)
+    if receiver is native:
+        host = local = mac_capture(native, revision, name, mixed)
+    else:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pending = pool.submit(mac_capture, native, revision, name, mixed)
+            local = receiver.invoke("capture", 10_000, mixed, IMAGE_TICKS)
+            host = pending.result()
+
+    def restore(tick, raw):
+        image = scratch / f"{name}-{tick}.bin"
+        image.write_bytes(raw)
+        print(f"{target}: restore {name} at tick {tick} through {expected['ticks']}", file=sys.stderr, flush=True)
+        return receiver.invoke("restore", 10_000, mixed, image, expected["ticks"])
+
+    return check_trace_images(native, receiver, reference, host, local, restore)
+
+
+def browser_images(native, receiver, scratch, revision, references):
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        captures = [pool.submit(mac_capture, native, revision, trace["name"], trace["variant"])
+                    for trace, _, _ in references]
+        hosts = [pending.result() for pending in captures]
+
+    files, requests = [], []
+    for (trace, _, expected), host in zip(references, hosts, strict=True):
+        name, mixed = trace["name"], trace["variant"]
+        trace_files = []
+        for row in host["rows"]:
+            image = scratch / f"{name}-{row['tick']}.bin"
+            image.write_bytes(bytes.fromhex(row["image"]))
+            trace_files.append(image)
+        files.extend(trace_files)
+        names = [file.name for file in trace_files]
+        requests.append([
+            {"method": "capture", "args": [10_000, mixed, IMAGE_TICKS, names]},
+            *({"method": "restore", "args": [10_000, mixed, filename, expected["ticks"]]} for filename in names),
+        ])
+
+    # Start the longest operations from both traces first. All workers run under
+    # one Chrome admission, after the Mac writers have finished.
+    ordered = list(itertools.chain.from_iterable(zip(*requests, strict=True)))
+    print(f"{receiver.target}: compare images and replay {len(files)} restores in one Chrome run",
+          file=sys.stderr, flush=True)
+    results = receiver.browser_call("proveImages", [], files, requests=ordered)
+    assert len(results) == len(ordered), "incomplete Chrome proof batch"
+    proofs = []
+    for index, (reference, host) in enumerate(zip(references, hosts, strict=True)):
+        local, *restored = results[index::len(references)]
+        by_tick = dict(zip(IMAGE_TICKS, restored, strict=True))
+        proofs.extend(check_trace_images(native, receiver, reference, host, local,
+                                        lambda tick, _raw: by_tick[tick]))
+    return proofs
+
+
 def images(target, scratch, revision):
     native = Runner("mac-metal", scratch)
     receiver = native if target == "mac-metal" else Runner(target, scratch)
@@ -213,6 +250,8 @@ def images(target, scratch, revision):
             pending = [pool.submit(trace_images, native, receiver, scratch, revision, reference)
                        for reference in references]
             proofs = [row for trace in pending for row in trace.result()]
+    elif receiver.web:
+        proofs = browser_images(native, receiver, scratch, revision, references)
     else:
         proofs = [row for reference in references
                   for row in trace_images(native, receiver, scratch, revision, reference)]
