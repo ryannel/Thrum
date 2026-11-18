@@ -473,3 +473,7 @@
   swash cut. Hardware Chrome drew all three bodies and passed the f64 map comparison inside its binding limits.
   [M4 evidence](../../evidence/WATERS/M4.md) links fixed and realtime inspections and the paired island cost.
   The thin sheet blends directly into the opaque colour. Refracted lookup and qualified device timing are later work.
+
+- 2026-11-18 M4.6 compares submitted coverage against an opaque-depth control at the sill and bank.
+  The Metal control confirmed that reset history makes dry ground reactive. The lake sweep still checks the
+  submitted level and motion across the stage edits. [Target run](../../evidence/WATERS/M4-checks.txt).
