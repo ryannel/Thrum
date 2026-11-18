@@ -3463,6 +3463,14 @@
         "evidence": "../evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md"
       },
       "current_priority": "parked until its active gate",
+      "deterministic_session": {
+        "implementation": "Caller-clocked host and client over the link interface. Baseline restore, post-commit set delivery, redundant timed input and ordered commands, adaptive lead, input results, bounded playout, listen-host admission and authority termination.",
+        "correctness": "The SESSION M2 tests cover independent reference-crowd worlds, conditioned delivery, negotiation, commands and result acknowledgement, authority failure and the playout position. Release matches compare all 1,200 digest checkpoints per client for both A0 and the harsh profile.",
+        "visuals": "Headless milestone. Windowed session presentation belongs to SESSION M7.",
+        "device": "Native M3 Max Mac with the in-memory link and virtual time.",
+        "performance": "Initial Mac release measurements taken under load. The cost record includes per-peer wire traffic, tick and send timing, warmed allocations and tripwires.",
+        "evidence": "../evidence/SESSION/M2.md"
+      },
       "transport_message_link": {
         "design": "../plans/TRANSPORT/DESIGN.md",
         "guide": "../TRANSPORT.md",

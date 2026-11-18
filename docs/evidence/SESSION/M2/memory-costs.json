@@ -1,0 +1,1123 @@
+{
+  "commit": "7a90b2db3ce2225e73516b2c498b8ac5116a63e0",
+  "dirty": true,
+  "utc": "2026-11-18T22:52:22.599890+00:00",
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "load": [
+    262.93212890625,
+    230.37646484375,
+    178.2314453125
+  ],
+  "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "target": "mac-metal",
+  "build": "release",
+  "artifact_sha256": "e0b71629bbd96567ca6b299e6785af71a7fcad4cf24199a7f26b130e43a40309",
+  "one_way_ms_jitter_ms_loss_ppm": {
+    "local": [
+      2,
+      0,
+      0
+    ],
+    "a0": [
+      50,
+      10,
+      20000
+    ],
+    "harsh": [
+      125,
+      50,
+      50000
+    ]
+  },
+  "duplicate_datagrams": true,
+  "scenario": "costs",
+  "runs": [
+    {
+      "baseline_digest": 2488756023073021747,
+      "bodies": 10000,
+      "final_digest": 15524549343109380701,
+      "host_barrier_to_send_ns": {
+        "max": 186414708,
+        "samples": 36000,
+        "total": 526053948648
+      },
+      "host_epoch": 37,
+      "host_image_write_ns": {
+        "max": 1587334,
+        "samples": 4,
+        "total": 4638001
+      },
+      "host_local_admitted": 0,
+      "host_tick": {
+        "advance_ns": {
+          "max": 142679625,
+          "samples": 2212,
+          "total": 32799494172
+        },
+        "allocated_bytes": {
+          "max": 4035,
+          "samples": 2212,
+          "total": 2051354
+        },
+        "allocations": {
+          "max": 7,
+          "samples": 2212,
+          "total": 8859
+        },
+        "engine_tick_ns": {
+          "max": 141725375,
+          "samples": 2212,
+          "total": 32713559626
+        },
+        "session_ns": {
+          "samples": 2212,
+          "total": 85934546
+        }
+      },
+      "image_bytes": 796745,
+      "listen_host": false,
+      "peers": [
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 124995,
+          "carrier_sets": {
+            "duplicated": 281481,
+            "lost": 5720,
+            "reordered": 4669
+          },
+          "clock_origin_us": 1011711,
+          "clock_rate_ppm": 1000000,
+          "confirmed_delay_us": {
+            "max": 2066710,
+            "samples": 35400,
+            "total": 4979403600
+          },
+          "datagram_sets": {
+            "max": 118,
+            "median": 8,
+            "p99": 10
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 3712,
+              "messages": 58,
+              "payload": 798401
+            },
+            {
+              "envelope": 2302208,
+              "messages": 35972,
+              "payload": 6021377
+            }
+          ],
+          "join_us": 358319,
+          "late_frames": 116,
+          "obsolete_set_records": 527105,
+          "off_grid_frames": 35983,
+          "player": 0,
+          "reliable_sets": 135,
+          "repeat_depth": 1,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 16,
+          "slot": 0,
+          "stall_duration_us": {
+            "max": 1924923,
+            "samples": 1,
+            "total": 1924923
+          },
+          "ticks_held": 871,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2304896,
+              "messages": 36014,
+              "payload": 1728320
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 207867625,
+              "samples": 2205,
+              "total": 38921302894
+            },
+            "allocated_bytes": {
+              "max": 112,
+              "samples": 2205,
+              "total": 246064
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2205,
+              "total": 2197
+            },
+            "engine_tick_ns": {
+              "max": 207862375,
+              "samples": 2205,
+              "total": 38855728359
+            },
+            "session_ns": {
+              "samples": 2205,
+              "total": 65574535
+            }
+          },
+          "world_epoch": 100
+        },
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 108329,
+          "carrier_sets": {
+            "duplicated": 281145,
+            "lost": 5999,
+            "reordered": 4441
+          },
+          "clock_origin_us": 2023422,
+          "clock_rate_ppm": 1000000,
+          "confirmed_delay_us": {
+            "max": 2083378,
+            "samples": 35400,
+            "total": 5217516133
+          },
+          "datagram_sets": {
+            "max": 108,
+            "median": 8,
+            "p99": 10
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 3584,
+              "messages": 56,
+              "payload": 798350
+            },
+            {
+              "envelope": 2302272,
+              "messages": 35973,
+              "payload": 6025795
+            }
+          ],
+          "join_us": 366652,
+          "late_frames": 194,
+          "obsolete_set_records": 526432,
+          "off_grid_frames": 35981,
+          "player": 1,
+          "reliable_sets": 135,
+          "repeat_depth": 2,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 16,
+          "slot": 3,
+          "stall_duration_us": {
+            "max": 1941589,
+            "samples": 1,
+            "total": 1941589
+          },
+          "ticks_held": 149,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2304960,
+              "messages": 36015,
+              "payload": 2844461
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 162570333,
+              "samples": 2204,
+              "total": 36313803945
+            },
+            "allocated_bytes": {
+              "max": 143,
+              "samples": 2204,
+              "total": 257543
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2204,
+              "total": 1801
+            },
+            "engine_tick_ns": {
+              "max": 162565291,
+              "samples": 2204,
+              "total": 36255692926
+            },
+            "session_ns": {
+              "samples": 2204,
+              "total": 58111019
+            }
+          },
+          "world_epoch": 101
+        },
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 16666,
+          "carrier_sets": {
+            "duplicated": 279921,
+            "lost": 6157,
+            "reordered": 4424
+          },
+          "clock_origin_us": 3035133,
+          "clock_rate_ppm": 1000100,
+          "confirmed_delay_us": {
+            "max": 2075041,
+            "samples": 35400,
+            "total": 4593584398
+          },
+          "datagram_sets": {
+            "max": 124,
+            "median": 8,
+            "p99": 10
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 3840,
+              "messages": 60,
+              "payload": 798421
+            },
+            {
+              "envelope": 2302080,
+              "messages": 35970,
+              "payload": 6002023
+            }
+          ],
+          "join_us": 283322,
+          "late_frames": 46560,
+          "obsolete_set_records": 523985,
+          "off_grid_frames": 35982,
+          "player": 2,
+          "reliable_sets": 136,
+          "repeat_depth": 4,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 16,
+          "slot": 1,
+          "stall_duration_us": {
+            "max": 1950117,
+            "samples": 2,
+            "total": 1958451
+          },
+          "ticks_held": 147,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2305280,
+              "messages": 36020,
+              "payload": 5076634
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 184397333,
+              "samples": 2204,
+              "total": 35855238588
+            },
+            "allocated_bytes": {
+              "max": 269,
+              "samples": 2204,
+              "total": 293419
+            },
+            "allocations": {
+              "max": 2,
+              "samples": 2204,
+              "total": 1432
+            },
+            "engine_tick_ns": {
+              "max": 184386541,
+              "samples": 2204,
+              "total": 35781576172
+            },
+            "session_ns": {
+              "samples": 2204,
+              "total": 73662416
+            }
+          },
+          "world_epoch": 102
+        },
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 116662,
+          "carrier_sets": {
+            "duplicated": 281103,
+            "lost": 5720,
+            "reordered": 4750
+          },
+          "clock_origin_us": 4046844,
+          "clock_rate_ppm": 1000000,
+          "confirmed_delay_us": {
+            "max": 2083378,
+            "samples": 35400,
+            "total": 4975004128
+          },
+          "datagram_sets": {
+            "max": 105,
+            "median": 8,
+            "p99": 10
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 3840,
+              "messages": 60,
+              "payload": 798402
+            },
+            {
+              "envelope": 2302016,
+              "messages": 35969,
+              "payload": 6016449
+            }
+          ],
+          "join_us": 374985,
+          "late_frames": 311670,
+          "obsolete_set_records": 526348,
+          "off_grid_frames": 35982,
+          "player": 3,
+          "reliable_sets": 136,
+          "repeat_depth": 8,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 16,
+          "slot": 2,
+          "stall_duration_us": {
+            "max": 1941589,
+            "samples": 1,
+            "total": 1941589
+          },
+          "ticks_held": 160,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2304832,
+              "messages": 36013,
+              "payload": 9539870
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 154918125,
+              "samples": 2204,
+              "total": 37451233262
+            },
+            "allocated_bytes": {
+              "max": 329,
+              "samples": 2204,
+              "total": 722813
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2204,
+              "total": 2197
+            },
+            "engine_tick_ns": {
+              "max": 154911625,
+              "samples": 2204,
+              "total": 37311003477
+            },
+            "session_ns": {
+              "samples": 2204,
+              "total": 140229785
+            }
+          },
+          "world_epoch": 103
+        }
+      ],
+      "pid": 13155,
+      "profile": "a0",
+      "repeats": 8,
+      "rule_set": "c1e8f7a89e0f97ed28eaf8630c659a032aeae0f16a20d5798ba36639d2696dba",
+      "seed": 29721,
+      "stall_us": [
+        300471314,
+        302479567
+      ],
+      "stretch": [
+        [
+          {
+            "changes": 9,
+            "fraction": 0.9762146892655367,
+            "own_frames": 34558,
+            "player": 0,
+            "reported_lead": 6.766299435028248,
+            "ticks": 35400,
+            "true_lead": 6.05183615819209
+          },
+          {
+            "changes": 10,
+            "fraction": 0.9961581920903955,
+            "own_frames": 35264,
+            "player": 1,
+            "reported_lead": 6.783954802259887,
+            "ticks": 35400,
+            "true_lead": 6.064774011299435
+          },
+          {
+            "changes": 15,
+            "fraction": 0.9961581920903955,
+            "own_frames": 35264,
+            "player": 2,
+            "reported_lead": 5.785338983050847,
+            "ticks": 35400,
+            "true_lead": 6.074209039548022
+          },
+          {
+            "changes": 9,
+            "fraction": 0.995819209039548,
+            "own_frames": 35252,
+            "player": 3,
+            "reported_lead": 6.779293785310735,
+            "ticks": 35400,
+            "true_lead": 6.0653389830508475
+          }
+        ]
+      ],
+      "ticks": 36000,
+      "digest_ticks_compared_per_peer": 1200,
+      "digest_trace_sha256": "5ce91cbaed504498f19d11ce3201db74a23e40a1b74543b41fb9b803dd496d58",
+      "elapsed_s": 2026.7540525826626,
+      "system_load_before": [
+        262.93212890625,
+        230.37646484375,
+        178.2314453125
+      ],
+      "system_load_after": [
+        122.0869140625,
+        110.10498046875,
+        105.6513671875
+      ],
+      "tripwires": [
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 0,
+          "direction": "from_host",
+          "bytes_per_second": 15209.192482817012
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 1,
+          "direction": "to_host",
+          "bytes_per_second": 8582.360019466278
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 1,
+          "direction": "from_host",
+          "bytes_per_second": 15216.364006053214
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 2,
+          "direction": "to_host",
+          "bytes_per_second": 12303.107271187911
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 2,
+          "direction": "from_host",
+          "bytes_per_second": 15176.969793937456
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 3,
+          "direction": "to_host",
+          "bytes_per_second": 19740.938514563044
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 3,
+          "direction": "from_host",
+          "bytes_per_second": 15200.874315847017
+        }
+      ],
+      "relative_regression_comparison": "initial measurement for this profile and workload",
+      "join_scaling_control": {
+        "bodies": 2000,
+        "image_bytes": 164745,
+        "join_us": [
+          258323,
+          274989,
+          266656,
+          258323
+        ],
+        "baseline_transfer_us": [
+          24999,
+          16666,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "baseline_digest": 2488756023073021747,
+      "bodies": 10000,
+      "final_digest": 7311344856793227046,
+      "host_barrier_to_send_ns": {
+        "max": 240745625,
+        "samples": 36000,
+        "total": 517002455057
+      },
+      "host_epoch": 37,
+      "host_image_write_ns": {
+        "max": 1448708,
+        "samples": 4,
+        "total": 3315167
+      },
+      "host_local_admitted": 0,
+      "host_tick": {
+        "advance_ns": {
+          "max": 171059000,
+          "samples": 2212,
+          "total": 31616305796
+        },
+        "allocated_bytes": {
+          "max": 3753,
+          "samples": 2212,
+          "total": 3324339
+        },
+        "allocations": {
+          "max": 6,
+          "samples": 2212,
+          "total": 8858
+        },
+        "engine_tick_ns": {
+          "max": 170977166,
+          "samples": 2212,
+          "total": 31539382454
+        },
+        "session_ns": {
+          "samples": 2212,
+          "total": 76923342
+        }
+      },
+      "image_bytes": 796745,
+      "listen_host": false,
+      "peers": [
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 299988,
+          "carrier_sets": {
+            "duplicated": 531588,
+            "lost": 27615,
+            "reordered": 235670
+          },
+          "clock_origin_us": 1011711,
+          "clock_rate_ppm": 1000000,
+          "confirmed_delay_us": {
+            "max": 2133384,
+            "samples": 35400,
+            "total": 13208843652
+          },
+          "datagram_sets": {
+            "max": 85,
+            "median": 16,
+            "p99": 20
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 6272,
+              "messages": 98,
+              "payload": 799228
+            },
+            {
+              "envelope": 2299584,
+              "messages": 35931,
+              "payload": 11164987
+            }
+          ],
+          "join_us": 883298,
+          "late_frames": 2460,
+          "obsolete_set_records": 1027344,
+          "off_grid_frames": 35817,
+          "player": 0,
+          "reliable_sets": 154,
+          "repeat_depth": 1,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 13,
+          "slot": 1,
+          "stall_duration_us": {
+            "max": 1908257,
+            "samples": 5,
+            "total": 1941589
+          },
+          "ticks_held": 968,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2306432,
+              "messages": 36038,
+              "payload": 1729280
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 203501834,
+              "samples": 2206,
+              "total": 37431257883
+            },
+            "allocated_bytes": {
+              "max": 112,
+              "samples": 2206,
+              "total": 131824
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2206,
+              "total": 1177
+            },
+            "engine_tick_ns": {
+              "max": 203497500,
+              "samples": 2206,
+              "total": 37356370945
+            },
+            "session_ns": {
+              "samples": 2206,
+              "total": 74886938
+            }
+          },
+          "world_epoch": 100
+        },
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 241657,
+          "carrier_sets": {
+            "duplicated": 532501,
+            "lost": 28093,
+            "reordered": 239457
+          },
+          "clock_origin_us": 2023422,
+          "clock_rate_ppm": 1000000,
+          "confirmed_delay_us": {
+            "max": 2166715,
+            "samples": 35400,
+            "total": 8848923117
+          },
+          "datagram_sets": {
+            "max": 127,
+            "median": 16,
+            "p99": 20
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 5184,
+              "messages": 81,
+              "payload": 798937
+            },
+            {
+              "envelope": 2300736,
+              "messages": 35949,
+              "payload": 11193627
+            }
+          ],
+          "join_us": 849966,
+          "late_frames": 11536,
+          "obsolete_set_records": 1029166,
+          "off_grid_frames": 35821,
+          "player": 1,
+          "reliable_sets": 150,
+          "repeat_depth": 2,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 16,
+          "slot": 0,
+          "stall_duration_us": {
+            "max": 1941589,
+            "samples": 7,
+            "total": 2033252
+          },
+          "ticks_held": 3333,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2306240,
+              "messages": 36035,
+              "payload": 2845348
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 154298458,
+              "samples": 2205,
+              "total": 36694758028
+            },
+            "allocated_bytes": {
+              "max": 143,
+              "samples": 2205,
+              "total": 125125
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2205,
+              "total": 875
+            },
+            "engine_tick_ns": {
+              "max": 154293500,
+              "samples": 2205,
+              "total": 36680280494
+            },
+            "session_ns": {
+              "samples": 2205,
+              "total": 14477534
+            }
+          },
+          "world_epoch": 101
+        },
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 74997,
+          "carrier_sets": {
+            "duplicated": 531803,
+            "lost": 26986,
+            "reordered": 237293
+          },
+          "clock_origin_us": 3035133,
+          "clock_rate_ppm": 1000100,
+          "confirmed_delay_us": {
+            "max": 2133376,
+            "samples": 35400,
+            "total": 8222032293
+          },
+          "datagram_sets": {
+            "max": 88,
+            "median": 15,
+            "p99": 20
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 5952,
+              "messages": 93,
+              "payload": 799162
+            },
+            {
+              "envelope": 2299904,
+              "messages": 35936,
+              "payload": 11159533
+            }
+          ],
+          "join_us": 733304,
+          "late_frames": 63766,
+          "obsolete_set_records": 1027701,
+          "off_grid_frames": 35806,
+          "player": 2,
+          "reliable_sets": 152,
+          "repeat_depth": 4,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 17,
+          "slot": 3,
+          "stall_duration_us": {
+            "max": 1900114,
+            "samples": 7,
+            "total": 2008451
+          },
+          "ticks_held": 453,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2306176,
+              "messages": 36034,
+              "payload": 5077358
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 147275500,
+              "samples": 2204,
+              "total": 35850212572
+            },
+            "allocated_bytes": {
+              "max": 205,
+              "samples": 2204,
+              "total": 325540
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2204,
+              "total": 1588
+            },
+            "engine_tick_ns": {
+              "max": 147263917,
+              "samples": 2204,
+              "total": 35808776758
+            },
+            "session_ns": {
+              "samples": 2204,
+              "total": 41435814
+            }
+          },
+          "world_epoch": 102
+        },
+        {
+          "axes_changes": 3273,
+          "baseline_transfer_us": 333320,
+          "carrier_sets": {
+            "duplicated": 533543,
+            "lost": 26188,
+            "reordered": 239621
+          },
+          "clock_origin_us": 4046844,
+          "clock_rate_ppm": 1000000,
+          "confirmed_delay_us": {
+            "max": 2150044,
+            "samples": 35400,
+            "total": 7935951409
+          },
+          "datagram_sets": {
+            "max": 95,
+            "median": 16,
+            "p99": 20
+          },
+          "digest_ticks": 1200,
+          "from_host": [
+            {
+              "envelope": 5568,
+              "messages": 87,
+              "payload": 799051
+            },
+            {
+              "envelope": 2300288,
+              "messages": 35942,
+              "payload": 11176643
+            }
+          ],
+          "join_us": 908297,
+          "late_frames": 287874,
+          "obsolete_set_records": 1031253,
+          "off_grid_frames": 35820,
+          "player": 3,
+          "reliable_sets": 153,
+          "repeat_depth": 8,
+          "restored": [
+            0,
+            2488756023073021747,
+            796745
+          ],
+          "skip_advances": 17,
+          "slot": 2,
+          "stall_duration_us": {
+            "max": 1891591,
+            "samples": 7,
+            "total": 2041585
+          },
+          "ticks_held": 526,
+          "to_host": [
+            {
+              "envelope": 64,
+              "messages": 1,
+              "payload": 34
+            },
+            {
+              "envelope": 2305344,
+              "messages": 36021,
+              "payload": 9540215
+            }
+          ],
+          "warmed_tick": {
+            "advance_ns": {
+              "max": 230884666,
+              "samples": 2204,
+              "total": 37503985830
+            },
+            "allocated_bytes": {
+              "max": 329,
+              "samples": 2204,
+              "total": 76986
+            },
+            "allocations": {
+              "max": 1,
+              "samples": 2204,
+              "total": 234
+            },
+            "engine_tick_ns": {
+              "max": 230870625,
+              "samples": 2204,
+              "total": 37468440290
+            },
+            "session_ns": {
+              "samples": 2204,
+              "total": 35545540
+            }
+          },
+          "world_epoch": 103
+        }
+      ],
+      "pid": 13156,
+      "profile": "harsh",
+      "repeats": 8,
+      "rule_set": "c1e8f7a89e0f97ed28eaf8630c659a032aeae0f16a20d5798ba36639d2696dba",
+      "seed": 29721,
+      "stall_us": [
+        301046291,
+        303054544
+      ],
+      "stretch": [
+        [
+          {
+            "changes": 246,
+            "fraction": 0.9734180790960452,
+            "own_frames": 34459,
+            "player": 0,
+            "reported_lead": 11.749717514124294,
+            "ticks": 35400,
+            "true_lead": 10.257401129943503
+          },
+          {
+            "changes": 245,
+            "fraction": 0.9071751412429379,
+            "own_frames": 32114,
+            "player": 1,
+            "reported_lead": 10.809124293785311,
+            "ticks": 35400,
+            "true_lead": 10.299745762711865
+          },
+          {
+            "changes": 265,
+            "fraction": 0.987909604519774,
+            "own_frames": 34972,
+            "player": 2,
+            "reported_lead": 8.989237288135593,
+            "ticks": 35400,
+            "true_lead": 10.486525423728814
+          },
+          {
+            "changes": 239,
+            "fraction": 0.985819209039548,
+            "own_frames": 34898,
+            "player": 3,
+            "reported_lead": 11.782005649717513,
+            "ticks": 35400,
+            "true_lead": 10.28268361581921
+          }
+        ]
+      ],
+      "ticks": 36000,
+      "digest_ticks_compared_per_peer": 1200,
+      "digest_trace_sha256": "352d14d5a0d6854419f7d428e786788c2f4f2397f75f785c79ef95dfeeaab41d",
+      "elapsed_s": 2121.2536103748716,
+      "system_load_before": [
+        262.93212890625,
+        230.37646484375,
+        178.2314453125
+      ],
+      "system_load_after": [
+        74.33740234375,
+        98.64794921875,
+        101.7861328125
+      ],
+      "tripwires": [
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 0,
+          "direction": "from_host",
+          "bytes_per_second": 23782.976007146524
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 1,
+          "direction": "to_host",
+          "bytes_per_second": 8585.971613901056
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 1,
+          "direction": "from_host",
+          "bytes_per_second": 23830.33006006547
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 2,
+          "direction": "to_host",
+          "bytes_per_second": 12305.80721718899
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 2,
+          "direction": "from_host",
+          "bytes_per_second": 23773.776191142846
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 3,
+          "direction": "to_host",
+          "bytes_per_second": 19742.36681933028
+        },
+        {
+          "name": "A0 peer bandwidth above 64 kbit/s",
+          "peer": 3,
+          "direction": "from_host",
+          "bytes_per_second": 23802.107291187513
+        }
+      ],
+      "relative_regression_comparison": "initial measurement for this profile and workload",
+      "join_scaling_control": {
+        "bodies": 2000,
+        "image_bytes": 164745,
+        "join_us": [
+          874965,
+          624975,
+          716638,
+          641641
+        ],
+        "baseline_transfer_us": [
+          291655,
+          16666,
+          58331,
+          66664
+        ]
+      }
+    }
+  ],
+  "result": "pass"
+}

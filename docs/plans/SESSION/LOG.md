@@ -120,3 +120,8 @@
   accepts the intact control. All three targets matched the retained digests. The Mac cost record flags the
   increase in the 5,000-body write tick. The [M1 proof](../../evidence/SESSION/M1.md) records the target runs,
   SIM-2D fixture audit and the shared exact-image check.
+- 2026-11-19 Built caller-clocked deterministic sessions with post-commit set delivery, baseline restore,
+  adaptive input lead, ordered commands, receipt-based results, listen-host admission and bounded playout.
+  The Mac proofs matched all 1,200 digest checkpoints on four independent clients at both link profiles.
+  The command, failure, negotiation and playout controls passed. Separate release cost runs recorded engine
+  and session time under load and flagged the 64 kbit/s peer bandwidth tripwire. [M2 proof](../../evidence/SESSION/M2.md)
