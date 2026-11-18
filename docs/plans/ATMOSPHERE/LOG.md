@@ -634,3 +634,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   culling modes. The fixed exit replay removes the tick-234 strip and retains moving near shadows
   and far ridge shade. The shared main-branch check verifies the registered Mac and Chrome baselines.
   [Builder evidence](../../evidence/ATMOSPHERE/M10/README.md)
+- 2026-11-18 M6 adds independent same-run stored-table and cube checks on Metal and Chrome.
+  H5 records P7/P8 differences. All existing guard expectations and H1–H4 cases are unchanged.
+  Paired Metal route timing passes with three pass excursions and two scrub gaps investigated.
+  Both targets reproduce the held 17.4 h terrain-lip step. A terrain ray diagnostic identifies
+  the abrupt receiver distance and normal change. The 6.1 h prop rays also hit the east terrain.
+  A ruling with SHOWCASE and APPLE-TILE is needed to change the scene and refresh the sunset references.
+  [Evidence](../../evidence/ATMOSPHERE/M6/README.md) and [handoff](../../evidence/ATMOSPHERE/M6-handoff.md)
