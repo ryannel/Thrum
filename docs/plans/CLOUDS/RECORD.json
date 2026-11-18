@@ -238,12 +238,12 @@
       }
     },
     "M3": {
-      "definitions": "7fb6b439b3113a2e3419fddacf1e7aa5e2eb1473ccdfd5c340bd5004642dc7c2",
+      "definitions": "ef22da5996ddd5f9dd8e2c7f57902f2bf9247174a4f1ef49293207c13d5a415f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-18T17:00:13Z"
+        "task": "Unblock CLOUDS M3. The builder wrote: a planner decision reopening the Metal trials for the toward-Sun diffuse-light cor",
+        "at": "2026-11-18T20:02:47Z"
       }
     },
     "M4": {
@@ -602,11 +602,15 @@
     {
       "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-18T17:00:13Z"
+    },
+    {
+      "task": "Unblock CLOUDS M3. The builder wrote: a planner decision reopening the Metal trials for the toward-Sun diffuse-light correction would unblock M3. Its handoff, docs/evidence/CLOUDS/M3-handoff.md on branch build/clouds at f38c7d77ad24 (read it with `git show`), lists three failed turret looks: a shelf/stripe and a bright toward-Sun underside, with the strongest stripe in solar diffuse. It also names the controls that would isolate the cause. This is the second three-look stop in M3 today, after the shape representation change, so don't plan another round of looks. Decide on evidence: either name the cause (the builder's controls are a cheap way to measure it) and a correction grounded in how shipped real-time cloud renderers light the toward-Sun underside, or, if the cause can't be pinned cheaply, move the toward-Sun underside cue out of M3 into a later milestone so that M3 lands with what already passes. Record which you chose and why. The bar is a plausible shipped-game look at the plan's frame cost; references diagnose, never gate.",
+      "at": "2026-11-18T20:02:47Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T17:00:13Z"
+    "at": "2026-11-18T20:02:47Z"
   },
   "design_history": [
     {
