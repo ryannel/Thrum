@@ -51,7 +51,7 @@ mod metal {
                 let witness_bytes = witnessed.map_or_else(Vec::new, |size| {
                     let (tx, rx) = std::sync::mpsc::channel();
                     witness.map_async(wgpu::MapMode::Read, 0..size, move |result| {
-                        tx.send(result).expect("map caller")
+                        tx.send(result).expect("map caller");
                     });
                     device
                         .poll(wgpu::PollType::Wait {

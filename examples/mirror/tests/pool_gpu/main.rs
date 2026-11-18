@@ -192,28 +192,30 @@ impl Fixture<'_> {
         scene.view = view;
         scene.instances[0].ids[3] = 0;
         scene.sun_shadows = false;
-        let mut host = FrameHost::new(
-            self.caps,
-            self.queue,
-            FrameConfig {
-                render_extent: [SIDE; 2],
-                surface: Some(SurfaceProfile {
-                    format: OUTPUT_FORMAT,
-                    extent: [SIDE; 2],
-                }),
-            },
-            StillWorld::default(),
-            Source {
-                frame: SceneFrame {
-                    view,
-                    lighting: light,
+        let mut host = Box::new(
+            Box::pin(FrameHost::new(
+                self.caps,
+                self.queue,
+                FrameConfig {
+                    render_extent: [SIDE; 2],
+                    surface: Some(SurfaceProfile {
+                        format: OUTPUT_FORMAT,
+                        extent: [SIDE; 2],
+                    }),
                 },
-            },
-            scene,
-            1.0,
-        )
-        .await
-        .expect("host");
+                StillWorld::default(),
+                Source {
+                    frame: SceneFrame {
+                        view,
+                        lighting: light,
+                    },
+                },
+                scene,
+                1.0,
+            ))
+            .await
+            .expect("host"),
+        );
         let mut parts: Vec<Box<dyn thrum_render::contribution::SceneContribution>> =
             vec![Box::new(panel::PanelDraw::new(panel))];
         let air = Arc::new(Mutex::new(None));
@@ -386,8 +388,8 @@ fn the_pool_composes_both_stretches_once() {
 async fn prove(device: &wgpu::Device, queue: &wgpu::Queue, caps: &DeviceCapabilities) -> [f32; 3] {
     let fixture = Fixture {
         device,
-        queue,
         caps,
+        queue,
     };
     let angle = 10.0_f32.to_radians();
     let ray = Vec3::new(0.0, angle.sin(), -angle.cos());

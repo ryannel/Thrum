@@ -244,6 +244,7 @@ try {
         viewProof = { report: await probe.prove_views(store) };
       })().catch(error => { viewProof = { error: String(error), gpu: mirrorErrors }; }); true`);
     results.proof = await waitFor(async () => {
+      assert.deepEqual(results.consoleErrors, []);
       const state = await evaluate('viewProof');
       if (state.error) throw Error(JSON.stringify(state));
       return state.report;

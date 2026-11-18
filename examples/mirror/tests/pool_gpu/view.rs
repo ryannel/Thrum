@@ -18,9 +18,11 @@ use thrum_render::{
     },
     extract::{ExtractReport, RenderExtractor, SourceTick},
     graph::{AccessKind, ResourceDescriptor, ResourceScope},
-    runtime::{FrameConfig, FrameHost, SceneFrame, SceneSource},
+    present::SurfaceProfile,
+    runtime::{FrameConfig, FrameHost, SceneFrame, SceneSource, SurfaceOutput},
     synthetic::{
-        FrameLighting, PhotometricEnvironment, SyntheticPointLight, SyntheticScene, SyntheticView,
+        FrameLighting, OUTPUT_FORMAT, PhotometricEnvironment, SyntheticPointLight, SyntheticScene,
+        SyntheticView,
     },
 };
 
@@ -271,23 +273,28 @@ impl Fixture<'_> {
             radius: 8.0,
             candela: [500.0, 350.0, 50.0],
         }];
-        let mut host = FrameHost::new(
-            self.caps,
-            self.queue,
-            FrameConfig {
-                render_extent: extent,
-                surface: None,
-            },
-            StillWorld::default(),
-            Source {
-                view,
-                entity: cooked.is_none(),
-            },
-            scene,
-            1.0,
-        )
-        .await
-        .expect("host");
+        let mut host = Box::new(
+            Box::pin(FrameHost::new(
+                self.caps,
+                self.queue,
+                FrameConfig {
+                    render_extent: extent,
+                    surface: Some(SurfaceProfile {
+                        extent,
+                        format: OUTPUT_FORMAT,
+                    }),
+                },
+                StillWorld::default(),
+                Source {
+                    view,
+                    entity: cooked.is_none(),
+                },
+                scene,
+                1.0,
+            ))
+            .await
+            .expect("host"),
+        );
         let mut parts: Vec<Box<dyn SceneContribution>> = Vec::new();
         let stats = cooked.map(|remote| {
             let assets = CookedAssets::new(CookedConfig::new(
@@ -309,7 +316,30 @@ impl Fixture<'_> {
         host.set_scene_contribution(Box::new(SceneContributions::new(parts)))
             .expect("view and main fixture");
         host.set_timing_requested(false);
-        let sent = host.drive(Duration::ZERO, None).expect("submit fixture");
+        let presenter = self
+            .device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("view proof output"),
+                size: wgpu::Extent3d {
+                    width: extent[0],
+                    height: extent[1],
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: OUTPUT_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let surface = SurfaceOutput {
+            view: &presenter,
+            extent,
+        };
+        let sent = host
+            .drive(Duration::ZERO, Some(&surface))
+            .expect("submit fixture");
         assert!(sent.submitted);
         let deadline = retire::Instant::now() + Duration::from_secs(15);
         loop {
@@ -322,7 +352,7 @@ impl Fixture<'_> {
                     break;
                 }
                 assert!(
-                    host.drive(Duration::ZERO, None)
+                    host.drive(Duration::ZERO, Some(&surface))
                         .expect("draw cooked content")
                         .submitted
                 );
