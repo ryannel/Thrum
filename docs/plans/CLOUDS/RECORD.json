@@ -238,12 +238,12 @@
       }
     },
     "M3": {
-      "definitions": "33c8f1e4a96494ab37022ff90b34372cb8f1809cc5d02f4c91c6d4d3dc5ea631",
+      "definitions": "82883a402706129aef8b4381e43eb3ec3771c92ddbca571004baedc34e9e4e2c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-18T10:47:28Z"
       }
     },
     "M4": {
@@ -265,21 +265,21 @@
       }
     },
     "M6": {
-      "definitions": "f7fe68f926a0a38f7f95c021278f54b22ec1dc30e9a8f96948b327c96cf9bae2",
+      "definitions": "c04931d1861ef5d4a6042a6d608e9c6b2e66aa89096b104be8f820fd871fc571",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-18T10:47:28Z"
       }
     },
     "M7": {
-      "definitions": "ca9d034f87f9ff64a58851108f91cdc0bac500c488e7c5b10940508aa952b0bb",
+      "definitions": "74109040cf7067aee4766aba141442d1f0ee8ab03e14cd7ca93c0a0a8c921687",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
-        "at": "2026-11-17T23:05:22Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-18T10:47:28Z"
       }
     },
     "M8": {
@@ -499,12 +499,12 @@
       }
     },
     "M14": {
-      "definitions": "6b6d2f81d2e8e47c5dcf1edfbb7a33b8b1f9bc6fbb4a44dd2a21ef74f499cc39",
+      "definitions": "0d57e14e6d49247b2da1ab4fde79587aa8c77d6b2c11b0c8a8ce59c766d43ed5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 1 Must Fix findings ",
-        "at": "2026-11-18T10:04:12Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-18T10:47:28Z"
       }
     },
     "M15": {
@@ -590,11 +590,15 @@
     {
       "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-18T10:04:12Z"
+    },
+    {
+      "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. This is the design's 12th review round, so keep each fix the smallest check that closes the hole the reviewer showed (for MF1, one check that the GPU's optical depth along a sight line agrees with the public query within an allowance; for MF2, require the first-frame record to contain a cloud measurement). The owner's bar is plausible shipped-game visuals in motion plus cost tripwires, with proof proportional to risk: don't widen other checks or add new numeric gates.",
+      "at": "2026-11-18T10:47:28Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T10:04:12Z"
+    "at": "2026-11-18T10:47:28Z"
   },
   "design_history": [
     {
