@@ -258,7 +258,7 @@
       }
     },
     "M3": {
-      "definitions": "0b8c43f8fd43ae99abc01eccafb8ae1dcd859c28d5a719cd12f4c86b8ff4489d",
+      "definitions": "5465b04a19bd0910a65980e1007b17d1edf07d7c6a18f85601d12b13f78bf9c6",
       "reviews": [
         {
           "verdict": "fail",
@@ -319,45 +319,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
-        "at": "2026-11-14T13:57:36Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ],
-      "ready_for_review": {
-        "commit": "410bb71be8e3c51d2911161000e80ef54b378a90",
-        "checked": "0fa0fb62710a56ab14d9348e00eae5af2f7b8839",
-        "at": "2026-11-18T05:20:02Z",
-        "reused": [
-          "Test command",
-          "M3.7"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.0-alpha.11.1",
-        "path": "headless",
-        "usage": {
-          "input": 1005764,
-          "cached": 55336320,
-          "output": 92605,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 1005764,
-          "cached": 55336320,
-          "output": 92605,
-          "turns": 1
-        }
+        "task": "SCENE-VIEWS M3 is blocked on M3.4 only: the builder wants every other builder paused for a quiet capture-off Metal timin",
+        "at": "2026-11-18T10:26:13Z"
       }
     }
   },
@@ -385,11 +348,15 @@
     {
       "task": "The SCENE-VIEWS design review's Must Fix shared-height-map-camera-support came back after your last fix (docs/evidence/SCENE-VIEWS/design-review.md on origin/main). The design now admits every camera on the main camera's vertical but exempts some of them through a rounding exception, while M1.1, M2.1 and M1's quality bar still promise equality with the main view. Make the acceptance contract and the mechanism say the same thing: either remove the exception so every admitted camera really gets identical shadow products, or narrow the admitted range and the equality claims to exactly where they hold, and state the limit everywhere it applies (V1, V3, M1.1, M1.13, M2.1). Prefer the option that keeps water reflections correct at the least cost. Its Suggestions are yours to take or leave.",
       "at": "2026-11-16T14:54:04Z"
+    },
+    {
+      "task": "SCENE-VIEWS M3 is blocked on M3.4 only: the builder wants every other builder paused for a quiet capture-off Metal timing sitting. Handoff: docs/evidence/SCENE-VIEWS/M3-handoff.md on build/scene-views at 7a5f2c02b596. Pausing four builders for one timing run is not worth it under the owner's 17 Nov bar (timing is a tripwire, not a gate; proof proportional to risk; the owner wants as many builders online as possible). Rework M3.4 so it can close without a quiet machine, for example: run under the GPU lock with load recorded, and fail only on a gross regression against the earlier recorded timings, deferring precise quiet numbers to a later batched quiet window if one is still wanted. Also record the defect the builder found: the shared GPU lock reported free while a WATERS GPU test ran, so say where that belongs (orchestrate's lock or the test's own use of it) without blocking M3 on it.",
+      "at": "2026-11-18T10:26:13Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T14:54:04Z"
+    "at": "2026-11-18T10:26:13Z"
   },
   "design_history": [
     {

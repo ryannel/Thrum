@@ -268,7 +268,7 @@
     {
       "id": "M3",
       "name": "The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -283,18 +283,18 @@
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.2",
           "statement": "In Chrome the pool passes M2.4's, M2.5's and M2.6's lists at noon and at dusk.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon and dusk, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m32-submitted-noon-and-dusk-inspection",
-          "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.3",
@@ -305,8 +305,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.4",
@@ -320,8 +320,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.5",
@@ -330,28 +330,28 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.6",
           "statement": "The maturity ledger has a row for secondary views with implementation, correctness, visuals and device kept apart, and it claims nothing for a recipe or a target that was not run.",
           "ask": "Does the row match what M1 to M3 ran, and is the Apple recipe's result recorded apart from the portable one's?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/design/maturity.json",
-          "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.7",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "findings": [
@@ -379,17 +379,7 @@
           "name": "The cost record omits per-resource byte counts",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "The lead needs to pause the other builders through Ready for Review and resume M3 for the capture-off Metal timing run.",
-        "work": {
-          "commit": "7a5f2c02b59649b758150d3251e99edd68ede31f",
-          "branch": "build/scene-views",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/SCENE-VIEWS/M3-handoff.md"
-      }
+      ]
     }
   ]
 }
