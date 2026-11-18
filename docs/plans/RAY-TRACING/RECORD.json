@@ -31,6 +31,32 @@
         "by": "plan",
         "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 6 Must Fix",
         "at": "2026-11-18T01:58:13Z"
+      },
+      "ready_for_review": {
+        "commit": "92f0955490db254ba5378facd37cdeda4f2f1972",
+        "checked": "92f0955490db254ba5378facd37cdeda4f2f1972",
+        "at": "2026-11-18T09:26:38Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 356974,
+          "cached": 57516416,
+          "output": 90246,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 356974,
+          "cached": 57516416,
+          "output": 90246,
+          "turns": 1
+        }
       }
     },
     "M2": {
