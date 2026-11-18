@@ -303,9 +303,8 @@ impl Layer {
         let previous_raster = self.committed.map_or(frame.view_proj, |old| old.raster);
         // Preserve the air lattice at long travel without subtracting large
         // rounded floats in the shader. Noise keeps the anchor's hash words.
-        let shape_metres = thrum_cloud_model::Field::SHAPE_NOISE_METRES;
         let anchor = std::array::from_fn::<_, 2, _>(|i| {
-            ((f64::from(frame.camera[[0, 2][i]]) - travel[i]) / shape_metres).floor() * shape_metres
+            ((f64::from(frame.camera[[0, 2][i]]) - travel[i]) / 200.0).floor() * 200.0
         });
         self.pending = (!frame.time.capture).then_some(LayerSample {
             travel,
@@ -362,8 +361,8 @@ impl Layer {
                 ),
             ],
             noise: [
-                (anchor[0] / shape_metres) as i64 as u32,
-                (anchor[1] / shape_metres) as i64 as u32,
+                (anchor[0] / 200.0) as i64 as u32,
+                (anchor[1] / 200.0) as i64 as u32,
                 (anchor[0] / 25.0) as i64 as u32,
                 (anchor[1] / 25.0) as i64 as u32,
             ],

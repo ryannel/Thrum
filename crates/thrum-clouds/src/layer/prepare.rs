@@ -197,9 +197,8 @@ impl Layer {
 
 pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
     format!(
-        "{}\nconst CLOUD_SHAPE_METRES:f32={};\n{}\n{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}",
         environment.shader_source,
-        thrum_cloud_model::Field::SHAPE_NOISE_METRES,
         include_str!("params.wgsl"),
         include_str!("../layer.wgsl"),
         include_str!("light.wgsl"),

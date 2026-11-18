@@ -20,7 +20,7 @@ fn hash(i:u32,j:u32,g:u32,stream:u32)->f32 {
     return f32(x)*0.00000000023283064365386963;
 }
 fn shape_noise(point:vec3<f32>)->f32 {
-    let local=point/CLOUD_SHAPE_METRES+vec3<f32>(p.erosion.y,0.0,p.erosion.z);
+    let local=point/200.0+vec3<f32>(p.erosion.y,0.0,p.erosion.z);
     let offset=vec3<i32>(floor(local));let f=vec3<f32>(smooth_unit(fract(local.x)),smooth_unit(fract(local.y)),smooth_unit(fract(local.z)));
     var n=0.0;
     for(var x=0;x<=1;x++){for(var y=0;y<=1;y++){for(var z=0;z<=1;z++){

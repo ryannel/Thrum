@@ -58,7 +58,7 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
             if d>coverage {age=phase;}
             coverage=max(coverage,d);
             let h=random(i,j,g,8u);
-            depth=max(depth,mix(p.physical.y,p.physical.z,h)*d);
+            depth=max(depth,mix(p.physical.y,p.physical.z,h)*pow(d,0.7));
         }
     }}
     let rem=vec2<f32>(vec2<i32>(p.integers.xy)-vec2<i32>(p.noise.xy)*4);

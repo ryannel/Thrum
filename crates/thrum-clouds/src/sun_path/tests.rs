@@ -3,7 +3,8 @@ use super::Uniform;
 #[test]
 fn sun_shader_and_uniform_layout_validate() {
     use wgpu::naga;
-    let module = naga::front::wgsl::parse_str(&super::shader()).expect("Sun path WGSL");
+    let module =
+        naga::front::wgsl::parse_str(include_str!("../sun_path.wgsl")).expect("Sun path WGSL");
     naga::valid::Validator::new(
         naga::valid::ValidationFlags::all(),
         naga::valid::Capabilities::all(),
