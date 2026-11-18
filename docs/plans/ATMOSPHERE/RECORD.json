@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": "docs/evidence/ATMOSPHERE/design-review.md",
-    "commit": "e143da67cf7b381b01d0ab2b1a00c2a4a5d38fbc",
-    "hash": "5564c820915670f05d5b43b34adc632a5f95b44ce9875f45bfd492e9cf46189d",
+    "commit": "cda25f4ef12467a97c43b81338f7529a15d9c9bf",
+    "hash": "8abbcc81a2e076fefa53bdab181c820c386d0c715207fb372e47526fc4ea61a1",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 113099,
-      "cached": 1050368,
-      "output": 6319,
+      "input": 97425,
+      "cached": 833408,
+      "output": 5357,
       "turns": 1
     },
-    "at": "2026-11-17T23:28:33Z"
+    "at": "2026-11-18T01:25:13Z"
   },
   "milestones": {
     "M5": {
@@ -460,6 +460,29 @@
         "turns": 1
       },
       "at": "2026-11-17T19:09:52Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/ATMOSPHERE/design-review-10.md",
+      "commit": "e143da67cf7b381b01d0ab2b1a00c2a4a5d38fbc",
+      "hash": "5564c820915670f05d5b43b34adc632a5f95b44ce9875f45bfd492e9cf46189d",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 113099,
+        "cached": 1050368,
+        "output": 6319,
+        "turns": 1
+      },
+      "at": "2026-11-17T23:28:33Z"
     }
   ]
 }
