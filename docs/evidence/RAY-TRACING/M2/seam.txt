@@ -1,0 +1,9 @@
+Revision e43e3b6d253b9e7265c5b7a951f0eed9e710a24b
+Target mac-metal, Apple M3 Max, Apple tile, required ray-query
+Command cargo test --locked --offline -p thrum-render --features creation-counters --test ray_instances_seam
+Cargo metadata confirmed no thrum-render dependency on thrum-asset-gpu.
+
+running 1 test
+test metal::a_contribution_offers_scene_membership_after_upload_without_any_draw ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s

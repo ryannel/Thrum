@@ -120,8 +120,8 @@
           "ask": "Could the author of another contribution offer its opaque geometry from the seam's documentation alone: what to offer, when, and what the mask's two bits mean?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/seam.txt",
           "verdict": "",
           "review": ""
         },
@@ -132,8 +132,8 @@
           "ask": "Is the frame in which the rays change shown to be the frame in which the drawn image changes, from the same run?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/edit.json",
           "verdict": "",
           "review": ""
         },
@@ -144,8 +144,8 @@
           "ask": "Is the expected set taken from the scene's own records of what it holds, so that an instance list or a mask built from any pass's submitted draws, or from the cooked shadow pass's caster index count, would fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/casters.json",
           "verdict": "",
           "review": ""
         },
@@ -155,8 +155,8 @@
           "check": "python3 scripts/ray_tracing_proof.py lifecycle",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/lifecycle.json",
           "verdict": "",
           "review": ""
         },
@@ -166,8 +166,8 @@
           "check": "python3 scripts/ray_tracing_proof.py demand",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/demand.json",
           "verdict": "",
           "review": ""
         },
@@ -177,8 +177,8 @@
           "check": "python3 scripts/ray_tracing_cost.py valley",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RAY-TRACING/M2/valley-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -187,8 +187,8 @@
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
