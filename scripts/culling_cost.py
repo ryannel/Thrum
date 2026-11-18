@@ -12,11 +12,13 @@ def quantile(values, q):
     return values[round((len(values) - 1) * q)]
 
 
-def summary(rows):
+def summary(rows, windows=None):
     ticks = {}
     for row in rows[1:-1]:
         ticks.setdefault(row['tick'], {})[row['mode']] = row
     groups = {'entire_route': [], 'occlusion_hides_slots': [], 'open_no_occlusion_saving': []}
+    windows = windows or {}
+    groups.update((name, []) for name in windows)
     for tick, modes in ticks.items():
         if len(modes) != 3 or any(row['whole_gpu_ns'] is None for row in modes.values()):
             raise showcase.Failure(f'missing paired timing/count at {tick}')
@@ -24,6 +26,9 @@ def summary(rows):
         groups['entire_route'].append(pair)
         key = 'occlusion_hides_slots' if modes['Occlusion']['counts']['drawn'] < modes['Frustum']['counts']['drawn'] else 'open_no_occlusion_saving'
         groups[key].append(pair)
+        for name, (first, last) in windows.items():
+            if first <= tick <= last:
+                groups[name].append(pair)
     result = {}
     for name, pairs in groups.items():
         result[name] = {'ticks': len(pairs)}
@@ -52,12 +57,22 @@ def main():
     run = showcase.new_run(f'culling-cost-{scene}')
     print(run, flush=True)
     route = json.loads(authored_route.read_text())
+    windows = {}
+    if args.exit:
+        # Classify the views by their authored camera legs before looking at
+        # the counts. Even an open valley view can hide slots behind terrain.
+        origin = route['origin_tick']
+        shelf = origin + route['keys'][1]['tick']
+        valley = origin + route['keys'][2]['tick']
+        windows = {'shelf_cover': [origin, shelf - 1], 'descent': [shelf, valley - 1],
+                   'open_valley': [valley, origin + route['keys'][-1]['tick']]}
     route['render_extent'] = [1920, 1080]
     route_path = run / 'route.json'
     showcase.write_json(route_path, route)
     report = {'commit': showcase.git('rev-parse', 'HEAD'), 'contended': True, 'scene': scene,
               'capture': 'off', 'extent': route['render_extent'], 'order': 'rotating each tick',
               'warmup_ticks': route['origin_tick'] - 1, 'runs': {},
+              'camera_windows_committed_ticks': windows,
               'authored_route_sha256': showcase.sha256(authored_route),
               'measured_route_sha256': showcase.sha256(route_path)}
     report['builds'] = showcase.identities(web=False, built=False)
@@ -79,10 +94,13 @@ def main():
                                      '--bench', 'valley_culling'], log, 1200, env=env, cwd=showcase.REPO):
                     raise showcase.Failure(f'bench failed: {run / name}')
             rows = [json.loads(line) for line in (run / name / 'rows.jsonl').read_text().splitlines()]
-            result = summary(rows)
-            if args.exit and (not result['hidden_with_nonempty_prepass']
-                              or not result['open_no_occlusion_saving']['ticks']):
-                raise showcase.Failure(f'{name}: missing prepass, cover or open samples')
+            result = summary(rows, windows)
+            if args.exit:
+                if not result['hidden_with_nonempty_prepass']:
+                    raise showcase.Failure(f'{name}: no occlusion hiding with a nonempty prepass')
+                for window, (first, last) in windows.items():
+                    if result[window]['ticks'] != last - first + 1:
+                        raise showcase.Failure(f'{name}: incomplete {window} timing')
             report['runs'][name] = {'header': rows[0], 'summary': result,
                                     'rows_sha256': showcase.sha256(run / name / 'rows.jsonl'),
                                     'load_end': os.getloadavg()}
