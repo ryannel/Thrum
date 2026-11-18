@@ -38,6 +38,26 @@ fn running_scene_drains_metal_answers_and_draws_the_fleet() {
 
 const DT: f64 = 1.0 / 60.0;
 
+#[test]
+fn displaced_hulls_settle_back_to_hydrostatic_draft() {
+    let sea = Surface {
+        body: Some(0),
+        wet: true,
+        ..Surface::default()
+    };
+    for (id, hull) in (0_u32..).zip([Hull::Craft].into_iter().chain([Hull::Float; 8])) {
+        let mut body = Body::new(id, hull, [0.0; 2], 0.0, 0.0);
+        body.position.y += if id % 2 == 0 { 0.24 } else { -0.31 };
+        body.rotation = glam::DQuat::from_rotation_z(0.15);
+        for _ in 0..600 {
+            body.advance(DT, |_, _| (sea, None));
+        }
+        assert!((body.position.y + body.draft()).abs() < 0.001);
+        assert!(body.velocity.length() < 0.001);
+        assert!((body.rotation * DVec3::Y).distance(DVec3::Y) < 0.001);
+    }
+}
+
 fn wave_field(phase: f64) -> LongWaves {
     let components = [
         (105.0, 0.03, 1.12, 0.7),

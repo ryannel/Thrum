@@ -36,7 +36,7 @@ pub(super) fn capture(directory: &Path) -> Value {
         super::proof_game(true)
     };
     let (extent, interval, opportunities) = if floating.is_some() {
-        ([2560, 1440], 2.6, 40.0)
+        ([2560, 1440], 3.7, 30.0)
     } else if island.is_some() {
         ([1280, 720], 7.0, 16.0)
     } else {

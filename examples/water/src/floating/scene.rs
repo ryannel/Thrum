@@ -128,7 +128,7 @@ pub fn build_paired(
     let (start, level) = if lake {
         ([182.0, 10.0], 12.0)
     } else {
-        ([132.0, 32.0], 0.0)
+        ([150.0, 32.0], 0.0)
     };
     let mut bodies = vec![Body::new(0, Hull::Craft, start, level, f64::from(heading))];
     let forward = (bodies[0].rotation * DVec3::X).with_y(0.0);
