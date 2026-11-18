@@ -182,10 +182,10 @@ impl DeviceWatch {
         let errors = Arc::clone(&faults);
         device.on_uncaptured_error(Arc::new(move |error: wgpu::Error| {
             if errors.uncaptured.set(error.to_string()).is_ok() {
-                let _ = writeln!(
+                drop(writeln!(
                     std::io::stderr().lock(),
                     "GPU generation {generation}: {error}"
-                );
+                ));
             }
         }));
         Self { generation, faults }
