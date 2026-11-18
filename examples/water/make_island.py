@@ -23,8 +23,9 @@ def height(x, z):
     point = 3.6 * exp(-((x - 153) / 13) ** 2 - ((z - 1) / 7) ** 2)
     lake = 8.2 + 0.12 * hypot(x - 183, (z - 5) * 1.16) + point
     hollow = 10.7 + 0.12 * hypot(x - 235, (z - 5) * 1.22)
-    bend = sin((z - 93) / 5) * 3.7
-    shelf = 0.72 + 0.28 * min(max((x - 96) / 11, 0), 1)
+    bend = sin((z - 93) / 9) * 2.3
+    shelf_blend = min(max((x - 96) / 11, 0), 1)
+    shelf = 0.72 + 0.28 * shelf_blend**2 * (3 - 2 * shelf_blend)
     pond = 8.0 + 0.24 * shelf * hypot(x - 104 + bend, (z - 93) * 1.13)
     return min(ground, lake, hollow, pond)
 
