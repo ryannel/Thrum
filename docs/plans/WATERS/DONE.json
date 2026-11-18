@@ -525,8 +525,8 @@
           "statement": "The example has an island the example makes: a beach, a lake in the hills above the sea, and a pond. At noon, from each shore at 2 m and from the hill at 40 m, each water lies level in its place and meets the ground in a clean line that follows the terrain: no stair-step from the map's cells, no sliver of water on dry ground, none missing at the edge, and no sheet between the lake and the sea.",
           "inspect": "`fixed` stills of the beach, the lake's shore and the pond from 2 m, and of all three from 40 m on the hill: each waterline, close and at a distance, and the ground between the lake and the sea.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M4-review-fixes.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M4-review.md"
         },
@@ -548,7 +548,7 @@
           "inspect": "`fixed` stills and a `realtime` sequence in a trade wind and a gale: the sea off the beach from 2 m and 40 m, the last 30 m of water before the sand, the lake and the pond in the same wind.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-visual.md",
+          "evidence": "docs/evidence/WATERS/M4-review-fixes.md",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M4-review.md"
         },
@@ -558,8 +558,8 @@
           "check": "cargo test --locked --offline -p water-scene --test stage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M4-fixes/stage.txt",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M4-review.md"
         },

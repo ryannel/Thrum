@@ -6234,6 +6234,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M4-review-fixes-captures.tar.zst",
+      "size": 632578594,
+      "sha256": "adeaec309884bbfdfd887250e40b1b11ecb2cdc08ddf919f7291c5e6b85c0038",
+      "date": "2026-11-18T15:18:39.091427+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,

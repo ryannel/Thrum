@@ -477,3 +477,8 @@
 - 2026-11-18 M4.6 compares submitted coverage against an opaque-depth control at the sill and bank.
   The Metal control confirmed that reset history makes dry ground reactive. The lake sweep still checks the
   submitted level and motion across the stage edits. [Target run](../../evidence/WATERS/M4-checks.txt).
+
+- 2026-11-18 M4 review fixes sample stage and sill connectivity at presentation time and keep the
+  previous submitted level for motion. Metal passed 40 fractional-stage samples. The calm shoreline
+  uses an optical path fade at the depth cut and a rounded, locally refined pond bank.
+  [Target captures and stage series](../../evidence/WATERS/M4-review-fixes.md).

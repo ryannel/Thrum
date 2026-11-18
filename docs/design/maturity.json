@@ -2934,8 +2934,8 @@
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS M4: mapped sea and basins render as a single depth-writing sheet per column. Fetch gains, shallow-wave limit, swash and live lake stage are active. The thin sheet uses a same-pixel composite over the opaque ground.",
-        "correctness": "Metal and Chrome map readbacks against f64; submitted Metal pixel ownership, reverse-Z overlap, stage history and moving shoreline checked. Wind-shelter mutation rejected on Metal.",
-        "visuals": "Metal fixed checkpoints and elapsed-time sequences cover the beach, lake, pond and overlook in trade wind and gale, with calm shoreline checkpoints.",
+        "correctness": "Metal and Chrome map readbacks against f64; submitted Metal pixel ownership, reverse-Z overlap and moving shoreline checked. The live lake test checks level, sill coverage and motion at four presentation phases per tick. Wind-shelter mutation rejected on Metal.",
+        "visuals": "Metal fixed checkpoints show the calm depth-cut contacts at the three close cameras and the overlook. Elapsed-time sequences cover the beach, lake, pond and overlook in trade wind and gale.",
         "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The paired 1440p island record is a concurrent-load tripwire.",
         "evidence": "../evidence/WATERS/M4.md"
       },
