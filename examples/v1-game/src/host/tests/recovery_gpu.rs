@@ -369,7 +369,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let old = Gpu::new(&instance, 21).await;
-        let host = FrameHost::new_with_setup(
+        let mut host = FrameHost::new_with_setup(
             &old.device,
             &old.queue,
             &old.capabilities,
@@ -394,15 +394,23 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
         )
         .await
         .expect("mixed-mesh field");
-        let origin = Instant::now();
-        let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
-        // Let the flythrough run before pausing on a fixed frame.
-        let deadline = Instant::now() + Duration::from_secs(10);
-        while controls.check_health().expect("running world") < 30 {
-            assert!(Instant::now() < deadline, "world did not run");
-            std::thread::sleep(Duration::from_millis(1));
+        // Prepare a moving flythrough sample before handing it to the resident world.
+        // Test runner scheduling must not determine which ticks enter the clock.
+        let tick_hz = u64::from(thrum_core::ClockConfig::default().tick_hz.get());
+        let tick_time = |tick: u64| Duration::from_nanos((1_000_000_000 * tick).div_ceil(tick_hz));
+        for tick in 1..=30 {
+            let report = host
+                .inner
+                .advance_without_rendering(tick_time(tick))
+                .expect("advance the fixture");
+            assert_eq!(report.tick, tick);
+            assert_eq!(report.overload, None);
         }
+        host.pause().expect("pause at the prepared tick");
+        let origin = Instant::now() - tick_time(30);
+        let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
         let paused = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
+        assert_eq!(paused.id.tick, 30);
         let (before, _) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         let inputs = host.device_prepare_inputs().expect("retained CPU inputs");
         old.device.destroy();
