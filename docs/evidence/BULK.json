@@ -5715,6 +5715,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-chrome-fixed.tar.zst",
+      "size": 1852628135,
+      "sha256": "b8d5b39cfa14a68a5590fe2021dd632d392c2b97da616e0c659158b104477a67",
+      "date": "2026-11-18T15:02:45.251894+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-chrome-flythrough.mp4",
       "size": 39483340,
       "sha256": "ba2d004eff57c6d3f74f470bd4c9b6572b18ea52b6d2d4d7530673395152b976",
@@ -5727,6 +5735,14 @@
       "size": 21142649,
       "sha256": "7526e3b51f40d36f160f167e38a4829a58f714d3f37d10551b186f05b85aa3fa",
       "date": "2026-11-17T23:26:44.580073+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
+      "size": 237800039,
+      "sha256": "850ab1f28e5a6d4ffb853356ba8b76503fa55eeaaf26015f01497a804c1dab27",
+      "date": "2026-11-18T15:02:41.024971+00:00",
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {

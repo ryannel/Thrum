@@ -64,3 +64,10 @@
   change to a capture script alone (`4ffb33052`, the receiver's limit) makes the old record fail and its pass is
   not reused. Suggestion taken: M5.9 discounts only the size of the step after a deferred Chrome tick, and still
   judges a mover or prop missing or changed in those frames. Not yet design-reviewed.
+- 2026-11-18 Rechecked exit layout, authoritative replay, grounded scatter, cooked-row counts and Chrome pause.
+  Fixed Metal and Chrome takes showed continuous drift in the inspected windows, and the old tick-234 strip was
+  absent at both phases. Refreshed the exit grids for ATMOSPHERE M10's terrain-horizon shadow correction with the
+  calibrated identity and thresholds. Baseline SHA-256 changed from
+  `b7ef2ce595cafc0379e326b2b71def0f3ab8992055552dd9d85e2c4dd2676d8f` to
+  `e7a63b2de2a200c2f0b714f8a9920c2749518c6282cb9b4f48b9446e0e5d5854`.
+  The six real-time arms are recorded under load. [Evidence](../../evidence/SHOWCASE/M5.md)
