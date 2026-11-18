@@ -31,14 +31,15 @@ const MAP_TOLERANCE_METRES: f64 = 0.00004;
 pub(crate) struct Clock {
     tick: u64,
     interpolate: bool,
+    now: Duration,
 }
 
 #[allow(dead_code, reason = "the query integration test imports this fixture")]
 impl Clock {
     pub(crate) fn interpolating() -> Self {
         Self {
-            tick: 0,
             interpolate: true,
+            ..Self::default()
         }
     }
 }
@@ -59,6 +60,7 @@ impl FrameWorld for Clock {
         false
     }
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+        self.now = now;
         let next =
             u64::try_from(now.as_nanos() / self.tick_duration().as_nanos()).expect("short test");
         let completed_ticks = u32::try_from(next - self.tick).expect("short test");
@@ -85,16 +87,17 @@ impl FrameWorld for Clock {
             page: self.source(),
         })
     }
-    fn presentation_alpha_at(&self, now: Duration) -> f32 {
+    fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         if self.interpolate {
             let step = self.tick_duration().as_nanos();
-            (now.as_nanos() % step) as f32 / step as f32
+            let part = self.now.as_nanos() % step + lead.as_nanos();
+            part.min(step) as f32 / step as f32
         } else {
             1.0
         }
     }
-    fn display_phase_at(&self, now: Duration) -> f32 {
-        self.presentation_alpha_at(now)
+    fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.presentation_alpha_at(lead)
     }
     fn is_interpolating(&self) -> bool {
         self.interpolate
