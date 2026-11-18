@@ -10,7 +10,10 @@ fn cloud_solar_source(phases:vec2<f32>,sun_depths:vec2<f32>,above:f32,viewer:vec
     let forward=dot(phases,vec2(beam,max(0.0,remaining-beam)));
 
     let path_cosine=length(path.xz);
-    let ratio=(above+2.0)/(sun_depths.x+2.0/path.y);
+    // The vertical column is uneroded. Give short, edge-grazing paths
+    // a deeper margin before inferring a plane from unequal depths.
+    let margin=8.0;
+    let ratio=(above+margin)/(sun_depths.x+margin/path.y);
     let cotangent=(ratio-path.y)/max(0.3,path_cosine);
     let slope=inverseSqrt(1.0+cotangent*cotangent);
     let incidence=min(1.0,ratio*slope);

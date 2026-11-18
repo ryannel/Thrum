@@ -23,7 +23,7 @@ pub fn shade_config() -> ShadeConfig {
         model: Profile {
             pitch: 4600.0,
             turret_pitch: 1300.0,
-            turret_least: 0.18,
+            turret_least: 0.22,
             turret_fade: 0.12,
             period: 1800.0,
             detail_mean: 0.5,
@@ -44,7 +44,7 @@ pub fn shade_config() -> ShadeConfig {
                 liquid_water: 0.00032,
                 droplet_radius: 0.000_012,
                 deck: 0.0,
-                profile: [0.16, 0.60],
+                profile: [0.25, 0.47],
             },
         ],
         weather: WeatherProfile {
