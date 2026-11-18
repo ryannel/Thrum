@@ -3,6 +3,7 @@ use crate::{
     envelope::{self, Header, Kind},
     input_batch::{ActionView, ActionWire, MAX_ACTION_BYTES, MAX_ACTIONS, dequantize, quantize},
 };
+
 use thrum_core::sim::InputFrame;
 use thrum_transport::{Lane, Link, LinkError, RELIABLE_LIMIT};
 
@@ -286,3 +287,6 @@ pub(super) fn read_set<A>(
 pub(super) fn scratch() -> Box<[u8]> {
     vec![0; RELIABLE_LIMIT].into_boxed_slice()
 }
+
+#[cfg(test)]
+mod tests;
