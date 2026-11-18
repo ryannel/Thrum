@@ -16,10 +16,10 @@
           "ask": "Read the test. Is the reference image built on the CPU from the sheet's source texels and the design's view rule, without any of the renderer's shaders? Does it compare every pixel of the submitted SDR output at each of the five scales, on the portable and the Apple tile recipe, at an odd extent, with a sprite cut by each edge of the view and an asymmetric sprite that would show a flip?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/metal-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -28,10 +28,10 @@
           "ask": "Is the expected pass list written out in the test and compared whole? Does the storage check walk everything the generation allocated, and does the 3D control, on a recipe that resolves a reconstructor, prove the check would see such a resource or selection if a 2D scene had one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/metal-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
@@ -40,10 +40,10 @@
           "ask": "Is there one refusal test for each request, each asserting a named error and an unchanged scene? Is any of them accepted and ignored instead? If the frame runtime offers no way to ask for a reconstructor by name, is that shown, with where the builder looked?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/metal-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
@@ -52,10 +52,10 @@
           "ask": "Is the 'before' side taken from main at the commit this milestone started from, for the variants the V1 game prepares, and not produced by the changed code?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/metal-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
@@ -64,10 +64,10 @@
           "ask": "Does the test run on both native recipes and read the submitted SDR bytes and the scene-linear checkpoint through engine capture's tap? Is the one-code allowance used only for blended texels, with opaque texels compared exactly? Are the 3D scene's two tone operators and its dither unchanged?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/metal-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.6",
@@ -76,10 +76,10 @@
           "ask": "Is each of the six events driven through the host's own calls, and is the fresh scene's image compared pixel for pixel after each?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/metal-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.7",
@@ -97,10 +97,10 @@
           "statement": "On the Mac the sprite scene's test card reads as drawn: upright, unmirrored, colours as authored, flat blocks of colour with hard edges, nothing missing and nothing 3D behind it.",
           "inspect": "Capture `fixed` stills of the sprite scene with T2 engine capture at 1280\u00d7720 and at 3456\u00d72234, at scales of 2 and 4. Judge each frame whole and in native-size crops of the card's lines, colour ramps and marks.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/stills.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.9",
@@ -109,10 +109,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the valley's paired figure from the same route and build settings on both sides?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/RENDER-2D/M1/cost-mac-metal.json.gz",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.10",
@@ -130,10 +130,10 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
