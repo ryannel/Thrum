@@ -1,3 +1,5 @@
+//! Validation and loss callbacks from a real Metal device.
+
 #[cfg(target_os = "macos")]
 #[test]
 fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
@@ -81,5 +83,3 @@ fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
         );
     });
 }
-//! Validation and loss callbacks from a real Metal device.
-

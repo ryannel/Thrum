@@ -15,6 +15,7 @@ use thrum_asset::{AssetStore, Ktx2, Profile};
 use thrum_asset_gpu::{CookedAssets, CookedStats};
 use thrum_cook::tripwire::{self, Rule};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
+use thrum_render::capabilities::{DeviceRecipe, DeviceRestriction, OpenedDevice};
 use v1_game::{FrameConfig, FrameHost};
 
 const BUDGET: u64 = 8 << 20;
@@ -252,7 +253,6 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
 
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        use thrum_render::capabilities::{DeviceRecipe, DeviceRestriction, OpenedDevice};
         let OpenedDevice {
             device,
             queue,

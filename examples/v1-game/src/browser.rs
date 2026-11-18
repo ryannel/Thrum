@@ -22,6 +22,7 @@ use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
 #[cfg(feature = "dev-material")]
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome, MaterialReload};
 use thrum_controls::Value;
+use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
@@ -1035,9 +1036,6 @@ async fn effect_diagnostic_device() -> Result<
     JsValue,
 > {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    use thrum_render::capabilities::{
-        DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
-    };
     let OpenedDevice {
         device,
         queue,

@@ -1,3 +1,5 @@
+//! Device request profiles and restrictions on Apple's Metal adapter.
+
 #[cfg(target_os = "macos")]
 #[test]
 fn native_portable_and_restricted_devices_on_metal() {
@@ -90,5 +92,3 @@ fn native_portable_and_restricted_devices_on_metal() {
         }
     });
 }
-//! Device request profiles and restrictions on Apple's Metal adapter.
-

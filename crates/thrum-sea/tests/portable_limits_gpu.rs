@@ -1,4 +1,6 @@
 //! Default WebGPU limits on the Metal target.
+use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction};
+
 mod support;
 #[test]
 fn default_webgpu_limits_and_named_profile_refusals() {
@@ -42,15 +44,23 @@ fn default_webgpu_limits_and_named_profile_refusals() {
     ) else {
         return;
     };
-    let (device, _queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction {
-            storage_buffers: Some(7),
-            features: Some(wgpu::Features::empty()),
-        },
-    );
-    let site = thrum_render::runtime::DeviceSite::untracked(device);
-    let error = thrum_sea::Ambient::new(&site, thrum_sea::Profile::default())
+    let opened = pollster::block_on(
+        DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            restriction: Some(&DeviceRestriction {
+                limits: Some(wgpu::Limits {
+                    max_storage_buffers_per_shader_stage: 7,
+                    ..Default::default()
+                }),
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+        .open(&gpu.instance, None),
+    )
+    .expect("restricted Metal recipe");
+    let error = thrum_sea::Ambient::new(opened.capabilities.site(), thrum_sea::Profile::default())
         .err()
         .expect("refusal before shader preparation");
     assert!(

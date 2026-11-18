@@ -164,6 +164,10 @@ pub struct DeviceWatch {
 }
 
 impl DeviceWatch {
+    #[expect(
+        clippy::print_stderr,
+        reason = "diagnose the first asynchronous GPU error on headless hosts as well as shells"
+    )]
     fn register(
         device: &wgpu::Device,
         generation: u64,

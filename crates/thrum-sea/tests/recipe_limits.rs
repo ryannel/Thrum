@@ -1,3 +1,5 @@
+//! Sea preparation on native, portable and restricted Metal devices.
+
 #[cfg(target_os = "macos")]
 #[test]
 fn sea_accepts_native_and_portable_limits_and_refuses_seven_storage_buffers() {
@@ -58,5 +60,3 @@ fn sea_accepts_native_and_portable_limits_and_refuses_seven_storage_buffers() {
         ));
     });
 }
-//! Sea preparation on native, portable and restricted Metal devices.
-

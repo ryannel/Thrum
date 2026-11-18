@@ -1,6 +1,6 @@
 //! Shared independent oracle and target readback harness.
 use std::{fmt::Write as _, sync::mpsc, time::Duration};
-use thrum_render::runtime::DeviceSite;
+use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 use thrum_sea::{Ambient, MAX_QUERIES, MIP_PIXELS, PIXELS, Profile};
 use thrum_sea_model::{Forcing, LongWaves, Spectrum};
 
@@ -37,27 +37,31 @@ impl Harness {
             thread.name().unwrap_or("sea harness"),
             Some(wgpu::Backend::Metal),
         )?;
-        let adapter = &gpu.adapter;
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let features = wgpu::Features::TIMESTAMP_QUERY;
-        assert!(
-            adapter.features().contains(features),
-            "Metal pass timings required"
-        );
-        let profile = if portable {
-            thrum_test_support::Profile::Portable
-        } else {
-            thrum_test_support::Profile::Native
-        };
-        let (device, queue) = gpu.device(
-            profile,
-            &thrum_test_support::Restriction {
-                features: Some(features),
+        let OpenedDevice {
+            adapter,
+            device,
+            queue,
+            capabilities,
+            ..
+        } = pollster::block_on(
+            DeviceRecipe {
+                profile: if portable {
+                    DeviceProfile::Portable
+                } else {
+                    DeviceProfile::Native
+                },
+                restriction: Some(&DeviceRestriction {
+                    features: Some(wgpu::Features::TIMESTAMP_QUERY),
+                    ..Default::default()
+                }),
                 ..Default::default()
-            },
-        );
-        let site = DeviceSite::untracked(device.clone());
-        let sea = Ambient::new(&site, physical).expect("valid Metal qualification fixture");
+            }
+            .open(&gpu.instance, None),
+        )
+        .expect("Metal device with pass timings");
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let sea =
+            Ambient::new(capabilities.site(), physical).expect("valid Metal qualification fixture");
         sea.graph()
             .validate()
             .expect("valid Metal qualification fixture");
