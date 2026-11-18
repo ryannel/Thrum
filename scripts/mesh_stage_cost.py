@@ -22,6 +22,9 @@ def summarize(frames):
     return {
         "timed_pass_span_ns": median(frames, "timed_pass_span_ns"),
         "frame_cpu_ns": median(frames, "frame_cpu_ns"),
+        "upload_cpu_ns": median(frames, "upload_cpu_ns"),
+        "encode_cpu_ns": median(frames, "encode_cpu_ns"),
+        "view_update_cpu_ns": median(frames, "view_update_cpu_ns"),
         "passes_ns": {
             name: statistics.median(row["passes_ns"][name] for row in frames)
             if frames[0]["passes_ns"][name] is not None else None

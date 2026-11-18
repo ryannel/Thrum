@@ -204,6 +204,9 @@ fn route_cost() {
             frames.push(json!({
                 "route_tick": relative_tick, "submission": sample.submission_order,
                 "timed_pass_span_ns": span, "frame_cpu_ns": (sample.upload_cpu + sample.encode_cpu).as_nanos(),
+                "upload_cpu_ns": sample.upload_cpu.as_nanos(),
+                "encode_cpu_ns": sample.encode_cpu.as_nanos(),
+                "view_update_cpu_ns": sample.view_update_ns,
                 "passes_ns": timings, "surface_consumer_ns": sample.gpu_present_ns,
                 "forward_draws": stats.mesh_stage_draws + stats.indexed_indirect_draws + stats.indexed_direct_draws,
                 "draws_per_sun_map": meshes.len(),
