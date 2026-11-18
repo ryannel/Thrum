@@ -56,9 +56,17 @@ impl Wind {
 }
 
 const SIZE: [usize; 2] = [241, 181];
-const MESH_SIZE: [usize; 2] = [300, 252];
-const POSITIONS_BYTES: usize = MESH_SIZE[0] * MESH_SIZE[1] * 12;
-const INDEX_BYTES: usize = (MESH_SIZE[0] - 1) * (MESH_SIZE[1] - 1) * 6 * 4;
+// The first two glTF buffer views emitted by make_island.py.
+const COARSE_MESH: [usize; 2] = [300, 252];
+const POND_CELLS: [usize; 2] = [40, 32];
+const POND_SUBDIVISIONS: usize = 4;
+const POSITIONS_BYTES: usize = (COARSE_MESH[0] * COARSE_MESH[1]
+    + (POND_CELLS[0] * POND_SUBDIVISIONS + 1) * (POND_CELLS[1] * POND_SUBDIVISIONS + 1))
+    * 12;
+const INDEX_BYTES: usize = ((COARSE_MESH[0] - 1) * (COARSE_MESH[1] - 1)
+    + POND_CELLS[0] * POND_CELLS[1] * (POND_SUBDIVISIONS * POND_SUBDIVISIONS - 1))
+    * 6
+    * 4;
 
 /// The bed and bodies, using the same indexed triangles as the opaque terrain.
 /// # Errors

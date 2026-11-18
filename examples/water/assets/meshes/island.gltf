@@ -4,7 +4,7 @@
   },
   "buffers": [
     {
-      "byteLength": 4220376,
+      "byteLength": 5345784,
       "uri": "island.bin"
     }
   ],
@@ -12,29 +12,29 @@
     {
       "buffer": 0,
       "byteOffset": 0,
-      "byteLength": 907200
+      "byteLength": 1156428
     },
     {
       "buffer": 0,
-      "byteOffset": 907200,
-      "byteLength": 1801176
+      "byteOffset": 1156428,
+      "byteLength": 2261976
     },
     {
       "buffer": 0,
-      "byteOffset": 2708376,
-      "byteLength": 907200
+      "byteOffset": 3418404,
+      "byteLength": 1156428
     },
     {
       "buffer": 0,
-      "byteOffset": 3615576,
-      "byteLength": 604800
+      "byteOffset": 4574832,
+      "byteLength": 770952
     }
   ],
   "accessors": [
     {
       "bufferView": 0,
       "componentType": 5126,
-      "count": 75600,
+      "count": 96369,
       "type": "VEC3",
       "min": [
         -200,
@@ -50,19 +50,19 @@
     {
       "bufferView": 1,
       "componentType": 5125,
-      "count": 450294,
+      "count": 565494,
       "type": "SCALAR"
     },
     {
       "bufferView": 2,
       "componentType": 5126,
-      "count": 75600,
+      "count": 96369,
       "type": "VEC3"
     },
     {
       "bufferView": 3,
       "componentType": 5126,
-      "count": 75600,
+      "count": 96369,
       "type": "VEC2"
     }
   ],

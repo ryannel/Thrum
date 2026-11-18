@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Make the island's ground triangles and their cooked-mesh source."""
 import json
-from math import cos, exp, hypot, sin
+from math import cos, exp, floor, hypot, sin
 from pathlib import Path
 import struct
+
+POND_PATCH = (84, 124, 77, 109)
+POND_SUBDIVISIONS = 4
 
 
 def height(x, z):
@@ -30,25 +33,46 @@ def height(x, z):
     return min(ground, lake, hollow, pond)
 
 
-def main():
-    # Denser triangles on the small inland shorelines. Use ordinary large
-    # triangles over the approaches and seabed.
-    xs = sorted(set(range(-200, 401, 4)) | set(range(82, 281)))
-    zs = sorted(set(range(-225, 226, 3)) | set(range(-34, 118)))
+def append_grid(points, normals, uvs, indices, xs, zs, pond=False):
+    base = len(points)
     nx, nz = len(xs), len(zs)
-    points, normals, uvs, indices = [], [], [], []
+    x0, x1, z0, z1 = POND_PATCH
     for j, z in enumerate(zs):
         for i, x in enumerate(xs):
-            points.append((x, height(x, z), z))
+            y = height(x, z)
+            # Keep the fine patch on the same straight edges as the coarse
+            # triangles. Its interior uses the authored continuous bank.
+            if pond and x in (x0, x1):
+                lo = floor(z)
+                y = height(x, lo) + (height(x, lo + 1) - height(x, lo)) * (z - lo)
+            elif pond and z in (z0, z1):
+                lo = floor(x)
+                y = height(lo, z) + (height(lo + 1, z) - height(lo, z)) * (x - lo)
+            points.append((x, y, z))
             dx = height(x + 0.1, z) - height(x - 0.1, z)
             dz = height(x, z + 0.1) - height(x, z - 0.1)
             norm = hypot(dx, 0.2, dz)
             normals.append((-dx / norm, 0.2 / norm, -dz / norm))
             uvs.append((x / 120, z / 120))
-            if i + 1 < nx and j + 1 < nz:
-                a = j * nx + i
+            outside_patch = not (x0 <= x < x1 and z0 <= z < z1)
+            if i + 1 < nx and j + 1 < nz and (pond or outside_patch):
+                a = base + j * nx + i
                 b = a + nx
                 indices.extend([(a,), (b,), (a + 1,), (a + 1,), (b,), (b + 1,)])
+
+
+def main():
+    # Keep the denser triangles local to the pond. The wider island uses the
+    # original one-metre inland grid and larger seabed triangles.
+    xs = sorted(set(range(-200, 401, 4)) | set(range(82, 281)))
+    zs = sorted(set(range(-225, 226, 3)) | set(range(-34, 118)))
+    points, normals, uvs, indices = [], [], [], []
+    append_grid(points, normals, uvs, indices, xs, zs)
+    x0, x1, z0, z1 = POND_PATCH
+    n = POND_SUBDIVISIONS
+    patch_xs = [x / n for x in range(x0 * n, x1 * n + 1)]
+    patch_zs = [z / n for z in range(z0 * n, z1 * n + 1)]
+    append_grid(points, normals, uvs, indices, patch_xs, patch_zs, pond=True)
 
     data = bytearray()
     views, accessors = [], []
