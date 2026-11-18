@@ -265,3 +265,9 @@
   The Metal checks passed on Portable and Apple Tile. The fixed checkpoints and five elapsed
   routes were inspected at 2560×1440 from the merged build. The exact-image check runs on main.
   [M2 evidence](../../evidence/SCENE-VIEWS/M2/README.md)
+- 2026-11-18 M2 review fixes. Both transport markers now sit above the main frame, with Metal checks
+  confirming the two stretches at both exposures. The mirror's 250 m bank shows lamp light and shadows
+  in both views. Cooked Sun draws reject placements outside each secondary cascade's light volume.
+  The seven fixed poses and five motion routes were inspected again on Metal. The launcher used
+  its offscreen inspection mode for this round.
+  [Checks, frames and reproduction](../../evidence/SCENE-VIEWS/M2/README.md)

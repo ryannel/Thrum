@@ -218,8 +218,8 @@
           "ask": "Are `V`, `B` and `W` stored colours of the scene's ordinary main view with the pool's effect off, composed by the test without the pool's shader, with the allowance worked out from stored steps and printed beside the difference? Is the pool the example's own effect, with no type or file of it in an engine crate?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "fail",
           "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
@@ -238,8 +238,8 @@
           "statement": "The reflection is in the scene's light. In the pool the tower shows its Sun-lit and shaded sides, the shadows on the ground and on the tower lie where the direct view shows them, the lamp lights the ground round it at dusk and at night, and the far hill carries its haze: at dawn, noon, dusk and night.",
           "inspect": "`fixed` stills at the four hours from 1.5 m, each with the direct view of the same things in frame: lit and shaded sides, each shadow, the lamp's pool of light and the hill, in the scene and in the mirror.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "fail",
           "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },

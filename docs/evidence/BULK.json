@@ -5651,6 +5651,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SCENE-VIEWS/M2/review-fix-metal.zip",
+      "size": 830581095,
+      "sha256": "7fc4d30a6bb76fe22f2e05c91caf275d602986f0be4af5e84b584d653aba055b",
+      "date": "2026-11-18T02:32:26.075881+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-chrome-flythrough.mp4",
       "size": 39483340,
       "sha256": "ba2d004eff57c6d3f74f470bd4c9b6572b18ea52b6d2d4d7530673395152b976",
