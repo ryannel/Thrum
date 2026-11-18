@@ -125,7 +125,12 @@ impl DeviceRecipe<'_> {
                         return Err(HardwareLaunchError::InvalidRestriction);
                     }
                     features = subset - restriction.remove_features;
-                    (limits.clone(), (features, limits))
+                    // Named hardware still goes through the registry. An exact
+                    // feature subset or lowered limits also constrain that offer.
+                    let available = restriction.features.map_or(adapter_features, |_| subset)
+                        - restriction.remove_features;
+                    let available_limits = restriction.limits.clone().unwrap_or(adapter_limits);
+                    (limits, (available, available_limits))
                 } else {
                     (profile_limits, (adapter_features, adapter_limits))
                 };
