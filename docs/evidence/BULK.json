@@ -4427,6 +4427,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-refresh/corrected-captures.tar",
+      "size": 2703626240,
+      "sha256": "1e5f3b0974bb58fdff919292d044e73a06cd5d09d29dfc3b82e6ec7204c9ee06",
+      "date": "2026-11-18T12:27:30.108764+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/M3-resumed-looks/base-frames.zst",
       "size": 5188617,
       "sha256": "84bf575e7a8361f2481c67d6679cc1149bf3de7b1cc90b0c9b031069a13a304b",

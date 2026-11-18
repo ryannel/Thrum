@@ -495,3 +495,9 @@
   M3.2's far range and M3.7's stable motion and cut sharpness remain open.
   Required-GPU transport, frame contract, shadow-only and far-air checks pass.
   The [paired cost and refusal check](../../evidence/CLOUDS/M3-cost.md) pass under load.
+
+- 2026-11-18 M3 resumes on the owner's instruction. [Metal horizon and motion proofs](../../evidence/CLOUDS/M3-refresh/README.md)
+  retain the corrected far-plane composition and complete half-extent refresh.
+  M3.2 and M3.7 have builder evidence. The frame contract and loaded cost/refusal checks pass.
+  Three more shape trials retain the deeper mature cells and still expose repeated domes and shelves.
+  M3.1 remains open under the plan's three-look stop.

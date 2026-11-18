@@ -2805,11 +2805,11 @@
         "record": "../evidence/CLOUDS/M2.md"
       },
       "sky_evidence": {
-        "implementation": "Opt-in Sky with half-extent trace, display-time motion, ping-pong resolve, disc phase tables, lent sky hemisphere integration, beam and diffuse Sun scattering and bounded air parts. Detail noise remains procedural.",
-        "correctness": "Apple M3 Max Metal tests pass for submitted motion and resets, absent graph and storage, stable Beer transport and one air composition, finite-air parity and the 32 km join, and both recipes' shadow-only byte equality under detail-changing probes.",
-        "visuals": "Metal noon and 15-degree stills show bright Sun-facing clouds, darker bases and clean ridge occlusion. Three independent looks still show repeated shallow domes and shelf-like undersides. The 150 km fade, native pan and walk stability, and the full cut sharpening cue remain open.",
+        "implementation": "Opt-in Sky with complete half-extent refresh by default, display-time motion, ping-pong resolve, lent lighting and bounded air parts. Clouds composite over sky beyond the opaque camera's far plane. Detail noise remains procedural.",
+        "correctness": "Apple M3 Max Metal tests pass for submitted motion, resets and clouds beyond the opaque far plane, absent graph and storage, stable Beer transport and one air composition, finite-air parity and the 32 km join, and both recipes' shadow-only byte equality under detail-changing probes.",
+        "visuals": "Metal noon and 15-degree stills show lent lighting, clean ridge occlusion and diminishing contrast toward 150 km. The sampled full-refresh pan and walk show stable contours, and the cut has a complete detailed first frame. Repeated shallow domes and shelf-like forms keep the fair-weather shape item open.",
         "device": "Apple M3 Max Metal with WebGPU-default-limit admission. Paired capture-off timings under load exceed one 120 Hz refresh interval. Chrome, iOS and physical display cadence remain unqualified.",
-        "record": "../evidence/CLOUDS/M3-beam/README.md"
+        "record": "../evidence/CLOUDS/M3-refresh/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",
