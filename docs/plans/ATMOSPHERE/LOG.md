@@ -594,3 +594,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   volume against an f64 quadrature). M7.2, M7.13 and M8.1 keep their contracts (bytes at the defaults, the terminal pair once, a
   medium counted once) without a ceiling. M7.10's record passes on its check. The design's view-volume acceptance is now
   [how the view volume is proved](DESIGN.md#how-the-view-volume-is-proved). No item of a Done milestone changed.
+- 2026-11-18 Design review asked for changes; three Must Fix resolved. M6.4: the handoff's comparisons are split into the contract
+  (expected value from the stored product, fixed) and guards made through the library (P rows again, which a deliberate change to
+  the look gives new expected values on both targets); a reviewer question holds the split. M6.5: the route's cost record passes on
+  a check, `scripts/atmosphere_cost.py`, and the timing question stays M8.9's. M7.13: the shadowed sky equals the clear sky plus the
+  volume's own `ΔS`, and a sky that takes it twice or not at all fails. All four Suggestions taken as wording: aerosol coefficients
+  and the noon figures, 30 stored steps for M9.2's fall, the optical-depth remedy, an exposure scale of 2. No Done item changed.

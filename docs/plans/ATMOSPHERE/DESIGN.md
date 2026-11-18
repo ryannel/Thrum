@@ -333,8 +333,10 @@ referee, which cases and which bound each operation must meet is the table below
 Two different things are proved, and they are kept apart.
 
 **Preserved referees.** These tests already run in `./dev check` on Metal against the production producers.
-Each compares one product with a reference inside a stated scope. M5 and M6 must leave their references, cases
-and bounds unchanged and passing. They are the whole of what is claimed for product accuracy.
+Each compares one product with a reference inside a stated scope. M5 left their references, cases and bounds
+unchanged and passing, and they are the whole of what was claimed for product accuracy. From M6 they are
+regression guards, and [Closing G3s](#closing-g3s) says how a deliberate change to the look gives one new
+expected values.
 
 | | Product and quantity | Reference | Cases | Bound |
 |---|---|---|---|---|
@@ -362,7 +364,9 @@ cost.
 **The handoff, new in M5.** For each lent operation, a contribution with its own pipeline, using only the lent
 layout and library, must return the stored product in the right units. This runs on Metal in `./dev check` and
 in Chrome on hardware WebGPU. The expected values come from the same references on both; Chrome is never judged
-against Metal's GPU output.
+against Metal's GPU output. That is how M5 proved the rows. From M6 the comparisons in them are of two kinds,
+the contract and the guards made through the library, and [Closing G3s](#closing-g3s) says which is which and
+what a deliberate change to the look does to each.
 
 | | Lent operation | What the contribution-side result must meet |
 |---|---|---|
@@ -420,9 +424,9 @@ with the one value a correct lookup returns at that point.
 
 The rule proves the handoff, the addressing and the units. It does not prove the accuracy of what is stored.
 
-**Exposure control.** At least one case of each row H1–H5 is repeated with the lent exposure scale set to a
-value other than 1, and meets the same bound against the same physical reference. A library that applied the
-scale would fail it.
+**Exposure control.** At least one case of each row H1–H5 whose expected value is larger than its bound is
+repeated with the lent exposure scale set to 2, and meets the same bound against the same expected value. A
+library that applied the scale would return twice the value, an error larger than the bound, and fail it.
 
 H5 varies direction, roughness (the sharpest and widest levels have different closed forms), the raw Sun's
 illuminance, the night term and a rewritten sky, so a constant, stale or wrongly scaled reflection fails.
@@ -656,8 +660,9 @@ that are both still falling round to the same step, zero included, so a strict f
 would refuse a correct column. That the air does go on is shown where storage can show it: on a line with two
 or more layers past the ground, the last layer stores less than the first one past the ground. Over every
 texel of the volume, from 3 m and 245 m, level and pitched down to straight down, at 60° and 90° fields of
-view, that fall is 40 stored steps or more, and a column held at its value at the ground fails it
-([the arithmetic](../../evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt)). M9.1 is what proves the
+view, that fall is 30 stored half-float steps or more, and a column held at its value at the ground fails it
+([the arithmetic](../../evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt), which estimated 40, and
+[the exact count](../../evidence/ATMOSPHERE/design-review-9/storage-revision-check.txt)). M9.1 is what proves the
 continuation is the right one.
 
 P10's fixture, a camera at 245 m with rows 1.1° below the level, already holds lines that meet the ground
@@ -706,19 +711,61 @@ Sun is behind it; missing object shadows at sunrise; shadow acne at low Sun; a h
 steps in the sky gradient and twilight colour. The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
-**What guards the products.** The preserved referees P1–P11 and the handoff rows H1–H5 of
-[the numerical acceptance](#numerical-acceptance) run in the workspace check, as they have since M5, and M6 adds
-no item for them. H1–H5 are the contract other modules read the sky through, and stay as they are. P1–P11 are
-regression guards: they catch a product that moved when nobody meant it to. A fix the inspection list needs may
-move a product on purpose; the builder then updates that referee's expected values in the same landing and says
-so in the log, and no review asks for a model that justifies the new values. The solar sky and solar aerial
-transport are not qualified against an all-orders reference, and under the owner's bar no such campaign is
-planned.
+**What guards the products.** The referees P1–P11 and the handoff rows H1–H5 of
+[the numerical acceptance](#numerical-acceptance) run in the workspace check on Metal, as they have since M5,
+and M6.4 runs the handoff in Chrome. Their comparisons are of two kinds, and M6 treats the two differently.
+
+- **The contract: what a consumer receives.** These take their expected value from the atmosphere's own stored
+  product, read back in the same run on the same target, or from a known field the fixture wrote. None takes it
+  from the model of the air or of the night sky. They are the filtered-decode rule's live arm, known-field arm
+  and wrong lookups (H2, H4); the fixed-texel decode (H4); the diffuse cases against the integral of the
+  read-back sky (H3); the reflection, split-sum and furnace cases and the known night term (H5); and the exact
+  zero with the Sun behind the planet (H1). They prove the sampling, the addressing and the units. A deliberate
+  change to a product moves both sides of each together, so none needs an edit to keep passing, and M6 changes
+  none of their cases, bounds or wrong lookups. One that fails is a broken handoff, whatever the picture looks
+  like.
+- **Guards: where a product stood.** P1–P11 are regression guards: they catch a product that moved when nobody
+  meant it to. Five handoff comparisons are a P row made again through the lent library, with that row's
+  reference, cases and bound, and are guards too: H1 against P1 and P2, H2's night part against P3, H2's
+  spectral row against P11, H3's night illuminance against P4, and H4's night part against P5. A guard that
+  fails asks one question, whether the change was meant. Its difference from the model is a diagnostic and
+  never a finding.
+
+Every row, contract or guard, keeps [its repeat at an exposure scale of 2](#numerical-acceptance), which is
+what shows that the library does not apply the scale.
+
+**A deliberate change to the look.** A fix the inspection list needs may move a product on purpose: a twilight
+colour, the gradient at the horizon, the light on a ridge. Every guard it moves past its bound then fails, on
+Metal and in Chrome, while the consumer still returns the product exactly. In the same landing the builder
+gives each such guard new expected values and keeps its cases, its bound and its exposure repeat:
+
+- where the change is to an input of the model, such as a coefficient or a profile, from the row's f64
+  reference run with the changed input;
+- where the change departs from the model, such as a tuned curve or a tint, from the changed product on the
+  producer's side: its stored values on the Mac, read back and decoded by the test's own evaluation.
+
+An expected value never comes from the lent library's output, so a guard made through the library keeps
+failing a consumer that reads the wrong resource or applies the exposure scale, as it does today. The Metal
+test and the Chrome referee take the same new values. A guard made through the library in Chrome may therefore
+rest on a value the Mac's producer stored: that is a guard at the row's bound and no claim that the two targets
+match, and every contract comparison in Chrome still reads Chrome's own product. The log names each guard that
+changed, the change to the look that moved it, and its old and new values. No review asks for a model that
+justifies the new values. So a twilight adjustment that moves P11's blue channel by 4% lands with P11's three
+recorded values replaced on both targets, and H2's live arm passes untouched because it reads the new chart.
+
+The solar sky and solar aerial transport are not qualified against an all-orders reference, and under the
+owner's bar no such campaign is planned.
 
 **Cost.** Whole-frame and atmosphere pass costs on the route are measured on the final build and, in the same
 session and configuration (extent, TAAU on, load class, order alternated), on the commit M6 started from. That
 pair is the comparison. The M1 and M2 records predate TAAU and describe other builds and loads; they are quoted
-as history and not called paired.
+as history and not called paired. The record is a tripwire and sets no budget
+([brief](../BRIEF.md), decision 3). A visible hitch in the scrub, or a pass about 25% over its arm on the
+starting commit, is investigated, and the finding is kept beside the record. M6.5's check passes the record: it
+fails on an arm, a named pass or the load that is missing, on a run that did not complete, on a record that
+does not say whether a hitch was seen in the scrub, and on a tripped wire with no investigation, and on no
+figure. The reviewer's question on the module's timing is M8.9's, in the last milestone, where the qualified
+numbers are taken.
 
 **What is out.** The west-lookout shadow crossing (M3) stays a parked spike and the exact finite-disk match (M4)
 stays deferred; both are named in the review as known and are not judged. The exclusion is narrow: it covers the
@@ -819,8 +866,9 @@ joint transport.
 
 **The air's haze is an input, by amount and by kind.** The air profile takes two numbers for its aerosol at the
 ground: its **amount**, as the extinction at 550 nm, and its **kind**, as an Ångström exponent `α` from 0 to 2.
-In each of the eight bands the aerosol's extinction and scattering are the amount's times `(λ / 550 nm)^−α`;
-the single-scattering albedo, the phase and the height profile are today's and do not change with either. The
+In each of the eight bands the aerosol's extinction is `amount × (λ / 550 nm)^−α`, and its scattering is that
+extinction times `3.996 / 4.4`, today's single-scattering albedo. The albedo, the phase and the height profile
+are today's and do not change with either number. The
 visual range is defined at 550 nm, so it depends on the amount alone. The defaults are today's values, about
 244 km and `α = 0`, the grey aerosol the shaders hold now. The charts that depend on the aerosol
 (transmittance, multiple scattering, the sky view, the night profile) follow a change of either number within a
@@ -831,7 +879,9 @@ without one a scene sets them.
 What the kind does was measured before M7 was built, with the module's own f64 reference sky in all orders of
 scattering ([the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md)). At a fixed visual range,
 `α = 1.3` against 0 moves the sky's colour near the horizon by a CIEDE2000 difference of 4 to 6 in 20 km haze and 6 to
-12 in 3 km with the Sun at 10°, and distant land by 5 to 7 in 3 km; at noon by 2 or less, except at the zenith.
+12 in 3 km with the Sun at 10°, and distant land by 5 to 7 in 3 km. With the Sun at 60° the sky from the
+horizon to 20° up moves by 2 or less in 20 km haze and by 2.2 to 3.4 in 3 km, less than at the low Sun, and
+the zenith by 3 to 5.
 Grey haze at a low Sun is lit mostly by the blue sky and reads blue-grey; fine haze reddens the Sun's long path
 through it and reads neutral to warm. So the kind is what turns a low Sun's murk from grey-blue to the warm haze of
 dry, fine aerosol or smoke, which an amount alone cannot. It does not, in general, make dry haze bluer, as the
@@ -955,8 +1005,12 @@ its speed.
 - **Speed is a tripwire.** M7.10's and M8.9's paired records, as [Cost](#cost-2) says.
 - **Contracts are tested.** At the defaults every chart holds the bytes it held, and a scene without the
   volume composes what it did (M7.1, M7.2). The volume's history follows the frame contract (M7.5). A ray that
-  leaves the volume takes its terminal pair once, and with nothing in the way the sky is the clear sky's to the
-  bit (M7.13, M8.2). A provider's medium is counted once with the air: the transmittance beyond a slab is the
+  leaves the volume takes its terminal pair once. With nothing in the way the sky is the clear sky's to the
+  bit. On a ray whose near air is shadowed, the composed sky is the clear sky's radiance plus the `ΔS` the
+  volume itself reports for that ray, and the test runs a sky that takes `ΔS` twice and one that takes none
+  through the same comparison, where each fails: with a clear sky of 4 and `ΔS` of −0.25, once gives 3.75 and
+  twice 3.5, and both are dimmer, so dimming alone would pass either (M7.13). A sky and a star behind a slab
+  compose once together (M8.2). A provider's medium is counted once with the air: the transmittance beyond a slab is the
   air's times the slab's, and a volume that applies either twice fails (M8.1).
 - **The f64 quadrature is a diagnostic.** The reference in `atmosphere/gpu/tests/reference/` and the proof
   scripts stay. A builder whose haze bands, steps or sits too bright compares the volume with them to find the
@@ -978,7 +1032,7 @@ choose the grid. It decides nothing in a build.
 | The night profile cannot follow a moving haze | Preparing it for a new amount takes longer than the declared lag | Freezing the haze at night without saying so. If preparation is too slow, M7 records it and the proposal for a prepared set of amounts goes to the log |
 | Chrome's sampled-texture limit | Pipeline creation fails with a ground band and a medium registered | Dropping a texture silently |
 | The grid is too coarse for a fog's edge on terrain | Tiles show where fog meets a slope | Blurring the fog |
-| The far cells are too thick for the haze | Far land in haze of 20 km or thicker bands, steps or sits too bright in M7's stills | A longer history that smears it. More slices beyond the handover, or a blend of optical depth, are the remedies |
+| The far cells are too thick for the haze | Far land in haze of 20 km or thicker bands, steps or sits too bright in M7's stills | A longer history that smears it. More slices beyond the handover is the remedy. A blend of optical depth repairs the transmittance alone and leaves the in-scatter as it was, so it is no remedy by itself |
 | The sky keeps haze the land has lost | A line where shadowed land meets the sky; no shaft against the sky | Holding `ΔS` at 0 when no medium is registered |
 
 ### Cost
