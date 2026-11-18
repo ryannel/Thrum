@@ -1,9 +1,12 @@
-use super::{Answer, Component, Point, Settings, map_gpu};
+use super::{Answer, Component, Point, Settings};
 
 #[test]
 fn query_records_match_the_shader_layout() {
-    let source = map_gpu::declarations_at(0) + include_str!("../sample.wgsl");
-    let shader = wgpu::naga::front::wgsl::parse_str(&source).expect("water query shader");
+    let source = concat!(
+        include_str!("../../gains.wgsl"),
+        include_str!("../sample.wgsl")
+    );
+    let shader = wgpu::naga::front::wgsl::parse_str(source).expect("water query shader");
     macro_rules! check {
         ($host:ty, $name:literal, $($member:ident),+ $(,)?) => {
             let ty = shader.types.iter().map(|(_, ty)| ty).find(|ty| ty.name.as_deref() == Some($name)).expect($name);
@@ -19,7 +22,18 @@ fn query_records_match_the_shader_layout() {
             }
         };
     }
-    check!(Point, "QueryPoint", position, radius, dt);
+    check!(
+        Point,
+        "QueryPoint",
+        position,
+        radius,
+        dt,
+        level_current_bed,
+        slope,
+        body,
+        has_bed,
+        gains
+    );
     check!(
         Component,
         "Component",
@@ -37,7 +51,8 @@ fn query_records_match_the_shader_layout() {
         count,
         components,
         lengths_chop,
-        heights
+        heights,
+        swash_margin
     );
     check!(
         Answer,

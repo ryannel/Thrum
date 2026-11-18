@@ -1,8 +1,13 @@
-struct QueryPoint { position: vec2<f32>, radius: f32, dt: f32 }
+struct QueryPoint {
+    position: vec2<f32>, radius: f32, dt: f32,
+    level_current_bed: vec4<f32>,
+    slope: vec2<f32>, body: u32, has_bed: u32,
+    gains: vec4<f32>,
+}
 struct Component { vector: vec2<f32>, amplitude: f32, phase: f32, omega: f32, inverse_k: f32, padding: vec2<f32> }
 struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
-    lengths_chop: vec4<f32>, heights: vec4<f32>,
+    lengths_chop: vec4<f32>, heights: vec4<f32>, swash_margin: vec4<f32>,
 }
 struct Answer {
     height_slope_rate: vec4<f32>,
@@ -102,18 +107,18 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     let index = invocation.x;
     if index >= settings.count { return; }
     let point = points[index];
-    let row = map_sample(point.position);
+    let row = point.level_current_bed;
     var out: Answer;
-    out.body_flags = vec4(row.body, 0u, u32(row.has_bed), 0u);
-    out.current_bed = vec4(row.row.water.yz, row.bed, 0.0);
-    if row.body != NO_BODY {
-        let depth = select(1e30, row.row.water.x - row.bed, row.has_bed);
-        let gains = limit_gains(row.row.gains, depth, settings.heights, map.swash.x, map.origin_spacing_margin.w);
+    out.body_flags = vec4(point.body, 0u, point.has_bed, 0u);
+    out.current_bed = vec4(row.yzw, 0.0);
+    if point.body != 0xffffffffu {
+        let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
+        let gains = limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
         let long = long_wave(point, gains.x);
         let long_slope = world_slope(long);
         var rate = long.velocity.y - dot(long_slope, long.velocity.xz);
-        var slope = long_slope;
-        var velocity = long.velocity + vec3(row.row.water.y, 0.0, row.row.water.z);
+        var slope = point.slope + long_slope;
+        var velocity = long.velocity + vec3(row.y, 0.0, row.z);
         out.layers.x = long.displacement.y;
         for (var band = 0u; band < 3u; band++) {
             let gain = gains[band + 1u];
@@ -128,10 +133,10 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
                 rate += band_rate;
             }
         }
-        let height = row.row.water.x + dot(out.layers, vec4(1.0));
+        let height = row.x + dot(out.layers, vec4(1.0));
         out.height_slope_rate = vec4(height, slope, rate);
         out.velocity_depth = vec4(velocity, depth);
-        out.body_flags.y = u32(!row.has_bed || height > row.bed);
+        out.body_flags.y = u32(point.has_bed == 0u || height > row.w);
         for (var layer = 0u; layer < 4u; layer++) {
             if gains[layer] * settings.heights[layer] > 0.0 { out.body_flags.w |= 1u << layer; }
         }

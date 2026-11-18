@@ -163,7 +163,7 @@ impl Water {
         }
         Ok(Self {
             report: Arc::default(),
-            map,
+            map: Arc::clone(&map),
             mapped,
             body,
             long_variances: records::long_variances(&spectrum),
@@ -174,7 +174,7 @@ impl Water {
             query: profile
                 .query
                 .filter(|limits| limits.points != 0)
-                .map(query::QueryMailbox::new),
+                .map(|limits| query::QueryMailbox::new(limits, map)),
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
@@ -269,7 +269,6 @@ impl SceneContribution for Water {
         if let Some(gpu) = &mut p.map {
             gpu.record(&p.queue, &map, frame.time);
         }
-        drop(map);
         self.recorded = (now, frame.time.tick, row.level);
         let previous_level = self.previous.map_or(row.level, |(_, _, level)| level);
         p.ambient
@@ -303,6 +302,7 @@ impl SceneContribution for Water {
                 &self.spectrum,
                 self.profile.waves.choppiness,
                 self.layer_heights,
+                &map,
             );
         }
     }

@@ -5,11 +5,11 @@ pub(super) use gpu::Readback;
 pub(super) use gpu::validate;
 use std::{
     cmp::Reverse,
-    collections::BTreeMap,
+    collections::{BTreeMap, VecDeque},
     sync::{Arc, Mutex},
     time::Duration,
 };
-use thrum_water_model::Surface;
+use thrum_water_model::{Map, Surface};
 
 /// Query capacity in points and the maximum age in ticks since posting.
 #[derive(Clone, Copy, Debug)]
@@ -98,8 +98,9 @@ pub struct QueryStats {
 
 #[derive(Default)]
 struct State {
-    page: Option<Page>,
-    ready: BTreeMap<u32, BodyAnswers>,
+    pages: VecDeque<Page>,
+    maps: VecDeque<(u64, Arc<Map>)>,
+    ready: BTreeMap<(u32, u64), BodyAnswers>,
     generations: BTreeMap<u32, u32>,
     epoch: u64,
     stats: QueryStats,
@@ -114,25 +115,61 @@ struct Page {
 #[derive(Clone)]
 pub struct QueryMailbox {
     state: Arc<Mutex<State>>,
+    map: Arc<Mutex<Map>>,
     limits: QueryLimits,
 }
 
 impl QueryMailbox {
-    pub(super) fn new(limits: QueryLimits) -> Self {
+    pub(super) fn new(limits: QueryLimits, map: Arc<Mutex<Map>>) -> Self {
         Self {
             state: Arc::default(),
+            map,
             limits,
         }
     }
 
-    /// Replace the pending page with a complete tick's requests and live generations.
-    /// Requests for the same tick are immutable once posted.
+    /// Enqueue a complete tick's requests and live generations. Requests for the
+    /// same tick are immutable once posted. Call after releasing the water map lock.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
     pub fn post(&self, tick: u64, mut bodies: Vec<BodyQuery>) {
+        let map = self.map.lock().expect("water query map");
         let mut state = self.state.lock().expect("water query mailbox");
-        if state.page.as_ref().is_some_and(|page| page.tick == tick) {
-            return;
+        if let Some((previous, _)) = state.maps.back() {
+            if *previous == tick {
+                return;
+            }
+            if *previous > tick {
+                state.pages.clear();
+                state.maps.clear();
+                state.ready.clear();
+                state.epoch += 1;
+            }
+        }
+        // Static maps share one snapshot, even across a frame that catches up
+        // multiple ticks. A changed revision keeps its own connectivity and rows.
+        let snapshot = state
+            .maps
+            .back()
+            .filter(|(_, old)| old.spatial_revision() == map.spatial_revision())
+            .map_or_else(|| Arc::new(map.clone()), |(_, old)| Arc::clone(old));
+        drop(map);
+        state.maps.push_back((tick, snapshot));
+        let oldest_page = tick.saturating_sub(u64::from(self.limits.max_age));
+        while state
+            .maps
+            .front()
+            .is_some_and(|(t, _)| *t < oldest_page.saturating_sub(3))
+        {
+            state.maps.pop_front();
+        }
+        while state
+            .pages
+            .front()
+            .is_some_and(|page| page.tick < oldest_page)
+        {
+            let page = state.pages.pop_front().expect("expired query page");
+            state.stats.unavailable += page.bodies.len() as u64;
         }
         bodies.sort_by_key(|body| (body.id, Reverse(body.generation)));
         let submitted = bodies.len();
@@ -143,9 +180,21 @@ impl QueryMailbox {
             .map(|body| (body.id, body.generation))
             .collect();
         let State {
-            ready, generations, ..
+            ready,
+            generations,
+            stats,
+            ..
         } = &mut *state;
-        ready.retain(|id, answer| generations.get(id) == Some(&answer.generation));
+        ready.retain(|(id, posted), answer| {
+            if generations.get(id) != Some(&answer.generation) {
+                return false;
+            }
+            if *posted < oldest_page {
+                stats.unavailable += 1;
+                return false;
+            }
+            true
+        });
         let mut available = self.limits.points as usize;
         bodies.retain(|body| {
             let valid = body.points.len() <= available
@@ -164,7 +213,9 @@ impl QueryMailbox {
             valid && !body.points.is_empty()
         });
         state.stats.refused += refused;
-        state.page = Some(Page { tick, bodies });
+        if !bodies.is_empty() {
+            state.pages.push_back(Page { tick, bodies });
+        }
     }
 
     /// Take completed results for live bodies. Correct height once, from the
@@ -174,12 +225,12 @@ impl QueryMailbox {
     pub fn drain(&self, tick: u64, step: Duration) -> Vec<BodyAnswers> {
         let mut state = self.state.lock().expect("water query mailbox");
         let mut answers = Vec::new();
-        for (id, mut body) in std::mem::take(&mut state.ready) {
+        for ((id, posted), mut body) in std::mem::take(&mut state.ready) {
             if state.generations.get(&id) != Some(&body.generation) {
                 continue;
             }
             if tick <= body.posted {
-                state.ready.insert(id, body);
+                state.ready.insert((id, posted), body);
                 continue;
             }
             if tick - body.posted > u64::from(self.limits.max_age) {

@@ -1,6 +1,7 @@
 //! Game-owned forces on real Metal and long-duration fixed-tick energy bounds.
 mod support;
 use glam::DVec3;
+use std::sync::{Arc, Mutex};
 use thrum_sea_model::{Component, LongWaves, Sample};
 use thrum_water_model::Surface;
 use water_scene::{
@@ -33,6 +34,125 @@ fn running_scene_drains_metal_answers_and_draws_the_fleet() {
                 assert!(body.rotation.is_finite());
             }
         }
+    }
+}
+
+#[derive(Default)]
+struct FleetRecord {
+    tick: u64,
+    bodies: [BodyRecord; 9],
+}
+
+#[derive(Default)]
+struct BodyRecord {
+    energy: Option<f64>,
+    input: f64,
+    correlation: [f64; 3],
+    least_contact: Option<f64>,
+    gpu_points: u64,
+    worst_energy_overage: f64,
+}
+
+#[test]
+fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
+    let seconds = 600_u32;
+    for speed in [15.0, 5.0, 0.0] {
+        let scene =
+            water_scene::floating::build(Wind::Gale, false, speed, std::f32::consts::PI, false)
+                .expect("head-sea gale scene");
+        let mailbox = scene.mailbox.clone();
+        let observe_pose = scene.observer();
+        let record = Arc::new(Mutex::new(FleetRecord::default()));
+        let write = Arc::clone(&record);
+        scene.observe_steps(move |step| {
+            let mut record = write.lock().expect("step record");
+            record.tick = step.tick;
+            let body = &mut record.bodies[step.id as usize];
+            body.least_contact = Some(
+                body.least_contact
+                    .map_or(step.contact, |old| old.min(step.contact)),
+            );
+            assert!(
+                step.contact > 0.0,
+                "body {} lost all contact at tick {} at {speed} m/s: {:.4} m",
+                step.id,
+                step.tick,
+                step.contact
+            );
+            body.correlation[0] += step.heave * step.waterline;
+            body.correlation[1] += step.heave * step.heave;
+            body.correlation[2] += step.waterline * step.waterline;
+            body.gpu_points += u64::from(step.gpu_points);
+            if step.tick % 120 == 1 {
+                if let Some(begin) = body.energy {
+                    let overage = step.energy - begin - body.input;
+                    body.worst_energy_overage = body.worst_energy_overage.max(overage);
+                    assert!(
+                        overage <= 0.8,
+                        "body {} at {speed} m/s, tick {}: energy gained {}, supplied {}",
+                        step.id,
+                        step.tick,
+                        step.energy - begin,
+                        body.input
+                    );
+                }
+                body.energy = Some(step.energy);
+                body.input = 0.0;
+            }
+            body.input += step.work.water + step.work.motor;
+        });
+        let mut host = support::Fixture::from_game([96, 64], scene.game, scene.report);
+        let begin = std::time::Instant::now();
+        let baseline = observe_pose()[0].position.x;
+        for frame in 0..=seconds * 60 {
+            host.frame(f64::from(frame) * 0.016_666_667);
+            let poses = observe_pose();
+            for body in &poses {
+                assert!(
+                    (body.rotation * DVec3::Y).y > 0.62,
+                    "body {} listed or capsized at frame {frame}, speed {speed}",
+                    body.id
+                );
+            }
+            if frame > 0 && frame % 3600 == 0 {
+                eprintln!(
+                    "gale {speed} m/s: {} simulated seconds, {:.1} wall seconds",
+                    frame / 60,
+                    begin.elapsed().as_secs_f64()
+                );
+            }
+        }
+        let actual_speed = (baseline - observe_pose()[0].position.x) / f64::from(seconds);
+        assert!(
+            (actual_speed - f64::from(speed)).abs() < 0.3,
+            "actual speed {actual_speed}"
+        );
+        let record = record.lock().expect("step record");
+        assert_eq!(record.tick, u64::from(seconds) * 60);
+        for (id, body) in record.bodies.iter().enumerate() {
+            let [cross, heave, waves] = body.correlation;
+            let tracking = cross / (heave * waves).sqrt();
+            assert!(
+                tracking > 0.88,
+                "body {id} at {speed} m/s tracks at {tracking}"
+            );
+            assert!(
+                body.gpu_points >= (record.tick - 2) * 6,
+                "missing GPU samples for body {id}: {}",
+                body.gpu_points
+            );
+            eprintln!(
+                "gale {speed} m/s, body {id}: least contact {:.4} m, tracking {tracking:.4}, GPU stations {}, maximum unaccounted energy {:.4} J/kg",
+                body.least_contact.expect("observed contact"),
+                body.gpu_points,
+                body.worst_energy_overage
+            );
+        }
+        assert_eq!(mailbox.stats().blocking_reads, 0);
+        eprintln!(
+            "gale {speed} m/s: actual {actual_speed:.3} m/s, {:?}",
+            mailbox.stats()
+        );
     }
 }
 

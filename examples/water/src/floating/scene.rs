@@ -1,4 +1,4 @@
-use super::{Body, Hull, draw::Draw, fallback, tick};
+use super::{Body, BodyStep, Hull, advance_fleet, draw::Draw, fallback};
 use crate::island::Wind;
 use glam::DVec3;
 use std::{
@@ -20,6 +20,9 @@ use thrum_water_model::{Bed, BodyKind, Map, Stage};
 pub(super) struct Fleet {
     pub(super) previous: Vec<Body>,
     pub(super) current: Vec<Body>,
+    observe: Option<Box<dyn FnMut(BodyStep) + Send>>,
+    #[cfg(target_arch = "wasm32")]
+    reply_ages: std::collections::VecDeque<(u32, u64, u64)>,
 }
 
 const STEP: Duration = Duration::from_nanos(16_666_667);
@@ -36,6 +39,13 @@ pub struct FloatingScene {
 }
 
 impl FloatingScene {
+    /// Observe station contact and work on each game tick.
+    /// # Panics
+    /// Panics if a thread poisoned the fleet lock.
+    pub fn observe_steps(&self, observe: impl FnMut(BodyStep) + Send + 'static) {
+        self.fleet.lock().expect("floating fleet").observe = Some(Box::new(observe));
+    }
+
     /// Copy the game's most recent complete body poses.
     /// # Panics
     /// Panics if the game poisoned its fleet lock.
@@ -136,7 +146,9 @@ pub fn build_paired(
     bodies[0].velocity = bodies[0].propulsion;
     for id in 1..=8 {
         let (x, z) = if speed > 0.0 && !lake {
-            (f64::from(id - 1) * 5.0 + 2.0, 2.7 + f64::from(id % 2))
+            // Keep the row alongside the straight course, with room for
+            // the floats' crosswind drift as the craft overtakes them.
+            (f64::from(id - 1) * 5.0 + 2.0, 5.0 + f64::from(id % 2))
         } else {
             (
                 f64::from((id - 1) % 4) * 2.4 - 3.6,
@@ -167,6 +179,9 @@ pub fn build_paired(
     let fleet = Arc::new(Mutex::new(Fleet {
         previous: bodies.clone(),
         current: bodies,
+        observe: None,
+        #[cfg(target_arch = "wasm32")]
+        reply_ages: std::collections::VecDeque::new(),
     }));
     let mut controls = Controls::new();
     let query_status = controls.table("water.query", "Water query")?;
@@ -220,14 +235,37 @@ pub fn build_paired(
         let craft = &mut fleet.current[0];
         let speed = *speed_value.lock().expect("speed control");
         craft.propulsion = forward * f64::from(speed);
-        tick(
+        let _answers = advance_fleet(
             &mut fleet.current,
             number,
             step,
             &world_mailbox,
             &map.lock().expect("water map"),
             &fallback,
+            fleet.observe.as_deref_mut(),
         );
+        world_mailbox.post(
+            number,
+            fleet
+                .current
+                .iter()
+                .map(|body| body.request(number, step))
+                .collect(),
+        );
+        #[cfg(target_arch = "wasm32")]
+        {
+            // Retain a sliding window for status readers, including deliveries
+            // on ticks followed by ticks with no reply in the same frame.
+            const REPLY_HISTORY: usize = 64;
+            for answer in _answers {
+                if fleet.reply_ages.len() == REPLY_HISTORY {
+                    fleet.reply_ages.pop_front();
+                }
+                fleet
+                    .reply_ages
+                    .push_back((answer.id, answer.posted, number));
+            }
+        }
     });
     let game = if lake {
         game.with_meshes_and_material(
@@ -253,7 +291,7 @@ pub fn build_paired(
                 ],
             );
             #[cfg(target_arch = "wasm32")]
-            browser_status(stats, &status_fleet.lock().expect("floating fleet").current);
+            browser_status(stats, &status_fleet.lock().expect("floating fleet"));
         })
         .with_contribution(Box::new(Draw::new(Arc::clone(&fleet))), || {
             ContentStatus::Drawn(1)
@@ -289,7 +327,7 @@ fn camera(body: &Body, chase: bool, level: f64) -> Camera {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn browser_status(stats: thrum_water::query::QueryStats, bodies: &[Body]) {
+fn browser_status(stats: thrum_water::query::QueryStats, fleet: &Fleet) {
     let report = js_sys::Object::new();
     let fields = [
         ("dispatches", stats.dispatches),
@@ -307,7 +345,7 @@ fn browser_status(stats: thrum_water::query::QueryStats, bodies: &[Body]) {
     }
     let poses = js_sys::Array::new();
     let replies = js_sys::Array::new();
-    for body in bodies {
+    for body in &fleet.current {
         let pose = js_sys::Array::new();
         for value in body
             .position
@@ -318,13 +356,13 @@ fn browser_status(stats: thrum_water::query::QueryStats, bodies: &[Body]) {
             pose.push(&value.into());
         }
         poses.push(&pose);
-        if let Some((posted, used)) = body.last_reply {
-            let reply = js_sys::Array::new();
-            reply.push(&f64::from(body.id).into());
-            reply.push(&(posted as f64).into());
-            reply.push(&(used as f64).into());
-            replies.push(&reply);
-        }
+    }
+    for &(id, posted, used) in &fleet.reply_ages {
+        let reply = js_sys::Array::new();
+        reply.push(&f64::from(id).into());
+        reply.push(&(posted as f64).into());
+        reply.push(&(used as f64).into());
+        replies.push(&reply);
     }
     let _ = js_sys::Reflect::set(&report, &"poses".into(), &poses);
     let _ = js_sys::Reflect::set(&report, &"replies".into(), &replies);

@@ -59,7 +59,7 @@ pub(super) fn new(
     mailbox: Option<QueryMailbox>,
 ) -> Result<Prepared, String> {
     let device = surface.device;
-    let map_gpu = (mapped || mailbox.is_some())
+    let map_gpu = mapped
         .then_some(map)
         .map(|map| MapGpu::new(device, surface.queue, map))
         .transpose()
@@ -72,12 +72,7 @@ pub(super) fn new(
             profile.query.expect("enabled query limits"),
             &surface.limits,
         )?;
-        Some(Readback::new(
-            device,
-            &ambient,
-            map_gpu.as_ref().expect("query map"),
-            mailbox,
-        ))
+        Some(Readback::new(device, &ambient, mailbox))
     } else {
         None
     };

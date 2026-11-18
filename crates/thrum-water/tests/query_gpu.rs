@@ -203,6 +203,155 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     assert_eq!(mailbox.stats().blocking_reads, 0);
     drop(domain);
     check_delay(&mut host, &device, &surface, &mailbox, step);
+    check_chart_ticks(&mut host, &device, &surface, step);
+}
+
+fn check_chart_ticks(
+    host: &mut FrameHost<Clock, Source>,
+    device: &wgpu::Device,
+    output: &SurfaceOutput<'_>,
+    step: Duration,
+) {
+    use thrum_water_model::{Bed, BodyKind, Chart, Map, Stage};
+    let footprint: Vec<_> = (0..25)
+        .map(|i| (1..=3).contains(&(i % 5)) && (1..=3).contains(&(i / 5)))
+        .collect();
+    let heights = footprint
+        .iter()
+        .map(|&wet| if wet { 0.0 } else { 1.6 })
+        .collect();
+    let map = Arc::new(Mutex::new(
+        Map::prepare(
+            Bed::new([0.0; 2], 0.5, [5, 5], heights).expect("chart bed"),
+            vec![thrum_water_model::Body {
+                name: "Sloped chart".into(),
+                kind: BodyKind::Chart(Chart {
+                    levels: (0..25).map(|i| 0.80 + 0.005 * f64::from(i % 5)).collect(),
+                    currents: vec![[2.0, 0.4]; 25],
+                    footprint,
+                    ends: Vec::new(),
+                }),
+                level: 0.0,
+                stage: Stage {
+                    min: 0.0,
+                    max: 0.5,
+                    value: 0.0,
+                },
+                fetch: 100.0,
+                gains: [0.0; 4],
+            }],
+            thrum_water_model::Profile {
+                margin_height: 0.3,
+                swash_ratio: 0.7,
+            },
+        )
+        .expect("chart map"),
+    ));
+    let spectrum = Spectrum {
+        long: Vec::new(),
+        cascades: [160.0, 37.0, 9.0].map(|length| Cascade::new(length, &[]).expect("calm band")),
+        tail_slope_variance: 0.0,
+    };
+    let water = Water::mapped(
+        Arc::clone(&map),
+        spectrum,
+        Profile {
+            query: Some(QueryLimits {
+                points: 1,
+                max_age: 3,
+            }),
+            ..Profile::default()
+        },
+    )
+    .expect("chart contribution");
+    let mailbox = water.query_mailbox().expect("chart mailbox");
+    host.set_scene_contribution(Box::new(water))
+        .expect("chart scene");
+    let request = |use_tick| {
+        vec![BodyQuery {
+            id: 1,
+            generation: 7,
+            points: vec![QueryPoint {
+                position: [0.738, 0.656],
+                radius: 0.0,
+                use_tick,
+            }],
+        }]
+    };
+    mailbox.post(7, request(7));
+    map.lock()
+        .expect("chart")
+        .set_stage(0, 0.10)
+        .expect("stage at tick 8");
+    mailbox.post(8, request(9));
+    drop(
+        host.advance(8 * step)
+            .expect("tentative frame")
+            .encode_scene()
+            .expect("encode two pages"),
+    );
+    assert_eq!(mailbox.stats().dispatches, 0);
+    assert!(
+        host.drive(8 * step + step / 4, Some(output))
+            .expect("submit")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("both test readbacks complete");
+    let results = mailbox.drain(9, step);
+    assert_eq!(mailbox.stats().dispatches, 2);
+    assert_eq!(
+        results.iter().map(|body| body.posted).collect::<Vec<_>>(),
+        [7, 8]
+    );
+    assert_eq!(mailbox.stats().age_two, 1);
+    assert_eq!(mailbox.stats().age_one, 1);
+
+    let check = |answer: &thrum_water::query::QueryAnswer, stage: f64| {
+        let model = map
+            .lock()
+            .expect("chart")
+            .sample_stages(&[stage])
+            .expect("oracle stage");
+        let point = answer.point.position.map(f64::from);
+        let row = model.sample(point).expect("chart support");
+        assert_eq!(answer.surface.body, Some(row.body));
+        assert!(answer.surface.wet);
+        assert!((answer.surface.sample.height - row.row.level).abs() < 0.000_002);
+        assert!((answer.surface.depth - row.depth).abs() < 0.000_002);
+        assert!((answer.surface.current[0] - 2.0).abs() < 0.000_002);
+        assert!((answer.surface.current[1] - 0.4).abs() < 0.000_002);
+        for (gpu, cpu) in answer
+            .surface
+            .sample
+            .slope
+            .into_iter()
+            .zip(model.level_slope(row.body, point))
+        {
+            assert!((gpu - cpu).abs() < 0.000_002, "{gpu} vs {cpu}");
+        }
+        assert!((answer.surface.sample.slope[0] - 0.01).abs() < 0.000_002);
+    };
+    check(&results[0].points[0], 0.0);
+    check(&results[1].points[0], 0.10);
+
+    map.lock()
+        .expect("chart")
+        .set_stage(0, 0.20)
+        .expect("stage at tick 9");
+    mailbox.post(9, request(10));
+    assert!(
+        host.drive(9 * step + step / 4, Some(output))
+            .expect("quarter-alpha stage frame")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("stage result");
+    let answer = mailbox.drain(10, step);
+    assert_eq!(answer.len(), 1);
+    check(&answer[0].points[0], 0.20);
 }
 
 fn check_delay(

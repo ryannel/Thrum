@@ -467,7 +467,10 @@ impl Map {
         row
     }
 
-    pub(crate) fn level_slope(&self, body: usize, point: [f64; 2]) -> [f64; 2] {
+    /// Spatial derivative of a sampled body's joined or continued still level.
+    /// # Panics
+    /// Panics if the body index is outside this map.
+    pub fn level_slope(&self, body: usize, point: [f64; 2]) -> [f64; 2] {
         let BodyKind::Chart(chart) = &self.bodies[body].kind else {
             return [0.0; 2];
         };

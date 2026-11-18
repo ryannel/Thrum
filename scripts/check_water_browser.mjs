@@ -288,25 +288,51 @@ try {
     const start=await bodyStatus();
     assert(start?.poses.length===9,'expected craft and eight floats');
     const ages=new Map();
+    const replyKey=([body,posted,used])=>`${body}/${posted}/${used}`;
+    const beforeStart=new Set(start.replies.map(replyKey));
+    const collect=({replies})=>{
+      for(const reply of replies) {
+        const key=replyKey(reply);
+        if(!beforeStart.has(key)){
+          const [body,posted,used]=reply;
+          ages.set(key,{body,posted,used,age:used-posted});
+        }
+      }
+    };
+    const reconcile=(from,to,records)=>{
+      const counts=[0,0,0];
+      for(const {age} of records){
+        assert(age>=1&&age<=3,`invalid reply age ${age}`);
+        counts[Math.min(age,3)-1]++;
+      }
+      for(const [index,key] of ['ageOne','ageTwo','ageOlder'].entries())
+        assert(counts[index]===to[key]-from[key],`missing ${key} records: ${counts[index]} vs ${to[key]-from[key]}`);
+    };
     for(let index=0;index<96;index++){
       await until(()=>evaluate('game.frame_ready()'),'free body frame slot');
       await drive(1000/120);
-      for(const [body,posted,used] of (await bodyStatus()).replies)
-        ages.set(`${body}/${used}`,{body,posted,used,age:used-posted});
+      collect(await bodyStatus());
     }
     await capture('bodies',0);
     const end=await bodyStatus();
+    collect(end);
     assert(end.dispatches>25&&end.ageOne+end.ageTwo>90,'body replies did not reach the game');
     assert(end.blockingReads===0&&end.refused===0,'query counters indicate a block or capacity refusal');
     assert(end.poses.every(p=>p.length===7&&p.every(Number.isFinite)&&Math.abs(p[1])<4),'a body left the water');
     assert(Math.abs(end.poses[0][0]-start.poses[0][0])>0.8,'the craft did not move under thrust');
     assert(end.poses.slice(1).some((p,i)=>Math.abs(p[1]-start.poses[i+1][1])>0.05),'floats did not respond to the swell');
-    assert(ages.size>=end.ageOne+end.ageTwo+end.ageOlder-start.ageOne-start.ageTwo-start.ageOlder-9,'missing per-body reply ages');
+    reconcile(start,end,ages.values());
+    const beforeHitch=new Set(ages.keys());
     await until(()=>evaluate('game.frame_ready()'),'frame slot before hitch');
     await drive(100);
     const hitch=await bodyStatus();
+    collect(hitch);
+    const hitchAges=[...ages].filter(([key])=>!beforeHitch.has(key)).map(([,record])=>record);
+    assert(hitchAges.length>0,'hitch did not exercise a delivered reply');
+    reconcile(end,hitch,hitchAges);
     assert(hitch.unavailable>end.unavailable&&hitch.blockingReads===0,'hitch did not account for the unavailable replies');
-    result.bodies={start,ages:[...ages.values()],end,hitch};
+    for(const status of [start,end,hitch]) delete status.replies;
+    result.bodies={start,ages:[...ages.values()].slice(0,beforeHitch.size),end,hitch,hitchAges};
   } else if(mode==='island'){
     await capture('island',10000-now);
     await inspectIsland(evaluate,result);

@@ -64,7 +64,6 @@ pub struct Body {
     pub angular: DVec3,
     /// Commanded speed in world x/z. Only a craft has a motor.
     pub propulsion: DVec3,
-    last_reply: Option<(u64, u64)>,
 }
 
 /// Actual positive work supplied to the normalized rigid-body state by water and motor.
@@ -74,6 +73,26 @@ pub struct Work {
     pub water: f64,
     /// Positive work in joules per kilogram from the motor.
     pub motor: f64,
+}
+
+/// One observed rigid-body step, measured at the stations used by the force law.
+pub struct BodyStep {
+    /// End of the fixed step being integrated.
+    pub tick: u64,
+    /// Game body that took the step.
+    pub id: u32,
+    /// Mechanical energy before integration at this tick's waterline.
+    pub energy: f64,
+    /// Positive external work supplied over this step.
+    pub work: Work,
+    /// Deepest station's immersion, including its remaining wetted keel.
+    pub contact: f64,
+    /// Mean height of the six station samples.
+    pub waterline: f64,
+    /// Body origin height plus the equilibrium draft.
+    pub heave: f64,
+    /// Number of the six stations driven by the GPU answer.
+    pub gpu_points: u32,
 }
 
 impl Body {
@@ -88,7 +107,6 @@ impl Body {
             velocity: DVec3::ZERO,
             angular: DVec3::ZERO,
             propulsion: DVec3::ZERO,
-            last_reply: None,
         }
     }
 
@@ -143,13 +161,16 @@ impl Body {
     /// Specific mechanical energy including gravitational, translational,
     /// angular and hydrostatic elastic energy at the supplied waterline.
     pub fn mechanical_energy(&self, mut height: impl FnMut(DVec3) -> f64) -> f64 {
+        self.energy_at_stations(|index| height(self.station(index)))
+    }
+
+    fn energy_at_stations(&self, mut height: impl FnMut(usize) -> f64) -> f64 {
         let omega = self.rotation.conjugate() * self.angular;
         let stiffness = GRAVITY * STATION_WEIGHT / self.draft();
         let spring_limit = MAX_LIFT / stiffness;
         let hydrostatic: f64 = (0..SAMPLES)
             .map(|i| {
-                let p = self.station(i);
-                let immersion = (height(p) - p.y).max(0.0);
+                let immersion = (height(i) - self.station(i).y).max(0.0);
                 let spring = immersion.min(spring_limit);
                 0.5 * stiffness * spring.powi(2) + MAX_LIFT * (immersion - spring)
             })
@@ -188,10 +209,14 @@ impl Body {
                 if immersion > -keel {
                     let flow = DVec3::from_array(surface.sample.velocity);
                     let slope = DVec3::new(surface.sample.slope[0], 0.0, surface.sample.slope[1]);
-                    // Hydrodynamic damping mostly follows the fluid, with part of
-                    // the pitch-induced encounter rate applied at the hull stations.
-                    let waterline_rate = flow.y + 0.31 * slope.dot(v - flow);
                     let encounter_rate = surface.sample.height_dt + slope.dot(v);
+                    // A driven hull crosses the water plane as well as moving
+                    // with the fluid. Damping follows the local waterline's
+                    // encounter rate at each of its stations.
+                    let waterline_rate = match self.hull {
+                        Hull::Craft => encounter_rate,
+                        Hull::Float => flow.y + 0.31 * slope.dot(v - flow),
+                    };
                     // A submerged station has finite displacement and wetted area.
                     // Bound the impulse of a broken-up short crest on a small hull.
                     let lift = (stiffness * immersion).clamp(0.0, MAX_LIFT);
@@ -292,33 +317,64 @@ pub fn sample_answer(
     Some((surface, bed))
 }
 
-/// Advance every body at the world tick, then post the next query page.
-pub fn tick(
+/// Advance every body at the world tick and return the deliveries for diagnostics.
+fn advance_fleet(
     bodies: &mut [Body],
     tick: u64,
     step: Duration,
     mailbox: &QueryMailbox,
     map: &thrum_water_model::Map,
     field: &Field,
-) {
+    mut observe: Option<&mut (dyn FnMut(BodyStep) + Send + 'static)>,
+) -> Vec<BodyAnswers> {
     let dt = step.as_secs_f64();
+    let answers = if tick == 0 {
+        Vec::new()
+    } else {
+        mailbox.drain(tick, step)
+    };
     if tick != 0 {
-        let answers = mailbox.drain(tick, step);
         for body in bodies.iter_mut() {
-            let answer = answers.iter().find(|answer| answer.id == body.id);
-            body.last_reply = answer.map(|answer| (answer.posted, tick));
-            body.advance(dt, |index, position| {
-                sample_answer(answer, index, position).unwrap_or_else(|| {
+            let answer = answers.iter().rfind(|answer| answer.id == body.id);
+            let mut gpu_points = 0;
+            let mut sample = |index, position: DVec3| {
+                if let Some(result) = sample_answer(answer, index, position) {
+                    gpu_points += 1;
+                    result
+                } else {
                     mailbox.report_unavailable();
                     let p = [position.x, position.z];
                     let sample = map.surface(field, p, tick as f64 * dt).unwrap_or_default();
                     (sample, map.bed().height(p))
-                })
-            });
+                }
+            };
+            if let Some(observer) = observe.as_deref_mut() {
+                let stations: [_; SAMPLES] = std::array::from_fn(|i| sample(i, body.station(i)));
+                let energy = body.energy_at_stations(|i| stations[i].0.sample.height);
+                let waterline =
+                    stations.iter().map(|s| s.0.sample.height).sum::<f64>() * STATION_WEIGHT;
+                let contact = stations
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, s)| s.0.wet)
+                    .map(|(i, s)| s.0.sample.height - body.station(i).y + body.hull.keel_depth())
+                    .fold(f64::NEG_INFINITY, f64::max);
+                let heave = body.position.y + body.draft();
+                let work = body.advance(dt, |i, _| stations[i]);
+                observer(BodyStep {
+                    tick,
+                    id: body.id,
+                    energy,
+                    work,
+                    contact,
+                    waterline,
+                    heave,
+                    gpu_points,
+                });
+            } else {
+                body.advance(dt, sample);
+            }
         }
     }
-    mailbox.post(
-        tick,
-        bodies.iter().map(|body| body.request(tick, step)).collect(),
-    );
+    answers
 }

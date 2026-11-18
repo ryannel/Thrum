@@ -94,8 +94,9 @@ pub fn declarations() -> String {
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
     format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}",
-        include_str!("map.wgsl")
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}\n{}",
+        include_str!("map.wgsl"),
+        include_str!("gains.wgsl"),
     )
 }
 
