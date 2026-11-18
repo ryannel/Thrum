@@ -269,6 +269,17 @@ impl SceneContribution for Water {
         if let Some(gpu) = &mut p.map {
             gpu.record(&p.queue, &map, frame.time);
         }
+        if let Some(query) = &mut p.query {
+            query.record(
+                &p.queue,
+                frame.time,
+                &self.spectrum,
+                self.profile.waves.choppiness,
+                self.layer_heights,
+                &map,
+            );
+        }
+        drop(map);
         self.recorded = (now, frame.time.tick, row.level);
         let previous_level = self.previous.map_or(row.level, |(_, _, level)| level);
         p.ambient
@@ -295,16 +306,6 @@ impl SceneContribution for Water {
         );
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
-        if let Some(query) = &mut p.query {
-            query.record(
-                &p.queue,
-                frame.time,
-                &self.spectrum,
-                self.profile.waves.choppiness,
-                self.layer_heights,
-                &map,
-            );
-        }
     }
     fn computes(&self, _frame: &ContributionFrame) -> bool {
         false
