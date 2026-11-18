@@ -2,6 +2,7 @@
 //! controls, movement keys and solar-time readback.
 
 use std::time::Instant;
+use thrum_render::capabilities::HardwareRequest;
 use thrum_render::synthetic::CullMode;
 
 use thrum_app::{Config, Edits, Game, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
@@ -52,8 +53,17 @@ pub fn run_runtime_capture(
     hold_full: std::time::Duration,
     recovery: NativeRecovery,
     capture_output: RuntimeCaptureOutput,
+    hardware: Vec<HardwareRequest>,
 ) -> Result<(), String> {
-    capture::run(output, scenario, wait, hold_full, recovery, capture_output)
+    capture::run(
+        output,
+        scenario,
+        wait,
+        hold_full,
+        recovery,
+        capture_output,
+        hardware,
+    )
 }
 
 const KEY_A: u8 = 1;
@@ -68,7 +78,7 @@ const KEY_DOWN: u8 = 128;
 /// Run the bounded V1 scene in a macOS window and print its frames report.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
-pub fn run_window() {
+pub fn run_window(hardware: Vec<HardwareRequest>) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
     // are reported when the host is prepared.
@@ -114,6 +124,7 @@ pub fn run_window() {
                 held_keys: 0,
                 capture_route: None,
                 cloud_capture: false,
+                hardware,
             })
         },
     );
@@ -126,6 +137,7 @@ struct WindowGame {
     held_keys: u8,
     capture_route: Option<String>,
     cloud_capture: bool,
+    hardware: Vec<HardwareRequest>,
 }
 
 /// Construct the ordinary game for the engine's headless presenter adapter.
@@ -141,6 +153,7 @@ fn capture_game_with_route_limit(cloud_capture: bool) -> Result<impl Game, Strin
         world: None,
         held_keys: 0,
         cloud_capture,
+        hardware: Vec::new(),
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .map(std::fs::read_to_string)
             .transpose()
@@ -175,6 +188,10 @@ impl Game for WindowGame {
     type Edits = ControlEdits;
     /// Committed solar time after a render job.
     type Readback = f32;
+
+    fn hardware_requests(&self) -> &[HardwareRequest] {
+        &self.hardware
+    }
 
     fn prepare(
         &mut self,

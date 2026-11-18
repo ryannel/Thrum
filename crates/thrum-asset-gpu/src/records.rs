@@ -25,13 +25,13 @@ pub struct CookedVolume {
     /// Extinction, march steps, light steps, reserved.
     pub params: [f32; 4],
 }
-/// Instance vertex stream; its stride includes reserved padding.
+/// Placement record read as an indexed instance stream or as a mesh-stage uniform.
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct Instance {
     /// Placement matrix, locations 3 through 6.
     pub model: [[f32; 4]; 4],
-    /// History validity at location 7 and reserved words.
+    /// History validity at location 7, then meshlet count, cull flag and largest scale bits.
     pub history: [u32; 4],
 }
 /// Renderer material ABI, written whole by the cooked contribution.
@@ -50,6 +50,6 @@ pub struct Material {
     pub textures: [u32; 4],
 }
 /// Actual shader read by the cull pipeline.
-pub const CULL_SHADER: &str = include_str!("cull.wgsl");
+pub const CULL_SHADER: &str = concat!(include_str!("meshlet_cull.wgsl"), include_str!("cull.wgsl"));
 /// Actual contribution appended to the scene's forward shader.
 pub const COOKED_SHADER: &str = include_str!("cooked.wgsl");

@@ -145,6 +145,8 @@ pub struct SceneSurface<'a> {
     pub downlevel: Option<wgpu::DownlevelFlags>,
     /// Device limits of this generation.
     pub limits: wgpu::Limits,
+    /// The generation's resolved recipe.
+    pub recipe: crate::capabilities::Recipe,
     /// The composed WGSL of the scene's forward shader (lighting, materials and entry points).
     /// It holds [`material_hook_point`] exactly once.
     pub shader_source: &'a str,

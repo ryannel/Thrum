@@ -33,6 +33,7 @@ pub(super) fn run(
     hold_full: Duration,
     recovery: super::NativeRecovery,
     capture_output: RuntimeCaptureOutput,
+    hardware: Vec<super::HardwareRequest>,
 ) -> Result<(), String> {
     if !matches!(
         scenario,
@@ -68,6 +69,7 @@ pub(super) fn run(
                 hold_full,
                 recovery,
                 capture_output,
+                &hardware,
             ))
         })
         .map_err(|e| e.to_string())?
@@ -535,6 +537,7 @@ async fn record(
     hold_full: Duration,
     recovery_mode: super::NativeRecovery,
     capture_output: RuntimeCaptureOutput,
+    hardware: &[super::HardwareRequest],
 ) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
     let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
@@ -542,7 +545,7 @@ async fn record(
     let (qos, encoding, disk_limit) = capture_settings()?;
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
-    let (adapter, device, queue, capabilities) = metal_device(&instance, 1).await?;
+    let (adapter, device, queue, capabilities) = metal_device(&instance, 1, hardware).await?;
     let mut driver = Offscreen::new(
         super::capture_game_with_route_limit(matches!(scenario, "clouds-route" | "exit-route"))?,
         &device,
@@ -584,7 +587,7 @@ async fn record(
     let mut running = false;
     let mut night_variant = false;
     let mut stalled = false;
-    let mut recovery = native_recovery::Recovery::new(recovery_mode);
+    let mut recovery = native_recovery::Recovery::new(recovery_mode, hardware);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
@@ -752,6 +755,18 @@ fn write_runtime_report<G: Game>(
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
+    if !capabilities.hardware().is_empty() {
+        result["hardware"] = json!(
+            capabilities
+                .hardware()
+                .iter()
+                .map(|entry| json!({
+                    "name": entry.request.feature.name(), "required": entry.request.required,
+                    "enabled": entry.declined.is_none(), "declined": entry.declined,
+                }))
+                .collect::<Vec<_>>()
+        );
+    }
     if let Some(native) = driver.native_witness_report() {
         result["native_witness"] = json!({"selection":format!("{:?}",native.selection),"encoded":native.encoded,"submitted":native.submitted,"discarded":native.discarded,"resets":native.resets,"completed":native.completed,"resident_bytes":native.resident_bytes});
     }
@@ -810,21 +825,21 @@ fn reset_native_capture<G: Game>(driver: &mut Offscreen<G>) {
 async fn metal_device(
     instance: &wgpu::Instance,
     generation: u64,
+    hardware: &[super::HardwareRequest],
 ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(|e| e.to_string())?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter)
-                | DeviceCapabilities::requested_content_features(&adapter),
+    DeviceCapabilities::open_generation(
+        instance,
+        &wgpu::RequestAdapterOptions::default(),
+        generation,
+        hardware,
+        |adapter| wgpu::DeviceDescriptor {
+            required_features: DeviceCapabilities::requested_timing_features(adapter)
+                | DeviceCapabilities::requested_content_features(adapter),
             ..Default::default()
-        })
-        .await
-        .map_err(|e| e.to_string())?;
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
-    Ok((adapter, device, queue, capabilities))
+        },
+    )
+    .await
+    .map_err(|error| error.to_string())
 }
 
 fn metal_instance() -> wgpu::Instance {

@@ -13,14 +13,18 @@ pub(super) fn yaw(time: f64, mode: super::super::NativeRecovery) -> f64 {
     ((time - 1.0) / duration).clamp(0.0, 1.0) * 36.0
 }
 
-pub(super) struct Recovery {
+pub(super) struct Recovery<'a> {
     control: Option<bool>,
     next: usize,
     generation: u64,
+    hardware: &'a [super::super::HardwareRequest],
 }
 
-impl Recovery {
-    pub(super) fn new(mode: super::super::NativeRecovery) -> Self {
+impl<'a> Recovery<'a> {
+    pub(super) fn new(
+        mode: super::super::NativeRecovery,
+        hardware: &'a [super::super::HardwareRequest],
+    ) -> Self {
         let control = match mode {
             super::super::NativeRecovery::Disabled => None,
             super::super::NativeRecovery::Control => Some(true),
@@ -30,6 +34,7 @@ impl Recovery {
             control,
             next: 0,
             generation: 1,
+            hardware,
         }
     }
 
@@ -85,7 +90,7 @@ impl Recovery {
         if needs_device {
             self.generation += 1;
             let (_, _, queue, capabilities) =
-                super::metal_device(instance, self.generation).await?;
+                super::metal_device(instance, self.generation, self.hardware).await?;
             driver
                 .recover_device(&capabilities, &queue)
                 .await

@@ -77,6 +77,8 @@ pub(crate) struct GpuMesh {
     pub(crate) ranges: Option<wgpu::Buffer>,
     /// Per meshlet culling bounds.
     pub(crate) bounds: Option<wgpu::Buffer>,
+    pub(crate) mesh_stage_streams: Option<[wgpu::Buffer; 3]>,
+    pub(crate) mesh_stage_exclusion: Option<&'static str>,
     pub(crate) meshlet_count: u32,
     pub(crate) index_count: u32,
     pub(crate) caster_box: Option<(glam::Vec3, glam::Vec3)>,
@@ -113,6 +115,47 @@ pub(crate) struct ResidentSet {
     pub(crate) products: Vec<ContentHash>,
 }
 
+impl ResidentSet {
+    pub(crate) fn report_mesh_storage(
+        &self,
+        placements: &[crate::MeshPlacement],
+        stats: &mut CookedStats,
+    ) {
+        stats.mesh_stage_exclusions.clear();
+        stats.mesh_buffer_bytes = 0;
+        stats.mesh_stage_bytes = 0;
+        stats.mesh_stage_vertex_streams = 0;
+        let mut counted = std::collections::HashSet::new();
+        for ((mesh, _), placement) in self.meshes.iter().zip(placements) {
+            if !counted.insert(Arc::as_ptr(mesh)) {
+                continue;
+            }
+            if let Some(reason) = mesh.mesh_stage_exclusion {
+                stats
+                    .mesh_stage_exclusions
+                    .push((placement.mesh.clone(), reason));
+            }
+            let stage_bytes = mesh
+                .mesh_stage_streams
+                .iter()
+                .flatten()
+                .map(wgpu::Buffer::size)
+                .sum::<u64>();
+            stats.mesh_stage_bytes += stage_bytes;
+            stats.mesh_stage_vertex_streams += [&mesh.positions, &mesh.attributes]
+                .into_iter()
+                .filter(|buffer| buffer.usage().contains(wgpu::BufferUsages::STORAGE))
+                .count();
+            stats.mesh_buffer_bytes += mesh.positions.size()
+                + mesh.attributes.size()
+                + mesh.indices.size()
+                + mesh.ranges.as_ref().map_or(0, wgpu::Buffer::size)
+                + mesh.bounds.as_ref().map_or(0, wgpu::Buffer::size)
+                + stage_bytes;
+        }
+    }
+}
+
 /// A set whose destinations exist but whose bytes are still in staging.
 pub(crate) struct PendingSet {
     /// Drawn generation whose resources this upload reuses.
@@ -134,6 +177,7 @@ pub(crate) struct Confirmed {
 
 pub(crate) struct Loader {
     pub(crate) indirect: bool,
+    pub(crate) mesh_stage_limits: Option<wgpu::Limits>,
     pub(crate) device: wgpu::Device,
     /// This device generation's bounded staging.
     pub(crate) ring: StagingRing,
@@ -625,38 +669,73 @@ impl Loader {
             part(Part::Ranges),
             part(Part::Bounds),
         );
+        let mesh_stage_exclusion = self
+            .mesh_stage_limits
+            .as_ref()
+            .and_then(|limits| crate::mesh_stages::exclusion(mesh, limits));
+        let stage_storage = self.mesh_stage_limits.is_some() && mesh_stage_exclusion.is_none();
+        let meshlet_count = u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX);
+        // A main-view fallback can still draw indexed geometry whole when its indirect inputs
+        // would themselves exceed the restricted device's limits.
+        let indirect = self.indirect
+            && self.mesh_stage_limits.as_ref().is_none_or(|limits| {
+                let max_binding = limits
+                    .max_storage_buffer_binding_size
+                    .min(limits.max_buffer_size);
+                [
+                    bounds.bytes().len() as u64,
+                    ranges.bytes().len() as u64,
+                    u64::from(meshlet_count.max(1)) * crate::draw::DRAW_ARGS_BYTES,
+                ]
+                .into_iter()
+                .all(|size| size.max(16) <= max_binding)
+                    && meshlet_count.div_ceil(64) <= limits.max_compute_workgroups_per_dimension
+            });
+        let vertex_usage = wgpu::BufferUsages::VERTEX
+            | if stage_storage {
+                wgpu::BufferUsages::STORAGE
+            } else {
+                wgpu::BufferUsages::empty()
+            };
+        let mesh_stage_streams = stage_storage.then(|| {
+            [
+                ("cooked meshlet table", Part::MeshletTable),
+                ("cooked meshlet vertices", Part::MeshletVertices),
+                ("cooked meshlet triangles", Part::MeshletTriangles),
+            ]
+            .map(|(label, stream)| {
+                let source = part(stream);
+                let buffer = self.buffer(label, source.bytes().len(), wgpu::BufferUsages::STORAGE);
+                plan.buffer(source, buffer.clone());
+                buffer
+            })
+        });
         let gpu = GpuMesh {
             mapped: mesh.is_mapped(),
-            positions: self.buffer(
-                "cooked positions",
-                positions.bytes().len(),
-                wgpu::BufferUsages::VERTEX,
-            ),
-            attributes: self.buffer(
-                "cooked attributes",
-                attributes.bytes().len(),
-                wgpu::BufferUsages::VERTEX,
-            ),
+            mesh_stage_streams,
+            mesh_stage_exclusion,
+            positions: self.buffer("cooked positions", positions.bytes().len(), vertex_usage),
+            attributes: self.buffer("cooked attributes", attributes.bytes().len(), vertex_usage),
             indices: self.buffer(
                 "cooked meshlet indices",
                 indices.bytes().len(),
                 wgpu::BufferUsages::INDEX,
             ),
-            ranges: self.indirect.then(|| {
+            ranges: indirect.then(|| {
                 self.buffer(
                     "cooked meshlet ranges",
                     ranges.bytes().len(),
                     wgpu::BufferUsages::STORAGE,
                 )
             }),
-            bounds: self.indirect.then(|| {
+            bounds: (indirect || stage_storage).then(|| {
                 self.buffer(
                     "cooked meshlet bounds",
                     bounds.bytes().len(),
                     wgpu::BufferUsages::STORAGE,
                 )
             }),
-            meshlet_count: u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX),
+            meshlet_count,
             index_count: u32::try_from(tables.indices().len()).unwrap_or(0),
             caster_box: caster_box(mesh.positions()),
             rest_points: rest_points(mesh.positions()),
@@ -752,6 +831,9 @@ enum Part {
     Indices,
     Ranges,
     Bounds,
+    MeshletTable,
+    MeshletVertices,
+    MeshletTriangles,
 }
 
 /// One staged array of a mesh: the product's own bytes, or its expanded meshlet tables.
@@ -769,6 +851,9 @@ impl Bytes for MeshPart {
             Part::Indices => bytemuck::cast_slice(self.tables.indices()),
             Part::Ranges => bytemuck::cast_slice(self.tables.ranges()),
             Part::Bounds => bytemuck::cast_slice(self.mesh.meshlet_bounds()),
+            Part::MeshletTable => bytemuck::cast_slice(self.mesh.meshlets()),
+            Part::MeshletVertices => bytemuck::cast_slice(self.mesh.meshlet_vertices()),
+            Part::MeshletTriangles => self.mesh.meshlet_triangles(),
         }
     }
 }

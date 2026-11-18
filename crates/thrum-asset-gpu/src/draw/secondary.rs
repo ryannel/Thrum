@@ -87,7 +87,8 @@ impl SecondaryCull {
             .max_buffer_size
             .min(self.limits.max_storage_buffer_binding_size);
         set.meshes.iter().all(|(mesh, _)| {
-            u64::from(mesh.meshlet_count.max(1)) * DRAW_ARGS_BYTES <= max_bytes
+            mesh.ranges.is_some()
+                && u64::from(mesh.meshlet_count.max(1)) * DRAW_ARGS_BYTES <= max_bytes
                 && mesh.meshlet_count.div_ceil(64)
                     <= self.limits.max_compute_workgroups_per_dimension
         })

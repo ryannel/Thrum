@@ -82,6 +82,11 @@ pub trait Game {
     /// A small value read on the render owner after each job and observed on the main thread.
     type Readback: Copy + Send + 'static;
 
+    /// Explicit launch hardware preferences and requirements, retained on device recovery.
+    fn hardware_requests(&self) -> &[thrum_render::capabilities::HardwareRequest] {
+        &[]
+    }
+
     /// Prepare the runtime on the shell's first device. `world_advanced` wakes the shell when
     /// a resident world lane commits.
     /// # Errors

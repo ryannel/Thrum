@@ -99,6 +99,34 @@ impl Restriction {
 }
 
 #[cfg(feature = "render")]
+impl Profile {
+    /// The gate's base recipe, for tests that opt into hardware through the renderer registry.
+    #[must_use]
+    pub fn descriptor(
+        self,
+        adapter: &wgpu::Adapter,
+        restriction: &Restriction,
+    ) -> wgpu::DeviceDescriptor<'static> {
+        let limits = match self {
+            Self::Portable => wgpu::Limits::default(),
+            Self::Native => adapter.limits(),
+        };
+        let features = adapter.features()
+            & (wgpu::Features::TIMESTAMP_QUERY
+                | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS
+                | wgpu::Features::TEXTURE_COMPRESSION_ASTC
+                | wgpu::Features::TEXTURE_COMPRESSION_BC
+                | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D);
+        let (limits, features) = restriction.apply(limits, features);
+        wgpu::DeviceDescriptor {
+            required_limits: limits,
+            required_features: features,
+            ..Default::default()
+        }
+    }
+}
+
+#[cfg(feature = "render")]
 impl Gpu {
     /// Fresh adapter for device-replacement tests, retaining the same instance.
     /// Backend device identities are only comparable within that instance.
@@ -125,22 +153,10 @@ impl Gpu {
         profile: Profile,
         restriction: &Restriction,
     ) -> (wgpu::Device, wgpu::Queue) {
-        let limits = match profile {
-            Profile::Portable => wgpu::Limits::default(),
-            Profile::Native => self.adapter.limits(),
-        };
-        let features = self.adapter.features()
-            & (wgpu::Features::TIMESTAMP_QUERY
-                | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS
-                | wgpu::Features::TEXTURE_COMPRESSION_ASTC
-                | wgpu::Features::TEXTURE_COMPRESSION_BC
-                | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D);
-        let (limits, features) = restriction.apply(limits, features);
-        pollster::block_on(self.adapter.request_device(&wgpu::DeviceDescriptor {
-            required_limits: limits,
-            required_features: features,
-            ..Default::default()
-        }))
+        pollster::block_on(
+            self.adapter
+                .request_device(&profile.descriptor(&self.adapter, restriction)),
+        )
         .expect("admitted GPU test device")
     }
 }

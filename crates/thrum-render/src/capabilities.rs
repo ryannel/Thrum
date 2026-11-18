@@ -2,7 +2,9 @@
 //! Render preparation consumes this record; pass recording never probes a device.
 
 use crate::runtime::DeviceSite;
+mod hardware;
 mod recipe;
+pub use hardware::{HardwareFeature, HardwareLaunchError, HardwareRequest, HardwareSelection};
 pub use recipe::{Recipe, RecipeError};
 
 /// Generation-selected temporal provider. Portable TAAU is the admitted default.
@@ -28,6 +30,7 @@ pub struct DeviceCapabilities {
     unified_memory: Option<bool>,
     recipe: Result<Recipe, RecipeError>,
     reconstructor: Reconstructor,
+    hardware: Vec<HardwareSelection>,
 }
 
 impl DeviceCapabilities {
@@ -101,6 +104,7 @@ impl DeviceCapabilities {
             site,
             generation,
             adapter,
+            hardware: Vec::new(),
         }
     }
 
@@ -207,6 +211,12 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn features(&self) -> wgpu::Features {
         self.features
+    }
+
+    /// Launch requests and their disposition on this generation.
+    #[must_use]
+    pub fn hardware(&self) -> &[HardwareSelection] {
+        &self.hardware
     }
 
     /// Adapter-read execution facts, unknown when no adapter was retained.

@@ -477,7 +477,11 @@ impl<G: Game + 'static> App<G> {
                 .map_err(|error| format!("surface: {error}"))?,
         );
         let size = window.inner_size();
-        let recipe = DeviceRecipe { instance, surface };
+        let recipe = DeviceRecipe {
+            instance,
+            surface,
+            hardware: self.game.hardware_requests().to_vec(),
+        };
         let gpu =
             pollster::block_on(recipe.create(DEVICE_GENERATION, [size.width, size.height], wake))?;
         if gpu.watch.is_lost() {

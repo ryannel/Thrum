@@ -24,18 +24,23 @@ fn cooked_octahedral(e: vec2<f32>) -> vec3<f32> {
 
 @vertex fn cooked_vertex(input: CookedVertex) -> VertexOutput {
     let model = mat4x4(input.model0, input.model1, input.model2, input.model3);
-    let world = model * vec4(input.position, 1.0);
+    return cooked_vertex_at(input.position, input.normal_oct, input.uv, model, input.history);
+}
+
+fn cooked_vertex_at(position: vec3<f32>, normal_oct: vec2<f32>, uv: vec2<f32>,
+                    model: mat4x4<f32>, history: u32) -> VertexOutput {
+    let world = model * vec4(position, 1.0);
     var output: VertexOutput;
     output.position = view.view_proj * world;
     output.current_clip = view.unjittered_view_proj * world;
     output.world_position = world.xyz;
     // Placements are rigid with uniform scale, so the model matrix transforms normals.
-    output.normal = normalize((model * vec4(cooked_octahedral(input.normal_oct), 0.0)).xyz);
-    output.uv = input.uv;
+    output.normal = normalize((model * vec4(cooked_octahedral(normal_oct), 0.0)).xyz);
+    output.uv = uv;
     output.material = 0u;
     // Placements are static: last frame's clip position comes from last frame's camera, when this
     // geometry existed last frame.
-    let valid = input.history != 0u;
+    let valid = history != 0u;
     output.history_valid = select(0u, 1u, valid);
     output.clip_delta = select(vec4(0.0),
         (view.previous_view_proj - view.unjittered_view_proj) * world, valid);

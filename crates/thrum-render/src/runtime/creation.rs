@@ -139,6 +139,8 @@ pub enum PipelineKind {
     Render,
     /// `create_compute_pipeline`.
     Compute,
+    /// `create_mesh_pipeline`.
+    Mesh,
 }
 
 /// Pipeline creation events of one thread, phase and scope.
@@ -155,6 +157,8 @@ pub struct PipelineRow {
     pub render: u64,
     /// Compute pipelines created.
     pub compute: u64,
+    /// Mesh pipelines created.
+    pub mesh: u64,
 }
 
 /// A live-object delta row: one window owner, phase and region.
@@ -245,7 +249,7 @@ impl CreationReport {
         self.pipelines
             .iter()
             .filter(|row| row.phase == phase)
-            .map(|row| row.render + row.compute)
+            .map(|row| row.render + row.compute + row.mesh)
             .sum()
     }
 }
@@ -266,8 +270,8 @@ impl fmt::Display for CreationReport {
         for row in &self.pipelines {
             write!(
                 f,
-                "; pipelines {:?}/{}@{}: render {} compute {}",
-                row.phase, row.label, row.thread, row.render, row.compute
+                "; pipelines {:?}/{}@{}: render {} compute {} mesh {}",
+                row.phase, row.label, row.thread, row.render, row.compute, row.mesh
             )?;
         }
         for row in &self.rows {
@@ -357,6 +361,15 @@ impl DeviceSite {
         let pipeline = self.0.device.create_compute_pipeline(desc);
         if let Some(ledger) = &self.0.ledger {
             record(ledger, PipelineKind::Compute);
+        }
+        pipeline
+    }
+
+    /// `create_mesh_pipeline`, followed by one event on this site's ledger.
+    pub fn mesh(&self, desc: &wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
+        let pipeline = self.0.device.create_mesh_pipeline(desc);
+        if let Some(ledger) = &self.0.ledger {
+            record(ledger, PipelineKind::Mesh);
         }
         pipeline
     }
@@ -693,12 +706,14 @@ impl CreationLedger {
                 label,
                 render: 0,
                 compute: 0,
+                mesh: 0,
             });
             rows.len() - 1
         };
         match kind {
             PipelineKind::Render => rows[index].render += 1,
             PipelineKind::Compute => rows[index].compute += 1,
+            PipelineKind::Mesh => rows[index].mesh += 1,
         }
         true
     }

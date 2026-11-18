@@ -1,7 +1,7 @@
 //! Reflect bound records from every owned WGSL file, including declarations appended to scene WGSL.
 use std::collections::{BTreeMap, BTreeSet};
 use std::mem::{offset_of, size_of};
-use thrum_asset::layout::MeshletBounds;
+use thrum_asset::layout::{Meshlet, MeshletBounds};
 use thrum_asset_gpu::records::{CookedVolume, Cull, Instance, Material};
 use wgpu::naga::{self, TypeInner};
 
@@ -90,9 +90,28 @@ fn check(source: &str) -> usize {
                 ("reserved", offset_of!(MeshletBounds, reserved)),
             ]),
         ),
+        (
+            "CookedMeshPlacement",
+            pod::<Instance>(vec![
+                ("model", offset_of!(Instance, model)),
+                ("draw", offset_of!(Instance, history)),
+            ]),
+        ),
+        (
+            "CookedMeshlet",
+            pod::<Meshlet>(vec![
+                ("vertex_offset", offset_of!(Meshlet, vertex_offset)),
+                ("triangle_offset", offset_of!(Meshlet, triangle_offset)),
+                ("vertex_count", offset_of!(Meshlet, vertex_count)),
+                ("triangle_count", offset_of!(Meshlet, triangle_count)),
+            ]),
+        ),
     ]);
-    let module = naga::front::wgsl::parse_str(&declarations(source))
-        .expect("owned shader declarations parse");
+    let module = naga::front::wgsl::parse_str(&format!(
+        "enable wgpu_mesh_shader;\n{}",
+        declarations(source)
+    ))
+    .expect("owned shader declarations parse");
     let mut found = BTreeSet::new();
     for (_, global) in module.global_variables.iter() {
         if global.binding.is_some()
@@ -125,15 +144,22 @@ fn check(source: &str) -> usize {
 #[test]
 fn every_owned_bound_record_has_a_pod_layout() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let count: usize = std::fs::read_dir(root)
+    // Compose the owned declarations so both cull routes see the shared Bounds. The scene
+    // supplies VertexOutput. Its raster interface is checked by the real Metal pipeline proof.
+    let owned: Vec<_> = std::fs::read_dir(root)
         .expect("sources")
         .map(|e| e.expect("source").path())
         .filter(|p| p.extension().is_some_and(|e| e == "wgsl"))
-        .map(|p| check(&std::fs::read_to_string(p).expect("WGSL")))
-        .sum();
+        .map(|p| std::fs::read_to_string(p).expect("WGSL"))
+        .collect();
+    let source = format!(
+        "struct VertexOutput {{ @builtin(position) position: vec4<f32> }}\n{}",
+        owned.join("\n")
+    );
+    let count = check(&source);
     assert_eq!(
-        count, 3,
-        "Cull, Bounds and CookedVolume; new bindings must have records too"
+        count, 5,
+        "culling, placement, meshlet and volume bindings have records"
     );
     assert_eq!(size_of::<Material>(), thrum_render::abi::MATERIAL_BYTES);
     assert_eq!(

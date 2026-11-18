@@ -5,7 +5,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::{capabilities::DeviceCapabilities, synthetic::DisplayOverlay};
+use thrum_render::{
+    capabilities::{DeviceCapabilities, HardwareRequest},
+    synthetic::DisplayOverlay,
+};
 use v1_game::{FrameConfig, FrameHost, controls::GameControls};
 
 #[path = "motion.rs"]
@@ -15,7 +18,7 @@ mod route;
 
 const EXTENT: [u32; 2] = [1280, 720];
 
-pub(super) async fn run(output: PathBuf) -> Result<(), String> {
+pub(super) async fn run(output: PathBuf, hardware: &[HardwareRequest]) -> Result<(), String> {
     if output.exists() {
         return Err("capture output must be a new directory".to_owned());
     }
@@ -39,22 +42,22 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         );
     }
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions {
+    let (_, device, queue, capabilities) = DeviceCapabilities::open_generation(
+        &instance,
+        &wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             ..Default::default()
-        })
-        .await
-        .map_err(|error| format!("capture adapter: {error}"))?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter)
-                | DeviceCapabilities::requested_content_features(&adapter),
+        },
+        FrameHost::DEVICE_GENERATION,
+        hardware,
+        |adapter| wgpu::DeviceDescriptor {
+            required_features: DeviceCapabilities::requested_timing_features(adapter)
+                | DeviceCapabilities::requested_content_features(adapter),
             ..Default::default()
-        })
-        .await
-        .map_err(|error| format!("capture device: {error}"))?;
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+        },
+    )
+    .await
+    .map_err(|error| error.to_string())?;
     let mut host = FrameHost::new_with_setup(
         &device,
         &queue,

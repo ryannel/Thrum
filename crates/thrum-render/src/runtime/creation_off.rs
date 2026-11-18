@@ -32,6 +32,11 @@ impl DeviceSite {
         self.0.create_compute_pipeline(desc)
     }
 
+    /// `create_mesh_pipeline` when diagnostics are disabled.
+    pub fn mesh(&self, desc: &wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
+        self.0.create_mesh_pipeline(desc)
+    }
+
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub(crate) fn native_prepared(&self) {
         let _ = &self.0;

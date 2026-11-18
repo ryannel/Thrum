@@ -154,6 +154,10 @@ impl PreparedSynthetic {
             features: self.capabilities.features(),
             downlevel: self.capabilities.downlevel(),
             limits: self.capabilities.limits().clone(),
+            recipe: self
+                .capabilities
+                .recipe()
+                .expect("scene preparation admitted this generation's recipe"),
             shader_source: &self.surface.shader_source,
             pipeline_layout: &self.surface.pipeline_layout,
             view_layout: &self.view_layout,

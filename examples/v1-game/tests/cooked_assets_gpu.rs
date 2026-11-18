@@ -1475,6 +1475,9 @@ fn selected_capabilities(
     match path {
         CookedDrawPath::Indirect => caps,
         CookedDrawPath::Direct => caps.without_indirect_execution(),
+        CookedDrawPath::Auto | CookedDrawPath::MeshStages => {
+            panic!("expected an indexed test path")
+        }
     }
 }
 

@@ -245,6 +245,7 @@ pub(crate) struct Target {
     pub(crate) secondary_source: Option<Arc<str>>,
     pub(crate) main: MeshSurface,
     pub(crate) secondary: Vec<MeshSurface>,
+    pub(crate) stages: Option<crate::mesh_stages::Layout>,
 }
 
 #[derive(Clone)]
@@ -256,6 +257,16 @@ pub(crate) struct MeshSurface {
 }
 
 impl MeshSurface {
+    pub(crate) fn depth(&self) -> wgpu::DepthStencilState {
+        wgpu::DepthStencilState {
+            format: self.depth_format,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Greater),
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }
+    }
+
     fn new(
         layout: wgpu::PipelineLayout,
         fragment_entry: &'static str,
@@ -287,6 +298,7 @@ impl Target {
             epoch,
             device: surface.device.clone(),
             scene_source: surface.shader_source.into(),
+            stages: None,
             secondary_source: surface
                 .secondary_surfaces
                 .first()
@@ -334,6 +346,7 @@ impl Target {
 pub(crate) struct MeshPipelines {
     pub(crate) main: wgpu::RenderPipeline,
     pub(crate) secondary: Vec<wgpu::RenderPipeline>,
+    pub(crate) stages: Option<wgpu::RenderPipeline>,
 }
 
 impl Target {
@@ -357,7 +370,15 @@ impl Target {
         MeshPipelines {
             main: mesh_pipeline(&self.device, &self.main, main),
             secondary,
+            stages: None,
         }
+    }
+}
+
+pub(crate) fn cooked_primitive() -> wgpu::PrimitiveState {
+    wgpu::PrimitiveState {
+        cull_mode: Some(wgpu::Face::Back),
+        ..Default::default()
     }
 }
 
@@ -422,17 +443,8 @@ pub(crate) fn mesh_pipeline(
                 }),
             ],
         },
-        primitive: wgpu::PrimitiveState {
-            cull_mode: Some(wgpu::Face::Back),
-            ..Default::default()
-        },
-        depth_stencil: Some(wgpu::DepthStencilState {
-            format: target.depth_format,
-            depth_write_enabled: Some(true),
-            depth_compare: Some(wgpu::CompareFunction::Greater),
-            stencil: wgpu::StencilState::default(),
-            bias: wgpu::DepthBiasState::default(),
-        }),
+        primitive: cooked_primitive(),
+        depth_stencil: Some(target.depth()),
         multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
             module,
@@ -533,12 +545,16 @@ impl Candidate {
                     .device
                     .create_shader_module(wgpu::ShaderModuleDescriptor {
                         label: Some("cooked material hook"),
-                        source: wgpu::ShaderSource::Wgsl(combined.text.into()),
+                        source: wgpu::ShaderSource::Wgsl(combined.text.as_str().into()),
                     });
-                candidate.pipeline = Some(target.meshes(
+                let mut pipelines = target.meshes(
                     &module,
                     secondary.as_ref().map(|source| source.text.as_str()),
-                ));
+                );
+                pipelines.stages = target.stages.as_ref().map(|stages| {
+                    stages.compile(&target.device, &target.main, &combined.text, "cooked_mesh")
+                });
+                candidate.pipeline = Some(pipelines);
                 candidate.info = Resolving::Pending(Box::pin(module.get_compilation_info()));
                 candidate.scope = Resolving::Pending(Box::pin(scope.pop()));
                 candidate.hook_offset = combined.hook_offset;
@@ -663,7 +679,7 @@ fn summary(message: &str) -> String {
 
 /// A validated candidate waiting for the frame boundary that draws it.
 pub(crate) struct Eligible {
-    serial: u64,
+    pub(crate) serial: u64,
     pub(crate) pipeline: MeshPipelines,
     hook: MaterialHook,
     requested: Instant,

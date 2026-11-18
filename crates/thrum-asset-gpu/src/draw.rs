@@ -12,7 +12,7 @@ use crate::{CookedDrawPath, CookedMaterial, MeshPlacement, VolumePlacement};
 
 const CULL_BYTES: usize = size_of::<crate::records::Cull>();
 const VOLUME_BYTES: usize = size_of::<crate::records::CookedVolume>();
-const DRAW_ARGS_BYTES: u64 = 20;
+pub(crate) const DRAW_ARGS_BYTES: u64 = 20;
 
 mod secondary;
 use secondary::SecondaryCull;
@@ -24,6 +24,9 @@ pub(crate) struct Pipelines {
     device: wgpu::Device,
     queue: wgpu::Queue,
     mesh: MeshPipelines,
+    stage_layout: Option<crate::mesh_stages::Layout>,
+    stage_cull: bool,
+    pub(crate) indexed_path: CookedDrawPath,
     shadow: Option<wgpu::RenderPipeline>,
     secondary_shadows: Vec<Option<wgpu::RenderPipeline>>,
     secondary_cull: Option<SecondaryCull>,
@@ -46,12 +49,15 @@ pub(crate) struct Bound {
     pub(crate) visible: Option<wgpu::Buffer>,
     /// This set was drawn in the last submitted frame, so its geometry has motion history.
     pub(crate) continued: Cell<bool>,
+    draw_counts: (usize, usize, usize),
+    indirect_meshlets: u32,
+    secondary_cull: bool,
 }
 
 impl Bound {
     /// Whether a frame drawing this set dispatches any cull work.
     pub(crate) fn culls(&self) -> bool {
-        self.visible.is_some() && self.has_meshes()
+        self.visible.is_some() || self.secondary_cull
     }
 
     pub(crate) fn has_meshes(&self) -> bool {
@@ -90,6 +96,11 @@ impl Bound {
             .map(|(index, mesh)| {
                 let command = if let Some(probe) = &mesh.probe {
                     probe.description()
+                } else if mesh.stage.is_some() {
+                    format!(
+                        "draw_mesh_tasks x={}",
+                        crate::mesh_stages::groups(mesh.meshlets)
+                    )
                 } else if mesh.indirect.is_some() {
                     format!(
                         "multi_draw_indexed_indirect offset=0 count={}",
@@ -106,9 +117,13 @@ impl Bound {
             .collect()
     }
 
-    /// Meshlets across every placed mesh.
+    /// Meshlets submitted to the main view's indexed compute cull.
     pub(crate) fn meshlets(&self) -> u32 {
-        self.meshes.iter().map(|mesh| mesh.meshlets).sum()
+        self.indirect_meshlets
+    }
+
+    pub(crate) fn draw_counts(&self) -> (usize, usize, usize) {
+        self.draw_counts
     }
 }
 
@@ -116,6 +131,7 @@ struct BoundMesh {
     #[cfg(feature = "draw-probe")]
     probe: Option<crate::draw_probe::Bound>,
     material: wgpu::BindGroup,
+    stage: Option<wgpu::BindGroup>,
     indirect: Option<IndirectMesh>,
     secondary: Vec<IndirectMesh>,
     index_count: u32,
@@ -230,13 +246,19 @@ fn material_record(material: &CookedMaterial) -> crate::records::Material {
 }
 impl Pipelines {
     /// Pipelines for the scene surface and its cooked contribution.
-    pub(crate) fn new(surface: &SceneSurface<'_>, target: &Target) -> Self {
+    pub(crate) fn new(
+        surface: &SceneSurface<'_>,
+        target: &mut Target,
+        indexed_path: CookedDrawPath,
+        config: &crate::CookedConfig,
+        fallback: &mut Option<String>,
+    ) -> Self {
         let device = surface.device;
         let cooked = cooked_source(surface.sun_optical_depth);
         let source = format!("{}\n{cooked}", surface.shader_source);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cooked scene entries"),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
+            source: wgpu::ShaderSource::Wgsl(source.as_str().into()),
         });
         let depth = |write| {
             Some(wgpu::DepthStencilState {
@@ -251,7 +273,16 @@ impl Pipelines {
             .secondary_source
             .as_ref()
             .map(|source| format!("{source}\n{cooked}"));
-        let mesh = target.meshes(&module, secondary_source.as_deref());
+        let mut mesh = target.meshes(&module, secondary_source.as_deref());
+        if config.draw_path == CookedDrawPath::MeshStages && fallback.is_none() {
+            match crate::mesh_stages::prepare(surface, &target.main, &source, config) {
+                Ok((layout, pipeline)) => {
+                    target.stages = Some(layout);
+                    mesh.stages = Some(pipeline);
+                }
+                Err(reason) => *fallback = Some(reason),
+            }
+        }
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
@@ -315,39 +346,37 @@ impl Pipelines {
             multiview_mask: None,
             cache: None,
         });
-        let cull =
-            (CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect).then(|| {
-                let cull_layout =
-                    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                        label: Some("cooked meshlet cull"),
-                        entries: &[
-                            uniform_entry(0, wgpu::ShaderStages::COMPUTE),
-                            storage_entry(1, true),
-                            storage_entry(2, true),
-                            storage_entry(3, false),
-                            storage_entry(4, false),
-                        ],
-                    });
-                let cull_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                    label: Some("cooked meshlet cull"),
-                    source: wgpu::ShaderSource::Wgsl(include_str!("cull.wgsl").into()),
-                });
-                let cull_pipeline_layout =
-                    device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                        label: Some("cooked meshlet cull"),
-                        bind_group_layouts: &[Some(&cull_layout)],
-                        immediate_size: 0,
-                    });
-                let cull = device.compute(&wgpu::ComputePipelineDescriptor {
-                    label: Some("cooked meshlet cull"),
-                    layout: Some(&cull_pipeline_layout),
-                    module: &cull_module,
-                    entry_point: Some("cull_meshlets"),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    cache: None,
-                });
-                (cull, cull_layout)
+        let cull = (indexed_path == CookedDrawPath::Indirect).then(|| {
+            let cull_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("cooked meshlet cull"),
+                entries: &[
+                    uniform_entry(0, wgpu::ShaderStages::COMPUTE),
+                    storage_entry(1, true),
+                    storage_entry(2, true),
+                    storage_entry(3, false),
+                    storage_entry(4, false),
+                ],
             });
+            let cull_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("cooked meshlet cull"),
+                source: wgpu::ShaderSource::Wgsl(crate::records::CULL_SHADER.into()),
+            });
+            let cull_pipeline_layout =
+                device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("cooked meshlet cull"),
+                    bind_group_layouts: &[Some(&cull_layout)],
+                    immediate_size: 0,
+                });
+            let cull = device.compute(&wgpu::ComputePipelineDescriptor {
+                label: Some("cooked meshlet cull"),
+                layout: Some(&cull_pipeline_layout),
+                module: &cull_module,
+                entry_point: Some("cull_meshlets"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                cache: None,
+            });
+            (cull, cull_layout)
+        });
         let defaults = [
             [128, 128, 255, 255],
             [255, 255, 255, 255],
@@ -371,7 +400,10 @@ impl Pipelines {
             ..Default::default()
         });
         let secondary_count = surface.secondary_surfaces.len();
-        let secondary_cull = if cull.is_some() && secondary_count != 0 {
+        let secondary_cull = if CookedDrawPath::select(surface.downlevel)
+            == CookedDrawPath::Indirect
+            && secondary_count != 0
+        {
             SecondaryCull::new(surface, secondary_count)
         } else {
             None
@@ -382,6 +414,9 @@ impl Pipelines {
             device: wgpu::Device::clone(device),
             queue: surface.queue.clone(),
             mesh,
+            stage_layout: target.stages.clone(),
+            stage_cull: config.mesh_stage_cull,
+            indexed_path,
             secondary_shadows: surface
                 .secondary_surfaces
                 .iter()
@@ -404,6 +439,10 @@ impl Pipelines {
             sampler,
             volume_sampler,
         }
+    }
+
+    pub(crate) fn uses_mesh_stages(&self) -> bool {
+        self.stage_layout.is_some()
     }
 
     #[cfg(feature = "draw-probe")]
@@ -432,15 +471,26 @@ impl Pipelines {
         placements: &[MeshPlacement],
         volume: Option<&VolumePlacement>,
     ) -> Bound {
-        let visible = self.cull.as_ref().map(|_| {
-            self.buffer(
-                "cooked visible meshlets",
-                4,
-                wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-            )
-        });
+        let visible = self
+            .cull
+            .as_ref()
+            .filter(|_| {
+                set.meshes.iter().any(|(mesh, _)| {
+                    mesh.ranges.is_some()
+                        && (self.stage_layout.is_none() || mesh.mesh_stage_streams.is_none())
+                })
+            })
+            .map(|_| {
+                self.buffer(
+                    "cooked visible meshlets",
+                    4,
+                    wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                )
+            });
         let mut shadow_bounds: Option<ShadowBounds> = None;
         let secondary_cull = self.secondary_cull.as_ref().filter(|cull| cull.admits(set));
+        let mut draw_counts = (0, 0, 0);
+        let mut indirect_meshlets = 0_u32;
         let meshes = set
             .meshes
             .iter()
@@ -494,10 +544,21 @@ impl Pipelines {
                     ],
                 });
                 let model = crate::placement::placed_model(placement, &mesh.rest_points);
+                let (scale, _, _) = model.to_scale_rotation_translation();
+                let max_scale = scale.abs().max_element();
+                let layout = self
+                    .stage_layout
+                    .as_ref()
+                    .zip(mesh.mesh_stage_streams.as_ref());
                 let instance = self.buffer(
                     "cooked instance",
                     INSTANCE_BYTES,
-                    wgpu::BufferUsages::VERTEX,
+                    wgpu::BufferUsages::VERTEX
+                        | if layout.is_some() {
+                            wgpu::BufferUsages::UNIFORM
+                        } else {
+                            wgpu::BufferUsages::empty()
+                        },
                 );
                 // History flag (byte 64) starts at zero: the first submitted frame has no history.
                 self.queue.write_buffer(
@@ -505,14 +566,44 @@ impl Pipelines {
                     0,
                     bytemuck::bytes_of(&crate::records::Instance {
                         model: model.to_cols_array_2d(),
-                        history: [0; 4],
+                        history: self.instance_draw(
+                            layout.is_some(),
+                            mesh.meshlet_count,
+                            false,
+                            max_scale,
+                        ),
                     }),
                 );
                 let indirect = self
                     .cull
                     .as_ref()
                     .zip(visible.as_ref())
+                    .filter(|_| layout.is_none() && mesh.ranges.is_some())
                     .map(|((_, layout), visible)| self.bind_cull(mesh, layout, 4, visible));
+                let stage = layout.map(|(layout, streams)| {
+                    layout.bind(
+                        &self.device,
+                        [
+                            &instance,
+                            mesh.bounds
+                                .as_ref()
+                                .expect("mesh stage loader stages meshlet bounds"),
+                            &mesh.positions,
+                            &mesh.attributes,
+                            &streams[0],
+                            &streams[1],
+                            &streams[2],
+                        ],
+                    )
+                });
+                if stage.is_some() {
+                    draw_counts.0 += 1;
+                } else if indirect.is_some() {
+                    draw_counts.1 += mesh.meshlet_count as usize;
+                    indirect_meshlets = indirect_meshlets.saturating_add(mesh.meshlet_count);
+                } else {
+                    draw_counts.2 += 1;
+                }
                 let secondary = secondary_cull
                     .into_iter()
                     .flat_map(|cull| {
@@ -521,7 +612,6 @@ impl Pipelines {
                             .map(|record| self.bind_cull(mesh, &cull.layout, 5, record))
                     })
                     .collect();
-                let (scale, _, _) = model.to_scale_rotation_translation();
                 let caster_bounds = if self.shadow.is_some()
                     && mesh.index_count != 0
                     && let Some((min, max)) = mesh.caster_box
@@ -538,12 +628,13 @@ impl Pipelines {
                         probe.bind(&self.device, &self.queue, placement_index, mesh.index_count)
                     }),
                     material,
+                    stage,
                     indirect,
                     secondary,
                     index_count: mesh.index_count,
                     instance,
                     model,
-                    max_scale: scale.abs().max_element(),
+                    max_scale,
                     history: Cell::new(false),
                     meshlets: mesh.meshlet_count,
                     vertex: [mesh.positions.clone(), mesh.attributes.clone()],
@@ -563,6 +654,23 @@ impl Pipelines {
             volume,
             visible,
             continued: Cell::new(false),
+            draw_counts,
+            indirect_meshlets,
+            secondary_cull: secondary_cull.is_some() && !set.meshes.is_empty(),
+        }
+    }
+
+    fn instance_draw(&self, stages: bool, count: u32, history: bool, scale: f32) -> [u32; 4] {
+        // The first word is also the indexed vertex history attribute.
+        if stages {
+            [
+                u32::from(history),
+                count,
+                u32::from(self.stage_cull),
+                scale.to_bits(),
+            ]
+        } else {
+            [u32::from(history), 0, 0, 0]
         }
     }
 
@@ -669,7 +777,12 @@ impl Pipelines {
                     0,
                     bytemuck::bytes_of(&crate::records::Instance {
                         model: mesh.model.to_cols_array_2d(),
-                        history: [u32::from(continued), 0, 0, 0],
+                        history: self.instance_draw(
+                            mesh.stage.is_some(),
+                            mesh.meshlets,
+                            continued,
+                            mesh.max_scale,
+                        ),
                     }),
                 );
                 mesh.history.set(continued);
@@ -755,10 +868,19 @@ impl Pipelines {
         pass: &mut wgpu::RenderPass<'_>,
         mesh: Option<&MeshPipelines>,
     ) {
-        if !bound.meshes.is_empty() {
-            pass.set_pipeline(&mesh.unwrap_or(&self.mesh).main);
-        }
+        let pipelines = mesh.unwrap_or(&self.mesh);
+        let mut stages = None;
         for mesh in &bound.meshes {
+            let stage = mesh.stage.as_ref().zip(pipelines.stages.as_ref());
+            if stages != Some(stage.is_some()) {
+                pass.set_pipeline(stage.map_or(&pipelines.main, |(_, pipeline)| pipeline));
+                stages = Some(stage.is_some());
+            }
+            if let Some((group, _)) = stage {
+                pass.set_bind_group(2, &mesh.material, &[]);
+                crate::mesh_stages::draw(pass, group, mesh.meshlets);
+                continue;
+            }
             mesh.bind_draw(pass);
             #[cfg(feature = "draw-probe")]
             if let Some(probe) = &mesh.probe {

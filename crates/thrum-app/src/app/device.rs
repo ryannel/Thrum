@@ -5,7 +5,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-use thrum_render::capabilities::DeviceCapabilities;
+use thrum_render::capabilities::{DeviceCapabilities, HardwareRequest};
 use winit::event_loop::EventLoopProxy;
 
 use super::UserEvent;
@@ -39,6 +39,7 @@ impl DeviceWatch {
 pub(super) struct DeviceRecipe {
     pub(super) instance: wgpu::Instance,
     pub(super) surface: Arc<wgpu::Surface<'static>>,
+    pub(super) hardware: Vec<HardwareRequest>,
 }
 
 pub(super) struct PlatformGpu {
@@ -57,29 +58,27 @@ impl DeviceRecipe {
         extent: [u32; 2],
         wake: &EventLoopProxy<UserEvent>,
     ) -> Result<PlatformGpu, String> {
-        // wgpu's public contract asks for a fresh Adapter for each Device.
-        let adapter = self
-            .instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
+        let (adapter, device, queue, capabilities) = DeviceCapabilities::open_generation(
+            &self.instance,
+            &wgpu::RequestAdapterOptions {
                 compatible_surface: Some(&self.surface),
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 ..Default::default()
-            })
-            .await
-            .map_err(|error| format!("adapter: {error:?}"))?;
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter)
-                    | DeviceCapabilities::requested_content_features(&adapter),
+            },
+            generation,
+            &self.hardware,
+            |adapter| wgpu::DeviceDescriptor {
+                required_features: DeviceCapabilities::requested_timing_features(adapter)
+                    | DeviceCapabilities::requested_content_features(adapter),
                 ..Default::default()
-            })
-            .await
-            .map_err(|error| format!("device: {error:?}"))?;
+            },
+        )
+        .await
+        .map_err(|error| error.to_string())?;
         let signal = wake.clone();
         let watch = DeviceWatch::register(&device, generation, move |generation| {
             let _ = signal.send_event(UserEvent::DeviceLost(generation));
         });
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
         let mut config = self
             .surface
             .get_default_config(&adapter, extent[0].max(1), extent[1].max(1))

@@ -4,7 +4,6 @@
     "device-request": {
       "version": 1,
       "files": {
-        "crates/thrum-app/src/app/device.rs": 2,
         "crates/thrum-app/src/app/device_tests.rs": 2,
         "crates/thrum-app/src/sky/capture.rs": 2,
         "crates/thrum-app/src/sky/tests.rs": 2,
@@ -69,7 +68,6 @@
         "examples/v1-game/benches/material_reload.rs": 2,
         "examples/v1-game/src/bin/apple_tile_residency.rs": 2,
         "examples/v1-game/src/bin/cooked_draw_probe.rs": 2,
-        "examples/v1-game/src/bin/window/capture.rs": 2,
         "examples/v1-game/src/browser.rs": 2,
         "examples/v1-game/src/effect/qualification.rs": 2,
         "examples/v1-game/src/host/tests.rs": 10,
@@ -77,7 +75,6 @@
         "examples/v1-game/src/host/tests/lifecycle_gpu.rs": 2,
         "examples/v1-game/src/host/tests/recovery_gpu.rs": 2,
         "examples/v1-game/src/lent/browser.rs": 4,
-        "examples/v1-game/src/window/capture.rs": 2,
         "examples/v1-game/tests/cooked_assets_gpu.rs": 4,
         "examples/v1-game/tests/cooked_fault_gpu.rs": 2,
         "examples/v1-game/tests/cooked_material_gpu.rs": 2,

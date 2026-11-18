@@ -6,6 +6,13 @@ mod capture;
 
 #[cfg(target_os = "macos")]
 fn main() {
+    let names = match std::env::var("THRUM_HARDWARE") {
+        Ok(names) => names,
+        Err(std::env::VarError::NotPresent) => String::new(),
+        Err(error) => report_capture_failure(&format!("THRUM_HARDWARE: {error}")),
+    };
+    let hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
+        .unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
         let scenario = std::env::var("THRUM_CAPTURE_CASE").unwrap_or_else(|_| "pan".to_owned());
         let (wait, hold, recovery) =
@@ -22,18 +29,19 @@ fn main() {
             hold,
             recovery,
             capture_output,
+            hardware,
         ) {
             report_capture_failure(&error);
         }
         return;
     }
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_SCENE") {
-        if let Err(error) = pollster::block_on(capture::run(output.into())) {
+        if let Err(error) = pollster::block_on(capture::run(output.into(), &hardware)) {
             report_capture_failure(&error);
         }
         return;
     }
-    v1_game::run_window();
+    v1_game::run_window(hardware);
 }
 
 #[cfg(target_os = "macos")]

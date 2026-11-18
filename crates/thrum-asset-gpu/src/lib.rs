@@ -37,6 +37,7 @@ mod lease;
 pub use fault::FaultProbe;
 mod load;
 mod material;
+mod mesh_stages;
 pub mod mesh_upload;
 mod placement;
 pub mod records;
@@ -189,6 +190,16 @@ impl From<PathBuf> for CookedSource {
 /// What to load and how fast to upload it. [`CookedConfig::new`] fills in the defaults.
 #[derive(Clone, Debug)]
 pub struct CookedConfig {
+    /// Forward path requested for the main view.
+    pub draw_path: CookedDrawPath,
+    /// Diagnostic switch to draw every meshlet through the mesh stages.
+    pub mesh_stage_cull: bool,
+    /// Force validation failure during mesh pipeline preparation in a diagnostic build.
+    #[cfg(feature = "draw-probe")]
+    pub fail_mesh_pipeline: bool,
+    /// Optional diagnostic counter buffer written by the object stage.
+    #[cfg(feature = "draw-probe")]
+    pub mesh_stage_rejections: Option<Arc<Mutex<Option<wgpu::Buffer>>>>,
     /// Entity mesh rows participating in the same publication as every other reader.
     pub rows: Option<rows::CookedRows>,
     /// Opt-in one-shot staging fill fault, absent from ordinary builds.
@@ -224,6 +235,12 @@ impl CookedConfig {
     /// interval and texture profiles.
     pub fn new(source: impl Into<CookedSource>, meshes: Vec<MeshPlacement>) -> Self {
         Self {
+            draw_path: CookedDrawPath::Auto,
+            mesh_stage_cull: true,
+            #[cfg(feature = "draw-probe")]
+            fail_mesh_pipeline: false,
+            #[cfg(feature = "draw-probe")]
+            mesh_stage_rejections: None,
             rows: None,
             #[cfg(feature = "fault-probe")]
             fault: None,
@@ -267,13 +284,38 @@ pub struct SwapRecord {
 /// Selected cooked-mesh recording mechanism for this device generation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CookedDrawPath {
+    /// Select the existing indexed path for the device.
+    Auto,
     /// GPU meshlet cull and indirect drawing.
     Indirect,
     /// One core indexed draw per placement; no meshlet cull resources.
     Direct,
+    /// GPU object-stage culling and mesh-stage drawing.
+    MeshStages,
 }
 
 impl CookedDrawPath {
+    fn resolve(self, surface: &SceneSurface<'_>) -> (Self, Option<String>) {
+        let indexed = Self::select(surface.downlevel);
+        let why = match self {
+            Self::Auto => return (indexed, None),
+            Self::Direct => return (Self::Direct, None),
+            Self::Indirect if indexed == Self::Direct => Some("device lacks indirect execution"),
+            Self::MeshStages
+                if !surface
+                    .features
+                    .contains(wgpu::Features::EXPERIMENTAL_MESH_SHADER) =>
+            {
+                Some("device did not enable mesh-stages")
+            }
+            Self::MeshStages if surface.recipe != thrum_render::capabilities::Recipe::AppleTile => {
+                Some("recipe is portable")
+            }
+            Self::Indirect | Self::MeshStages => None,
+        };
+        (indexed, why.map(str::to_owned))
+    }
+
     fn select(flags: Option<wgpu::DownlevelFlags>) -> Self {
         if flags.is_some_and(|flags| flags.contains(wgpu::DownlevelFlags::INDIRECT_EXECUTION)) {
             Self::Indirect
@@ -316,6 +358,31 @@ pub struct CookedStats {
     pub drawn_device_generation: Option<u64>,
     /// Path selected at the latest rebuild.
     pub draw_path: Option<CookedDrawPath>,
+    /// The forward path requested for the main view.
+    pub requested_draw_path: Option<CookedDrawPath>,
+    /// Recipe used to prepare the current contribution.
+    pub recipe: Option<thrum_render::capabilities::Recipe>,
+    /// Why an explicit forward path could not be selected.
+    pub draw_fallback: Option<String>,
+    /// Mesh-stage draws in the latest submitted frame.
+    pub mesh_stage_draws: usize,
+    /// Indexed indirect draws in the latest submitted main forward pass.
+    pub indexed_indirect_draws: usize,
+    /// Indexed direct draws in the latest submitted main forward pass.
+    pub indexed_direct_draws: usize,
+    /// Whether the submitted frame dispatched the cooked compute cull.
+    pub meshlet_compute_cull: bool,
+    /// Placed mesh products excluded by device limits, with the limit that excluded them.
+    pub mesh_stage_exclusions: Vec<(String, &'static str)>,
+    /// Buffer residency of distinct drawn mesh products, including any meshlet storage.
+    pub mesh_buffer_bytes: u64,
+    /// Bytes of additional meshlet storage in distinct drawn mesh products.
+    pub mesh_stage_bytes: u64,
+    /// Resident position and attribute buffers with storage usage.
+    pub mesh_stage_vertex_streams: usize,
+    /// Candidate recorded by the latest encoding, including an encoding that was discarded.
+    #[cfg(feature = "draw-probe")]
+    pub recorded_material: Option<u64>,
     /// Slot index and resolved cooked draw path for each view with meshes in the
     /// most recent submitted frame. A slot can use Direct while the main uses Indirect.
     pub secondary_draw_paths: Vec<(usize, CookedDrawPath)>,
@@ -622,7 +689,10 @@ impl CookedAssets {
         let (resident_tx, resident_rx) = channel();
         let stop = Arc::new(AtomicBool::new(false));
         let loader = load::Loader {
-            indirect: CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect,
+            indirect: pipelines.indexed_path == CookedDrawPath::Indirect
+                || (!surface.secondary_surfaces.is_empty()
+                    && CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect),
+            mesh_stage_limits: pipelines.uses_mesh_stages().then(|| surface.limits.clone()),
             device: wgpu::Device::clone(surface.device),
             ring: staging::StagingRing::new(
                 surface.device,
@@ -684,6 +754,8 @@ impl CookedAssets {
                 None
             }
         };
+        let readback = (pipelines.indexed_path == CookedDrawPath::Indirect)
+            .then(|| Readback::new(surface.device));
         Live {
             generation: surface.generation,
             stop,
@@ -696,8 +768,7 @@ impl CookedAssets {
             secondary_views: Vec::with_capacity(surface.secondary_surfaces.len()),
             pending: None,
             current: None,
-            readback: (CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect)
-                .then(|| Readback::new(surface.device)),
+            readback,
             tentative: None,
             material: None,
         }
@@ -705,32 +776,49 @@ impl CookedAssets {
 
     /// Rebuild pipelines and bindings for `surface`, or restart on a new device generation.
     fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) {
-        if let Ok(mut stats) = self.stats.lock() {
-            stats.draw_path = Some(CookedDrawPath::select(surface.downlevel));
-            stats.visible_meshlets = None;
-            stats.secondary_draw_paths.clear();
-        }
+        let (indexed_path, mut fallback) = self.config.draw_path.resolve(surface);
         // A material candidate for the previous surface cannot publish. The new pipelines draw
         // the built-in material until the accepted hook validates against this surface.
         self.epoch += 1;
-        let target = material::Target::new(surface, self.epoch);
+        let mut target = material::Target::new(surface, self.epoch);
         if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
             self.material.release(&held);
         }
-        let pipelines = draw::Pipelines::new(surface, &target);
+        let pipelines = draw::Pipelines::new(
+            surface,
+            &mut target,
+            indexed_path,
+            &self.config,
+            &mut fallback,
+        );
         #[cfg(feature = "draw-probe")]
         let pipelines = {
             let mut pipelines = pipelines;
             pipelines.probe(self.draw_probe.clone());
             pipelines
         };
+        let stages = pipelines.uses_mesh_stages();
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.draw_path = Some(if stages {
+                CookedDrawPath::MeshStages
+            } else {
+                indexed_path
+            });
+            stats.requested_draw_path = Some(self.config.draw_path);
+            stats.recipe = Some(surface.recipe);
+            stats.draw_fallback = fallback;
+            stats.visible_meshlets = None;
+            stats.secondary_draw_paths.clear();
+        }
         self.material.retarget(&target);
         match self.live.as_mut() {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.
-            Some(live) if live.generation == surface.generation => {
-                live.readback = (CookedDrawPath::select(surface.downlevel)
-                    == CookedDrawPath::Indirect)
+            Some(live)
+                if live.generation == surface.generation
+                    && live.pipelines.uses_mesh_stages() == stages =>
+            {
+                live.readback = (indexed_path == CookedDrawPath::Indirect)
                     .then(|| Readback::new(surface.device));
                 live.pipelines = pipelines;
                 live.secondary_views = Vec::with_capacity(surface.secondary_surfaces.len());
@@ -754,6 +842,9 @@ impl CookedAssets {
                     stats.drawn = None;
                     stats.drawn_device_generation = None;
                     stats.last_frame_history = None;
+                    stats.mesh_stage_exclusions.clear();
+                    stats.mesh_buffer_bytes = 0;
+                    stats.mesh_stage_bytes = 0;
                 }
                 self.live = None;
                 self.live = Some(self.start(surface, pipelines));
@@ -977,6 +1068,14 @@ impl SceneContribution for CookedAssets {
         }
         if let Ok(mut stats) = self.stats.lock() {
             stats.recorded_frames += 1;
+            #[cfg(feature = "draw-probe")]
+            {
+                stats.recorded_material = live
+                    .tentative
+                    .filter(|tentative| tentative.material && tentative.meshed)
+                    .and(live.material.as_ref())
+                    .map(|held| held.serial);
+            }
         }
     }
 
@@ -1050,6 +1149,8 @@ impl SceneContribution for CookedAssets {
                 .filter(|bound| bound.has_meshes())
                 .map(draw::Bound::view_path)
         };
+        let (stages, indirect, direct) = live.drawn().map_or((0, 0, 0), draw::Bound::draw_counts);
+        let compute = live.drawn().is_some_and(draw::Bound::culls);
         let Some(tentative) = live.tentative.take() else {
             return;
         };
@@ -1061,6 +1162,10 @@ impl SceneContribution for CookedAssets {
         if let Ok(mut stats) = self.stats.lock() {
             stats.submitted_frames += 1;
             stats.last_frame_history = tentative.history;
+            stats.mesh_stage_draws = stages;
+            stats.indexed_indirect_draws = indirect;
+            stats.indexed_direct_draws = direct;
+            stats.meshlet_compute_cull = compute;
             stats.secondary_draw_paths.clear();
             if let Some(path) = view_path {
                 stats
@@ -1130,6 +1235,7 @@ impl SceneContribution for CookedAssets {
                     stats.probe_resources.1 |= live.readback.is_some();
                 }
                 stats.drawn = Some(set.generation);
+                set.report_mesh_storage(&self.config.meshes, &mut stats);
                 stats.drawn_device_generation = Some(live.generation);
                 stats.swaps.push(SwapRecord {
                     mapped: set

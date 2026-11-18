@@ -10,18 +10,28 @@ use super::{
 };
 pub(super) use light::{AerialBindings, LightBindings};
 
+pub(super) fn mesh_stage_visibility(features: wgpu::Features) -> wgpu::ShaderStages {
+    if features.contains(wgpu::Features::EXPERIMENTAL_MESH_SHADER) {
+        wgpu::ShaderStages::TASK | wgpu::ShaderStages::MESH
+    } else {
+        wgpu::ShaderStages::empty()
+    }
+}
+
 pub(super) fn view_entries(
     meshes: bool,
     camera_mode: super::CullMode,
     shadowed: bool,
     atmosphere: bool,
+    mesh_stages: wgpu::ShaderStages,
 ) -> Vec<wgpu::BindGroupLayoutEntry> {
     let mut entries = vec![
         wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::VERTEX
                 | wgpu::ShaderStages::FRAGMENT
-                | wgpu::ShaderStages::COMPUTE,
+                | wgpu::ShaderStages::COMPUTE
+                | mesh_stages,
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: true,

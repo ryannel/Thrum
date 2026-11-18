@@ -1110,7 +1110,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     .report()
                     .pipelines
                     .iter()
-                    .map(|row| row.render + row.compute)
+                    .map(|row| row.render + row.compute + row.mesh)
                     .sum(),
             )
         }
