@@ -3,7 +3,7 @@
 use super::{
     FrameError, FrameHost, FrameWorld, SceneSource,
     creation::{CreationPhase, Ledger},
-    preparation::{PreparedScene, prepare_scene},
+    preparation::{PreparedRenderer, PreparedScene, prepare_scene, prepare_sprites},
 };
 use crate::{
     capabilities::DeviceCapabilities,
@@ -20,10 +20,19 @@ pub struct DevicePrepareInputs {
     base_device: wgpu::Device,
     base_generation: u64,
     owner: Arc<()>,
+    scene: RetainedScene,
+    render_extent: [u32; 2],
+}
+
+enum RetainedScene {
+    ThreeD(Box<RetainedThreeD>),
+    TwoD(crate::sprite::SpriteScene),
+}
+
+struct RetainedThreeD {
     scene: SyntheticScene,
     lighting: FrameLighting,
     exposure: f32,
-    render_extent: [u32; 2],
     contribution_passes: ContributionPasses,
 }
 
@@ -50,6 +59,13 @@ impl PreparedDevice {
             return Err(FrameError::InvalidState(
                 "device replacement already published",
             ));
+        }
+        if self
+            .scene
+            .as_ref()
+            .is_some_and(|scene| matches!(scene.prepared, PreparedRenderer::TwoD(_)))
+        {
+            return self.resize_scene_surface(extent);
         }
         let _region = self.creations.region(CreationPhase::Build, "device-resize");
         self.presenter
@@ -79,8 +95,12 @@ impl PreparedDevice {
         let presenter = presenter
             .refit(extent, extent)
             .map_err(|error| FrameError::Gpu(format!("replacement scene resize: {error:?}")))?;
-        let mut slots =
-            super::preparation::prepare_slots(&scene.prepared, &self.queue, extent, true)?;
+        let mut slots = super::preparation::prepare_slots(
+            &scene.prepared,
+            &self.queue,
+            extent,
+            Some(presenter.profile()),
+        )?;
         super::preparation::bind_presenter(&scene.prepared, &mut slots, Some(&presenter))?;
         scene.slots = slots;
         self.presenter = Some(presenter);
@@ -113,24 +133,43 @@ impl DevicePrepareInputs {
         }
         let creations = capabilities.device().ledger();
         let build = creations.region(CreationPhase::Build, "device");
-        let mut scene = prepare_scene(
-            capabilities,
-            queue,
-            &self.scene,
-            self.lighting,
-            self.exposure,
-            self.render_extent,
-            surface.is_some(),
-            self.contribution_passes,
-            // The effect selects its new generation's declarations in rebuild at
-            // publication. An old preferred format must not prevent base recovery.
-            crate::contribution::EffectGraph::default(),
-            None,
-        )
-        .await?;
+        let (mut scene, render_extent) = match self.scene {
+            RetainedScene::ThreeD(inputs) => {
+                let RetainedThreeD {
+                    scene,
+                    lighting,
+                    exposure,
+                    contribution_passes,
+                } = *inputs;
+                (
+                    prepare_scene(
+                        capabilities,
+                        queue,
+                        &scene,
+                        lighting,
+                        exposure,
+                        self.render_extent,
+                        surface.is_some(),
+                        contribution_passes,
+                        // Rebuild selects the contribution's new-generation formats.
+                        crate::contribution::EffectGraph::default(),
+                        None,
+                    )
+                    .await?,
+                    self.render_extent,
+                )
+            }
+            RetainedScene::TwoD(sprites) => {
+                let extent = surface.map_or(self.render_extent, |profile| profile.extent);
+                (
+                    prepare_sprites(capabilities, queue, sprites, extent, surface).await?,
+                    extent,
+                )
+            }
+        };
         let presenter = match surface {
             Some(profile) => Some(
-                SurfacePresenter::prepare(capabilities, self.render_extent, profile)
+                SurfacePresenter::prepare(capabilities, render_extent, profile)
                     .await
                     .map_err(|error| {
                         FrameError::Gpu(format!("replacement presenter: {error:?}"))
@@ -148,7 +187,7 @@ impl DevicePrepareInputs {
             scene: Some(scene),
             presenter,
             creations,
-            render_extent: self.render_extent,
+            render_extent,
         })
     }
 }
@@ -159,26 +198,34 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a current camera/lighting policy refusal without changing the host.
     pub fn device_prepare_inputs(&self) -> Result<DevicePrepareInputs, FrameError> {
-        let frame = self
-            .source
-            .frame(
-                self.world.source(),
-                self.presentation_alpha(),
-                self.render_extent,
-                self.visual_lighting,
-            )
-            .map_err(FrameError::Scene)?;
-        let mut scene = self.scene.clone();
-        scene.view = frame.view;
+        let scene = match &self.prepared {
+            PreparedRenderer::ThreeD(prepared) => {
+                let frame = self
+                    .source
+                    .frame(
+                        self.world.source(),
+                        self.presentation_alpha(),
+                        self.render_extent,
+                        self.visual_lighting,
+                    )
+                    .map_err(FrameError::Scene)?;
+                let mut scene = self.scene.clone();
+                scene.view = frame.view;
+                RetainedScene::ThreeD(Box::new(RetainedThreeD {
+                    scene,
+                    lighting: frame.lighting,
+                    exposure: prepared.fallback_exposure(),
+                    contribution_passes: prepared.contribution_passes(),
+                }))
+            }
+            PreparedRenderer::TwoD(prepared) => RetainedScene::TwoD(prepared.scene.clone()),
+        };
         Ok(DevicePrepareInputs {
             base_device: self.device.clone(),
             base_generation: self.generation,
             owner: Arc::clone(&self.visual_owner),
             scene,
-            lighting: frame.lighting,
-            exposure: self.prepared.fallback_exposure(),
             render_extent: self.render_extent,
-            contribution_passes: self.prepared.contribution_passes(),
         })
     }
 
@@ -205,17 +252,33 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
-        if !scene.prepared.has_current_mesh_rows(&self.prepared) {
-            return Err(FrameError::InvalidState(
-                "stale mesh rows in device replacement",
-            ));
-        }
-        let view = self.refresh_replacement(
-            scene,
-            &candidate.queue,
-            self.visual_lighting,
-            candidate.render_extent,
-        )?;
+        let view = if let Some(previous) = self.prepared.three_d() {
+            if !scene.prepared.has_current_mesh_rows(previous) {
+                return Err(FrameError::InvalidState(
+                    "stale mesh rows in device replacement",
+                ));
+            }
+            Some(self.refresh_replacement(
+                scene,
+                &candidate.queue,
+                self.visual_lighting,
+                candidate.render_extent,
+            )?)
+        } else {
+            self.source
+                .sprites(
+                    self.world.source(),
+                    self.presentation_alpha(),
+                    candidate.render_extent,
+                )
+                .map_err(FrameError::Scene)?
+                .view
+                .clip_scale(candidate.render_extent)
+                .map_err(|error| {
+                    FrameError::Scene(format!("replacement sprite view: {error:?}"))
+                })?;
+            None
+        };
         let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
@@ -234,7 +297,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.slots = scene.slots;
         self.presenter = candidate.presenter.take();
         self.presenter_generation += 1;
-        self.scene.view = view;
+        if let Some(view) = view {
+            self.scene.view = view;
+        }
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
         self.rebuild_contribution();

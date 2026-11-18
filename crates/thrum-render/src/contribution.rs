@@ -316,8 +316,38 @@ pub struct ContributionPasses {
     pub compute: bool,
 }
 
+/// A contribution's legacy drawing requirement, before its graph is prepared.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneDrawStage {
+    /// Draw into the Sun's shadow cascades.
+    Shadow,
+    /// Draw into the forward opaque pass.
+    Opaque,
+}
+
+/// Preparation context for an upload/simulate contribution in a 2D scene.
+pub struct SpriteContributionSurface<'a> {
+    /// Device site, capabilities, limits and generation for this scene.
+    pub capabilities: &'a crate::capabilities::DeviceCapabilities,
+    /// The scene's queue. Contributions may stage writes and never submit.
+    pub queue: &'a wgpu::Queue,
+}
+
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Legacy drawing stages this contribution needs. Pure upload/simulate
+    /// contributions declare an empty list and implement [Self::rebuild_2d].
+    fn draw_stages(&self) -> Vec<SceneDrawStage> {
+        vec![SceneDrawStage::Opaque]
+    }
+
+    /// Prepare generation-bound upload/simulate resources for a sprite scene.
+    /// # Errors
+    /// Refuses a contribution that cannot prepare with the supplied capabilities.
+    fn rebuild_2d(&mut self, _surface: &SpriteContributionSurface<'_>) -> Result<(), String> {
+        Err("contribution does not support 2D preparation".into())
+    }
+
     /// Offer every opaque placement this contribution holds for this recording,
     /// including off-camera placements and geometry outside all shadow passes.
     /// Called only with scene ray demand, after staged uploads and before the

@@ -362,6 +362,14 @@ impl<G: Game> Offscreen<G> {
         self.host.pending_frames()
     }
 
+    /// Prepared scene kind and target storage for capture diagnostics.
+    pub fn scene_storage(&self) -> (thrum_render::runtime::SceneKind, u64, String) {
+        let bytes = u64::from(self.output.width())
+            * u64::from(self.output.height())
+            * u64::from(self.output.format().block_copy_size(None).unwrap_or(0));
+        (self.host.scene_kind(), bytes, self.host.storage_report())
+    }
+
     /// Outcomes of the optional labelled native composition diagnostic.
     #[must_use]
     pub fn native_witness_report(&self) -> Option<thrum_render::synthetic::NativeWitnessReport> {

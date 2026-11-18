@@ -11,9 +11,6 @@ struct ExposureSample {
     let positions = array<vec2<f32>, 3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));
     return vec4(positions[index],0.0,1.0);
 }
-fn srgb_encode(linear: vec3<f32>) -> vec3<f32> {
-    return select(1.055*pow(linear,vec3(1.0/2.4))-vec3(0.055),12.92*linear,linear<=vec3(0.0031308));
-}
 // Integer hash (PCG 2D, Jarzynski and Olano 2020) giving two uniform values per pixel.
 fn pcg2d(seed: vec2<u32>) -> vec2<f32> {
     var v = seed * 1664525u + 1013904223u;

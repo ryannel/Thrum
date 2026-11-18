@@ -49,10 +49,89 @@ pub(super) fn display_selectors(tone_map: SdrToneMap, overlay: DisplayOverlay) -
 }
 
 pub(super) const SHADER: &str = concat!(
+    include_str!("display/srgb.wgsl"),
+    "\n",
     include_str!("display/neutral_highlights.wgsl"),
     "\n",
     include_str!("../synthetic_display.wgsl"),
 );
+
+pub(crate) const DISPLAY_REFERRED_SHADER: &str = concat!(
+    include_str!("display/srgb.wgsl"),
+    "\n",
+    include_str!("display/display_referred.wgsl"),
+);
+
+pub(crate) const DISPLAY_REFERRED_PASS: &str = "display-referred tone encode";
+
+/// Fixed-exposure SDR output used when the scene publishes colour only.
+pub(crate) struct DisplayReferredStage(wgpu::RenderPipeline);
+
+impl DisplayReferredStage {
+    pub(crate) fn new(device: &crate::runtime::DeviceSite) -> Self {
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some(DISPLAY_REFERRED_PASS),
+            source: wgpu::ShaderSource::Wgsl(DISPLAY_REFERRED_SHADER.into()),
+        });
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some(DISPLAY_REFERRED_PASS),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            }],
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some(DISPLAY_REFERRED_PASS),
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
+        });
+        Self(display_pipeline(
+            device,
+            &shader,
+            &pipeline_layout,
+            DISPLAY_REFERRED_PASS,
+        ))
+    }
+
+    pub(crate) fn bind(
+        &self,
+        device: &wgpu::Device,
+        colour: &wgpu::TextureView,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(DISPLAY_REFERRED_PASS),
+            layout: &self.0.get_bind_group_layout(0),
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(colour),
+            }],
+        })
+    }
+
+    pub(crate) fn encode(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        generation: u64,
+        compiled: &CompiledPass,
+        target: GraphColorAttachment<'_>,
+        input: &wgpu::BindGroup,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<(), RenderError> {
+        let mut pass = compiled
+            .begin_render(encoder, [Some(target)], None, generation, timings)?
+            .ok_or(RenderError::GraphPassMismatch)?;
+        pass.set_pipeline(&self.0);
+        pass.set_bind_group(0, input, &[]);
+        pass.draw(0..3, 0..1);
+        Ok(())
+    }
+}
 
 pub(crate) struct SdrToneStage {
     key: PipelineKey,
@@ -190,31 +269,12 @@ impl SdrToneStage {
             label: Some("synthetic authored SDR display"),
             source: wgpu::ShaderSource::Wgsl(source.into()),
         });
-        let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
-            label: Some("prepared synthetic tone encode role"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vertex"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some("fragment"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: OUTPUT_FORMAT,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
+        let pipeline = display_pipeline(
+            device,
+            &shader,
+            &pipeline_layout,
+            "prepared synthetic tone encode role",
+        );
         Self {
             key,
             pipeline,
@@ -395,6 +455,39 @@ impl SdrToneStage {
         pass.draw(0..3, 0..1);
         Ok(())
     }
+}
+
+fn display_pipeline(
+    device: &crate::runtime::DeviceSite,
+    shader: &wgpu::ShaderModule,
+    layout: &wgpu::PipelineLayout,
+    label: &str,
+) -> wgpu::RenderPipeline {
+    device.render(&wgpu::RenderPipelineDescriptor {
+        label: Some(label),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vertex"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[],
+        },
+        primitive: wgpu::PrimitiveState::default(),
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fragment"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format: OUTPUT_FORMAT,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        multiview_mask: None,
+        cache: None,
+    })
 }
 
 fn prepare_group(

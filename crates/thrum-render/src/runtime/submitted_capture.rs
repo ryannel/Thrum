@@ -240,6 +240,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 &self.queue,
                 self.render_extent,
                 self.presenter.is_some(),
+                self.presenter
+                    .as_ref()
+                    .map(crate::present::SurfacePresenter::profile),
                 source,
             )?;
             super::preparation::bind_presenter(
@@ -247,9 +250,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 &mut slots,
                 self.presenter.as_ref(),
             )?;
-            for slot in &mut slots {
-                slot.target
-                    .share_reconstruction_history(&self.prepared, &self.slots[0].target);
+            if let Some(prepared) = self.prepared.three_d() {
+                for slot in &mut slots {
+                    slot.target
+                        .share_reconstruction_history(prepared, &self.slots[0].target);
+                }
             }
             Some(slots)
         };

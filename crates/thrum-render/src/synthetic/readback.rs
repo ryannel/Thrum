@@ -77,32 +77,40 @@ impl PixelReadback {
         exposure: Option<&wgpu::Buffer>,
         native: Option<&super::NativeFrame>,
     ) -> Result<(), RenderError> {
+        let texture = match self.source {
+            CaptureSource::Sdr => target
+                .textures
+                .texture(&target.ids.output)
+                .ok_or(RenderError::GraphPassMismatch)?,
+            CaptureSource::SceneLinear => target
+                .textures
+                .texture(&target.ids.scene)
+                .ok_or(RenderError::GraphPassMismatch)?,
+            CaptureSource::NativeOutput => {
+                &target
+                    .native
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?
+                    .provider
+                    .output
+            }
+            CaptureSource::NativeHistory => native.ok_or(RenderError::GraphPassMismatch)?.history(),
+        };
+        self.copy_texture(encoder, texture, exposure)
+    }
+
+    pub(crate) fn copy_texture(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        texture: &wgpu::Texture,
+        exposure: Option<&wgpu::Buffer>,
+    ) -> Result<(), RenderError> {
         if let Some(timer) = &mut self.copy_timing {
             timer.marker(self.generation, encoder, false)?;
         }
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
-                texture: match self.source {
-                    CaptureSource::Sdr => target
-                        .textures
-                        .texture(&target.ids.output)
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                    CaptureSource::SceneLinear => target
-                        .textures
-                        .texture(&target.ids.scene)
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                    CaptureSource::NativeOutput => {
-                        &target
-                            .native
-                            .as_ref()
-                            .ok_or(RenderError::GraphPassMismatch)?
-                            .provider
-                            .output
-                    }
-                    CaptureSource::NativeHistory => {
-                        native.ok_or(RenderError::GraphPassMismatch)?.history()
-                    }
-                },
+                texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
@@ -147,6 +155,41 @@ impl PixelReadback {
         });
         self.pending = Some(receive);
         Ok(())
+    }
+
+    pub(crate) fn new(
+        device: &wgpu::Device,
+        generation: u64,
+        extent: [u32; 2],
+        source: CaptureSource,
+        row_bytes: u32,
+    ) -> Self {
+        Self {
+            source,
+            exposure_words: None,
+            has_exposure: false,
+            buffer: device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("scene pixel readback"),
+                size: u64::from(row_bytes) * u64::from(extent[1]) + super::exposure::SAMPLE_BYTES,
+                usage: wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::MAP_READ
+                    | if device
+                        .features()
+                        .contains(wgpu::Features::MAPPABLE_PRIMARY_BUFFERS)
+                    {
+                        wgpu::BufferUsages::STORAGE
+                    } else {
+                        wgpu::BufferUsages::empty()
+                    },
+                mapped_at_creation: false,
+            }),
+            generation,
+            extent,
+            row_bytes,
+            pending: None,
+            copy_timing: None,
+            resolving_copy_timing: false,
+        }
     }
     pub(crate) fn enable_copy_timing(
         &mut self,

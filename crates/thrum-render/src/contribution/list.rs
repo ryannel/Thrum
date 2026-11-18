@@ -232,6 +232,23 @@ impl SceneContribution for SceneContributions {
                 passes
             })
     }
+    fn draw_stages(&self) -> Vec<super::SceneDrawStage> {
+        self.entries
+            .iter()
+            .flat_map(|entry| entry.draw_stages())
+            .collect()
+    }
+
+    fn rebuild_2d(&mut self, surface: &super::SpriteContributionSurface<'_>) -> Result<(), String> {
+        self.pass_counts.clear();
+        self.after_counts.clear();
+        for entry in &mut self.entries {
+            entry.rebuild_2d(surface)?;
+            self.pass_counts.push(entry.effect_graph().passes.len());
+            self.after_counts.push(0);
+        }
+        Ok(())
+    }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
         self.pass_counts.clear();
         self.after_counts.clear();

@@ -21,6 +21,7 @@ mod graph_record;
 pub mod history;
 pub mod present;
 pub mod runtime;
+pub mod sprite;
 pub mod synthetic;
 #[cfg(test)]
 mod timestamp_permit;

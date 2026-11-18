@@ -764,6 +764,12 @@ fn write_runtime_report<G: Game>(
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
+    let (scene_kind, present_target_bytes, storage) = driver.scene_storage();
+    if scene_kind == thrum_render::runtime::SceneKind::TwoD {
+        result["scene_kind"] = json!("TwoD");
+        result["present_target_bytes"] = json!(present_target_bytes);
+        result["storage"] = json!(storage);
+    }
     if !capabilities.hardware().is_empty() {
         result["hardware"] = json!(
             capabilities

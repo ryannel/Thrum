@@ -15,6 +15,7 @@ use std::sync::Arc;
 /// A detached copy of the scene and executor handles for preparing one cooked
 /// visual generation without borrowing the ticking host.
 pub struct VisualPrepareInputs {
+    pub(super) kind: super::SceneKind,
     pub(super) queue: wgpu::Queue,
     pub(super) capabilities: DeviceCapabilities,
     pub(super) scene: SyntheticScene,
@@ -47,6 +48,11 @@ impl VisualPrepareInputs {
         exposure: f32,
         revision: Option<[u8; 32]>,
     ) -> Result<PreparedVisual, FrameError> {
+        if self.kind == super::SceneKind::TwoD {
+            return Err(FrameError::InvalidState(
+                "2D scene refuses a 3D visual replacement",
+            ));
+        }
         let region = self
             .creations
             .region(CreationPhase::Transition, "prepare-visual");

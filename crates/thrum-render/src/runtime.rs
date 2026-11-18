@@ -24,6 +24,7 @@ use crate::{
     },
     timing::{GpuTimings, TimingError},
 };
+use preparation::{FrameTarget, PreparedRenderer};
 use thrum_core::sim::{WorldAdvance, WorldPublication};
 
 #[cfg(feature = "creation-counters")]
@@ -34,6 +35,7 @@ mod creation;
 mod device;
 mod extent;
 mod preparation;
+mod sprites;
 mod submitted_capture;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
@@ -134,6 +136,17 @@ pub trait SceneSource<P> {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String>;
+    /// Sample the game's unjittered 2D view and frame rows on the physical pixel grid.
+    /// # Errors
+    /// Refuses a missing or invalid game presentation policy.
+    fn sprites(
+        &self,
+        _source: SourceTick,
+        _alpha: f32,
+        _extent: [u32; 2],
+    ) -> Result<crate::sprite::SpriteFrame<'_>, String> {
+        Err("scene source does not supply sprite rows".into())
+    }
     /// Sample positions/intensities into the prepared local-light slice using
     /// the same committed endpoint and alpha as the view. Keep the prepared
     /// capacity and valid photometric values; the source remains their owner.
@@ -144,6 +157,27 @@ pub trait SceneSource<P> {
         _lights: &mut [crate::synthetic::SyntheticPointLight],
     ) {
     }
+}
+
+/// Load-time selection of the prepared scene half.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SceneKind {
+    /// The default camera, lighting and opaque renderer.
+    #[default]
+    ThreeD,
+    /// Sprites at the output pixel extent, with fixed exposure.
+    TwoD,
+}
+
+/// Requests shared launch controls may offer when selecting a 2D scene.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SpriteSceneRequests {
+    /// A request for temporal sampling.
+    pub temporal_sampling: bool,
+    /// An explicit camera culling selection.
+    pub culling: Option<CullMode>,
+    /// A requested reconstruction provider or explicitly disabled reconstruction.
+    pub reconstruction: crate::synthetic::Reconstruction,
 }
 
 /// One sampled camera/lighting input; resource updates belong to the executor.
@@ -366,10 +400,10 @@ enum SlotState {
 }
 
 struct FrameSlot {
-    target: OffscreenTarget,
+    target: FrameTarget,
     presentation: Option<PresentationBinding>,
     timings: GpuTimings,
-    timing_layout: SceneTimingLayout,
+    timing_layout: Option<SceneTimingLayout>,
     timing_readback: bool,
     render_done: Arc<AtomicBool>,
     state: SlotState,
@@ -435,7 +469,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     last_scene_apply: SceneApplyReport,
     render_extent: [u32; 2],
     changed_slots: Vec<u32>,
-    prepared: PreparedSynthetic,
+    prepared: PreparedRenderer,
     presenter: Option<SurfacePresenter>,
     slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
@@ -464,14 +498,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     #[must_use]
     pub fn observe_ray_mesh_builds(&mut self) -> Option<crate::synthetic::RayBuildProbe> {
-        self.prepared.observe_ray_mesh_builds()
+        match &mut self.prepared {
+            PreparedRenderer::ThreeD(scene) => scene.observe_ray_mesh_builds(),
+            PreparedRenderer::TwoD(_) => None,
+        }
     }
 
     /// Inspect the actual scene structure from the latest recording.
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     #[must_use]
     pub fn ray_structure_instances(&self) -> Option<Vec<crate::synthetic::RayStructureInstance>> {
-        self.prepared.ray_structure_instances()
+        self.prepared.three_d()?.ray_structure_instances()
     }
 
     /// Bind the latest scene structure for a diagnostic query on the host's queue.
@@ -482,7 +519,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         &self,
         layout: &wgpu::BindGroupLayout,
     ) -> Option<wgpu::BindGroup> {
-        self.prepared.ray_structure_probe_group(layout)
+        self.prepared.three_d()?.ray_structure_probe_group(layout)
     }
 
     /// Inspect the Sun pass volumes determined by the latest camera and scene bounds.
@@ -491,7 +528,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn ray_inspection_shadow_volumes(
         &self,
     ) -> Vec<crate::contribution::SecondaryShadowCascade> {
-        self.prepared.ray_inspection_shadow_volumes(
+        let Some(prepared) = self.prepared.three_d() else {
+            return Vec::new();
+        };
+        prepared.ray_inspection_shadow_volumes(
             self.contribution
                 .as_ref()
                 .and_then(|entry| entry.shadow_bounds()),
@@ -561,6 +601,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let _region = self
             .creations
             .region(CreationPhase::Transition, "contribution");
+        if self.scene_kind() == SceneKind::TwoD {
+            self.attach_sprite_contribution(contribution.as_mut())?;
+            self.contribution = Some(contribution);
+            self.contribution_error = None;
+            return Ok(());
+        }
         let previous_views = self.prepared.take_secondary();
         let declarations = contribution.secondary_view_slots();
         if let Err(error) = self.prepared.prepare_secondary_views(
@@ -607,6 +653,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Rebuild members before accepting their new generation's declarations. Optional
     /// content can refuse reconstruction; the base scene remains usable when detached.
     fn rebuild_contribution(&mut self) {
+        if self.scene_kind() == SceneKind::TwoD {
+            if let Some(mut contribution) = self.contribution.take() {
+                match self.attach_sprite_contribution(contribution.as_mut()) {
+                    Ok(()) => self.contribution = Some(contribution),
+                    Err(error) => self.contribution_error = Some(error),
+                }
+            }
+            return;
+        }
         let had_views = self.prepared.secondary_view_count() != 0;
         let previous_views = self.prepared.take_secondary();
         let rebuilt = self.contribution.as_mut().map(|contribution| {
@@ -666,7 +721,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             &self.prepared,
             &self.queue,
             self.render_extent,
-            self.presenter.is_some(),
+            self.presenter.as_ref().map(SurfacePresenter::profile),
         )
         .and_then(|mut slots| {
             preparation::bind_presenter(&self.prepared, &mut slots, self.presenter.as_ref())?;
@@ -703,7 +758,29 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
     /// The reconstruction provider prepared for the live scene generation.
     pub fn reconstruction(&self) -> crate::synthetic::Reconstruction {
-        self.prepared.reconstruction()
+        match &self.prepared {
+            PreparedRenderer::ThreeD(scene) => scene.reconstruction(),
+            PreparedRenderer::TwoD(_) => crate::synthetic::Reconstruction::Off,
+        }
+    }
+
+    /// The scene half selected at preparation.
+    pub fn scene_kind(&self) -> SceneKind {
+        match &self.prepared {
+            PreparedRenderer::ThreeD(_) => SceneKind::ThreeD,
+            PreparedRenderer::TwoD(_) => SceneKind::TwoD,
+        }
+    }
+
+    /// Capability record for the active device generation.
+    pub fn device_capabilities(&self) -> &DeviceCapabilities {
+        self.prepared.capabilities()
+    }
+
+    /// The temporal reconstructor resolved for the prepared scene, when active.
+    pub fn resolved_reconstructor(&self) -> Option<crate::capabilities::Reconstructor> {
+        (self.reconstruction() == crate::synthetic::Reconstruction::Taau)
+            .then(|| self.prepared.capabilities().reconstructor())
     }
     /// Change presentation policy between frames. Invalidate retained extraction
     /// and GPU correspondence because the mapping itself may have changed.
@@ -765,7 +842,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         mut scene: SyntheticScene,
         exposure: f32,
     ) -> Result<Self, FrameError> {
-        let device = capabilities.device();
         let [width, height] = config.render_extent;
         if width == 0 || height == 0 {
             return Err(FrameError::InvalidState("render extent must be nonzero"));
@@ -818,8 +894,118 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         gpu.bind_presenter(presenter.as_ref())?;
         drop(build);
         creations.ready();
-        Ok(Self {
-            device: wgpu::Device::clone(device),
+        Ok(Self::from_prepared(
+            capabilities,
+            queue,
+            config.render_extent,
+            world,
+            source,
+            scene,
+            extractor,
+            initial_source,
+            initial_extracted,
+            initial_scene_apply,
+            changed_slots,
+            gpu,
+            presenter,
+        ))
+    }
+
+    /// Prepare a sprite scene on the exact output grid. The game supplies the 2D
+    /// view and frame rows through its existing scene source.
+    ///
+    /// # Errors
+    /// Refuses named 3D-only requests and invalid initial world, sheet or surface inputs.
+    pub async fn new_2d(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        config: FrameConfig,
+        mut world: W,
+        source: V,
+        sprites: crate::sprite::SpriteScene,
+        requests: SpriteSceneRequests,
+    ) -> Result<Self, FrameError> {
+        if requests.temporal_sampling {
+            return Err(FrameError::InvalidState(
+                "2D scene refuses temporal sampling",
+            ));
+        }
+        if let Some(mode) = requests.culling {
+            return Err(FrameError::Scene(format!(
+                "2D scene refuses camera culling mode {mode:?}"
+            )));
+        }
+        DeviceCapabilities::no_reconstructor(requests.reconstruction)?;
+        let extent = config
+            .surface
+            .map_or(config.render_extent, |profile| profile.extent);
+        let initial = world.publication().map_err(FrameError::World)?;
+        let initial_source = publication_source(&initial);
+        if initial_source != world.source() {
+            return Err(FrameError::InvalidState(
+                "initial publication is not current",
+            ));
+        }
+        drop(initial);
+        source
+            .sprites(initial_source, 0.0, extent)
+            .map_err(FrameError::Scene)?
+            .view
+            .clip_scale(extent)
+            .map_err(|error| FrameError::Scene(format!("initial sprite view: {error:?}")))?;
+        let creations = capabilities.site().ledger();
+        let build = creations.region(CreationPhase::Build, "host");
+        let mut gpu =
+            preparation::prepare_sprites(capabilities, queue, sprites, extent, config.surface)
+                .await?;
+        let presenter = match config.surface {
+            Some(profile) => Some(
+                SurfacePresenter::prepare(capabilities, extent, profile)
+                    .await
+                    .map_err(|error| format!("sprite surface prepare: {error:?}"))?,
+            ),
+            None => None,
+        };
+        gpu.bind_presenter(presenter.as_ref())?;
+        drop(build);
+        creations.ready();
+        Ok(Self::from_prepared(
+            capabilities,
+            queue,
+            extent,
+            world,
+            source,
+            SyntheticScene::empty(),
+            RenderExtractor::new(0, 0),
+            initial_source,
+            ExtractReport::default(),
+            SceneApplyReport {
+                moving: 0,
+                dropped_invalid: 0,
+            },
+            Vec::new(),
+            gpu,
+            presenter,
+        ))
+    }
+
+    fn from_prepared(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        render_extent: [u32; 2],
+        world: W,
+        source: V,
+        scene: SyntheticScene,
+        extractor: RenderExtractor,
+        initial_source: SourceTick,
+        initial_extracted: ExtractReport,
+        initial_scene_apply: SceneApplyReport,
+        changed_slots: Vec<u32>,
+        gpu: preparation::PreparedScene,
+        presenter: Option<SurfacePresenter>,
+    ) -> Self {
+        Self {
+            device: wgpu::Device::clone(capabilities.device()),
             queue: queue.clone(),
             capture_owner: Arc::new(()),
             submitted_capture: None,
@@ -839,7 +1025,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             scene,
             last_extracted: initial_extracted,
             last_scene_apply: initial_scene_apply,
-            render_extent: config.render_extent,
+            render_extent,
             changed_slots,
             prepared: gpu.prepared,
             presenter,
@@ -859,27 +1045,34 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             visual_owner: Arc::new(()),
             contribution: None,
             contribution_error: None,
-            creations,
+            creations: capabilities.site().ledger(),
             #[cfg(feature = "creation-counters")]
             retired_creations: None,
-        })
+        }
     }
 
     /// Copy presentation inputs once for an asynchronous visual preparation.
     /// This copies the finite scene only on accepted edits, never on ticks.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn visual_prepare_inputs(&self) -> VisualPrepareInputs {
+        let prepared = self.prepared.three_d();
         VisualPrepareInputs {
             queue: self.queue.clone(),
             capabilities: self.prepared.capabilities().clone(),
             scene: self.scene.clone(),
-            retained_ray_meshes: self.prepared.retained_ray_meshes(),
+            retained_ray_meshes: prepared.and_then(PreparedSynthetic::retained_ray_meshes),
             surface: self.presenter.is_some(),
-            contribution_passes: self.prepared.contribution_passes(),
-            effect_graph: self.prepared.effect_graph().clone(),
+            contribution_passes: prepared.map_or_else(
+                ContributionPasses::default,
+                PreparedSynthetic::contribution_passes,
+            ),
+            effect_graph: prepared
+                .map(|scene| scene.effect_graph().clone())
+                .unwrap_or_default(),
             render_extent: self.render_extent,
             owner: Arc::clone(&self.visual_owner),
             creations: self.creations.detach(),
+            kind: self.scene_kind(),
         }
     }
 
@@ -1021,11 +1214,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// The camera culling mode the prepared renderer runs; it survives
     /// surface resize and device replacement.
     pub fn camera_culling(&self) -> CullMode {
-        self.prepared.camera_culling()
+        self.prepared
+            .three_d()
+            .map_or(CullMode::Direct, PreparedSynthetic::camera_culling)
     }
     /// Capability decision belonging to the currently published generation.
     pub fn culling_selection(&self) -> crate::synthetic::CullingSelection {
-        self.prepared.culling_selection()
+        self.prepared.three_d().map_or(
+            crate::synthetic::CullingSelection {
+                requested: CullMode::Direct,
+                resolved: CullMode::Direct,
+                reason: crate::synthetic::CullingReason::NoCameraCulling,
+            },
+            PreparedSynthetic::culling_selection,
+        )
     }
 
     /// Number of optional views skipped because all GPU packet slots were held.
@@ -1058,19 +1260,37 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Inspect prepared ordinary slot texture storage without allocating GPU objects.
     #[must_use]
     pub fn storage_report(&self) -> String {
-        self.slots
+        let slots = self
+            .slots
             .iter()
             .enumerate()
             .map(|(index, slot)| format!("slot={index}\n{}", slot.target.storage_report()))
             .collect::<Vec<_>>()
-            .join("\n")
+            .join("\n");
+        match &self.prepared {
+            PreparedRenderer::ThreeD(_) => slots,
+            PreparedRenderer::TwoD(scene) => format!("{}\n{slots}", scene.storage_report()),
+        }
     }
     /// Inspect the prepared slot's graph without encoding or allocating GPU work.
     /// # Errors
     /// Refuses a stale target during an incomplete scene transition.
     pub fn scene_graph(&self) -> Result<crate::graph::CompiledGraph, FrameError> {
+        self.scene_graph_variant(false)
+    }
+
+    /// Inspect the prepared graph with its optional submitted-image copy.
+    /// # Errors
+    /// Refuses a stale target during a scene transition.
+    pub fn scene_graph_variant(
+        &self,
+        capture: bool,
+    ) -> Result<crate::graph::CompiledGraph, FrameError> {
+        if let FrameTarget::TwoD(target) = &self.slots[0].target {
+            return Ok(target.plan(capture).clone());
+        }
         self.prepared
-            .graph(&self.slots[0].target, false)
+            .graph(&self.slots[0].target, capture)
             .map_err(|error| FrameError::Gpu(format!("graph inspection: {error:?}")))
     }
     /// Read-only reconstruction witness of the latest submitted frame, before report retirement.
@@ -1098,7 +1318,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 SlotState::Free => None,
             })
             .max_by_key(|(order, _)| *order)
-            .map(|(_, target)| target)
+            .and_then(|(_, target)| target.three_d())
     }
 
     /// Outcomes of the optional labelled native copy/select diagnostic.
@@ -1106,7 +1326,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn native_witness_report(&self) -> Option<crate::synthetic::NativeWitnessReport> {
         self.slots
             .first()
-            .and_then(|slot| slot.target.native_witness_report())
+            .and_then(|slot| slot.target.three_d()?.native_witness_report())
     }
 
     /// Reject the optional provider at a free frame boundary. Its prepared twin
@@ -1117,7 +1337,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return false;
         }
         for slot in &self.slots {
-            if let Some(binding) = &slot.target.native {
+            if let Some(binding) = slot
+                .target
+                .three_d()
+                .and_then(|target| target.native.as_ref())
+            {
                 binding.reject();
             }
         }
@@ -1132,7 +1356,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(binding) = self
             .slots
             .first()
-            .and_then(|slot| slot.target.native.as_ref())
+            .and_then(|slot| slot.target.three_d()?.native.as_ref())
         {
             binding.inject_completion_error();
         }
@@ -1193,6 +1417,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Refuses an invalid extent or a host without a surface presenter.
     pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), FrameError> {
         self.check_native_completion()?;
+        if self.scene_kind() == SceneKind::TwoD {
+            return if self.resize_scene_surface(extent)? {
+                Ok(())
+            } else {
+                Err(FrameError::InvalidState(
+                    "2D surface resize requires a nonzero extent and retired frames",
+                ))
+            };
+        }
         let _region = self
             .creations
             .region(CreationPhase::Transition, "resize-surface");
@@ -1416,10 +1649,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let extract_start = Instant::now();
         let snapshot = self.world.publication().map_err(FrameError::World)?;
         let source = publication_source(&snapshot);
+        let sprites = self.scene_kind() == SceneKind::TwoD;
         let extractor = &mut self.extractor;
         let reused_source =
             extractor.frame().source() == Some(source) && self.last_view_source == Some(source);
-        let extracted = if reused_source {
+        let extracted = if sprites {
+            ExtractReport::default()
+        } else if reused_source {
             self.last_extracted
         } else {
             self.source.extract(extractor, &snapshot.page)
@@ -1461,6 +1697,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         report: &mut DriveReport,
         frame: SubmitFrame,
     ) -> Result<Option<PreparedSample>, FrameError> {
+        if self.scene_kind() == SceneKind::TwoD {
+            return self.prepare_sprite_frame(slot_index, report, frame);
+        }
         let authority = self.world.source();
         let frame_source = self.extractor.frame().source();
         let Some(frame_source) = frame_source else {
@@ -1654,10 +1893,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let slot = &mut self.slots[slot_index];
         let native = slot
             .target
-            .reserve_native(self.scene.view.history_reset())
-            .map_err(|error| format!("native reserve: {error:?}"))?;
+            .three_d()
+            .map(|target| target.reserve_native(self.scene.view.history_reset()))
+            .transpose()
+            .map_err(|error| format!("native reserve: {error:?}"))?
+            .flatten();
         let mut segments = Vec::new();
-        slot.target.arm_culling_stats();
+        if let FrameTarget::ThreeD(target) = &mut slot.target {
+            target.arm_culling_stats();
+        }
         let capture = submitted_capture::reserve(
             &mut self.submitted_capture,
             self.generation,
@@ -1665,16 +1909,44 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             slot.target.capture_source(),
         );
         let capture_slot = capture.as_ref().map(|(index, _)| *index);
-        if let Err(error) = self.prepared.encode_contributed(
-            &mut encoder,
-            self.generation,
-            &slot.target,
-            self.timing_requested.then_some(&mut slot.timings),
-            capture.map(|(_, readback)| readback),
-            self.contribution.as_deref_mut(),
-            native.as_ref(),
-            &mut segments,
-        ) {
+        let timings = self.timing_requested.then_some(&mut slot.timings);
+        let readback = capture.map(|(_, readback)| readback);
+        let contribution = self.contribution.as_deref_mut();
+        let encoded = match (&self.prepared, &slot.target) {
+            (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => scene
+                .encode_contributed(
+                    &mut encoder,
+                    self.generation,
+                    target,
+                    timings,
+                    readback,
+                    contribution,
+                    native.as_ref(),
+                    &mut segments,
+                ),
+            (PreparedRenderer::TwoD(scene), FrameTarget::TwoD(target)) => scene.record(
+                &mut encoder,
+                target,
+                timings,
+                readback,
+                contribution,
+                sprites::contribution_frame(
+                    target,
+                    self.generation,
+                    crate::contribution::EffectTime {
+                        epoch: prepared.source.epoch,
+                        timeline: prepared.source.timeline,
+                        tick: prepared.source.tick,
+                        tick_duration: self.world.tick_duration(),
+                        alpha: prepared.sample.presentation_alpha,
+                        display_phase: prepared.sample.display_phase,
+                        capture: false,
+                    },
+                ),
+            ),
+            _ => Err(crate::synthetic::RenderError::StaleTarget),
+        };
+        if let Err(error) = encoded {
             drop(encoder);
             if let Some(index) = capture_slot
                 && let Some(tap) = self.submitted_capture.as_mut()
@@ -1755,15 +2027,27 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .zip(slot.presentation.as_ref())
             .zip(surface)
             .is_some_and(|((presenter, binding), surface)| {
-                self.prepared
-                    .encode_surface(
-                        &slot.target,
+                let surface = (presenter, binding, surface.view, surface.extent);
+                let timings = sample.timing_requested.then_some(&mut slot.timings);
+                match (&self.prepared, &slot.target) {
+                    (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => scene
+                        .encode_surface(
+                            target,
+                            &mut encoder,
+                            surface,
+                            timings,
+                            capture_slot.is_some(),
+                        ),
+                    (PreparedRenderer::TwoD(scene), FrameTarget::TwoD(target)) => scene.present(
                         &mut encoder,
-                        (presenter, binding, surface.view, surface.extent),
-                        sample.timing_requested.then_some(&mut slot.timings),
+                        target,
+                        timings,
                         capture_slot.is_some(),
-                    )
-                    .is_ok()
+                        surface,
+                    ),
+                    _ => Err(crate::synthetic::RenderError::StaleTarget),
+                }
+                .is_ok()
             });
         if self.presenter.is_some() && !surface_presented {
             self.dropped_surface = self.dropped_surface.saturating_add(1);
@@ -1822,7 +2106,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             sample.native_segment = Some(segment);
             completion
         });
-        self.prepared.submit_mesh_rows();
+        if let PreparedRenderer::ThreeD(scene) = &mut self.prepared {
+            scene.submit_mesh_rows();
+        }
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(true);
         }
@@ -1834,10 +2120,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             done.store(true, Ordering::Release);
         });
         self.creations.frame();
-        slot.target.map_culling_stats(
-            self.prepared.camera_culling(),
-            self.prepared.active_instance_count(),
-        );
+        if let (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) =
+            (&self.prepared, &mut slot.target)
+        {
+            target.map_culling_stats(scene.camera_culling(), scene.active_instance_count());
+            slot.timing_layout = Some(SceneTimingLayout::from((&**scene, &**target)));
+        }
         sample.encode_cpu = encode_cpu + finish_start.elapsed();
         sample.wall = wall_start.elapsed();
         sample.render_cpu = if self.world.is_threaded() {
@@ -1869,13 +2157,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             );
         }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
-        slot.timing_layout = SceneTimingLayout::from((&self.prepared, &slot.target));
         slot.timing_readback = capture_slot.is_some();
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
-        self.prepared.commit_frame();
+        if let PreparedRenderer::ThreeD(scene) = &mut self.prepared {
+            scene.commit_frame();
+        }
         self.history_reset_pending = false;
         self.submitted_view_history_epoch = view_history_epoch;
         self.last_view_source = Some(source);
@@ -1908,6 +2197,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         let creations = self.creations.clone();
         let _region = creations.region(CreationPhase::Transition, "capture");
+        if self.scene_kind() == SceneKind::TwoD {
+            return self.begin_sprite_capture();
+        }
         let needs_extract = self.extractor.frame().source().is_none_or(|source| {
             source.epoch != self.world.source().epoch
                 || source.timeline != self.world.source().timeline
@@ -2140,7 +2432,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     // has settled, keeping any an earlier pass took.
                     sample.camera_culling = sample
                         .camera_culling
-                        .or_else(|| slot.target.take_culling_counts());
+                        .or_else(|| slot.target.take_culling_counts_if_3d());
                     if !sample.timing_requested || !slot.timings.is_enabled() {
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         continue;
@@ -2165,22 +2457,32 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 SlotState::Resolving(mut sample) => {
                     sample.camera_culling = sample
                         .camera_culling
-                        .or_else(|| slot.target.take_culling_counts());
+                        .or_else(|| slot.target.take_culling_counts_if_3d());
                     match slot.timings.try_collect(self.generation) {
                         Ok(Some(passes)) => {
-                            if let Some((mut scene, present, contribution)) =
-                                pass_durations(passes, sample.surface_presented, slot.timing_layout)
-                            {
-                                scene.effect_passes(slot.target.effect_pass_names());
-                                let boundary = slot.target.first_late_pass().and_then(|name| {
-                                    Some(slot.timings.gap_before(name)? + scene.get(name)?)
-                                });
-                                scene.set_effect_boundary(boundary);
-                                scene.set_timed_pass_span(slot.timings.timed_pass_span());
-                                scene.unmeasured(slot.target.untimed_pass_names(
+                            let timings = match &slot.target {
+                                FrameTarget::ThreeD(_) => slot.timing_layout.and_then(|layout| {
+                                    pass_durations(passes, sample.surface_presented, layout)
+                                }),
+                                FrameTarget::TwoD(target) => target.timings(
+                                    passes,
                                     slot.timing_readback,
                                     sample.surface_presented,
-                                ));
+                                ),
+                            };
+                            if let Some((mut scene, present, contribution)) = timings {
+                                if let FrameTarget::ThreeD(target) = &slot.target {
+                                    scene.effect_passes(target.effect_pass_names());
+                                    let boundary = target.first_late_pass().and_then(|name| {
+                                        Some(slot.timings.gap_before(name)? + scene.get(name)?)
+                                    });
+                                    scene.set_effect_boundary(boundary);
+                                    scene.unmeasured(target.untimed_pass_names(
+                                        slot.timing_readback,
+                                        sample.surface_presented,
+                                    ));
+                                }
+                                scene.set_timed_pass_span(slot.timings.timed_pass_span());
                                 sample.gpu_pass_ns = Some(scene);
                                 sample.gpu_present_ns = present;
                                 sample.gpu_contribution_ns = contribution;

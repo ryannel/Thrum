@@ -115,6 +115,20 @@ impl std::error::Error for CloudQualityError {
 /// Refuses unsupported launch settings.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = launch_value("THRUM_SCENE");
+    let sprite_scale = if scene.as_deref() == Ok("sprites") {
+        if let Ok(request) = launch_value("THRUM_CULLING") {
+            return Err(format!("2D scene refuses THRUM_CULLING={request}"));
+        }
+        Some(match launch_value("THRUM_SPRITE_SCALE") {
+            Ok(scale) => scale
+                .parse::<u16>()
+                .map_err(|_| "THRUM_SPRITE_SCALE must be an integer from 1 to 6")?,
+            Err(std::env::VarError::NotPresent) => 2,
+            Err(error) => return Err(error.to_string()),
+        })
+    } else {
+        None
+    };
     let content = match scene.as_deref() {
         Ok("field") => crate::GameContent::Field,
         Ok("exit") => crate::GameContent::Exit,
@@ -147,6 +161,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         _ => return Err("THRUM_CLOUDS must be off, shade or sky".to_owned()),
     };
     Ok(crate::GameSetup {
+        sprite_scale,
         cloud_weather: if clouds == crate::CloudSelection::Off {
             crate::clouds::initial_state().parameters()
         } else {
@@ -254,7 +269,14 @@ fn attach_selected(
     if scene.as_deref() == Ok("field") {
         return Ok(None);
     }
-    let Some(store) = std::env::var_os("THRUM_ASSET_STORE") else {
+    let store = std::env::var_os("THRUM_ASSET_STORE");
+    if scene.as_deref() == Ok("sprites") {
+        if store.is_some() {
+            return Err("2D scene refuses cooked placements through THRUM_ASSET_STORE".into());
+        }
+        return Ok(None);
+    }
+    let Some(store) = store else {
         if scene != Err(std::env::VarError::NotPresent) {
             return Err("THRUM_SCENE requires THRUM_ASSET_STORE".to_owned());
         }
@@ -279,7 +301,11 @@ fn attach_selected(
             )
             .map_err(|error| error.to_string())?,
         ),
-        _ => return Err("THRUM_SCENE must be valley, exit, diagnostic or field".to_owned()),
+        _ => {
+            return Err(
+                "THRUM_SCENE must be valley, exit, diagnostic, field or sprites".to_owned(),
+            );
+        }
     };
     let assets = if let Some(rows) = host.cooked_rows() {
         assets.with_rows(rows).map_err(|error| error.to_string())?

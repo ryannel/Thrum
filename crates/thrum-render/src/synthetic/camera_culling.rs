@@ -38,6 +38,8 @@ pub struct CullingSelection {
 /// Why a requested camera mode was selected or replaced.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CullingReason {
+    /// The prepared scene has no camera culling stage.
+    NoCameraCulling,
     /// Direct was explicitly requested.
     RequestedDirect,
     /// Adapter-read facts permit compute and indirect execution.

@@ -124,7 +124,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     #[cfg(feature = "creation-counters")]
     pub fn copy_shadow_view_witness(&mut self, output: &wgpu::Buffer) -> Option<u64> {
         let ready = self.ready.as_mut()?;
-        let views = ready.host.prepared.shadow_view_witness()?;
+        let views = ready.host.prepared.three_d()?.shadow_view_witness()?;
         let bytes = views.iter().map(|view| view.size()).sum();
         if bytes > output.size() || !output.usage().contains(wgpu::BufferUsages::COPY_DST) {
             return None;
@@ -166,8 +166,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         #[cfg(feature = "creation-counters")]
         {
             let ready = self.ready.as_mut()?;
-            let target = &ready.host.slots[ready.recorded.slot_index].target;
-            let buffers = ready.host.prepared.main_draw_witness(target);
+            let target = ready.host.slots[ready.recorded.slot_index]
+                .target
+                .three_d()?;
+            let buffers = ready.host.prepared.three_d()?.main_draw_witness(target);
             let bytes = buffers.iter().map(|item| item.2).sum();
             if bytes > output.size() || !output.usage().contains(wgpu::BufferUsages::COPY_DST) {
                 return None;
@@ -205,6 +207,21 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         let host = &ready.host;
         let presenter = host.presenter.as_ref()?;
         let (source, viewport) = presenter.source_viewport();
+        if let super::FrameTarget::TwoD(target) = &host.slots[ready.recorded.slot_index].target {
+            let (target_textures, target_bytes) = target.allocation();
+            return Some(super::FrameExtent {
+                attachments: [[0; 2], target.extent, [0; 2], target.extent],
+                target_textures,
+                target_bytes,
+                view_projection: target.projection,
+                previous_view_projection: [[0.0; 4]; 4],
+                source,
+                destination: presenter.extent(),
+                viewport,
+                submission: host.next_submission_order,
+                revision: host.presenter_generation,
+            });
+        }
         let (target_textures, target_bytes) = host.slots[ready.recorded.slot_index]
             .target
             .texture_allocation();

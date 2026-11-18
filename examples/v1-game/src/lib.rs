@@ -22,13 +22,15 @@ mod projection;
 mod scene;
 mod showcase;
 pub mod simulation;
+mod sprite_card;
 #[cfg(target_os = "macos")]
 mod window;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
     BrowserGame, CookedValley, create_browser_game, create_field_game, create_route_game,
-    fetch_cooked_valley, qualify_effect_after_opaque, qualify_effect_state, qualify_lent_products,
+    create_sprite_game, fetch_cooked_valley, qualify_effect_after_opaque, qualify_effect_state,
+    qualify_lent_products,
 };
 #[cfg(all(target_arch = "wasm32", feature = "draw-probe"))]
 pub use browser::{BrowserLightProbe, create_light_list_probe};

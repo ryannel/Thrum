@@ -64,20 +64,36 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let _region = self
             .creations
             .region(CreationPhase::Transition, "resize-scene-surface");
-        let view = self
-            .source
-            .frame(
-                self.world.source(),
-                self.presentation_alpha(),
-                extent,
-                self.visual_lighting,
+        let view = if self.scene_kind() == super::SceneKind::ThreeD {
+            Some(
+                self.source
+                    .frame(
+                        self.world.source(),
+                        self.presentation_alpha(),
+                        extent,
+                        self.visual_lighting,
+                    )
+                    .map_err(FrameError::Scene)?
+                    .view,
             )
-            .map_err(FrameError::Scene)?
-            .view;
+        } else {
+            self.source
+                .sprites(self.world.source(), self.presentation_alpha(), extent)
+                .map_err(FrameError::Scene)?
+                .view
+                .clip_scale(extent)
+                .map_err(|error| FrameError::Scene(format!("resized sprite view: {error:?}")))?;
+            None
+        };
         let presenter = presenter
             .refit(extent, extent)
             .map_err(|error| FrameError::Gpu(format!("scene presenter resize: {error:?}")))?;
-        let mut slots = preparation::prepare_slots(&self.prepared, &self.queue, extent, true)?;
+        let mut slots = preparation::prepare_slots(
+            &self.prepared,
+            &self.queue,
+            extent,
+            Some(presenter.profile()),
+        )?;
         preparation::bind_presenter(&self.prepared, &mut slots, Some(&presenter))?;
         if !current() {
             return Ok(false);
@@ -85,11 +101,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.slots = slots;
         self.presenter = Some(presenter);
         self.render_extent = extent;
-        self.scene.view = view;
+        if let Some(view) = view {
+            self.scene.view = view;
+        }
         self.presenter_generation += 1;
         self.visual_owner = std::sync::Arc::new(());
         self.reset_replacement_history();
-        if self.prepared.secondary_view_count() != 0 {
+        if self
+            .prepared
+            .three_d()
+            .is_some_and(|scene| scene.secondary_view_count() != 0)
+        {
             // A declared scale resolves against the new scene extent. Owners
             // must receive the replacement attachments before the next ask.
             self.rebuild_contribution();

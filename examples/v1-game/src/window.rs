@@ -97,6 +97,10 @@ pub fn run_window(hardware: Vec<HardwareRequest>) {
     // are reported when the host is prepared.
     let (window_title, title) = match crate::selected_setup() {
         Ok(crate::GameSetup {
+            sprite_scale: Some(_),
+            ..
+        }) => ("Thrum V1 — sprites", "Thrum V1 sprites"),
+        Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Frustum,
             ..

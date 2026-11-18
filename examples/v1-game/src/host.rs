@@ -63,6 +63,8 @@ pub enum ExitEntities {
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GameSetup {
+    /// Select the sprite test card at this integer output scale.
+    pub sprite_scale: Option<u16>,
     /// Valley entity meshes follow cooked publications instead of code-authored props.
     pub cooked_mesh_rows: MeshRowSource,
     /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
@@ -95,6 +97,7 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            sprite_scale: None,
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
@@ -648,6 +651,51 @@ impl FrameHost {
             return Err(runtime::FrameError::InvalidState(
                 "capability record does not match the host device",
             ));
+        }
+        if let Some(scale) = setup.sprite_scale {
+            if rows.is_some() || setup.cooked_mesh_rows == MeshRowSource::Cooked {
+                return Err(runtime::FrameError::InvalidState(
+                    "2D scene refuses cooked placements",
+                ));
+            }
+            if setup.clouds != crate::CloudSelection::Off
+                || setup.diagnostic_clouds
+                || setup.valley_stars
+                || setup.field_meshes
+                || setup.content != GameContent::Grid
+                || setup.route_overlay != RouteOverlay::Off
+            {
+                return Err(runtime::FrameError::InvalidState(
+                    "2D scene refuses 3D content settings",
+                ));
+            }
+            let world = WorldPort::Inline(Box::new(WorldDriver::new(
+                setup.content,
+                RouteOverlay::Off,
+            )?));
+            let inner = Runtime::new_2d(
+                capabilities,
+                queue,
+                config,
+                world,
+                GameScene::new(setup),
+                crate::sprite_card::scene(scale)?,
+                runtime::SpriteSceneRequests {
+                    temporal_sampling: setup.display_overlay == DisplayOverlay::TemporalInputs,
+                    culling: (setup.camera_culling != CullMode::Direct)
+                        .then_some(setup.camera_culling),
+                    reconstruction: setup.reconstruction,
+                },
+            )
+            .await?;
+            return Ok(Self {
+                cooked_rows: None,
+                inner,
+                cloud_input: None,
+                cloud_sky: None,
+                #[cfg(not(target_arch = "wasm32"))]
+                visual_product: None,
+            });
         }
         let mut scene = GameScene::scene(config.render_extent, setup)?;
         #[cfg(not(target_arch = "wasm32"))]

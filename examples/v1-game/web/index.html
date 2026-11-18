@@ -47,7 +47,7 @@
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
-      import init, { create_browser_game, create_field_game, fetch_cooked_valley } from "./v1_game.js";
+      import init, { create_browser_game, create_field_game, create_sprite_game, fetch_cooked_valley } from "./v1_game.js";
       import { mountControls } from "./thrum-controls.js";
 
       const canvas = document.querySelector("#scene");
@@ -59,12 +59,30 @@
         // ?field draws the dense flythrough field; ?culling=direct|frustum|occlusion picks camera culling.
         const cooked = probe.has("assets");
         const exit = probe.get("scene") === "exit";
+        const sprites = probe.get("scene") === "sprites";
+        if (sprites && (cooked || probe.has("field") || probe.has("meshes") || probe.has("diagnostic-clouds"))) {
+          throw new Error("2D scene refuses 3D content settings");
+        }
+        if (sprites && probe.has("backing")) {
+          const [width, height] = probe.get("backing").split("x").map(Number);
+          if (![width, height].every(side => Number.isInteger(side) && side > 0 && side <= 4096)) {
+            throw new Error("Sprite backing size must be WIDTHxHEIGHT in 1..4096");
+          }
+          canvas.width = width;
+          canvas.height = height;
+        }
         if (exit && (!cooked || probe.has("field"))) throw new Error("The exit scene requires a cooked store");
         if (exit && probe.has("measure")) {
           canvas.width = 1920;
           canvas.height = 1080;
         }
-        const game = probe.has("field")
+        const scale = Number(probe.get("scale") ?? 2);
+        if (sprites && (!Number.isInteger(scale) || scale < 1 || scale > 6)) {
+          throw new Error("Sprite scale must be an integer from 1 to 6");
+        }
+        const game = sprites
+          ? await create_sprite_game(canvas, scale, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
+          : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit);
         if (probe.has("diagnostic-clouds")) {
@@ -88,7 +106,7 @@
             }
           })();
         }
-        const running = probe.has("field") ? "Running the 100,513-instance field…" : "Running the 10,000-entity scene…";
+        const running = sprites ? "Running the sprite scene…" : probe.has("field") ? "Running the 100,513-instance field…" : "Running the 10,000-entity scene…";
         status.textContent = running;
         const pauseProbe = probe.has("pause-probe");
         const resizeProbe = probe.has("resize-probe");

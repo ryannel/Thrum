@@ -303,6 +303,7 @@ fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
 }
 
 pub(crate) struct GameScene {
+    sprite_scale: Option<u16>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -395,6 +396,7 @@ impl GameScene {
                 .expect("checked-in temporal fixture")
             });
         Self {
+            sprite_scale: setup.sprite_scale,
             cloud_input: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
@@ -581,6 +583,16 @@ impl super::FrameHost {
 }
 
 impl SceneSource<PublishedPage> for GameScene {
+    fn sprites(
+        &self,
+        _source: SourceTick,
+        _alpha: f32,
+        extent: [u32; 2],
+    ) -> Result<thrum_render::sprite::SpriteFrame<'_>, String> {
+        let scale = self.sprite_scale.ok_or("sprite scene is not selected")?;
+        Ok(crate::sprite_card::frame(scale, extent))
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "bounded sinusoidal fixture position is converted from game-clock f64 to renderer f32"
@@ -904,6 +916,7 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            sprite_scale: None,
             cloud_input: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,

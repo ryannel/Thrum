@@ -8,6 +8,7 @@ mod environment;
 mod light_probe;
 #[cfg(feature = "draw-probe")]
 pub use light_probe::{BrowserLightProbe, create_light_list_probe};
+mod sprites;
 mod submitted_capture;
 
 use std::{
@@ -184,6 +185,7 @@ pub async fn create_field_game(
     create_game(
         canvas,
         crate::GameSetup {
+            sprite_scale: None,
             display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
@@ -196,6 +198,43 @@ pub async fn create_field_game(
             valley_stars: false,
             route_overlay: crate::RouteOverlay::Off,
             field_meshes,
+        },
+    )
+    .await
+}
+
+/// Prepare the sprite test card on the same WebGPU canvas and game clock.
+/// # Errors
+/// Refuses an unsupported scale or 3D-only launch setting.
+#[wasm_bindgen]
+pub async fn create_sprite_game(
+    canvas: HtmlCanvasElement,
+    scale: u16,
+    culling: Option<String>,
+    reconstruction: Option<String>,
+) -> Result<BrowserGame, JsValue> {
+    use thrum_render::synthetic::Reconstruction;
+    if let Some(culling) = culling {
+        return Err(js_error(format!(
+            "2D scene refuses camera culling mode {culling}"
+        )));
+    }
+    let reconstruction = match reconstruction.as_deref() {
+        None | Some("off") => Reconstruction::Off,
+        Some("taau") => Reconstruction::Taau,
+        Some("reference") => Reconstruction::Reference,
+        Some(provider) => {
+            return Err(js_error(format!(
+                "2D scene refuses reconstructor {provider}"
+            )));
+        }
+    };
+    create_game(
+        canvas,
+        crate::GameSetup {
+            sprite_scale: Some(scale),
+            reconstruction,
+            ..crate::GameSetup::default()
         },
     )
     .await

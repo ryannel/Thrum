@@ -57,6 +57,19 @@ pub struct DeviceCapabilities {
 }
 
 impl DeviceCapabilities {
+    pub(crate) fn no_reconstructor(
+        requested: crate::synthetic::Reconstruction,
+    ) -> Result<(), crate::runtime::FrameError> {
+        use crate::synthetic::Reconstruction;
+        if requested == Reconstruction::Off {
+            Ok(())
+        } else {
+            Err(crate::runtime::FrameError::Scene(format!(
+                "2D scene refuses reconstructor {requested:?}"
+            )))
+        }
+    }
+
     /// Resolve the provider once during preparation. Native providers require
     /// separate qualification before they can replace this portable default.
     #[must_use]

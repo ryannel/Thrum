@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import { prepareLent } from './check_lent_browser.mjs';
 import { prepareMeshRows } from './check_mesh_rows_browser.mjs';
 import { qualifyTemporal } from './check_temporal_browser.mjs';
+import { qualifySprites } from './check_sprites_browser.mjs';
 import { installWasmReceipt, readWasmReceipt } from './wasm_receipt.mjs';
 import { qualifyEnvironment, qualifyEnvironmentParity, qualifyEnvironmentCost } from './check_environment_browser.mjs';
 import { createServer } from 'node:http';
@@ -20,6 +21,7 @@ cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops');
+cases.push('sprites-2d', 'sprites-2d-cost');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
@@ -2013,7 +2015,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
@@ -2024,6 +2026,10 @@ async function main() {
       if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
+      else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
+        cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
+        wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
+      }));
       else if (mode === 'effect-state' || mode === 'effect-after-opaque') {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
         const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });

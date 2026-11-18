@@ -36,8 +36,8 @@ mod cluster_probe;
 #[cfg(feature = "creation-counters")]
 pub use cluster_probe::LightListProbe;
 mod contributed;
-mod display;
-mod exposure;
+pub(crate) mod display;
+pub(crate) mod exposure;
 mod forward;
 pub(crate) mod frame_stats;
 mod history_gpu;
@@ -49,7 +49,7 @@ mod raytrace;
 pub(crate) use raytrace::RetainedRayMeshes;
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
-mod readback;
+pub(crate) mod readback;
 mod scene_apply;
 mod scene_graph;
 mod scene_source;
@@ -99,7 +99,7 @@ const VIEW_BYTES: usize = view::VIEW_BYTES;
 const VIEW_SLOTS: u32 = 2;
 pub(crate) const LIGHT_BYTES: usize = 208;
 pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
-const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+pub(crate) const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
 const CUBE_INDICES: [u16; 36] = [
     0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18,
@@ -196,6 +196,23 @@ pub struct SyntheticMeshes {
 const MESH_COORDINATE_LIMIT: f32 = 1e30;
 
 impl SyntheticScene {
+    /// Empty CPU storage for a host that never enters the 3D renderer.
+    pub(crate) fn empty() -> Self {
+        Self {
+            ray_structure: false,
+            sun_optical_depth: None,
+            materials: Vec::new(),
+            instances: Vec::new(),
+            local_lights: Vec::new(),
+            view: SyntheticView::default(),
+            sun_shadows: false,
+            camera_culling: CullMode::Direct,
+            star_catalogue: None,
+            meshes: None,
+            aloft_mesh_rows: Vec::new(),
+        }
+    }
+
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
     /// renders the active prefix. The default view uses the historical orthographic
     /// diagnostic coordinates; callers may supply a checked perspective view.

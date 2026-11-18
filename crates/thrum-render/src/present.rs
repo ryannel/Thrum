@@ -265,10 +265,22 @@ impl SurfacePresenter {
         device: &wgpu::Device,
         target: &OffscreenTarget,
     ) -> Result<PresentationBinding, PresentError> {
+        if !target.belongs_to_device(device) {
+            return Err(PresentError::StaleTarget);
+        }
+        self.bind_output(device, target.device_generation(), target.output_view())
+    }
+
+    pub(crate) fn bind_output(
+        &self,
+        device: &wgpu::Device,
+        generation: u64,
+        output: &wgpu::TextureView,
+    ) -> Result<PresentationBinding, PresentError> {
+        let texture = output.texture();
         if self.device != *device
-            || !target.belongs_to_device(device)
-            || target.device_generation() != self.generation
-            || target.extent() != self.source_extent
+            || generation != self.generation
+            || [texture.width(), texture.height()] != self.source_extent
         {
             return Err(PresentError::StaleTarget);
         }
@@ -278,7 +290,7 @@ impl SurfacePresenter {
                 layout: &self.layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(target.output_view()),
+                    resource: wgpu::BindingResource::TextureView(output),
                 }],
             }),
             owner: Arc::clone(&self.owner),

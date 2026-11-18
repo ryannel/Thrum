@@ -94,6 +94,7 @@ fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cel
                     &capabilities,
                     FrameConfig::default(),
                     GameSetup {
+                        sprite_scale: None,
                         cooked_mesh_rows: v1_game::MeshRowSource::Code,
                         clouds: v1_game::CloudSelection::Off,
                         cloud_weather: v1_game::clouds::initial_state().parameters(),
