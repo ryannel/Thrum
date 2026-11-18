@@ -593,12 +593,13 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
     let old_texel = |view: SyntheticView, direction: Vec3| {
         let eye = Vec3::from_array(view.camera_position());
         let matrix = glam::camera::rh::view::look_at_mat4(eye, eye + direction, Vec3::Y);
-        (matrix.inverse().w_axis.x / 32.0).round() as i32
+        (matrix.inverse().w_axis.x / 32.0).round()
     };
     let main_texel = old_texel(mirror_main, Vec3::new(-2.0, -1.7, -1.0));
     let mirror_texel = old_texel(mirror, Vec3::new(-2.0, 1.7, -1.0));
     assert_ne!(
-        main_texel, mirror_texel,
+        main_texel.to_bits(),
+        mirror_texel.to_bits(),
         "matrix-recovered eyes must split the texel edge"
     );
     writeln!(
@@ -656,8 +657,9 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
             {
                 let [red, _, _, _, depth, ..] = decode(shadow);
                 if depth > 0.0 && red < decode(clear)[0] * 0.9 {
-                    let x = (index as u32 % SIDE) as f32 + 0.5;
-                    let y = (index as u32 / SIDE) as f32 + 0.5;
+                    let index = u32::try_from(index).expect("witness pixel index");
+                    let x = (index % SIDE) as f32 + 0.5;
+                    let y = (index / SIDE) as f32 + 0.5;
                     let p = inverse
                         * Vec4::new(
                             2.0 * x / SIDE as f32 - 1.0,
@@ -665,9 +667,9 @@ async fn prove_terrain(fixture: &Fixture<'_>, report: &mut String) {
                             depth,
                             1.0,
                         );
-                    let distance =
-                        (p.truncate() / p.w - Vec3::from_array(view.camera_position())).length();
-                    distant_shadowed += usize::from(distance > 128.0);
+                    // The normalized clip point uses w=1. Undo that division
+                    // to recover clip w, which is forward depth in metres.
+                    distant_shadowed += usize::from(p.w.recip() > 128.0);
                 }
             }
             assert!(
