@@ -270,7 +270,7 @@
     {
       "id": "M5",
       "name": "Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -285,8 +285,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M5/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M5-review.md"
         },
         {
           "id": "M5.2",
@@ -296,8 +296,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M5/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M5-review.md"
         },
         {
           "id": "M5.3",
@@ -308,8 +308,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M5/README.md; docs/evidence/REVIEW-ENGINE/M5/metal-cascade-ms.csv; docs/evidence/REVIEW-ENGINE/M5/metal-resource-bytes.csv",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -317,7 +317,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "evidence": "main-branch check exact-images",
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M5-review.md"
         }
       ]
     }
