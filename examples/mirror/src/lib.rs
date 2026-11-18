@@ -3,6 +3,9 @@
 mod mover;
 mod pool;
 pub use pool::{Pool, PoolPlane};
+#[cfg(target_os = "macos")]
+#[doc(hidden)]
+pub mod fixture;
 
 use std::{error::Error, time::Duration};
 use thrum_app::sky::{Camera, ContentStatus, Controls, CookedMaterial, MeshPlacement, SkyGame};
@@ -13,6 +16,12 @@ const BANK_EDGE: f32 = -15.99;
 const LAMP_Z: f32 = -17.4;
 const LAMP_BASE: f32 = bank_height(LAMP_Z);
 const FOV: f32 = 58.0;
+/// The authored pool used by the running example.
+pub const MIRROR_POOL: PoolPlane = PoolPlane {
+    level: LEVEL,
+    min: [-19.0, -16.0],
+    max: [19.0, 20.8],
+};
 
 const fn bank_height(z: f32) -> f32 {
     // Height on the rising face made by generate_meshes.py.
@@ -24,6 +33,14 @@ const fn bank_height(z: f32) -> f32 {
 /// # Errors
 /// Returns invalid control declarations, scene data or cooked placements.
 pub fn build() -> Result<SkyGame, Box<dyn Error>> {
+    build_with_pool(Pool::new(MIRROR_POOL))
+}
+
+/// Build the same authored scene with a caller-supplied pool.
+///
+/// # Errors
+/// Returns invalid control declarations, scene data or cooked placements.
+pub fn build_with_pool(pool: Pool) -> Result<SkyGame, Box<dyn Error>> {
     let mut controls = Controls::new();
     let height = controls
         .slider("camera.height", "Eye height", 1.5..=10.0)
@@ -62,13 +79,11 @@ pub fn build() -> Result<SkyGame, Box<dyn Error>> {
         candela: [420.0, 220.0, 76.0],
     }])
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
-    let pool = Pool::new(PoolPlane {
-        level: LEVEL,
-        min: [-19.0, -16.0],
-        max: [19.0, 20.8],
-    });
     Ok(game
-        .with_meshes(placements())?
+        .with_meshes_and_material(
+            placements(),
+            Some(("mirror/material.wgsl", include_str!("../material.wgsl"))),
+        )?
         .with_contribution(Box::new(mover::Mover::default()), || {
             ContentStatus::Drawn(1)
         })

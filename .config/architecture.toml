@@ -162,7 +162,7 @@ allowed_workspace_dependencies = ["thrum-app"]
 
 [packages.mirror-scene]
 manifest = "examples/mirror/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-app", "thrum-render", "thrum-test-support"]
+allowed_workspace_dependencies = ["thrum-app", "thrum-asset", "thrum-asset-gpu", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-stones]
 manifest = "examples/stones/Cargo.toml"

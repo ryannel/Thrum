@@ -47,10 +47,10 @@ use std::{
 
 #[cfg(target_os = "macos")]
 use std::time::Instant;
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats};
-pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
 #[cfg(not(target_arch = "wasm32"))]
-use thrum_asset_gpu::{MaterialHook, MaterialOutcome};
+use thrum_asset_gpu::MaterialOutcome;
+use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook};
+pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
 pub use thrum_controls::{Controls, Display};
 use thrum_core::{
     WorldEpoch,
@@ -91,6 +91,33 @@ pub const STORE_VARIABLE: &str = "THRUM_ASSET_STORE";
 /// Names the cooked meshes' WGSL material hook, which `./dev scene` sets to the folder's
 /// `material.wgsl` when there is one.
 pub const MATERIAL_VARIABLE: &str = "THRUM_MATERIAL";
+
+/// Failure before the sky kit can attach its cooked placements.
+#[derive(Debug)]
+pub enum CookedSetupError {
+    /// The scene's cooked publication is unavailable.
+    Store(String),
+    /// The placement table is invalid.
+    Placement(thrum_asset_gpu::PlacementError),
+}
+
+impl std::fmt::Display for CookedSetupError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Store(message) => formatter.write_str(message),
+            Self::Placement(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl Error for CookedSetupError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Store(_) => None,
+            Self::Placement(error) => Some(error),
+        }
+    }
+}
 
 /// Linear base colour of the default ground: dry, grassy earth.
 pub const DEFAULT_GROUND: [f32; 3] = [0.16, 0.15, 0.11];
@@ -609,11 +636,28 @@ impl SkyGame {
     /// The variable is unset or names a store nothing was cooked into, or a placement's
     /// transform is not rigid with one uniform scale; each message says what to do.
     pub fn with_meshes(self, meshes: Vec<MeshPlacement>) -> Result<Self, String> {
+        self.with_meshes_and_material(meshes, None)
+            .map_err(|error| error.to_string())
+    }
+
+    /// Draw cooked meshes with an optional initial WGSL material hook on both platforms.
+    /// The native file watcher can replace this initial hook when a material file is configured.
+    ///
+    /// # Errors
+    /// Returns the same asset and placement errors as [Self::with_meshes].
+    pub fn with_meshes_and_material(
+        self,
+        meshes: Vec<MeshPlacement>,
+        initial: Option<(&str, &str)>,
+    ) -> Result<Self, CookedSetupError> {
         #[cfg(not(target_arch = "wasm32"))]
-        let source: thrum_asset_gpu::CookedSource =
-            cooked_store(std::env::var_os(STORE_VARIABLE))?.into();
+        let source: thrum_asset_gpu::CookedSource = cooked_store(std::env::var_os(STORE_VARIABLE))
+            .map_err(CookedSetupError::Store)?
+            .into();
         #[cfg(target_arch = "wasm32")]
-        let source = thrum_asset_gpu::CookedSource::Remote(browser::feed()?);
+        let source = thrum_asset_gpu::CookedSource::Remote(
+            browser::feed().map_err(CookedSetupError::Store)?,
+        );
         let names = meshes
             .iter()
             .map(|mesh| format!("mesh {} with texture {}", mesh.mesh, mesh.texture))
@@ -621,10 +665,15 @@ impl SkyGame {
             .join(", ");
         let status_names = names.clone();
         let assets = CookedAssets::new(CookedConfig::new(source, meshes))
-            .map_err(|error| error.to_string())?;
+            .map_err(CookedSetupError::Placement)?;
         let stats = assets.stats();
-        #[cfg(not(target_arch = "wasm32"))]
         let material = assets.material();
+        if let Some((name, source)) = initial {
+            material.request(MaterialHook {
+                name: name.into(),
+                source: source.into(),
+            });
+        }
         let kept = Arc::clone(&stats);
         let mut shown = 0;
         let mut game =
@@ -769,13 +818,14 @@ impl SkyGame {
         SkyEdits(Some(sky))
     }
 
-    /// Poll the content probe and log a change.
+    /// Poll the content probe and log a change. Offscreen callers can wait
+    /// for the first cooked generation before recording a capture or timing.
     #[expect(
         clippy::print_stderr,
         reason = "content progress and hot reloads are reported to the person editing assets"
     )]
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-    fn poll_status(&mut self) -> Option<ContentStatus> {
+    pub fn poll_status(&mut self) -> Option<ContentStatus> {
         let status = (self.status.as_mut()?)();
         if self.shown_status.as_ref() != Some(&status) {
             match &status {

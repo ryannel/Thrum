@@ -121,12 +121,14 @@ impl Shade {
             QualitySettings::new(vec![
                 QualityKnob {
                     name: "cloud refresh exponent".into(),
+                    effect: "Refresh the cloud sky every 2^value frames",
                     value: profile.refresh_stride.trailing_zeros(),
                     range: 0..=2,
                     invalidation: QualityInvalidation::EffectHistory,
                 },
                 QualityKnob {
                     name: "cloud local light samples".into(),
+                    effect: "Samples used for each cloud local light",
                     value: profile.light_samples,
                     range: 0..=3,
                     invalidation: QualityInvalidation::EffectHistory,

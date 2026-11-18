@@ -17,6 +17,42 @@ use thrum_render::{
 
 mod air;
 mod panel;
+mod retire;
+#[cfg(target_arch = "wasm32")]
+mod view;
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console, js_name = error)]
+    fn console_error(message: &str);
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+/// Compare stored colour and depth and validate the pool's two air stretches.
+///
+/// # Errors
+/// Reports failure to create a browser WebGPU device.
+pub async fn prove_views(store: String) -> Result<String, JsValue> {
+    std::panic::set_hook(Box::new(|info| console_error(&info.to_string())));
+    let gpu = thrum_test_support::browser_gpu()
+        .await
+        .map_err(|error| JsValue::from_str(&error.to_string()))?;
+    let caps = DeviceCapabilities::capture(&gpu.0.adapter, &gpu.1, 1);
+    assert!(matches!(
+        caps.recipe(),
+        Ok(thrum_render::capabilities::Recipe::Portable)
+    ));
+    let report = view::prove(&gpu.1, &gpu.2, &caps, &store).await;
+    let margins = prove(&gpu.1, &gpu.2, &caps).await;
+    Ok(format!(
+        "{report}\nMarker actual/allowance max, missing/allowance min, double/allowance min: {margins:?}"
+    ))
+}
 
 const SIDE: u32 = 65;
 const CENTER: [usize; 2] = [32; 2];
@@ -125,7 +161,7 @@ impl Image {
 }
 
 impl Fixture<'_> {
-    fn draw(&self, camera: Camera, panel: Panel, exposure: f32, pool: Option<Pool>) -> Image {
+    async fn draw(&self, camera: Camera, panel: Panel, exposure: f32, pool: Option<Pool>) -> Image {
         let view = SyntheticView::perspective(
             camera.position,
             camera.target,
@@ -156,7 +192,7 @@ impl Fixture<'_> {
         scene.view = view;
         scene.instances[0].ids[3] = 0;
         scene.sun_shadows = false;
-        let mut host = pollster::block_on(FrameHost::new(
+        let mut host = FrameHost::new(
             self.caps,
             self.queue,
             FrameConfig {
@@ -175,7 +211,8 @@ impl Fixture<'_> {
             },
             scene,
             1.0,
-        ))
+        )
+        .await
         .expect("host");
         let mut parts: Vec<Box<dyn thrum_render::contribution::SceneContribution>> =
             vec![Box::new(panel::PanelDraw::new(panel))];
@@ -232,35 +269,26 @@ impl Fixture<'_> {
             )
             .expect("ordinary main submission");
         assert!(report.submitted);
-        self.device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(Duration::from_secs(15)),
-            })
-            .expect("wait");
-        let deadline = std::time::Instant::now() + Duration::from_secs(15);
+        let deadline = retire::Instant::now() + Duration::from_secs(15);
         let image = loop {
             while host.poll_completed().expect("completed frame").is_some() {}
             if let Some(image) = host.try_submitted_image().expect("readback") {
                 break image;
             }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "missing submitted image"
-            );
-            std::thread::sleep(Duration::from_millis(1));
+            assert!(retire::Instant::now() < deadline, "missing submitted image");
+            retire::pause().await;
         };
         assert_eq!(image.extent, [SIDE; 2]);
+        let air = air.lock().expect("witness").clone();
+        let quanta = if let Some(buffer) = air {
+            air::read(self.device, self.queue, &buffer).await
+        } else {
+            [[0.0; 4]; 2]
+        };
         Image {
             bytes: image.rgba,
             scale: f32::from_bits(image.exposure_gpu_words.expect("submitted exposure")[0]),
-            quanta: air
-                .lock()
-                .expect("witness")
-                .as_ref()
-                .map_or([[0.0; 4]; 2], |buffer| {
-                    air::read(self.device, self.queue, buffer)
-                }),
+            quanta,
         }
     }
 }
@@ -281,9 +309,10 @@ fn compare(
     pool: &Image,
     marker: f32,
     whole_path: Option<[f32; 3]>,
-) {
+) -> [f32; 3] {
     let [b, w] = [black.pixel(CENTER), white.pixel(CENTER)];
     let center = view.pixel(CENTER);
+    let mut margins = [0.0_f32, f32::INFINITY, f32::INFINITY];
     for (c, actual) in pool.pixel(CENTER).into_iter().enumerate() {
         let tc = (w[c] - b[c]) / (black.scale * LUMINANCE);
         let b_error = step(b[c]) + black.air_allowance(c, 0.0);
@@ -321,6 +350,7 @@ fn compare(
             (actual - expected).abs()
         );
         assert!(difference <= bound, "two stretches");
+        margins[0] = margins[0].max(difference / bound);
         if let Some(whole_path) = whole_path {
             let missing = composed[0] - high;
             let double = b[c] + tc * whole_path[c] - composed[1];
@@ -329,10 +359,14 @@ fn compare(
             );
             assert!(missing > bound, "missing camera stretch");
             assert!(double > bound, "double camera stretch");
+            margins[1] = margins[1].min(missing / bound);
+            margins[2] = margins[2].min(double / bound);
         }
     }
+    margins
 }
 
+#[cfg(target_os = "macos")]
 #[test]
 fn the_pool_composes_both_stretches_once() {
     let Some(gpu) =
@@ -345,10 +379,15 @@ fn the_pool_composes_both_stretches_once() {
         &thrum_test_support::Restriction::default(),
     );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    let report = pollster::block_on(prove(&device, &queue, &caps));
+    eprintln!("worst composition difference relative to its allowance: {report:?}");
+}
+
+async fn prove(device: &wgpu::Device, queue: &wgpu::Queue, caps: &DeviceCapabilities) -> [f32; 3] {
     let fixture = Fixture {
-        device: &device,
-        queue: &queue,
-        caps: &caps,
+        device,
+        queue,
+        caps,
     };
     let angle = 10.0_f32.to_radians();
     let ray = Vec3::new(0.0, angle.sin(), -angle.cos());
@@ -380,25 +419,42 @@ fn the_pool_composes_both_stretches_once() {
         marker.assert_above_frame(main);
     }
     let mut scales = Vec::new();
+    let mut worst = [0.0_f32, f32::INFINITY, f32::INFINITY];
     for exposure in [6.0, 2.0] {
-        let black = fixture.draw(main, swatch, exposure, None);
-        let white = fixture.draw(
-            main,
-            Panel {
-                radiance: LUMINANCE,
-                ..swatch
-            },
-            exposure,
-            None,
-        );
+        let black = fixture.draw(main, swatch, exposure, None).await;
+        let white = fixture
+            .draw(
+                main,
+                Panel {
+                    radiance: LUMINANCE,
+                    ..swatch
+                },
+                exposure,
+                None,
+            )
+            .await;
         scales.push(black.scale);
         for marker in mixed {
-            let v = fixture.draw(reference, marker, exposure, None);
-            let pool = fixture.draw(main, marker, exposure, Some(Pool::new(POOL)));
-            let whole_path = (marker.radiance == 0.0)
-                .then(|| fixture.draw(mirror, marker, exposure, None).pixel(CENTER));
-            compare(&black, &white, &v, &pool, marker.radiance, whole_path);
+            let v = fixture.draw(reference, marker, exposure, None).await;
+            let pool = fixture
+                .draw(main, marker, exposure, Some(Pool::new(POOL)))
+                .await;
+            let whole_path = if marker.radiance == 0.0 {
+                Some(
+                    fixture
+                        .draw(mirror, marker, exposure, None)
+                        .await
+                        .pixel(CENTER),
+                )
+            } else {
+                None
+            };
+            let errors = compare(&black, &white, &v, &pool, marker.radiance, whole_path);
+            worst[0] = worst[0].max(errors[0]);
+            worst[1] = worst[1].min(errors[1]);
+            worst[2] = worst[2].min(errors[2]);
         }
     }
     assert!((scales[1] / scales[0] - 16.0).abs() < 1e-5);
+    worst
 }

@@ -1588,10 +1588,16 @@ dependencies = [
  "bytemuck",
  "glam",
  "half",
+ "js-sys",
  "pollster",
  "thrum-app",
+ "thrum-asset",
+ "thrum-asset-gpu",
  "thrum-render",
  "thrum-test-support",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-time",
  "wgpu",
 ]
 

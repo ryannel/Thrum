@@ -85,13 +85,72 @@ Its lighting values are un-pre-exposed: apply `environment_storage_scale()` once
 
 `EffectPass::async_eligible` admits compute-only declarations without attachment/copy access and lists them in
 `CompiledGraph::async_eligible`. It does not change order or use another queue. `FrameHost::quality_knobs`
-lists named integer values, inclusive ranges and invalidations. `set_quality_knob` stages a change;
+lists named integer values, inclusive ranges, declared effects and invalidations. `set_quality_knob` stages a change;
 `commit_quality_knobs` applies it before frame preparation. `QualitySettings` coalesces requests and reports
 the strongest invalidation. The effect invalidates its own state there; `ViewHistory` also resets the host's
 reconstruction history until a frame submits. Ordered-list control names have a `member/` prefix.
 The example exposes cache interval, volume slices and bounded catch-up ticks.
 `QualityError` distinguishes invalid declarations, unknown controls, out-of-range values and an absent
 contribution. A refused request preserves both the committed value and any earlier valid staged request.
+
+## Secondary views
+
+Declare one `SecondaryViewSlot::new(scale)` for each view you can use at once in
+`SceneContribution::secondary_view_slots`. The scale sets the largest viewport as a fraction of each side
+of the main render extent. It accepts 0.25 through 1.0. The renderer prepares the slot's resources up front,
+with up to four slots across the scene and further limits from the device. Clone your own handles from
+`SceneSurface::secondary_views` in `rebuild`. Replace those handles after a resize, republication or device
+replacement.
+
+Ask in `encode_upload` by calling `slot.request(&request)`. A slot starts idle on every recording. Build
+the request with `SecondaryViewRequest::new`, a rigid right-handed `SyntheticView::perspective` and an
+extent no larger than `slot.maximum_extent()`. Copy X and Z from `ContributionFrame::camera` exactly.
+Height, direction and field of view can vary. For a horizontal mirror, reflect eye and target across the
+surface and build a proper view with world up. Use a world-space clip plane whose positive side faces the
+geometry to keep. `ViewAir::Plane` requires a level clip plane and starts the aerial transport at each ray's
+crossing of the plane. A plane within 5 cm of the requested eye is moved out to 5 cm. A rejected request
+has a named error. Use your fallback for an idle slot and its old contents.
+
+The slot draws opaque entities and opted-in contributions, including cooked placements. It makes its own
+visibility lists, local-light clusters, aerial volume and Sun cascades. It shares scene data, the terrain
+height map, Sun and sky lighting products, exposure and jitter phase. It contains no sky, stars, fog effect,
+water, other after-opaque effects, motion or history. The view has aerial perspective according to its
+request. This is distinct from a fog effect composed by a reader.
+
+Bind `slot.colour()`, `slot.depth()` and `slot.record()` in your own after-opaque pass and read them only
+in the frame that successfully asked for the slot. The record's layout is `SecondaryView::record_wgsl()`.
+Project the surface point with the record's jittered `view_proj`, divide by W, and convert X/Y to
+top-left UV with `ndc * vec2(0.5, -0.5) + 0.5`. Test the projection and viewport before sampling. Multiply
+the UV by `extent.xy` for viewport texels. For linear sampling, clamp to the viewport's texel centres and
+divide by `extent.zw`, the prepared attachment size. RGBA16Float stores pre-exposed scene radiance with
+coverage in alpha. Cleared pixels have zero colour and coverage. Depth32Float stores reverse-Z depth,
+cleared to zero. To reconstruct a covered point, turn its viewport texel centre into NDC, use the
+sampled depth as Z, multiply by `inverse_view_proj` and divide by W.
+
+For a mirror, fill the uncovered fraction with your sky reflection in the same encoding. The covered
+RGB already holds the reflected stretch through air from the plane. Apply the main camera's aerial
+pair once from the pool to the camera. With storage scale E, reflected stored colour V, and main air
+scatter S and transmission T, the result is `E * S + T * V` after filling uncovered sky. The reader owns
+surface shading, filtering, extra fog and the fallback, including any choice of mip chain. The
+[mirror pool](../examples/mirror/src/pool.rs) and [lookup shader](../examples/mirror/src/pool.wgsl)
+show the bindings and the two-stretch composition.
+
+Register your view's settings through `QualitySettings` and feed the committed values into each request.
+The mirror declares the following ranges. It preserves history and uses prepared resources at both ends.
+
+| Control | Mirror range | Work affected |
+|---|---:|---|
+| Extent | 25–100% per side | Viewport only. Both raster dimensions fall, reducing fragments while the attachments keep their full size. |
+| Far distance | 64–32,000 m | Projection and frustum. Reduces distant geometry in the draw. |
+| Least size | 0–16 pixels | Projected size threshold for entity compaction and indirect cooked meshlet culling. The direct route does not size-cull. |
+| Sun cascade count | 0–2 | Number of per-view Sun depth draws. At zero the terrain height map still answers shadows. |
+| Sun reach | 16–512 m | Coverage of the enabled cascades. A shorter reach fits a smaller volume, changing the casters and keeping the terrain map beyond it. |
+
+An idle slot skips its view passes. An active slot adds per-view preparation work on the GPU and a
+second opaque draw. For example, at 2560×1440 the full-size RGBA16Float and Depth32Float attachments
+reserve 44,236,800 bytes together, exclusive of lighting and culling products and backend overhead.
+Changing the slot count or the largest view extent requires preparation. [Scene view design](plans/SCENE-VIEWS/DESIGN.md#cost-account)
+describes cost scope and pass ownership.
 
 When timestamps are available, `SceneGpuTimings::execution(name)` distinguishes `Timed(0)` from `NotRun`
 and `Unmeasured`. The last denotes transfers without counters. Disabled timing remains absent.

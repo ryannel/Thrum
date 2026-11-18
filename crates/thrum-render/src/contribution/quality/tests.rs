@@ -2,6 +2,7 @@ use super::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 
 fn knob() -> QualityKnob {
     QualityKnob {
+        effect: "Test cadence in ticks",
         name: "interval".into(),
         value: 2,
         range: 1..=8,

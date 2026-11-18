@@ -164,32 +164,12 @@ impl SceneContribution for Air {
     fn submitted(&mut self, _: bool) {}
 }
 
-pub(super) fn read(
+pub(super) async fn read(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     source: &wgpu::Buffer,
 ) -> [[f32; 4]; 2] {
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: BYTES,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(source, 0, &buffer, 0, BYTES);
-    let submission = queue.submit([encoder.finish()]);
-    let (tx, rx) = std::sync::mpsc::channel();
-    buffer.map_async(wgpu::MapMode::Read, .., move |result| {
-        tx.send(result).expect("mapping");
-    });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(std::time::Duration::from_secs(15)),
-        })
-        .expect("wait");
-    rx.recv().expect("map callback").expect("map");
-    let data = buffer.get_mapped_range(..).expect("witness bytes");
+    let data = super::retire::copy_buffer(device, queue, source).await;
     let mut max = [[0.0_f32; 4]; 2];
     for (i, value) in bytemuck::cast_slice::<_, [f32; 4]>(&data)
         .iter()

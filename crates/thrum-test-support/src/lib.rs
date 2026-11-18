@@ -9,6 +9,25 @@ pub struct Gpu {
     pub adapter: wgpu::Adapter,
 }
 
+/// Admit the browser WebGPU backend at portable limits without a canvas.
+///
+/// # Errors
+/// Reports unavailable WebGPU or a failed portable device request.
+#[cfg(target_arch = "wasm32")]
+pub async fn browser_gpu() -> Result<(Gpu, wgpu::Device, wgpu::Queue), Box<dyn std::error::Error>> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::BROWSER_WEBGPU,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await?;
+    let (device, queue) = adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await?;
+    Ok((Gpu { instance, adapter }, device, queue))
+}
+
 fn absent(test: &str, reason: &str) -> Option<Gpu> {
     let message = format!("thrum-gpu-skip: {test}: {reason}");
     assert!(

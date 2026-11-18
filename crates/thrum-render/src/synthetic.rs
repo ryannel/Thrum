@@ -1169,7 +1169,9 @@ impl PreparedSynthetic {
         let view_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic ABI2 view"),
             size: view_capacity,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::COPY_DST
+                | draw_witness_usage(),
             mapped_at_creation: false,
         });
         queue.write_buffer(
@@ -2378,7 +2380,7 @@ fn storage_buffer(
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some(label),
         size: capacity,
-        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | draw_witness_usage(),
         mapped_at_creation: false,
     });
     queue.write_buffer(&buffer, 0, data);
@@ -2386,6 +2388,44 @@ fn storage_buffer(
 }
 
 const REACTIVE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
+
+const fn draw_witness_usage() -> wgpu::BufferUsages {
+    if cfg!(feature = "creation-counters") {
+        wgpu::BufferUsages::COPY_SRC
+    } else {
+        wgpu::BufferUsages::empty()
+    }
+}
+
+#[cfg(feature = "creation-counters")]
+impl PreparedSynthetic {
+    pub(crate) fn main_draw_witness<'a>(
+        &'a self,
+        target: &'a OffscreenTarget,
+    ) -> Vec<(&'a wgpu::Buffer, u64, u64)> {
+        let view_offset = u64::from(self.view_stride) * (target.frame_revision & 1);
+        let mut buffers = vec![(&self.view_buffer, view_offset, VIEW_BYTES as u64)];
+        let mut add = |buffer: &'a wgpu::Buffer| buffers.push((buffer, 0, buffer.size()));
+        add(self.instance_upload.buffer());
+        if let Some(visibility) = &target.visibility {
+            add(visibility.visible());
+            add(visibility.args());
+        }
+        if let Some(shadow) = &self.shadow {
+            add(&shadow.sample_buffer);
+            for view in shadow.caster_views() {
+                add(view);
+            }
+        }
+        if let Some((culling, _)) = &self.caster_culling {
+            for (visible, args) in culling.lists() {
+                add(visible);
+                add(args);
+            }
+        }
+        buffers
+    }
+}
 
 struct TargetResources {
     secondary: Vec<secondary::Resources>,

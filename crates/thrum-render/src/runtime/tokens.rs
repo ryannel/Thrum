@@ -124,6 +124,41 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         self.ready.is_some()
     }
 
+    /// Diagnostic copy of the main draw's camera and instance rows, visibility
+    /// lists and indirect arguments, and Sun cascade inputs and caster lists.
+    /// The caller supplies a prepared COPY_DST buffer and reads the range after
+    /// submission. Returns its length, or None for disabled counters, no ready
+    /// frame or insufficient output capacity.
+    pub fn copy_main_draw_witness(&mut self, output: &wgpu::Buffer) -> Option<u64> {
+        #[cfg(not(feature = "creation-counters"))]
+        {
+            let _ = output;
+            None
+        }
+        #[cfg(feature = "creation-counters")]
+        {
+            let ready = self.ready.as_mut()?;
+            let target = &ready.host.slots[ready.recorded.slot_index].target;
+            let buffers = ready.host.prepared.main_draw_witness(target);
+            let bytes = buffers.iter().map(|item| item.2).sum();
+            if bytes > output.size() || !output.usage().contains(wgpu::BufferUsages::COPY_DST) {
+                return None;
+            }
+            let mut destination = 0;
+            for (buffer, offset, size) in buffers {
+                ready.recorded.encoder.copy_buffer_to_buffer(
+                    buffer,
+                    offset,
+                    output,
+                    destination,
+                    size,
+                );
+                destination += size;
+            }
+            Some(bytes)
+        }
+    }
+
     /// Candidate/predecessor identity packed for this exact encoded token.
     pub fn history_identity(&self) -> Option<[u64; 2]> {
         Some(

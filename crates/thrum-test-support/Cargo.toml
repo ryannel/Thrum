@@ -13,5 +13,8 @@ workspace = true
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl", "metal", "vulkan", "dx12"] }
 pollster = "=1.0.1"
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
+
 [features]
 render = []

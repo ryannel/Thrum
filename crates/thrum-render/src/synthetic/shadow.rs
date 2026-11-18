@@ -216,7 +216,9 @@ impl ShadowPrepared {
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("synthetic Sun cascade matrix"),
                 contents: &fitted.caster_view(index),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                usage: wgpu::BufferUsages::UNIFORM
+                    | wgpu::BufferUsages::COPY_DST
+                    | super::draw_witness_usage(),
             });
             let view_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("synthetic Sun cascade view"),
@@ -296,7 +298,9 @@ impl ShadowPrepared {
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),
             contents: &fitted.samples,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::COPY_DST
+                | super::draw_witness_usage(),
         });
         Ok(Self {
             pipeline,

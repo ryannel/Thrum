@@ -63,11 +63,13 @@ pub enum QualityInvalidation {
     ViewHistory,
 }
 
-/// Discoverable integer cadence control. Values are ticks or slices, as named by the effect.
+/// Discoverable integer runtime control, with units and effect declared by its owner.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QualityKnob {
     /// Stable effect-local name.
     pub name: String,
+    /// What changing the control affects, including its unit.
+    pub effect: &'static str,
     /// Committed runtime value.
     pub value: u32,
     /// Inclusive supported range.

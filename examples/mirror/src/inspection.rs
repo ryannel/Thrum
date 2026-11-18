@@ -19,7 +19,7 @@ const EXTENT: [u32; 2] = [2560, 1440];
 const WAIT: Duration = Duration::from_secs(15);
 type Scene = Offscreen<SkyGame>;
 
-pub(super) fn run(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
+pub(super) fn run(output: &Path, compare_chrome: bool) -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir(output)?;
     let (device, queue, caps) = pollster::block_on(headless_device())?;
     fs::write(
@@ -50,7 +50,18 @@ pub(super) fn run(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     )?;
     fixed(&mut scene, &device, output)?;
     for name in ["pan", "tilt", "orbit", "sun", "mover"] {
-        realtime(&mut scene, &device, &output.join(name), name)?;
+        realtime(&mut scene, &device, &output.join(name), name, None)?;
+        if compare_chrome {
+            for (hour, sun) in [("noon", [51.0, 130.0]), ("dusk", [-5.0, 262.0])] {
+                realtime(
+                    &mut scene,
+                    &device,
+                    &output.join(format!("{name}-{hour}")),
+                    name,
+                    Some(sun),
+                )?;
+            }
+        }
     }
     if scene.omissions() != 0 {
         return Err(format!("{} submitted capture omissions", scene.omissions()).into());
@@ -99,6 +110,9 @@ fn fixed(
         ("dawn", 1.5, 9.0, 4, 78),
         ("dusk", 1.5, 9.0, -5, 262),
         ("night", 1.5, 9.0, -10, 262),
+        ("low-tilt-dusk", 1.5, 31.0, -5, 262),
+        ("high-dusk", 10.0, 16.0, -5, 262),
+        ("high-tilt-dusk", 10.0, 42.0, -5, 262),
     ]
     .into_iter()
     .enumerate()
@@ -131,6 +145,7 @@ fn realtime(
     device: &wgpu::Device,
     output: &Path,
     name: &str,
+    compare: Option<[f64; 2]>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir(output)?;
     let mut timestamps = ledger(output)?;
@@ -141,7 +156,7 @@ fn realtime(
         let seconds = next.scenario_time.as_secs_f64();
         let t = ((seconds - 0.35) / 2.0).clamp(0.0, 1.0);
         let t = t * t * (3.0 - 2.0 * t);
-        let (pan, tilt, orbit, sun, azimuth) = match name {
+        let (pan, tilt, orbit, mut sun, mut azimuth) = match name {
             "pan" => (25.0 - 50.0 * t, 9.0, 0.0, 51.0, 130.0),
             "tilt" => (0.0, 9.0 + 22.0 * t, 0.0, 51.0, 130.0),
             "orbit" => (0.0, 9.0, -25.0 + 50.0 * t, 51.0, 130.0),
@@ -151,6 +166,13 @@ fn realtime(
             }
             _ => (0.0, 9.0, 0.0, 5.0, 262.0),
         };
+        if let Some([elevation, bearing]) = compare {
+            (sun, azimuth) = if name == "sun" {
+                (elevation + 10.0 * t - 5.0, bearing + 12.0 * t - 6.0)
+            } else {
+                (elevation, bearing)
+            };
+        }
         scene.parameters(&format!(r#"{{"camera.height":1.5,"camera.pan":{pan},"camera.tilt":{tilt},"camera.orbit":{orbit},"sun.elevation":{sun},"sun.azimuth":{azimuth}}}"#))?;
         if scene.step_for(&next)?.submitted {
             let image = frame(scene, device)?;

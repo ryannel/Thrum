@@ -1,11 +1,16 @@
 use glam::{Mat4, Vec3};
+use std::sync::{
+    Arc,
+    atomic::{AtomicU32, Ordering},
+};
 use thrum_app::sky::Camera;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     contribution::{
         AfterOpaqueKind, AfterOpaquePass, ContributionFrame, ContributionPasses, EffectCadence,
-        EffectGraph, SceneContribution, SceneSurface, SecondaryView, SecondaryViewRequest,
-        SecondaryViewSlot, ViewAir, ViewClipPlane,
+        EffectGraph, QualityError, QualityInvalidation, QualityKnob, QualitySettings,
+        SceneContribution, SceneSurface, SecondaryView, SecondaryViewRequest, SecondaryViewSlot,
+        ViewAir, ViewClipPlane,
     },
     synthetic::SyntheticView,
 };
@@ -29,10 +34,13 @@ pub struct Pool {
     plane: PoolPlane,
     prepared: Option<Prepared>,
     asked: bool,
+    quality: QualitySettings,
+    cost_requests: Option<Arc<AtomicU32>>,
 }
 
 struct Prepared {
     slot: SecondaryView,
+    second: Option<SecondaryView>,
     environment: EnvironmentProducts,
     group: wgpu::BindGroup,
     pipeline: wgpu::RenderPipeline,
@@ -40,13 +48,45 @@ struct Prepared {
 
 impl Pool {
     /// Compose the normal two-stretch planar reflection.
+    #[expect(
+        clippy::missing_panics_doc,
+        reason = "the static knob definitions are valid"
+    )]
     #[must_use]
     pub fn new(plane: PoolPlane) -> Self {
         Self {
             plane,
             prepared: None,
             asked: false,
+            cost_requests: None,
+            quality: QualitySettings::new(
+                [
+                    ("view extent percent", 100, 25..=100, "Raster viewport as a percentage of each prepared side"),
+                    ("view far metres", 32_000, 64..=32_000, "Far clip distance in metres"),
+                    ("view least pixels", 0, 0..=16, "Reject small projected instances and indirect cooked meshlets below this size in pixels"),
+                    ("view Sun cascade count", 1, 0..=2, "Number of local Sun shadow cascades; zero keeps height-map shadows"),
+                    ("view Sun reach metres", 128, 16..=512, "Far edge of local Sun cascades in metres"),
+                ]
+                .map(|(name, value, range, effect)| QualityKnob {
+                    name: name.into(),
+                    effect,
+                    value,
+                    range,
+                    invalidation: QualityInvalidation::None,
+                })
+                .into(),
+            )
+            .expect("valid mirror quality definitions"),
         }
+    }
+
+    /// Prepare two identical views for a paired cost run. The caller may
+    /// request zero, one or two each frame. The pool samples the first.
+    #[cfg(target_os = "macos")]
+    #[must_use]
+    pub fn with_cost_requests(mut self, requests: Arc<AtomicU32>) -> Self {
+        self.cost_requests = Some(requests);
+        self
     }
 
     /// Build a proper reflected camera with the same projection as the real camera.
@@ -58,6 +98,16 @@ impl Pool {
         eye: [f32; 3],
         level: f32,
         extent: [u32; 2],
+    ) -> Result<SyntheticView, thrum_render::synthetic::RenderError> {
+        Self::reflected_view_with_far(camera, eye, level, extent, 32_000.0)
+    }
+
+    fn reflected_view_with_far(
+        camera: Camera,
+        eye: [f32; 3],
+        level: f32,
+        extent: [u32; 2],
+        far: f32,
     ) -> Result<SyntheticView, thrum_render::synthetic::RenderError> {
         let target = [
             camera.target[0],
@@ -71,7 +121,7 @@ impl Pool {
             camera.vertical_fov_degrees.to_radians(),
             extent[0] as f32 / extent[1] as f32,
             0.1,
-            32_000.0,
+            far,
         )
     }
 }
@@ -89,8 +139,23 @@ fn declaration() -> AfterOpaquePass {
 }
 
 impl SceneContribution for Pool {
+    fn quality_knobs(&self) -> Vec<QualityKnob> {
+        self.quality.knobs().to_vec()
+    }
+
+    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
+        self.quality.set(name, value)
+    }
+
+    fn commit_quality_knobs(&mut self) -> QualityInvalidation {
+        self.quality.commit()
+    }
+
     fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
-        vec![SecondaryViewSlot::new(1.0).expect("full extent")]
+        vec![
+            SecondaryViewSlot::new(1.0).expect("full extent");
+            1 + usize::from(self.cost_requests.is_some())
+        ]
     }
 
     fn effect_graph(&self) -> EffectGraph {
@@ -117,6 +182,13 @@ impl SceneContribution for Pool {
         let Some(prepared) = &self.prepared else {
             return;
         };
+        let count = self
+            .cost_requests
+            .as_ref()
+            .map_or(1, |requested| requested.load(Ordering::Relaxed));
+        if count == 0 {
+            return;
+        }
         // The fourth row of a perspective view-projection is the camera's
         // forward axis. Remove its jitter term from the row carrying the up axis.
         let rows = Mat4::from_cols_array_2d(&frame.view_proj).transpose();
@@ -128,15 +200,37 @@ impl SceneContribution for Pool {
             (Vec3::from_array(frame.camera) + forward * 128.0).to_array(),
             fov,
         );
-        let extent = prepared.slot.maximum_extent();
+        let [extent_percent, far, least_pixels, cascades, reach] = self.quality.knobs() else {
+            unreachable!("the pool declares five controls")
+        };
+        let maximum = prepared.slot.maximum_extent();
+        let extent = maximum.map(|size| (size * extent_percent.value / 100).max(1));
         let level = self.plane.level;
-        let request = Self::reflected_view(camera, frame.camera, level, extent)
-            .ok()
-            .and_then(|view| {
-                let plane = ViewClipPlane::new([0.0, 1.0, 0.0, -level]).ok()?;
-                SecondaryViewRequest::new(&view, extent, Some(plane), ViewAir::Plane).ok()
-            });
-        self.asked = request.is_some_and(|request| prepared.slot.request(&request).is_ok());
+        let request =
+            Self::reflected_view_with_far(camera, frame.camera, level, maximum, far.value as f32)
+                .ok()
+                .and_then(|view| {
+                    let plane = ViewClipPlane::new([0.0, 1.0, 0.0, -level]).ok()?;
+                    SecondaryViewRequest::new(&view, extent, Some(plane), ViewAir::Plane)
+                        .ok()
+                        .and_then(|request| {
+                            request.with_least_pixels(least_pixels.value as f32).ok()
+                        })
+                        .and_then(|request| {
+                            request
+                                .with_shadows(cascades.value, reach.value as f32)
+                                .ok()
+                        })
+                });
+        if let Some(request) = request {
+            self.asked = prepared.slot.request(&request).is_ok();
+            if count == 2
+                && let Some(second) = &prepared.second
+            {
+                let result = second.request(&request);
+                debug_assert!(result.is_ok(), "{result:?}");
+            }
+        }
     }
 
     fn draw_after_opaque(
@@ -258,6 +352,7 @@ impl Prepared {
         let pipeline = pipeline(surface, &environment, &layout);
         Ok(Self {
             slot,
+            second: surface.secondary_views.get(1).cloned(),
             environment,
             group,
             pipeline,

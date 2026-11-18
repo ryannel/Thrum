@@ -144,12 +144,14 @@ impl DiagnosticEffect {
                 quality: thrum_render::contribution::QualitySettings::new(vec![
                     thrum_render::contribution::QualityKnob {
                         name: "cache interval".into(),
+                        effect: "Cache refresh interval in ticks",
                         value: 3,
                         range: 1..=16,
                         invalidation: thrum_render::contribution::QualityInvalidation::None,
                     },
                     thrum_render::contribution::QualityKnob {
                         name: "volume slices".into(),
+                        effect: "Volume slices updated per frame",
                         value: 1,
                         range: 1..=4,
                         invalidation:
@@ -157,6 +159,7 @@ impl DiagnosticEffect {
                     },
                     thrum_render::contribution::QualityKnob {
                         name: "catch-up ticks".into(),
+                        effect: "Maximum catch-up ticks per frame",
                         value: 8,
                         range: 1..=8,
                         invalidation: thrum_render::contribution::QualityInvalidation::ViewHistory,
