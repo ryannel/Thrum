@@ -226,8 +226,11 @@ impl Layout {
         } else {
             report
         };
+        // ViewRecord belongs to the composed renderer shader. The alias
+        // uses the renderer's existing uniform, without a cooked upload ABI.
         let shader = format!(
-            "enable wgpu_mesh_shader;\n{source}\n{}\n{}\n{}\n{report}",
+            "enable wgpu_mesh_shader;\n{source}
+             @group({GROUP}) @binding({VIEW_BINDING}) var<uniform> mesh_view: ViewRecord;\n{}\n{}\n{}\n{report}",
             include_str!("meshlet_cull.wgsl"),
             include_str!("mesh_stage_streams.wgsl"),
             include_str!("mesh_stages.wgsl"),

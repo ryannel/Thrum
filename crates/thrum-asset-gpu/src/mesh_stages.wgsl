@@ -1,5 +1,4 @@
 @group(4) @binding(3) var<storage, read> mesh_attributes: array<u32>;
-@group(4) @binding(9) var<uniform> mesh_view: ViewRecord;
 
 @task @payload(cooked_payload) @workgroup_size(1)
 fn cooked_object(@builtin(workgroup_id) group: vec3<u32>) -> @builtin(mesh_task_size) vec3<u32> {
