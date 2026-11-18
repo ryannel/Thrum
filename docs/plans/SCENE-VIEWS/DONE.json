@@ -281,8 +281,8 @@
           "check": "node scripts/check_mirror_browser.mjs --case view",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m31-chrome-stored-format-checks",
           "verdict": "",
           "review": ""
         },

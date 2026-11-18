@@ -305,3 +305,10 @@
   mistake. If `gpu: 2` should ever bound those tests too, the change is on the tests' side, where
   `TEST-SUPPORT` hands a test its GPU device. Nothing is planned for it, and M3 does not wait on it. The
   settings now say that a busy GPU beside a free lock is expected.
+
+- 2026-11-18 M3 review fixes. Chrome reproduced the distant hill shadow in all three camera
+  cases at both extents, with zero stored steps of difference from its ordinary view.
+  Both Metal recipes matched explicit requests at all five control endpoints and the attachment
+  readback confirmed the viewport coverage. The author guide links measured endpoints and a
+  per-resource byte inventory. The qualified cost record needs a sitting with the other builders paused.
+  [Target proofs](../../evidence/SCENE-VIEWS/M3/README.md)
