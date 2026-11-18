@@ -187,13 +187,21 @@ impl StateEncode for Vector {
     }
 }
 
-/// Philox2x32-10 counter-based random number. The tick, stable identity and stream
-/// are folded into its fixed-width counter and key. No cursor is retained.
+/// Keyed 64-bit draw from Philox2x32-10. The first output word occupies the
+/// high 32 bits and the second occupies the low 32 bits. No cursor is retained.
+///
+/// ```
+/// use thrum_core::profile::{random, random_fraction, random_u64};
+///
+/// let draw: u64 = random_u64(0, 0, 0, 0);
+/// assert_eq!(draw, 0xff1d_ae59_6cd1_0df2);
+/// assert_eq!(random_fraction(draw), random(0, 0, 0, 0));
+/// ```
 #[expect(
     clippy::cast_possible_truncation,
     reason = "Philox uses high and low words"
 )]
-pub fn random(seed: u64, tick: u64, entity: u128, stream: u32) -> Number {
+pub fn random_u64(seed: u64, tick: u64, entity: u128, stream: u32) -> u64 {
     let mut x = tick as u32 ^ entity as u32 ^ (entity >> 64) as u32;
     let mut y = (tick >> 32) as u32 ^ (entity >> 32) as u32 ^ (entity >> 96) as u32 ^ stream;
     let mut key = seed as u32 ^ (seed >> 32) as u32;
@@ -203,7 +211,17 @@ pub fn random(seed: u64, tick: u64, entity: u128, stream: u32) -> Number {
         y = product as u32;
         key = key.wrapping_add(0x9e37_79b9);
     }
-    Number((x >> 8) as f32 / 16_777_216.0)
+    (u64::from(x) << 32) | u64::from(y)
+}
+
+/// Convert a draw's top 24 bits to an exactly representable number in `[0, 1)`.
+pub fn random_fraction(draw: u64) -> Number {
+    Number((draw >> 40) as f32 / 16_777_216.0)
+}
+
+/// Draw a profile number in `[0, 1)` using [`random_u64`] and [`random_fraction`].
+pub fn random(seed: u64, tick: u64, entity: u128, stream: u32) -> Number {
+    random_fraction(random_u64(seed, tick, entity, stream))
 }
 
 /// Deliberately platform-dependent operation for the conformance negative control.

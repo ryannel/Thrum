@@ -17,13 +17,23 @@ fn encoding_cannot_observe_nan_sign_or_payload() {
 fn philox_matches_random123_published_known_answers() {
     // https://github.com/DEShawResearch/random123/blob/main/tests/kat_vectors
     for (counter, key, expected) in [
-        (0, 0, 0xff1d_ae59_u32),
-        (u64::MAX, 0xffff_ffff, 0x2c3f_628b),
-        (0x85a3_08d3_243f_6a88, 0x1319_8a2e, 0xdd7c_e038),
+        (0, 0, 0xff1d_ae59_6cd1_0df2),
+        (u64::MAX, 0xffff_ffff, 0x2c3f_628b_ab4f_d7ad),
+        (0x85a3_08d3_243f_6a88, 0x1319_8a2e, 0xdd7c_e038_f62a_4c12),
     ] {
-        let expected = (expected >> 8) as f32 / 16_777_216.0;
-        assert_eq!(random(key, counter, 0, 0).0.to_bits(), expected.to_bits());
+        let draw = random_u64(key, counter, 0, 0);
+        assert_eq!(draw, expected);
+        let fraction = Number((expected >> 40) as f32 / 16_777_216.0);
+        assert_eq!(random_fraction(draw), fraction);
+        assert_eq!(random(key, counter, 0, 0), fraction);
     }
+}
+
+#[test]
+fn random_fraction_uses_only_the_top_24_bits() {
+    assert_eq!(random_fraction((1 << 40) - 1), Number::ZERO);
+    assert_eq!(random_fraction(1 << 40), Number(1.0 / 16_777_216.0));
+    assert_eq!(random_fraction(u64::MAX), Number(1.0_f32.next_down()));
 }
 
 #[test]
@@ -58,13 +68,12 @@ fn fixture_includes_every_wire_value_and_rounding_boundary() {
 
 #[test]
 fn random_has_no_call_order_or_thread_state() {
-    let expected: Vec<_> = (0..256)
-        .map(|tick| random(123, tick, u128::from(tick), 7).0.to_bits())
-        .collect();
-    let mut reverse: Vec<_> = (0..256)
-        .rev()
-        .map(|tick| random(123, tick, u128::from(tick), 7).0.to_bits())
-        .collect();
+    let draw = |tick| random_u64(123, tick, 42, 7);
+    let expected: Vec<_> = (0..256).map(draw).collect();
+    assert!(expected.windows(2).any(|pair| pair[0] != pair[1]));
+    let mut reverse: Vec<_> = std::thread::spawn(move || (0..256).rev().map(draw).collect())
+        .join()
+        .expect("draws on another thread");
     reverse.reverse();
     assert_eq!(reverse, expected);
 }

@@ -33,9 +33,12 @@ type IDs or `std::hash`. The portable digest includes complete registered author
 derived indexes are rebuilt and not encoded. See `Body` and `Resources` in the reference and
 [the digest coverage](plans/SIM-2D/DESIGN.md#4-the-world-digest).
 
-`random(seed: u64, tick: u64, entity: u128, stream: u32) -> Number` uses Philox2x32-10
-and returns `[0,1)`. Supply the tick and stable entity identity, with a distinct stream
-per purpose. There is no mutable cursor, so replay and parallel chunks do not change draws.
+`random_u64(seed: u64, tick: u64, entity: u128, stream: u32) -> u64` returns both
+Philox2x32-10 output words, with the first word in the high 32 bits.
+`random_fraction(draw: u64) -> Number` converts the top 24 bits to an exact value
+in `[0, 1)`. Use `random(seed, tick, entity, stream)` to draw and convert in one call.
+Supply the tick and stable entity identity, with a distinct stream per purpose.
+There is no mutable cursor, so replay and parallel chunks do not change draws.
 
 ## Register and check
 
@@ -116,7 +119,7 @@ consumer of the same target adapter. Engine crates name no crowd types or consta
 These commands run the shipped reference. Set the installed build-loop path for your host:
 
 ```sh
-export ORCHESTRATE_SCRIPT=/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.6/skills/orchestration/build/scripts/agent_loop.py
+export ORCHESTRATE_SCRIPT=/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.7/skills/orchestration/build/scripts/agent_loop.py
 python3 scripts/sim2d_conformance.py run --package crowd-2d --target mac-metal
 python3 scripts/sim2d_conformance.py run --package crowd-2d --target chrome-webgpu
 python3 scripts/sim2d_conformance.py run --package crowd-2d --target ios-sim
