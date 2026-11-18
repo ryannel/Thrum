@@ -598,7 +598,72 @@
     },
     "M5": {
       "definitions": "980d296c452b418933e7d8c10c1c9519230be5578fac24462f63e2a6ade488d2",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7dec527f11d56f87ba5ac28fff5ed005e964170a",
+          "review": "docs/evidence/WATERS/M5-review.md",
+          "items": {
+            "M5.1": "fail",
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "fail",
+            "M5.5": "fail",
+            "M5.6": "pass",
+            "M5.7": "fail",
+            "M5.8": "pass",
+            "M5.9": "pass"
+          },
+          "findings": [
+            {
+              "item": "M5.4",
+              "name": "The craft leaves the water in the scene gale at 15 m/s",
+              "repeat": false
+            },
+            {
+              "item": "M5.1",
+              "name": "Multi-tick frames overwrite accepted query pages",
+              "repeat": false
+            },
+            {
+              "item": "M5.1",
+              "name": "Query answers use the displayed stage instead of the use-tick stage",
+              "repeat": false
+            },
+            {
+              "item": "M5.1",
+              "name": "The query omits the slope of chart water levels",
+              "repeat": false
+            },
+            {
+              "item": "M5.5",
+              "name": "A float slides through the craft in the moving beam-sea view",
+              "repeat": false
+            },
+            {
+              "item": "M5.7",
+              "name": "Chrome loses individual answer ages across a hitch",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 139027,
+            "cached": 4548992,
+            "output": 15928,
+            "turns": 1
+          },
+          "at": "2026-11-18T21:08:40Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",

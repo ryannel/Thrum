@@ -612,8 +612,8 @@
     {
       "id": "M5",
       "name": "A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -625,10 +625,10 @@
           "check": "cargo test --locked --offline -p thrum-water --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.2",
@@ -639,8 +639,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M5-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.3",
@@ -650,8 +650,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M5-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -660,20 +660,20 @@
           "ask": "Read the test. Is the energy bound worked out from the wave field and the thrust, and would a body driven by a fixed bobbing schedule fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.5",
           "statement": "A float and the craft rise, pitch and roll with the waves under them: a float lifts as a crest reaches it and tilts down its face, the craft pitches into a head sea and rolls in a beam sea, and nothing slides, jitters or lags the water. This holds at rest, at 5 m/s and at 15 m/s, in a trade wind and in a gale.",
           "inspect": "`realtime` sequences from a chase view and a side view, at each speed in each sea: the waterline on the hull and on one float.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-metal.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.6",
@@ -684,8 +684,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M5-checks.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.7",
@@ -693,10 +693,10 @@
           "check": "node scripts/check_water_browser.mjs --case bodies",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-chrome.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.8",
@@ -705,8 +705,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M5.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.9",
@@ -715,8 +715,40 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "item": "M5.4",
+          "name": "The craft leaves the water in the scene gale at 15 m/s",
+          "repeat": false
+        },
+        {
+          "item": "M5.1",
+          "name": "Multi-tick frames overwrite accepted query pages",
+          "repeat": false
+        },
+        {
+          "item": "M5.1",
+          "name": "Query answers use the displayed stage instead of the use-tick stage",
+          "repeat": false
+        },
+        {
+          "item": "M5.1",
+          "name": "The query omits the slope of chart water levels",
+          "repeat": false
+        },
+        {
+          "item": "M5.5",
+          "name": "A float slides through the craft in the moving beam-sea view",
+          "repeat": false
+        },
+        {
+          "item": "M5.7",
+          "name": "Chrome loses individual answer ages across a hitch",
+          "repeat": false
         }
       ]
     },
