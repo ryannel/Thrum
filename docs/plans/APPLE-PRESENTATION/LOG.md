@@ -261,4 +261,5 @@
   The Mac still tap matched the drawable grid for all six arms. Both iPhone rotations matched their oriented grids.
   Chrome reset history at the first new-grid submission at DPR 1 and 2. D4.4–D4.7 await a Metal resize operation
   that allows frames in flight, because released wgpu-core drains the device queue in surface configuration.
+  The workspace gate hit a clock overload in V1 recovery. The same test passed in isolation.
   [Extent evidence](../../evidence/APPLE-PRESENTATION/m4/README.md) · [Handoff](../../evidence/APPLE-PRESENTATION/M4-handoff.md)
