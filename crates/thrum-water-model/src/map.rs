@@ -158,9 +158,36 @@ pub struct Map {
     pub(crate) rivers: Vec<crate::River>,
     // Each body's river and chart index, for a river's chart.
     pub(crate) sampled: Vec<Option<(usize, usize)>>,
+    spatial_revision: u64,
+    surface_bounds: Vec<Option<[[f64; 2]; 2]>>,
 }
 
 impl Map {
+    /// Bed used to prepare the map's connectivity.
+    pub fn bed(&self) -> &Bed {
+        &self.bed
+    }
+
+    /// The map's shore margin and swash settings.
+    pub fn profile(&self) -> Profile {
+        self.profile
+    }
+
+    /// Changes when stage-dependent support or authored gains change.
+    pub fn spatial_revision(&self) -> u64 {
+        self.spatial_revision
+    }
+
+    /// Prepared support at each bed centre, as the index of its water origin.
+    pub fn support_origins(&self, body: usize) -> &[Option<usize>] {
+        &self.support[body]
+    }
+
+    /// Bounds of a finite surface over its declared stage range, including its margin.
+    pub fn surface_bounds(&self, body: usize) -> Option<[[f64; 2]; 2]> {
+        self.surface_bounds.get(body).copied().flatten()
+    }
+
     /// Read a body's authored declaration and current stage without duplicating its authority.
     pub fn body(&self, index: usize) -> Option<&Body> {
         self.bodies.get(index)
@@ -203,6 +230,8 @@ impl Map {
             flow: None,
             rivers: Vec::new(),
             sampled: Vec::new(),
+            spatial_revision: 0,
+            surface_bounds: Vec::new(),
         };
         map.generations = vec![0; map.bodies.len()];
         map.sampled = vec![None; map.bodies.len()];
@@ -221,6 +250,28 @@ impl Map {
         map.validate_topology()?;
         map.validate_banks(&minimum_fills)?;
         map.validate_hollows()?;
+        map.surface_bounds = map
+            .support
+            .iter()
+            .map(|support| {
+                let mut points = support
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, origin)| origin.is_some())
+                    .map(|(i, _)| map.bed.point(i));
+                let first = points.next()?;
+                let [min, max] = points.fold([first, first], |[min, max], point| {
+                    [
+                        std::array::from_fn(|axis| min[axis].min(point[axis])),
+                        std::array::from_fn(|axis| max[axis].max(point[axis])),
+                    ]
+                });
+                Some([
+                    min.map(|v| v - map.bed.spacing),
+                    max.map(|v| v + map.bed.spacing),
+                ])
+            })
+            .collect();
         for (b, s) in map.bodies.iter_mut().zip(stages) {
             b.stage.value = s;
         }
@@ -245,11 +296,14 @@ impl Map {
         if !stage.is_finite() {
             return Err(WaterError::new(&b.name, "nonfinite stage"));
         }
-        b.stage.value = stage.clamp(b.stage.min, b.stage.max);
+        let value = stage.clamp(b.stage.min, b.stage.max);
         if stage < b.stage.min || stage > b.stage.max {
             self.clamped_stages += 1;
         }
-        self.rebuild();
+        if b.stage.value.to_bits() != value.to_bits() {
+            b.stage.value = value;
+            self.rebuild();
+        }
         Ok(())
     }
 
@@ -277,8 +331,17 @@ impl Map {
                 }
             })
             .collect();
-        for (body, gains) in self.bodies.iter_mut().zip(gains?) {
-            body.gains = gains;
+        let gains = gains?;
+        if self
+            .bodies
+            .iter()
+            .zip(&gains)
+            .any(|(body, gains)| body.gains.map(f64::to_bits) != gains.map(f64::to_bits))
+        {
+            for (body, gains) in self.bodies.iter_mut().zip(gains) {
+                body.gains = gains;
+            }
+            self.spatial_revision = self.spatial_revision.wrapping_add(1);
         }
         Ok(())
     }
@@ -521,6 +584,7 @@ impl Map {
     }
 
     pub(crate) fn rebuild(&mut self) {
+        self.spatial_revision = self.spatial_revision.wrapping_add(1);
         self.support = (0..self.bodies.len())
             .map(|id| {
                 let wet = self.flood(id);

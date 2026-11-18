@@ -2,6 +2,7 @@
     dead_code,
     reason = "shared public-seam fixture supports several focused GPU tests"
 )]
+pub(crate) mod island;
 use std::time::Duration;
 use thrum_app::{
     Game, Gpu,
@@ -83,7 +84,6 @@ impl Fixture {
         temporal_sampling: bool,
         overlay: bool,
     ) -> Self {
-        let (device, queue, caps) = device();
         let (mut game, report) = water_scene::build_paired(
             std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
             water,
@@ -94,6 +94,14 @@ impl Fixture {
             game =
                 game.with_display_overlay(thrum_render::synthetic::DisplayOverlay::TemporalInputs);
         }
+        Self::from_game(extent, game, report)
+    }
+    pub(crate) fn from_game(
+        extent: [u32; 2],
+        mut game: SkyGame,
+        report: water_scene::SharedReport,
+    ) -> Self {
+        let (device, queue, caps) = device();
         let host = game
             .prepare(
                 Gpu {
@@ -135,6 +143,20 @@ impl Fixture {
             report,
             witness: None,
         }
+    }
+    pub(crate) fn warm_cooked(&mut self) {
+        for index in 0..120 {
+            self.frame(f64::from(index) / 120.0);
+            match self.game.poll_status() {
+                Some(thrum_app::sky::ContentStatus::Drawn(_)) => {
+                    self.frame(f64::from(index + 1) / 120.0);
+                    return;
+                }
+                Some(thrum_app::sky::ContentStatus::Failed(error)) => panic!("{error}"),
+                _ => {}
+            }
+        }
+        panic!("cooked island did not draw");
     }
     pub(crate) fn parameters(&mut self, json: &str) {
         let report = self.game.controls_mut().apply_file(json).expect("controls");

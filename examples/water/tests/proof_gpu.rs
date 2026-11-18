@@ -7,6 +7,27 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_render::runtime::{CaptureLimits, FrameSample, SubmittedImage};
+use water_scene::island::Wind;
+
+fn island_wind() -> Option<Wind> {
+    std::env::var("THRUM_WATER_ISLAND")
+        .ok()
+        .as_deref()
+        .and_then(Wind::named)
+}
+
+fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedReport) {
+    if let Some(wind) = island_wind() {
+        let (game, report, _) = water_scene::island::build(wind, water).expect("island");
+        (game, report)
+    } else {
+        water_scene::build_paired(
+            std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
+            water,
+        )
+        .expect("open sea")
+    }
+}
 #[test]
 fn proof_driver() {
     if std::env::var_os("THRUM_WATER_PROOF").is_none() {
@@ -27,7 +48,12 @@ fn driver() {
         .expect("record");
         return;
     }
-    let mut fixture = if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
+    let mut fixture = if island_wind().is_some() {
+        let (game, report) = proof_game(true);
+        let mut fixture = support::Fixture::from_game([2560, 1440], game, report);
+        fixture.warm_cooked();
+        fixture
+    } else if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
         support::Fixture::antialiased([2560, 1440])
     } else {
         support::Fixture::new([2560, 1440])
@@ -37,6 +63,11 @@ fn driver() {
     }
     let report = fixture.report.lock().expect("report").clone();
     let mut result = json!({"schema":1,"target":"mac-metal","mode":mode,"extent":fixture.extent,"vertices":report.vertices,"resources":report.resources});
+    if let Some(wind) = island_wind() {
+        result["wind"] = json!(format!("{wind:?}"));
+        result["body_vertices"] = json!(report.bodies);
+        result["cameras"] = json!(water_scene::island::CAMERAS.map(|c| json!({"position":c.position,"target":c.target,"fov_degrees":c.vertical_fov_degrees})));
+    }
     result["recipe"] =
         json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
     result["camera"] = json!({"focus_xz":water_scene::CAMERA_FOCUS,"eye_at_2m_along_wind":water_scene::camera_position(2.0,90.0),"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP,"orbit_radius":"24m at 2m height, 40m at 40m height; bearing orbits the focus"});
@@ -47,7 +78,14 @@ fn driver() {
         "cost" => {
             let mut arms = Vec::new();
             for present in [true, false] {
-                let mut fixture = support::Fixture::paired([2560, 1440], present);
+                let mut fixture = if island_wind().is_some() {
+                    let (game, report) = proof_game(present);
+                    let mut fixture = support::Fixture::from_game([2560, 1440], game, report);
+                    fixture.warm_cooked();
+                    fixture
+                } else {
+                    support::Fixture::paired([2560, 1440], present)
+                };
                 for index in 0..8 {
                     fixture.frame(f64::from(index) / 120.0);
                 }
@@ -71,7 +109,13 @@ fn driver() {
                 } else {
                     0
                 };
-                arms.push(json!({"water":present,"calibration_float":true,"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()}));
+                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
+                if present && island_wind().is_some() {
+                    let counts = island_pixels(&fixture);
+                    assert_eq!(counts.iter().sum::<usize>(), pixels);
+                    arm["body_pixels"] = json!(counts);
+                }
+                arms.push(arm);
             }
             result["capture"] = json!(false);
             result["arms"] = json!(arms);
@@ -82,16 +126,37 @@ fn driver() {
                 .enable_submitted_capture_with_limits(2, limits())
                 .expect("tap");
             let mut images = Vec::new();
-            for (name, height, bearing, sun) in [
+            let views = [
                 ("noon-2-along", 2, 90, 60),
                 ("noon-2-across", 2, 0, 60),
                 ("noon-40-along", 40, 90, 60),
                 ("noon-40-across", 40, 0, 60),
                 ("low-sun", 2, 90, 6),
                 ("twilight", 2, 90, -4),
-            ] {
-                fixture.parameters(&format!(r#"{{"camera.height":{height},"camera.bearing":{bearing},"sun.elevation":{sun}}}"#));
-                let sample = fixture.frame(10.0);
+            ];
+            let checkpoints: Vec<_> = if island_wind().is_some() {
+                ["beach", "lake", "pond", "hill"]
+                    .into_iter()
+                    .zip(0..)
+                    .flat_map(|(name, view)| {
+                        (0..3).map(move |phase| {
+                            (
+                                format!("{name}-{phase}"),
+                                format!(r#"{{"camera.island":{view}}}"#),
+                                10.0 + f64::from(view * 6 + phase) * 1.25,
+                            )
+                        })
+                    })
+                    .collect()
+            } else {
+                views.into_iter().map(|(name,height,bearing,sun)| (name.to_owned(),
+                    format!(r#"{{"camera.height":{height},"camera.bearing":{bearing},"sun.elevation":{sun}}}"#),
+                    10.0,
+                )).collect()
+            };
+            for (name, params, time) in checkpoints {
+                fixture.parameters(&params);
+                let sample = fixture.frame(time);
                 let image = take_image(&mut fixture);
                 let file = format!("{name}.rgba");
                 std::fs::write(directory.join(&file), &image.rgba).expect("fixed image");
@@ -107,6 +172,42 @@ fn driver() {
         serde_json::to_vec_pretty(&result).expect("json"),
     )
     .expect("record");
+}
+
+fn island_pixels(fixture: &support::Fixture) -> [usize; 3] {
+    let c = water_scene::island::CAMERAS[3];
+    let view = thrum_render::synthetic::SyntheticView::perspective(
+        c.position,
+        c.target,
+        [0.0, 1.0, 0.0],
+        c.vertical_fov_degrees.to_radians(),
+        fixture.extent[0] as f32 / fixture.extent[1] as f32,
+        0.1,
+        30_000.0,
+    )
+    .expect("island camera");
+    let inverse = glam::Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
+    let mut counts = [0; 3];
+    for (i, sample) in fixture.witness().into_iter().enumerate() {
+        if sample[0] <= 0.1 || sample[1] <= 0.0 {
+            continue;
+        }
+        let width = fixture.extent[0] as usize;
+        let x = ((i % width) as f32 + 0.5) * 2.0 / fixture.extent[0] as f32 - 1.0;
+        let y = 1.0 - ((i / width) as f32 + 0.5) * 2.0 / fixture.extent[1] as f32;
+        let height = inverse.project_point3(glam::vec3(x, y, sample[1])).y;
+        // Body elevations differ by much more than the sheltered wave heights
+        // and the half-float witness's reconstruction error.
+        let body = if height < 5.0 {
+            0
+        } else if height < 11.3 {
+            2
+        } else {
+            1
+        };
+        counts[body] += 1;
+    }
+    counts
 }
 fn limits() -> CaptureLimits {
     CaptureLimits {

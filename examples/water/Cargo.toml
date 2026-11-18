@@ -15,6 +15,10 @@ name = "frame_contract_gpu"
 name = "level_gpu"
 [[test]]
 name = "proof_gpu"
+[[test]]
+name = "bodies_gpu"
+[[test]]
+name = "stage_gpu"
 
 [lints]
 workspace = true
@@ -25,7 +29,11 @@ thrum-water = { path = "../../crates/thrum-water" }
 thrum-water-model = { path = "../../crates/thrum-water-model" }
 thrum-sea-model = { path = "../../crates/thrum-sea-model" }
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "=0.3.106"
+
 [dev-dependencies]
+thrum-cook = { path = "../../crates/thrum-cook" }
 thrum-render = { path = "../../crates/thrum-render" }
 thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }

@@ -25,11 +25,21 @@ const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE
 
 pub(super) fn capture(directory: &Path) -> Value {
     let (device, queue, caps) = super::support::device();
-    let (game, report) =
-        water_scene::build_with_report(std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some())
-            .expect("scene");
+    let (game, report) = super::proof_game(true);
+    let island = super::island_wind();
+    let (extent, interval, opportunities) = if island.is_some() {
+        ([1280, 720], 7.0, 16.0)
+    } else {
+        ([2560, 1440], 1.0, 120.0)
+    };
     let mut runtime =
-        Offscreen::new(game, &device, &caps, &queue, [2560, 1440]).expect("ordinary game runtime");
+        Offscreen::new(game, &device, &caps, &queue, extent).expect("ordinary game runtime");
+    let island_view = std::env::var("THRUM_WATER_VIEW").unwrap_or_else(|_| "0".into());
+    if island.is_some() {
+        runtime
+            .parameters(&format!(r#"{{"camera.island":{island_view}}}"#))
+            .expect("island view");
+    }
     for _ in 0..8 {
         runtime.step().expect("warm submit");
         device
@@ -59,14 +69,16 @@ pub(super) fn capture(directory: &Path) -> Value {
     let mut submitted = 0;
     let mut frames = Vec::new();
     let mut completed = BTreeMap::new();
-    while begin.elapsed() < Duration::from_secs(1) && submitted < MAX_SUBMISSIONS {
+    while begin.elapsed() < Duration::from_secs_f64(interval) && submitted < MAX_SUBMISSIONS {
         let elapsed = begin.elapsed().as_secs_f64();
-        runtime
-            .parameters(&format!(
-                r#"{{"camera.bearing":{}}}"#,
-                70.0 + elapsed * 12.0
-            ))
-            .expect("pan control");
+        if island.is_none() {
+            runtime
+                .parameters(&format!(
+                    r#"{{"camera.bearing":{}}}"#,
+                    70.0 + elapsed * 12.0
+                ))
+                .expect("pan control");
+        }
         if runtime.step().expect("ordinary submit").submitted {
             submitted += 1;
         }
@@ -75,8 +87,10 @@ pub(super) fn capture(directory: &Path) -> Value {
             "writer rejected a frame; underlying outcome: {:?}",
             writer.finish(Duration::from_secs(60))
         );
-        if let Some(wait) = Duration::from_secs_f64((elapsed * 120.0).floor() / 120.0 + 1.0 / 120.0)
-            .checked_sub(begin.elapsed())
+        if let Some(wait) = Duration::from_secs_f64(
+            (elapsed * opportunities).floor() / opportunities + 1.0 / opportunities,
+        )
+        .checked_sub(begin.elapsed())
         {
             std::thread::sleep(wait);
         }
@@ -104,7 +118,7 @@ pub(super) fn capture(directory: &Path) -> Value {
     assert_eq!(written.frames, frames.len() as u64);
     assert_eq!(runtime.omissions(), 0, "complete submitted interval");
     let prepared = report.lock().expect("report").clone();
-    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":[2560,1440],"vertices":prepared.vertices,"resources":prepared.resources,"clock":"ordinary Offscreen::step on actual monotonic world time; 120 Hz opportunities, asynchronous in-flight frames","frames":frames,"hashes":written.frame_hashes,"encoding":"Raw","omissions":runtime.omissions(),"capture_limits":{"interval_seconds":1,"max_submissions":MAX_SUBMISSIONS,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64()})
+    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.map(|w| format!("{w:?}")),"island_view":island.map(|_|island_view),"clock":"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames","opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":"Raw","omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":MAX_SUBMISSIONS,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64()})
 }
 fn drain(
     runtime: &mut Offscreen<SkyGame>,

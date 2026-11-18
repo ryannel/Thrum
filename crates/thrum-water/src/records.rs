@@ -13,6 +13,8 @@ pub(super) struct Parameters {
     pub(super) cache: [[f32; 4]; 8],
     pub(super) long_covariance: [[f32; 4]; 8],
     pub(super) scatter: [f32; 4],
+    pub(super) heights: [f32; 4],
+    pub(super) shoal_bed: [f32; 4],
 }
 #[expect(
     clippy::cast_possible_truncation,
@@ -53,7 +55,8 @@ impl Parameters {
         previous_level: f64,
         long_variances: [[f32; 4]; 8],
         height_rms: f32,
-        deep_scatter: [f32; 3],
+        heights: [f32; 4],
+        profile: super::Profile,
     ) -> Self {
         Self {
             level_dt_reset: [
@@ -75,13 +78,39 @@ impl Parameters {
             }),
             long_covariance: long_variances,
             scatter: [
-                deep_scatter[0],
-                deep_scatter[1],
-                deep_scatter[2],
+                profile.deep_scatter[0],
+                profile.deep_scatter[1],
+                profile.deep_scatter[2],
                 height_rms,
+            ],
+            heights,
+            shoal_bed: [
+                profile.shoal_bed[0],
+                profile.shoal_bed[1],
+                profile.shoal_bed[2],
+                0.0,
             ],
         }
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "significant heights are prepared once in GPU metres"
+)]
+pub(super) fn layer_heights(spectrum: &Spectrum) -> [f32; 4] {
+    let long = spectrum
+        .long
+        .iter()
+        .map(|c| 0.5 * c.amplitude.powi(2))
+        .sum::<f64>();
+    [
+        long,
+        spectrum.cascades[0].variance(),
+        spectrum.cascades[1].variance(),
+        spectrum.cascades[2].variance(),
+    ]
+    .map(|v| (4.0 * v.sqrt()) as f32)
 }
 #[expect(
     clippy::cast_possible_truncation,

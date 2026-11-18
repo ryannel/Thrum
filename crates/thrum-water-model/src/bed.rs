@@ -13,6 +13,16 @@ pub struct Bed {
 }
 
 impl Bed {
+    /// First centre in world x/z, uniform spacing in metres and centre counts.
+    pub fn lattice(&self) -> ([f64; 2], f64, [usize; 2]) {
+        (self.origin, self.spacing, self.size)
+    }
+
+    /// Heights in row-major x-fastest order.
+    pub fn heights(&self) -> &[f64] {
+        &self.heights
+    }
+
     /// Validate a row-major x-fastest height grid.
     /// # Errors
     /// Refuses nonfinite heights, invalid spacing, dimensions or sample count.
@@ -57,22 +67,46 @@ impl Bed {
             return Err(WaterError::new("bed", "nonfinite triangle"));
         }
         let mut bed = Self::new(origin, spacing, size, vec![floor; count])?;
-        for i in 0..count {
-            let [x, z] = bed.point(i);
-            let mut highest: Option<f64> = None;
-            for &[a, b, c] in triangles {
-                let det = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
-                if det.abs() < 1e-12 {
-                    continue;
-                }
-                let u = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / det;
-                let v = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / det;
-                if u >= -1e-10 && v >= -1e-10 && u + v <= 1.0 + 1e-10 {
-                    let height = u * a[1] + v * b[1] + (1.0 - u - v) * c[1];
-                    highest = Some(highest.map_or(height, |old| old.max(height)));
+        let mut covered = vec![false; count];
+        for &[a, b, c] in triangles {
+            let det = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
+            if det.abs() < 1e-12 {
+                continue;
+            }
+            let range = |axis: usize, coordinate: usize| {
+                let min = a[coordinate].min(b[coordinate]).min(c[coordinate]);
+                let max = a[coordinate].max(b[coordinate]).max(c[coordinate]);
+                // Cover the same barycentric tolerance as the intersection.
+                let pad = (max - min) * 3e-10;
+                let lo = ((min - pad - origin[axis]) / spacing)
+                    .ceil()
+                    .clamp(0.0, size[axis] as f64);
+                let hi = (((max + pad - origin[axis]) / spacing).floor() + 1.0)
+                    .clamp(0.0, size[axis] as f64);
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "clipped integral lattice indices"
+                )]
+                let indices = lo as usize..hi as usize;
+                indices
+            };
+            let columns = range(0, 0);
+            for row in range(1, 2) {
+                for col in columns.clone() {
+                    let i = row * size[0] + col;
+                    let [x, z] = bed.point(i);
+                    let u = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / det;
+                    let v = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / det;
+                    if u >= -1e-10 && v >= -1e-10 && u + v <= 1.0 + 1e-10 {
+                        let height = u * a[1] + v * b[1] + (1.0 - u - v) * c[1];
+                        if !covered[i] || height > bed.heights[i] {
+                            covered[i] = true;
+                            bed.heights[i] = height;
+                        }
+                    }
                 }
             }
-            bed.heights[i] = highest.unwrap_or(floor);
         }
         Ok(bed)
     }
@@ -114,7 +148,8 @@ impl Bed {
         ])
     }
 
-    pub(crate) fn point(&self, i: usize) -> [f64; 2] {
+    /// World x/z of a centre given its index in the height table.
+    pub fn point(&self, i: usize) -> [f64; 2] {
         [
             self.origin[0] + (i % self.size[0]) as f64 * self.spacing,
             self.origin[1] + (i / self.size[0]) as f64 * self.spacing,

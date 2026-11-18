@@ -1,4 +1,9 @@
-use super::{Profile, SURFACE_PASS, records::Parameters};
+use super::{
+    Profile, SURFACE_PASS,
+    map_gpu::{self, MapGpu},
+    records::Parameters,
+};
+use std::ops::Range;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     contribution::{AfterOpaqueKind, AfterOpaquePass, EffectCadence, EffectGraph, SceneSurface},
@@ -14,6 +19,10 @@ pub(super) struct Prepared {
     pub(super) mesh: wgpu::Buffer,
     pub(super) vertices: u32,
     pub(super) queue: wgpu::Queue,
+    pub(super) map: Option<MapGpu>,
+    pub(super) bodies: Vec<(String, u32)>,
+    pub(super) indices: Option<wgpu::Buffer>,
+    pub(super) draws: Vec<Range<u32>>,
 }
 fn declaration() -> AfterOpaquePass {
     AfterOpaquePass {
@@ -36,8 +45,16 @@ impl Prepared {
         graph
     }
 }
-pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepared, String> {
+pub(super) fn new(
+    surface: &SceneSurface<'_>,
+    profile: Profile,
+    map: Option<&thrum_water_model::Map>,
+) -> Result<Prepared, String> {
     let device = surface.device;
+    let map_gpu = map
+        .map(|map| MapGpu::new(device, surface.queue, map))
+        .transpose()
+        .map_err(|e| e.to_string())?;
     let ambient =
         thrum_sea::Ambient::new(device, profile.waves).map_err(|error| error.to_string())?;
     let environment = surface
@@ -49,7 +66,7 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    let entries: Vec<_> = (0..5)
+    let mut entries: Vec<_> = (0..5)
         .map(|binding| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
@@ -71,6 +88,9 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
             count: None,
         })
         .collect();
+    if map_gpu.is_some() {
+        entries.extend(map_gpu::bindings(wgpu::ShaderStages::VERTEX_FRAGMENT));
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
         entries: &entries,
@@ -97,7 +117,7 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
     let repeat = sampler(wgpu::AddressMode::Repeat);
     let clamp = sampler(wgpu::AddressMode::ClampToEdge);
     let views = ambient.filtered_views();
-    let bindings = [
+    let mut bindings = vec![
         wgpu::BindGroupEntry {
             binding: 0,
             resource: parameters.as_entire_binding(),
@@ -119,6 +139,10 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
             resource: wgpu::BindingResource::Sampler(&clamp),
         },
     ];
+    let map_view = map_gpu.as_ref().map(MapGpu::view);
+    if let (Some(map), Some(view)) = (&map_gpu, &map_view) {
+        bindings.extend(map.entries(view));
+    }
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("water field"),
         layout: &layout,
@@ -136,11 +160,16 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         immediate_size: 0,
     });
     let source = format!(
-        "{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}",
         environment.shader_source.replace("@group(0)", "@group(2)"),
         include_str!("fresnel.wgsl"),
         include_str!("sampling.wgsl"),
-        include_str!("surface.wgsl")
+        include_str!("surface.wgsl"),
+        if map_gpu.is_some() {
+            map_gpu::declarations() + include_str!("mapped_surface.wgsl")
+        } else {
+            include_str!("open_surface.wgsl").to_owned()
+        }
     );
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(SURFACE_PASS),
@@ -195,13 +224,9 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         multiview_mask: None,
         cache: None,
     });
-    let vertices = mesh();
-    let count = u32::try_from(vertices.len()).map_err(|e| e.to_string())?;
-    let mesh = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("water rings and horizon skirt"),
-        contents: bytemuck::cast_slice(&vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
+    let geometry = surface_mesh(map);
+    let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
+    let (mesh, indices) = geometry.upload(device)?;
     Ok(Prepared {
         ambient,
         environment,
@@ -211,7 +236,118 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         mesh,
         vertices: count,
         queue: surface.queue.clone(),
+        map: map_gpu,
+        bodies: geometry.bodies,
+        draws: geometry.draws,
+        indices,
     })
+}
+
+#[derive(Default)]
+struct Geometry {
+    vertices: Vec<[f32; 4]>,
+    indices: Vec<u32>,
+    bodies: Vec<(String, u32)>,
+    draws: Vec<Range<u32>>,
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "GPU vertices and at most 16 body slots"
+)]
+fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
+    let Some(map) = map else {
+        return Geometry {
+            vertices: mesh(),
+            ..Geometry::default()
+        };
+    };
+    let mut geometry = Geometry::default();
+    for body in 0..map_gpu::BODY_LIMIT {
+        let Some(declaration) = map.body(body) else {
+            break;
+        };
+        let first = geometry.vertices.len() as u32;
+        let first_index = geometry.indices.len() as u32;
+        if matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
+            for level in 0..17 {
+                geometry.grid(
+                    [-32; 2],
+                    [32; 2],
+                    0.25 * 2.0_f32.powi(level),
+                    0.0,
+                    level > 0,
+                );
+            }
+        } else if let Some([min, max]) = map.surface_bounds(body) {
+            // Tile fine enough for geometry in the near view; shading filters
+            // the unresolved part of each layer separately.
+            let span = (max[0] - min[0]).max(max[1] - min[1]);
+            let spacing = 0.5_f32.max((span / 1024.0) as f32);
+            let start = min.map(|x| (x / f64::from(spacing)).floor() as i32);
+            let end = max.map(|x| (x / f64::from(spacing)).ceil() as i32);
+            geometry.grid(start, end, spacing, (body + 1) as f32, false);
+        }
+        geometry.bodies.push((
+            declaration.name.clone(),
+            geometry.vertices.len() as u32 - first,
+        ));
+        geometry
+            .draws
+            .push(first_index..geometry.indices.len() as u32);
+    }
+    geometry
+}
+
+impl Geometry {
+    fn upload(
+        &self,
+        device: &wgpu::Device,
+    ) -> Result<(wgpu::Buffer, Option<wgpu::Buffer>), String> {
+        let vertices = bytemuck::cast_slice(&self.vertices);
+        let indices = bytemuck::cast_slice(&self.indices);
+        if vertices.len().max(indices.len()) as u64 > device.limits().max_buffer_size {
+            return Err("water mesh exceeds the maximum buffer size".into());
+        }
+        let buffer = |label, contents, usage| {
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(label),
+                contents,
+                usage,
+            })
+        };
+        Ok((
+            buffer(
+                "water surface vertices",
+                vertices,
+                wgpu::BufferUsages::VERTEX,
+            ),
+            (!indices.is_empty()).then(|| {
+                buffer(
+                    "water surface triangle indices",
+                    indices,
+                    wgpu::BufferUsages::INDEX,
+                )
+            }),
+        ))
+    }
+
+    fn grid(&mut self, start: [i32; 2], end: [i32; 2], spacing: f32, body: f32, ring: bool) {
+        let base = u32::try_from(self.vertices.len()).expect("bounded mesh");
+        let width = u32::try_from(end[0] - start[0] + 1).expect("grid width");
+        for (row, z) in (0..).zip(start[1]..=end[1]) {
+            for (column, x) in (0..).zip(start[0]..=end[0]) {
+                self.vertices
+                    .push([x as f32 * spacing, z as f32 * spacing, spacing, body]);
+                let centre = ring && (-16..16).contains(&x) && (-16..16).contains(&z);
+                if x < end[0] && z < end[1] && !centre {
+                    let a = base + row * width + column;
+                    self.indices
+                        .extend([a, a + width, a + 1, a + 1, a + width, a + width + 1]);
+                }
+            }
+        }
+    }
 }
 fn mesh() -> Vec<[f32; 4]> {
     let mut vertices = Vec::new();

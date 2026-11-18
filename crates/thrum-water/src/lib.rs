@@ -1,6 +1,7 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
 #[cfg(test)]
 mod fresnel_tests;
+pub mod map_gpu;
 mod prepare;
 mod records;
 #[cfg(test)]
@@ -24,6 +25,9 @@ pub struct Profile {
     /// Deep-water backscatter divided by extinction, RGB in zero through one.
     /// The game supplies its water type; the default is a pure absorber.
     pub deep_scatter: [f32; 3],
+    /// Diffuse bed reflectance for thin, mapped water before scene refraction.
+    /// A zero value leaves the bed proxy off.
+    pub shoal_bed: [f32; 3],
 }
 
 /// Invalid water configuration or unavailable preparation dependency.
@@ -33,7 +37,7 @@ pub enum WaterError {
     UnavailableMap,
     /// The selected body index does not exist in this map.
     UnknownBody(usize),
-    /// This first surface profile draws only a sea.
+    /// The open-sea constructor requires a sea.
     UnsupportedBody,
     /// A physical wave input is outside the supported domain.
     InvalidSpectrum(String),
@@ -41,6 +45,8 @@ pub enum WaterError {
     InvalidOptics,
     /// The map supplied a nonfinite level.
     InvalidLevel,
+    /// The map cannot be represented by this GPU profile.
+    UnsupportedMap(&'static str),
 }
 impl std::fmt::Display for WaterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -50,9 +56,10 @@ impl std::fmt::Display for WaterError {
             Self::UnsupportedBody => f.write_str("this surface profile requires a sea body"),
             Self::InvalidSpectrum(reason) => write!(f, "water spectrum: {reason}"),
             Self::InvalidOptics => {
-                f.write_str("water deep scatter must be finite in zero through one")
+                f.write_str("water scatter and bed reflectance must be finite in zero through one")
             }
             Self::InvalidLevel => f.write_str("water level must be finite"),
+            Self::UnsupportedMap(reason) => f.write_str(reason),
         }
     }
 }
@@ -63,6 +70,8 @@ impl std::error::Error for WaterError {}
 pub struct WaterReport {
     /// Submitted vertices, including the horizon skirt.
     pub vertices: u32,
+    /// Submitted vertices by water body, in declaration order.
+    pub bodies: Vec<(String, u32)>,
     /// Actual allocation sizes, keyed by resource name.
     pub resources: Vec<(String, u64)>,
 }
@@ -71,15 +80,18 @@ pub struct WaterReport {
 pub struct Water {
     report: Arc<Mutex<WaterReport>>,
     map: Arc<Mutex<Map>>,
+    mapped: bool,
     body: usize,
     spectrum: Spectrum,
     long_variances: [[f32; 4]; 8],
     height_rms: f32,
+    layer_heights: [f32; 4],
     profile: Profile,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
     invalid: bool,
+    previous_levels: Option<[f32; map_gpu::BODY_LIMIT]>,
 }
 impl Water {
     /// Declare a sea surface for the selected map body. Stage changes are read at frame boundaries.
@@ -91,9 +103,33 @@ impl Water {
         spectrum: Spectrum,
         profile: Profile,
     ) -> Result<Self, WaterError> {
+        Self::configure(map, body, spectrum, profile, false)
+    }
+
+    /// Draw every body of the map on the same wave field and surface pass.
+    /// Geometry is kept separate by body, while ownership comes from the map.
+    ///
+    /// # Errors
+    /// Rejects an empty map or invalid spectrum or water type.
+    pub fn mapped(
+        map: Arc<Mutex<Map>>,
+        spectrum: Spectrum,
+        profile: Profile,
+    ) -> Result<Self, WaterError> {
+        Self::configure(map, 0, spectrum, profile, true)
+    }
+
+    fn configure(
+        map: Arc<Mutex<Map>>,
+        body: usize,
+        spectrum: Spectrum,
+        profile: Profile,
+        mapped: bool,
+    ) -> Result<Self, WaterError> {
         if profile
             .deep_scatter
             .iter()
+            .chain(&profile.shoal_bed)
             .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
         {
             return Err(WaterError::InvalidOptics);
@@ -118,7 +154,7 @@ impl Water {
         }
         let guard = map.lock().map_err(|_| WaterError::UnavailableMap)?;
         let declaration = guard.body(body).ok_or(WaterError::UnknownBody(body))?;
-        if !matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
+        if !mapped && !matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
             return Err(WaterError::UnsupportedBody);
         }
         let row = guard.row(body, [0.0; 2]);
@@ -129,15 +165,18 @@ impl Water {
         Ok(Self {
             report: Arc::default(),
             map,
+            mapped,
             body,
             long_variances: records::long_variances(&spectrum),
             height_rms: records::height_rms(&spectrum),
+            layer_heights: records::layer_heights(&spectrum),
             spectrum,
             profile,
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
             invalid: true,
+            previous_levels: None,
         })
     }
     /// Read-only preparation report handle; no per-frame polling is required by the water.
@@ -157,6 +196,19 @@ impl Water {
                 size_of::<records::Parameters>() as u64,
             ));
             resources.push(("water mesh".into(), p.mesh.size()));
+            if let Some(indices) = &p.indices {
+                resources.push(("water surface triangle indices".into(), indices.size()));
+            }
+            if let Some(map) = &p.map {
+                let size = map.texture.size();
+                resources.push((
+                    "water map lattice".into(),
+                    16 * u64::from(size.width)
+                        * u64::from(size.height)
+                        * u64::from(size.depth_or_array_layers),
+                ));
+                resources.push(("water map records".into(), map.info.size()));
+            }
             resources
         })
     }
@@ -169,12 +221,22 @@ impl SceneContribution for Water {
         }
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.prepared = Some(prepare::new(surface, self.profile)?);
+        let map = self
+            .map
+            .lock()
+            .map_err(|_| WaterError::UnavailableMap.to_string())?;
+        self.prepared = Some(prepare::new(
+            surface,
+            self.profile,
+            self.mapped.then_some(&*map),
+        )?);
         *self.report.lock().expect("water report") = WaterReport {
             vertices: self.vertices(),
+            bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),
             resources: self.resource_bytes(),
         };
         self.previous = None;
+        self.previous_levels = None;
         Ok(())
     }
     fn effect_graph(&self) -> EffectGraph {
@@ -192,10 +254,12 @@ impl SceneContribution for Water {
                 .previous
                 .is_none_or(|(_, tick, _)| frame.time.tick > tick.saturating_add(1));
         let previous = self.previous.map_or(now, |(time, _, _)| time);
-        let row = self.map.lock().expect("water map lock").row(
-            self.body,
-            [f64::from(frame.camera[0]), f64::from(frame.camera[2])],
-        );
+        let map = self.map.lock().expect("water map lock");
+        let row = map.row(self.body, [0.0; 2]);
+        if let Some(gpu) = &mut p.map {
+            gpu.upload(&p.queue, &map, self.previous_levels);
+        }
+        drop(map);
         self.recorded = (now, frame.time.tick, row.level);
         let previous_level = self.previous.map_or(row.level, |(_, _, level)| level);
         p.ambient
@@ -217,7 +281,8 @@ impl SceneContribution for Water {
             previous_level,
             self.long_variances,
             self.height_rms,
-            self.profile.deep_scatter,
+            self.layer_heights,
+            self.profile,
         );
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
@@ -255,12 +320,26 @@ impl SceneContribution for Water {
             );
             pass.set_bind_group(3, &p.group, &[]);
             pass.set_vertex_buffer(0, p.mesh.slice(..));
-            pass.draw(0..p.vertices, 0..1);
+            if let Some(indices) = &p.indices {
+                pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
+                for range in &p.draws {
+                    if !range.is_empty() {
+                        pass.draw_indexed(range.clone(), 0, 0..1);
+                    }
+                }
+            } else {
+                pass.draw(0..p.vertices, 0..1);
+            }
         }
     }
     fn submitted(&mut self, history_advanced: bool) {
         if history_advanced {
             self.previous = Some(self.recorded);
+            self.previous_levels = self
+                .prepared
+                .as_ref()
+                .and_then(|p| p.map.as_ref())
+                .map(map_gpu::MapGpu::levels);
         }
     }
 }

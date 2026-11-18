@@ -46,3 +46,17 @@ on the fixed capture.
 paired capture-off run. `check` takes a fresh measurement and validates the committed record;
 timings themselves are investigation tripwires rather than pass thresholds. The cost tool cooks
 the calibration float and keeps it in both arms at identical world times, so only water differs.
+
+## Island
+
+Run the island on Metal with `THRUM_WATER_ISLAND=trade ./dev scene examples/water`.
+Use `calm` for inspecting still edges or `gale` for the larger swash. In Chrome
+run `./dev scene examples/water --web` and append `?island=trade` (or the other
+wind name) to the printed scene URL. The same example without a wind selection
+opens the retained open-sea scene.
+
+The camera control selects the beach, lake, pond, 40 m overlook, top-down map,
+or lake sill, in that order. Move **Lake stage** from 0 to 1 m and back in the
+sill view to flood and drain the second hollow. The island bed is rasterized
+from the same triangles the cooker draws. Regenerate those triangles from
+`python3 examples/water/make_island.py`.

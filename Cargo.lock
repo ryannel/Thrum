@@ -3330,6 +3330,9 @@ name = "thrum-water"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "glam",
+ "pollster",
+ "thrum-core",
  "thrum-render",
  "thrum-sea",
  "thrum-sea-model",
@@ -3742,8 +3745,10 @@ name = "water-scene"
 version = "0.1.0"
 dependencies = [
  "glam",
+ "js-sys",
  "serde_json",
  "thrum-app",
+ "thrum-cook",
  "thrum-render",
  "thrum-sea-model",
  "thrum-test-support",

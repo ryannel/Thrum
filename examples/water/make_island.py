@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Make the island's ground triangles and their cooked-mesh source."""
+import json
+from math import cos, exp, hypot, sin
+from pathlib import Path
+import struct
+
+
+def height(x, z):
+    # Trade wind blows towards the west beach. Its headland extends into
+    # the sea to the north, with a sheltered side around the tip.
+    headland = 36 * exp(-((z + 95) / 34) ** 2)
+    radius = hypot((x - 124 + headland) / 230, z / 176)
+    coast = 22 * (1 - radius)
+    hills = (17 + 5 * sin(x / 57) * cos(z / 43)
+             + 17 * exp(-((x - 257) / 65) ** 2 - ((z + 77) / 48) ** 2)
+             + 15 * exp(-((x - 282) / 39) ** 2 - ((z - 11) / 62) ** 2)
+             + 12 * exp(-((x - 35) / 48) ** 2 - ((z + 48) / 52) ** 2))
+    hills += 0.85 * sin(x / 12 + z / 24) * cos(z / 19 - x / 51)
+    hills += 0.46 * sin(x / 4.1 - z / 8.3) * sin(z / 6.8 + x / 7.6)
+    rise = min(max(coast / 9, 0), 1)
+    ground = coast + rise * rise * (3 - 2 * rise) * (hills - coast)
+    point = 3.6 * exp(-((x - 153) / 13) ** 2 - ((z - 1) / 7) ** 2)
+    lake = 8.2 + 0.12 * hypot(x - 183, (z - 5) * 1.16) + point
+    hollow = 10.7 + 0.12 * hypot(x - 235, (z - 5) * 1.22)
+    bend = sin((z - 93) / 5) * 3.7
+    shelf = 0.72 + 0.28 * min(max((x - 96) / 11, 0), 1)
+    pond = 8.0 + 0.24 * shelf * hypot(x - 104 + bend, (z - 93) * 1.13)
+    return min(ground, lake, hollow, pond)
+
+
+def main():
+    # Denser triangles on the small inland shorelines. Use ordinary large
+    # triangles over the approaches and seabed.
+    xs = sorted(set(range(-200, 401, 4)) | set(range(82, 281)))
+    zs = sorted(set(range(-225, 226, 3)) | set(range(-34, 118)))
+    nx, nz = len(xs), len(zs)
+    points, normals, uvs, indices = [], [], [], []
+    for j, z in enumerate(zs):
+        for i, x in enumerate(xs):
+            points.append((x, height(x, z), z))
+            dx = height(x + 0.1, z) - height(x - 0.1, z)
+            dz = height(x, z + 0.1) - height(x, z - 0.1)
+            norm = hypot(dx, 0.2, dz)
+            normals.append((-dx / norm, 0.2 / norm, -dz / norm))
+            uvs.append((x / 120, z / 120))
+            if i + 1 < nx and j + 1 < nz:
+                a = j * nx + i
+                b = a + nx
+                indices.extend([(a,), (b,), (a + 1,), (a + 1,), (b,), (b + 1,)])
+
+    data = bytearray()
+    views, accessors = [], []
+    # Positions then indices also form the CPU map's source triangles.
+    for values, fmt, kind, component in [
+        (points, '3f', 'VEC3', 5126), (indices, 'I', 'SCALAR', 5125),
+        (normals, '3f', 'VEC3', 5126), (uvs, '2f', 'VEC2', 5126),
+    ]:
+        offset = len(data)
+        for value in values:
+            data.extend(struct.pack('<' + fmt, *value))
+        views.append({'buffer': 0, 'byteOffset': offset, 'byteLength': len(data) - offset})
+        accessors.append({'bufferView': len(views) - 1, 'componentType': component,
+                          'count': len(values), 'type': kind})
+    accessors[0].update(min=[min(axis) for axis in zip(*points)],
+                        max=[max(axis) for axis in zip(*points)])
+    model = {
+        'asset': {'version': '2.0'},
+        'buffers': [{'byteLength': len(data), 'uri': 'island.bin'}],
+        'bufferViews': views, 'accessors': accessors,
+        'meshes': [{'primitives': [{'attributes': {'POSITION': 0, 'NORMAL': 2, 'TEXCOORD_0': 3},
+                                    'indices': 1}]}],
+        'nodes': [{'mesh': 0}], 'scenes': [{'nodes': [0]}], 'scene': 0,
+    }
+    root = Path(__file__).resolve().parent / 'assets/meshes'
+    (root / 'island.gltf').write_text(json.dumps(model, indent=2) + '\n')
+    (root / 'island.bin').write_bytes(data)
+
+
+if __name__ == '__main__':
+    main()

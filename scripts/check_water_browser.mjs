@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime');
+if (!['first-frame','frames','fixed','realtime','island'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island');
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -101,6 +101,117 @@ const observer = `
     return result;
   };
 `;
+const islandObserver = `
+  globalThis.__island = {draws:[], layouts:new WeakMap(), pipelines:new WeakMap()};
+  function wrap(proto,name,observe){
+    const original=proto[name];
+    proto[name]=function(...args){
+      const result=original.apply(this,args);
+      observe.call(this,result,...args);
+      return result;
+    };
+  }
+  wrap(GPUDevice.prototype,'createShaderModule',(shader,d)=>{
+    if(d.label==='water surface')__island.source=d.code;
+  });
+  wrap(GPUDevice.prototype,'createBindGroupLayout',(layout,d)=>__island.layouts.set(layout,d.entries));
+  wrap(GPUDevice.prototype,'createPipelineLayout',(layout,d)=>__island.pipelines.set(layout,d.bindGroupLayouts));
+  wrap(GPUDevice.prototype,'createBindGroup',(group,d)=>{
+    if(d.label==='water field')__island.bindings=d.entries;
+  });
+  wrap(GPUDevice.prototype,'createRenderPipeline',(pipeline,d)=>{
+    if(d.label!=='water surface')return;
+    __island.surface=pipeline;
+    __island.surfaceEntries=__island.pipelines.get(d.layout).flatMap(layout=>__island.layouts.get(layout)??[]);
+  });
+  wrap(GPURenderPassEncoder.prototype,'setPipeline',function(_,pipeline){this.__water=pipeline===__island.surface;});
+  wrap(GPURenderPassEncoder.prototype,'draw',function(_,count,instances,first){
+    if(this.__water)__island.draws.push([first,count]);
+  });
+  wrap(GPURenderPassEncoder.prototype,'drawIndexed',function(_,count,instances,first){
+    if(this.__water)__island.draws.push([first,count]);
+  });
+`;
+
+async function inspectIsland(evaluate, result) {
+  const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
+  const oracle=JSON.parse(execFileSync('rustup',['run','stable','cargo','run','--quiet','--release',
+    '--locked','--offline','-p','water-scene','--example','map_oracle'],{
+    maxBuffer:8<<20,env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}
+  }));
+  const probe=await fs.readFile('crates/thrum-water/tests/map_probe.wgsl','utf8');
+  const report=await evaluate(`(async()=>{
+    const d=__devices.at(-1);
+    const entries=__island.surfaceEntries;
+    const limits={};
+    for(const name of ['maxSampledTexturesPerShaderStage','maxStorageTexturesPerShaderStage',
+      'maxStorageBuffersPerShaderStage','maxUniformBuffersPerShaderStage','maxTextureArrayLayers',
+      'maxTextureDimension2D'])limits[name]=d.limits[name];
+    const stages=[GPUShaderStage.VERTEX,GPUShaderStage.FRAGMENT].map(stage=>{
+      const used=entries.filter(e=>e.visibility&stage);
+      return {sampled:used.filter(e=>e.texture).length,
+        storageFormats:used.filter(e=>e.storageTexture).map(e=>e.storageTexture.format),
+        storageBuffers:used.filter(e=>e.buffer&&e.buffer.type?.includes('storage')).length,
+        uniforms:used.filter(e=>e.buffer&&(!e.buffer.type||e.buffer.type==='uniform')).length};
+    });
+    const points=${JSON.stringify(oracle.points)};
+    const code=__island.source.split('const BODY_LIMIT')[1].split('fn surface_body')[0];
+    const shader=d.createShaderModule({code:('const BODY_LIMIT'+code).replaceAll('@group(3)','@group(0)')+
+      ${JSON.stringify(probe)}});
+    const values=new Float32Array(points.length*8);
+    points.forEach(([x,z],i)=>values.set([x,z],i*8));
+    const input=d.createBuffer({size:values.byteLength,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    d.queue.writeBuffer(input,0,values);
+    const size=points.length*48;
+    const output=d.createBuffer({size,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
+    const staging=d.createBuffer({size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    const binding=GPUShaderStage.COMPUTE;
+    const layout=d.createBindGroupLayout({entries:[
+      {binding:0,visibility:binding,buffer:{type:'read-only-storage'}},
+      {binding:1,visibility:binding,buffer:{type:'storage'}},
+      {binding:5,visibility:binding,texture:{sampleType:'unfilterable-float',viewDimension:'2d-array'}},
+      {binding:6,visibility:binding,buffer:{type:'uniform'}}
+    ]});
+    const pipe=await d.createComputePipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[layout]}),
+      compute:{module:shader,entryPoint:'probe'}});
+    const group=d.createBindGroup({layout,entries:[
+      {binding:0,resource:{buffer:input}},{binding:1,resource:{buffer:output}},
+      ...__island.bindings.filter(e=>e.binding===5||e.binding===6)
+    ]});
+    const enc=d.createCommandEncoder(), pass=enc.beginComputePass();
+    pass.setPipeline(pipe);pass.setBindGroup(0,group);pass.dispatchWorkgroups(Math.ceil(points.length/64));pass.end();
+    enc.copyBufferToBuffer(output,0,staging,0,size);d.queue.submit([enc.finish()]);
+    await staging.mapAsync(GPUMapMode.READ);
+    const answers=Array.from(new Float32Array(staging.getMappedRange()));
+    staging.unmap();
+    input.destroy();output.destroy();staging.destroy();
+    return {answers,stages,limits,draws:__island.draws.slice(-3)};
+  })()`);
+  const seen=[0,0,0,0], err={bed:0,depth:0,level:0,current:0};
+  oracle.expected.forEach(([body,level,bed,depth,current],i)=>{
+    const [id,h,bottom,d,cx,cz,hasBed]=report.answers.slice(12*i,12*i+7);
+    assert(id===(body??-1),`island map owner at ${oracle.points[i]}: ${id}, expected ${body}`);
+    assert(Boolean(hasBed)===(bed!==null),'bed extent differs');
+    if(bed!==null)err.bed=Math.max(err.bed,Math.abs(bottom-bed));
+    if(body!==null){
+      err.level=Math.max(err.level,Math.abs(h-level));
+      err.current=Math.max(err.current,Math.abs(cx-current[0]),Math.abs(cz-current[1]));
+      if(depth!==null)err.depth=Math.max(err.depth,Math.abs(d-depth));
+      else assert(d>1e29,'unbounded water reports finite depth');
+    }
+    seen[body??3]++;
+  });
+  assert(seen.every(n=>n>=30)&&oracle.shore_crossings.every(n=>n>=20),'every island shore must be covered');
+  assert(Math.max(err.bed,err.depth,err.level)<0.00004&&err.current<0.000004,JSON.stringify(err));
+  assert(report.draws.length===3&&report.draws.every((d,i)=>d[1]>0&&d[0]===(i===0?0:report.draws[i-1][0]+report.draws[i-1][1])),'island body draws are absent');
+  for(const stage of report.stages) {
+    assert(stage.sampled<=Math.min(16,report.limits.maxSampledTexturesPerShaderStage),'sampled texture budget');
+    assert(stage.storageFormats.length===0&&stage.storageBuffers===0,'surface must use sampled map data');
+    assert(stage.uniforms<=report.limits.maxUniformBuffersPerShaderStage,'uniform budget');
+  }
+  result.map={scattered:4096,points:oracle.points.length,shore_crossings:oracle.shore_crossings,
+    classifications:seen,max_absolute_error:err,...{stages:report.stages,limits:report.limits,draws:report.draws}};
+}
 const log=await fs.open(path.join(output,'command.log'),'w');
 const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output},stdio:['ignore',log.fd,log.fd],detached:true});
 let chrome,cdp,sid,failure;
@@ -130,8 +241,8 @@ try {
   };
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
-  await cdp.call('Page.navigate',{url},sid);
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='island'?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
+  await cdp.call('Page.navigate',{url:mode==='island'?url+'?island=trade':url},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
   let now=0;
@@ -171,7 +282,10 @@ try {
     result.frames.push(record);return record;
   };
   for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
-  if(mode==='first-frame'||mode==='frames'){
+  if(mode==='island'){
+    await capture('island',10000-now);
+    await inspectIsland(evaluate,result);
+  } else if(mode==='first-frame'||mode==='frames'){
     const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
     execFileSync('rustup',['run','stable','cargo','build','--release','--locked','--offline','-p','water-scene','--example','field_oracle'],{stdio:'inherit',env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC_WRAPPER:''}});
     await capture('first',0,true);

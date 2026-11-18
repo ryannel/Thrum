@@ -9,7 +9,7 @@ struct ViewAuxRecord {
 }
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
-struct Parameters { level_dt_reset: vec4<f32>, gains: vec4<f32>, lengths: vec4<f32>, cache: array<vec4<f32>,8>, long_covariance:array<vec4<f32>,8>, scatter:vec4<f32>, }
+struct Parameters { level_dt_reset: vec4<f32>, gains: vec4<f32>, lengths: vec4<f32>, cache: array<vec4<f32>,8>, long_covariance:array<vec4<f32>,8>, scatter:vec4<f32>, heights:vec4<f32>, shoal_bed:vec4<f32>, }
 @group(3) @binding(0) var<uniform> water: Parameters;
 struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32>, }
 @group(3) @binding(1) var cascades:texture_2d_array<f32>;
@@ -45,38 +45,50 @@ fn long_at(point:vec2<f32>,spacing:f32)->Field {
     let a=long_level(point,low);let b=long_level(point,min(low+1u,7u));
     return add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-fract(lod)),b,fract(lod));
 }
-fn field_at(point:vec2<f32>,spacing:f32)->Field {
+fn field_at(point:vec2<f32>,spacing:f32,gains:vec4<f32>)->Field {
     let long=long_at(point,spacing);
-    var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,water.gains.x);
+    var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,gains.x);
     for(var band=0u;band<3u;band++) {
         let fade=1.0-smoothstep(water.lengths[band]/128.0,water.lengths[band]/32.0,spacing);
-        f=add_field(f,cascade_at(point,band),water.gains[band+1u]*fade);
+        f=add_field(f,cascade_at(point,band),gains[band+1u]*fade);
     }
     return f;
+}
+struct SurfaceRow {
+    level: f32,
+    previous_level: f32,
+    gains: vec4<f32>,
+    bed: f32,
+    owned: bool,
 }
 struct VertexOut {
     @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,
     @location(1) rest:vec2<f32>, @location(2) velocity:vec3<f32>,
     @location(3) current:vec4<f32>, @location(4) previous:vec4<f32>,
+    @location(5) @interpolate(flat) body:u32,
 }
 @vertex fn water_vertex(@location(0) vertex:vec4<f32>)->VertexOut {
-    let anchor=floor(view.camera_xyz_time.xz);
+    let sea=vertex.w==0.0;
+    let body=u32(vertex.w);
+    let anchor=select(vec2(0.0),floor(view.camera_xyz_time.xz),sea);
     let rest=anchor+vertex.xy;
-    var f=field_at(rest,vertex.z);
+    let row=surface_vertex(rest,body);
+    var f=field_at(rest,vertex.z,row.gains);
     let local=vertex.xy/vertex.z;
-    if max(abs(local.x),abs(local.y))>=32.0 {
+    if sea && max(abs(local.x),abs(local.y))>=32.0 {
         let lo=floor(local/2.0)*2.0;let hi=ceil(local/2.0)*2.0;
-        let a=field_at(anchor+lo*vertex.z,vertex.z*2.0);
-        let b=field_at(anchor+hi*vertex.z,vertex.z*2.0);
+        let p=anchor+lo*vertex.z;let q=anchor+hi*vertex.z;
+        let a=field_at(p,vertex.z*2.0,surface_vertex(p,body).gains);
+        let b=field_at(q,vertex.z*2.0,surface_vertex(q,body).gains);
         f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,0.5),b,0.5);
     }
-    var world=vec3(rest.x+f.displacement.x,water.level_dt_reset.x+f.displacement.y,rest.y+f.displacement.z);
+    var world=vec3(rest.x+f.displacement.x,row.level+f.displacement.y,rest.y+f.displacement.z);
     // Infinite final edge: clamp reverse-Z to the far plane, preserving the horizon.
-    if max(abs(vertex.x),abs(vertex.y))>=524288.0 {world=vec3(anchor.x+vertex.x*100.0,water.level_dt_reset.x,anchor.y+vertex.y*100.0);}
+    if sea && max(abs(vertex.x),abs(vertex.y))>=524288.0 {world=vec3(anchor.x+vertex.x*100.0,row.level,anchor.y+vertex.y*100.0);}
     var clip=view.view_proj*vec4(world,1.0);clip.z=max(clip.z,0.0000001);
     let current=view.unjittered_view_proj*vec4(world,1.0);
-    let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-vec3(0.0,water.level_dt_reset.x-water.level_dt_reset.w,0.0),1.0);
-    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous);
+    let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-vec3(0.0,row.level-row.previous_level,0.0),1.0);
+    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body);
 }
 struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@location(2) reactive:f32, }
 struct FilteredLayer { slope:vec2<f32>, second:vec3<f32>, differential:vec3<f32>, }
@@ -109,11 +121,15 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
 }
 @fragment fn water_fragment(input:VertexOut)->Output {
     let dx=dpdx(input.rest);let dy=dpdy(input.rest);
+    let row=surface_pixel(input.rest,input.body);
+    if !row.owned { discard; }
     // Select a cache only for spatial coverage. Hardware filters each layer
     // over the ellipse; its longest side never selects a level or mip.
     let cache_lod=long_lod(input.rest,1.0);let low_cache=u32(floor(cache_lod));
     var slope=vec2(0.0);
-    var covariance=vec3(water.lengths.w*0.5,0.0,water.lengths.w*0.5);
+    let gain=tail_gain(row);
+    let tail=water.lengths.w*0.5*gain*gain;
+    var covariance=vec3(tail,0.0,tail);
     var differential=vec3(1.0,0.0,1.0);
     let fade=1.0-smoothstep(4000.0,8000.0,length(input.rest-view.camera_xyz_time.xz));
     var long_mean=vec2(0.0);var long_second=vec3(0.0);var long_differential=vec3(0.0);
@@ -126,13 +142,13 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         long_second+=w*(m.second+water.long_covariance[level].xyz);
         long_differential+=w*m.differential;
     }
-    slope=water.gains.x*fade*long_mean;
-    covariance+=water.gains.x*water.gains.x*(long_second-fade*fade*vec3(long_mean.x*long_mean.x,long_mean.x*long_mean.y,long_mean.y*long_mean.y));
-    differential+=water.gains.x*fade*long_differential;
+    slope=row.gains.x*fade*long_mean;
+    covariance+=row.gains.x*row.gains.x*(long_second-fade*fade*vec3(long_mean.x*long_mean.x,long_mean.x*long_mean.y,long_mean.y*long_mean.y));
+    differential+=row.gains.x*fade*long_differential;
     for(var band=0u;band<3u;band++) {
         let scale=water.lengths[band];
         let m=filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,i32(band*5u));
-        let gain=water.gains[band+1u];
+        let gain=row.gains[band+1u];
         slope+=gain*m.slope;
         covariance+=gain*gain*(m.second-vec3(m.slope.x*m.slope.x,m.slope.x*m.slope.y,m.slope.y*m.slope.y));
         differential+=gain*m.differential;
@@ -166,7 +182,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     // Height in RMS-wave units and horizontal compression locate the thin
     // crest. Its extra in-scatter is bounded and uses the same lent irradiance
     // as the body; no independent light, pattern, or geometric sharpening.
-    let crest_height=max(0.0,input.world.y-water.level_dt_reset.x)/max(water.scatter.w,0.001);
+    let crest_height=max(0.0,input.world.y-row.level)/max(water.scatter.w,0.001);
     let crest=1.0-exp(-crest_height*max(0.0,1.0-determinant));
     light+=(1.0-fresnel)*incident*water.scatter.rgb*crest;
     let h=normalize(l+v);let nh=max(dot(n,h),0.0);let nl=max(dot(n,l),0.0);
@@ -175,6 +191,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let gl=2.0*nl/(nl+sqrt(a2+(1.0-a2)*nl*nl));
     let fh=water_fresnel(max(dot(v,h),0.0));
     light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
+    light=shallow_colour(row,input.world,nv,incident,fresnel,light);
     let uv=input.clip.xy*view_aux.viewport_inv_viewport.zw;
     let air=environment_aerial(input.world,uv);
     let colour=(light*air.transmission+air.scatter)*environment_storage_scale();

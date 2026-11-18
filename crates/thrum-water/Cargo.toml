@@ -5,6 +5,14 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Shared water surface on the scene effect graph"
+autotests = false
+
+[[test]]
+name = "map_gpu"
+[[test]]
+name = "gains_gpu"
+[[test]]
+name = "swash_gpu"
 
 [lints]
 workspace = true
@@ -18,4 +26,7 @@ thrum-water-model = { path = "../thrum-water-model" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [dev-dependencies]
+glam = { version = "=0.33.12", default-features = false, features = ["std"] }
+pollster = "=1.0.1"
+thrum-core = { path = "../thrum-core" }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }

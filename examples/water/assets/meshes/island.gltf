@@ -1,0 +1,96 @@
+{
+  "asset": {
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "byteLength": 4220376,
+      "uri": "island.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 907200
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 907200,
+      "byteLength": 1801176
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2708376,
+      "byteLength": 907200
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3615576,
+      "byteLength": 604800
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 75600,
+      "type": "VEC3",
+      "min": [
+        -200,
+        -19.85064599477031,
+        -225
+      ],
+      "max": [
+        400,
+        28.972493443012564,
+        225
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5125,
+      "count": 450294,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 75600,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 75600,
+      "type": "VEC2"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}
