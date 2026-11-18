@@ -11,17 +11,15 @@ use thrum_render::present::SurfaceProfile;
 #[test]
 fn threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_world() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for threaded pause rendering");
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("game rendering device");
+        let thrum_render::capabilities::OpenedDevice {
+            adapter,
+            device,
+            queue,
+            ..
+        } = super::gpu_support::device(wgpu::Backends::all(), false).await;
+        if cfg!(target_os = "macos") {
+            assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        }
         let target = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("offscreen presentation proxy, not a drawable"),
             size: wgpu::Extent3d {

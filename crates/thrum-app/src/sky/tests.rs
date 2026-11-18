@@ -1,7 +1,10 @@
 use std::sync::{Arc, Mutex};
 
 use thrum_controls::Controls;
-use thrum_render::{capabilities::DeviceCapabilities, runtime::FrameConfig};
+use thrum_render::{
+    capabilities::{DeviceProfile, DeviceRecipe, OpenedDevice},
+    runtime::FrameConfig,
+};
 
 use super::{
     Camera, DEFAULT_GROUND, Edits, Sky, SkyEdits, SkyGame,
@@ -295,23 +298,18 @@ fn render(mut game: SkyGame) -> Vec<u8> {
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
         let instance = wgpu::Instance::new(descriptor);
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .unwrap();
-        let errors = Arc::new(Mutex::new(Vec::new()));
-        let sink = Arc::clone(&errors);
-        device.on_uncaptured_error(Arc::new(move |error| {
-            sink.lock().unwrap().push(error.to_string());
-        }));
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
+        let OpenedDevice {
+            queue,
+            capabilities,
+            watch,
+            ..
+        } = DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            ..Default::default()
+        }
+        .open(&instance, None)
+        .await
+        .expect("device");
         let extent = [160, 90];
         let mut host = game
             .build_host(
@@ -328,7 +326,7 @@ fn render(mut game: SkyGame) -> Vec<u8> {
             pixels = host.capture_pixels().unwrap();
         }
         assert_eq!(pixels.len(), 160 * 90 * 4);
-        assert!(errors.lock().unwrap().is_empty(), "{:?}", errors.lock());
+        assert_eq!(watch.uncaptured_error(), None);
         pixels
     })
 }

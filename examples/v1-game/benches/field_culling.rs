@@ -13,7 +13,10 @@
 
 use std::time::Duration;
 
-use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
+use thrum_render::{
+    capabilities::{DeviceRecipe, OpenedDevice},
+    synthetic::CullMode,
+};
 use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, GameSetup};
 
 const TICK_NS: u64 = 16_666_667;
@@ -122,19 +125,16 @@ fn open_view(hosts: &mut [FrameHost], tick: u64) {
 fn main() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
+        let OpenedDevice {
+            adapter,
+            device,
+            queue,
+            capabilities,
+            ..
+        } = DeviceRecipe::default()
+            .open(&instance, None)
             .await
-            .expect("real native adapter required");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("timestamp-capable device");
-        let capabilities =
-            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+            .expect("device");
         let field_meshes = std::env::var("THRUM_FIELD_MESHES").is_ok_and(|value| value == "on");
         let modes: &[CullMode] = &[CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
         let occlusion = modes.len() == 3;

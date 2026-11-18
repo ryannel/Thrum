@@ -8,7 +8,10 @@ use std::{
 };
 use thrum_asset::{BrowserFetch, DevClient, Fetch, Ktx2, RemoteGeneration};
 use thrum_asset_gpu::{CookedAssets, CookedConfig, LeaseRequest, RemoteFeed};
-use thrum_render::{capabilities::DeviceCapabilities, contribution::SceneContributions};
+use thrum_render::{
+    capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice},
+    contribution::SceneContributions,
+};
 
 async fn complete(queue: &wgpu::Queue) {
     let state = Arc::new(Mutex::new((false, None::<std::task::Waker>)));
@@ -147,15 +150,23 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
     let first_references = references(&first)?;
     let feed = RemoteFeed::new(first);
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
+    let recipe = DeviceRecipe {
+        profile: DeviceProfile::Portable,
+        restriction: Some(&DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    } = recipe
+        .open(&instance, None)
         .await
         .map_err(|error| error.to_string())?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(|error| error.to_string())?;
-    let caps = DeviceCapabilities::capture(&adapter, &device, 1);
     let mut host =
         FrameHost::new_with_capabilities(&device, &queue, &caps, FrameConfig::default()).await?;
     let mut config = CookedConfig::new(thrum_asset_gpu::CookedSource::Remote(feed.clone()), vec![]);
@@ -221,15 +232,18 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
     }
     let checked_edit = verify(&device, &queue, &witness, &edited_references).await?;
     // WebGPU adapters are consumed by requestDevice; recovery obtains a fresh adapter.
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(|error| error.to_string())?;
-    let (replacement, replacement_queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(|error| error.to_string())?;
-    let caps = DeviceCapabilities::capture(&adapter, &replacement, 2);
+    let OpenedDevice {
+        device: replacement,
+        queue: replacement_queue,
+        capabilities: caps,
+        ..
+    } = DeviceRecipe {
+        generation: recipe.generation + 1,
+        ..recipe
+    }
+    .open(&instance, None)
+    .await
+    .map_err(|error| error.to_string())?;
     let mut candidate = host
         .device_prepare_inputs()
         .map_err(|error| error.to_string())?

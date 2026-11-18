@@ -2,8 +2,14 @@
 //! Render preparation consumes this record; pass recording never probes a device.
 
 use crate::runtime::DeviceSite;
+mod device;
 mod hardware;
 mod recipe;
+pub use device::{
+    DeviceProfile, DeviceRecipe, DeviceRestriction, DeviceWatch, FIRST_DEVICE_GENERATION,
+    OpenedDevice, PREFERRED_SDR_FORMAT, SurfaceConfigError, configure_surface, sdr_surface_config,
+    sdr_surface_format,
+};
 pub use hardware::{HardwareFeature, HardwareLaunchError, HardwareRequest, HardwareSelection};
 pub use recipe::{Recipe, RecipeError};
 

@@ -252,24 +252,23 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
 
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("adapter");
-        let features = adapter.features()
-            & (wgpu::Features::TEXTURE_COMPRESSION_ASTC
-                | wgpu::Features::TEXTURE_COMPRESSION_BC
-                | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: features,
-                required_limits: adapter.limits(),
+        use thrum_render::capabilities::{DeviceRecipe, DeviceRestriction, OpenedDevice};
+        let OpenedDevice {
+            device,
+            queue,
+            capabilities,
+            ..
+        } = DeviceRecipe {
+            restriction: Some(&DeviceRestriction {
+                remove_features: wgpu::Features::TIMESTAMP_QUERY
+                    | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS,
                 ..Default::default()
-            })
-            .await
-            .expect("device");
-        let capabilities =
-            thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+            }),
+            ..Default::default()
+        }
+        .open(&instance, None)
+        .await
+        .expect("device");
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,

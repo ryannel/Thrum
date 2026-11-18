@@ -1,42 +1,16 @@
 //! The platform's adapter/device recipe, shared by initial setup and recovery.
 
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
+use std::sync::Arc;
 
-use thrum_render::capabilities::{DeviceCapabilities, HardwareRequest};
+use thrum_render::capabilities::{
+    DeviceCapabilities, DeviceRecipe, DeviceWatch, HardwareRequest, OpenedDevice,
+    sdr_surface_config,
+};
 use winit::event_loop::EventLoopProxy;
 
 use super::UserEvent;
 
-#[derive(Clone)]
-pub(super) struct DeviceWatch {
-    pub(super) generation: u64,
-    lost: Arc<AtomicBool>,
-}
-
-impl DeviceWatch {
-    pub(super) fn register(
-        device: &wgpu::Device,
-        generation: u64,
-        notify: impl Fn(u64) + Send + 'static,
-    ) -> Self {
-        let lost = Arc::new(AtomicBool::new(false));
-        let signal = Arc::clone(&lost);
-        device.set_device_lost_callback(move |_, _| {
-            signal.store(true, Ordering::Release);
-            notify(generation);
-        });
-        Self { generation, lost }
-    }
-
-    pub(super) fn is_lost(&self) -> bool {
-        self.lost.load(Ordering::Acquire)
-    }
-}
-
-pub(super) struct DeviceRecipe {
+pub(super) struct WindowDevice {
     pub(super) instance: wgpu::Instance,
     pub(super) surface: Arc<wgpu::Surface<'static>>,
     pub(super) hardware: Vec<HardwareRequest>,
@@ -51,48 +25,32 @@ pub(super) struct PlatformGpu {
     pub(super) adapter_name: String,
 }
 
-impl DeviceRecipe {
+impl WindowDevice {
     pub(super) async fn create(
         &self,
         generation: u64,
         extent: [u32; 2],
         wake: &EventLoopProxy<UserEvent>,
     ) -> Result<PlatformGpu, String> {
-        let (adapter, device, queue, capabilities) = DeviceCapabilities::open_generation(
-            &self.instance,
-            &wgpu::RequestAdapterOptions {
-                compatible_surface: Some(&self.surface),
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                ..Default::default()
-            },
+        let signal = wake.clone();
+        let OpenedDevice {
+            adapter,
+            device,
+            queue,
+            capabilities,
+            watch,
+        } = DeviceRecipe {
             generation,
-            &self.hardware,
-            |adapter| wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(adapter)
-                    | DeviceCapabilities::requested_content_features(adapter),
-                ..Default::default()
-            },
-        )
+            hardware: &self.hardware,
+            ..Default::default()
+        }
+        .open_with_wake(&self.instance, Some(&self.surface), move |generation| {
+            let _ = signal.send_event(UserEvent::DeviceLost(generation));
+        })
         .await
         .map_err(|error| error.to_string())?;
-        let signal = wake.clone();
-        let watch = DeviceWatch::register(&device, generation, move |generation| {
-            let _ = signal.send_event(UserEvent::DeviceLost(generation));
-        });
-        let mut config = self
-            .surface
-            .get_default_config(&adapter, extent[0].max(1), extent[1].max(1))
-            .ok_or("no compatible surface configuration")?;
-        let formats = self.surface.get_capabilities(&adapter).formats;
-        config.format = [
-            wgpu::TextureFormat::Bgra8Unorm,
-            wgpu::TextureFormat::Rgba8Unorm,
-            wgpu::TextureFormat::Bgra8UnormSrgb,
-            wgpu::TextureFormat::Rgba8UnormSrgb,
-        ]
-        .into_iter()
-        .find(|format| formats.contains(format))
-        .ok_or("no supported 8-bit SDR surface format")?;
+        let config = sdr_surface_config(&self.surface, &adapter, extent)
+            .ok_or("no compatible SDR surface configuration")?;
         Ok(PlatformGpu {
             device,
             queue,
@@ -103,28 +61,3 @@ impl DeviceRecipe {
         })
     }
 }
-
-pub(super) fn configure_surface(
-    surface: &wgpu::Surface<'_>,
-    device: &wgpu::Device,
-    config: &wgpu::SurfaceConfiguration,
-) -> Result<(), String> {
-    let configure = || {
-        let errors = device.push_error_scope(wgpu::ErrorFilter::Validation);
-        surface.configure(device, config);
-        pollster::block_on(errors.pop())
-    };
-    // In wgpu 30, dropping a drawable after device loss can leave its
-    // surface marked acquired. The first configure retires that old
-    // presentation before reporting the outstanding-output error.
-    if let Some(first) = configure()
-        && let Some(retry) = configure()
-    {
-        return Err(format!("surface configuration: {first}; retry: {retry}"));
-    }
-    Ok(())
-}
-
-#[cfg(test)]
-#[path = "device_tests.rs"]
-mod tests;

@@ -13,7 +13,9 @@ use thrum_core::{
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
 use thrum_render::{
-    capabilities::DeviceCapabilities,
+    capabilities::{
+        DeviceCapabilities, DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
+    },
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource},
@@ -371,15 +373,26 @@ pub(super) async fn replacement_device(
     generation: u64,
     recipe: thrum_render::capabilities::Recipe,
 ) -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(error)?;
-    let (replacement, replacement_queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(error)?;
-    let next_caps = DeviceCapabilities::capture(&adapter, &replacement, generation)
+    let OpenedDevice {
+        device: replacement,
+        queue: replacement_queue,
+        capabilities,
+        ..
+    } = DeviceRecipe {
+        generation,
+        ..DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            restriction: Some(&DeviceRestriction {
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+    .open(instance, None)
+    .await
+    .map_err(error)?;
+    let next_caps = capabilities
         .with_recipe_override(match recipe {
             thrum_render::capabilities::Recipe::Portable => "portable",
             thrum_render::capabilities::Recipe::AppleTile => "apple-tile",

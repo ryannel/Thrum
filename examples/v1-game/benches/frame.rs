@@ -8,7 +8,10 @@ use std::{
 };
 
 use thrum_core::{StableId, sim::ExecutionMode};
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
+use thrum_render::{
+    capabilities::{DeviceRecipe, DeviceRestriction, OpenedDevice},
+    present::SurfaceProfile,
+};
 use v1_game::{
     FrameConfig, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost,
     simulation::{Command, ComponentEntity, Position, Velocity},
@@ -323,22 +326,27 @@ fn measure(
         backends: wgpu::Backends::METAL,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
     });
-    let adapter =
-        pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
-            .expect("real Metal adapter required for this explicit benchmark");
+    let restriction = DeviceRestriction {
+        remove_features: wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS,
+        ..Default::default()
+    };
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        capabilities,
+        ..
+    } = pollster::block_on(
+        DeviceRecipe {
+            restriction: (!gpu_timestamps).then_some(&restriction),
+            ..Default::default()
+        }
+        .open(&instance, None),
+    )
+    .expect("real Metal device required for this explicit benchmark");
     let adapter_info = adapter.get_info();
     assert_eq!(adapter_info.backend, wgpu::Backend::Metal);
     report_metal_adapter(&adapter_info);
-    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        required_features: (if gpu_timestamps {
-            DeviceCapabilities::requested_timing_features(&adapter)
-        } else {
-            wgpu::Features::empty()
-        }) | DeviceCapabilities::requested_content_features(&adapter),
-        ..Default::default()
-    }))
-    .expect("device request succeeds");
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
     let surface = surface_extent.map(|extent| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("V1 benchmark presentation target"),

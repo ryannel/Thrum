@@ -15,7 +15,7 @@ use std::time::{Duration, Instant};
 use thrum_asset::Profile;
 use thrum_asset_gpu::{CookedAssets, CookedStats, MaterialHook, MaterialOutcome};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-use thrum_render::capabilities::DeviceCapabilities;
+use thrum_render::capabilities::{DeviceRecipe, OpenedDevice};
 use v1_game::{FrameConfig, FrameHost};
 
 const EXTENT: [u32; 2] = [1280, 720];
@@ -75,19 +75,15 @@ fn hook(index: u32, run: u32) -> MaterialHook {
 
 async fn run(root: &std::path::Path) -> String {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("adapter");
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_content_features(&adapter)
-                | DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities,
+        ..
+    } = DeviceRecipe::default()
+        .open(&instance, None)
         .await
         .expect("device");
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
     let mut host = FrameHost::new_with_capabilities(
         &device,
         &queue,

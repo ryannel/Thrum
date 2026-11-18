@@ -75,7 +75,7 @@ def export_session(path, destination, negative=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
-    parser.add_argument('--case', choices=['all', 'off', 'pan', 'running', 'stall', 'surface', 'background', 'loss', 'saturation', 'slow', 'ui-regression'], default='all')
+    parser.add_argument('--case', choices=['all', 'off', 'pan', 'running', 'stall', 'surface', 'background', 'loss', 'saturation', 'slow', 'ui-regression', 'host-lifecycle'], default='all')
     parser.add_argument('--device', help='continue this task’s already owned simulator boot')
     parser.add_argument('--no-build', action='store_true', help='use the current local app and cooker')
     args = parser.parse_args()
@@ -128,6 +128,8 @@ def main():
         if not args.no_build:
             run(['examples/v1-game-ios/ios/build-simulator.sh'], env, 600)
             run(['cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook'], env, 600)
+            if args.case == 'host-lifecycle':
+                run(['examples/v1-game-ios/ios/build-uitest.sh'], env, 300)
         store = out / 'store'
         from cooked_draw_fixture import sources, cook
         cooker = ROOT / 'target/debug/thrum-cook'
@@ -224,7 +226,62 @@ def main():
                     before = wait(state, healthy, 'foreground after simulator bootstrap', 150)
             row = {'case': case, 'name': name, 'before': before, 'actions': actions}
             (session_out / 'before.json').write_text(json.dumps(before, indent=2))
-            if case in ('off', 'ui-regression'):
+            if case == 'host-lifecycle':
+                from capture_spool import decoded_frames
+                from t2_writer_probe import package
+
+                def still(label, capture_index, observed):
+                    if not healthy(observed):
+                        raise RuntimeError(f'{label}: cooked valley did not draw')
+                    adapter = observed['adapter']
+                    if 'texture_profiles=[AppleAstc,' not in adapter:
+                        raise RuntimeError(f'{label}: expected ASTC first in {adapter}')
+                    if observed.get('cooked_texture_profile') != 'Some(AppleAstc)':
+                        raise RuntimeError(f'{label}: cooked scene did not select ASTC')
+                    limit = int(adapter.rsplit('max_storage_buffers_per_shader_stage=', 1)[-1])
+                    if limit < 8:
+                        raise RuntimeError(f'{label}: sea cannot use {limit} storage buffers')
+                    post('capture-begin')
+                    path = temp / f'thrum-capture-{capture_index}'
+                    wait(lambda: observe(path / 'pending.json'),
+                         lambda p: p.get('images', 0) > 0, f'{label} submitted engine image')
+                    destination = session_out / label
+                    runtime = finish(path, destination)
+                    source = runtime['images'][0]
+                    width, height = source['extent']
+                    if [width, height] != [int(value) for value in observed['presented_extent'].split('x')]:
+                        raise RuntimeError(f'{label}: engine image extent differs from live drawable')
+                    if source['device_generation'] != int(observed['device_generation']):
+                        raise RuntimeError(f'{label}: selected image came from another device generation')
+                    if source['surface_epoch'] != int(observed['presented_epoch']):
+                        raise RuntimeError(f'{label}: selected image came from another surface epoch')
+                    frames = decoded_frames(destination / 'frames.spool', 'ZstdDelta',
+                                            runtime['writer']['hashes'], width * height * 4)
+                    raw = next(frames)
+                    frames.close()
+                    png = session_out / f'{label}.png'
+                    digest = package(raw, png, width, height)
+                    if digest != runtime['writer']['hashes'][0]:
+                        raise RuntimeError(f'{label}: still diverges from source image')
+                    return {'state': observed, 'image': source, 'rgba_sha256': digest,
+                            'png_sha256': hashlib.sha256(png.read_bytes()).hexdigest()}
+
+                previous_argv = sys.argv
+                sys.argv = ['route.py', device, str(witness)]
+                os.environ['THRUM_V1_ROUTE_OUT'] = str(session_out / 'route')
+                route = runpy.run_path('examples/v1-game-ios/ios/route.py')
+                sys.argv = previous_argv
+                extent_proof = route['extent_proof']
+                fov = json.loads(Path('examples/v1-game/assets/showcase/scene.json').read_text())['camera']['vertical_fov_degrees']
+                route['rotate'].__globals__['extent_proof'] = lambda s: extent_proof(s, fov)
+
+                start = still('start', 1, before)
+                rotated = route['rotate']('landscape', 'testLandscape', state(), landscape=True)
+                landscape = still('landscape', 2, rotated)
+                resumed = route['background'](state(), 'host-lifecycle')
+                foreground = still('resumed', 3, resumed)
+                row.update(stills=[start, landscape, foreground], pass_result=True)
+            elif case in ('off', 'ui-regression'):
                 if case == 'ui-regression':
                     run(['examples/v1-game-ios/ios/build-uitest.sh'], env, 300)
                     previous_argv = sys.argv

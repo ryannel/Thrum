@@ -1,21 +1,17 @@
 //! Real Metal completion → qualification observer → platform reply regression.
 use super::*;
 use crate::{
-    app::{
-        device::DeviceWatch,
-        render_actor::{FrameCounters, RenderOutcome, RenderReply, SurfaceStatus},
-    },
+    app::render_actor::{FrameCounters, RenderOutcome, RenderReply, SurfaceStatus},
     sky::StillWorld,
 };
 use std::time::Duration;
 use thrum_render::{
-    capabilities::DeviceCapabilities,
+    capabilities::{DeviceProfile, DeviceRecipe, OpenedDevice},
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{DriveReport, FrameConfig, SceneFrame, SurfaceOutput},
     synthetic::{FrameLighting, NativeWitness, SyntheticLight, SyntheticScene, SyntheticView},
 };
-use thrum_test_support::{Profile, Restriction};
 
 struct NativeScene;
 impl SceneSource<SourceTick> for NativeScene {
@@ -110,10 +106,20 @@ async fn recover_observer(
     surface: SurfaceProfile,
 ) {
     let inputs = host.device_prepare_inputs().unwrap();
-    let gpu = original_gpu.fresh_adapter();
-    let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
-    let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 8);
-    let watch = DeviceWatch::register(&device, 8, |_| {});
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities,
+        watch,
+        ..
+    } = DeviceRecipe {
+        profile: DeviceProfile::Portable,
+        generation: 8,
+        ..Default::default()
+    }
+    .open(&original_gpu.instance, None)
+    .await
+    .unwrap();
     let mut prepared = inputs
         .prepare(&capabilities, &queue, Some(surface))
         .await
@@ -170,11 +176,20 @@ fn metal_observer_preserves_and_discovers_native_loss_in_platform_reply() {
         return;
     };
     pollster::block_on(async {
-        let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
-        let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 7);
-        let watch = DeviceWatch::register(&device, 7, |_| {
-            panic!("native completion must not require a wgpu loss callback")
-        });
+        let OpenedDevice {
+            device,
+            queue,
+            capabilities,
+            watch,
+            ..
+        } = DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            generation: 7,
+            ..Default::default()
+        }
+        .open(&gpu.instance, None)
+        .await
+        .unwrap();
         let surface = SurfaceProfile {
             format: wgpu::TextureFormat::Rgba8Unorm,
             extent: [64, 64],

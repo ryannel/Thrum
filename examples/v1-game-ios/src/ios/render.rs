@@ -4,7 +4,7 @@
 use std::{
     fmt::Write as _,
     sync::{
-        Arc, Mutex, PoisonError,
+        Arc, Mutex,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
     thread,
@@ -12,7 +12,10 @@ use std::{
 };
 
 use thrum_render::{
-    capabilities::DeviceCapabilities,
+    capabilities::{
+        DeviceRecipe, DeviceWatch, FIRST_DEVICE_GENERATION, OpenedDevice, PREFERRED_SDR_FORMAT,
+        configure_surface, sdr_surface_format,
+    },
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{DriveReport, FrameError},
@@ -21,18 +24,13 @@ use v1_game::{
     EncodedFrame, FrameConfig, FrameHost, SurfaceOutput, ThreadedFrameHost, WorldControls,
 };
 
-/// The platform's first device generation; it matches the host's own.
-const FIRST_GENERATION: u64 = FrameHost::DEVICE_GENERATION;
 /// Longest qualification hold of a recovery before it proceeds anyway.
 const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
 /// Sleep slice inside qualification holds, so a loss can land inside them.
 const HOLD_SLICE: Duration = Duration::from_millis(20);
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 
-use crate::{
-    device::request_device,
-    lease::{Leased, SurfaceLease},
-};
+use crate::lease::{Leased, SurfaceLease};
 
 pub(super) const THREAD: &str = "thrum-v1-ios-render";
 /// Completed samples polled per job; the host retains at most this many frames.
@@ -214,60 +212,14 @@ pub(super) struct Signals {
     pub(super) background: AtomicBool,
 }
 
-/// One device generation's loss watch.
-struct Watch {
-    generation: u64,
-    lost: Arc<AtomicBool>,
-    /// The owner called `destroy` and polls until wgpu reports the loss.
-    destroyed: bool,
-    /// The first uncaptured wgpu error on this device, if any.
-    error: Arc<Mutex<Option<String>>>,
-}
-
-impl Watch {
-    /// Register before the device is used: wgpu's lost callback sets the flag
-    /// and wakes the shell with this generation.
-    fn register(device: &wgpu::Device, generation: u64, lost_wake: &LostWake) -> Self {
-        let lost = Arc::new(AtomicBool::new(false));
-        let signal = Arc::clone(&lost);
-        let wake = Arc::clone(lost_wake);
-        device.set_device_lost_callback(move |_, _| {
-            signal.store(true, Ordering::Release);
-            wake(generation);
-        });
-        let error = Arc::new(Mutex::new(None));
-        let first = Arc::clone(&error);
-        device.on_uncaptured_error(Arc::new(move |fault: wgpu::Error| {
-            let mut slot = first.lock().unwrap_or_else(PoisonError::into_inner);
-            slot.get_or_insert_with(|| fault.to_string());
-        }));
-        Self {
-            generation,
-            lost,
-            destroyed: false,
-            error,
-        }
-    }
-
-    fn is_lost(&self) -> bool {
-        self.lost.load(Ordering::Acquire)
-    }
-
-    fn take_error(&self) -> Option<String> {
-        self.error
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .take()
-    }
-}
-
 type LostWake = Arc<dyn Fn(u64) + Send + Sync>;
 
 struct Gpu {
     adapter: wgpu::Adapter,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    watch: Watch,
+    watch: DeviceWatch,
+    destroyed: bool,
     host: ThreadedFrameHost,
     cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
     cooked_view: Option<super::cooked_view::View>,
@@ -320,7 +272,7 @@ pub(super) fn start(
         gpu: None,
         diagnostics: std::env::var("THRUM_V1_ROUTE").is_ok_and(|value| value == "1"),
         origin: Instant::now(),
-        next_generation: FIRST_GENERATION + 1,
+        next_generation: FIRST_DEVICE_GENERATION + 1,
         lost_wake: lost,
         stalling,
         recover_held,
@@ -423,25 +375,29 @@ impl Owner {
             return Err("iOS render owner is already prepared".into());
         }
         self.instance = Some(instance.clone());
-        let (adapter, device, queue) = request_device(instance).map_err(|e| e.to_string())?;
-        let watch = Watch::register(&device, FIRST_GENERATION, &self.lost_wake);
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, FIRST_GENERATION);
-        // Every CAMetalLayer accepts Bgra8Unorm; prefer it as before, and check
-        // the live surface's list when the lease is still current.
+        let wake = Arc::clone(&self.lost_wake);
+        let OpenedDevice {
+            adapter,
+            device,
+            queue,
+            capabilities,
+            watch,
+        } = pollster::block_on(DeviceRecipe::default().open_with_wake(
+            instance,
+            None,
+            move |generation| {
+                wake(generation);
+            },
+        ))
+        .map_err(|error| error.to_string())?;
+        // Adapter selection cannot hold the revocable surface lease while the
+        // request runs. Check the live format offer when the lease is current.
         let format = self
             .lease
             .section(epoch, |leased| {
-                let formats = leased.surface.get_capabilities(&adapter).formats;
-                [
-                    wgpu::TextureFormat::Bgra8Unorm,
-                    wgpu::TextureFormat::Rgba8Unorm,
-                    wgpu::TextureFormat::Bgra8UnormSrgb,
-                    wgpu::TextureFormat::Rgba8UnormSrgb,
-                ]
-                .into_iter()
-                .find(|format| formats.contains(format))
+                sdr_surface_format(&leased.surface.get_capabilities(&adapter).formats)
             })
-            .unwrap_or(Some(wgpu::TextureFormat::Bgra8Unorm))
+            .unwrap_or(Some(PREFERRED_SDR_FORMAT))
             .ok_or("no supported iOS SDR surface format")?;
         let extent = [extent[0].max(1), extent[1].max(1)];
         let setup = v1_game::selected_setup()?;
@@ -477,6 +433,7 @@ impl Owner {
             device,
             queue,
             watch,
+            destroyed: false,
             host,
             cooked,
             cooked_view,
@@ -517,20 +474,20 @@ impl Owner {
                 return Ok(reply);
             }
             if self.signals.stale_wake.swap(false, Ordering::AcqRel)
-                && gpu.watch.generation > FIRST_GENERATION
+                && gpu.watch.generation > FIRST_DEVICE_GENERATION
             {
                 (self.lost_wake)(gpu.watch.generation - 1);
             }
-            if self.signals.lose_now.swap(false, Ordering::AcqRel) && !gpu.watch.destroyed {
+            if self.signals.lose_now.swap(false, Ordering::AcqRel) && !gpu.destroyed {
                 gpu.device.destroy();
-                gpu.watch.destroyed = true;
+                gpu.destroyed = true;
             }
-            if gpu.watch.destroyed && !gpu.watch.is_lost() {
+            if gpu.destroyed && !gpu.watch.is_lost() {
                 // `destroy` only marks the device; wgpu reports the loss from
                 // maintenance. Never `Wait` on it.
                 let _ = gpu.device.poll(wgpu::PollType::Poll);
             }
-            if gpu.watch.destroyed || gpu.watch.is_lost() {
+            if gpu.destroyed || gpu.watch.is_lost() {
                 if let Err(error) =
                     self.capture
                         .cancel(&mut gpu.host, &self.signals, "device generation lost")
@@ -548,22 +505,18 @@ impl Owner {
             .gpu
             .as_mut()
             .ok_or("iOS render owner is not prepared")?;
-        if gpu.watch.destroyed && !gpu.watch.is_lost() {
+        if gpu.destroyed && !gpu.watch.is_lost() {
             let _ = gpu.device.poll(wgpu::PollType::Poll);
         }
-        let lost = gpu.watch.destroyed || gpu.watch.is_lost();
+        let lost = gpu.destroyed || gpu.watch.is_lost();
         match result {
             Err(FrameError::NativeCommandBuffer { generation })
                 if generation == gpu.watch.generation =>
             {
-                gpu.watch.lost.store(true, Ordering::Release);
+                gpu.watch.retire();
                 (self.lost_wake)(generation);
                 Ok(unrun(generation, SurfaceStatus::DeviceLost))
             }
-            Ok(reply) if !lost => match gpu.watch.take_error() {
-                Some(error) => Err(format!("iOS wgpu error: {error}")),
-                None => Ok(reply),
-            },
             Ok(reply) => Ok(reply),
             Err(_) if lost => {
                 // The error may follow an acquisition: assume a drawable was
@@ -613,10 +566,21 @@ impl Owner {
         let inputs = gpu.host.device_prepare_inputs().map_err(fail)?;
         let generation = self.next_generation;
         self.next_generation += 1;
-        let (adapter, device, queue) =
-            request_device(&instance).map_err(|e| RecoverFault::Failed(e.to_string()))?;
-        let watch = Watch::register(&device, generation, &self.lost_wake);
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
+        let wake = Arc::clone(&self.lost_wake);
+        let OpenedDevice {
+            adapter,
+            device,
+            queue,
+            capabilities,
+            watch,
+        } = pollster::block_on(
+            DeviceRecipe {
+                generation,
+                ..Default::default()
+            }
+            .open_with_wake(&instance, None, move |generation| wake(generation)),
+        )
+        .map_err(|error| RecoverFault::Failed(error.to_string()))?;
         if watch.is_lost() {
             return Err(RecoverFault::CandidateLost);
         }
@@ -684,6 +648,7 @@ impl Owner {
         gpu.device = device;
         gpu.queue = queue;
         gpu.watch = watch;
+        gpu.destroyed = false;
         gpu.host_extent = current;
         Ok(Recovered {
             from,
@@ -848,7 +813,8 @@ impl Gpu {
         }
         config.format = self.format;
         config.desired_maximum_frame_latency = 2;
-        leased.surface.configure(&self.device, &config);
+        configure_surface(&leased.surface, &self.device, &config)
+            .map_err(|_| FrameError::InvalidState("iOS surface configuration refused"))?;
         leased.configured = Some((request.epoch, request.extent));
         Ok(Some(true))
     }
@@ -882,9 +848,9 @@ impl Gpu {
         reply.presentable_encode = true;
         let queue = &self.queue;
         let device = &self.device;
-        let lost = &self.watch.lost;
+        let watch = &self.watch;
         let destroyed = std::cell::Cell::new(false);
-        let is_lost = || destroyed.get() || lost.load(Ordering::Acquire);
+        let is_lost = || destroyed.get() || watch.is_lost();
         if is_lost() {
             return Ok(abandon(encoded, reply));
         }
@@ -994,7 +960,7 @@ impl Gpu {
             Ok(Some(report))
         });
         if destroyed.get() {
-            self.watch.destroyed = true;
+            self.destroyed = true;
         }
         if let Some(report) = result {
             return report;
@@ -1002,7 +968,7 @@ impl Gpu {
         let encoded = pending
             .take()
             .expect("a refused section leaves the encoded frame");
-        if self.watch.destroyed || self.watch.is_lost() {
+        if self.destroyed || self.watch.is_lost() {
             return Ok(abandon(encoded, reply));
         }
         reply.status = SurfaceStatus::NoLease;

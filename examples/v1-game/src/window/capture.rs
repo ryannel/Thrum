@@ -21,7 +21,9 @@ use thrum_app::{
     },
 };
 use thrum_render::{
-    capabilities::DeviceCapabilities, runtime::SubmittedImage, synthetic::CaptureSource,
+    capabilities::{DeviceCapabilities, DeviceRecipe, OpenedDevice},
+    runtime::SubmittedImage,
+    synthetic::CaptureSource,
 };
 
 /// Run the ordinary game on a dedicated render-owner thread. Stdout is raw RGBA;
@@ -834,19 +836,21 @@ async fn metal_device(
     generation: u64,
     hardware: &[super::HardwareRequest],
 ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
-    DeviceCapabilities::open_generation(
-        instance,
-        &wgpu::RequestAdapterOptions::default(),
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        capabilities,
+        ..
+    } = DeviceRecipe {
         generation,
         hardware,
-        |adapter| wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(adapter)
-                | DeviceCapabilities::requested_content_features(adapter),
-            ..Default::default()
-        },
-    )
+        ..Default::default()
+    }
+    .open(instance, None)
     .await
-    .map_err(|error| error.to_string())
+    .map_err(|error| error.to_string())?;
+    Ok((adapter, device, queue, capabilities))
 }
 
 fn metal_instance() -> wgpu::Instance {

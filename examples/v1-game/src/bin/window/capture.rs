@@ -6,7 +6,7 @@ use std::{
 };
 
 use thrum_render::{
-    capabilities::{DeviceCapabilities, HardwareRequest},
+    capabilities::{DeviceRecipe, HardwareRequest, OpenedDevice},
     synthetic::DisplayOverlay,
 };
 use v1_game::{FrameConfig, FrameHost, controls::GameControls};
@@ -42,20 +42,16 @@ pub(super) async fn run(output: PathBuf, hardware: &[HardwareRequest]) -> Result
         );
     }
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let (_, device, queue, capabilities) = DeviceCapabilities::open_generation(
-        &instance,
-        &wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            ..Default::default()
-        },
-        FrameHost::DEVICE_GENERATION,
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities,
+        ..
+    } = DeviceRecipe {
         hardware,
-        |adapter| wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(adapter)
-                | DeviceCapabilities::requested_content_features(adapter),
-            ..Default::default()
-        },
-    )
+        ..Default::default()
+    }
+    .open(&instance, None)
     .await
     .map_err(|error| error.to_string())?;
     let mut host = FrameHost::new_with_setup(

@@ -1,7 +1,7 @@
 //! One render owner serializes frames, configuration and GPU replacement.
 use super::{
     UserEvent,
-    device::{DeviceRecipe, DeviceWatch, PlatformGpu, configure_surface},
+    device::{PlatformGpu, WindowDevice},
 };
 use crate::Game;
 use objc2_quartz_core::CACurrentMediaTime;
@@ -13,6 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_render::{
+    capabilities::{DeviceWatch, configure_surface},
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{
@@ -140,7 +141,7 @@ impl<R> RenderReply<R> {
 struct Actor<G: Game> {
     host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
-    recipe: DeviceRecipe,
+    recipe: WindowDevice,
     surface_generation: Arc<AtomicU64>,
     stopped: Arc<AtomicBool>,
     needs_reconfigure: bool,
@@ -161,7 +162,7 @@ pub(super) fn start<G: Game + 'static>(
     name: &str,
     mut host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
-    recipe: DeviceRecipe,
+    recipe: WindowDevice,
     surface_generation: Arc<AtomicU64>,
     stopped: Arc<AtomicBool>,
     origin: Instant,
@@ -304,7 +305,7 @@ impl<G: Game> Actor<G> {
             if let Err(error) = result {
                 self.needs_reconfigure = true;
                 self.refused_surface_generation = Some(request.surface_generation);
-                reply.surface_status = SurfaceStatus::ConfigurationRefused(error);
+                reply.surface_status = SurfaceStatus::ConfigurationRefused(error.to_string());
                 ready = false;
             } else {
                 if let Some(observer) = &mut self.observer {
@@ -450,7 +451,7 @@ impl<G: Game> Actor<G> {
             )
             && self.surface_generation.load(Ordering::Acquire) == surface_generation
         {
-            return Err(RecoveryFailure::Unavailable(error));
+            return Err(RecoveryFailure::Unavailable(error.to_string()));
         }
         replacement
             .device
@@ -551,7 +552,10 @@ fn check_encoded_device<'a, W: FrameWorld, V: SceneSource<W::Page>>(
 fn ensure_device(watch: &DeviceWatch) -> Result<(), FrameError> {
     if watch.is_lost() {
         Err(FrameError::Gpu(
-            "device loss reported by callback".to_owned(),
+            watch
+                .loss_message()
+                .unwrap_or("device generation retired")
+                .to_owned(),
         ))
     } else {
         Ok(())

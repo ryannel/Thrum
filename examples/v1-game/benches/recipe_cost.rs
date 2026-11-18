@@ -5,7 +5,9 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_render::{
-    capabilities::DeviceCapabilities, present::SurfaceProfile, synthetic::CullMode,
+    capabilities::{DeviceRecipe, OpenedDevice},
+    present::SurfaceProfile,
+    synthetic::CullMode,
 };
 use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
@@ -58,14 +60,17 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let samples = number("RECIPE_SAMPLES", 180)?;
     let capture = number("RECIPE_CAPTURE", 0)? != 0;
     let warmup = number("RECIPE_WARMUP", 120)?;
-    let gpu = thrum_test_support::gpu("integrated recipe cost", Some(wgpu::Backend::Metal))
-        .ok_or("Metal is required for this cost record")?;
-    let adapter = &gpu.adapter;
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
-    let caps = DeviceCapabilities::capture(adapter, &device, 1);
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    } = DeviceRecipe::default().open(&instance, None).await?;
     let surface_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("recipe cost virtual surface"),
         size: wgpu::Extent3d {

@@ -13,8 +13,8 @@ mod recovery_gpu;
 #[cfg(not(target_arch = "wasm32"))]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
-        let (_adapter, device, queue) =
-            gpu_support::device(wgpu::Backends::all(), |_| wgpu::Features::empty()).await;
+        let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
+            gpu_support::device(wgpu::Backends::all(), false).await;
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
@@ -41,15 +41,8 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
 #[test]
 fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
+            gpu_support::device(wgpu::Backends::all(), false).await;
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
@@ -153,15 +146,8 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
 #[test]
 fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
+            gpu_support::device(wgpu::Backends::all(), false).await;
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");
@@ -183,21 +169,8 @@ fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
 #[test]
 fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features:
-                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
-                        &adapter,
-                    ),
-                ..Default::default()
-            })
-            .await
-            .expect("device");
+        let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
+            gpu_support::device(wgpu::Backends::all(), true).await;
         let extent = [640, 360];
         let mut host = super::FrameHost::new(
             &device,
@@ -271,15 +244,8 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
 #[test]
 fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
+            gpu_support::device(wgpu::Backends::all(), false).await;
         let extent = [640, 360];
         let mut host = super::FrameHost::new(
             &device,
@@ -336,15 +302,8 @@ fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
 #[test]
 fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
+            gpu_support::device(wgpu::Backends::all(), false).await;
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");

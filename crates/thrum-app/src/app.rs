@@ -19,7 +19,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use device::{DeviceRecipe, configure_surface};
+use device::WindowDevice;
 use display_link::ViewDisplayLink;
 use edit_flow::EditFlow;
 use pause::PauseIntent;
@@ -30,7 +30,12 @@ use render_actor::{
 };
 use thrum_controls::macos::MacPanel;
 use thrum_core::sim::WorldLaneFault;
-use thrum_render::{frame::TargetLeadStatus, present::SurfaceProfile, runtime::FrameSample};
+use thrum_render::{
+    capabilities::{FIRST_DEVICE_GENERATION, configure_surface},
+    frame::TargetLeadStatus,
+    present::SurfaceProfile,
+    runtime::FrameSample,
+};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -50,8 +55,6 @@ const MAX_FRAMES: usize = 100_000;
 /// Entries each profile history keeps in a run until closed; the oldest half is dropped
 /// when one exceeds it, so a long session holds a bounded recent window.
 const RETAINED_PROFILES: usize = 36_000;
-/// The first device's generation; recovery owns later ones.
-const DEVICE_GENERATION: u64 = 1;
 
 enum TimingPolicy {
     Report,
@@ -182,7 +185,7 @@ impl<G: Game + 'static> App<G> {
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
             pause: PauseIntent::default(),
-            recovery: Recovery::new(DEVICE_GENERATION),
+            recovery: Recovery::new(FIRST_DEVICE_GENERATION),
             recovery_error: None,
             device_losses: 0,
             world_tick: 0,
@@ -477,17 +480,21 @@ impl<G: Game + 'static> App<G> {
                 .map_err(|error| format!("surface: {error}"))?,
         );
         let size = window.inner_size();
-        let recipe = DeviceRecipe {
+        let recipe = WindowDevice {
             instance,
             surface,
             hardware: self.game.hardware_requests().to_vec(),
         };
-        let gpu =
-            pollster::block_on(recipe.create(DEVICE_GENERATION, [size.width, size.height], wake))?;
+        let gpu = pollster::block_on(recipe.create(
+            FIRST_DEVICE_GENERATION,
+            [size.width, size.height],
+            wake,
+        ))?;
         if gpu.watch.is_lost() {
             return Err("initial device lost before preparation".to_owned());
         }
-        configure_surface(&recipe.surface, &gpu.device, &gpu.config)?;
+        configure_surface(&recipe.surface, &gpu.device, &gpu.config)
+            .map_err(|error| error.to_string())?;
         if gpu.watch.is_lost() {
             return Err("initial device lost during surface configuration".to_owned());
         }

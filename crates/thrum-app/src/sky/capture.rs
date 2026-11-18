@@ -8,7 +8,7 @@ use std::{
 };
 
 use thrum_render::{
-    capabilities::{DeviceCapabilities, HardwareLaunchError},
+    capabilities::{DeviceCapabilities, DeviceRecipe, HardwareLaunchError, OpenedDevice},
     runtime::FrameConfig,
 };
 
@@ -182,26 +182,19 @@ pub async fn headless_device()
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::METAL;
     let instance = wgpu::Instance::new(descriptor);
-    let (_, device, queue, capabilities) = DeviceCapabilities::open_generation(
-        &instance,
-        &wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            ..Default::default()
-        },
-        1,
-        &[],
-        |adapter| wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(adapter)
-                | DeviceCapabilities::requested_content_features(adapter),
-            ..Default::default()
-        },
-    )
-    .await
-    .map_err(|error| match error {
-        HardwareLaunchError::Adapter(error) => HeadlessDeviceError::Adapter(error),
-        HardwareLaunchError::Device { source, .. } => HeadlessDeviceError::Device(source),
-        _ => unreachable!("the headless sky kit requests no named hardware"),
-    })?;
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities,
+        ..
+    } = DeviceRecipe::default()
+        .open(&instance, None)
+        .await
+        .map_err(|error| match error {
+            HardwareLaunchError::Adapter(error) => HeadlessDeviceError::Adapter(error),
+            HardwareLaunchError::Device { source, .. } => HeadlessDeviceError::Device(source),
+            _ => unreachable!("the headless sky kit requests no named hardware"),
+        })?;
     Ok((device, queue, capabilities))
 }
 

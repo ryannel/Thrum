@@ -11,23 +11,24 @@ fn main() -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 async fn run() -> Result<(), String> {
-    use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
+    use thrum_render::{
+        capabilities::{DeviceCapabilities, DeviceRecipe, OpenedDevice},
+        present::SurfaceProfile,
+    };
     use v1_game::{FrameConfig, FrameHost};
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
     });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(|error| error.to_string())?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_content_features(&adapter)
-                | DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        capabilities,
+        ..
+    } = DeviceRecipe::default()
+        .open(&instance, None)
         .await
         .map_err(|error| error.to_string())?;
     let width = std::env::var("APPLE_TILE_RESIDENCY_WIDTH")
@@ -46,7 +47,7 @@ async fn run() -> Result<(), String> {
             extent,
         }),
     };
-    let portable = DeviceCapabilities::capture(&adapter, &device, 1)
+    let portable = capabilities
         .with_recipe_override("portable")
         .map_err(|error| format!("{error:?}"))?;
     let mut old = FrameHost::new_with_setup(

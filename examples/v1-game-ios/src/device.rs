@@ -1,6 +1,6 @@
 //! The iPhone device request used by both preparation and recovery.
 
-use thrum_render::capabilities::DeviceCapabilities;
+use thrum_render::capabilities::{DeviceRecipe, HardwareLaunchError, OpenedDevice};
 
 /// Failure to obtain the iPhone shell's GPU resources.
 #[derive(Debug)]
@@ -36,17 +36,17 @@ impl std::error::Error for DeviceRequestError {
 pub fn request_device(
     instance: &wgpu::Instance,
 ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue), DeviceRequestError> {
-    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::HighPerformance,
-        ..Default::default()
-    }))
-    .map_err(DeviceRequestError::Adapter)?;
-    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        required_features: DeviceCapabilities::requested_timing_features(&adapter)
-            | DeviceCapabilities::requested_content_features(&adapter),
-        required_limits: adapter.limits(),
-        ..Default::default()
-    }))
-    .map_err(DeviceRequestError::Device)?;
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        ..
+    } = pollster::block_on(DeviceRecipe::default().open(instance, None)).map_err(|error| {
+        match error {
+            HardwareLaunchError::Adapter(error) => DeviceRequestError::Adapter(error),
+            HardwareLaunchError::Device { source, .. } => DeviceRequestError::Device(source),
+            _ => unreachable!("the default iOS request has no hardware overrides"),
+        }
+    })?;
     Ok((adapter, device, queue))
 }

@@ -3,7 +3,10 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
+use thrum_render::{
+    capabilities::{DeviceCapabilities, DeviceRecipe, FIRST_DEVICE_GENERATION, OpenedDevice},
+    present::SurfaceProfile,
+};
 use v1_game::{FrameConfig, FrameHost, SurfaceOutput};
 
 fn main() -> Result<(), String> {
@@ -14,19 +17,15 @@ async fn run() -> Result<(), String> {
     let output = PathBuf::from(std::env::var("COOKED_DRAW_OUTPUT").map_err(|e| e.to_string())?);
     std::fs::create_dir_all(&output).map_err(|e| e.to_string())?;
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
+    let OpenedDevice {
+        device,
+        queue,
+        mut capabilities,
+        ..
+    } = DeviceRecipe::default()
+        .open(&instance, None)
         .await
-        .map_err(|e| e.to_string())?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_content_features(&adapter)
-                | DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .map_err(|e| e.to_string())?;
-    let mut capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
+        .map_err(|error| error.to_string())?;
     let captured_flags = capabilities.downlevel();
     let masked = std::env::var("COOKED_DRAW_MASK_INDIRECT").as_deref() == Ok("1");
     if masked {
@@ -34,7 +33,7 @@ async fn run() -> Result<(), String> {
     }
     let adapter_less = std::env::var("COOKED_DRAW_ADAPTER_LESS").as_deref() == Ok("1");
     if adapter_less {
-        capabilities = DeviceCapabilities::capture_device(&device, 1);
+        capabilities = DeviceCapabilities::capture_device(&device, FIRST_DEVICE_GENERATION);
     }
     let extent = [1920, 1080];
     let config = FrameConfig {

@@ -575,7 +575,7 @@ impl FrameHost {
     /// Maximum submitted scene packets retained by the engine.
     pub const MAX_IN_FLIGHT: usize = Runtime::MAX_IN_FLIGHT;
     /// Initial generation for simple callers; live platforms own later generations.
-    pub const DEVICE_GENERATION: u64 = 1;
+    pub const DEVICE_GENERATION: u64 = thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
     /// Retain CPU presentation inputs for detached GPU reconstruction.
     /// # Errors

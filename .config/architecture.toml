@@ -335,8 +335,8 @@ target_cost = "Large target-specific graphics closure and device/surface memory;
 [external_dependencies.pollster]
 requirement = "=1.0.1"
 license = "Apache-2.0/MIT"
-purpose = "Block first mobile adapter/device creation in the initial shell and opt-in local renderer device tests"
-target_cost = "Small native/test dependency; runtime startup blocking must be measured and replaced if it harms responsiveness"
+purpose = "Wait for native setup, test-device requests and validation scopes around surface configuration"
+target_cost = "Small native/test dependency; surface configuration waits only on setup, resize or recovery"
 
 [external_dependencies.blake3]
 requirement = "=1.8.7"

@@ -1,63 +1,48 @@
 //! Platform-owned, detached graphics preparation. The mailbox contains no world
 //! or game reference; dropping the game also abandons late preparation results.
 
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use thrum_render::{
-    capabilities::DeviceCapabilities,
+    capabilities::{
+        DeviceCapabilities, DeviceProfile, DeviceRecipe, DeviceWatch, OpenedDevice,
+        configure_surface, sdr_surface_config,
+    },
     present::SurfaceProfile,
     runtime::{DevicePrepareInputs, FrameHost, FrameWorld, PreparedDevice, SceneSource},
 };
-
-use super::GraphicsFault;
 
 pub(super) struct GraphicsDevice {
     pub(super) device: wgpu::Device,
     pub(super) queue: wgpu::Queue,
     pub(super) capabilities: DeviceCapabilities,
-    pub(super) fault: Arc<GraphicsFault>,
+    pub(super) fault: DeviceWatch,
     pub(super) config: wgpu::SurfaceConfiguration,
     pub(super) adapter_name: String,
 }
 
-pub(super) async fn request_device(
+pub(super) async fn open_canvas_device(
     instance: &wgpu::Instance,
     surface: &wgpu::Surface<'static>,
     extent: [u32; 2],
     generation: u64,
 ) -> Result<GraphicsDevice, String> {
-    // WebGPU permits one requestDevice per adapter. Each attempt requests a
-    // fresh surface-compatible adapter, including its format/features recipe.
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions {
-            compatible_surface: Some(surface),
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            ..Default::default()
-        })
-        .await
-        .map_err(|error| error.to_string())?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .map_err(|error| error.to_string())?;
-    let fault = GraphicsFault::register(&device);
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
-    let mut config = surface
-        .get_default_config(&adapter, extent[0], extent[1])
-        .ok_or_else(|| "no compatible canvas surface configuration".to_owned())?;
-    let formats = surface.get_capabilities(&adapter).formats;
-    config.format = [
-        wgpu::TextureFormat::Bgra8Unorm,
-        wgpu::TextureFormat::Rgba8Unorm,
-        wgpu::TextureFormat::Bgra8UnormSrgb,
-        wgpu::TextureFormat::Rgba8UnormSrgb,
-    ]
-    .into_iter()
-    .find(|format| formats.contains(format))
-    .ok_or_else(|| "no compatible 8-bit SDR canvas format".to_owned())?;
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        capabilities,
+        watch: fault,
+    } = DeviceRecipe {
+        profile: DeviceProfile::Portable,
+        generation,
+        ..Default::default()
+    }
+    .open(instance, Some(surface))
+    .await
+    .map_err(|error| error.to_string())?;
+    let config = sdr_surface_config(surface, &adapter, extent)
+        .ok_or_else(|| "no compatible SDR canvas configuration".to_owned())?;
     let name = capabilities.adapter().name.clone();
     Ok(GraphicsDevice {
         device,
@@ -87,7 +72,7 @@ impl Replacement {
         extent: [u32; 2],
         generation: u64,
     ) -> Result<Box<Self>, String> {
-        let gpu = request_device(instance, surface, extent, generation).await?;
+        let gpu = open_canvas_device(instance, surface, extent, generation).await?;
         let prepared = inputs
             .prepare(
                 &gpu.capabilities,
@@ -126,7 +111,8 @@ impl Replacement {
                 .map_err(|error| error.to_string())?;
             self.gpu.config.width = extent[0];
             self.gpu.config.height = extent[1];
-            surface.configure(&self.gpu.device, &self.gpu.config);
+            configure_surface(surface, &self.gpu.device, &self.gpu.config)
+                .map_err(|error| error.to_string())?;
             self.configured_extent = Some(extent);
         }
         // WebGPU configure returns void and can defer failure until acquire.

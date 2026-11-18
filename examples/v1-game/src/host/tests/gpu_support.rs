@@ -3,27 +3,25 @@
 use super::super::super::{FrameSample, SurfaceOutput, ThreadedFrameHost, WorldControls};
 use std::time::{Duration, Instant};
 use thrum_core::sim::{WorldLifecycle, WorldLifecycleReply};
+use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 
-pub(super) async fn device(
-    backends: wgpu::Backends,
-    features: impl FnOnce(&wgpu::Adapter) -> wgpu::Features,
-) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
+pub(super) async fn device(backends: wgpu::Backends, timing: bool) -> OpenedDevice {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
     });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("test GPU adapter");
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .expect("test GPU device");
-    (adapter, device, queue)
+    let restriction = DeviceRestriction {
+        features: Some(wgpu::Features::empty()),
+        ..Default::default()
+    };
+    DeviceRecipe {
+        profile: DeviceProfile::Portable,
+        restriction: (!timing).then_some(&restriction),
+        ..Default::default()
+    }
+    .open(&instance, None)
+    .await
+    .expect("test GPU device")
 }
 
 pub(super) fn transition(

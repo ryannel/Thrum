@@ -12,18 +12,10 @@
 //! stay allowed and the replacement draws them; capture is refused; a scene contribution
 //! attached while lost is held and attached right after the replacement is published.
 
-use std::{
-    future::Future,
-    rc::Rc,
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
-    },
-    time::Duration,
-};
+use std::{future::Future, rc::Rc, time::Duration};
 
 use thrum_render::{
-    capabilities::DeviceCapabilities,
+    capabilities::{DeviceCapabilities, DeviceWatch, configure_surface},
     contribution::SceneContribution,
     present::SurfaceProfile,
     runtime::{
@@ -107,7 +99,7 @@ pub struct WebShell<W: WebWorld, V: SceneSource<W::Page>> {
     recovery: recovery::Recovery,
     config: wgpu::SurfaceConfiguration,
     device: wgpu::Device,
-    graphics: Arc<GraphicsFault>,
+    graphics: DeviceWatch,
     queue: wgpu::Queue,
     host: FrameHost<W, V>,
     clock: PageClock,
@@ -148,14 +140,14 @@ where
             .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
             .map_err(|error| error.to_string())?,
     );
-    let gpu = recovery::request_device(
+    let gpu = recovery::open_canvas_device(
         &instance,
         &surface,
         [canvas.width().max(1), canvas.height().max(1)],
         generation,
     )
     .await?;
-    surface.configure(&gpu.device, &gpu.config);
+    configure_surface(&surface, &gpu.device, &gpu.config).map_err(|error| error.to_string())?;
     let extent = [gpu.config.width, gpu.config.height];
     let host = prepare(WebGpu {
         device: gpu.device.clone(),
@@ -286,7 +278,8 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         {
             self.config.width = extent[0];
             self.config.height = extent[1];
-            self.surface.configure(&self.device, &self.config);
+            configure_surface(&self.surface, &self.device, &self.config)
+                .map_err(|error| error.to_string())?;
             self.host
                 .resize_surface(extent)
                 .map_err(|error| error.to_string())?;
@@ -405,7 +398,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
 
     /// Persistent device-loss diagnostic, or `None` while the device is healthy.
     pub fn graphics_fault(&self) -> Option<String> {
-        self.graphics.message()
+        self.graphics.loss_message().map(str::to_owned)
     }
 
     /// Whether the current device is lost. GPU-touching game work checks this first.
@@ -549,45 +542,5 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);
         self.host.world_mut().pause()?;
         self.host.world_mut().resume_after_drain(now)
-    }
-}
-
-// The callback owns no world/renderer reference. The hot path observes one
-// atomic; the cold diagnostic allocates only when loss is reported/read.
-struct GraphicsFault {
-    lost: AtomicBool,
-    first: Mutex<Option<String>>,
-}
-impl GraphicsFault {
-    fn register(device: &wgpu::Device) -> Arc<Self> {
-        let fault = Arc::new(Self {
-            lost: AtomicBool::new(false),
-            first: Mutex::new(None),
-        });
-        let signal = Arc::clone(&fault);
-        device.set_device_lost_callback(move |reason, message| {
-            if let Ok(mut first) = signal.first.lock()
-                && first.is_none()
-            {
-                *first = Some(format!("{reason:?}: {message}"));
-            }
-            signal.lost.store(true, Ordering::Release);
-        });
-        fault
-    }
-    fn is_lost(&self) -> bool {
-        self.lost.load(Ordering::Acquire)
-    }
-    fn message(&self) -> Option<String> {
-        if !self.is_lost() {
-            return None;
-        }
-        Some(
-            self.first
-                .lock()
-                .ok()
-                .and_then(|first| first.clone())
-                .unwrap_or_else(|| "Graphics device lost".to_owned()),
-        )
     }
 }

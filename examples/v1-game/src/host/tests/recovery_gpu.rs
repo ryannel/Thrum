@@ -22,20 +22,24 @@ struct Gpu {
 impl Gpu {
     async fn new(instance: &wgpu::Instance, generation: u64) -> Self {
         // A replacement requests a fresh Adapter, as required by wgpu's API.
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for device recovery");
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("new rendering device");
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
+        use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, OpenedDevice};
+        let OpenedDevice {
+            adapter,
+            device,
+            queue,
+            capabilities,
+            ..
+        } = DeviceRecipe {
+            generation,
+            profile: DeviceProfile::Portable,
+            ..Default::default()
+        }
+        .open(instance, None)
+        .await
+        .expect("real GPU required for recovery");
+        if cfg!(target_os = "macos") {
+            assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        }
         let target = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("recovered presentation proxy, not a drawable"),
             size: wgpu::Extent3d {

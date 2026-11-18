@@ -1035,15 +1035,25 @@ async fn effect_diagnostic_device() -> Result<
     JsValue,
 > {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(js_error)?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(js_error)?;
-    let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+    use thrum_render::capabilities::{
+        DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
+    };
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    } = DeviceRecipe {
+        profile: DeviceProfile::Portable,
+        restriction: Some(&DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+    .open(&instance, None)
+    .await
+    .map_err(js_error)?;
     Ok((instance, device, queue, caps))
 }
 

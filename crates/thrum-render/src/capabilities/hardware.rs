@@ -122,6 +122,8 @@ impl HardwareRequest {
 /// A launch's hardware request could not be admitted.
 #[derive(Debug)]
 pub enum HardwareLaunchError {
+    /// The restriction requested more than the selected profile.
+    InvalidRestriction,
     /// A name is unknown to the registry.
     Unknown(String),
     /// A feature appears more than once in the list.
@@ -147,6 +149,9 @@ pub enum HardwareLaunchError {
 impl fmt::Display for HardwareLaunchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidRestriction => {
+                f.write_str("device restriction adds a feature or raises a limit")
+            }
             Self::Unknown(name) => write!(f, "unknown hardware feature {name:?}"),
             Self::Repeated(feature) => write!(f, "repeated hardware feature {}", feature.name()),
             Self::Adapter(error) => write!(f, "adapter: {error}"),
@@ -283,11 +288,31 @@ impl DeviceCapabilities {
     /// # Errors
     /// Reports adapter or device failures and names refused required hardware.
     pub async fn open_generation_from(
-        mut acquire_adapter: impl AsyncFnMut() -> Result<wgpu::Adapter, wgpu::RequestAdapterError>,
+        acquire_adapter: impl AsyncFnMut() -> Result<wgpu::Adapter, wgpu::RequestAdapterError>,
         generation: u64,
         requests: &[HardwareRequest],
         descriptor: impl Fn(&wgpu::Adapter) -> wgpu::DeviceDescriptor<'static>,
         offer: impl Fn(&wgpu::Adapter) -> (wgpu::Features, wgpu::Limits),
+    ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
+        Self::open_planned_generation(acquire_adapter, generation, requests, |adapter| {
+            Ok((descriptor(adapter), offer(adapter)))
+        })
+        .await
+    }
+
+    pub(super) async fn open_planned_generation(
+        mut acquire_adapter: impl AsyncFnMut() -> Result<wgpu::Adapter, wgpu::RequestAdapterError>,
+        generation: u64,
+        requests: &[HardwareRequest],
+        descriptor: impl Fn(
+            &wgpu::Adapter,
+        ) -> Result<
+            (
+                wgpu::DeviceDescriptor<'static>,
+                (wgpu::Features, wgpu::Limits),
+            ),
+            HardwareLaunchError,
+        >,
     ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
         for (index, request) in requests.iter().enumerate() {
             if requests[..index]
@@ -302,9 +327,9 @@ impl DeviceCapabilities {
             let adapter = acquire_adapter()
                 .await
                 .map_err(HardwareLaunchError::Adapter)?;
-            let (features, limits) = offer(&adapter);
+            let (descriptor, (features, limits)) = descriptor(&adapter)?;
             let (request, selections) = plan(
-                descriptor(&adapter),
+                descriptor,
                 requests,
                 features & adapter.features(),
                 &limits,
