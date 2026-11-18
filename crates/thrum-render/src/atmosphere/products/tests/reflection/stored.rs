@@ -1,5 +1,9 @@
 //! Independent H5 checks of the producer's actual lent textures.
-#![allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+#![expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "nonnegative table coordinates fit in one texture and fixture inputs round to GPU floats"
+)]
 
 use super::{filtered, observer, reference};
 use crate::{
@@ -29,7 +33,7 @@ const DIRECTIONS: [[f32; 3]; 6] = [
 ];
 
 fn fixture(
-    gpu: thrum_test_support::Gpu,
+    gpu: &thrum_test_support::Gpu,
 ) -> (
     wgpu::Device,
     wgpu::Queue,
@@ -82,7 +86,7 @@ fn metal_split_sum_reads_stored_table() {
     let Some(gpu) = thrum_test_support::gpu("H5 stored table", Some(wgpu::Backend::Metal)) else {
         return;
     };
-    let (device, queue, _, prepared, _) = fixture(gpu);
+    let (device, queue, _, prepared, _) = fixture(&gpu);
     let surface = prepared.scene_surface(&queue);
     let table = &surface.environment.as_ref().unwrap().reflection.dfg;
     let texels = reference::read_texture(&device, &queue, &reference::reader(&device), table, 0);
@@ -297,7 +301,7 @@ fn metal_reflection_reads_stored_cube() {
     let Some(gpu) = thrum_test_support::gpu("H5 stored cube", Some(wgpu::Backend::Metal)) else {
         return;
     };
-    let (device, queue, scene, mut prepared, mut target) = fixture(gpu);
+    let (device, queue, scene, mut prepared, mut target) = fixture(&gpu);
     let surface = prepared.scene_surface(&queue);
     write_cube(
         &device,
