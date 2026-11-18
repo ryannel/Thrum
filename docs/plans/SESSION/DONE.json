@@ -15,8 +15,8 @@
           "ask": "Read the harness. Is the image restored in a different process from the one that wrote it, into a runtime with a different world epoch? Does the restored world step through thrum_core::sim's registered runtime? Are the digests compared with SIM-2D's retained files, unchanged in git since SIM-2D was accepted? Is an image taken at tick 0 and at more than one later tick, with reused slots and despawned bodies counted above zero at the later ones?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/recheck/image-mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -25,8 +25,8 @@
           "check": "python3 scripts/session_match.py image --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SESSION/M1/recheck/image-chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -35,8 +35,8 @@
           "check": "python3 scripts/session_match.py image --target ios-sim",
           "target": "ios-sim",
           "evidence": "docs/evidence/SESSION/M1/recheck/image-ios-sim.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -46,8 +46,8 @@
           "ask": "Read the test. Does it cover, one at a time, each kind in the design's list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Does any encoded value pass through the machine's width or std::hash? Does thrum-core name anything of the reference crowd?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/recheck/core-checks.txt",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -57,8 +57,8 @@
           "ask": "Read the test. Does it drive the restore the session will use, with each kind of input in the statement generated? Is every refusal made by a runtime that the same test then shows installing the unaltered image, so that nothing but the bytes can be the cause? Is the whole image validated before any part of the world is replaced? Is there a stdin target for the image decoder, in the style of thrum-network's?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/recheck/core-checks.txt",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -68,8 +68,8 @@
           "ask": "Is the identity derived when the game is built from the sources the design lists, with no number a person raises? Does it also cover the game's action wire and the toolchain? Does every argument of the crowd's constructors that its rules read reach either the world image or the identity? Does the command make each change in a scratch copy outside the tree and fail if any leaves the identity unchanged, if Crowd and Mixed state one identity, or if either's runtime installs the other's image? Do the Chrome and simulator image runs show an image written under the Mac's identity accepted there?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/recheck/identity-mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -79,8 +79,8 @@
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/recheck/image-costs-mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -89,8 +89,8 @@
           "check": "python3 scripts/session_match.py image-costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SESSION/M1/recheck/image-costs-chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -100,8 +100,8 @@
           "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this milestone change any item or trace comparison of SIM-2D's? In the tests SIM-2D was accepted with, is every change since then either the decoding half of a fixture's type or a signature the state encoding's interface now has, as seam ruling 1 allows, with no test, assertion, input or expected value removed or altered?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SESSION/M1/recheck/sim2d-mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -110,15 +110,15 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "As exact as Factorio's map transfer to a joining player, after which the newcomer's world matches the server's checksum for checksum, and as careful with untrusted bytes as thrum-network's existing decoders. An image carries everything the digest covers and nothing the machine it was made on, proved by stepping a restored world on to SIM-2D's own retained digests on all three targets.",
       "diagnosed_for_planner_finding": true
     },
