@@ -208,6 +208,20 @@ impl SceneContribution for SceneContributions {
         }
     }
 
+    fn encode_effect_readback(&mut self, mut index: usize, encoder: &mut wgpu::CommandEncoder) {
+        for (entry, count) in self
+            .entries
+            .iter_mut()
+            .zip(self.pass_counts.iter().copied())
+        {
+            if index < count {
+                entry.encode_effect_readback(index, encoder);
+                return;
+            }
+            index -= count;
+        }
+    }
+
     fn passes(&self) -> ContributionPasses {
         self.entries
             .iter()

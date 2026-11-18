@@ -28,7 +28,7 @@ const HEIGHT_SLOPE: f64 = 0.1;
 const MAP_TOLERANCE_METRES: f64 = 0.00004;
 
 #[derive(Default)]
-struct Clock {
+pub(crate) struct Clock {
     tick: u64,
 }
 
@@ -88,9 +88,9 @@ impl FrameWorld for Clock {
     }
 }
 
-struct Source {
-    view: SyntheticView,
-    lighting: FrameLighting,
+pub(crate) struct Source {
+    pub(crate) view: SyntheticView,
+    pub(crate) lighting: FrameLighting,
 }
 impl SceneSource<SourceTick> for Source {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
@@ -112,7 +112,7 @@ impl SceneSource<SourceTick> for Source {
     }
 }
 
-fn beach(ratio: f64) -> Map {
+pub(crate) fn beach(ratio: f64) -> Map {
     let heights = (0_i16..7)
         .flat_map(|_| (-48_i16..=48).map(|x| f64::from(x) * HEIGHT_SLOPE))
         .collect();

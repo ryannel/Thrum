@@ -58,13 +58,24 @@ def main():
         sources = output / 'frames'
         sources.mkdir(exist_ok=True)
         concat = []
-        for index, raw in enumerate(decoded_frames(output / 'motion.spool.zst', record['encoding'], record['hashes'], width*height*4)):
-            png = sources / f'{index:04}.png'
-            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pixel_format', 'rgba', '-video_size', f'{width}x{height}', '-i', 'pipe:0', '-frames:v', '1', str(png)], input=raw, check=True)
-            concat.append(f"file '{png.name}'\noption framerate 1000\n")
-            if index + 1 < len(record['frames']):
-                duration = record['frames'][index+1]['elapsed'] - record['frames'][index]['elapsed']
-                concat.append(f'duration {duration:.9f}\n')
+        with subprocess.Popen([
+            'ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pixel_format', 'rgba',
+            '-video_size', f'{width}x{height}', '-i', 'pipe:0', '-c:v', 'png',
+            '-threads', '2', '-compression_level', '1', '-start_number', '0', str(sources / '%04d.png'),
+        ], stdin=subprocess.PIPE) as encoder:
+            try:
+                for index, raw in enumerate(decoded_frames(
+                    output / 'motion.spool.zst', record['encoding'], record['hashes'], width * height * 4,
+                )):
+                    encoder.stdin.write(raw)
+                    concat.append(f"file '{index:04}.png'\noption framerate 1000\n")
+                    if index + 1 < len(record['frames']):
+                        duration = record['frames'][index+1]['elapsed'] - record['frames'][index]['elapsed']
+                        concat.append(f'duration {duration:.9f}\n')
+            finally:
+                encoder.stdin.close()
+            if encoder.wait():
+                raise RuntimeError('PNG encoder rejected submitted source frames')
         (sources / 'frames.txt').write_text(''.join(concat))
         movie = output / 'motion.mp4'
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', str(sources/'frames.txt'), '-fps_mode', 'vfr', '-enc_time_base', '1/1000', '-c:v', 'libx264', '-crf', '16', '-pix_fmt', 'yuv420p', str(movie)], check=True)

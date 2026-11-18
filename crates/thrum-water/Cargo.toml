@@ -13,6 +13,8 @@ name = "map_gpu"
 name = "gains_gpu"
 [[test]]
 name = "swash_gpu"
+[[test]]
+name = "query_gpu"
 
 [lints]
 workspace = true

@@ -11,8 +11,8 @@ struct MapRecord {
     swash: vec4<f32>,
     bodies: array<BodyRecord, BODY_LIMIT>,
 }
-@group(3) @binding(5) var bed_map: texture_2d_array<f32>;
-@group(3) @binding(6) var<uniform> map: MapRecord;
+@group(WATER_MAP_GROUP) @binding(5) var bed_map: texture_2d_array<f32>;
+@group(WATER_MAP_GROUP) @binding(6) var<uniform> map: MapRecord;
 
 struct Cell {
     corners: array<vec2<i32>, 4>,

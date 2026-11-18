@@ -88,8 +88,13 @@ fn stages(map: &Map) -> [f64; BODY_LIMIT] {
 
 /// WGSL declarations and sampling functions, with map resources in group 3.
 pub fn declarations() -> String {
+    declarations_at(3)
+}
+
+/// Map shader declarations with the specified resource group.
+pub fn declarations_at(group: u32) -> String {
     format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\n{}",
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}",
         include_str!("map.wgsl")
     )
 }

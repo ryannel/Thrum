@@ -242,6 +242,8 @@ impl super::SceneContext<'_> {
                 .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
                 .ok_or(RenderError::GraphPassMismatch)?;
             contribution.encode_effect(index, &mut pass, &self.contribution_frame);
+            drop(pass);
+            contribution.encode_effect_readback(index, self.encoder);
         }
         Ok(())
     }

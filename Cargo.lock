@@ -3744,6 +3744,7 @@ checksum = "4f692aa943ccd88363733b77063f32cfed5bc6cbea8e6e8b251b302f881606fe"
 name = "water-scene"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "glam",
  "js-sys",
  "serde_json",

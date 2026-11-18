@@ -3,6 +3,7 @@
 mod fresnel_tests;
 pub mod map_gpu;
 mod prepare;
+pub mod query;
 mod records;
 #[cfg(test)]
 mod sampling_tests;
@@ -25,6 +26,8 @@ pub struct Profile {
     /// Deep-water backscatter divided by extinction, RGB in zero through one.
     /// The game supplies its water type; the default is a pure absorber.
     pub deep_scatter: [f32; 3],
+    /// Optional body query capacity and age limits.
+    pub query: Option<query::QueryLimits>,
 }
 
 /// Invalid water configuration or unavailable preparation dependency.
@@ -84,6 +87,7 @@ pub struct Water {
     height_rms: f32,
     layer_heights: [f32; 4],
     profile: Profile,
+    query: Option<query::QueryMailbox>,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
@@ -167,6 +171,10 @@ impl Water {
             layer_heights: records::layer_heights(&spectrum),
             spectrum,
             profile,
+            query: profile
+                .query
+                .filter(|limits| limits.points != 0)
+                .map(query::QueryMailbox::new),
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
@@ -176,6 +184,10 @@ impl Water {
     /// Read-only preparation report handle; no per-frame polling is required by the water.
     pub fn report(&self) -> Arc<Mutex<WaterReport>> {
         Arc::clone(&self.report)
+    }
+    /// Tick-page writer and answer mailbox for query-enabled water.
+    pub fn query_mailbox(&self) -> Option<query::QueryMailbox> {
+        self.query.clone()
     }
     /// Actual submitted mesh vertices (including the horizon skirt).
     pub fn vertices(&self) -> u32 {
@@ -203,6 +215,9 @@ impl Water {
                 ));
                 resources.push(("water map records".into(), map.info.size()));
             }
+            if let Some(query) = &p.query {
+                resources.extend(query.resource_bytes());
+            }
             resources
         })
     }
@@ -222,7 +237,9 @@ impl SceneContribution for Water {
         self.prepared = Some(prepare::new(
             surface,
             self.profile,
-            self.mapped.then_some(&*map),
+            &map,
+            self.mapped,
+            self.query.clone(),
         )?);
         *self.report.lock().expect("water report") = WaterReport {
             vertices: self.vertices(),
@@ -279,11 +296,25 @@ impl SceneContribution for Water {
         );
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
+        if let Some(query) = &mut p.query {
+            query.record(
+                &p.queue,
+                frame.time,
+                &self.spectrum,
+                self.profile.waves.choppiness,
+                self.layer_heights,
+            );
+        }
     }
     fn computes(&self, _frame: &ContributionFrame) -> bool {
         false
     }
     fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
+    fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
+        self.prepared.as_ref().is_none_or(|p| {
+            index != p.ambient_passes || p.query.as_ref().is_some_and(query::Readback::pending)
+        })
+    }
     fn encode_effect(
         &mut self,
         index: usize,
@@ -291,7 +322,19 @@ impl SceneContribution for Water {
         _frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
-            p.ambient.encode_pass(index, pass);
+            if index < p.ambient_passes {
+                p.ambient.encode_pass(index, pass);
+            } else if let Some(query) = &p.query {
+                query.encode(pass);
+            }
+        }
+    }
+    fn encode_effect_readback(&mut self, index: usize, encoder: &mut wgpu::CommandEncoder) {
+        if let Some(p) = &self.prepared
+            && index == p.ambient_passes
+            && let Some(query) = &p.query
+        {
+            query.copy(encoder);
         }
     }
     fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
@@ -330,6 +373,9 @@ impl SceneContribution for Water {
             self.previous = Some(self.recorded);
             if let Some(map) = self.prepared.as_mut().and_then(|p| p.map.as_mut()) {
                 map.commit();
+            }
+            if let Some(query) = self.prepared.as_mut().and_then(|p| p.query.as_mut()) {
+                query.submit();
             }
         }
     }

@@ -1,0 +1,156 @@
+//! Game-owned forces on real Metal and long-duration fixed-tick energy bounds.
+mod support;
+use glam::DVec3;
+use thrum_sea_model::{Component, LongWaves, Sample};
+use thrum_water_model::Surface;
+use water_scene::{
+    floating::{Body, Hull},
+    island::Wind,
+};
+
+#[test]
+fn running_scene_drains_metal_answers_and_draws_the_fleet() {
+    for wind in [Wind::Calm, Wind::Gale] {
+        let scene = water_scene::floating::build(wind, false, 0.0, 0.0, false).expect("scene");
+        let bodies = scene.observer();
+        let mailbox = scene.mailbox.clone();
+        let initial = bodies();
+        let mut host = support::Fixture::from_game([128, 96], scene.game, scene.report);
+        for frame in 0..80 {
+            host.frame(f64::from(frame) / 120.0);
+        }
+        let stats = mailbox.stats();
+        assert!(stats.age_one + stats.age_two > 200, "{stats:?}");
+        assert_eq!(stats.blocking_reads, 0);
+        let bodies = bodies();
+        assert_eq!(bodies.len(), 9);
+        for (body, old) in bodies.iter().zip(&initial) {
+            if matches!(wind, Wind::Calm) {
+                assert!((body.position.y + body.draft()).abs() < 0.001);
+                assert!(body.velocity.length() < 0.001);
+            } else {
+                assert!((body.position.y - old.position.y).abs() > 0.015);
+                assert!(body.rotation.is_finite());
+            }
+        }
+    }
+}
+
+const DT: f64 = 1.0 / 60.0;
+
+fn wave_field(phase: f64) -> LongWaves {
+    let components = [
+        (105.0, 0.03, 1.12, 0.7),
+        (76.0, 0.19, 0.57, 1.9),
+        (53.0, 0.44, 0.46, 0.9),
+        (44.0, -0.52, 0.33, 2.3),
+        (28.0, -0.24, 0.22, 0.2),
+    ]
+    .map(
+        |(length, bearing, amplitude, offset): (f64, f64, f64, f64)| {
+            let k = std::f64::consts::TAU / length;
+            Component {
+                wave_vector: [k * bearing.cos(), k * bearing.sin()],
+                amplitude,
+                phase: phase + offset,
+            }
+        },
+    );
+    LongWaves::new(components.to_vec(), 0.45).expect("gale waves")
+}
+
+#[test]
+fn ten_minutes_of_gale_stay_bounded_at_all_three_speeds() {
+    for speed in [0.0, 5.0, 15.0] {
+        let field = wave_field(speed * 0.127);
+        let mut craft = Body::new(0, Hull::Craft, [0.0; 2], 0.0, std::f64::consts::PI);
+        craft.velocity = -speed * DVec3::X;
+        craft.propulsion = craft.velocity;
+        run(&field, craft, speed);
+        for id in 1..=8 {
+            let float = Body::new(
+                id,
+                Hull::Float,
+                [f64::from(id) * 2.3, f64::from(id % 4) * 2.4],
+                0.0,
+                0.0,
+            );
+            run(&field, float, 0.0);
+        }
+    }
+}
+
+fn run(field: &LongWaves, mut body: Body, speed: f64) {
+    let mut input_work = 0.0;
+    let wave_height = |p: DVec3, time| field.evaluate([p.x, p.z], time).expect("waterline").height;
+    let mut interval_start_energy = body.mechanical_energy(|p| wave_height(p, 0.0));
+    let mut correlation = [0.0; 3];
+    let mut maximum_error = 0.0_f64;
+    let mut worst = (0.0, 0.0, 0.0);
+    let mut least_immersion = f64::INFINITY;
+    for tick in 1..=36_000 {
+        let time = f64::from(tick) * DT;
+        let work = body.advance(DT, |_, p| {
+            let sample = field.evaluate([p.x, p.z], time).expect("wind wave");
+            (
+                Surface {
+                    body: Some(0),
+                    wet: true,
+                    sample,
+                    ..Surface::default()
+                },
+                None,
+            )
+        });
+        input_work += work.water + work.motor;
+        let Sample { height, .. } = field
+            .evaluate([body.position.x, body.position.z], time)
+            .expect("waterline");
+        let heave = body.position.y + body.draft();
+        let error = (height - heave).abs();
+        if tick > 60 {
+            let immersion = (0..6)
+                .map(|i| {
+                    let point = body.station(i);
+                    wave_height(point, time) - point.y
+                })
+                .fold(f64::NEG_INFINITY, f64::max);
+            least_immersion = least_immersion.min(immersion);
+            correlation[0] += heave * height;
+            correlation[1] += heave * heave;
+            correlation[2] += height * height;
+            if error > maximum_error {
+                maximum_error = error;
+                worst = (time, heave, height);
+            }
+        }
+        assert!(
+            (body.rotation * DVec3::Y).y > 0.62,
+            "body {} capsized at {time}s",
+            body.id
+        );
+        if tick % 120 == 0 {
+            let energy = body.mechanical_energy(|p| wave_height(p, time));
+            // This envelope covers first-order integration error over two
+            // seconds. Water and thrust must pay for any larger gain.
+            assert!(
+                energy - interval_start_energy <= input_work + 0.8,
+                "energy at {time}s: gain {}, input {input_work}",
+                energy - interval_start_energy
+            );
+            interval_start_energy = energy;
+            input_work = 0.0;
+        }
+    }
+    let tracking = correlation[0] / (correlation[1] * correlation[2]).sqrt();
+    assert!(
+        tracking > 0.88,
+        "body {} at {speed} m/s tracks at {tracking}",
+        body.id
+    );
+    assert!(
+        maximum_error < 1.6 && least_immersion > -body.hull.keel_depth(),
+        "body {} at {speed} m/s error {maximum_error}, least immersion {least_immersion}, time/heave/height {worst:?}",
+        body.id
+    );
+}

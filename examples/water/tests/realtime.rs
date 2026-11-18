@@ -25,9 +25,19 @@ const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE
 
 pub(super) fn capture(directory: &Path) -> Value {
     let (device, queue, caps) = super::support::device();
-    let (game, report) = super::proof_game(true);
     let island = super::island_wind();
-    let (extent, interval, opportunities) = if island.is_some() {
+    let floating = super::floating_wind();
+    let mut fleet = None;
+    let (game, report) = if let Some(wind) = floating {
+        let scene = super::floating_game(wind, true);
+        fleet = Some((scene.observer(), scene.mailbox.clone()));
+        (scene.game, scene.report)
+    } else {
+        super::proof_game(true)
+    };
+    let (extent, interval, opportunities) = if floating.is_some() {
+        ([2560, 1440], 2.6, 40.0)
+    } else if island.is_some() {
         ([1280, 720], 7.0, 16.0)
     } else {
         ([2560, 1440], 1.0, 120.0)
@@ -57,21 +67,22 @@ pub(super) fn capture(directory: &Path) -> Value {
             },
         )
         .expect("tap");
-    let output = std::fs::File::create(directory.join("motion.spool.raw")).expect("spool");
-    let writer = ImageWriter::start(
-        output,
-        WRITER_QUEUE,
-        6 * 1024 * 1024 * 1024,
-        SpoolEncoding::Raw,
-    )
-    .expect("writer");
+    let (file, encoding) = if floating.is_some() {
+        ("motion.spool.zst", SpoolEncoding::ZstdDelta)
+    } else {
+        ("motion.spool.raw", SpoolEncoding::Raw)
+    };
+    let output = std::fs::File::create(directory.join(file)).expect("spool");
+    let writer =
+        ImageWriter::start(output, WRITER_QUEUE, 6 * 1024 * 1024 * 1024, encoding).expect("writer");
     let begin = Instant::now();
     let mut submitted = 0;
     let mut frames = Vec::new();
     let mut completed = BTreeMap::new();
+    let mut poses = Vec::new();
     while begin.elapsed() < Duration::from_secs_f64(interval) && submitted < MAX_SUBMISSIONS {
         let elapsed = begin.elapsed().as_secs_f64();
-        if island.is_none() {
+        if island.is_none() && floating.is_none() {
             runtime
                 .parameters(&format!(
                     r#"{{"camera.bearing":{}}}"#,
@@ -80,6 +91,12 @@ pub(super) fn capture(directory: &Path) -> Value {
                 .expect("pan control");
         }
         if runtime.step().expect("ordinary submit").submitted {
+            if let Some((observe, _)) = &fleet {
+                poses.push(observe().into_iter().map(|body| json!({
+                    "id": body.id, "position": body.position.to_array(),
+                    "rotation": body.rotation.to_array(), "velocity": body.velocity.to_array(),
+                })).collect::<Vec<_>>());
+            }
             submitted += 1;
         }
         assert!(
@@ -118,7 +135,7 @@ pub(super) fn capture(directory: &Path) -> Value {
     assert_eq!(written.frames, frames.len() as u64);
     assert_eq!(runtime.omissions(), 0, "complete submitted interval");
     let prepared = report.lock().expect("report").clone();
-    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.map(|w| format!("{w:?}")),"island_view":island.map(|_|island_view),"clock":"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames","opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":"Raw","omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":MAX_SUBMISSIONS,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64()})
+    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating).map(|w| format!("{w:?}")),"island_view":island.map(|_|&island_view),"floating_view":floating.map(|_|&island_view),"craft_speed":floating.and_then(|_|std::env::var("THRUM_WATER_SPEED").ok()),"clock":"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames","opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":MAX_SUBMISSIONS,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats()))})
 }
 fn drain(
     runtime: &mut Offscreen<SkyGame>,

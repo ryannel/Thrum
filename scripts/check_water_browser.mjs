@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island');
+if (!['first-frame','frames','fixed','realtime','island','bodies'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies');
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -156,7 +156,7 @@ async function inspectIsland(evaluate, result) {
     });
     const points=${JSON.stringify(oracle.points)};
     const code=__island.source.split('const BODY_LIMIT')[1].split('fn surface_body')[0];
-    const shader=d.createShaderModule({code:('const BODY_LIMIT'+code).replaceAll('@group(3)','@group(0)')+
+    const shader=d.createShaderModule({code:('const BODY_LIMIT'+code).replace('WATER_MAP_GROUP = 3u','WATER_MAP_GROUP = 0u')+
       ${JSON.stringify(probe)}});
     const values=new Float32Array(points.length*8);
     points.forEach(([x,z],i)=>values.set([x,z],i*8));
@@ -242,7 +242,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='island'?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
-  await cdp.call('Page.navigate',{url:mode==='island'?url+'?island=trade':url},sid);
+  const route=mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
+  await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
   let now=0;
@@ -282,7 +283,31 @@ try {
     result.frames.push(record);return record;
   };
   for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
-  if(mode==='island'){
+  if(mode==='bodies'){
+    const bodyStatus=()=>evaluate('(game.report(),globalThis.waterBodyStatus)');
+    const start=await bodyStatus();
+    assert(start?.poses.length===9,'expected craft and eight floats');
+    const ages=new Map();
+    for(let index=0;index<96;index++){
+      await until(()=>evaluate('game.frame_ready()'),'free body frame slot');
+      await drive(1000/120);
+      for(const [body,posted,used] of (await bodyStatus()).replies)
+        ages.set(`${body}/${used}`,{body,posted,used,age:used-posted});
+    }
+    await capture('bodies',0);
+    const end=await bodyStatus();
+    assert(end.dispatches>25&&end.ageOne+end.ageTwo>90,'body replies did not reach the game');
+    assert(end.blockingReads===0&&end.refused===0,'query counters indicate a block or capacity refusal');
+    assert(end.poses.every(p=>p.length===7&&p.every(Number.isFinite)&&Math.abs(p[1])<4),'a body left the water');
+    assert(Math.abs(end.poses[0][0]-start.poses[0][0])>0.8,'the craft did not move under thrust');
+    assert(end.poses.slice(1).some((p,i)=>Math.abs(p[1]-start.poses[i+1][1])>0.05),'floats did not respond to the swell');
+    assert(ages.size>=end.ageOne+end.ageTwo+end.ageOlder-start.ageOne-start.ageTwo-start.ageOlder-9,'missing per-body reply ages');
+    await until(()=>evaluate('game.frame_ready()'),'frame slot before hitch');
+    await drive(100);
+    const hitch=await bodyStatus();
+    assert(hitch.unavailable>end.unavailable&&hitch.blockingReads===0,'hitch did not account for the unavailable replies');
+    result.bodies={start,ages:[...ages.values()],end,hitch};
+  } else if(mode==='island'){
     await capture('island',10000-now);
     await inspectIsland(evaluate,result);
   } else if(mode==='first-frame'||mode==='frames'){

@@ -1,0 +1,340 @@
+//! Mac Metal proof of the public query mailbox through the renderer.
+mod swash_gpu;
+
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+use swash_gpu::{Clock, Source};
+use thrum_render::{
+    atmosphere::AtmosphereFrame,
+    capabilities::DeviceCapabilities,
+    present::SurfaceProfile,
+    runtime::{FrameConfig, FrameHost, SurfaceOutput},
+    synthetic::{FrameLighting, OUTPUT_FORMAT, SyntheticScene, SyntheticView},
+};
+use thrum_sea_model::{Cascade, Forcing, LongWaves, Spectrum};
+use thrum_water::{
+    Profile, Water,
+    query::{BodyQuery, QueryLimits, QueryPoint},
+};
+
+const EXTENT: [u32; 2] = [96, 64];
+
+#[test]
+fn mailbox_samples_the_gale_at_its_use_tick() {
+    let gpu =
+        thrum_test_support::gpu("water body query", Some(wgpu::Backend::Metal)).expect("mac-metal");
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    let target = device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some("query scene output"),
+            size: wgpu::Extent3d {
+                width: EXTENT[0],
+                height: EXTENT[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: OUTPUT_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        })
+        .create_view(&wgpu::TextureViewDescriptor::default());
+    let surface = SurfaceOutput {
+        view: &target,
+        extent: EXTENT,
+    };
+    let scene = SyntheticScene::grid(1).expect("fixture");
+    let view = SyntheticView::perspective(
+        [-8.0, 4.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        55_f32.to_radians(),
+        1.5,
+        0.1,
+        500.0,
+    )
+    .expect("camera");
+    let lighting = FrameLighting::Atmosphere(
+        AtmosphereFrame::new([0.3, 0.93, 0.2], 100_000.0, [1.0; 3], 55.0, 1).expect("noon"),
+    );
+    let mut host = pollster::block_on(FrameHost::new(
+        &caps,
+        &queue,
+        FrameConfig {
+            render_extent: EXTENT,
+            surface: Some(SurfaceProfile {
+                format: OUTPUT_FORMAT,
+                extent: EXTENT,
+            }),
+        },
+        Clock::default(),
+        Source { view, lighting },
+        scene,
+        1.0,
+    ))
+    .expect("frame host");
+    let map = Arc::new(Mutex::new(swash_gpu::beach(0.7)));
+    let mut spectrum = Spectrum::build(&Forcing {
+        wind_speed: 25.0,
+        wind_direction: 0.0,
+        fetch: 100_000.0,
+        swells: Vec::new(),
+    })
+    .expect("gale");
+    // Sparse bands allow an independent direct sum of filtered texels.
+    spectrum.cascades = [160.0, 37.0, 9.0].map(|length| {
+        Cascade::new(length, &[(11, 7, 0.0001, 0.8), (-21, 13, 0.000_065, 1.9)]).expect("band")
+    });
+    let oracle = LongWaves::new(spectrum.long.clone(), 0.2).expect("long model");
+    let mut profile = Profile {
+        query: Some(QueryLimits {
+            points: 2050,
+            max_age: 3,
+        }),
+        ..Profile::default()
+    };
+    profile.waves.choppiness = 0.2;
+    let water = Water::mapped(Arc::clone(&map), spectrum.clone(), profile).expect("water");
+    let mailbox = water.query_mailbox().expect("query enabled");
+    host.set_scene_contribution(Box::new(water))
+        .expect("query contribution");
+    let step = Duration::from_secs_f64(1.0 / 60.0);
+    let n = 2048_u16;
+    let points: Vec<_> = (0..n)
+        .map(|i| QueryPoint {
+            position: [-52.0 - f32::from(i % 64) * 0.37, f32::from(i / 64) * 0.53],
+            radius: [0.0, 0.5, 1.0, 2.0][usize::from(i % 4)],
+            use_tick: 2,
+        })
+        .collect();
+    let dry = QueryPoint {
+        position: [45.0, 0.0],
+        radius: 0.0,
+        use_tick: 1,
+    };
+    let swash = QueryPoint {
+        position: [15.0, 0.0],
+        radius: 0.0,
+        use_tick: 2,
+    };
+    mailbox.post(
+        1,
+        vec![
+            BodyQuery {
+                id: 9,
+                generation: 1,
+                points: vec![dry; 2],
+            },
+            BodyQuery {
+                id: 7,
+                generation: 1,
+                points: vec![dry],
+            },
+            BodyQuery {
+                id: 5,
+                generation: 1,
+                points: vec![swash],
+            },
+            BodyQuery {
+                id: 1,
+                generation: 7,
+                points,
+            },
+        ],
+    );
+    assert_eq!(mailbox.stats().refused, 1);
+    drop(
+        host.advance(step)
+            .expect("discarded frame")
+            .encode_scene()
+            .expect("tentative query"),
+    );
+    assert_eq!(mailbox.stats().dispatches, 0);
+    assert!(
+        host.drive(step + step / 2, Some(&surface))
+            .expect("submitted")
+            .submitted
+    );
+    assert!(mailbox.drain(1, step).is_empty());
+    // This wait is in the test driver only; the mailbox is callable beforehand.
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("test completion");
+    mailbox.post(
+        2,
+        vec![
+            BodyQuery {
+                id: 1,
+                generation: 7,
+                points: vec![],
+            },
+            BodyQuery {
+                id: 5,
+                generation: 1,
+                points: vec![],
+            },
+            BodyQuery {
+                id: 7,
+                generation: 2,
+                points: vec![],
+            },
+        ],
+    );
+    let mut answer = mailbox.drain(2, step);
+    assert_eq!(
+        answer.iter().map(|body| body.id).collect::<Vec<_>>(),
+        [1, 5]
+    );
+    let swash = answer.pop().expect("swash");
+    let domain = map.lock().expect("model");
+    let row = domain.sample([15.0, 0.0]).expect("swash margin");
+    assert!(row.depth < 0.0);
+    assert!(!swash.points[0].surface.wet);
+    assert!((swash.points[0].surface.depth - row.depth).abs() < 0.00004);
+    check_waves(&answer[0].points, &spectrum, &oracle, step);
+    assert_eq!(mailbox.stats().dispatches, 1);
+    assert_eq!(mailbox.stats().blocking_reads, 0);
+    drop(domain);
+    check_delay(&mut host, &device, &surface, &mailbox, step);
+}
+
+fn check_delay(
+    host: &mut FrameHost<Clock, Source>,
+    device: &wgpu::Device,
+    surface: &SurfaceOutput<'_>,
+    mailbox: &thrum_water::query::QueryMailbox,
+    step: Duration,
+) {
+    let request = |use_tick| {
+        vec![BodyQuery {
+            id: 1,
+            generation: 7,
+            points: vec![
+                QueryPoint {
+                    position: [-72.0, 1.0],
+                    radius: 0.2,
+                    use_tick,
+                },
+                QueryPoint {
+                    position: [45.0, 0.0],
+                    radius: 0.0,
+                    use_tick,
+                },
+            ],
+        }]
+    };
+    mailbox.post(3, request(4));
+    assert!(
+        host.drive(3 * step, Some(surface))
+            .expect("new pass")
+            .submitted
+    );
+    // Two discarded presentation opportunities at the same 60 Hz endpoint.
+    // No maintenance call in these paths can release the readback.
+    host.advance_without_rendering(4 * step).expect("skip view");
+    host.advance_without_rendering(4 * step + step / 2)
+        .expect("skip repeat");
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("test releases stalled observation");
+    let answer = mailbox.drain(5, step);
+    assert_eq!(answer.len(), 1);
+    assert_eq!(answer[0].posted, 3);
+    assert_eq!(answer[0].points[0].point.use_tick, 4);
+    assert_eq!(answer[0].points[1].surface.body, None);
+    assert!(!answer[0].points[1].surface.wet);
+    assert_eq!(mailbox.stats().age_two, 1);
+    assert_eq!(mailbox.stats().late, 2);
+    assert!(
+        mailbox.drain(5, step).is_empty(),
+        "a result can be carried once"
+    );
+    mailbox.post(6, request(7));
+    assert!(
+        host.drive(6 * step, Some(surface))
+            .expect("third pass")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("test completes expired result");
+    assert!(mailbox.drain(10, step).is_empty());
+    assert_eq!(mailbox.stats().unavailable, 1);
+    assert_eq!(mailbox.stats().blocking_reads, 0);
+}
+
+fn check_waves(
+    points: &[thrum_water::query::QueryAnswer],
+    spectrum: &Spectrum,
+    oracle: &LongWaves,
+    step: Duration,
+) {
+    for point in points {
+        let world = point.point.position.map(f64::from);
+        let use_time = 2.0 * step.as_secs_f64();
+        let expected = oracle.evaluate(world, use_time).expect("contractive model");
+        assert_eq!(point.sources[0], Some(use_time));
+        assert_eq!(point.sources[4], None);
+        assert!((f64::from(point.wave_heights[0]) - expected.height).abs() < 0.002);
+        assert_eq!(point.surface.body, Some(0));
+        assert!(point.surface.wet && point.surface.depth.is_infinite());
+        assert_eq!(point.surface.current, [0.0; 2]);
+        for (band, cascade) in spectrum.cascades.iter().enumerate() {
+            let frame = point.sources[band + 1].expect("supported cascade");
+            let expected = filtered_height(
+                cascade,
+                world,
+                f64::from(point.point.radius),
+                frame,
+                use_time - frame,
+            );
+            let error = (f64::from(point.wave_heights[band + 1]) - expected).abs();
+            assert!(
+                error / cascade.variance().sqrt() < 0.0004,
+                "band {band} at {world:?}: {error}"
+            );
+        }
+    }
+}
+
+fn filtered_height(cascade: &Cascade, p: [f64; 2], radius: f64, time: f64, dt: f64) -> f64 {
+    let width = cascade.length() / 256.0;
+    let lod = (radius * 2.0 / width).max(1.0).log2();
+    let base = (2.0_f64).powf(lod.floor());
+    let at_mip = |span: f64| {
+        let coords = p.map(|value| value / (width * span) - 0.5);
+        let corner = coords.map(f64::floor);
+        let frac = std::array::from_fn::<_, 2, _>(|i| coords[i] - corner[i]);
+        let mut sum = [0.0; 4];
+        let n = (1..=256_u16).find(|n| f64::from(*n) >= span).expect("mip");
+        for (i, value) in sum.iter_mut().enumerate() {
+            let x = corner[0] + f64::from(u16::try_from(i % 2).expect("column"));
+            let z = corner[1] + f64::from(u16::try_from(i / 2).expect("row"));
+            for a in 0..n {
+                for b in 0..n {
+                    let sample = cascade.direct(
+                        [
+                            width * (x * span + f64::from(a) + 0.5),
+                            width * (z * span + f64::from(b) + 0.5),
+                        ],
+                        time,
+                    );
+                    *value += sample.displacement[1] + dt * sample.velocity[1];
+                }
+            }
+            *value /= span * span;
+        }
+        let a = (sum[1] - sum[0]).mul_add(frac[0], sum[0]);
+        let b = (sum[3] - sum[2]).mul_add(frac[0], sum[2]);
+        (b - a).mul_add(frac[1], a)
+    };
+    let low = at_mip(base);
+    (at_mip(2.0 * base) - low).mul_add(lod.fract(), low)
+}

@@ -420,6 +420,10 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     ) {
     }
 
+    /// Record copies of a named effect's results into its own readback buffers.
+    /// Called only for a recorded pass, on the same tentative encoder.
+    fn encode_effect_readback(&mut self, _index: usize, _encoder: &mut wgpu::CommandEncoder) {}
+
     /// The graph passes this contribution records into; constant for its lifetime.
     fn passes(&self) -> ContributionPasses;
 

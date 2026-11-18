@@ -293,8 +293,8 @@ target_cost = "Already transitive in the locked workspace; one direct thrum-core
 [external_dependencies.glam]
 requirement = "=0.33.12"
 license = "MIT OR Apache-2.0"
-purpose = "Checked right-handed WebGPU perspective views, clustered light bounds and cloud raster-history reprojection"
-target_cost = "Minimal std/f32 profile with no optional integration dependencies; camera preparation cost and native, Wasm and iOS simulator compile checked separately"
+purpose = "Checked right-handed WebGPU perspective views, clustered light bounds, cloud raster-history reprojection and rigid-body math in the water example"
+target_cost = "Minimal std/f32 in the engine; the water example enables f64 for body integration. No optional integration dependencies"
 
 [external_dependencies.winit]
 requirement = "=0.30.13"

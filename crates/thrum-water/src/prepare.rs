@@ -1,6 +1,7 @@
 use super::{
     Profile, SURFACE_PASS,
     map_gpu::{self, MapGpu},
+    query::{self, QueryMailbox, Readback},
     records::Parameters,
 };
 use std::ops::Range;
@@ -12,6 +13,8 @@ use wgpu::util::DeviceExt;
 
 pub(super) struct Prepared {
     pub(super) ambient: thrum_sea::Ambient,
+    pub(super) ambient_passes: usize,
+    pub(super) query: Option<Readback>,
     pub(super) environment: EnvironmentProducts,
     pub(super) pipeline: wgpu::RenderPipeline,
     pub(super) parameters: wgpu::Buffer,
@@ -38,6 +41,9 @@ fn declaration() -> AfterOpaquePass {
 impl Prepared {
     pub(super) fn graph(&self) -> EffectGraph {
         let mut graph = self.ambient.graph();
+        if self.query.is_some() {
+            Readback::declare(&self.ambient, &mut graph);
+        }
         let mut surface = declaration();
         surface.accesses = self.ambient.filtered_accesses();
         graph.opaque_reads.clear();
@@ -48,15 +54,33 @@ impl Prepared {
 pub(super) fn new(
     surface: &SceneSurface<'_>,
     profile: Profile,
-    map: Option<&thrum_water_model::Map>,
+    map: &thrum_water_model::Map,
+    mapped: bool,
+    mailbox: Option<QueryMailbox>,
 ) -> Result<Prepared, String> {
     let device = surface.device;
-    let map_gpu = map
+    let map_gpu = (mapped || mailbox.is_some())
+        .then_some(map)
         .map(|map| MapGpu::new(device, surface.queue, map))
         .transpose()
         .map_err(|e| e.to_string())?;
     let ambient =
         thrum_sea::Ambient::new(device, profile.waves).map_err(|error| error.to_string())?;
+    let ambient_passes = ambient.graph().passes.len();
+    let query = if let Some(mailbox) = mailbox {
+        query::validate(
+            profile.query.expect("enabled query limits"),
+            &surface.limits,
+        )?;
+        Some(Readback::new(
+            device,
+            &ambient,
+            map_gpu.as_ref().expect("query map"),
+            mailbox,
+        ))
+    } else {
+        None
+    };
     let environment = surface
         .environment_products()
         .ok_or("water needs the scene's physical environment")?;
@@ -88,7 +112,7 @@ pub(super) fn new(
             count: None,
         })
         .collect();
-    if map_gpu.is_some() {
+    if mapped {
         entries.extend(map_gpu::bindings(wgpu::ShaderStages::VERTEX_FRAGMENT));
     }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -139,7 +163,7 @@ pub(super) fn new(
             resource: wgpu::BindingResource::Sampler(&clamp),
         },
     ];
-    let map_view = map_gpu.as_ref().map(MapGpu::view);
+    let map_view = map_gpu.as_ref().filter(|_| mapped).map(MapGpu::view);
     if let (Some(map), Some(view)) = (&map_gpu, &map_view) {
         bindings.extend(map.entries(view));
     }
@@ -159,13 +183,42 @@ pub(super) fn new(
         ],
         immediate_size: 0,
     });
+    let pipeline = create_pipeline(surface, &pipeline_layout, &environment, mapped);
+    let geometry = surface_mesh(mapped.then_some(map));
+    let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
+    let (mesh, indices) = geometry.upload(device)?;
+    Ok(Prepared {
+        ambient,
+        ambient_passes,
+        query,
+        environment,
+        pipeline,
+        parameters,
+        group,
+        mesh,
+        vertices: count,
+        queue: surface.queue.clone(),
+        map: map_gpu,
+        bodies: geometry.bodies,
+        draws: geometry.draws,
+        indices,
+    })
+}
+
+fn create_pipeline(
+    surface: &SceneSurface<'_>,
+    pipeline_layout: &wgpu::PipelineLayout,
+    environment: &EnvironmentProducts,
+    mapped: bool,
+) -> wgpu::RenderPipeline {
+    let device = surface.device;
     let source = format!(
         "{}\n{}\n{}\n{}\n{}",
         environment.shader_source.replace("@group(0)", "@group(2)"),
         include_str!("fresnel.wgsl"),
         include_str!("sampling.wgsl"),
         include_str!("surface.wgsl"),
-        if map_gpu.is_some() {
+        if mapped {
             map_gpu::declarations() + include_str!("mapped_surface.wgsl")
         } else {
             include_str!("open_surface.wgsl").to_owned()
@@ -182,14 +235,14 @@ pub(super) fn new(
         .map(|(i, f)| {
             Some(wgpu::ColorTargetState {
                 format: *f,
-                blend: (i == 0 && map_gpu.is_some()).then_some(wgpu::BlendState::ALPHA_BLENDING),
+                blend: (i == 0 && mapped).then_some(wgpu::BlendState::ALPHA_BLENDING),
                 write_mask: wgpu::ColorWrites::ALL,
             })
         })
         .collect();
-    let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
+    device.render(&wgpu::RenderPipelineDescriptor {
         label: Some(SURFACE_PASS),
-        layout: Some(&pipeline_layout),
+        layout: Some(pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: Some("water_vertex"),
@@ -224,23 +277,6 @@ pub(super) fn new(
         }),
         multiview_mask: None,
         cache: None,
-    });
-    let geometry = surface_mesh(map);
-    let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
-    let (mesh, indices) = geometry.upload(device)?;
-    Ok(Prepared {
-        ambient,
-        environment,
-        pipeline,
-        parameters,
-        group,
-        mesh,
-        vertices: count,
-        queue: surface.queue.clone(),
-        map: map_gpu,
-        bodies: geometry.bodies,
-        draws: geometry.draws,
-        indices,
     })
 }
 

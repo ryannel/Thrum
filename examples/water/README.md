@@ -2,8 +2,7 @@
 
 `./dev scene examples/water` cooks this example's grey calibration float and opens the sea under
 the engine's sky. The game selects its own 60 Hz world, trade wind, longer swell and sea declaration.
-The panel controls the Sun, camera height and bearing, and the sea's stage. The float is a lighting
-reference; physical floating bodies land in WATERS M5.
+The panel controls the Sun, camera height and bearing, and the sea's stage.
 
 `./dev scene examples/water --web` serves the same scene and cooked float in Chrome with WebGPU.
 The page pauses its world while hidden. If the graphics device is lost, **Recover graphics**
@@ -60,3 +59,19 @@ or lake sill, in that order. Move **Lake stage** from 0 to 1 m and back in the
 sill view to flood and drain the second hollow. The island bed is rasterized
 from the same triangles the cooker draws. Regenerate those triangles from
 `python3 examples/water/make_island.py`.
+
+## Floating bodies
+
+Run `THRUM_WATER_BODIES=gale ./dev scene examples/water` for the craft and eight buoys. Use
+`calm`, `trade` or `gale` and optionally set `THRUM_WATER_SPEED=5` or `15`,
+`THRUM_WATER_HEADING=beam`, `THRUM_WATER_VIEW=chase`, or `THRUM_WATER_LOCATION=lake`.
+In Chrome the corresponding URL options are `?bodies=gale&speed=5&heading=beam&view=chase`.
+The panel controls speed, camera and Sun and shows refused requests, late points, unavailable
+uses and blocking reads.
+
+The game publishes six columns per body at each fixed tick. The water contribution uses the
+world map, analytic long waves and the existing cascade mips, then copies a single dispatch's
+results into a nonblocking staging ring. The game drains the mailbox at the start of its tick,
+uses the long-wave CPU model as a fallback and retains the hull forces and rigid-body state.
+Run `node scripts/check_water_browser.mjs --case bodies` under the Chrome lock for the hardware
+WebGPU check and reply-age counters.

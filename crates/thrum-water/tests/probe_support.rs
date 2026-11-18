@@ -37,8 +37,7 @@ pub(crate) fn probe(map: &Map, inputs: &[[f32; 8]]) -> Vec<[[f32; 4]; 3]> {
         "water map proof readback",
         wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
     );
-    let source =
-        map_gpu::declarations().replace("@group(3)", "@group(0)") + include_str!("map_probe.wgsl");
+    let source = map_gpu::declarations_at(0) + include_str!("map_probe.wgsl");
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("water map proof"),
         source: wgpu::ShaderSource::Wgsl(source.into()),

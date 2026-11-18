@@ -77,22 +77,20 @@ pub async fn create_scene(
     let _ = game.update();
     let scene = SkyScene {
         temporal_sampling: game.temporal_sampling,
+        presentation_camera: game.presentation_camera.take(),
         overlay: game.overlay,
         sky: game.sky,
         ground: game.ground.is_some(),
     };
     let ground = ground_scene(game.ground, &game.local_lights).map_err(js)?;
     let contribution = game.contribution.take();
-    let tick_duration = game.tick_duration;
+    let world = game.take_world();
     let shell = web::create(canvas, 1, |gpu| async move {
         let mut host = FrameHost::new(
             &gpu.capabilities,
             &gpu.queue,
             gpu.frame_config,
-            StillWorld {
-                tick_duration,
-                ..StillWorld::default()
-            },
+            world,
             scene,
             ground,
             FALLBACK_EXPOSURE,

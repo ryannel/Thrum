@@ -1,0 +1,515 @@
+use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
+use crate::map_gpu::{self, MapGpu};
+use bytemuck::{Pod, Zeroable};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use thrum_render::contribution::{EffectCadence, EffectGraph, EffectPass, EffectTime};
+use thrum_sea_model::{Sample, Spectrum};
+use thrum_water_model::Surface;
+
+#[cfg(test)]
+mod tests;
+
+const SLOT_COUNT: usize = 4;
+const GROUP_WIDTH: u32 = 64;
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct Point {
+    position: [f32; 2],
+    radius: f32,
+    dt: f32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct Component {
+    vector: [f32; 2],
+    amplitude: f32,
+    phase: f32,
+    omega: f32,
+    inverse_k: f32,
+    padding: [f32; 2],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct Settings {
+    origin: [f32; 2],
+    count: u32,
+    components: u32,
+    lengths_chop: [f32; 4],
+    heights: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct Answer {
+    height_slope_rate: [f32; 4],
+    velocity_depth: [f32; 4],
+    layers: [f32; 4],
+    current_bed: [f32; 4],
+    body_flags: [u32; 4],
+}
+
+struct Slot {
+    buffer: wgpu::Buffer,
+    busy: Arc<AtomicBool>,
+}
+
+struct Batch {
+    slot: usize,
+    tick: u64,
+    epoch: u64,
+    frame: EffectTime,
+    seconds: f64,
+    count: u32,
+    bodies: Vec<BodyQuery>,
+}
+
+pub(crate) struct Readback {
+    mailbox: QueryMailbox,
+    pipeline: wgpu::ComputePipeline,
+    group: wgpu::BindGroup,
+    settings: wgpu::Buffer,
+    components: wgpu::Buffer,
+    points: wgpu::Buffer,
+    answers: wgpu::Buffer,
+    slots: [Slot; SLOT_COUNT],
+    pending: Option<Batch>,
+    submitted: Option<(u128, u64, u64)>,
+}
+
+fn buffer(
+    device: &wgpu::Device,
+    label: &str,
+    size: u64,
+    usage: wgpu::BufferUsages,
+) -> wgpu::Buffer {
+    device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some(label),
+        size,
+        usage,
+        mapped_at_creation: false,
+    })
+}
+
+impl Readback {
+    pub(crate) fn new(
+        device: &thrum_render::runtime::DeviceSite,
+        ambient: &thrum_sea::Ambient,
+        map: &MapGpu,
+        mailbox: QueryMailbox,
+    ) -> Self {
+        use wgpu::BufferUsages as Usage;
+        let count = u64::from(mailbox.limits.points);
+        let settings = buffer(
+            device,
+            "query settings",
+            size_of::<Settings>() as u64,
+            Usage::UNIFORM | Usage::COPY_DST,
+        );
+        let components = buffer(
+            device,
+            "query components",
+            (192 * size_of::<Component>()) as u64,
+            Usage::STORAGE | Usage::COPY_DST,
+        );
+        let points = buffer(
+            device,
+            "query points",
+            count * size_of::<Point>() as u64,
+            Usage::STORAGE | Usage::COPY_DST,
+        );
+        let answers = buffer(
+            device,
+            "query answers",
+            count * size_of::<Answer>() as u64,
+            Usage::STORAGE | Usage::COPY_SRC,
+        );
+        let slots = std::array::from_fn(|_| Slot {
+            buffer: buffer(
+                device,
+                "query readback",
+                answers.size(),
+                Usage::MAP_READ | Usage::COPY_DST,
+            ),
+            busy: Arc::default(),
+        });
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("water body query"),
+            source: wgpu::ShaderSource::Wgsl(
+                format!(
+                    "{}\n{}",
+                    map_gpu::declarations_at(0),
+                    include_str!("sample.wgsl")
+                )
+                .into(),
+            ),
+        });
+        let visibility = wgpu::ShaderStages::COMPUTE;
+        let bind = |binding, ty| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility,
+            ty,
+            count: None,
+        };
+        let bind_buffer = |binding, ty| {
+            bind(
+                binding,
+                wgpu::BindingType::Buffer {
+                    ty,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+            )
+        };
+        let mut layout = vec![
+            bind_buffer(0, wgpu::BufferBindingType::Uniform),
+            bind_buffer(1, wgpu::BufferBindingType::Storage { read_only: true }),
+            bind_buffer(2, wgpu::BufferBindingType::Storage { read_only: true }),
+            bind_buffer(3, wgpu::BufferBindingType::Storage { read_only: false }),
+            bind(
+                4,
+                wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2Array,
+                    multisampled: false,
+                },
+            ),
+        ];
+        layout.extend(map_gpu::bindings(visibility));
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("water query bindings"),
+            entries: &layout,
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("water query pipeline layout"),
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
+        });
+        let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
+            label: Some("water body query"),
+            layout: Some(&pipeline_layout),
+            module: &module,
+            entry_point: Some("sample_query"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            cache: None,
+        });
+        let view = map.view();
+        let mut entries = vec![
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: settings.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: points.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: components.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: answers.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: wgpu::BindingResource::TextureView(&ambient.filtered_views()[0]),
+            },
+        ];
+        entries.extend(map.entries(&view));
+        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("water query bindings"),
+            layout: &layout,
+            entries: &entries,
+        });
+        mailbox.reset_readback();
+        Self {
+            mailbox,
+            pipeline,
+            group,
+            settings,
+            components,
+            points,
+            answers,
+            slots,
+            pending: None,
+            submitted: None,
+        }
+    }
+
+    pub(crate) fn declare(ambient: &thrum_sea::Ambient, graph: &mut EffectGraph) {
+        graph.passes.push(EffectPass {
+            name: "water body query".into(),
+            // The graph has no retained read of this output. The contribution
+            // itself controls execution and the staging copy as one operation.
+            cadence: EffectCadence::Skippable,
+            async_eligible: false,
+            accesses: ambient.filtered_accesses().into_iter().take(1).collect(),
+        });
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "GPU parameters use local f32 metres and bounded tick offsets"
+    )]
+    pub(crate) fn record(
+        &mut self,
+        queue: &wgpu::Queue,
+        time: EffectTime,
+        spectrum: &Spectrum,
+        chop: f64,
+        heights: [f32; 4],
+    ) {
+        // A recording that never reached submit did not start a map.
+        self.pending = None;
+        if time.capture || self.submitted == Some((time.epoch, time.timeline, time.tick)) {
+            return;
+        }
+        if self.submitted.is_some_and(|(epoch, timeline, tick)| {
+            epoch != time.epoch || timeline != time.timeline || tick > time.tick
+        }) {
+            self.mailbox.reset_readback();
+            self.submitted = None;
+        }
+        let mut state = self.mailbox.state.lock().expect("water query mailbox");
+        let Some(page) = state
+            .page
+            .as_ref()
+            .filter(|page| page.tick == time.tick && !page.bodies.is_empty())
+        else {
+            return;
+        };
+        let Some(slot) = self
+            .slots
+            .iter()
+            .position(|slot| !slot.busy.load(Ordering::Acquire))
+        else {
+            state.stats.busy += 1;
+            return;
+        };
+        let bodies = page.bodies.clone();
+        let epoch = state.epoch;
+        drop(state);
+        let seconds = thrum_sea::display_seconds(time);
+        let origin = bodies[0].points[0].position;
+        let frame_offset = (1.0 - f64::from(time.alpha)) * time.tick_duration.as_secs_f64();
+        let points: Vec<_> = bodies
+            .iter()
+            .flat_map(|body| &body.points)
+            .map(|point| Point {
+                position: point.position,
+                radius: point.radius,
+                dt: (frame_offset + seconds_between(point.use_tick, time.tick, time.tick_duration))
+                    as f32,
+            })
+            .collect();
+        let components: Vec<_> = spectrum
+            .long
+            .iter()
+            .map(|component| {
+                let [x, z] = component.wave_vector;
+                Component {
+                    vector: [x as f32, z as f32],
+                    amplitude: component.amplitude as f32,
+                    phase: component.anchored_phase(origin.map(f64::from), seconds) as f32,
+                    omega: component.frequency() as f32,
+                    inverse_k: x.hypot(z).recip() as f32,
+                    padding: [0.0; 2],
+                }
+            })
+            .collect();
+        let count = u32::try_from(points.len()).expect("points admitted by query capacity");
+        let lengths_chop = std::array::from_fn(|i| {
+            spectrum
+                .cascades
+                .get(i)
+                .map_or(chop, thrum_sea_model::Cascade::length) as f32
+        });
+        let settings = Settings {
+            origin,
+            count,
+            components: u32::try_from(components.len()).expect("bounded component count"),
+            lengths_chop,
+            heights,
+        };
+        queue.write_buffer(&self.settings, 0, bytemuck::bytes_of(&settings));
+        queue.write_buffer(&self.points, 0, bytemuck::cast_slice(&points));
+        if !components.is_empty() {
+            queue.write_buffer(&self.components, 0, bytemuck::cast_slice(&components));
+        }
+        self.pending = Some(Batch {
+            slot,
+            tick: time.tick,
+            epoch,
+            frame: time,
+            seconds,
+            count,
+            bodies,
+        });
+    }
+
+    pub(crate) fn pending(&self) -> bool {
+        self.pending.is_some()
+    }
+
+    pub(crate) fn resource_bytes(&self) -> Vec<(String, u64)> {
+        vec![
+            (
+                "water query inputs".into(),
+                self.settings.size() + self.components.size() + self.points.size(),
+            ),
+            ("water query answers".into(), self.answers.size()),
+            (
+                "water query readback".into(),
+                self.slots.iter().map(|slot| slot.buffer.size()).sum(),
+            ),
+        ]
+    }
+
+    pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
+        if let Some(batch) = &self.pending {
+            pass.set_pipeline(&self.pipeline);
+            pass.set_bind_group(0, &self.group, &[]);
+            pass.dispatch_workgroups(batch.count.div_ceil(GROUP_WIDTH), 1, 1);
+        }
+    }
+
+    pub(crate) fn copy(&self, encoder: &mut wgpu::CommandEncoder) {
+        let Some(batch) = &self.pending else { return };
+        let slot = &self.slots[batch.slot];
+        let size = u64::from(batch.count) * size_of::<Answer>() as u64;
+        encoder.copy_buffer_to_buffer(&self.answers, 0, &slot.buffer, 0, size);
+    }
+
+    pub(crate) fn submit(&mut self) {
+        let Some(batch) = self.pending.take() else {
+            return;
+        };
+        let slot = &self.slots[batch.slot];
+        slot.busy.store(true, Ordering::Release);
+        self.submitted = Some((batch.frame.epoch, batch.frame.timeline, batch.tick));
+        self.mailbox
+            .state
+            .lock()
+            .expect("water query mailbox")
+            .stats
+            .dispatches += 1;
+        let mailbox = self.mailbox.clone();
+        let busy = Arc::clone(&slot.busy);
+        let buffer = slot.buffer.clone();
+        let size = u64::from(batch.count) * size_of::<Answer>() as u64;
+        slot.buffer
+            .slice(..size)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                if result.is_ok() {
+                    if let Ok(mapped) = buffer.slice(..size).get_mapped_range() {
+                        batch.publish(bytemuck::cast_slice(&mapped), &mailbox);
+                    }
+                    buffer.unmap();
+                }
+                busy.store(false, Ordering::Release);
+            });
+    }
+}
+
+impl Batch {
+    fn publish(self, values: &[Answer], mailbox: &QueryMailbox) {
+        let mut state = mailbox.state.lock().expect("water query mailbox");
+        if state.epoch != self.epoch {
+            return;
+        }
+        let mut values = values.iter();
+        for body in self.bodies {
+            let mut fields = (&mut values).take(body.points.len());
+            if state.generations.get(&body.id) != Some(&body.generation)
+                || state
+                    .ready
+                    .get(&body.id)
+                    .is_some_and(|result| result.posted >= self.tick)
+            {
+                fields.nth(body.points.len() - 1);
+                continue;
+            }
+            let points = body
+                .points
+                .into_iter()
+                .zip(fields)
+                .enumerate()
+                .map(|(index, (point, raw))| {
+                    let mut sources = [None; 5];
+                    for (layer, source) in sources[..4].iter_mut().enumerate() {
+                        if raw.body_flags[3] & (1 << layer) != 0 {
+                            *source = Some(if layer == 0 {
+                                point.use_tick as f64 * self.frame.tick_duration.as_secs_f64()
+                            } else {
+                                self.seconds
+                            });
+                        }
+                    }
+                    raw.decode(index, point, sources)
+                })
+                .collect();
+            state.ready.insert(
+                body.id,
+                BodyAnswers {
+                    id: body.id,
+                    generation: body.generation,
+                    posted: self.tick,
+                    points,
+                },
+            );
+        }
+    }
+}
+
+impl Answer {
+    fn decode(
+        self,
+        index: usize,
+        point: super::QueryPoint,
+        sources: [Option<f64>; 5],
+    ) -> QueryAnswer {
+        let [body, wet, has_bed, _] = self.body_flags;
+        let [height, sx, sz, height_dt] = self.height_slope_rate.map(f64::from);
+        let [vx, vy, vz, depth] = self.velocity_depth.map(f64::from);
+        let [cx, cz, bed, _] = self.current_bed;
+        QueryAnswer {
+            index,
+            point,
+            sources,
+            wave_heights: self.layers,
+            bed: (has_bed != 0).then_some(bed),
+            surface: Surface {
+                body: (body != u32::MAX).then_some(body as usize),
+                sample: Sample {
+                    height,
+                    slope: [sx, sz],
+                    velocity: [vx, vy, vz],
+                    height_dt,
+                },
+                depth: if body != u32::MAX && has_bed == 0 {
+                    f64::INFINITY
+                } else {
+                    depth
+                },
+                current: [f64::from(cx), f64::from(cz)],
+                wet: wet != 0,
+            },
+        }
+    }
+}
+
+pub(crate) fn validate(limits: QueryLimits, device: &wgpu::Limits) -> Result<(), String> {
+    if u64::from(limits.points) * size_of::<Answer>() as u64
+        > device.max_storage_buffer_binding_size
+        || limits.points.div_ceil(GROUP_WIDTH) > device.max_compute_workgroups_per_dimension
+    {
+        return Err("water query exceeds the device buffer or dispatch limit".into());
+    }
+    Ok(())
+}

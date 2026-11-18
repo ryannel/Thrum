@@ -270,7 +270,7 @@ pub enum ContentStatus {
 }
 
 /// The kit's world: still by default, optionally advancing a game's fixed clock.
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct StillWorld {
     tick_duration: Option<Duration>,
     now: Duration,
@@ -278,6 +278,18 @@ pub struct StillWorld {
     paused: bool,
     presentation_hold: bool,
     tick: u64,
+    fixed_update: Option<FixedUpdate>,
+}
+
+type FixedUpdate = Box<dyn FnMut(u64, Duration) + Send>;
+
+impl std::fmt::Debug for StillWorld {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StillWorld")
+            .field("tick", &self.tick)
+            .field("paused", &self.paused)
+            .finish_non_exhaustive()
+    }
 }
 
 impl StillWorld {
@@ -345,6 +357,11 @@ impl FrameWorld for StillWorld {
             }
             self.wall_now = wall_now;
             self.tick = u64::try_from(self.now.as_nanos() / step.as_nanos()).unwrap_or(u64::MAX);
+            if let Some(update) = &mut self.fixed_update {
+                for tick in (previous..self.tick).map(|tick| tick + 1) {
+                    update(tick, step);
+                }
+            }
             if self.tick > previous {
                 self.presentation_hold = false;
             }
@@ -417,9 +434,18 @@ impl FrameWorld for StillWorld {
 #[derive(Debug)]
 pub struct SkyScene {
     sky: Sky,
+    presentation_camera: Option<PresentationCamera>,
     ground: bool,
     temporal_sampling: bool,
     overlay: DisplayOverlay,
+}
+
+struct PresentationCamera(Box<dyn Fn(f32) -> Camera + Send>);
+
+impl std::fmt::Debug for PresentationCamera {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PresentationCamera").finish_non_exhaustive()
+    }
 }
 
 impl SceneSource<SourceTick> for SkyScene {
@@ -437,13 +463,15 @@ impl SceneSource<SourceTick> for SkyScene {
     fn frame(
         &self,
         _source: SourceTick,
-        _alpha: f32,
+        alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
-        let view = self
-            .sky
-            .camera
+        let camera = self
+            .presentation_camera
+            .as_ref()
+            .map_or(self.sky.camera, |sample| (sample.0)(alpha));
+        let view = camera
             .view(extent)?
             .with_temporal_inputs(self.sky.temporal_inputs || self.temporal_sampling);
         let view = if self.temporal_sampling {
@@ -493,6 +521,8 @@ impl Edits for SkyEdits {
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+type StatusReadouts = Box<dyn FnMut(&mut Controls)>;
 type KeptProbe = Box<dyn FnMut() -> Vec<(u64, String)>>;
 type Reload = Box<dyn FnMut() -> Result<(), String>>;
 type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
@@ -500,6 +530,8 @@ type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 /// A still scene under the sky, hosted by the app shell. See the [module](self) example.
 pub struct SkyGame {
     tick_duration: Option<Duration>,
+    fixed_update: Option<FixedUpdate>,
+    presentation_camera: Option<PresentationCamera>,
     temporal_sampling: bool,
     overlay: DisplayOverlay,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -518,6 +550,8 @@ pub struct SkyGame {
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    readouts: Option<StatusReadouts>,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     shown_status: Option<ContentStatus>,
     /// New loader failures once content has drawn, each with the generation that stays drawn.
@@ -545,6 +579,8 @@ impl SkyGame {
         drop((controls, camera, update));
         Self {
             tick_duration: None,
+            fixed_update: None,
+            presentation_camera: None,
             temporal_sampling: false,
             overlay: DisplayOverlay::Off,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -570,6 +606,8 @@ impl SkyGame {
             local_lights: Vec::new(),
             contribution: None,
             status: None,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            readouts: None,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             shown_status: None,
             kept: None,
@@ -623,6 +661,53 @@ impl SkyGame {
         }
         self.tick_duration = Some(step);
         Ok(self)
+    }
+
+    /// Run game-owned updates for each committed tick of the configured fixed clock.
+    /// The callback is also called at tick zero to publish the initial game state.
+    #[must_use]
+    pub fn with_fixed_update(mut self, update: impl FnMut(u64, Duration) + Send + 'static) -> Self {
+        self.fixed_update = Some(Box::new(update));
+        self
+    }
+
+    /// Sample a game-owned camera from the same interpolation fraction used to draw the scene.
+    #[must_use]
+    pub fn with_presentation_camera(
+        mut self,
+        camera: impl Fn(f32) -> Camera + Send + 'static,
+    ) -> Self {
+        self.presentation_camera = Some(PresentationCamera(Box::new(camera)));
+        self
+    }
+
+    /// Publish game-owned readouts into the panel when the scene status is polled.
+    #[must_use]
+    pub fn with_status_readouts(self, readouts: impl FnMut(&mut Controls) + 'static) -> Self {
+        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+        {
+            let mut game = self;
+            game.readouts = Some(Box::new(readouts));
+            game
+        }
+        #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
+        {
+            drop(readouts);
+            self
+        }
+    }
+
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    fn take_world(&mut self) -> StillWorld {
+        let mut fixed_update = self.fixed_update.take();
+        if let (Some(step), Some(update)) = (self.tick_duration, &mut fixed_update) {
+            update(0, step);
+        }
+        StillWorld {
+            tick_duration: self.tick_duration,
+            fixed_update,
+            ..StillWorld::default()
+        }
     }
 
     /// Draw cooked meshes from the store named by `THRUM_ASSET_STORE` ([`STORE_VARIABLE`]),
@@ -825,6 +910,9 @@ impl SkyGame {
     )]
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub fn poll_status(&mut self) -> Option<ContentStatus> {
+        if let Some(publish) = self.readouts.as_mut() {
+            publish(&mut self.controls);
+        }
         let status = (self.status.as_mut()?)();
         if self.shown_status.as_ref() != Some(&status) {
             match &status {
@@ -872,16 +960,15 @@ impl SkyGame {
     ) -> Result<FrameHost<StillWorld, SkyScene>, String> {
         let _ = self.update();
         self.sky.check()?;
+        let world = self.take_world();
         let mut host = pollster::block_on(FrameHost::new(
             capabilities,
             queue,
             config,
-            StillWorld {
-                tick_duration: self.tick_duration,
-                ..StillWorld::default()
-            },
+            world,
             SkyScene {
                 sky: self.sky,
+                presentation_camera: self.presentation_camera.take(),
                 ground: self.ground.is_some(),
                 temporal_sampling: self.temporal_sampling,
                 overlay: self.overlay,
