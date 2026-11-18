@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-18 M3: Chrome's twelve entity and cooked view pairs matched its own main colour
+  and depth exactly, and both exposure arms passed the air composition check. Submitted noon
+  and dusk captures match the Portable Metal contacts and lighting cues. On both Metal recipes,
+  the five controls affect the pool while the main draw buffers and outside pixels remain exact.
+  The paired capture-off timing record includes the two-view field cost investigation.
+  [Proof and reproduction](../../evidence/SCENE-VIEWS/M3/README.md) include the author guide,
+  the maturity entry and the shared exact-baseline handoff.
+
 - 2026-11-17 M1 repository-gate continuation: `d50691cd4` replaces the resident
   resume test's tight attempt cap with a bounded elapsed-time wait and yields
   after dropped opportunities. All 24-frame and timing assertions remain.

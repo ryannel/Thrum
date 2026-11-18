@@ -5,6 +5,10 @@ look-down angle, pan, orbit, and the Sun's elevation and azimuth. The moving bea
 presentation clock. The pool asks for one full-size secondary view, then combines the reflected scenery
 with the air from the pool to the real camera.
 
+`./dev scene examples/mirror --web` serves the same authored scene and material on hardware Chrome.
+The [secondary view author guide](../../docs/EFFECTS.md#secondary-views) describes the runtime
+controls, including their ranges and what part of the draw each changes.
+
 The tower, rock and white texel are copied from the [lighthouse example](../lighthouse/README.md).
 Run `python3 examples/mirror/generate_meshes.py` to regenerate the post, bank, ground and hill.
 The water is 250 m above sea level. The far bank rises from the waterline so its surface, including

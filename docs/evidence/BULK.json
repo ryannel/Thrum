@@ -5659,6 +5659,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SCENE-VIEWS/M3/chrome-inspection.tar",
+      "size": 1125388288,
+      "sha256": "da71db4c239fabf6572dcc1709b632699cd48507da6498e0fa0178e82857e545",
+      "date": "2026-11-18T04:26:11.332854+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-chrome-flythrough.mp4",
       "size": 39483340,
       "sha256": "ba2d004eff57c6d3f74f470bd4c9b6572b18ea52b6d2d4d7530673395152b976",
