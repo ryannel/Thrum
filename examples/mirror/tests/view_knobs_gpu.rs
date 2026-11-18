@@ -1,7 +1,8 @@
 //! The governor's API changes the pool in a running Metal frame.
 
 #[cfg(target_os = "macos")]
-mod metal {
+mod view_knobs_gpu {
+    mod witness;
 
     use std::{
         sync::{Arc, Mutex},
@@ -13,241 +14,15 @@ mod metal {
     use thrum_app::sky::{Camera, StillWorld};
     use thrum_render::{
         capabilities::DeviceCapabilities,
-        contribution::{
-            AfterOpaqueKind, AfterOpaquePass, ContributionFrame, ContributionPasses, EffectAccess,
-            EffectCadence, EffectGraph, QualityError, QualityInvalidation, QualityKnob,
-            SceneContribution, SceneSurface, SecondaryView, SecondaryViewFrame,
-            SecondaryViewRequest, SecondaryViewSlot, ViewAir, ViewClipPlane,
-        },
-        graph::{AccessKind, ResourceDescriptor, ResourceScope},
+        contribution::{SecondaryViewRequest, ViewAir, ViewClipPlane},
         present::SurfaceProfile,
         runtime::{CaptureLimits, FrameConfig, FrameHost, FrameSample, SurfaceOutput},
         synthetic::{CaptureSource, OUTPUT_FORMAT},
     };
+    use witness::{Observation, PoolWitness, VIEWPORT_REPORT_BYTES, read_viewport};
 
     const EXTENT: [u32; 2] = [384, 256];
-    const VIEWPORT_REPORT_BYTES: u64 = 16;
     type Host = FrameHost<StillWorld, fixture::Source>;
-
-    fn viewport_pass() -> AfterOpaquePass {
-        AfterOpaquePass {
-            name: "reflection viewport witness".into(),
-            kind: AfterOpaqueKind::Compute,
-            cadence: EffectCadence::EveryFrame,
-            accesses: vec![EffectAccess {
-                resource: 0,
-                range: 0..VIEWPORT_REPORT_BYTES,
-                kind: AccessKind::StorageWrite,
-                history: None,
-                view: None,
-            }],
-            depth: false,
-            refraction: false,
-            write_depth: false,
-        }
-    }
-
-    #[derive(Default)]
-    struct Observation {
-        reference: Option<SecondaryViewRequest>,
-        view: Option<SecondaryViewFrame>,
-        measure_viewport: bool,
-    }
-
-    // Render the real pool in both runs. In the reference run supersede its
-    // request with one whose values are supplied directly, without the knob
-    // implementation. This gives an expected image for each endpoint on the
-    // same host and device, with exactly the same main frame and pool shader.
-    struct PoolWitness {
-        pool: Pool,
-        slot: Option<SecondaryView>,
-        observation: Arc<Mutex<Observation>>,
-        viewport_report: wgpu::Buffer,
-        viewport_probe: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
-    }
-
-    impl SceneContribution for PoolWitness {
-        fn quality_knobs(&self) -> Vec<QualityKnob> {
-            self.pool.quality_knobs()
-        }
-        fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
-            self.pool.set_quality_knob(name, value)
-        }
-        fn commit_quality_knobs(&mut self) -> QualityInvalidation {
-            self.pool.commit_quality_knobs()
-        }
-        fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
-            self.pool.secondary_view_slots()
-        }
-        fn secondary_views_enabled(&self) -> bool {
-            true
-        }
-        fn effect_graph(&self) -> EffectGraph {
-            let mut graph = self.pool.effect_graph();
-            graph.resources.push((
-                ResourceDescriptor::Buffer {
-                    bytes: VIEWPORT_REPORT_BYTES,
-                    usage: self.viewport_report.usage(),
-                },
-                ResourceScope::Persistent {
-                    owner: 1,
-                    epoch: 1,
-                    initialized: false,
-                },
-            ));
-            graph.after_opaque.push(viewport_pass());
-            graph
-        }
-        fn passes(&self) -> ContributionPasses {
-            self.pool.passes()
-        }
-        fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-            let slot = surface.secondary_views.first().expect("pool slot");
-            assert_eq!(slot.maximum_extent(), EXTENT);
-            self.slot = Some(slot.clone());
-            let device = surface.device;
-            let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("reflection viewport witness"),
-                source: wgpu::ShaderSource::Wgsl(
-                    include_str!("view_knobs_gpu/viewport.wgsl").into(),
-                ),
-            });
-            let entries = [
-                wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Depth,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-            ];
-            let group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("reflection viewport witness"),
-                entries: &std::array::from_fn::<_, 3, _>(|binding| wgpu::BindGroupLayoutEntry {
-                    binding: binding as u32,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: entries[binding],
-                    count: None,
-                }),
-            });
-            let inputs = viewport_pass().input_layout(device);
-            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("reflection viewport witness"),
-                bind_group_layouts: &[
-                    Some(surface.view_layout),
-                    Some(&inputs),
-                    Some(&group_layout),
-                ],
-                immediate_size: 0,
-            });
-            let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
-                label: Some("reflection viewport witness"),
-                layout: Some(&layout),
-                module: &shader,
-                entry_point: Some("inspect_viewport"),
-                compilation_options: Default::default(),
-                cache: None,
-            });
-            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("reflection viewport witness"),
-                layout: &group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(slot.colour()),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::TextureView(slot.depth()),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: self.viewport_report.as_entire_binding(),
-                    },
-                ],
-            });
-            self.viewport_probe = Some((pipeline, group));
-            self.pool.rebuild(surface)
-        }
-        fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
-            index == 0 || self.observation.lock().unwrap().measure_viewport
-        }
-        fn encode_after_opaque(
-            &mut self,
-            _: usize,
-            pass: &mut wgpu::ComputePass<'_>,
-            _: &ContributionFrame,
-        ) {
-            let (pipeline, group) = self
-                .viewport_probe
-                .as_ref()
-                .expect("prepared viewport probe");
-            pass.set_pipeline(pipeline);
-            pass.set_bind_group(2, group, &[]);
-            pass.dispatch_workgroups(1, 1, 1);
-        }
-        fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
-            self.pool.encode_upload(encoder, frame);
-            if let Some(reference) = self.observation.lock().unwrap().reference {
-                self.slot
-                    .as_ref()
-                    .unwrap()
-                    .request(&reference)
-                    .expect("reference request");
-            }
-        }
-        fn encode_secondary_upload(
-            &mut self,
-            _: &mut wgpu::CommandEncoder,
-            _: &ContributionFrame,
-            views: &[SecondaryViewFrame],
-        ) {
-            assert_eq!(views.len(), 1);
-            self.observation.lock().unwrap().view = Some(views[0]);
-        }
-        fn draw_after_opaque(
-            &self,
-            index: usize,
-            pass: &mut wgpu::RenderPass<'_>,
-            frame: &ContributionFrame,
-        ) {
-            self.pool.draw_after_opaque(index, pass, frame);
-        }
-        fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-        fn computes(&self, _: &ContributionFrame) -> bool {
-            false
-        }
-        fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-        fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-        fn submitted(&mut self, _: bool) {}
-    }
-
-    fn read_viewport(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        report: &wgpu::Buffer,
-    ) -> [u32; 4] {
-        let (tx, rx) = std::sync::mpsc::channel();
-        wgpu::util::DownloadBuffer::read_buffer(device, queue, &report.slice(..), move |result| {
-            tx.send(result).expect("map caller");
-        });
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: None,
-                timeout: Some(Duration::from_secs(15)),
-            })
-            .expect("map viewport report");
-        let bytes = rx.recv().expect("map callback").expect("viewport bytes");
-        std::array::from_fn(|i| u32::from_le_bytes(bytes[i * 4..][..4].try_into().unwrap()))
-    }
 
     #[derive(Clone, Copy)]
     struct Expected {
@@ -445,8 +220,24 @@ mod metal {
                 .with_recipe_override(recipe)
                 .expect("recipe");
             let (scene, source) = fixture::scene(6, EXTENT);
-            let fixture_view = scene.view;
-            let mask = pool_pixels(Mat4::from_cols_array_2d(&fixture_view.view_proj_columns()));
+            let projection = Mat4::from_cols_array_2d(&scene.view.view_proj_columns());
+            let mask = pool_pixels(projection);
+            // Use the main projection's exact forward and FOV so the optics
+            // match bitwise. Specify the secondary controls independently.
+            let rows = projection.transpose();
+            let forward = rows.w_axis.truncate().normalize();
+            let vertical = rows.y_axis.truncate();
+            let fov = (2.0
+                * (vertical - forward * vertical.dot(forward))
+                    .length_recip()
+                    .atan())
+            .to_degrees();
+            let eye = scene.view.camera_position();
+            let camera = Camera::look_at(
+                eye,
+                (glam::Vec3::from_array(eye) + forward * 128.0).to_array(),
+                fov,
+            );
             let mut host = pollster::block_on(FrameHost::new(
                 &caps,
                 &queue,
@@ -470,13 +261,12 @@ mod metal {
                 usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                 mapped_at_creation: false,
             });
-            host.set_scene_contribution(Box::new(PoolWitness {
-                pool: Pool::new(fixture::POOL),
-                slot: None,
-                observation: Arc::clone(&observation),
-                viewport_probe: None,
-                viewport_report: viewport_report.clone(),
-            }))
+            host.set_scene_contribution(Box::new(PoolWitness::new(
+                EXTENT,
+                Pool::new(fixture::POOL),
+                Arc::clone(&observation),
+                viewport_report.clone(),
+            )))
             .expect("prepare pool");
             host.enable_submitted_capture_from(
                 1,
@@ -497,6 +287,17 @@ mod metal {
             let declarations = host.quality_knobs();
             assert_eq!(declarations.len(), 5);
             for knob in declarations {
+                let name = knob.name.rsplit('/').next().expect("control name");
+                let (range, default) = match name {
+                    "view extent percent" => (25..=100, 100),
+                    "view far metres" => (64..=32_000, 32_000),
+                    "view least pixels" => (0..=16, 0),
+                    "view Sun cascade count" => (0..=2, 1),
+                    "view Sun reach metres" => (16..=512, 128),
+                    _ => panic!("unexpected quality control {name}"),
+                };
+                assert_eq!(knob.range, range, "{name}");
+                assert_eq!(knob.value, default, "{name}");
                 assert_ne!(knob.effect, "");
                 assert!(
                     host.set_quality_knob(&knob.name, *knob.range.end() + 1)
@@ -504,7 +305,6 @@ mod metal {
                 );
                 let mut extremes = Vec::new();
                 for value in [*knob.range.start(), *knob.range.end()] {
-                    let name = knob.name.rsplit('/').next().unwrap();
                     let expected = Expected::endpoint(name, value);
                     host.set_quality_knob(&knob.name, value)
                         .expect("stage discovered knob");
@@ -518,20 +318,25 @@ mod metal {
                     assert_eq!(report.uploaded_bytes, baseline.uploaded_bytes);
                     assert_eq!(host.pipeline_creation_count(), pipelines);
                     assert_eq!(objects(&device), objects_before);
-                    let view = observation.lock().unwrap().view.expect("prepared view");
+                    let view = observation
+                        .lock()
+                        .expect("observation")
+                        .view
+                        .expect("prepared view");
                     assert_eq!(
-                        view.record.extent,
+                        view.record.extent.map(f32::to_bits),
                         [
                             expected.viewport[0] as f32,
                             expected.viewport[1] as f32,
                             EXTENT[0] as f32,
                             EXTENT[1] as f32
-                        ],
+                        ]
+                        .map(f32::to_bits),
                         "{recipe} {name}={value}: active viewport in the full targets"
                     );
-                    assert_eq!(view.record.options[2], expected.least);
+                    assert_eq!(view.record.options[2].to_bits(), expected.least.to_bits());
                     assert_eq!(view.shadow_count, expected.count);
-                    assert_eq!(view.shadow_reach, expected.reach);
+                    assert_eq!(view.shadow_reach.to_bits(), expected.reach.to_bits());
                     let outside = before
                         .as_chunks::<8>()
                         .0
@@ -545,26 +350,10 @@ mod metal {
                         "{recipe} {}={value} changed outside the pool",
                         knob.name
                     );
-                    // Recover the exact forward/FOV of the submitted main projection.
-                    // The test independently specifies each secondary endpoint.
-                    let matrix =
-                        Mat4::from_cols_array_2d(&fixture_view.view_proj_columns()).transpose();
-                    let forward = matrix.w_axis.truncate().normalize();
-                    let vertical = matrix.y_axis.truncate();
-                    let fov = (2.0
-                        * (vertical - forward * vertical.dot(forward))
-                            .length_recip()
-                            .atan())
-                    .to_degrees();
-                    let eye = fixture_view.camera_position();
-                    let camera = Camera::look_at(
-                        eye,
-                        (glam::Vec3::from_array(eye) + forward * 128.0).to_array(),
-                        fov,
-                    );
-                    observation.lock().unwrap().reference = Some(expected.request(camera, eye));
+                    observation.lock().expect("observation").reference =
+                        Some(expected.request(camera, eye));
                     let (reference, _, _) = sample(&mut host, &device, &surface, &witness);
-                    observation.lock().unwrap().reference = None;
+                    observation.lock().expect("observation").reference = None;
                     assert_eq!(
                         pixels
                             .as_chunks::<8>()
@@ -605,8 +394,8 @@ mod metal {
                 .quality_knobs()
                 .into_iter()
                 .find(|knob| knob.name.ends_with("view extent percent"))
-                .unwrap();
-            observation.lock().unwrap().measure_viewport = true;
+                .expect("extent control");
+            observation.lock().expect("observation").measure_viewport = true;
             for value in [25, 100] {
                 host.set_quality_knob(&extent.name, value)
                     .expect("set active viewport");

@@ -152,6 +152,13 @@ reserve 44,236,800 bytes together, exclusive of lighting and culling products an
 Changing the slot count or the largest view extent requires preparation. [Scene view design](plans/SCENE-VIEWS/DESIGN.md#cost-account)
 describes cost scope and pass ownership.
 
+The endpoint table gives measured GPU time for each control on the authored mirror and the
+100,513-instance field. The paired runs used an Apple M3 Max at 2560×1440, with capture off and
+Portable and AppleTile selected separately. Another GPU workload was active during these runs.
+The resource table gives the logical bytes reserved before any view is requested.
+[Measured endpoints](evidence/SCENE-VIEWS/M3/README.md#measured-control-endpoints) ·
+[Prepared resource sizes](evidence/SCENE-VIEWS/M3/resource-bytes.md)
+
 When timestamps are available, `SceneGpuTimings::execution(name)` distinguishes `Timed(0)` from `NotRun`
 and `Unmeasured`. The last denotes transfers without counters. Disabled timing remains absent.
 List order establishes execution only: SEA and CLOUDS still own disjoint medium admission and the explicit
