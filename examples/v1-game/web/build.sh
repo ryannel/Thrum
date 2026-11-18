@@ -38,6 +38,7 @@ witness=$(mktemp "$build_root/$web/.temporal-witness.XXXXXX")
 trap 'rm -f "$witness"' EXIT
 RUSTC="$rustc_path" rustup run stable cargo run --locked --offline --quiet \
   -p thrum-render --example temporal_witness --target-dir "$build_root" > "$witness"
+chmod a+r "$witness"
 mv "$witness" "$build_root/$web/temporal-witness.json"
 cp examples/v1-game/web/route.html "$build_root/$web/route.html"
 cp examples/v1-game/web/capture.html "$build_root/$web/capture.html"
