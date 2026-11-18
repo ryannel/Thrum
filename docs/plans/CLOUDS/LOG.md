@@ -488,3 +488,10 @@
   replacing higher orders with a conservative, physically validated source.
   [Motion diagnostics](../../evidence/CLOUDS/M3-motion-diagnostics/README.md)
   find stride-one edges cleaner; final integrated visual/cost proofs stay open.
+
+- 2026-11-18 M3 implements the beam and diffuse light and anchors far-air transmission at 32 km.
+  [Three independent Metal looks](../../evidence/CLOUDS/M3-beam/README.md) show bright lit faces
+  and clean ridge occlusion, but repeat shallow domes and shelves. M3.1 hits the three-look stop.
+  M3.2's far range and M3.7's stable motion and cut sharpness remain open.
+  Required-GPU transport, frame contract, shadow-only and far-air checks pass.
+  The [paired cost and refusal check](../../evidence/CLOUDS/M3-cost.md) pass under load.

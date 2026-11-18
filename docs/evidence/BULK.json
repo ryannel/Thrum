@@ -4395,6 +4395,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-beam/beam-captures.tar",
+      "size": 3058350080,
+      "sha256": "7258d83d704d910cd2a3a07c763eb6309a70f48b6c60294431428e084baa3015",
+      "date": "2026-11-18T11:12:00.916926+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/M3-lighting-diagnosis/snapshots.tar.gz",
       "size": 7141860,
       "sha256": "106e53492b7cf0a4187b571bf50dc6f2e248daa7e3ce4c73cc4742b0e89a08e8",

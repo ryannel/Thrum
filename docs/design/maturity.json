@@ -2805,11 +2805,11 @@
         "record": "../evidence/CLOUDS/M2.md"
       },
       "sky_evidence": {
-        "implementation": "Partial opt-in Sky: half-extent trace, display-time motion, ping-pong resolve, model-generated disc phase tables, lent sky hemisphere integration and bounded air parts. Procedural noise remains direct; preparation-time noise volumes/mips are not built.",
-        "correctness": "Metal submitted-frame motion/cut/profile/absence probes, passive constant and Sun-lit slab kernels, provider finite-air parity and measured far-air reference bounds, shadow-only ground-byte equality on portable and Apple tile; far-air bounds are broad and do not establish visual quality. Six Metal lighting rays have an independent f64 stage reference; density, phase, ambient and source arithmetic agree closely. Shape-preserving height interpolation reduces the retained Sun-cache maximum T error from 0.2882 to 0.1802; finite-grid error remains (M3-sun-reconstruction).",
-        "visuals": "Development stills fail the bright sunlit-side cue and distant haze quality; no accepted M3 visual matrix, pan, walk or cut sequence.",
-        "device": "Apple M3 Max Metal and WebGPU-default-limit admission only. Development capture-off cost tripwires exceed 120 Hz refresh; no Chrome, iOS or physical cadence qualification.",
-        "record": "../evidence/CLOUDS/M3-numerical.md"
+        "implementation": "Opt-in Sky with half-extent trace, display-time motion, ping-pong resolve, disc phase tables, lent sky hemisphere integration, beam and diffuse Sun scattering and bounded air parts. Detail noise remains procedural.",
+        "correctness": "Apple M3 Max Metal tests pass for submitted motion and resets, absent graph and storage, stable Beer transport and one air composition, finite-air parity and the 32 km join, and both recipes' shadow-only byte equality under detail-changing probes.",
+        "visuals": "Metal noon and 15-degree stills show bright Sun-facing clouds, darker bases and clean ridge occlusion. Three independent looks still show repeated shallow domes and shelf-like undersides. The 150 km fade, native pan and walk stability, and the full cut sharpening cue remain open.",
+        "device": "Apple M3 Max Metal with WebGPU-default-limit admission. Paired capture-off timings under load exceed one 120 Hz refresh interval. Chrome, iOS and physical display cadence remain unqualified.",
+        "record": "../evidence/CLOUDS/M3-beam/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",
