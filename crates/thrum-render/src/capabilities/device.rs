@@ -1,8 +1,11 @@
 //! The device request shared by shells, offscreen hosts and diagnostics.
 
-use std::sync::{
-    Arc, OnceLock,
-    atomic::{AtomicBool, Ordering},
+use std::{
+    io::Write as _,
+    sync::{
+        Arc, OnceLock,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
 use super::{DeviceCapabilities, HardwareLaunchError, HardwareRequest};
@@ -164,10 +167,6 @@ pub struct DeviceWatch {
 }
 
 impl DeviceWatch {
-    #[expect(
-        clippy::print_stderr,
-        reason = "diagnose the first asynchronous GPU error on headless hosts as well as shells"
-    )]
     fn register(
         device: &wgpu::Device,
         generation: u64,
@@ -183,7 +182,10 @@ impl DeviceWatch {
         let errors = Arc::clone(&faults);
         device.on_uncaptured_error(Arc::new(move |error: wgpu::Error| {
             if errors.uncaptured.set(error.to_string()).is_ok() {
-                eprintln!("GPU generation {generation}: {error}");
+                let _ = writeln!(
+                    std::io::stderr().lock(),
+                    "GPU generation {generation}: {error}"
+                );
             }
         }));
         Self { generation, faults }
@@ -259,7 +261,11 @@ impl std::fmt::Display for SurfaceConfigError {
     }
 }
 
-impl std::error::Error for SurfaceConfigError {}
+impl std::error::Error for SurfaceConfigError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.retry)
+    }
+}
 
 /// Configure and retry once if native validation rejects a stale drawable.
 /// WebGPU configure returns void and the shell checks the next drawable.
