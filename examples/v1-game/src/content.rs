@@ -213,7 +213,14 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
 pub fn attach_cooked_scene(
     host: &mut FrameHost,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
-    attach_selected(host, Ok)
+    attach_cooked_scene_with_path(host, thrum_asset_gpu::CookedDrawPath::Auto)
+}
+
+pub(crate) fn attach_cooked_scene_with_path(
+    host: &mut FrameHost,
+    path: thrum_asset_gpu::CookedDrawPath,
+) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
+    attach_selected(host, path, Ok)
 }
 
 /// Attach selected content with an explicit compile-time-enabled qualification control.
@@ -224,16 +231,21 @@ pub fn attach_cooked_scene_with_probe(
     host: &mut FrameHost,
     probe: Option<thrum_asset_gpu::draw_probe::Probe>,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
-    attach_selected(host, |assets| match probe {
-        Some(probe) => assets
-            .with_draw_probe(probe)
-            .map_err(|error| error.to_string()),
-        None => Ok(assets),
-    })
+    attach_selected(
+        host,
+        thrum_asset_gpu::CookedDrawPath::Auto,
+        |assets| match probe {
+            Some(probe) => assets
+                .with_draw_probe(probe)
+                .map_err(|error| error.to_string()),
+            None => Ok(assets),
+        },
+    )
 }
 
 fn attach_selected(
     host: &mut FrameHost,
+    path: thrum_asset_gpu::CookedDrawPath,
     configure: impl FnOnce(
         thrum_asset_gpu::CookedAssets,
     ) -> Result<thrum_asset_gpu::CookedAssets, String>,
@@ -250,8 +262,10 @@ fn attach_selected(
     };
     let (camera, assets) = match scene.as_deref() {
         Ok("valley" | "exit") => {
-            let (camera, assets) =
-                crate::showcase::prepare_showcase(std::path::PathBuf::from(store).into())?;
+            let (camera, assets) = crate::showcase::prepare_showcase_with_path(
+                std::path::PathBuf::from(store).into(),
+                path,
+            )?;
             (Some(camera), assets)
         }
         Err(std::env::VarError::NotPresent) | Ok("diagnostic") => (

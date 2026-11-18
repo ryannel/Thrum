@@ -25,6 +25,16 @@ fn main() {
             Err(std::env::VarError::NotPresent) => v1_game::RuntimeCaptureOutput::Images,
             _ => report_capture_failure("capture observer arm must be 1 when set"),
         };
+        #[cfg(feature = "draw-probe")]
+        let capture_output = match std::env::var("THRUM_VALLEY_MESH_STAGE_PROBE").as_deref() {
+            Err(std::env::VarError::NotPresent) => capture_output,
+            Ok("culled") if capture_output == v1_game::RuntimeCaptureOutput::Images => {
+                v1_game::RuntimeCaptureOutput::MeshStageImages
+            }
+            _ => report_capture_failure(
+                "mesh-stage capture requires THRUM_VALLEY_MESH_STAGE_PROBE=culled with image capture",
+            ),
+        };
         if let Err(error) = v1_game::run_runtime_capture(
             std::path::Path::new(&output),
             &scenario,

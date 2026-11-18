@@ -548,7 +548,13 @@ async fn record(
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) = metal_device(&instance, 1, hardware).await?;
     let mut driver = Offscreen::new(
-        super::capture_game_with_route_limit(matches!(scenario, "clouds-route" | "exit-route"))?,
+        super::capture_game_with_route_limit(
+            matches!(scenario, "clouds-route" | "exit-route"),
+            Some(super::CaptureCooked {
+                folder: output.to_owned(),
+                path: capture_output.cooked_path(),
+            }),
+        )?,
         &device,
         &capabilities,
         &queue,
@@ -967,6 +973,7 @@ pub(super) fn prepare_route(
     render_extent: [u32; 2],
     gpu: &thrum_app::Gpu<'_>,
     cloud_capture: bool,
+    _report_folder: Option<&Path>,
 ) -> Result<Duration, String> {
     let camera = host
         .scene_camera()
@@ -1018,7 +1025,7 @@ pub(super) fn prepare_route(
                     return Err("routed capture generation mismatch".to_owned());
                 }
                 #[cfg(feature = "draw-probe")]
-                if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
+                if let Some(output) = _report_folder {
                     let report = json!({
                         "generation": generation,
                         "recipe": format!("{:?}", stats.recipe),
@@ -1029,11 +1036,8 @@ pub(super) fn prepare_route(
                         "indexed_indirect_draws": stats.indexed_indirect_draws,
                         "mesh_stage_exclusions": stats.mesh_stage_exclusions,
                     });
-                    std::fs::write(
-                        Path::new(&output).join("cooked-path.json"),
-                        report.to_string(),
-                    )
-                    .map_err(|error| error.to_string())?;
+                    std::fs::write(output.join("cooked-path.json"), report.to_string())
+                        .map_err(|error| error.to_string())?;
                 }
                 break;
             }

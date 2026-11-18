@@ -61,7 +61,14 @@ struct Material {
 pub(crate) fn prepare_showcase(
     source: CookedSource,
 ) -> Result<(SceneCamera, CookedAssets), String> {
-    prepare_showcase_with_volume(source, None)
+    prepare_showcase_with_path(source, thrum_asset_gpu::CookedDrawPath::Auto)
+}
+
+pub(crate) fn prepare_showcase_with_path(
+    source: CookedSource,
+    path: thrum_asset_gpu::CookedDrawPath,
+) -> Result<(SceneCamera, CookedAssets), String> {
+    prepare_showcase_with_volume(source, None, path)
 }
 
 /// The authored valley recipe or contribution could not be prepared.
@@ -122,15 +129,18 @@ pub(crate) fn prepare_temporal_showcase(
             steps: v.steps,
             light_steps: v.light_steps,
         }),
+        thrum_asset_gpu::CookedDrawPath::Auto,
     )
 }
 
 fn prepare_showcase_with_volume(
     source: CookedSource,
     volume: Option<VolumePlacement>,
+    path: thrum_asset_gpu::CookedDrawPath,
 ) -> Result<(SceneCamera, CookedAssets), String> {
-    let (camera, mut config) = valley_config(source)?;
+    let (camera, mut config) = valley_config(source).map_err(|error| error.to_string())?;
     config.volume = volume;
+    config.draw_path = path;
     let assets = CookedAssets::new(config).map_err(|error| format!("showcase: {error}"))?;
     Ok((camera, assets))
 }
@@ -138,36 +148,29 @@ fn prepare_showcase_with_volume(
 /// Authored valley camera and cooked contribution configuration.
 ///
 /// # Errors
-/// Returns an invalid authored camera, placement, or diagnostic selection.
+/// Returns an invalid authored camera or placement.
 #[doc(hidden)]
 pub fn valley_config(
     source: CookedSource,
-) -> Result<(SceneCamera, thrum_asset_gpu::CookedConfig), String> {
+) -> Result<(SceneCamera, thrum_asset_gpu::CookedConfig), CookedValleyError> {
     let recipe: Recipe = serde_json::from_str(include_str!("../assets/showcase/scene.json"))
-        .map_err(|error| format!("showcase recipe: {error}"))?;
+        .map_err(|error| CookedValleyError(format!("showcase recipe: {error}")))?;
     let camera = SceneCamera::perspective(
         recipe.camera.position_m,
         recipe.camera.target_m,
         recipe.camera.vertical_fov_degrees.to_radians(),
         recipe.camera.near_m,
         recipe.camera.far_m,
-    )?;
+    )
+    .map_err(CookedValleyError)?;
     let mut config = crate::cooked::cooked_config(source);
-    #[cfg(all(target_os = "macos", feature = "draw-probe"))]
-    match std::env::var("THRUM_VALLEY_MESH_STAGE_PROBE").as_deref() {
-        Err(std::env::VarError::NotPresent) => {}
-        Ok(mode @ ("culled" | "unculled")) => {
-            config.draw_path = thrum_asset_gpu::CookedDrawPath::MeshStages;
-            config.mesh_stage_cull = mode == "culled";
-        }
-        _ => return Err("THRUM_VALLEY_MESH_STAGE_PROBE must be culled or unculled".into()),
-    }
     config.volume = None;
     config.meshes = recipe
         .placements
         .into_iter()
         .map(Placement::checked)
-        .collect::<Result<_, _>>()?;
+        .collect::<Result<_, _>>()
+        .map_err(CookedValleyError)?;
     Ok((camera, config))
 }
 
