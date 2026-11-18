@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "3f5035b62c7496df6c4e93681782fe2100fc4b8566d768a20cf873f1705247f8",
+      "definitions": "9aaaf2c52944b0306ca8d5c66c406efba11df4414869fe8387d76b16c38c5502",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026, accepted leaving Nanite-class geometry, Lumen-class GI and virtual shadow maps until after V1, on co",
-        "at": "2026-11-18T00:45:55Z"
+        "task": "The design review of REVIEW-RENDER at docs/evidence/REVIEW-RENDER/design-review.md asked for changes. Resolve its 1 Must",
+        "at": "2026-11-18T03:22:52Z"
       }
     },
     "M2": {
@@ -114,11 +114,15 @@
     {
       "task": "Owner, 17 Nov 2026, accepted leaving Nanite-class geometry, Lumen-class GI and virtual shadow maps until after V1, on condition V1 lays no foundations that force rework. A read-only check (lead-commissioned) found three cheap pre-V1 changes; settle them with producers and consumers, design lines only unless stated, with no new V1 build milestones and no change to exact baselines now. (1) CONTENT-LOOP: cooked mesh rows keep their meshlet and bounds sections, and the meshlet bounds record (crates/thrum-asset/src/layout.rs:115-142) is versioned so cluster error and parent fields can later be added by a cooker bump. (2) APPLE-TILE design and C07: the forward shader keeps surface fetch and light evaluation as separable steps (today one shade() in crates/thrum-render/src/synthetic.wgsl:520-565), and normals/roughness guide buffers are a declared optional graph output, so dynamic GI and virtual shadow maps can later sit on Forward+ plus a thin prepass without a G-buffer rewrite. Coordinate with APPLE-PRESENTATION M3-M8 and CULLING M3, which are already negotiating forward-target changes. (3) C08: diffuse and specular indirect light are queried by world position, normal and screen position through the one seam; fold the signature change to ambient_irradiance and indirect_radiance (synthetic.wgsl:513-518, cooked.wgsl:104) into REVIEW-RENDER's existing light-buffer milestone, byte-neutral under the exact-baseline rules, before WATERS and CLOUDS add more readers. Also note for the separate Metal ray-tracing and mesh-shader planning now under way: REVIEW-ENGINE M71 (Metal draws every meshlet one by one) is the natural mesh-shader entry point. Judge each against first principles and current shipped engines; reject any that doesn't earn its place, and say why. Done when the affected designs, contracts and plans say it, and any change needing a design review is named.",
       "at": "2026-11-18T00:45:55Z"
+    },
+    {
+      "task": "The design review of REVIEW-RENDER at docs/evidence/REVIEW-RENDER/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T03:22:52Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T00:45:55Z"
+    "at": "2026-11-18T03:22:52Z"
   },
   "design_history": [
     {
