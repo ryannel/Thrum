@@ -268,7 +268,7 @@
     {
       "id": "M3",
       "name": "The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -283,8 +283,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m31-chrome-stored-format-checks",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -293,8 +293,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m32-submitted-noon-and-dusk-inspection",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -305,8 +305,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m33-runtime-quality-controls",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -320,8 +320,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -330,8 +330,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/EFFECTS.md#secondary-views",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -340,8 +340,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -350,34 +350,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "item": "M3.1",
-          "name": "Chrome omits the terrain-shadow equality cases",
-          "repeat": false
-        },
-        {
-          "item": "M3.4",
-          "name": "The final cost record was taken during another builder's GPU run",
-          "repeat": false
-        },
-        {
-          "item": "M3.3",
-          "name": "The pool comparison accepts the wrong effect",
-          "repeat": false
-        },
-        {
-          "item": "M3.5",
-          "name": "The author guide omits the measured cost of each control",
-          "repeat": false
-        },
-        {
-          "name": "The cost record omits per-resource byte counts",
-          "repeat": false
+          "verdict": "pass",
+          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
         }
       ]
     }
