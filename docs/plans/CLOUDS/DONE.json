@@ -459,7 +459,7 @@
     {
       "id": "M3",
       "name": "Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -609,7 +609,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The planner needs to move M3.1\u2019s form cue to a later milestone before M3 can merge.",
+        "work": {
+          "commit": "5f84d354a3bf7bec24a3b993c902d45a7521a0ce",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/CLOUDS/M3-handoff.md"
+      }
     },
     {
       "id": "M4",
