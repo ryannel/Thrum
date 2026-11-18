@@ -259,10 +259,10 @@
           "lock": "gpu",
           "ask": "Does the arm read the submitted frame through engine capture's tap at each size, and compare the extent the host resolved with the window's backing size? Do offscreen, capture and exact-baseline paths still name their own extents, so that no retained image moved?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m4/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.2",
