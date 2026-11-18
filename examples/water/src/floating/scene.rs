@@ -144,11 +144,19 @@ pub fn build_paired(
     let forward = (bodies[0].rotation * DVec3::X).with_y(0.0);
     bodies[0].propulsion = forward * f64::from(speed);
     bodies[0].velocity = bodies[0].propulsion;
+    // The example's prevailing wind runs along X. Leave more clearance
+    // when its drift carries the floats across the course.
+    let moving_clearance = if forward.z.abs() > forward.x.abs() {
+        6.6
+    } else {
+        5.0
+    };
     for id in 1..=8 {
         let (x, z) = if speed > 0.0 && !lake {
-            // Keep the row alongside the straight course, with room for
-            // the floats' crosswind drift as the craft overtakes them.
-            (f64::from(id - 1) * 5.0 + 2.0, 5.0 + f64::from(id % 2))
+            (
+                f64::from(id - 1) * 5.0 + 2.0,
+                moving_clearance + f64::from(id % 2),
+            )
         } else {
             (
                 f64::from((id - 1) % 4) * 2.4 - 3.6,
