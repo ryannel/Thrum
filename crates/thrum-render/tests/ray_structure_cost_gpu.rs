@@ -147,7 +147,7 @@ mod metal {
                 .expect("production recorder");
             let recorded = start.elapsed();
             self.queue.submit([encoder.finish()]);
-            let submitted = start.elapsed() - recorded;
+            let submitted = start.elapsed().saturating_sub(recorded);
             support::wait(self.device);
             [recorded.as_secs_f64() * 1e6, submitted.as_secs_f64() * 1e6]
         }
