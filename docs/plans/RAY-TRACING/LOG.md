@@ -27,3 +27,21 @@
   decides any item (old M1.2, M1.3, M2.1, M2.3, M3.1, M3.4). Tests aim rays whose answer is plain from how the
   scene was built and compare what the structure holds with the scene's records; the valley's structure is
   inspected in a traced view (M2.1). A builder may still write the reference as a diagnostic.
+- 2026-11-18 The design review at `eaf682210eab` asked for changes: six Must Fix, no Suggestion. Lead: "the
+  traced path is an explicit, recorded opt-in for this Mac, judged by eye against the inspection list, with a
+  paired whole-frame timing kept as a tripwire, and a plain fallback to the portable path when its feature is
+  missing. Drop adapter-keyed automatic promotion and recipe-difference crediting."
+- 2026-11-18 Findings 1, 2, 5 and 6, resolved by that rule. No `Auto`, no qualified list, no host-added
+  feature, no gain list and no comparison with the portable recipe. A ray request that cannot be met, or
+  whose scene fails to prepare, falls back to the map frame and reports why (M3.6, M5.6). A launch gives a
+  name as required or preferred, and a preferred one is retried once without it (M1.1, M6.2). M6 is now
+  this Mac's opt-in record: the final-build inspection and a Maps-against-Traced pair on one recipe, with the
+  whole frame measured as a GPU span through the output's consumer (M6.1 to M6.3). Old M6.2, M6.3 and M6.5
+  are gone and M6 was renumbered.
+- 2026-11-18 Finding 3, on its merits: the one-frame remnant of a soft edge a shadow has left is stated as a
+  limit, not hidden. The history's settled state is its value (0 or 1), the pass settles a texel whose
+  neighbourhood agrees, and M4.4 inspects a caster that outruns its own edge (M4.4, M4.7). More inline rays
+  are the named candidate if the remnant reads as a second edge. Finding 4, on its merits: an instance's
+  shadow bit is a fact about the thing and never follows Sun maps, so a lamp-only room is shadowed with Sun
+  shadows off, for entities and cooked placements (M2.4, M3.4, M3.8). M3.12 was split from M3.6. The design
+  review is owed.
