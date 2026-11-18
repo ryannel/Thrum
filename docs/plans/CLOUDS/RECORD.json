@@ -526,12 +526,12 @@
       }
     },
     "M17": {
-      "definitions": "6978a8afc69764027b592d9361a2f85285c072ae1707cdd55690d9f27743c8bc",
+      "definitions": "a4add5ef630de427a832fba005b14d8ce45a8c36327c66eaa401bfc5a1a3b963",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shap",
-        "at": "2026-11-18T22:24:57Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its Must Fix findings in",
+        "at": "2026-11-18T23:43:14Z"
       }
     }
   },
@@ -619,11 +619,15 @@
     {
       "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shape, then lighting, then form. The one authorised Metal trial of the CPU-diagnosed erosion correction did not clear it; see docs/evidence/CLOUDS/M3-handoff.md on build/clouds at 5f84d354a3bf (read it with `git show`). Move M3.1's form cue (domes, shelves, the silhouette break) out of M3 into a later CLOUDS milestone that comes after the other cloud work, carrying the erosion diagnosis and what was tried, so M3 can be reviewed and merge with everything that already passes. Keep it the smallest plan change, and change no interface. Don't plan new looks inside M3.",
       "at": "2026-11-18T22:24:57Z"
+    },
+    {
+      "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T23:43:14Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T22:24:57Z"
+    "at": "2026-11-18T23:43:14Z"
   },
   "design_history": [
     {
