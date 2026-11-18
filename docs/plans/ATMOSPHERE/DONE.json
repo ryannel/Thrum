@@ -242,7 +242,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Far shadows as over Red Dead Redemption 2's New Austin or Forza Horizon 5's Mexico seen from high ground: ridges and mesas shade the far ground steadily, and nothing in the air draws a hard bar across it or blinks one on and off. This milestone judges that one defect on the exit camera. The stepped edge of far terrain shadows and the finished image are judged in SHOWCASE M8.",
       "items": [
         {
@@ -252,8 +252,8 @@
           "lock": "gpu",
           "ask": "Read the test. Are all three layers read back from the GPU, and is each expected layer taken from another run of the scene, not from the test's own model of a layer? Does it run each of the three culling modes on the bucket route? Would it fail if the mark were ignored, and if a marked caster were dropped from a cascade?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/ATMOSPHERE/M10/README.md#m101--metal-shadow-layers",
           "verdict": "",
           "review": ""
         },
@@ -262,8 +262,8 @@
           "statement": "On the exit flythrough on the Mac, with every tick submitted, no dark strip lies on the ground beneath or down-Sun of a balloon beyond the Sun cascades, and none appears or vanishes from one tick to the next, committed ticks 228 to 240 included. Balloons near the camera still cast shadows that move with them, and ridges still shade the far ground.",
           "inspect": "Capture the exit flythrough with T2 engine capture in `fixed` mode with every tick submitted: committed ticks 200 to 320, and the stretch round the route's `balloons` checkpoint. Judge consecutive frames whole and in native-size crops of the far ground under balloons, and set ticks 232 to 235 beside `docs/evidence/SHOWCASE/M5-motion-fixed-shadow-crop.png`, in the crop its record names.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/ATMOSPHERE/M10/README.md#m102--fixed-metal-exit-flythrough",
           "verdict": "",
           "review": ""
         },
@@ -272,8 +272,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: a scene that marks no row draws the bytes it drew.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

@@ -629,3 +629,8 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   blends between levels. M6.8 written again; M6.4 unchanged, since it runs the same probe by name. Suggestion taken: M10.1's
   standing caster reaches higher than the aloft one, so both scenes fit one depth range. The design has not been reviewed
   since this change. [Full entry](../../evidence/ATMOSPHERE/log-entries.md#entry-5).
+- 2026-11-18 M10 marks the exit balloon row aloft and omits it from the terrain horizon.
+  Metal readback matches the two cascade controls and the height-layer control under all three
+  culling modes. The fixed exit replay removes the tick-234 strip and retains moving near shadows
+  and far ridge shade. The shared main-branch check verifies the registered Mac and Chrome baselines.
+  [Builder evidence](../../evidence/ATMOSPHERE/M10/README.md)

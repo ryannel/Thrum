@@ -24,17 +24,14 @@ struct Gpu {
 }
 
 fn gpu() -> Gpu {
+    let admitted = thrum_test_support::gpu("mesh route", None).expect("real adapter");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        let (device, queue) = adapter
+        let (device, queue) = admitted
+            .adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
+        let capabilities = DeviceCapabilities::capture(&admitted.adapter, &device, 41);
         Gpu {
             capabilities,
             device,

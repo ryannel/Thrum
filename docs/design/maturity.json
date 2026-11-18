@@ -191,6 +191,13 @@
         "browser": "Chrome_M3Max_sunset_to_midnight_sweep_reviewed;_paired_720p_star_frame_costs_at_midnight_and_twilight_recorded;_physical_cadence_unqualified",
         "ios": "not_run"
       },
+      "aloft_casters": {
+        "implementation": "The exit balloon row is marked aloft. Its buckets draw in both Sun cascades. Only grounded buckets draw in the terrain horizon; contribution casters and Sun fits retain their existing inputs.",
+        "correctness": "M10.1 reads the three Metal depth layers. Both cascades equal the unmarked run, and the terrain horizon equals the run with the airborne caster absent, in Direct, Frustum and Occlusion.",
+        "visuals": "The fixed Mac exit sequence removes the far-ground strip at tick 234 and retains moving nearby balloon shadows and distant ridge shading over the inspected spans.",
+        "device": "Apple M3 Max Metal bucket-route readback and 1280 by 720 SDR portable fixed submitted frames. The shared exact-images main check covers registered Mac and Chrome baselines. Live cadence and the Chrome exit replay are outside this proof.",
+        "evidence": ["../evidence/ATMOSPHERE/M10/README.md"]
+      },
       "aerial_ground_transport": {
         "implementation": "M9 continues the one aerial producer below the model ground using signed altitude, the density laws and the transmittance chart's near-surface optical-depth slope; diffuse and night sources use the ground point above. Sky charts and lent decoders are unchanged.",
         "correctness": "M9.1 and M9.2 pass on Metal: the declared 60-degree near-ground reads match the production product's own column within the unchanged allowance, the stopped-column controls fail, above-ground stored bytes are preserved, and continued values are finite with non-increasing stored transmittance. The 90-degree and 0.5-degree-Sun records are diagnostics only.",
