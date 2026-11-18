@@ -181,7 +181,7 @@
     {
       "id": "M2",
       "name": "A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -220,7 +220,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
@@ -240,7 +240,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
@@ -262,26 +262,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Reflected bank does not show the lamp-lit ground",
-          "item": "M2.5",
-          "repeat": false
-        },
-        {
-          "name": "Radiance markers are inside the main frame",
-          "item": "M2.3",
-          "repeat": false
-        },
-        {
-          "name": "Secondary cascades submit every cooked caster",
-          "repeat": false
-        },
-        {
-          "name": "Mirror example uses sea-level air instead of 250 m",
-          "repeat": false
         }
       ]
     },
