@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 from concurrent.futures import ThreadPoolExecutor
 
 import sim2d_conformance as conformance
@@ -34,13 +35,15 @@ COST_TICK = 240
 def build(target, tree=ROOT, output=None):
     output = output or (ROOT / "target")
     triple = TARGETS[target]
-    args = ["rustup", "run", "1.99.1", "cargo", "build", "--locked", "--offline", "--release", "-p", PACKAGE,
+    channel = tomllib.loads((tree / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+    args = ["rustup", "run", channel, "cargo", "build", "--locked", "--offline", "--release", "-p", PACKAGE,
             "--target-dir", str(output)]
     if triple:
         args += ["--target", triple]
     if target == "chrome-webgpu":
         args.append("--lib")
-    environment = dict(os.environ, RUSTC=conformance.command(["rustup", "which", "--toolchain", "1.99.1", "rustc"]).strip())
+    rustc = conformance.command(["rustup", "which", "--toolchain", channel, "rustc"]).strip()
+    environment = dict(os.environ, RUSTC=rustc)
     environment.setdefault("RUSTC_WRAPPER", "")
     subprocess.run(args, cwd=tree, env=environment, check=True)
     directory = (output / triple if triple else output) / "release"
