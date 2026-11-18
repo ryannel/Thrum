@@ -198,6 +198,7 @@ mod view_knobs_gpu {
             .create_view(&wgpu::TextureViewDescriptor::default())
     }
 
+    #[expect(clippy::print_stderr, reason = "the GPU witness is saved as evidence")]
     fn verify_viewport(
         host: &mut Host,
         observation: &Mutex<Observation>,
@@ -232,6 +233,24 @@ mod view_knobs_gpu {
         }
     }
 
+    fn submitted_camera(projection: Mat4, eye: [f32; 3]) -> Camera {
+        // Use the main projection's exact forward and FOV so the optics
+        // match bitwise. Specify the secondary controls independently.
+        let rows = projection.transpose();
+        let forward = rows.w_axis.truncate().normalize();
+        let vertical = rows.y_axis.truncate();
+        let fov = (2.0
+            * (vertical - forward * vertical.dot(forward))
+                .length_recip()
+                .atan())
+        .to_degrees();
+        Camera::look_at(
+            eye,
+            (glam::Vec3::from_array(eye) + forward * 128.0).to_array(),
+            fov,
+        )
+    }
+
     #[test]
     fn quality_controls_change_only_the_reflection_on_both_recipes() {
         let Some(gpu) = thrum_test_support::gpu("mirror view knobs", Some(wgpu::Backend::Metal))
@@ -260,22 +279,8 @@ mod view_knobs_gpu {
             let (scene, source) = fixture::scene(6, EXTENT);
             let projection = Mat4::from_cols_array_2d(&scene.view.view_proj_columns());
             let mask = pool_pixels(projection);
-            // Use the main projection's exact forward and FOV so the optics
-            // match bitwise. Specify the secondary controls independently.
-            let rows = projection.transpose();
-            let forward = rows.w_axis.truncate().normalize();
-            let vertical = rows.y_axis.truncate();
-            let fov = (2.0
-                * (vertical - forward * vertical.dot(forward))
-                    .length_recip()
-                    .atan())
-            .to_degrees();
             let eye = scene.view.camera_position();
-            let camera = Camera::look_at(
-                eye,
-                (glam::Vec3::from_array(eye) + forward * 128.0).to_array(),
-                fov,
-            );
+            let camera = submitted_camera(projection, eye);
             let mut host = pollster::block_on(FrameHost::new(
                 &caps,
                 &queue,
