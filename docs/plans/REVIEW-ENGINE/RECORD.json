@@ -354,14 +354,30 @@
         }
       ],
       "ready_for_review": {
-        "commit": "b8c8e71bd6b3ba0c14bc2f951c5899153f202915",
-        "checked": "b8c8e71bd6b3ba0c14bc2f951c5899153f202915",
-        "at": "2026-11-17T21:50:32Z",
+        "commit": "04ccb68de17a766e3bdd504ad03af8f6ad757328",
+        "checked": "fdf92fa9073ec10ebe8618355fba52dfedc63f2c",
+        "at": "2026-11-18T00:03:15Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
         "effort": "medium",
-        "observed": {},
-        "cli": "codex-cli 0.169.0-alpha.11.1"
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 174891,
+          "cached": 21292288,
+          "output": 27421,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 174891,
+          "cached": 21292288,
+          "output": 27421,
+          "turns": 2
+        }
       }
     },
     "M5": {
