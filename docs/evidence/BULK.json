@@ -4403,6 +4403,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-beam/far-horizon.tar",
+      "size": 8418304,
+      "sha256": "bb9047ad5e88023ba3075b20b177b60e2d5dbd091e4801bc46b7f46546713c4d",
+      "date": "2026-11-18T11:17:19.363986+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/M3-lighting-diagnosis/snapshots.tar.gz",
       "size": 7141860,
       "sha256": "106e53492b7cf0a4187b571bf50dc6f2e248daa7e3ce4c73cc4742b0e89a08e8",
