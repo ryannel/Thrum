@@ -459,7 +459,7 @@
     {
       "id": "M3",
       "name": "Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -609,17 +609,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The M3 plan needs to reopen form tuning so the erosion correction can be tested on Metal.",
-        "work": {
-          "commit": "2d39edb23acbfa415238c218582fb9951876673d",
-          "branch": "build/clouds",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/CLOUDS/M3-handoff.md"
-      }
+      ]
     },
     {
       "id": "M4",
