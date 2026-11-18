@@ -34,7 +34,7 @@
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close |
-| 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, kept as a default only if it measures faster | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close |
+| 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
 are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 milestone. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
@@ -2051,7 +2051,7 @@ at once, and so that one path failing to measure a win does not hold the other.
 | Module | Owns (state and code) | Design |
 |---|---|---|
 | `RAY-TRACING` | The mesh structures and the scene structure; ray instances and their masks; the traced method of the scene's Sun visibility; lamp shadows; the traced visibility pass with its history, soft Sun shadows and ambient occlusion; this Mac's opt-in record for ray paths (a `raytrace` module in `thrum-render`, and [ruled changes](#seam-rulings-for-track-5) elsewhere) | [Design](RAY-TRACING/DESIGN.md) |
-| `MESH-SHADING` | The object and mesh stage shaders and pipelines of the cooked draw; a mesh's meshlet storage on the GPU; the promoted list for the mesh stages (files of its own in `thrum-asset-gpu`, and [ruled changes](#seam-rulings-for-track-5) elsewhere) | [Design](MESH-SHADING/DESIGN.md) |
+| `MESH-SHADING` | The object and mesh stage shaders and pipelines of the cooked draw; a mesh's meshlet storage on the GPU; this Mac's opt-in record for the mesh stages (files of its own in `thrum-asset-gpu`, and [ruled changes](#seam-rulings-for-track-5) elsewhere) | [Design](MESH-SHADING/DESIGN.md) |
 
 ### Off the critical path
 
@@ -2062,8 +2062,9 @@ culling, and both are built.
   `depends_on`.
 - A launch that names no hardware feature makes the device it makes today, and a scene that asks for nothing
   draws the bytes it draws today. Each milestone proves it against [the exact baselines](#exact-baselines).
-- Each module's last milestone waits for `SHOWCASE` M8, so the Mac window's default does not change under the
-  exit. Promotion moves no registered baseline: the verifier's runs name no hardware feature.
+- Neither module changes the Mac window's default, before the exit or after it, and the verifier's runs name
+  no hardware feature, so no registered baseline moves. Each module's last milestone waits for `SHOWCASE` M8
+  so that its record describes the valley as the exit leaves it.
 - A builder takes a milestone here only when no V1 milestone can start. Order among the other work that is
   off the exit is the lead's.
 - Milestones running in the same crates when this was planned: `SCENE-VIEWS` M1 in `thrum-render` and
@@ -2092,10 +2093,8 @@ belongs to its owner: later work there keeps its tests passing.
    request with it fails the function asks once more without the preferred names; the registry records what
    was enabled and why any name was not. With no list the request is today's. Whichever milestone lands first
    builds the function and the other adds its name. `HOST` M1 gathers the device requests into its recipe when
-   it is built, and the recipe carries the list. No host adds `ray-query` unasked. A host adds `mesh-stages`
-   to its own request, unasked, only when the registry says the adapter and the launch's recipe are in a
-   qualified configuration for it and the adapter offers it (`MESH-SHADING` M3), so an ordinary launch is
-   never refused.
+   it is built, and the recipe carries the list. No host adds `ray-query` or `mesh-stages` unasked, and the
+   registry holds no list of machines for either.
 2. **Mesh pipelines in the creation ledger** (`MESH-SHADING` M1; `runtime/creation.rs`). The creation authority
    gains an entry for mesh pipelines beside `render` and `compute`, counted as they are.
 3. **A mesh structure for each arena row** (`RAY-TRACING` M1; `synthetic/mesh_arena.rs`, `mesh_route.rs`). In a
@@ -2130,17 +2129,19 @@ belongs to its owner: later work there keeps its tests passing.
    reads and writes declared. The visibility history is accepted, reset and committed by
    `APPLE-PRESENTATION`'s history rules. The frame's timing record gains the GPU span of the whole frame,
    from its first GPU work to the end of the pass that consumes its output, beside the pass times and the
-   scene sum it has, which keep their meaning.
-8. **Scene layouts for the object and mesh stages** (`MESH-SHADING` M1; the view and light group layouts and
-   `SceneSurface`). On a generation that enabled the stages, those layouts are visible to the object and mesh
-   stages as they are to the vertex stage. On any other generation they are unchanged.
+   scene sum it has, which keep their meaning. `RAY-TRACING` M3 or `MESH-SHADING` M2 adds the span,
+   whichever lands first, and the other uses it as found.
+8. **Scene layouts for the object and mesh stages** (`MESH-SHADING` M1: the view and light group layouts and
+   `SceneSurface`; M2: the caster view layout of `synthetic/shadow.rs`, which each Sun map pass binds at
+   group 0 and lends as `SceneShadowSurface::view_layout`). On a generation that enabled the stages, those
+   layouts are visible to the object and mesh stages as they are to the vertex stage. Nothing else about
+   them changes, and on any other generation they are unchanged.
 9. **Secondary views** (no build). A view of `SCENE-VIEWS` shades with the map method and its own cascade and
    draws cooked meshes by the path that module resolves, whatever the main view resolved. Rays or the stages
    in a view are proposals for that module's next plan.
 10. **Resolved selections** (`RAY-TRACING` M3, `MESH-SHADING` M1). The report that names the culling mode also
     names the hardware features the device enabled, the Sun shadow method, the penumbra, lamp shadows, ambient
-    occlusion and the cooked draw path, each as resolved. The cooked draw path's `Auto` reads the resolved Sun
-    shadow method: `RAY-TRACING` M3 supplies it where it adds the method, and until then the method is maps.
+    occlusion and the cooked draw path, each as resolved, with the reason where it did not resolve as asked.
     `SHOWCASE`'s exit report prints what it reads; no item of `SHOWCASE` changes.
 11. **Pipeline preparation** (no build). A scene with a ray or mesh-stage request creates its pipelines
     through the creation authority before it is ready, from WGSL. `APPLE-PRESENTATION` M10's shaders compiled
@@ -2152,10 +2153,10 @@ belongs to its owner: later work there keeps its tests passing.
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Hardware features at launch**: a launch names the hardware features it wants, each as required or preferred, and one function makes the device. A required name is enabled or the launch is refused by name. A preferred name never fails a launch: it is left out where the adapter does not offer it or the device request with it fails. The registry records what was enabled and why any name was not. Default: none. No host adds `ray-query` unasked; a host adds `mesh-stages` unasked only inside a qualified configuration | `RAY-TRACING:M1`, `MESH-SHADING:M1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
+| **Hardware features at launch**: a launch names the hardware features it wants, each as required or preferred, and one function makes the device. A required name is enabled or the launch is refused by name. A preferred name never fails a launch: it is left out where the adapter does not offer it or the device request with it fails. The registry records what was enabled and why any name was not. Default: none. No host adds either name unasked | `RAY-TRACING:M1`, `MESH-SHADING:M1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
 | **Ray instances**: a contribution offers each frame, for each opaque thing it holds in the scene, drawn or not, a mesh structure, a transform and a mask (casts shadows, occludes ambient light); the scene structure is rebuilt from them each frame | `RAY-TRACING:M2` → `CONTENT-LOOP`'s cooked contribution; any later contribution with opaque geometry | [RAY-TRACING](RAY-TRACING/DESIGN.md#the-structure-m1-m2) |
 | **Traced visibility**: a scene's preparation takes the Sun's shadow method (`Maps`, or `Traced` with the penumbra on or off), lamp shadows, and ambient occlusion with a radius; each is resolved from the registry before anything is allocated and reported, with the reason where it did not resolve as asked. A ray request is met only on a device that enabled ray queries and on a recipe that lists ray effects, which is Apple tile. Anywhere else, and where a traced scene fails to prepare, the scene draws the map frame: `Maps`, no lamp shadow, no occlusion. Nothing is `Auto`, and no ray effect is a default | `RAY-TRACING:M3` (Sun, lamps), `M4` (penumbra), `M5` (ambient occlusion) → games, the proving ground | C04, C08, [RAY-TRACING](RAY-TRACING/DESIGN.md#selection-fallback-and-the-opt-in) |
-| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported. `Auto` is `COOKED-DRAW`'s selection outside a qualified configuration: the measured adapter, the Apple tile recipe and the Sun's shadows as maps | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-promotion) |
+| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported with the reason where it did not resolve as asked. `Auto` is `COOKED-DRAW`'s selection on every device and never the stages. `MeshStages` is met on a device that enabled the stages; anywhere else, and where a stage pipeline fails to build, the scene draws what `Auto` draws. It is not refused | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-the-opt-in) |
 
 
 ## Owner decisions
@@ -2240,13 +2241,14 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
 31. **What rays are spent on.** Shadows from the Sun and lamps, soft Sun shadows and ambient occlusion.
     Reflections by ray and global illumination are not planned; decision 23 stands. The owner can ask for
     either, as a later plan on the same structure.
-32. **What the mesh stages draw.** Cooked placements. The exit scene's 10,000 entities are planned only if
-    `MESH-SHADING` M3's record shows the stages are faster on this GPU. The owner can ask for them now.
-33. **Promotion is strict, and ray tracing has none.** The mesh stages become the Apple recipe's default only
-    if they measure faster, and then only on the Mac GPU and with the map shadows they were measured with. No
-    ray effect is a default on any machine: a person turns the traced path on with a launch setting, it falls
-    back to shadow maps where rays cannot run, and `RAY-TRACING` M6 records how it looks and what it costs on
-    this Mac. Turning a path on by default for its look, in the showcase too, would change the V1 exit.
+32. **What the mesh stages draw.** Cooked placements. Whether the exit scene's 10,000 entities follow is
+    decided by the next plan from `MESH-SHADING` M3's record. The owner can ask for them now.
+33. **Nothing in track 5 is a default.** No ray effect and no mesh-stage path is on by default on any
+    machine. A person turns each on with a launch setting, it falls back to the path it replaces where its
+    feature is missing, and `RAY-TRACING` M6 and `MESH-SHADING` M3 record how it looks and what it costs on
+    this Mac, timed while other builders work. Making either a default needs a measured win on a quiet
+    machine and a rule for which Macs it covers, and in the showcase it would change the V1 exit. The two can
+    be turned on together; neither module checks the pair.
 34. **Effects with no portable version.** Lamp shadows and ambient occlusion appear only on a device that
     traces rays, on the Apple tile recipe. On the portable recipe a scene that asks for a ray effect draws without it and reports why. No screen-space stand-in is planned for Chrome or the portable recipe.
 35. **Where track 5 sits in the queue.** Behind every V1 milestone. Its order among the other work off the
@@ -2673,3 +2675,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   or chosen by the engine, a ray request that cannot be met falls back to the map frame, a launch gives a
   hardware name as required or preferred, and the frame's timing record gains a whole-frame GPU span.
   `MESH-SHADING`'s half of ruling 1 keeps its meaning. No V1 module's item, contract or exact baseline changed.
+- 2026-11-18 Track 5 rulings 1, 7, 8 and 10, the launch and cooked-draw-path interfaces, the module table's
+  row 33 and owner decisions 32 and 33 were amended after
+  [MESH-SHADING's second design review](../evidence/MESH-SHADING/design-review.md) and the lead's direction,
+  quoted in [its design](MESH-SHADING/DESIGN.md#the-request): the mesh stages are an opt-in a launch and a
+  scene ask for and no host or `Auto` selects them, a `MeshStages` request that cannot be met falls back with
+  a reason, the caster view layout is visible to the object and mesh stages on a device that enabled them,
+  and whichever of `RAY-TRACING` M3 and `MESH-SHADING` M2 lands first adds the whole-frame GPU span. No V1
+  module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.

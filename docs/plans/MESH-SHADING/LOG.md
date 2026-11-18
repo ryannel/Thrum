@@ -19,3 +19,9 @@
   held to it (old M1.3, M1.4) became one contract comparison at a tolerance the test states (M1.3). The cost
   record's reviewer question was dropped (M2.7), and the final-build inspection runs only if the path is
   promoted (M3.4). Meshlet storage follows the scene's resolved path, not the device. The design review is owed.
+- 2026-11-18 [The second design review](../../evidence/MESH-SHADING/design-review.md) asked for changes: four
+  Must Fix. The lead: "prefer the simplest promotion rule that holds: an explicit, recorded per-device opt-in
+  with a measured paired timing as a tripwire is acceptable". Nothing is promoted now: the stages are an
+  opt-in, and the pair is a tripwire. M2 gained M2.8 and M3's items were rewritten.
+  [What changed, finding by finding](../../evidence/MESH-SHADING/design-review-2-resolution.md). The design
+  review is owed.

@@ -15,9 +15,9 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "A launch that names `mesh-stages` on this Mac gets a device with the object and mesh stages enabled and the limits the path needs, and the registry reports them. A launch that names nothing gets the device it gets today. An unknown name, and `mesh-stages` on an adapter that does not offer them, are each refused by name before a device is made.",
+          "statement": "A launch that requires `mesh-stages` on this Mac gets a device with the object and mesh stages enabled and the limits the path needs, and the registry reports them. A launch that names nothing gets the device it gets today. An unknown name, and a required `mesh-stages` on an adapter that does not offer the stages or those limits, are each refused by name before a device is made. A preferred `mesh-stages` never fails a launch: on such an adapter, and when the device request with it is made to fail, the launch gets the device it gets today, and the registry reports the name as not enabled and why.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test mesh_stage_request_gpu",
-          "ask": "Is there one function in the registry that turns a launch's list into the device request, shared with `ray-query`, and does every host that asks go through it?",
+          "ask": "Is there one function in the registry that turns a launch's list into the device, shared with `ray-query`, and do the Mac window, the capture runner and the test gate each make their device through it?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -51,9 +51,9 @@
         },
         {
           "id": "M1.4",
-          "statement": "The frame reports the cooked path that was asked for and the path it resolved to. `Auto` resolves to the path chosen today. An explicit `MeshStages` on a device without the stages is refused by name when the scene is prepared. On the mesh-stage path the forward pass records one mesh draw for each placement, and no cull pass and no indexed indirect draw for it.",
+          "statement": "The frame reports the cooked path that was asked for, the path it resolved to and, where the two differ, why. `Auto` resolves to the path chosen today, on a device with the stages as on one without. `MeshStages` on a device that did not enable the stages is not refused: it resolves to the path chosen today and the scene submits that path's bytes. On the mesh-stage path the forward pass records one mesh draw for each placement, and no cull pass and no indexed indirect draw for it.",
           "check": "python3 scripts/mesh_stage_proof.py selection",
-          "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages?",
+          "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages and a fallback is never silent?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -143,7 +143,7 @@
           "id": "M2.2",
           "statement": "Each of the Sun's map passes, the two cascades and the top-down height layer, stores through the stages with its cull on the depth it stores with the cull off, to the byte, at noon and at a low Sun. A pass that a mesh only partly reaches launches fewer mesh workgroups than the mesh has meshlets.",
           "check": "python3 scripts/mesh_stage_proof.py shadow-equal",
-          "ask": "Does a diagnostic count show meshlets rejected in a shadow pass on the valley, so the equality is not vacuous?",
+          "ask": "Does a diagnostic count show meshlets rejected in a shadow pass on the valley, so the equality is not vacuous? Do the object and mesh stages read each map's matrix from the binding the pass makes at group 0, with the caster view layout unchanged on a device that did not enable the stages?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -198,7 +198,7 @@
         },
         {
           "id": "M2.7",
-          "statement": "For both paths on the valley's route at 1280\u00d7720 and 1920\u00d71080, with the machine's load, the record holds: frame GPU time and frame CPU time as the design defines them; the GPU time of the cull pass, the forward pass and each of the Sun's map passes by name; the draws recorded; the meshlets and the triangles submitted and rejected in each pass, with terrain kept apart from the other cooked meshes; and resident bytes. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "For both paths on the valley's route at 1280\u00d7720 and 1920\u00d71080, with the machine's load, the record holds the design's two whole-frame figures, the GPU time of the cull pass, the forward pass and each of the Sun's map passes by name, the draws recorded, the counts of the design's cost account and resident bytes. The frame GPU span runs through the pass that consumes the frame's output. Each tripwire of the cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/mesh_stage_cost.py valley",
           "lock": "gpu",
           "target": "mac-metal",
@@ -209,6 +209,17 @@
         },
         {
           "id": "M2.8",
+          "statement": "A scene prepared with the Sun's shadows off and `MeshStages` asked draws its forward pass through the stages, makes no shadow pipeline for them and records no shadow draw, and its bytes with the cull on equal its bytes with the cull off.",
+          "check": "python3 scripts/mesh_stage_proof.py shadows-off",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.9",
           "statement": "No exact baseline moves: with no request, and on the direct and indirect paths, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
@@ -221,20 +232,20 @@
     },
     {
       "id": "M3",
-      "name": "The record says whether the object and mesh stages measured faster on this Mac, and the Mac window uses them by default only where they did",
+      "name": "A person turns the object and mesh stages on for this Mac with one launch setting, and the record shows how the valley looks and what it costs beside the path it replaces",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "SHOWCASE:M8"
       ],
-      "quality_bar": "A promotion record a reader can trust, as APPLE-TILE's integrated record is: paired, taken in one quiet sitting, its conclusion recomputable from its rows, and nothing claimed for a Mac, a recipe or a shadow method that was not run.",
+      "quality_bar": "An opt-in record a person can decide from, as RAY-TRACING's is: the machine as the OS reports it, the launch line, the look judged on the final build against a shipped GPU-driven renderer's meshlet path, and a paired timing that says no more than its spread allows. Nothing is claimed as a default, or for a Mac, a recipe or a shadow method that was not run.",
       "items": [
         {
           "id": "M3.1",
-          "statement": "The design's eight runs are retained from one sitting with other builders paused: the valley's route on this Mac on the Apple tile recipe, with capture off and the Sun's shadows as maps, at 1280\u00d7720 and 1920\u00d71080, the existing path and the mesh stages each run twice, interleaved. For every frame of every run the record holds frame GPU time and frame CPU time. For every run it holds their medians, M2.7's other rows, the load and the thermal state. No figure in the record decides this item.",
+          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the path on, and the design's paired timing. For each of the pair's eight runs it holds M2.7's rows, the timed ones as medians. For each figure at each extent it states the difference between the two paths beside the spread, and says the pair shows no difference where the spread is the larger. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
           "check": "python3 scripts/mesh_stage_cost.py check",
-          "ask": "Was the record taken in one sitting with other builders paused, on the final build, in the design's order, and do the retained frames give the medians it states?",
+          "ask": "Do the two paths' runs differ in the opt-in selection alone, on the final build and in the design's order, and is each sentence the record draws from the pair no stronger than its spread allows?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -243,20 +254,9 @@
         },
         {
           "id": "M3.2",
-          "statement": "The record states, for each figure at each extent, the spread and whether the mesh stages were no higher, lower or higher, and its conclusion: promoted, no measurable effect or slower. That conclusion is what the design's rule gives from the retained frames, and the registry's qualified list holds this Mac's entry exactly when the conclusion is promoted.",
-          "check": "python3 scripts/mesh_stage_cost.py decide",
-          "ask": "Is the rule the script applies the design's, figure for figure, and does the list in the code match the conclusion?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M3.3",
-          "statement": "With a qualified entry present, an ordinary launch of the Mac window asks for `mesh-stages`, and `Auto` draws through the stages, only when the adapter is the entry's and offers the stages, the recipe is Apple tile and the Sun's shadows are maps. Outside any one of those the launch makes the device it makes today and draws the existing path, and nothing is refused. A launch that names `mesh-stages` on an adapter without them is still refused by name. A capture or a test asks only for what it names. All of this holds with the list empty too.",
-          "check": "python3 scripts/mesh_stage_proof.py qualification",
-          "ask": "Is an ordinary launch on this Mac exercised through the host on both recipes, with the cases this Mac cannot show (another adapter, the stages not offered) exercised through the registry's function? Is the Sun shadow method that `Auto` reads the scene's resolved one wherever `RAY-TRACING` has added it?",
+          "statement": "From an ordinary launch of the proving ground's Mac window on the final build: with the opt-in selection, on each recipe, the valley reports `mesh-stages` enabled and the cooked draw path resolved to `MeshStages`, with a count of mesh-stage draws that is not zero. With no selection the device is the one made today and the valley reports the path chosen today. With the selection and the first device request made to fail, the window makes the device it makes today, draws the existing path and reports why. No launch is refused and none fails.",
+          "check": "python3 scripts/mesh_stage_proof.py opt-in",
+          "ask": "Is each case launched through the Mac window's host as a person would launch it, with only the device request's failure injected?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -265,9 +265,9 @@
           "review": ""
         },
         {
-          "id": "M3.4",
-          "statement": "If the record promotes the path, an ordinary launch of the Mac window on this Mac reports the mesh stages, and the valley it shows passes M2.4's inspection list on the final build. If it does not, an ordinary launch reports the existing path and nothing more is inspected.",
-          "inspect": "If promoted: one capture pass of an ordinary launch on the final build, `fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route, judged by M2.4's list. If not: the ordinary launch's report.",
+          "id": "M3.3",
+          "statement": "With the opt-in selection on the final build, the valley as the V1 exit leaves it passes M2.4's inspection list. The record states the result for each entry of the list.",
+          "inspect": "One capture pass on the final build, launched with the opt-in selection and with `mesh-stages` required, so its frames cannot be the fallback's: `fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, whole and as native-size crops, with the capture's own report of the enabled features and the resolved cooked path beside them. Judged by M2.4's list.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -275,8 +275,8 @@
           "review": ""
         },
         {
-          "id": "M3.5",
-          "statement": "The record says, from its rows, what share of cooked triangles the cone test and the frustum test each removed in each pass, for terrain and for the other cooked meshes apart, and what the paired times say the path saved. From the share measured on the other cooked meshes it says what the same tests would be expected to remove from the exit scene's entities, so that the next plan can decide whether entities are drawn this way.",
+          "id": "M3.4",
+          "statement": "The record says, from its rows, what share of cooked triangles the cone test and the frustum test each removed in each pass, for terrain and for the other cooked meshes apart, and what the pair shows the path saved or cost. From the shares measured on the other cooked meshes it says what the same tests would be expected to remove from the exit scene's entities, so that the next plan can decide whether entities are drawn this way.",
           "ask": "Is the expectation for entities derived from triangle shares measured on meshes like the exit scene's props, with its assumptions stated, and not asserted?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -285,8 +285,8 @@
           "review": ""
         },
         {
-          "id": "M3.6",
-          "statement": "A creator can select the path for a scene from the public documentation: the launch request, the scene's request, what it resolves to on a device without the stages and for a mesh the device cannot bind, when the Mac window selects it unasked, and what was measured.",
+          "id": "M3.5",
+          "statement": "A creator can turn the path on for a scene from the public documentation: the launch's list and what required and preferred mean, the scene's request, what it resolves to on a device without the stages and for a mesh the device cannot bind, that nothing selects it unasked, and what this Mac's record shows.",
           "ask": "Could an agent that has read only the public documentation launch a scene on the mesh stages on this Mac and read back that it did?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -295,8 +295,8 @@
           "review": ""
         },
         {
-          "id": "M3.7",
-          "statement": "The maturity ledger has a row for the mesh-stage path, with implementation, correctness, visuals and device kept apart, and claims nothing for a Mac, a recipe or a target that was not run.",
+          "id": "M3.6",
+          "statement": "The maturity ledger has a row for the mesh-stage path, with implementation, correctness, visuals and device kept apart. It records the path as run on this Mac, not performance-qualified and not a default, and claims nothing for a Mac, a recipe or a target that was not run.",
           "ask": "Does the row match what M1 to M3 ran, with the physical iPhone recorded as owed?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -305,8 +305,8 @@
           "review": ""
         },
         {
-          "id": "M3.8",
-          "statement": "Every exact baseline holds after promotion, because the verifier's runs name no hardware feature.",
+          "id": "M3.7",
+          "statement": "Every exact baseline holds: the verifier's runs name no hardware feature and ask for no path, and no launch's default has changed.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "open",

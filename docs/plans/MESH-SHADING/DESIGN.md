@@ -14,8 +14,15 @@ The owner, 17 November 2026:
 > Just do ray tracing and mesh shaders on mac, let's leave PC for now.
 
 The lead's task is quoted in [RAY-TRACING's design](../RAY-TRACING/DESIGN.md#the-request), which is the other
-half of it. This design is mesh shaders: Metal's object and mesh stages, which wgpu calls the task and mesh
-stages.
+half of it. It asked that each path be "promoted only by a measured win".
+
+The lead, 18 November 2026, after two design reviews found faults in a rule that made the stages a default by
+itself: "prefer the simplest promotion rule that holds: an explicit, recorded per-device opt-in with a
+measured paired timing as a tripwire is acceptable; don't build general registry keying or exhaustive operand
+capture this module doesn't need. Off the V1 path." So this module makes nothing a default. A person turns the
+path on for a machine, and the measured win the task asks of a default is owed by whoever later makes one.
+
+This design is mesh shaders: Metal's object and mesh stages, which wgpu calls the task and mesh stages.
 
 ## Purpose and scope
 
@@ -39,27 +46,32 @@ for those that pass, in whichever pass is drawing.
 
 | User | Needs | What that requires |
 |---|---|---|
-| A game or demo on the Mac | The same scene for less CPU and GPU work, and to see which path drew it | A registry-selected path, a resolved report, and the path it replaces prepared as the fallback, for the scene or for one mesh |
+| A game or demo on the Mac | The same scene for less CPU and GPU work, and to see which path drew it | A path a launch and a scene ask for, resolved from the registry and reported, with the path it replaces prepared as the fallback, for the scene or for one mesh |
+| A person deciding whether to turn it on for a machine | How it looks and what it costs on a Mac that ran it | One launch selection, and this Mac's record |
 | A creator editing a cooked material or mesh while the scene runs | The edit, on whichever path draws the mesh | One accepted material and one publication for both paths |
-| A Mac other than the one measured, or a scene whose Sun shadows are not maps | The launch and the frame it has | No automatic request and no automatic selection outside what was measured |
+| Every launch and scene that did not ask, and a Mac whose GPU lacks the stages | The launch and the frame it has | Nothing requested or selected unasked, and a request that cannot be met draws the existing path and says why |
 | Chrome, the iPhone simulator, a Mac on the portable recipe | The frame they have | The indirect and direct paths untouched |
 | A later Vulkan or D3D12 recipe | The same path | wgpu's public API and WGSL only |
 
 **Commissioned**, on `mac-metal`: cooked placements drawn through the object and mesh stages in the main
-view's forward pass and in the Sun's shadow passes, selected from the registry, with the existing path as
-fallback and reference; a paired record; promotion, by the rule below, for the configuration that was measured.
+view's forward pass and in the Sun's shadow passes, resolved from the registry when a launch and a scene ask,
+with the existing path as fallback and reference; one launch selection that turns the path on; and this Mac's
+record of how it looks and what it costs.
 
 **Not built**, with the reason:
 
 - **Entities.** The 10,000 entities of the exit scene draw whole mesh rows through `CULLING`'s bucket route,
   culled a whole instance at a time. Drawing them a meshlet at a time is where the larger saving may lie, since
   `SHOWCASE` sizes prop detail to fit the frame. It needs meshlet tables in the mesh arena and a change to the
-  route whose every mode is held byte-equal to an oracle. It is planned only if this module's record shows the
-  stages win on this GPU ([open for the human](PLAN.md#open-for-the-human)).
-- **The default under the traced Sun.** `RAY-TRACING`'s traced method removes cascade passes, and part of this
-  path's saving is in those passes. The default is qualified here with the Sun's shadows drawn as maps. A
-  default for the two together belongs to the plan that follows both modules' records, and neither waits for
-  the other.
+  route whose every mode is held byte-equal to an oracle. The next plan decides it from this module's record
+  ([open for the human](PLAN.md#open-for-the-human)).
+- **A default.** Nothing here turns the stages on unasked, on this Mac or any other. A default needs C12's
+  performance qualification, taken on a quiet machine, and a rule for which machines it covers. Both belong
+  with the decision to make one.
+- **A check of the stages with `RAY-TRACING`'s traced Sun.** A scene may ask for both, and
+  [the stages draw whichever passes it records](#selection-fallback-and-the-opt-in). This module runs the
+  path with the Sun's shadows as maps and with them off. Neither module waits for the other, so the two
+  together are not inspected or timed here ([open for the human](PLAN.md#open-for-the-human)).
 - **Occlusion culling of meshlets.** `CULLING`'s depth pyramid holds entities only, and a cooked placement is
   never an occluder in it, so there is nothing to test terrain meshlets against.
 - **Levels of detail and cluster hierarchies.** The cooker makes one level.
@@ -73,8 +85,8 @@ fallback and reference; a paired record; promotion, by the rule below, for the c
 |---|---|---|---|
 | **G1 The same picture** | The valley's terrain and cooked meshes, in the main view and in their shadows | Every cooked mesh in the valley; 1 to the valley's largest meshlet count; camera inside, beside and far from a mesh; noon and low Sun | A path that drops a meshlet nobody is looking at, or a shadow caster that drops the faces turned from the Sun. Rejected by byte equality between the path with its cull on and with it off, and by the path with its cull off against the path it replaces |
 | **G2 Nothing pops** | The camera in motion and across a cut | Snap turns, a mesh crossing the near plane, an edit, a device replacement | A cull tested at rest. Rejected by the same equality at every frame of a scripted path |
-| **G3 The work is less** | The recorded frame | The valley's route; a mesh wholly in view, partly in view and behind the camera | Counters that fall while time does not. Rejected by paired whole-frame GPU and CPU times |
-| **G4 The path is the one reported** | Mac on both recipes, with and without the launch request | Adapters with and without the stages; a mesh the device's limits cannot bind or dispatch; a Mac that was not measured | The indirect path passing as the mesh stages, or a mesh silently left out. Rejected by asserting the resolved path for the scene and for each mesh, and by a count of mesh-stage draws that is not zero |
+| **G3 The work is known** | The recorded frame | The valley's route; a mesh wholly in view, partly in view and behind the camera | Counters that fall while time does not, or a sum of pass times that falls while the frame takes longer. Rejected by a paired record of the frame's whole GPU span and its CPU time, which says so when the pair shows no difference |
+| **G4 The path is the one reported** | Mac on both recipes, with and without the launch request | Adapters with and without the stages; a name required and preferred; a scene with the Sun's shadows off; a mesh the device's limits cannot bind or dispatch | The indirect path passing as the mesh stages, a fallback nobody is told of, or a mesh silently left out. Rejected by asserting the resolved path and its reason for the scene and for each mesh, and by a count of mesh-stage draws that is not zero |
 | **G5 An edit arrives** | A cooked material or mesh edited while the scene runs | Accepted and refused edits, a frame that is discarded, a device replacement, a mesh that fell back | A reload reported as installed while the stage pipeline still draws the old fragment. Rejected by the edit read from pixels a stage pipeline drew, in the frame the reload reports |
 
 The bar is a shipped GPU-driven renderer's meshlet path, such as the mesh-shader paths of Alan Wake 2 and of
@@ -100,8 +112,8 @@ This module has four proofs.
   measured first and asserted later, and the difference images are kept as the diagnostic.
 - **The look.** One inspection in the valley on the mesh-stage path, against the list in
   [M2's done-when item](DONE.json), with the existing path's stops beside it.
-- **The speed.** Tripwire records under load in M2, which pass on their check. The qualified pair is taken
-  once, in M3's sitting.
+- **The speed.** Tripwire records under load, in M2 and in M3's pair, which pass on their check. Nothing is
+  performance-qualified here, so no sitting with other builders paused is asked for.
 
 ## Research and selection
 
@@ -139,13 +151,23 @@ cooked meshlet tables, and keep the existing path prepared as fallback and refer
 
 ### Hardware features at launch
 
-As [RAY-TRACING defines it](../RAY-TRACING/DESIGN.md#hardware-features-at-launch): a launch that names
-`mesh-stages` in `THRUM_HARDWARE`, or in code, gets a device with the feature and its limits enabled, or a
-refusal by name. With no request the device is the one made today. Whichever module's first milestone lands
-second extends what the first built.
+As [RAY-TRACING defines it](../RAY-TRACING/DESIGN.md#hardware-features-at-launch): a launch names
+`mesh-stages` in `THRUM_HARDWARE`, or in code, as required or preferred, and one function of the registry
+makes the device for every host. A required name is enabled or the launch is refused by name. A preferred
+name never fails a launch: where the adapter does not offer it, or the device request with it fails, the
+launch gets the device it gets today and the registry records why the name is not enabled. With no request
+the device is the one made today. Whichever module's first milestone lands second extends what the first
+built.
 
 The request for `mesh-stages` also raises any ordinary limit the stage pipelines need, such as storage buffers
-in one stage, and only for a launch that asks. An adapter that cannot grant them refuses the request by name.
+in one stage, and only for a launch that asks. An adapter that cannot grant them does not offer `mesh-stages`:
+a required name is refused, and a preferred one is left out.
+
+**The launch decides the device and nothing else.** It is made before any scene exists, from the launch's
+list and the adapter. No host adds `mesh-stages` unasked, on any adapter, and the registry holds no list of
+machines. What a scene draws is decided when the scene is prepared, from the scene's own request
+([selection](#selection-fallback-and-the-opt-in)). A device that enabled the stages and a scene that does not
+draw through them hold [the bytes they hold on main](#residency).
 
 Pipelines for the stages are created through the device's creation authority, which gains a third entry
 beside `render` and `compute`, so the creation ledger counts them.
@@ -244,57 +266,87 @@ mesh through the stages with the pass's own view and projection.
   Cooked terrain is an open heightfield. At a low Sun its Sun-facing faces are grazing slivers that rasterise
   with holes, and the faces that carry the shadow are turned from the Sun (`draw.rs`, `shadow_pipeline`). A
   one-sided caster would pass the cull's equality in both arms and still leak light.
+- **The pass's view.** Each map's pass binds its own matrix at group 0, through the caster view layout that
+  `synthetic/shadow.rs` makes and lends to a contribution as `SceneShadowSurface::view_layout`. Today that
+  binding is visible to the vertex stage alone, so neither new stage could read it. Under
+  [ruling 8](../ARCHITECTURE.md#seam-rulings-for-track-5), on a generation that enabled the stages the
+  binding is also visible to the object and mesh stages. Nothing else about the layout, the uniform or the
+  pass changes, and on any other generation the layout is today's. The stage shadow pipeline's layout is that
+  group and a group of the contribution's own for the placement's record, so the one bind the pass makes
+  serves the existing casters and the stages alike, in all three maps.
+- **Which passes.** The stage shadow pipelines are made when the scene has Sun maps, as the existing caster's
+  is. A scene with the Sun's shadows off makes none and draws its forward pass through the stages. The
+  contribution draws into each map pass the renderer records and reads nothing about the Sun's method.
 
 So a pass rasterises only the meshlets that reach it, and what it stores is what the existing caster stores.
 
-### Selection, fallback and promotion
+<a id="selection-fallback-and-promotion"></a>
+### Selection, fallback and the opt-in
 
 - **Request.** `CookedDrawPath` gains `MeshStages` beside `Direct` and `Indirect`. A scene's preparation asks
-  for `Auto` or names a path.
-- **Resolution for the scene.** An explicit `MeshStages` resolves to the stages on a generation that enabled
-  them, and is refused by name on one that did not. `Auto` resolves to the stages only inside a qualified
-  configuration, defined below, and otherwise to what `COOKED-DRAW` selects today.
+  for `Auto` or names a path, and the path is fixed when the scene is prepared.
+- **Nothing is chosen for a scene.** `Auto` is `COOKED-DRAW`'s selection between the direct and indirect
+  paths, on every device, with the stages enabled or not. It never resolves to the stages. The registry holds
+  no list of measured machines, and nothing reads an adapter's name or its core count. The stages draw because
+  a launch and a scene asked for them.
+- **Resolution for the scene.** `MeshStages` is met on a device generation that enabled the stages. On one
+  that did not, it resolves to what `Auto` resolves to there, and the scene is prepared as if it had asked for
+  that, so it submits the bytes of the same scene with no request. The request is not refused, and it fails
+  no scene. A test that must draw through the stages requires `mesh-stages` at launch, so it cannot run on a
+  device without them.
 - **Resolution for each mesh.** Within a mesh-stage scene, [an ineligible mesh](#residency) draws through the
-  fallback. That is reported, not refused.
+  fallback.
 - **Fallback.** The fallback is the path `COOKED-DRAW` selects for the device, which on the Mac is the
   indirect path. Its pipelines are prepared with the stages', so a stage pipeline that fails to build resolves
   the whole scene to the fallback before the scene is ready.
-- **Report.** Where the culling mode is reported: the path asked for, the path the scene resolved to, how many
-  meshes each path draws, and the limit that excluded each mesh that fell back.
-- **Qualified configuration.** The registry holds a list of the configurations in which the stages measured
-  faster. An entry names what was measured: the adapter by the name the registry records for it, the Apple
-  tile recipe, and the Sun's shadows drawn as maps. A scene is inside a qualified configuration when its
-  device generation's adapter and recipe match an entry, the generation enabled the stages, and the scene's
-  resolved Sun shadow method is maps. Until `RAY-TRACING` M3 adds a second method, maps is the only one. The
-  list is empty until M3.
-- **Promotion (M3).** M3's sitting runs the valley's route on this Mac, on the Apple tile recipe, with capture
-  off and the Sun's shadows as maps, at 1280×720 and at 1920×1080. At each extent it takes four runs,
-  interleaved: the existing path from an ordinary launch, the mesh stages from a launch that names them, then
-  both again. Two figures are read from every frame of a run:
-  - **Frame GPU time:** the sum of the GPU intervals of every scene pass in the frame's timing record.
+- **The Sun's shadows.** The path does not depend on them. With maps, the forward pass and each map pass draw
+  through the stages. With the Sun's shadows off, the forward pass alone does. Under `RAY-TRACING`'s traced
+  method the forward pass does, and so does each map pass the renderer still records.
+- **Report.** Where the culling mode is reported: the hardware names the launch gave, which were enabled and
+  why any was not; the path asked for, the path the scene resolved to and, where the two differ, why; how
+  many meshes each path draws; and the limit that excluded each mesh that fell back. The reasons for the
+  scene are that the device did not enable the stages and that a stage pipeline failed to build. A fallback
+  is never silent.
+- **The opt-in.** A person turns the path on for a machine by how they launch: `mesh-stages` as a
+  [preferred](#hardware-features-at-launch) name, and a scene that asks for `MeshStages`. The proving ground's
+  valley has one launch selection, off by default, that does both; the recipe is chosen as it is today. On a
+  Mac whose GPU lacks the stages the same launch draws the existing path and reports why. The opt-in is
+  recorded in two places: every run's report says what was asked, enabled and resolved, and this Mac's record
+  says what the opt-in was found to do here.
+- **This Mac's record (M3).** It is written for a person deciding whether to opt a machine in, and nothing in
+  the engine reads it. It holds the machine as the OS reports it (chip, GPU core count, memory, OS version)
+  with the registry's digest, the commit, the launch line, the look, and the paired timing. The look is M3's
+  inspection of the final build against [M2's list](DONE.json).
+- **The paired timing is a tripwire.** On the final build with capture off, on the Apple tile recipe with the
+  Sun's shadows as maps, at 1280×720 and at 1920×1080, the valley's route runs from an ordinary launch and
+  from the opt-in launch. The two differ in the opt-in selection and in nothing else: the same recipe,
+  reconstruction, display range, extent, route and Sun. At each extent they run interleaved, twice each, which
+  is eight runs. Two figures are read from every frame:
+  - **Frame GPU span:** from the start of the first GPU work the frame encodes to the end of the pass that
+    consumes the frame's output. The time between passes and any untimed transfer lie inside it. It is the
+    span [ruling 7](../ARCHITECTURE.md#seam-rulings-for-track-5) adds to the frame's timing record.
   - **Frame CPU time:** the frame sample's upload and encode intervals together, which run from the start of
     the frame's uploads to the return of its submission.
 
-  A run's value for a figure is the median over the route's frames. At one extent, each figure then has two
-  values for each path. Its spread is the larger of the two paths' differences between their own two runs. The
-  mesh stages are *no higher* in a figure when their larger value is at most the existing path's smaller value
-  plus the spread, *lower* when their larger value is below the existing path's smaller value by more than the
-  spread, and *higher* when their smaller value is above the existing path's larger value by more than the
-  spread.
+  A sum of pass times is not the frame. The runtime's scene sum leaves out the surface pass, untimed
+  transfers and the time between passes, and this path removes a pass and changes where passes begin and end.
+  Pass times by name explain a difference between two rows and are never the difference.
 
-  The configuration is qualified when, at both extents, both figures are no higher and at least one is lower.
-  The record then says "promoted" and the list gains this Mac's entry. If any figure at either extent is
-  higher, the record says "slower". Otherwise it says "no measurable effect". In those two cases the list
-  stays empty and the path stays a named choice. The record keeps both figures for every frame of all eight
-  runs, so a reader can recompute the conclusion.
-- **What promotion changes.** For an ordinary launch, the Mac window asks the registry before it makes the
-  device whether the adapter is in a qualified entry for the launch's recipe and offers the stages with the
-  limits the path needs. Only then does it add `mesh-stages` to its own request. Otherwise it makes the device
-  it makes today. So an automatic request is never refused, and a Mac that was not measured launches and draws
-  as it does now. A launch that names `mesh-stages` itself is still enabled or refused by name. A capture and a
-  test ask only for what they name, so the verifier's runs enable no feature and resolve to the reference
-  paths, and no registered exact baseline moves at promotion. M3 waits for `SHOWCASE` M8, so the window's
-  default does not change under the V1 exit either.
+  The record keeps each run's median of both figures, the median of each pass by name,
+  [the counts](#cost-account) and the machine's load. For each figure at each extent it states the difference
+  between the paths beside the spread, which is the larger of the two paths' differences between their own
+  two runs. Where the spread is the larger it says the pair shows no difference. It is taken while other
+  builders work, as every timing of this module is. The stages about 25% above the existing path in either
+  figure, or a visible hitch, is investigated and the record says what was found. No figure fails an item,
+  and none turns anything on.
+- **What is not claimed.** No default, and no performance qualification under C12. That asks for a
+  same-device comparison with its image difference and a sustained run, on a quiet machine, and it belongs
+  with a decision to make the path a default. The maturity ledger
+  records the path as run on this Mac, not performance-qualified and not a default.
+- **Why M3 waits for the exit.** M3 waits for `SHOWCASE` M8 so that its inspection, its record and its
+  estimate for entities describe the valley as the V1 exit leaves it. Nothing here changes the window's
+  default, before the exit or after it. The verifier's runs name no hardware feature and ask for no path, so
+  no registered exact baseline moves.
 
 ### Check that it can work
 
@@ -312,20 +364,27 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
 - **The material.** `material.rs` builds a reload's module by appending the cooked entries to the hooked scene
   source. The hook point is in the fragment path, which the stage entries do not touch, so the stage module is
   built from the same hooked source in the same way.
+- **The caster's view.** One layout serves all three maps, and each pass binds it at group 0 before the
+  contribution draws (`synthetic/shadow.rs`). Widening a binding's visibility changes no pipeline that reads
+  it from the vertex stage, so the existing casters draw as they do. With it the object stage has each map's
+  matrix to cull by and the mesh stage has it to place vertices by.
+- **The span.** `timing.rs` reads every timed pass's begin and end counters from one batch, the surface
+  consumer's among them, so the span is the last end less the first begin, with no new query.
 - **Order.** The cooked index buffer is already in meshlet order, so both paths submit triangles in the same
   order if a mesh draw rasterises its workgroups in order. Metal's documentation does not say that it does.
   Order decides a pixel only where two triangles tie in depth, and M1's comparison counts those pixels.
 
 ## The system as it runs
 
-1. **Launch.** The host asks for `mesh-stages`, because the launch named it or because the adapter is in a
-   qualified entry and offers it. The device enables the stages and the registry records it.
-2. **Preparation.** The cooked contribution resolves its path. For `MeshStages` it compiles the stages'
-   module, creates the forward and shadow pipelines and keeps the fallback's prepared.
+1. **Launch.** The host asks for `mesh-stages` because the launch named it, and for no other reason. The
+   device enables the stages, or a preferred name is left out, and the registry records which and why.
+2. **Preparation.** The cooked contribution resolves its path from the scene's request and the generation.
+   For `MeshStages` it compiles the stages' module, creates the forward pipeline, and the shadow pipelines
+   where the scene has Sun maps, and keeps the fallback's prepared.
 3. **Residency.** Each mesh is found eligible or not when it is staged. An eligible mesh's meshlet storage is
    copied with the mesh.
 4. **Each frame.** The forward pass records one mesh draw for each placement of an eligible mesh, and each of
-   the Sun's map passes records one for each such caster. No cull pass runs for those meshes. A mesh that fell
+   the Sun's map passes the renderer records takes one for each such caster. No cull pass runs for those meshes. A mesh that fell
    back draws as it does today.
 5. **A publication.** The new mesh's eligibility is decided and its storage prepared with it, and the draw
    switches in the publication's frame.
@@ -336,8 +395,9 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
 
 ## Shared files and exact baselines
 
-This module builds in `thrum-asset-gpu` and at three places in `thrum-render` and the hosts, under
-[the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5). With no request, and on the direct
+This module builds in `thrum-asset-gpu` and, in `thrum-render` and the hosts, at the places
+[the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5) name: the launch function, the
+creation ledger, the visibility of the view, light and caster view layouts, and the timing record's span. With no request, and on the direct
 and indirect paths, every byte on main is unchanged, and each milestone proves it through
 [the exact baselines](../ARCHITECTURE.md#exact-baselines). No baseline is added for the mesh-stage path: its
 proofs are [the comparisons above](#what-is-proved-and-how-hard).
@@ -355,16 +415,17 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 - **GPU each frame.** No cull pass. Object workgroups in proportion to meshlets; mesh workgroups in
   proportion to survivors.
 - **A material reload.** Two pipelines compiled off the frame where there was one.
-- **What the record counts.** Meshlets and triangles submitted and rejected in each pass, with terrain kept
-  apart from the other cooked meshes. Meshlets differ in size, so the triangles are what M3's estimate for
-  entities rests on.
+- **What the record counts.** In each pass, the meshlets and triangles submitted, and those rejected by the
+  cone test and by the frustum test apart, with terrain kept apart from the other cooked meshes. Meshlets
+  differ in size, so the triangles are what M3's estimate for entities rests on, and the reason is kept
+  because entities already pass a frustum test for each instance.
 
 ## Risks
 
 1. **wgpu's mesh shading is experimental.** A defect a builder cannot work around inside Thrum ends the
    milestone `BLOCKED` with the smallest program that shows it. Nothing is posted upstream without the owner.
-2. **The stages may not be faster on this GPU.** Then the path stays unpromoted, the record says so, and
-   entities are not planned. That is a result, not a failure of the module.
+2. **The stages may not be faster on this GPU.** Then the record says so, the path stays a choice a launch
+   can make, and the next plan has its answer about entities. That is a result, not a failure of the module.
 3. **The two paths differ by more than rounding.** The early sign is a pixel that differs away from an edge
    or a tie in M1's difference images. The cause is found there, before anything is built on the path.
 4. **A hook validates for the indexed pipeline and not for the stage pipeline.** The reload is refused whole
@@ -374,13 +435,19 @@ about 25% worse than its last record, growth that is not linear in what it shoul
 
 ## Proof and builder handoff
 
+- GPU tests ask `thrum-test-support`'s gate for a device with `mesh-stages` required, and are skipped with a
+  reason where the adapter does not offer the stages. On this Mac a skip fails.
+- A case this Mac cannot show by itself is forced: an adapter without the stages through the registry's
+  function, small limits through a device made with them, and a failed device request or pipeline through a
+  fault the test injects.
 - Proofs that need cooked meshes run in the proving ground through a script, so a check names no game package.
 - Visual items use T2 engine capture on `mac-metal`, `fixed` for stills and `realtime` for motion, with the
-  path behind a selection that is off by default.
-- Timing inside M1 and M2 is a tripwire taken under load. M3 takes the paired numbers in one sitting with
-  other builders paused; its builder asks the lead for it. The sitting comes before the items that read its
-  record, which are the decision, the look of a promoted default, the estimate for entities, the public
-  documentation and the maturity row.
+  path behind a selection that is off by default. The capture route makes its own device through the
+  registry's function. A capture for an inspected item requires `mesh-stages` and keeps its report of the
+  resolved path beside its frames, so they cannot be the fallback's. What the Mac window itself resolves is
+  proved from its report (M3.2), not from pictures.
+- Every timing of this module is a tripwire taken under load, M3's pair included: it records the load and
+  fails only on a missing measurement. No sitting with other builders paused is asked for.
 - Scratch goes in `tmp/mesh-shading-<milestone>/`, selected evidence in `docs/evidence/MESH-SHADING/`.
 
 ## Open questions
