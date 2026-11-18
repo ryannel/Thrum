@@ -20,8 +20,8 @@
           "ask": "Is there one function in the registry that turns a launch's list into the device, shared with `ray-query`, and do the Mac window, the capture runner and the test gate each make their device through it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m11-launch-admission",
           "verdict": "fail",
           "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
@@ -32,8 +32,8 @@
           "ask": "Does the proof assert that the cull rejected meshlets for each reason (the cone, each plane) on that path, with a count that is not zero, so the equality is not vacuous? Is the cull's rule one function text compiled into both the compute pass and the object stage?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m12-object-stage-culling",
           "verdict": "fail",
           "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },
@@ -56,8 +56,8 @@
           "ask": "Is the report the resolved path and not an echo of the request, so that the indirect path cannot pass as the mesh stages, the stages cannot draw a portable frame, and a fallback is never silent?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/MESH-SHADING/M1.md#m14-path-selection",
           "verdict": "fail",
           "review": "docs/evidence/MESH-SHADING/M1-review.md"
         },

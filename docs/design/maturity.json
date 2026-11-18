@@ -7,7 +7,7 @@
   "mesh_shading_m1": {
     "scope": "Opt-in Apple tile cooked-mesh forward path on Apple M3 Max",
     "implementation": "object_and_mesh_stages_with_shared_culling_indexed_fallback_and_paired_material_installation",
-    "functional_validation": "eight_builder_checks_passed_on_mac_metal_shared_exact_images_runs_after_merge",
+    "functional_validation": "mac_metal_builder_checks_include_registry_gate_admission_six_plane_cull_equality_and_requested_view_compute; shared_exact_images_runs_after_merge",
     "experienced_quality": "builder_fixture_colour_depth_motion_reactive_parity_and_visible_shadow_texture_and_material_controls",
     "platform_cost_baselines": {
       "mac-metal": "Residency and budgeted upload measured in the fixture. Paired timing and default promotion are M3."

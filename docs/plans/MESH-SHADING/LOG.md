@@ -34,3 +34,6 @@
 - 2026-11-18 The M1 builder verified opt-in Apple tile forward mesh stages on Apple M3 Max Metal. The proof
   exercised admission, culling, the submitted frame contract, fallback, material installation and upload budgets.
   The shared `exact-images` check runs after integration. [Metal results and images](../../evidence/MESH-SHADING/M1.md).
+- 2026-11-18 M1 review fixes passed on M3 Max Metal. The GPU gate shares registry creation with the native hosts,
+  the cull compares all six planes with nonzero crossing and rejection witnesses, and a prepared secondary
+  slot starts cooked compute only in the frame that requests it. [Repair evidence](../../evidence/MESH-SHADING/M1.md).
