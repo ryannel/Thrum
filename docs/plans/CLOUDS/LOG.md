@@ -501,3 +501,9 @@
   M3.2 and M3.7 have builder evidence. The frame contract and loaded cost/refusal checks pass.
   Three more shape trials retain the deeper mature cells and still expose repeated domes and shelves.
   M3.1 remains open under the plan's three-look stop.
+
+- 2026-11-18 M3 builds cleared turrets and shared GPU billow noise at `acbf93577`.
+  [Metal evidence](../../evidence/CLOUDS/M3-turrets/README.md) covers clearing and exact weather centres,
+  the distant haze, and first-frame cost. Three turret looks still show shelves and a bright underside
+  in the toward-Sun views. Isolating beam, diffuse and ambient places the strongest stripe in solar diffuse.
+  M3.1 and M3.3 remain open. The [handoff](../../evidence/CLOUDS/M3-handoff.md) records the stop and next diagnosis.

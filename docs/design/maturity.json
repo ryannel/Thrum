@@ -2805,11 +2805,11 @@
         "record": "../evidence/CLOUDS/M2.md"
       },
       "sky_evidence": {
-        "implementation": "Opt-in Sky with complete half-extent refresh by default, display-time motion, ping-pong resolve, lent lighting and bounded air parts. Clouds composite over sky beyond the opaque camera's far plane. Detail noise remains procedural.",
-        "correctness": "Apple M3 Max Metal tests pass for submitted motion, resets and clouds beyond the opaque far plane, absent graph and storage, stable Beer transport and one air composition, finite-air parity and the 32 km join, and both recipes' shadow-only byte equality under detail-changing probes.",
-        "visuals": "Metal noon and 15-degree stills show lent lighting, clean ridge occlusion and diminishing contrast toward 150 km. The sampled full-refresh pan and walk show stable contours, and the cut has a complete detailed first frame. Repeated shallow domes and shelf-like forms keep the fair-weather shape item open.",
-        "device": "Apple M3 Max Metal with WebGPU-default-limit admission. Paired capture-off timings under load exceed one 120 Hz refresh interval. Chrome, iOS and physical display cadence remain unqualified.",
-        "record": "../evidence/CLOUDS/M3-refresh/README.md"
+        "implementation": "Opt-in Sky with complete half-extent refresh, display-time motion, lent lighting and bounded air parts. Cleared turrets supply the CPU query and every weather-map level. A prepared billow volume serves the trace and coarse Sun paths, and Sky alone prepares detail noise.",
+        "correctness": "Apple M3 Max Metal builder checks passed for point-centred weather columns, integer cell identity, wind motion and reset, absent graph and storage, Beer transport and one air composition, and both recipes' shadow-only byte equality with erosion-changing probes. Clearing continuity passed in the CPU query.",
+        "visuals": "Metal stills show shrinking clouds and diminishing contrast at about 150 km. Consecutive pan and walk frames retain stable outlines, and the first cut frame has complete sharp contours. Three turret looks retained shelves and bright undersides below dark stripes in the toward-Sun frames.",
+        "device": "Apple M3 Max Metal with WebGPU-default-limit admission. The first visible submission cost 47.984 ms under load against an 8.333 ms panel interval. The record covers engine output and GPU measurements on this Mac.",
+        "record": "../evidence/CLOUDS/M3-turrets/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",
