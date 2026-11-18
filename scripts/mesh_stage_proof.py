@@ -96,11 +96,11 @@ def scene_witnesses(output):
     clear_depth = frame(output, "parity-no-shadow", "temporal")
     shadow = sum(z[1] > 0 and z[1] == z_clear[1] and max(b[c] - a[c] for c in range(3)) > 0.025
                  for a, b, z, z_clear in zip(shadowed, clear, depth, clear_depth, strict=True))
-    if shadow < 12:
-        raise AssertionError(f"caster must change visible geometry radiance, got {shadow} pixels")
+    geometry = sum(z[1] > 0 for z in depth)
+    if min(shadow, geometry - shadow) < 12:
+        raise AssertionError(f"Sun attenuation must leave lit and shadowed geometry, got {shadow}/{geometry}")
     checker = sum(z[1] > 0 and colour[0] - colour[2] > 0.5
                   for colour, z in zip(shadowed, depth, strict=True))
-    geometry = sum(z[1] > 0 for z in depth)
     if min(checker, geometry - checker) < 100:
         raise AssertionError(f"exercises both checker tones on geometry, got {checker}/{geometry}")
     print(json.dumps(dict(receiving_shadow_pixels=shadow, warm_checker_pixels=checker, geometry_pixels=geometry)))
