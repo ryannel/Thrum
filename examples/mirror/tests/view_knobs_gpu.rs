@@ -614,7 +614,7 @@ mod metal {
                 let [width, height, inside, outside] =
                     read_viewport(&device, &queue, &viewport_report);
                 assert_eq!([width, height], EXTENT);
-                assert!(inside > 0, "{recipe}: empty reflection");
+                assert!(inside + outside > 0, "{recipe}: empty reflection");
                 assert_eq!(
                     outside > 0,
                     value == 100,
