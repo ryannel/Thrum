@@ -1,6 +1,7 @@
 # Review fixes in the renderer: confirmed bugs, GPU records, pass identity, errors and waste
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/REVIEW-RENDER/design-review.md).
+14 November 2026, revised 15 November after [the first design review](../../evidence/REVIEW-RENDER/design-review.md),
+and on 18 November for [the indirect-light query](#mechanisms).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), slices S1 to S4 ·
@@ -60,6 +61,20 @@ before its diffuse pass has first run, by the constant, which is zero in that mo
 Rust record, one WGSL declaration and a layout test, and readers bind both. The alternative, one record with named
 offsets, keeps two writers on one buffer, which the adopted shape rules out. The values read are the same in
 every mode, so the image is.
+
+*Indirect light is asked for by position.* The split rewrites `ambient_irradiance`, and every reader of it
+follows in that landing. In the same landing the scene shader's indirect light takes the shape
+[C08](../../design/CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4) now gives it: one query by
+world position, shading normal, view direction, roughness and pixel position. `ambient_irradiance` and
+`indirect_radiance`, in `synthetic.wgsl` and in both composed variants (`synthetic_environment.wgsl` and
+`synthetic_plain.wgsl`), take the world position and the pixel position of the point being lit, beside what they
+take now. Nothing reads the two new arguments, so every value is what it was and no retained image moves. `shade`
+passes its fragment's. The cooked volume's one call passes the world position and pixel of the fragment it
+marches from. Test shaders that stub either function follow the signature; their assertions do not change. It is
+done here because the callers are three today, and a traced occlusion (`RAY-TRACING` M5), a world-space cache
+and a screen-space gather each need one of the two arguments
+([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), which also says why the atmosphere's lent
+`environment_diffuse` and `environment_reflection` do not change).
 
 **2. A surface encode failure is kept (M41).** The runtime turns a failed surface encode into a dropped-frame
 count. The failure is kept by kind on the drive report and the frame sample, and one that is not transient is

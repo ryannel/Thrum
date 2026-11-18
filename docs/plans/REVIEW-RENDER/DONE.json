@@ -61,6 +61,16 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "The scene shader's indirect light is asked for by the point being lit: `ambient_irradiance` and `indirect_radiance` take a world position and a pixel position, in `synthetic.wgsl` and in both composed variants, and every caller passes the position and pixel of the point it lights. Nothing reads the two new arguments, so no value changes.",
+          "ask": "Do both functions take the two arguments in `synthetic.wgsl`, `synthetic_environment.wgsl` and `synthetic_plain.wgsl`? Does each caller (`shade`, the cooked volume in `thrum-asset-gpu`, the test shaders that stub them) pass the lit point's own world position and pixel, not a constant? In the scene shader and what is composed with it (`thrum-render`'s `synthetic*.wgsl` and `thrum-asset-gpu`'s cooked shaders), does anything light a surface from the diffuse coefficients, the constant ambient or the reflection cube without going through these two functions?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },

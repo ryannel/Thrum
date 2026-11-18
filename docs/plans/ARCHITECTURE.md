@@ -1877,7 +1877,9 @@ belongs to its owner.
    tripwire measures the engine's loader from then on, so its baseline is recorded again once, with the old and
    new figures side by side; `scripts/check_g5_tripwires.sh` keeps its name for `CONTENT-LOOP` M3.
 6. **The renderer** (`REVIEW-RENDER` M1 to M5). The light group gains a second buffer, so every reader of the
-   contribution seam's light layout follows in the same landing (`thrum-asset-gpu`, `thrum-sea`). Pass names stay
+   contribution seam's light layout follows in the same landing (`thrum-asset-gpu`, `thrum-sea`). In that landing
+   the scene shader's two indirect-light functions also take a world position and a pixel position, with no
+   value changed ([ruling 4 on work left until after V1](#held-open-for-after-v1)). Pass names stay
    exported constants and the frame timing feed gives `CREATOR`'s profiler what it gave. The timing-demand switch
    keeps its meaning. A change that cannot keep a retained image exact is not built: the builder ends `BLOCKED`.
 7. **The device recipe** (`HOST` M1; `APPLE-TILE`'s capabilities and registry, the three shells). Recipe selection
@@ -1944,6 +1946,61 @@ loop runs in one repository; its builder commits the game's code there and prove
 | **World lifecycle policy**, **render once** and **await drawn** | `HOST:M2` and `M3` → shells, captures, tests; `SESSION:M7` | [HOST](HOST/DESIGN.md#mechanisms) |
 | **Game contract**: what a game implements to run in the window, on the page and offscreen; and the render owner's **frame job and reply** | `HOST:M4` → games, kit scenes, the iPhone app; `GAME-UI:M6` adds the iPhone | C11, [HOST](HOST/DESIGN.md#mechanisms) |
 | **Game gate**: a game in the games repository built and checked against the engine checkout under test, with both revisions recorded | `GAME-SPLIT:M1` → `SHOWCASE` after the move, `SWARM` | [GAME-SPLIT](GAME-SPLIT/DESIGN.md#mechanisms) |
+
+<a id="held-open-for-after-v1"></a>
+
+## Held open for after V1: cluster level of detail, dynamic GI and virtual shadow maps
+
+Added 18 November 2026. The owner, 17 November 2026, as the lead's task reports it: Nanite-class geometry,
+Lumen-class global illumination and virtual shadow maps are left until after V1, on condition that V1 lays no
+foundation that forces rework. [The decision](../design/decisions/POST-V1-FOUNDATIONS.md) judges the three
+changes a read-only check proposed, with the research, and says what was rejected and why. The rulings below are
+what it asks of modules. None adds a milestone, none is on the road to the exit, and none moves an exact
+baseline. C05, C07 and C08 each gained the lines these rulings rest on.
+
+1. **Mesh products and rows** (nothing to build; `CONTENT-LOOP`, read by `CULLING`, `COOKED-DRAW`,
+   `MESH-SHADING` and `RAY-TRACING`). Every cooked mesh product carries its meshlet sections. A mesh row keeps
+   its product's vertex numbering and index order and is held with the product's hash, so the product's meshlet
+   table and bounds describe the row. Cluster facts arrive by a new container format and cooker version.
+   [CONTENT-LOOP's design](CONTENT-LOOP/DESIGN.md#what-later-modules-will-ask) holds the three promises, and any
+   milestone that converts, uploads or draws a cooked mesh keeps them. A version field or reserved fields in the
+   meshlet bounds record were rejected.
+2. **The forward shader's two steps** (nothing to build; the forward pass, as
+   [APPLE-TILE's design](APPLE-TILE/DESIGN.md#mechanisms) describes it). `shade` keeps a surface step and a light
+   step with only the surface's values, the world position, the view direction and the pixel position between
+   them (C08). It binds every milestone that edits `shade` or adds a term to it, among them `RAY-TRACING` M3 to
+   M5, `PUDDLES`' wet ground, `WATERS` M16's Sun-path factor and `REVIEW-RENDER` M2. A light term takes those
+   values as arguments; a surface effect changes the surface before any light is evaluated. Nobody splits the
+   shader text for this now.
+3. **Guide buffers** (nothing to build; C07). Normals and roughness, when a later module builds them, are the
+   output of a thin depth prepass declared in the one graph, selected at preparation, and absent from a scene
+   that does not ask. They are never a fourth forward colour target: `SceneSurface`'s three colour formats stay
+   three through `APPLE-PRESENTATION` M4 to M12 and for every forward contributor. The buffers are render-extent
+   attachments under `APPLE-PRESENTATION`'s extent and generation rules. The prepass's fragment entries write
+   [`CULLING` M3's coverage output](#ruling-on-culling-m3), and `CULLING`'s occlusion prepass stays private: it
+   draws only last frame's visible set, so it cannot be the producer. A contribution joins through one optional
+   method on the contribution seam whose default draws nothing.
+4. **The indirect-light query** (`REVIEW-RENDER` M1, item M1.5; `synthetic.wgsl`, its two composed variants,
+   `thrum-asset-gpu`'s cooked volume and the test shaders that stub the functions). `ambient_irradiance` and
+   `indirect_radiance` take the lit point's world position and pixel position, in the landing that splits the
+   light buffer. Nothing reads them, so every byte is as it was, and M1's verifier item holds it.
+   `RAY-TRACING` M5 gives the pixel its first reader under [track 5's ruling 6](#seam-rulings-for-track-5), on
+   the signature it finds. `ATMOSPHERE`'s lent `environment_diffuse` and `environment_reflection` do not change:
+   they are the sky as a source, asked by direction, and `WATERS`, `CLOUDS` and `SEA` keep reading them as they
+   do.
+5. **Metal's one draw for each meshlet** (a note for track 5). The code review's M71, which `REVIEW-ENGINE`
+   parked, is the finding `MESH-SHADING` closes for cooked placements, and its natural entry point.
+   `REVIEW-ENGINE`'s plan now says so. Ruling 1 is what lets entities follow without a new cook, if
+   `MESH-SHADING` M3's record asks for them.
+
+| Module | What changed on 18 November 2026 |
+|---|---|
+| `CONTENT-LOOP` | Design: three promises on mesh products and rows. No item |
+| `REVIEW-RENDER` | Design: the indirect-light query, in mechanism 1. M1 gains item M1.5 |
+| `APPLE-TILE` | Design: forward shading held open for a prepass. No item |
+| `APPLE-PRESENTATION`, `CULLING` | A log line each. No design line and no item |
+| `REVIEW-ENGINE` | The M71 assumption in its plan points at `MESH-SHADING`. Its design's parked note follows at its next re-plan |
+| `MESH-SHADING`, `RAY-TRACING`, `ATMOSPHERE`, `WATERS`, `CLOUDS`, `SEA` | Nothing |
 
 ## Track 5: ray tracing and mesh shaders on the Mac
 

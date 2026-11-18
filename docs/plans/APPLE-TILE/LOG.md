@@ -201,8 +201,7 @@
   paused-state, controls, CUA resize/restore and generation 2→3 replacement/pan proofs under both recipes.
   Simulator diagnostic lifecycle passes; no physical-device or runtime-motion qualification is inferred.
   Required milestone checks pass outside the sandbox after a GPU-lock timeout and sandbox no-adapter refusal. Evidence:
-  [M3 record](../../evidence/render/apple-tile-m3/README.md). Pass-name counters retain untimed work as
-  unavailable; no traffic, speed, panel cadence or EDR/native-provider promotion. Independent review owed.
+  [M3 record](../../evidence/render/apple-tile-m3/README.md). Pass-name counters retain untimed work as unavailable; no traffic, speed, panel cadence or EDR/native-provider promotion. Independent review owed.
 
 - **2026-11-11 — M3 MF1 window follow-up.** Repeated D3.5 on the exact reviewer executable
   (`e2eef29b…`, reviewed commit `e2129272`) with an unlocked console and existing observer grant.
@@ -443,3 +442,10 @@
   A supplementary Apple tile movie covers the restore cycle beyond the first
   movie's interval. The full source archive and all clocks are retained.
   All six builder items pass. Mac M3 owns the separate cadence qualification.
+
+- 2026-11-18 Planner, from the owner's 17 November decision to leave dynamic GI and virtual shadow maps until
+  after V1 if nothing forces rework: [Mechanisms](DESIGN.md#mechanisms) gains "Forward shading, held open for a
+  prepass". The forward shader keeps a surface step and a light step, and normals and roughness are an optional
+  graph output of a thin depth prepass, never a fourth forward target
+  ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), C07, C08). Nothing is built and no item changes.
+  The 11 November M3 entry above was re-wrapped to pass the log check; no word of it changed.

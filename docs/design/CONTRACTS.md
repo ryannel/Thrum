@@ -247,6 +247,15 @@ of material, geometry, pass, provider and target plus admitted transitions; dyna
 or a new admission. Keys include source/includes, compiler/schema, target features and descriptor. Unneeded combinations
 may be stripped only outside this closure. Driver/device caches are disposable; they are not portable cooked authority.
 
+A cooked mesh product carries its meshlets, their vertex and triangle lists and one bounds record for each
+meshlet, whichever path draws it; no profile, product kind or loader strips them. A runtime representation
+derived from a product, such as an entity's mesh row, keeps the product's vertex numbering and index order and is
+held with the product's content hash, so the product's meshlet sections describe it without a second cook. What a
+cluster level of detail needs for each meshlet (its error, its parent group's bounds and error, a hierarchy over
+the groups) enters only by a new container format and cooker version, as a wider element or new sections. A
+reader takes those facts from the product and never infers them, and no record carries a version of its own
+([the decision](decisions/POST-V1-FOUNDATIONS.md)).
+
 ## C06 GPU execution and lifetime — V1
 
 Rendering modules declare passes and resource reads/writes; one GPU executor owns hazard ordering, allocation and
@@ -333,6 +342,13 @@ denoising provider for it, whatever the device's default, and a request that nam
 scene is prepared: never accepted and ignored, and never fed fabricated inputs. The frame runtime owns the
 declaration and V4 owns the refusal
 ([seam ruling 1 for RENDER-2D](../plans/ARCHITECTURE.md#seam-rulings-for-render-2d)).
+**Guide buffers** are selected when a scene is prepared, under C04. A view that selects none allocates none,
+declares no pass for them and draws the bytes it drew. When selected, normals and roughness are a declared output
+of the view's graph, at render extent and under the view's jitter, written by a depth prepass of the view's
+opaque geometry that runs each material's surface step (C08) and evaluates no light, so they and depth exist
+before the forward pass shades. They are not forward colour targets: the forward pass keeps the targets it has.
+V3's screen-space gathers and V4's denoising providers read them through the graph. Albedo and hit distance stay
+options with no producer planned ([the decision](decisions/POST-V1-FOUNDATIONS.md)).
 A **secondary view** is a second draw of a 3D scene's geometry from another camera, asked for by a contribution
 of a presented view, as a Sun cascade is a product of that view. It publishes no frame contract, has no history
 key, is never given to a reconstruction provider and is not a camera instance: it takes its presenting view's
@@ -388,6 +404,21 @@ paired with that query. R0's authored isotropic ambient irradiance and terminal
 background are independent source quantities; ambient is not a second Sun or
 an inferred cloud/sky-reflection product. Other provider profiles must declare
 their own constituent ownership with equivalent no-duplication semantics.
+
+V3 shades a surface in two steps with one value between them. The **surface step** turns the material, its
+textures and the interpolated geometry into a surface: base colour, metalness, roughness, shading normal,
+occlusion and emission at a world position. The **light step** turns a surface, a view direction and a pixel
+position into radiance. The light step reads no material texture and no raster interpolant, and the surface step
+reads no light, so a pass can run either alone: a prepass the surface step, a ray hit or a cache texel the light
+step.
+
+Indirect light arriving at a surface the scene shades, diffuse and specular, is one query of the light step: by
+world position, shading normal, view direction, roughness and pixel position. Today it answers from the
+environment's diffuse and reflection products and the material's occlusion, and uses neither the position nor the
+pixel. A world-space cache answers by position and a screen-space gather by pixel, behind the same query, so no
+caller changes when one is added. Nothing lights such a surface indirectly outside the query. The environment's
+own products stay source quantities, asked by direction at the camera's location; a medium, and water's own
+optics, read them as sources ([the decision](decisions/POST-V1-FOUNDATIONS.md)).
 
 Distinguish incoming radiance, irradiance and dimensionless transmittance. Do not sum quantities with incompatible
 units or apply the same shadow/air attenuation twice. A transport query specifies its path/segment and contributing

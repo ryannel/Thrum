@@ -21,7 +21,11 @@ The light split is in `synthetic.rs` (`cpu_light_bytes`), `atmosphere/graph.rs`,
 light group through the contribution seam, so they follow its layout. The mode with no atmosphere is
 `FrameLighting::Photometric` and `Diagnostic`: `pack_directional` writes the constant ambient at bytes 48 to 60,
 and `ambient_irradiance` in `synthetic.wgsl` picks it when the mark is clear. Take the photometric scene's bytes
-before you change anything. The dropped encode is in `runtime.rs`
+before you change anything. M1.5 adds two arguments to `ambient_irradiance` and `indirect_radiance` and changes no
+arithmetic ([Mechanisms](DESIGN.md#mechanisms), mechanism 1). Their callers are `shade`, the two composed variants
+(`synthetic_environment.wgsl`, `synthetic_plain.wgsl`), the cooked volume in `thrum-asset-gpu`'s `cooked.wgsl`,
+and the test shaders in `atmosphere/reflection/tests.rs` and `thrum-asset-gpu/src/draw/tests.rs`. The atmosphere's
+lent `environment_diffuse` and `environment_reflection` are not part of it. The dropped encode is in `runtime.rs`
 (`encode_surface(...).is_ok()`), and the two blanket conversions are beside `FrameError` there.
 
 ## M2 Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test

@@ -11,7 +11,7 @@ Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-r
 ## Open for the human
 
 - Assumption: a game can no longer fill its own published page. The engine fills it, as the G2S decision says, and no planned game needs otherwise.
-- Assumption: the fix for Metal drawing every meshlet one by one (M71) waits for the performance phase after the V1 exit, as `CULLING`'s native recipes do. It is the largest cost finding this plan leaves alone.
+- Assumption: the fix for Metal drawing every meshlet one by one (M71) is not built here. `MESH-SHADING` builds it for cooked placements beside V1, and its record decides whether entities follow. It is the largest cost finding this plan leaves alone.
 - Assumption: the cooker's mip filter keeps its two small quality defects (odd sizes, colour bleeding at alpha edges), because fixing them changes cooked bytes and would move every exact reference image.
 
 ## M1 The iPhone app gets compressed textures and enough storage buffers for the sea, and a rewound game no longer carries a patch that never ran

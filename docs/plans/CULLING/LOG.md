@@ -407,3 +407,8 @@
   [Geometry judgement and reproducible identity audit](../../evidence/CULLING/M3/geometry/README.md).
   Accepted correctness, baseline, campaign and cost evidence stands; no runtime or reference changed.
 >>>>>>> 83165972e (Record CULLING motion review gaps and attended setup blocker)
+
+- 2026-11-18 Planner: [the module list's rulings on work left until after V1](../ARCHITECTURE.md#held-open-for-after-v1)
+  name two things of this module's. M3's all-ones coverage output is written by the fragment entries of any later
+  guide prepass, as by every opaque entry. The occlusion mode's depth prepass stays private and is not that
+  prepass's producer, since it draws only last frame's visible set. No design line or item changes here.

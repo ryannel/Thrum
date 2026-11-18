@@ -170,6 +170,30 @@ scene-wide two-sided policy for mirrors/degenerates, physical-slot draw order an
 unchanged. Private bucket consolidation belongs to V2/G3c on a later commission. Synthetic slot 5060 still supplies
 a runtime mirror witness; cooked negative winding is baked and is not a runtime-classifier test.
 
+**Forward shading, held open for a prepass (18 November 2026; nothing to build).** The forward pass stays the one
+place a scene's surfaces are lit, on both recipes, and keeps its three colour targets: scene colour, motion and
+reactive. Two things are held open so that dynamic global illumination and virtual shadow maps can later be added
+as a thin prepass and reads inside the forward pass, with no G-buffer and no change to a forward contributor's
+pipelines ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), C07, C08).
+
+- **Two steps in the shader.** `shade` in `synthetic.wgsl` first fetches the surface (the material record, the
+  base, ORM and emissive textures, the shading normal) and then evaluates light on it (`direct_brdf`,
+  `local_radiance`, `indirect_radiance`, emission, aerial). Later edits keep these as two steps, with only the
+  surface's values, the world position, the view direction and the pixel position passing from the first to the
+  second. A new light term takes those as arguments and reads no material texture and no `VertexOutput`. A new
+  surface effect, wet ground for one, changes the surface before any light is evaluated and reads no light.
+  `sun_visibility` takes `VertexOutput` today; the milestone that first needs the light step alone gives it the
+  receiver's values instead, under [the exact-baseline rules](../ARCHITECTURE.md#exact-baselines).
+- **Guide buffers as an optional graph output.** Normals and roughness, when a scene's preparation selects them,
+  are written by a depth prepass declared in the one graph, at render extent. Its storage follows its readers, as
+  graph storage derives it, and it is resident before readiness like every selected variant's attachments. Its
+  fragment entries run the surface step alone and write the all-ones coverage output every opaque entry writes.
+  A contribution with opaque geometry joins through one optional method on the contribution seam whose default
+  draws nothing, as `draw_shadow` is. A scene that selects none compiles today's graph and draws today's bytes.
+
+Neither is built by this module or on the road to the exit. The first module that needs one builds it under
+[a ruling in the module list](../ARCHITECTURE.md#held-open-for-after-v1).
+
 **Native feature handoff.** C06 and the boundary decision define the planned whole-encoder segment; independent
 review is required before its implementation. Close the producing wgpu encoder, record only raw commands in a
 separate wgpu-owned encoder, then resume a fresh wgpu encoder. Submit the ordered list once on the coordinator's

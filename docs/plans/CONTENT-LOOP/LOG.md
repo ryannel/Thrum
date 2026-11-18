@@ -155,3 +155,10 @@
   regression and scoped Clippy passed. The varied-normal conversion oracle was strengthened as suggested.
   [Repair evidence and logs](../../evidence/CONTENT-LOOP/M2/repair/README.md); no reference or comparison was loosened.
   The merge size gate required moving the unchanged host methods into the mesh-row module; repo checks and Clippy passed.
+- 2026-11-18 Planner, from the owner's 17 November decision to leave Nanite-class geometry until after V1 if
+  nothing forces rework: the design gains three promises under
+  [what later modules will ask](DESIGN.md#what-later-modules-will-ask). Products always carry their meshlet
+  sections, a row keeps its product's order and hash, and cluster facts arrive by a container and cooker bump.
+  A version field in `MeshletBounds` was rejected: the container already versions it
+  ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md)). No item, code or product byte changes. The
+  design review is owed.

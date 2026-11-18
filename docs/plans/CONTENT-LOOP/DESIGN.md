@@ -457,6 +457,27 @@ new set to leases and switches the rows, and the switch commits for all of them 
 
 Each ask becomes a milestone here, planned with the module that needs it.
 
+**Held open for cluster level of detail (18 November 2026; nothing to build).** Nanite-class geometry is left
+until after V1 ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md),
+[C05](../../design/CONTRACTS.md#c05-assets-streaming-and-retirement--f4-with-w2-v1-and-p7)). Three things this
+module already does are promises from now on, so that it can be added later by a cooker change and a new draw
+path, with no change to the store, the manifest, residency or publication.
+
+- **Every mesh product carries its meshlets.** The `MLET`, `MLVX`, `MLTR` and `MLBD` sections are written for
+  every mesh and every profile, whichever path draws it. No profile, product kind or loader strips them.
+- **A row is its product's geometry in its product's order.** The row conversion copies vertices one for one and
+  the index list unchanged, as [cooked mesh rows](#cooked-mesh-rows-m2) says, and a row is held with its product's
+  content hash. The index list is in meshlet order, so meshlet `i` of the product is one contiguous index range
+  of the row, and the product's meshlet table and bounds describe the row without a second cook. A conversion
+  that reorders, welds or re-indexes breaks this and is not made. The row uploads none of those sections: nothing
+  reads them there yet.
+- **Cluster facts arrive by a cooker bump.** What a hierarchy needs for each meshlet (its own error, its parent
+  group's bounds and error, a hierarchy over the groups) is added as a wider `MLBD` element or as new sections,
+  under a new `CONTAINER_FORMAT` and `COOKER_VERSION`. The container already refuses a format it does not know
+  and an element size it was not built for, and the cooker's version is in every action key, so an old product
+  is never read as a new one: it is cooked again. `MeshletBounds` gets no version field and no fields reserved
+  for this, and its `reserved` word stays zero until a format change gives it a meaning.
+
 ## Shared files and exact baselines
 
 `thrum-asset-gpu` is also edited by `APPLE-PRESENTATION` M2 (the reactive target in `draw.rs`), which is why M1
