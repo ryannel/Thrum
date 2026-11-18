@@ -285,7 +285,7 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, or banding in the sky gradient and twilight.",
+          "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, banding in the sky gradient and twilight, or sky light reflected off a surface in blotches, separate spots or with a seam.",
           "inspect": "Capture the route stops as fixed-time stills and the scrub and pans, including the Ground E pan, with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the moving shadow edge on the authored spur between 17.40 and 17.80 h. The held 17.4 h stop is judged, and the Ground E terrain lip is judged as a brightness step.",
           "target": "mac-metal",
           "evidence": "",
@@ -305,9 +305,9 @@
         },
         {
           "id": "M6.4",
-          "statement": "In Chrome on hardware WebGPU, on the final build, a contribution with its own pipeline, using only the lent layout and library, receives each of the five lent operations as the atmosphere stores it, in physical units and with the exposure scale not applied. Every contract comparison of H1-H5 passes, the split-sum pair's stored-table rule among them. Apart from that rule, which M6.7 adds, each has the cases, bounds, wrong lookups and exposure repeats it had at the commit this milestone started from. Each guard made through the library passes against the expected values the Metal test holds, and every expected value this milestone changed is in the log with the change to the look that moved it.",
+          "statement": "In Chrome on hardware WebGPU, on the final build, a contribution with its own pipeline, using only the lent layout and library, receives each of the five lent operations as the atmosphere stores it, in physical units and with the exposure scale not applied. Every contract comparison of H1-H5 passes, the reflection cube's probe and the split-sum pair's stored-table rule among them. H5 passes or fails on no comparison with the reflection model: its differences from P7's closed forms and P8's quadrature are in the run's report as records. Each of the five guards made through the library in H1-H4 passes against the expected values the Metal test holds, and every expected value this milestone changed is in the log with the change to the look that moved it.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
-          "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. Apart from the stored-table rule M6.7 adds, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. Is every changed expected value one of the design's guards, H5's split-sum pair against the quadrature now among them, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
+          "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "",
@@ -320,6 +320,18 @@
           "statement": "The split-sum pair a contribution receives is the pair the atmosphere stored for the requested view cosine and roughness. On Metal the lent reflection operation meets the design's stored-table rule at its cases and at exposure scales of 1 and 2, and each of the rule's three wrong lookups misses the bound at every query between texel centres. The Chrome referee holds the same rule, which M6.4's check runs.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib split_sum_reads_stored 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "ask": "Read the stored-table comparison in `crates/thrum-render/src/atmosphere/products/tests/reflection.rs` and in `scripts/environment_referee.mjs`. In both, does the expected pair come from the table's stored texels, read back in that run and blended by the test's own evaluation, with no call to the lent library and no quadrature, and do the three wrong lookups go through the same bound as the right one?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.8",
+          "statement": "The reflection radiance a contribution receives is read from the atmosphere's cube, at the face its direction names and the level its roughness names, in physical units. On Metal, with the design's probe stored in that cube, the lent reflection operation returns each face's and level's colour at raw Sun 1, 0 and 2 and exposure scales of 1 and 2, and each of the probe's three wrong lookups misses the bound at every query with the raw Sun on. The Chrome referee holds the same probe, which M6.4's check runs.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib reflection_reads_stored_cube 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
+          "ask": "Read the probe in `crates/thrum-render/src/atmosphere/products/tests/reflection.rs` and in `scripts/environment_referee.mjs`. In both, is the probe stored in the cube the lent layout binds, and not in a texture or a layout the test made; does each expected value come from the colour the fixture stored, with no call to the lent library and no closed form or quadrature; and do the three wrong lookups go through the same bound as the right one?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",

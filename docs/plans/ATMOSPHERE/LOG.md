@@ -615,3 +615,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   ([arithmetic](../../evidence/ATMOSPHERE/design-proof/horizon-columns.txt)). Selected: a scene marks a mesh row aloft, and the
   height layer leaves it out. M10's builder confirms the cause first and ends `BLOCKED` if the strip stays. Researched Unreal's
   far shadow cascades and height-field shadowing. The design has not been reviewed since this change.
+- 2026-11-18 Design review asked for changes; one Must Fix resolved, by the lead's direction: "checking the handoff by what it
+  is, not by matching a reference", with "any f64 comparison as a recorded diagnostic with no pass threshold". H5 gains the
+  stored-cube probe (M6.8) and passes or fails on no comparison with the reflection model; M6.4 written again; M6.1 gains one
+  inspection entry for reflected sky light. Suggestion taken: the stored-table rule's exchange is named as the two public
+  arguments. M6.7 and every Done item unchanged. The design has not been reviewed since this change.
+  [Full entry](../../evidence/ATMOSPHERE/log-entries.md#entry-4).

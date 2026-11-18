@@ -366,9 +366,9 @@ cost.
 **The handoff, new in M5.** For each lent operation, a contribution with its own pipeline, using only the lent
 layout and library, must return the stored product in the right units. This runs on Metal in `./dev check` and
 in Chrome on hardware WebGPU. The expected values come from the same references on both; Chrome is never judged
-against Metal's GPU output. That is how M5 proved the rows. From M6 the comparisons in them are of two kinds,
-the contract and the guards made through the library, and [Closing G3s](#closing-g3s) says which is which and
-what a deliberate change to the look does to each.
+against Metal's GPU output. That is how M5 proved the rows. From M6 the comparisons in them are of three kinds:
+the contract, the guards made through the library, and in H5 the records. [Closing G3s](#closing-g3s) says
+which is which and what a deliberate change to the look does to each.
 
 | | Lent operation | What the contribution-side result must meet |
 |---|---|---|
@@ -376,7 +376,7 @@ what a deliberate change to the look does to each.
 | H2 | Sky radiance along a direction | Night part: the cases and bound of P3. Solar part: the filtered-decode rule below, on the live sky-view chart at the 11 view directions and six Sun elevations of the all-orders grid, and on a known field. Its three wrong lookups fail. Plus the P11 row at its bound |
 | H3 | Incident diffuse on a normal | The cases and bounds of P6; with nightglow on, the added horizontal irradiance within P4's bound |
 | H4 | Aerial `(T,S)` to a point | Night part: the cases and bound of P5. Solar part and transmittance: P10's fixed-texel decode at its bound, and the filtered-decode rule below, on the live volume at P10's Sun elevations and on a known field. Its three wrong lookups fail |
-| H5 | Environment reflection | The cases and bounds of P7, P8 and P9 through the lent library. The same run also stores a known night term in the fixture and requires it back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance. From M6 the split-sum pair also meets the stored-table rule below, and its three wrong lookups fail |
+| H5 | Environment reflection | In M5: the cases and bounds of P7, P8 and P9 through the lent library, with a known night term stored in the fixture and required back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance. From M6 the radiance meets the stored-cube probe below and the split-sum pair the stored-table rule below, and the wrong lookups of both fail. P9's cases, the night term and P7's agreement across the cube's edges and corners stay as they were. The differences from P7's closed forms and from P8's quadrature are recorded and decide nothing |
 
 **The filtered-decode rule, for H2 and H4.** Lying between the neighbouring texels is not enough: a lookup that
 returns one depth slice instead of blending two stays in that range at every query. So each result is compared
@@ -447,24 +447,63 @@ roughness?
   roughness (0.0625, 0.224), (0.125, 0.582), (0.75, 0.582) and (0.5625, 0.881): texels (4, 12), (8, 36),
   (48, 36) and (36, 56) of the 65 × 65 table. Every case runs at exposure scales of 1 and 2.
 - **Wrong lookups that must fail.** The same harness runs three wrong lookups through the same bound, and each
-  must fail at every query between texel centres: one row alone, one column alone, and the view cosine and
-  roughness exchanged. A run in which one of them passes is a failed run, on Metal and in Chrome. The nearest
-  single texel is not on the list, because its errors on the two axes can cancel.
+  must fail at every query between texel centres: one row alone, one column alone, and the two public arguments
+  exchanged, the view cosine passed as the roughness and the roughness as the view cosine, before the library
+  floors and remaps the roughness. A run in which one of them passes is a failed run, on Metal and in Chrome.
+  The nearest single texel is not on the list, because its errors on the two axes can cancel.
 - **Why those cells.** At low roughness away from grazing the table is nearly flat along one axis, and no bound
-  tells one of its rows from the next. On the diagonal the exchange is the same query. In the four cells, on
-  the table as the producer's equations give it, a correct read with 8-bit sampler weights and a half-float
-  result uses at most 0.36 of the bound, one row or one column alone misses it by 3.2 times or more, and the
-  exchange by 139 times or more (parts B and C).
+  tells one of its rows from the next. Where the view cosine equals the roughness the exchange is the same
+  query. In the four cells, on the table as the producer's equations give it, a correct read with 8-bit sampler
+  weights and a half-float result uses at most 0.36 of the bound, one row or one column alone misses it by 3.2
+  times or more, and the exchange by 171 times or more (parts B and C).
 
 This rule proves that the pair is the stored one. Whether the stored table is a good split sum is P8's
-question, and [Closing G3s](#closing-g3s) makes that a guard.
+question. The producer's own test keeps asking it on Metal, and through the library
+[Closing G3s](#closing-g3s) makes it a record.
+
+**The stored-cube probe, for H5's reflection radiance, from M6.** M5 proved the radiance against closed forms
+of the lobe on a sky the fixture wrote: the sky itself at the sharpest level, and the lobe's mean at the
+widest. That too is a question about the producer. The cube is a sampled estimate, and one made with fewer
+samples leaves the closed form while the consumer reads every texel correctly: at the centre of a face of the
+widest level, 16 samples put red 0.024 off and 8 samples 0.056, against the 0.020 the comparison allowed
+([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part D). So the handoff asks
+what it is. Does the contribution read the atmosphere's cube, at the face its direction names and the level
+its roughness names, and decode it to physical units?
+
+- **The probe.** After the producer has run, the fixture stores a known cube in the atmosphere's own cube
+  texture, the one the lent layout binds, and no producer pass runs between the store and the queries. Every
+  face of every level holds one colour, exact in half-float, that names it: with values between 1 and 4 at unit
+  Sun, one channel steps by an eighth or more from face to face and another from level to level. The fourth
+  channel holds a known night term, 1/16 in absolute units as in M5's fixture.
+- **Expected value.** The raw Sun's illuminance times the colour the fixture stored for that face and level,
+  plus the night term. It comes from what the fixture wrote. It does not call the lent library, and it holds
+  no closed form, quadrature or model.
+- **Cases.** The six axis directions, each the centre of a face, at the seven roughnesses that name a level,
+  with the raw Sun at 1, 0 and 2 and at exposure scales of 1 and 2. Below the widest level the query's
+  roughness sits 1/1024 of a level above the level's own, so a sampler that truncates its level fraction still
+  lands on the level. The widest level is held by the roughness clamp.
+- **Bound.** The filtered-decode bound, `C/32 + 1e-5 × M + Q` per channel, with `C` and `M` taken over that
+  face on the level and on the levels beside it.
+- **Wrong lookups that must fail.** The same harness runs three wrong lookups through the same bound, and each
+  must fail at every query with the raw Sun on: the roughness of a neighbouring level, the direction negated,
+  and the direction's axes rotated one place. A run in which one of them passes is a failed run, on Metal and
+  in Chrome. With the raw Sun at 0 every query returns the night term alone.
+- **What it tells apart.** With the example colours of part E, a correct read whose level weight is 1/64 off
+  uses 0.33 of the bound, a neighbouring level misses it by 12 times or more and another face by 118 times or
+  more. Nothing else the layout binds holds those colours, so a contribution bound to another texture returns
+  none of them. A raw Sun or exposure scale applied wrongly fails the cases that vary it, and a night term
+  scaled by the Sun fails with the Sun at 0.
+
+The probe proves which texture, face and level were read, and the units. Whether the cube is a good filter of
+the sky is the producer's question: P7 keeps guarding it on Metal, and M6's inspection list judges it in the
+picture.
 
 **Exposure control.** At least one case of each row H1–H5 whose expected value is larger than its bound is
 repeated with the lent exposure scale set to 2, and meets the same bound against the same expected value. A
 library that applied the scale would return twice the value, an error larger than the bound, and fail it.
 
-H5 varies direction, roughness (the sharpest and widest levels have different closed forms), the raw Sun's
-illuminance, the night term and a rewritten sky, so a constant, stale or wrongly scaled reflection fails.
+H5 varies the face, the level, the raw Sun's illuminance, the night term and a rewritten sky, so a constant,
+stale, wrongly scaled or wrongly addressed reflection fails.
 
 The Chrome run needs a page that drives the production producers with the referees' frames, as
 [the cooked-draw browser check](../../../scripts/cooked_draw_browser.mjs) drives its own page. The builder
@@ -743,39 +782,41 @@ continuous scrub from dawn through noon, sunset and twilight to night, with slow
 game with the engine tap. The inspection list is the set of defects earlier reviews recorded: a horizontal
 brightness step across the ground; a flat near ridge with a hard bright rim at low Sun; a ridge lit warm when the
 Sun is behind it; missing object shadows at sunrise; shadow acne at low Sun; a hard horizon line; and banding or
-steps in the sky gradient and twilight colour. The bar is the time of day in Red Dead Redemption 2 and Horizon
+steps in the sky gradient and twilight colour. One entry is new, because the look of the reflection cube is
+judged here and by no number: sky light reflected off a surface in blotches, separate spots or with a seam.
+The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
 **What guards the products.** The referees P1–P11 and the handoff rows H1–H5 of
 [the numerical acceptance](#numerical-acceptance) run in the workspace check on Metal, as they have since M5,
-and M6.4 runs the handoff in Chrome. M6.7 adds the stored-table rule on both targets. Their comparisons are of
-two kinds, and M6 treats the two differently.
+and M6.4 runs the handoff in Chrome. M6.7 adds the stored-table rule and M6.8 the stored-cube probe, on both
+targets. Their comparisons are of three kinds, and M6 treats each differently.
 
 - **The contract: what a consumer receives.** These take their expected value from the atmosphere's own stored
   product, read back in the same run on the same target, or from a known field the fixture wrote. None takes it
   from the model of the air or of the night sky, and none from a quadrature of the reflection model. They are
   the filtered-decode rule's live arm, known-field arm and wrong lookups (H2, H4); the fixed-texel decode (H4);
   the diffuse cases against the integral of the read-back sky (H3); the exact zero with the Sun behind the
-  planet (H1); and in H5 the split-sum pair under the stored-table rule with its wrong lookups, the known night
-  term, the furnace and source-scaling cases, and the reflection cases on the sky the fixture writes. They
-  prove the sampling, the addressing and the units. A deliberate change to the sky, the air or the split-sum
-  table moves both sides of each together, or neither side where the fixture wrote the field, so none needs an
-  edit to keep passing. M6 adds the stored-table rule and changes none of the other cases, bounds or wrong
-  lookups. One that fails is a broken handoff, whatever the picture looks like.
-
-  The reflection cases are the one place a closed form stands in the contract: the sky itself at the sharpest
-  level, and the lobe's mean at the widest. They are what "filtered to a GGX lobe" means to a consumer, and the
-  filter's sample count does not move them. From 512 samples down to 8, the widest level stays within 0.0052 of its
-  closed form, against a bound of 0.020
-  ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part D). Only another lobe
-  would move them. That changes what the lent operation returns, so it goes through
-  [the module list](../ARCHITECTURE.md#interfaces) and is not a fix to the look.
+  planet (H1); and in H5 the stored-cube probe and the split-sum pair's stored-table rule with their wrong
+  lookups, the known night term, the agreement across the cube's edges and corners, and the furnace and
+  source-scaling cases. They prove the sampling, the addressing and the units. A deliberate change to the sky,
+  the air, the cube's filter or the split-sum table moves both sides of each together, or neither side where
+  the fixture wrote the field, so none needs an edit to keep passing. M6 adds the stored-table rule and the
+  probe and changes none of the other cases, bounds or wrong lookups. One that fails is a broken handoff,
+  whatever the picture looks like.
 - **Guards: where a product stood.** P1–P11 are regression guards: they catch a product that moved when nobody
-  meant it to. Six handoff comparisons are a P row made again through the lent library, with that row's
+  meant it to. Five handoff comparisons are a P row made again through the lent library, with that row's
   reference, cases and bound, and are guards too: H1 against P1 and P2, H2's night part against P3, H2's
-  spectral row against P11, H3's night illuminance against P4, H4's night part against P5, and H5's split-sum
-  pair against P8's quadrature. A guard that fails asks one question, whether the change was meant. Its
-  difference from the model is a diagnostic and never a finding.
+  spectral row against P11, H3's night illuminance against P4, and H4's night part against P5. A guard that
+  fails asks one question, whether the change was meant. Its difference from the model is a diagnostic and
+  never a finding.
+- **Records: H5 against the reflection model.** The cube and the split-sum table are sampled estimates, and
+  their sample counts are a cost a builder may lower. A comparison with the reflection model made through the
+  library then measures the estimator and not the handoff, as the two rules above show. So the H5 run still
+  makes both, on the producer's own cube and table at the cases M5 gave them: the radiance against P7's closed
+  forms on the sky the fixture writes, and the pair against P8's quadrature. It writes the largest difference
+  of each, for each channel, into the Chrome report and the Metal test's output, and passes or fails on
+  neither. They are there to find the cause when a reflection looks wrong.
 
 Every row, contract or guard, keeps [its repeat at an exposure scale of 2](#numerical-acceptance), which is
 what shows that the library does not apply the scale.
@@ -798,9 +839,9 @@ match, and every contract comparison in Chrome still reads Chrome's own product.
 changed, the change to the look that moved it, and its old and new values. No review asks for a model that
 justifies the new values. So a twilight adjustment that moves P11's blue channel by 4% lands with P11's three
 recorded values replaced on both targets, and H2's live arm passes untouched because it reads the new chart.
-In the same way, a split-sum table made with fewer samples lands with the expected pairs at P8's nodes taken
-from the table the Mac stores, in the producer's test and in H5's guard on both targets, and the stored-table
-rule passes untouched because it reads the new table.
+In the same way, a split-sum table or a cube filter made with fewer samples lands with the producer's own
+guard, P8 or P7 on Metal, given expected values from the product the Mac stores. H5 needs no edit: the
+stored-table rule and the probe read what is stored, and its differences from the model are only recorded.
 
 The solar sky and solar aerial transport are not qualified against an all-orders reference, and under the
 owner's bar no such campaign is planned.

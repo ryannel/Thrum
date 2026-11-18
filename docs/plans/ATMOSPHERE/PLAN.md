@@ -11,7 +11,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: M9 is built now, ahead of M6 and TAAU, and is held by numbers and by where the retained images moved. Its look on a real sea is judged in `WATERS` M2, which now waits for it.
 - Assumption: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6.
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
-- Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference, and under the owner's bar of 17 November no accuracy campaign is planned. The referees P1–P11, and the six handoff comparisons that repeat one through the lent library, stay in the checks as regression guards, which a deliberate change to the look gives new expected values. The handoff's contract comparisons, which read the stored product, stay fixed.
+- Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference, and under the owner's bar of 17 November no accuracy campaign is planned. The referees P1–P11, and the five comparisons in H1–H4 that repeat one through the lent library, stay as regression guards, which a deliberate change to the look gives new expected values. The handoff's contract comparisons, which read the stored product, stay fixed. H5's reflection-model differences are only recorded.
 - Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step, because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image, and M6 judges by eye whether a step shows.
 - Assumption: "top quality atmosphere" (the owner, 14 November) gives this module two milestones after G3s closes, M7 and M8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume.
 - Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
@@ -65,11 +65,12 @@ tests are `crates/thrum-render/src/atmosphere/products/tests/` on Metal and `scr
 Chrome; a fix that moves a product on purpose follows that section's rule for guards in both, in the same
 landing. `scripts/atmosphere_cost.py` is created here, in the shape of `scripts/cloud_cost.py`.
 
-M6.7's comparison is new on both targets, beside H5's quadrature comparison, which stays as a guard. The
-split-sum table is made by `dfg.wgsl` and held in `reflection.rs` without copy usage: `reflection/tests.rs`
-reads it back on Metal with its own reader, and the Chrome referee's `readTexture` cannot, so a texel load
-there serves. `products/tests/filtered.rs` has the filtered-decode bound. The Metal test's name contains
-`split_sum_reads_stored`, which M6.7's check filters on.
+M6.7's and M6.8's comparisons are new on both targets, and H5's closed-form and quadrature assertions
+become records in both. Neither the split-sum table nor the cube in `reflection.rs` has copy
+usage: `reflection/tests.rs` reads the table back on Metal with its own reader, the Chrome referee needs a
+texel load, and a pass the test owns stores the probe.
+`products/tests/filtered.rs` has the filtered-decode bound. The Metal tests' names contain
+`split_sum_reads_stored` and `reflection_reads_stored_cube`, which the checks filter on.
 
 ## M7 Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
 
