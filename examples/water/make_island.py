@@ -29,7 +29,13 @@ def height(x, z):
     bend = sin((z - 93) / 9) * 2.3
     shelf_blend = min(max((x - 96) / 11, 0), 1)
     shelf = 0.72 + 0.28 * shelf_blend**2 * (3 - 2 * shelf_blend)
-    pond = 8.0 + 0.24 * shelf * hypot(x - 104 + bend, (z - 93) * 1.13)
+    outer_bank = 8.0 + 0.24 * shelf * hypot(x - 104 + bend, (z - 93) * 1.13)
+    # A rounded bowl gives the close camera a fair curve through the right
+    # turn. Ease back into the outer ground above the wet bank.
+    pond_radius = hypot((x - 104 + 1.3 * sin((z - 93) / 11)) / 13, (z - 93) / 12)
+    bowl = 8.0 + 2.6 * pond_radius**2
+    outer_blend = min(max((pond_radius - 1.32) / 0.42, 0), 1)
+    pond = bowl + (outer_bank - bowl) * outer_blend**2 * (3 - 2 * outer_blend)
     return min(ground, lake, hollow, pond)
 
 

@@ -22,7 +22,7 @@ fn surface_opacity(row: SurfaceRow, world: vec3<f32>) -> f32 {
     if ground.inside { depth = world.y - ground.bed; }
     // Leave the optical edge visible at the opaque depth intersection, with
     // the bed still showing through the first part of the shallows.
-    return mix(0.28, 1.0, smoothstep(0.0, 0.12, depth));
+    return mix(0.28, 1.0, smoothstep(0.0, 0.065, depth));
 }
 
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
