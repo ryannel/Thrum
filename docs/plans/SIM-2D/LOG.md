@@ -212,3 +212,11 @@ Every registered rule package is linted in development and release on native, Wa
 The two target-specific controls are refused where compiled, including a release-only simulator call.
 Crowd and Mixed match all retained folds, checkpoints and profile vectors on Mac, Chrome and iPhone simulator.
 [Evidence](../../evidence/SIM-2D/M3-target-guard.md) includes the six build configurations and all 26 trace rows.
+
+## M3 full Philox draw, 18 November 2026
+
+Exposed the full keyed 64-bit draw and its top-24-bit conversion to a profile number.
+The native public API test and all three published two-word known answers pass.
+All 26 Mac, Chrome Wasm and iPhone simulator rows match the retained folds and checkpoints.
+The guide recording matches 603 Crowd data rows, and the sine control diverges at tick 1.
+[Evidence and target limits](../../evidence/SIM-2D/M3-random-draw.md).
