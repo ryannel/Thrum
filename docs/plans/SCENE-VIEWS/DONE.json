@@ -310,10 +310,13 @@
         },
         {
           "id": "M3.4",
-          "statement": "On the mirror scene, and on a scene of 100,513 entity instances with one view (the count of the V1 field flythrough), on both of the Mac's recipes at 2560\u00d71440 with capture off, the paired cost record is taken with no view asked, one and two, and with each knob at both ends: each view pass's GPU time by name beside the main view's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "The paired cost record is retained with the load it was taken under. On the mirror scene, and on a scene of 100,513 entity instances with one view (the count of the V1 field flythrough), on both of the Mac's recipes at 2560\u00d71440 with capture off, it holds no view asked, one and two, and each knob at both ends: each view pass's GPU time by name beside the main view's, with the machine's load average and busiest processes. It is of the view code this milestone leaves, was taken while other builders worked, and the evidence, the author guide and the maturity ledger call its figures taken under load and claim none for a quiet machine. The logical bytes of each resource a prepared slot owns are listed beside it, and each tripwire it trips has its investigation there. No figure in the record decides this item, and it needs no sitting with other builders paused.",
           "check": "python3 scripts/scene_view_cost.py check",
-          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
-          "lock": "gpu",
+          "ask": "Is the record of the view code this milestone leaves: has no commit of the milestone since the record's changed what a view draws or what the collector times? Do the evidence, the author guide and the ledger call the record's figures taken under load, with each tripped wire's investigation beside the record?",
+          "reads": [
+            "scripts/scene_view_cost.py",
+            "docs/evidence/SCENE-VIEWS/M3/cost.json.gz"
+          ],
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

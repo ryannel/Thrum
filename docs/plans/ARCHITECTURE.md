@@ -2729,3 +2729,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `ATMOSPHERE` M10, the aloft-casters interface and [its seam ruling](#seam-ruling-for-atmosphere-m10): the
   caster height map holds the ground and what stands on it, and a marked row is left out of it. `SHOWCASE` M5
   now waits for `ATMOSPHERE:M10`. No contract or registered exact baseline changed, and no item of `CULLING`.
+- 2026-11-18 `SCENE-VIEWS` M3 ended blocked asking for a timing sitting with the other builders paused, the
+  second last milestone to stop that way after `CULLING` M3. The project's rule now makes every timing a
+  tripwire taken under load, a last milestone's included; quiet figures wait for one batched window if they are
+  still wanted, and only a sitting a design names, as `SHOWCASE` M8's, pauses the others
+  ([settings](../../ORCHESTRATE.md#targets)). `SCENE-VIEWS` M3.4 was written again to it. No interface,
+  contract or exact baseline changed, and no item of another module.

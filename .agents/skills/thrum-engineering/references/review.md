@@ -113,8 +113,9 @@ Challenge:
 
 A timing taken while another agent used the GPU is labelled as contended, or it doesn't count. Inside a
 milestone that is expected: such a timing is a tripwire, and it fails only on a collapse or a missing
-measurement. Hold a module's last milestone to qualified numbers, taken in one sitting with the other builders
-paused.
+measurement. That holds in a module's last milestone too. A record taken under load is not a finding, and no
+review asks for a sitting with the other builders paused unless the module's design names one. A figure quoted
+without its load is a finding.
 
 ## Calibration: failures this engine has already paid for
 

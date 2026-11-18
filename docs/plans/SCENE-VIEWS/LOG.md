@@ -279,3 +279,29 @@
   The seven fixed poses and five motion routes were inspected again on Metal. The launcher used
   its offscreen inspection mode for this round.
   [Checks, frames and reproduction](../../evidence/SCENE-VIEWS/M2/README.md)
+- 2026-11-18 M3's first review failed four items and raised one finding outside them: Chrome left out the
+  terrain-shadow cases, the cost record was taken beside another builder's GPU run, the knob test took any
+  change in the pool as the declared one, the guide gave no measured cost, and the record held no resource
+  bytes. The fix round passed its builder on every item but M3.4 and ended `BLOCKED`, asking for a timing
+  sitting with the other builders paused. [Review](../../evidence/SCENE-VIEWS/M3-review.md) ·
+  [handoff](../../evidence/SCENE-VIEWS/M3-handoff.md)
+- 2026-11-18 The lead's task: "Pausing four builders for one timing run is not worth it under the owner's
+  17 Nov bar (timing is a tripwire, not a gate; proof proportional to risk; the owner wants as many builders
+  online as possible). Rework M3.4 so it can close without a quiet machine".
+- 2026-11-18 M3.4 planned again. The record taken under load stands as the module's record, labelled so in
+  the evidence, the guide and the ledger, and the module asks for no quiet sitting
+  ([design](DESIGN.md#cost-account)). The item gains the resource bytes the review's fifth finding asked for,
+  loses its `gpu` lock, because its check only reads the retained record, and gains `reads`. The project's
+  rule changed with it ([settings](../../../ORCHESTRATE.md#targets)): no last milestone pauses the others for
+  a timing, and quiet figures wait for one batched window if they are still wanted.
+- 2026-11-18 Not chosen: a new run that fails on a gross regression against earlier timings. No earlier
+  comparable record exists (the smoke run before it was at a load near 25), and nothing a view draws has
+  changed since `25cfadff5bf44`, so the comparison would set one load against another. The design's 25% wire
+  compares any later record with this one.
+- 2026-11-18 The builder saw a `WATERS` GPU test run while `locks` read `gpu` free. The lock's records agree
+  with `locks`: `WATERS` last held `gpu` at 07:25, and at 07:48 its builder started `merge`, whose `./dev check`
+  runs GPU tests under no lock, as the project's rule has it since 15 November. So it is not a fault in
+  orchestrate's lock, which counts only runs that take it, and most likely not a test run outside the lock by
+  mistake. If `gpu: 2` should ever bound those tests too, the change is on the tests' side, where
+  `TEST-SUPPORT` hands a test its GPU device. Nothing is planned for it, and M3 does not wait on it. The
+  settings now say that a busy GPU beside a free lock is expected.

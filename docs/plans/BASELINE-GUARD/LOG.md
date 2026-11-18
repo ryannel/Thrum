@@ -248,3 +248,7 @@
   `scripts/exact_baselines_native.py` so a run whose Mac capture ended incomplete exits 75, "could not judge",
   and is recorded as that. No item of this module changes.
   [Ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames).
+- 2026-11-18 The timing rule of the 15 November regime changed, on the lead's task for `SCENE-VIEWS` M3: no
+  last milestone pauses the other builders for a timing, and quiet figures wait for one batched window if
+  they are still wanted ([settings](../../../ORCHESTRATE.md#targets)). The assumption in this plan was
+  written again to say so. No item of this module changed.

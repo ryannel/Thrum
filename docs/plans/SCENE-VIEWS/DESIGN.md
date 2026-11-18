@@ -563,6 +563,15 @@ pass is about 25% over its last comparable record, or when a view costs more tha
 draw at the same pixel count. A tripped wire is investigated in the milestone that tripped it. **No timing
 figure decides whether an item passes.**
 
+**Taken under load, with no quiet sitting** (18 November 2026). The record is taken while other builders
+work, under the shared `gpu` lock, and keeps the machine's load average and its busiest processes beside the
+figures. Its check fails only on a missing measurement. This module claims no figure for a quiet machine and
+asks for no sitting with the other builders paused, in its last milestone as in any other: the evidence, the
+author guide and the maturity ledger call the record's figures taken under load. M3's record is the first
+paired one, so it is the record a later one is compared with, and it has none before it to be compared with.
+If figures for a quiet machine are wanted later, the collector's one command retakes the record in a window
+the lead batches for every module. No milestone waits for that window.
+
 ## Risks
 
 1. **A view costs a second scene.** Early sign: M3's record. The designed remedies are the knobs: extent, far

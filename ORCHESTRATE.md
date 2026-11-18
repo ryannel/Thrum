@@ -69,12 +69,19 @@ Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on
 - **A lock is about capacity.** A command takes one lock, for the device it loads most, around the part that needs
   it. It never takes a second lock and never runs `merge` inside one. `gpu.alone` is only for a run that needs the
   whole GPU, such as all its memory. It doesn't make a timing trustworthy, because builds elsewhere take no lock.
+  The `locks` command lists only the runs that took a lock. The GPU tests inside `./dev check`, a builder's or a
+  merge's, take none, so the GPU can be busy while `gpu` reads free. That is expected, and nothing to report.
 - **Nothing waits for a person under a lock.** Before an attended run, check that the console is unlocked and the
   panel awake, and only then take the lock. If they aren't, end `BLOCKED needs_access` at once.
-- **Timing inside a milestone is a tripwire.** It is taken while other builders work, records the load, and
-  fails only on a collapse or a missing measurement. A module's qualified numbers are taken in its last
-  milestone, in one sitting with the other builders paused: its builder ends `BLOCKED` asking the lead for that
-  sitting, and the lead keeps the others paused until the milestone is Ready for Review.
+- **Timing is a tripwire, in a module's last milestone too.** It is taken while other builders work, under the
+  lock its run needs, records the load, and fails only on a collapse or a missing measurement. Nobody is paused
+  for a timing, and no builder ends `BLOCKED` asking for a quiet machine. The evidence and the maturity ledger
+  call the figures taken under load. Figures for a quiet machine, where they are still wanted, wait for one
+  window the lead batches for every module, and no milestone waits for it. The one exception is a sitting that
+  a module's design asks for by name, because smoothness at 1x is judged in it, as `SHOWCASE` M8's is: that
+  builder ends `BLOCKED` asking the lead for it, and the lead keeps the others paused until the milestone is
+  Ready for Review. *(lead, 18 Nov 2026, on the owner's bar of 17 Nov; from 15 Nov every last milestone asked
+  for a paused sitting, and `CULLING` M3 and `SCENE-VIEWS` M3 each stopped on it)*
 
 Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
 
@@ -103,7 +110,7 @@ reviewers judge by them.
   unculled one, is a regression guard and stays.
 - **Proof is proportional to risk.** New rendering work gets a full inspection. A fix round is reviewed on what
   the last review found and what the fix touched. A tripwire record passes on its check alone, with a reviewer's
-  question only in a module's last milestone, where the qualified numbers are taken. An evidence item that costs
+  question only in a module's last milestone. An evidence item that costs
   more than the fault it would catch is not written.
 
 A milestone that was In Progress or Ready for Review on 17 November 2026 keeps the items it was approved with.

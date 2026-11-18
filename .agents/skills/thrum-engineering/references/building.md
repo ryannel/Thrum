@@ -90,8 +90,11 @@ gates only done-when items about pacing.
 - **`gpu.alone` is for a run that needs the whole GPU,** such as all its memory. It doesn't give a quiet machine,
   because other builders' builds and tests take no lock.
 - **Timings inside a milestone are tripwires.** Record them with the load on the machine. They fail only on a
-  collapse or a missing measurement. A module's qualified numbers are taken in its last milestone in one
-  sitting: do every other item, then end `BLOCKED` asking the lead for a quiet machine and naming the items.
+  collapse or a missing measurement. That holds in a module's last milestone too: never end `BLOCKED` asking
+  for a quiet machine. Say in the evidence and the maturity ledger that the figures were taken under load.
+  Only a sitting the module's design asks for by name, as `SHOWCASE` M8's is, is asked for by ending `BLOCKED`.
+  `locks` lists only runs that took a lock, and the GPU tests in another builder's `./dev check` take none, so
+  a busy GPU beside a free `gpu` lock is expected.
 - **Attended runs check first, then lock.** Before a run that needs the console unlocked or the panel awake,
   check both. If either fails, end `BLOCKED needs_access` at once. Never wait for a person while holding a lock:
   one check held the GPU for over 30 minutes that way.
