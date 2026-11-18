@@ -467,3 +467,9 @@
   completion history filled. The runtime merged at `e9a449b08` after `./dev check` passed.
   [Target evidence](../../evidence/WATERS/M3-frame-report.md) includes four new Chrome/Metal fixed
   pairs and a 62-frame Chrome pan on the merged runtime. Callback timing measures the page clock.
+
+- 2026-11-18 Built M4's camera-independent map sampler, indexed body draws and the island's sea, lake and pond.
+  Metal checks passed for map and gains, pixel ownership and hidden overlap, stage and history, and the submitted
+  swash cut. Hardware Chrome drew all three bodies and passed the f64 map comparison inside its binding limits.
+  [M4 evidence](../../evidence/WATERS/M4.md) links fixed and realtime inspections and the paired island cost.
+  The thin sheet blends directly into the opaque colour. Refracted lookup and qualified device timing are later work.

@@ -2898,6 +2898,16 @@
         "device": "Apple M3 Max native/portable Metal and hardware Chrome WebGPU. M2 capture-off cost remains a concurrent-load tripwire; Chrome callback intervals describe its page clock with capture active. No physical display-cadence or quiet-machine qualification.",
         "evidence": "../evidence/WATERS/M3.md"
       },
+      "waters_island": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "builder_inspected_review_owed",
+        "scope": "WATERS M4: mapped sea and basins render as a single depth-writing sheet per column. Fetch gains, shallow-wave limit, swash and live lake stage are active. The thin sheet uses a same-pixel composite over the opaque ground.",
+        "correctness": "Metal and Chrome map readbacks against f64; submitted Metal pixel ownership, reverse-Z overlap, stage history and moving shoreline checked. Wind-shelter mutation rejected on Metal.",
+        "visuals": "Metal fixed checkpoints and elapsed-time sequences cover the beach, lake, pond and overlook in trade wind and gale, with calm shoreline checkpoints.",
+        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The paired 1440p island record is a concurrent-load tripwire.",
+        "evidence": "../evidence/WATERS/M4.md"
+      },
       "waters_cpu_model": {
         "implementation": "partial",
         "functional_validation": "passed",

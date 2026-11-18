@@ -6178,6 +6178,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M4-island-captures.tar.zst",
+      "size": 641071611,
+      "sha256": "b0ee027be3c6878813abbc298ccd540c16d4c1ed6de2599893550d107c5b8267",
+      "date": "2026-11-18T10:38:59.553342+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,
