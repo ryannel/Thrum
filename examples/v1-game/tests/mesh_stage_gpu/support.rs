@@ -386,6 +386,13 @@ impl Gpu {
             };
         host.set_scene_contribution(contribution)
             .expect("cooked contribution");
+        let initially_prepared_mesh_pipelines = host
+            .creation_report()
+            .pipelines
+            .iter()
+            .filter(|row| row.label == "contribution")
+            .map(|row| row.mesh)
+            .sum();
         host.enable_submitted_capture_from(
             1,
             CaptureLimits {
@@ -422,6 +429,7 @@ impl Gpu {
             clock: Duration::ZERO,
             output,
             rejections,
+            initially_prepared_mesh_pipelines,
         };
         let timeout = Instant::now() + Duration::from_secs(25);
         while scene.stats.lock().expect("stats").drawn.is_none() {
@@ -488,6 +496,7 @@ pub(super) struct Scene<'a> {
     pub(super) clock: Duration,
     output: wgpu::TextureView,
     rejections: Arc<Mutex<Option<wgpu::Buffer>>>,
+    pub(super) initially_prepared_mesh_pipelines: u64,
 }
 
 pub(super) struct Image {
@@ -631,6 +640,7 @@ impl Scene<'_> {
 
 impl<'a> Scene<'a> {
     pub(super) fn replace_device(&mut self, gpu: &'a Gpu) {
+        self.host.disable_submitted_capture();
         let inputs = self.host.device_prepare_inputs().expect("retained inputs");
         let mut replacement = pollster::block_on(inputs.prepare(
             &gpu.capabilities,
@@ -645,6 +655,17 @@ impl<'a> Scene<'a> {
         self.host
             .publish_device(&mut replacement)
             .expect("publish replacement");
+        self.host
+            .enable_submitted_capture_from(
+                2,
+                CaptureLimits {
+                    staging_slots: 2,
+                    cpu_buffers: 2,
+                    byte_allowance: 1 << 20,
+                },
+                CaptureSource::SceneLinear,
+            )
+            .expect("replacement capture");
         self.gpu = gpu;
         self.output = gpu
             .device

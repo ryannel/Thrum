@@ -500,13 +500,7 @@ fn shadows_off() {
     assert!(gpu.passes().iter().all(
         |pass| !pass.name.contains("Sun shadow") && !pass.name.contains("Sun horizon heights")
     ));
-    let ledger = culled.host.creation_report();
-    let row = ledger
-        .pipelines
-        .iter()
-        .find(|row| row.label == "contribution")
-        .expect("contribution pipeline creation");
-    assert_eq!(row.mesh, 1, "{ledger}");
+    assert_eq!(culled.initially_prepared_mesh_pipelines, 1);
     assert_eq!(
         culled.stats.lock().expect("draw counts").mesh_stage_draws,
         1
