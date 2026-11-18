@@ -203,6 +203,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     assert_eq!(mailbox.stats().blocking_reads, 0);
     drop(domain);
     check_delay(&mut host, &device, &surface, &mailbox, step);
+    while host.poll_completed().expect("retire gale frames").is_some() {}
     check_chart_ticks(&mut host, &device, &surface, step);
 }
 
