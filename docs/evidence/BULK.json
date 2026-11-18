@@ -3955,6 +3955,22 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M6/chrome-ground-pan-1x.mp4",
+      "size": 1680246,
+      "sha256": "6005fe49cef0a4a3c63efc167862a0c91ee542e8020a8d2be433741efc261ce3",
+      "date": "2026-11-18T23:23:11.727237+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M6/chrome-scrub-1x.mp4",
+      "size": 3600943,
+      "sha256": "8a90d039e6a11166edb580b3889c6b5f477504eba6d4c3c15edc256df391dda8",
+      "date": "2026-11-18T23:23:11.334051+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/ATMOSPHERE/M6/metal-ground-pan-1x.mp4",
       "size": 1635460,
       "sha256": "f36bbd9decc1a750ff1b72121c0a070e2eaf3d673b6ab198fd999cc8c66d188d",
