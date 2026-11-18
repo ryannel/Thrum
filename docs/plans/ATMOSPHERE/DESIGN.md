@@ -266,7 +266,7 @@ texels are already rounded to that step.
 | Sky radiance along a direction | RGB radiance of the sky without the Sun's disk: the solar part and the night part, already summed | The active camera's observer altitude only; any direction, including the ground side below the horizon. The night part exists for 0–15 km observer altitude; outside that the result is Sun-only and the fallback is reported, as today |
 | Incident diffuse on a normal | RGB irradiance from the sky, never negative | One answer per frame at the camera's location, for any normal. It does not vary with world position |
 | Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. From M9 the air goes on under the model's ground, so a point on low ground or just above the horizon takes the haze of its own line ([The air at the ground](#the-air-at-the-ground)). A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](../ARCHITECTURE.md#interfaces) |
-| Environment reflection | RGB radiance of the disk-free sky filtered to a GGX lobe around a direction at a roughness, solar and night parts decoded and summed; and the split-sum pair `(scale, bias)` for a view cosine and the same roughness | One cube per frame at the camera's location, no parallax. Roughness is the material roughness the forward pass uses, clamped to 0.045–1. View cosine 0–1. The library maps roughness to its filtered level; a contribution never names a mip |
+| Environment reflection | RGB radiance of the disk-free sky filtered to a GGX lobe around a direction at a roughness, solar and night parts decoded and summed; and the split-sum pair `(scale, bias)` for a view cosine and the same roughness | One cube per frame at the camera's location, no parallax. Roughness is the material roughness the forward pass uses, clamped to 0.045–1. View cosine 0–1. The library maps roughness to its filtered level, and between two levels returns their linear blend, so the radiance does not step as roughness changes; a contribution never names a mip |
 
 The reflection operation is the one `SEA` uses as the fallback under its screen-space reflection. It returns the
 filtered radiance and the pair separately, so a consumer can apply its own Fresnel term.
@@ -468,7 +468,7 @@ samples leaves the closed form while the consumer reads every texel correctly: a
 widest level, 16 samples put red 0.024 off and 8 samples 0.056, against the 0.020 the comparison allowed
 ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part D). So the handoff asks
 what it is. Does the contribution read the atmosphere's cube, at the face its direction names and the level
-its roughness names, and decode it to physical units?
+its roughness names, blending the two levels a roughness lies between, and decode it to physical units?
 
 - **The probe.** After the producer has run, the fixture stores a known cube in the atmosphere's own cube
   texture, the one the lent layout binds, and no producer pass runs between the store and the queries. Every
@@ -476,27 +476,39 @@ its roughness names, and decode it to physical units?
   Sun, one channel steps by an eighth or more from face to face and another from level to level. The fourth
   channel holds a known night term, 1/16 in absolute units as in M5's fixture.
 - **Expected value.** The raw Sun's illuminance times the colour the fixture stored for that face and level,
-  plus the night term. It comes from what the fixture wrote. It does not call the lent library, and it holds
-  no closed form, quadrature or model.
-- **Cases.** The six axis directions, each the centre of a face, at the seven roughnesses that name a level,
-  with the raw Sun at 1, 0 and 2 and at exposure scales of 1 and 2. Below the widest level the query's
-  roughness sits 1/1024 of a level above the level's own, so a sampler that truncates its level fraction still
-  lands on the level. The widest level is held by the roughness clamp.
-- **Bound.** The filtered-decode bound, `C/32 + 1e-5 × M + Q` per channel, with `C` and `M` taken over that
-  face on the level and on the levels beside it.
-- **Wrong lookups that must fail.** The same harness runs three wrong lookups through the same bound, and each
-  must fail at every query with the raw Sun on: the roughness of a neighbouring level, the direction negated,
-  and the direction's axes rotated one place. A run in which one of them passes is a failed run, on Metal and
-  in Chrome. With the raw Sun at 0 every query returns the night term alone.
-- **What it tells apart.** With the example colours of part E, a correct read whose level weight is 1/64 off
-  uses 0.33 of the bound, a neighbouring level misses it by 12 times or more and another face by 118 times or
-  more. Nothing else the layout binds holds those colours, so a contribution bound to another texture returns
-  none of them. A raw Sun or exposure scale applied wrongly fails the cases that vary it, and a night term
-  scaled by the Sun fails with the Sun at 0.
+  plus the night term. Between two levels it is the two colours the fixture stored for that face, blended
+  linearly by the query's place between the levels. It comes from what the fixture wrote. It does not call the
+  lent library, and it holds no closed form, quadrature or model.
+- **Cases.** The six axis directions, each the centre of a face, with the raw Sun at 1, 0 and 2 and at exposure
+  scales of 1 and 2, at thirteen roughnesses: the seven that name a level, and the six that name the midpoint
+  of each pair of neighbouring levels. The library's mapping is linear, so level `l` of the seven is roughness
+  `0.045 + 0.955 × l/6`, and level 2.5 is roughness 0.4429. Every query below the widest level sits 1/1024 of a
+  level above the level or midpoint it names. A sampler that truncates its level fraction then still lands on
+  the level, and one that keeps as few as four bits of it still weights a midpoint by a half. The widest level
+  is held by the roughness clamp.
+- **Bound.** The filtered-decode bound, `C/32 + 1e-5 × M + Q` per channel. At a level, `C` and `M` are taken
+  over that face on the level and on the levels beside it. At a midpoint they are taken over that face on its
+  two levels.
+- **Wrong lookups that must fail.** The same harness runs wrong lookups through the same bound, and each must
+  fail at every query it is run at with the raw Sun on. At every query: the direction negated, and the
+  direction's axes rotated one place. At the queries on a level: the roughness of a neighbouring level. At the
+  midpoints: the roughness of the lower level, and the roughness of the upper level, each compared with the
+  midpoint's expected blend. A run in which one of them passes is a failed run, on Metal and in Chrome. With
+  the raw Sun at 0 every query returns the night term alone.
+- **Why the midpoints.** A library that rounded, floored or raised its level to a whole one before sampling
+  returns the stored colour at every query on a level, and the forward pass's own lookup would hide it in every
+  picture M6 judges. Between levels it returns one level alone. At level 2.5 the example colours give a green
+  of 2.375 with the night term, and either level alone gives 2.3125 or 2.4375.
+- **What it tells apart.** With the example colours of parts E and F, a correct read whose level weight is 1/64
+  off uses 0.33 of the bound at a level and at a midpoint. A neighbouring level misses it by 12 times or more,
+  either level alone at a midpoint by 10 times or more, and another face by 118 times or more. Nothing else the
+  layout binds holds those colours, so a contribution bound to another texture returns none of them. A raw Sun
+  or exposure scale applied wrongly fails the cases that vary it, and a night term scaled by the Sun fails with
+  the Sun at 0.
 
-The probe proves which texture, face and level were read, and the units. Whether the cube is a good filter of
-the sky is the producer's question: P7 keeps guarding it on Metal, and M6's inspection list judges it in the
-picture.
+The probe proves which texture, face and levels were read, that two levels are blended, and the units. Whether
+the cube is a good filter of the sky is the producer's question: P7 keeps guarding it on Metal, and M6's
+inspection list judges it in the picture.
 
 **Exposure control.** At least one case of each row H1–H5 whose expected value is larger than its bound is
 repeated with the lent exposure scale set to 2, and meets the same bound against the same expected value. A
@@ -530,6 +542,7 @@ arranges it.
 | A lent sky or aerial lookup steps where the product blends | An independent surface shows bands in depth or across the sky that the terrain beside it does not | Accepting any value between the neighbouring texels |
 | A contribution pre-exposes twice, or not at all | A module's surface is brighter or darker than the scene by the exposure scale, and the gap changes as the meter moves | Applying the scale inside a lent lookup |
 | The reflection handoff is wrong while the forward pass is right | The first independent consumer shows a sky of the wrong brightness, or copies mip and gain rules to fix it | Testing only the forward fragment path |
+| The lent reflection reads one level where the cube blends two | An independent surface's reflected sky jumps as its roughness crosses a level, while the terrain's does not | Probing only roughnesses that name a level |
 | The texture limit is hit in Chrome | Pipeline creation fails on the portable recipe with the provider on | Dropping another texture silently |
 | The lent library exposes internals modules then depend on | A contribution reads chart layouts directly | Publishing chart formats as interface |
 
@@ -983,7 +996,11 @@ nothing pays nothing. No figure is asked for.
 
 - **M10.1**, a test on Metal: with one caster marked aloft above the ground and one unmarked standing on it,
   the height layer read back equals that of the same scene without the marked caster, and both cascades equal
-  those of the same scene with it unmarked, under each culling mode.
+  those of the same scene with it unmarked, under each culling mode. The unmarked caster stands apart from the
+  marked one and reaches higher than it. The fit keeps every caster, so a marked caster that was the highest
+  thing in the scene would set the layer's depth range, and taking it out would move the stored depth of ground
+  that is correctly kept. With the standing caster highest, both scenes fit the same range and the read-backs
+  differ only by what the marked caster drew.
 - **M10.2**, a reviewer's inspection of the exit flythrough with every tick submitted: no strip under a
   balloon on the far ground, none appearing or vanishing, the near balloons' shadows and the ridges' far
   shadows still there.

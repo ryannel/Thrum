@@ -621,3 +621,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   inspection entry for reflected sky light. Suggestion taken: the stored-table rule's exchange is named as the two public
   arguments. M6.7 and every Done item unchanged. The design has not been reviewed since this change.
   [Full entry](../../evidence/ATMOSPHERE/log-entries.md#entry-4).
+- 2026-11-18 Design review of `267d631488c8` asked for changes; one Must Fix resolved. The finding: every query of the
+  stored-cube probe sat on a level, so a lent library that rounds its level to a whole mip passed M6.8 and M6.4 while a
+  material's reflection would jump as its roughness crossed a level. The probe gains the six midpoints between neighbouring
+  levels on every face, expected as the blend of the two stored colours, and two wrong lookups there, the lower level alone
+  and the upper level alone (part F: 10 times the bound or more, a correct read 0.33). The interface now says the radiance
+  blends between levels. M6.8 written again; M6.4 unchanged, since it runs the same probe by name. Suggestion taken: M10.1's
+  standing caster reaches higher than the aloft one, so both scenes fit one depth range. The design has not been reviewed
+  since this change. [Full entry](../../evidence/ATMOSPHERE/log-entries.md#entry-5).
