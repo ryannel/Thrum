@@ -122,7 +122,7 @@ impl Lighting {
         clippy::cast_sign_loss,
         reason = "validated type axis selects bounded phase rows and shader floats"
     )]
-    pub(super) fn type_parameters(&self, kind: f64) -> ([f32; 4], [f32; 4]) {
+    pub(super) fn type_parameters(&self, kind: f64, plane_turn: f64) -> ([f32; 4], [f32; 4]) {
         let axis = kind * (self.phases.len() - 1) as f64;
         let low = (axis.floor() as usize).min(self.phases.len() - 2);
         let weight = axis - low as f64;
@@ -141,7 +141,7 @@ impl Lighting {
                 blend(Phase::forward_share),
                 blend(|phase| phase.parameters()[3]),
                 blend(Phase::broad_mean_cosine),
-                0.0,
+                plane_turn as f32,
             ],
         )
     }

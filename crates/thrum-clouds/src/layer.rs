@@ -323,7 +323,9 @@ impl Layer {
         });
         let stride = self.profile.refresh_stride;
         let heights = weather.height_range();
-        let (phase, scattering) = self.lighting.type_parameters(state.parameters().kind);
+        let (phase, scattering) = self
+            .lighting
+            .type_parameters(state.parameters().kind, (1.0 - kind.deck) * 0.5);
         let uniform = Uniform {
             weather: std::array::from_fn(|i| {
                 [

@@ -66,21 +66,6 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
     return cloud_erode(sigma,cloud.physical.x,cloud.physical.y,cloud_billow(point,footprint),detail);
 }
-fn cloud_coarse_above(point:vec3<f32>,column:vec4<f32>,footprint:f32)->f32 {
-    if cloud.physical.y==0.0 {return column.y;}
-    // The lit plane compares two directions through the eroded field.
-    // Use a short quadrature for the vertical direction, with detail at mean.
-    let step=column.w/3.0;
-    var sum=0.0;
-    for (var j=0u;j<3u;j++) {
-        let sample=point+vec3(0.0,(f32(j)+0.5)*step,0.0);
-        let sigma=cloud_column(sample).x;
-        sum+=cloud_erode(sigma,cloud.physical.x,cloud.physical.y,
-            cloud_billow(sample,max(footprint,80.0)),cloud.physical.z);
-    }
-    return step*sum;
-}
-
 fn cloud_sun_depths(world:vec3<f32>)->vec2<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
     let near=(point-mapping.near.xy)/mapping.near.z;
@@ -145,6 +130,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         end=min(end,length(hit.xyz/hit.w-camera));
     }
     let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
+    let plane_cosines=cloud_plane_cosines(-ray);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=begin;var samples=0u;
@@ -160,8 +146,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let world=camera+ray*at;
                 let sun_depths=cloud_local_sun(point,world,footprint);
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-                let above=cloud_coarse_above(point,column,footprint);
-                let source=cloud_source(solar,phase,sun_depths,column.yz,above,ray,at,total.transmittance*part.transmittance);
+                let source=cloud_source(solar,phase,sun_depths,column.yz,plane_cosines,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
                 // A part spans at most 0.25 of the lent air's optical depth.

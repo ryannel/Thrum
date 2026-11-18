@@ -18,14 +18,19 @@ fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec2<f32> {
     // Narrow the middle lobe to avoid a bright ring far outside the Sun's vicinity.
     return vec2(first,cloud_hg_phase(s2,mix(cloud.erosion.z*cloud.scattering.z,cloud.erosion.z,0.65)));
 }
+fn cloud_plane_cosines(viewer:vec3<f32>)->vec2<f32> {
+    let path=mapping.path_border.xyz;
+    // The resolved type gives every sample the same turn toward the Sun path.
+    let normal=normalize(mix(vec3(0.0,1.0,0.0),path,cloud.scattering.w));
+    return vec2(dot(normal,path),dot(normal,viewer));
+}
 fn cloud_source(solar:vec3<f32>,phases:vec2<f32>,sun_depths:vec2<f32>,
-                vertical_depths:vec2<f32>,above:f32,ray:vec3<f32>,distance:f32,transmission:f32)->vec3<f32> {
+                vertical_depths:vec2<f32>,plane_cosines:vec2<f32>,distance:f32,transmission:f32)->vec3<f32> {
     // The first profile's near/far medium handover ends at 500 m.
     let boundary=cloud_smooth((distance-500.0)/500.0);
     let g=cloud.erosion.z;
     let depth=-log(transmission);
-    let direct=cloud_solar_source(phases,sun_depths,above,-ray,depth,boundary,
-        mapping.path_border.xyz,cloud.scattering.xyz,g);
+    let direct=cloud_solar_source(phases,sun_depths,plane_cosines,depth,boundary,cloud.scattering.xyz,g);
     let diffuse_depth=0.75*(1.0-g)*vertical_depths;
     let ambient=cloud_ambient[0].rgb/(1.0+diffuse_depth.x)+cloud_ambient[1].rgb/(1.0+diffuse_depth.y);
     return solar*direct+ambient;
