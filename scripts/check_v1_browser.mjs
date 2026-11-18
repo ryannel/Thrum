@@ -2023,13 +2023,13 @@ async function main() {
     let assetsSource;
     if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
     for (const mode of modes) {
-      if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
-      else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));
-      else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
-      else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
+      if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
       }));
+      else if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
+      else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));
+      else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
       else if (mode === 'effect-state' || mode === 'effect-after-opaque') {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
         const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
