@@ -276,7 +276,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome (SHOWCASE M5): Ready for Review · [plan](SHOWCASE/PLAN.md) · [latest review](../evidence/SHOWCASE/M5-review.md)
 - A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it (WATERS M5): In Progress · [plan](WATERS/PLAN.md) · [latest review](../evidence/WATERS/M5-review.md)
 - CLOUDS M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh: Blocked: Needs Context: The planner needs to move M3.1’s form cue to a later milestone before M3 can merge. The lead finds the missing fact, or asks you for it
-- A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): In Progress · [plan](SESSION/PLAN.md) · [latest review](../evidence/SESSION/M1-review.md)
+- A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION M1): Ready for Review · [plan](SESSION/PLAN.md) · [latest review](../evidence/SESSION/M1-review.md)
 
 ### Recently done
 
@@ -367,7 +367,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M1 of 7 · In Progress |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M1 of 7 · Ready for Review |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, TEST-SUPPORT:M2, GAME-SPLIT:M3 |
