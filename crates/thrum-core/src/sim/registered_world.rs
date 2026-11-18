@@ -3,6 +3,7 @@
 
 #[cfg(test)]
 mod digest_tests;
+mod image;
 
 use std::{
     any::Any,
@@ -734,10 +735,24 @@ impl RegisteredWorld {
 
     pub(super) fn digest(
         &self,
-        digest: &mut crate::profile::Digest,
+        digest: &mut crate::profile::Digest<'_>,
         partial: &mut impl FnMut(ComponentSchemaId, u64),
     ) -> Result<(), ComponentSchemaId> {
         use crate::profile::{Digest, StateEncode};
+        self.encode_metadata(digest);
+        for component in self.schema_order() {
+            let entry = &self.registry.entries[component];
+            let mut column = Digest::default();
+            self.encode_column(component, &mut column)?;
+            let digest_value = column.finish();
+            partial(entry.schema, digest_value);
+            digest_value.encode(digest);
+        }
+        Ok(())
+    }
+
+    fn encode_metadata(&self, digest: &mut crate::profile::Digest<'_>) {
+        use crate::profile::StateEncode;
         u64::try_from(self.slots.len())
             .expect("capacity fits u64")
             .encode(digest);
@@ -764,20 +779,27 @@ impl RegisteredWorld {
         if let Some(directory) = &self.directory {
             directory.encode(digest);
         }
-        let mut order: Vec<_> = (0..self.registry.entries.len()).collect();
+    }
+
+    fn schema_order(&self) -> Vec<usize> {
+        let mut order: Vec<_> = (0..self.component_count()).collect();
         order.sort_unstable_by_key(|&index| self.registry.entries[index].schema.0);
-        for component in order {
-            let entry = &self.registry.entries[component];
-            let profile = entry.profile.as_ref().ok_or(entry.schema)?;
-            let mut column = Digest::default();
-            entry.schema.0.encode(&mut column);
-            for slot in 0..self.capacity() {
-                self.change_ticks[tick_index(component, slot, self.capacity())].encode(&mut column);
-            }
-            (profile.encode)(self, component, &mut column);
-            partial(entry.schema, column.finish());
-            column.finish().encode(digest);
+        order
+    }
+
+    fn encode_column(
+        &self,
+        component: usize,
+        sink: &mut crate::profile::Digest<'_>,
+    ) -> Result<(), ComponentSchemaId> {
+        use crate::profile::StateEncode;
+        let entry = &self.registry.entries[component];
+        let profile = entry.profile.as_ref().ok_or(entry.schema)?;
+        entry.schema.0.encode(sink);
+        for slot in 0..self.capacity() {
+            self.change_ticks[tick_index(component, slot, self.capacity())].encode(sink);
         }
+        (profile.encode)(self, component, sink);
         Ok(())
     }
     pub(super) fn capacity(&self) -> usize {

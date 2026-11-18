@@ -42,6 +42,10 @@ ticks = 240
 manifest = "examples/crowd-2d-run/Cargo.toml"
 allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]
 
+[packages.match-proof]
+manifest = "examples/match-proof/Cargo.toml"
+allowed_workspace_dependencies = ["crowd-2d", "thrum-core"]
+
 [packages.thrum-sea-model]
 manifest = "crates/thrum-sea-model/Cargo.toml"
 # CPU spectrum and conformance oracle; no graphics or game dependencies.
@@ -397,8 +401,8 @@ target_cost = "macOS/iOS thrum-app opt-in capture writer only; native zstd code,
 [external_dependencies.sha2]
 requirement = "=0.10.9"
 license = "MIT OR Apache-2.0"
-purpose = "Hash original RGBA records before live lossless encoding for independent decoder equality checks"
-target_cost = "macOS/iOS capture writer thread only; ARM SHA-256 dispatch with portable fallback per full image and at most 1024 bounded digests per session"
+purpose = "Hash original RGBA records for independent decoder equality checks and derive the reference crowd rule-set identity at build time"
+target_cost = "Capture hashes run on the macOS/iOS writer thread. Session proof hashing is a host build dependency only"
 
 [external_dependencies.cpu-time]
 requirement = "=1.0.0"

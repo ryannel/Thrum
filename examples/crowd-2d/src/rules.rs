@@ -1,7 +1,7 @@
 use std::{any::Any, num::NonZeroUsize};
 use thrum_core::{
     ActorId, Handle, Origin, PeerId, StableId, WorldEpoch,
-    profile::{Digest, Number as N, StateEncode, Vector, random},
+    profile::{Digest, Number as N, StateDecodeError, StateEncode, StateReader, Vector, random},
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, Edit, EditWriter,
         EntityWriter, Executor, GameRuntime, HistoryGame, InputFrame, ReadPermit, RegisteredSystem,
@@ -28,13 +28,38 @@ pub struct Body {
     pub health: i32,
 }
 impl StateEncode for Body {
-    fn encode(&self, digest: &mut Digest) {
+    fn encode(&self, digest: &mut Digest<'_>) {
         self.position.encode(digest);
         self.velocity.encode(digest);
         self.radius.encode(digest);
         self.kind.encode(digest);
         self.player.encode(digest);
         self.health.encode(digest);
+    }
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+        let body = Self {
+            position: Vector::decode(reader)?,
+            velocity: Vector::decode(reader)?,
+            radius: N::decode(reader)?,
+            kind: u32::decode(reader)?,
+            player: u32::decode(reader)?,
+            health: i32::decode(reader)?,
+        };
+        let arena = N::from_i32(120);
+        let speed = N::from_i32(8);
+        if body.kind > 2
+            || body.player >= 4
+            || body.radius <= N::ZERO
+            || body.radius > N::from_i32(6)
+            || body.position.x.abs() > arena
+            || body.position.y.abs() > arena
+            || body.velocity.x.abs() > speed
+            || body.velocity.y.abs() > speed
+            || body.health <= 0
+        {
+            return Err(StateDecodeError::Invalid);
+        }
+        Ok(body)
     }
     fn is_finite(&self) -> bool {
         self.position.is_finite() && self.velocity.is_finite() && self.radius.is_finite()
@@ -54,11 +79,19 @@ pub struct Resources {
     pub hits: u64,
 }
 impl StateEncode for Resources {
-    fn encode(&self, digest: &mut Digest) {
+    fn encode(&self, digest: &mut Digest<'_>) {
         self.controls.encode(digest);
         self.sequences.encode(digest);
         self.next_id.encode(digest);
         self.hits.encode(digest);
+    }
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+        Ok(Self {
+            controls: <[[N; 2]; 4]>::decode(reader)?,
+            sequences: <[u64; 4]>::decode(reader)?,
+            next_id: u64::decode(reader)?,
+            hits: u64::decode(reader)?,
+        })
     }
     fn is_finite(&self) -> bool {
         self.controls.is_finite()
@@ -501,6 +534,27 @@ impl Simulation {
     }
 
     fn with_trace(count: u32, epoch: u128, mixed: bool) -> Self {
+        let (mut runtime, mut game, mut candidate) = Self::image_parts(count, epoch, mixed);
+        Self::seed(&mut runtime, count, mixed);
+        runtime.publish_initial(&mut game, &mut candidate);
+        let history = RuntimeHistory::new(&runtime, &game, NonZeroUsize::new(8).expect("window"));
+        Self {
+            runtime,
+            game,
+            candidate,
+            history,
+        }
+    }
+
+    /// Prepare the runtime, rule state and scratch for an incoming image.
+    ///
+    /// # Panics
+    /// If the body count is outside the reference workload's supported range.
+    pub fn image_parts(
+        count: u32,
+        epoch: u128,
+        mixed: bool,
+    ) -> (GameRuntime<Crowd>, Crowd, Candidate) {
         assert!((4..=10_000).contains(&count), "reference crowd count");
         let capacity = count as usize + 128;
         let mut registry = ComponentRegistry::default();
@@ -508,7 +562,7 @@ impl Simulation {
             .register_profile::<Body>(ComponentSchemaId(1))
             .expect("body schema");
         let system = SystemId(1);
-        let mut runtime = GameRuntime::new_published(
+        let runtime = GameRuntime::new_published(
             WorldEpoch(epoch),
             capacity,
             registry,
@@ -537,7 +591,7 @@ impl Simulation {
         let structure = runtime
             .structural_permit(system, 1)
             .expect("structural permit");
-        let mut game = Crowd {
+        let game = Crowd {
             mixed,
             control: None,
             read,
@@ -560,6 +614,28 @@ impl Simulation {
                 )
             }),
         };
+        let candidate = Candidate {
+            steering: (0..capacity.div_ceil(256))
+                .map(|_| Vec::with_capacity(256))
+                .collect(),
+            parallel_chunks: 0,
+            oversize: 0,
+            swept_only_hits: 0,
+            rows: Vec::with_capacity(capacity),
+            circles: Vec::with_capacity(capacity),
+            index: CircleIndex::new(N::from_i32(4)).expect("cell size"),
+            batch: Vec::with_capacity(capacity),
+            births: Vec::with_capacity(128),
+            dead: Vec::with_capacity(128),
+            damage: vec![0; capacity],
+            nearest: Vec::with_capacity(1),
+            resources: Resources::default(),
+            neighbours: 0,
+        };
+        (runtime, game, candidate)
+    }
+
+    fn seed(runtime: &mut GameRuntime<Crowd>, count: u32, mixed: bool) {
         let width = N::from_i32(i32::try_from(count).expect("body count fits"))
             .sqrt()
             .ceil()
@@ -584,32 +660,6 @@ impl Simulation {
                     Ok(())
                 })
                 .expect("seed body");
-        }
-        let mut candidate = Candidate {
-            steering: (0..capacity.div_ceil(256))
-                .map(|_| Vec::with_capacity(256))
-                .collect(),
-            parallel_chunks: 0,
-            oversize: 0,
-            swept_only_hits: 0,
-            rows: Vec::with_capacity(capacity),
-            circles: Vec::with_capacity(capacity),
-            index: CircleIndex::new(N::from_i32(4)).expect("cell size"),
-            batch: Vec::with_capacity(capacity),
-            births: Vec::with_capacity(128),
-            dead: Vec::with_capacity(128),
-            damage: vec![0; capacity],
-            nearest: Vec::with_capacity(1),
-            resources: Resources::default(),
-            neighbours: 0,
-        };
-        runtime.publish_initial(&mut game, &mut candidate);
-        let history = RuntimeHistory::new(&runtime, &game, NonZeroUsize::new(8).expect("window"));
-        Self {
-            runtime,
-            game,
-            candidate,
-            history,
         }
     }
     /// Digest the current endpoint.

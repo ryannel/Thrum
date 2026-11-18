@@ -1,6 +1,9 @@
 //! Generic fixed-tick authority boundary. Games own component types, candidate
 //! work and rules; the engine owns registered storage and complete publication.
 
+mod image;
+pub use image::{RuleSetIdentity, WorldImageError};
+
 use std::{
     collections::HashMap,
     error::Error,
@@ -1242,7 +1245,7 @@ impl<G: TickGame> GameRuntime<G> {
         self.pages.reserved_bytes(page_bytes)
     }
 
-    /// Seal tick zero before any mutation, preserving seeded structural state.
+    /// Seal the initial seeded or restored endpoint before stepping.
     ///
     /// # Panics
     ///
@@ -2052,6 +2055,11 @@ impl<T: Send + Sync + 'static> ColumnRead<'_, T> {
 }
 
 impl WorldRead<'_> {
+    /// Number of logical slots, including vacant and retired slots.
+    pub fn capacity(&self) -> usize {
+        self.world.capacity()
+    }
+
     /// Whether a page's changed-slot interval is still in the bounded journal.
     pub fn has_changes_since(&self, since: u64, current: u64) -> bool {
         self.world.has_changes_since(since, current)

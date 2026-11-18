@@ -2,6 +2,9 @@
 
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+mod reader;
+pub use reader::{StateDecodeError, StateReader};
+
 #[cfg(test)]
 mod tests;
 
@@ -102,31 +105,57 @@ pub struct Vector {
 }
 
 /// Integer-only FNV-1a encoding accumulator, with explicitly ordered bytes.
-#[derive(Clone, Copy, Debug)]
-pub struct Digest(u64, bool);
-impl Default for Digest {
+#[derive(Debug)]
+pub struct Digest<'a>(u64, bool, Option<&'a mut Vec<u8>>);
+impl Default for Digest<'_> {
     fn default() -> Self {
-        Self(0xcbf2_9ce4_8422_2325, true)
+        Self(0xcbf2_9ce4_8422_2325, true, None)
     }
 }
-impl Digest {
+impl<'a> Digest<'a> {
+    pub(crate) fn record(bytes: &'a mut Vec<u8>) -> Self {
+        Self(0, true, Some(bytes))
+    }
+
     /// Append bytes in the caller's canonical order.
     pub fn bytes(&mut self, bytes: &[u8]) {
+        if let Some(output) = &mut self.2 {
+            output.extend_from_slice(bytes);
+            return;
+        }
         for byte in bytes {
             self.0 = (self.0 ^ u64::from(*byte)).wrapping_mul(0x100_0000_01b3);
         }
     }
     /// Current digest.
-    pub fn finish(self) -> u64 {
+    pub fn finish(&self) -> u64 {
         self.0
     }
 }
 
 /// A fixed-width state encoding. Implementations must encode every field and
 /// propagate the validity of nested values. Raw floats and usize have no implementation.
+/// Both halves are required, including for game resources.
+///
+/// ```compile_fail,E0046
+/// use thrum_core::profile::{Digest, StateEncode};
+/// struct Resource(u32);
+/// impl StateEncode for Resource {
+///     fn encode(&self, sink: &mut Digest<'_>) {
+///         self.0.encode(sink);
+///     }
+/// }
+/// ```
 pub trait StateEncode {
     /// Append canonical bytes, with lengths encoded as u64.
-    fn encode(&self, digest: &mut Digest);
+    fn encode(&self, digest: &mut Digest<'_>);
+    /// Read the canonical encoding of one value.
+    ///
+    /// # Errors
+    /// The value is truncated, invalid, or exceeds the reader's allocation budget.
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError>
+    where
+        Self: Sized;
     /// Whether all nested profile values are finite. The default validates the
     /// complete encoding. An override must propagate every nested value's validity.
     fn is_finite(&self) -> bool {
@@ -137,7 +166,10 @@ pub trait StateEncode {
 }
 macro_rules! integers {
     ($($ty:ty),*) => { $(impl StateEncode for $ty {
-        fn encode(&self, digest: &mut Digest) { digest.bytes(&self.to_le_bytes()); }
+        fn encode(&self, digest: &mut Digest<'_>) { digest.bytes(&self.to_le_bytes()); }
+        fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+            Ok(Self::from_le_bytes(reader.read()?))
+        }
         fn is_finite(&self) -> bool { true }
     })* };
 }
@@ -146,12 +178,19 @@ impl StateEncode for bool {
     fn is_finite(&self) -> bool {
         true
     }
-    fn encode(&self, digest: &mut Digest) {
+    fn encode(&self, digest: &mut Digest<'_>) {
         u8::from(*self).encode(digest);
+    }
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+        match u8::decode(reader)? {
+            0 => Ok(false),
+            1 => Ok(true),
+            _ => Err(StateDecodeError::Invalid),
+        }
     }
 }
 impl<T: StateEncode, const N: usize> StateEncode for [T; N] {
-    fn encode(&self, digest: &mut Digest) {
+    fn encode(&self, digest: &mut Digest<'_>) {
         u64::try_from(N)
             .expect("array length fits u64")
             .encode(digest);
@@ -162,9 +201,19 @@ impl<T: StateEncode, const N: usize> StateEncode for [T; N] {
     fn is_finite(&self) -> bool {
         self.iter().all(StateEncode::is_finite)
     }
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+        if u64::decode(reader)? != u64::try_from(N).expect("array length fits u64") {
+            return Err(StateDecodeError::Invalid);
+        }
+        let mut values = [const { None }; N];
+        for value in &mut values {
+            *value = Some(T::decode(reader)?);
+        }
+        Ok(values.map(|value| value.expect("array was filled")))
+    }
 }
 impl StateEncode for Number {
-    fn encode(&self, digest: &mut Digest) {
+    fn encode(&self, digest: &mut Digest<'_>) {
         digest.1 &= self.0.is_finite();
         let bits = if self.0.is_nan() {
             0x7fc0_0000
@@ -176,14 +225,28 @@ impl StateEncode for Number {
     fn is_finite(&self) -> bool {
         self.0.is_finite()
     }
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+        let value = Self(f32::from_bits(u32::decode(reader)?));
+        if value.is_finite() {
+            Ok(value)
+        } else {
+            Err(StateDecodeError::Invalid)
+        }
+    }
 }
 impl StateEncode for Vector {
-    fn encode(&self, digest: &mut Digest) {
+    fn encode(&self, digest: &mut Digest<'_>) {
         self.x.encode(digest);
         self.y.encode(digest);
     }
     fn is_finite(&self) -> bool {
         self.x.is_finite() && self.y.is_finite()
+    }
+    fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
+        Ok(Self {
+            x: Number::decode(reader)?,
+            y: Number::decode(reader)?,
+        })
     }
 }
 

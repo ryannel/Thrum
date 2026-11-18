@@ -29,8 +29,9 @@ pub use publication::{PublicationChanges, PublicationPage};
 pub use registered_world::{ChunkedVisit, EntityWriter, RegisteredWorldError};
 pub use runtime::{
     ColumnRead, ExecutionMode, Executor, GameRuntime, LiveSlot, PublicationMode, Read2, ReadPermit,
-    RegisteredSystem, RuntimeCapture, RuntimeDelta, RuntimeEndpoint, RuntimeError, RuntimeUndo,
-    StructuralPermit, TickError, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
+    RegisteredSystem, RuleSetIdentity, RuntimeCapture, RuntimeDelta, RuntimeEndpoint, RuntimeError,
+    RuntimeUndo, StructuralPermit, TickError, TickGame, WorldImageError, WorldRead, WorldTxn,
+    WritePermit, WriteRead2,
 };
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,

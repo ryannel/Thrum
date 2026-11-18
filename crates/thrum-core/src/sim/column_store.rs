@@ -38,6 +38,14 @@ struct ActiveIndex<T> {
 }
 
 impl<T> TypedStore<T> {
+    pub(super) fn allocation_bytes(capacity: usize, indexed: bool) -> Option<usize> {
+        let words = capacity.div_ceil(64) * (1 + usize::from(indexed));
+        size_of::<Option<T>>()
+            .checked_mul(capacity)?
+            .checked_add(words * size_of::<u64>())?
+            .checked_add(size_of::<Self>())
+    }
+
     pub(super) fn new(capacity: usize) -> Self {
         Self {
             values: std::iter::repeat_with(|| None).take(capacity).collect(),

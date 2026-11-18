@@ -1498,6 +1498,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f"
 
 [[package]]
+name = "match-proof"
+version = "0.1.0"
+dependencies = [
+ "crowd-2d",
+ "serde_json",
+ "sha2",
+ "thrum-core",
+ "wasm-bindgen",
+ "web-time",
+]
+
+[[package]]
 name = "matchers"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

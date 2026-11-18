@@ -60,7 +60,7 @@ impl Clone for DenseDirectory {
 }
 
 impl DenseDirectory {
-    pub(super) fn encode(&self, digest: &mut crate::profile::Digest) {
+    pub(super) fn encode(&self, digest: &mut crate::profile::Digest<'_>) {
         use crate::profile::StateEncode;
         for map in [&self.slot_to_row, &self.row_to_slot] {
             u64::try_from(map.len())
@@ -73,6 +73,40 @@ impl DenseDirectory {
         u64::try_from(self.active_len)
             .expect("active length fits u64")
             .encode(digest);
+    }
+
+    pub(super) fn decode(
+        reader: &mut crate::profile::StateReader<'_>,
+        capacity: usize,
+    ) -> Result<Self, crate::profile::StateDecodeError> {
+        use crate::profile::{StateDecodeError as Error, StateEncode};
+
+        let capacity_wire = u64::try_from(capacity).expect("world capacity fits u64");
+        if u64::decode(reader)? != capacity_wire {
+            return Err(Error::Invalid);
+        }
+        let bytes = capacity
+            .checked_mul(2 * size_of::<usize>())
+            .ok_or(Error::Limit)?;
+        reader.charge_allocation(bytes)?;
+        let mut directory = Self::new(capacity);
+        for row in &mut directory.slot_to_row {
+            *row = usize::try_from(u64::decode(reader)?).map_err(|_| Error::Invalid)?;
+        }
+        if u64::decode(reader)? != capacity_wire {
+            return Err(Error::Invalid);
+        }
+        for (row, slot) in directory.row_to_slot.iter_mut().enumerate() {
+            *slot = usize::try_from(u64::decode(reader)?).map_err(|_| Error::Invalid)?;
+            if directory.slot_to_row.get(*slot) != Some(&row) {
+                return Err(Error::Invalid);
+            }
+        }
+        directory.active_len = usize::try_from(u64::decode(reader)?).map_err(|_| Error::Invalid)?;
+        if directory.active_len > capacity {
+            return Err(Error::Invalid);
+        }
+        Ok(directory)
     }
     /// Reserves every logical slot, initially inactive and in logical order.
     pub(super) fn new(capacity: usize) -> Self {

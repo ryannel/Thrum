@@ -94,12 +94,46 @@ impl ComponentRegistry {
         schema: ComponentSchemaId,
     ) -> Result<ComponentKey, RegistrationError> {
         let key = self.register::<T>(schema)?;
+        self.attach_profile::<T>();
+        Ok(key)
+    }
+
+    /// Register a portable component with a maintained activity predicate.
+    ///
+    /// # Errors
+    /// The type or schema is already registered.
+    pub fn register_indexed_profile<
+        T: Copy + PartialEq + Send + Sync + crate::profile::StateEncode + 'static,
+    >(
+        &mut self,
+        schema: ComponentSchemaId,
+        predicate: fn(&T) -> bool,
+    ) -> Result<ComponentKey, RegistrationError> {
+        let key = self.register_indexed(schema, predicate)?;
+        self.attach_profile::<T>();
+        Ok(key)
+    }
+
+    fn attach_profile<T: Copy + Send + Sync + crate::profile::StateEncode + 'static>(&mut self) {
         self.entries.last_mut().expect("new entry").profile = Some(ProfileComponent {
             valid: |value| {
                 value
                     .downcast_ref::<T>()
                     .is_some_and(crate::profile::StateEncode::is_finite)
             },
+            decode: |column, row, reader| {
+                let value = T::decode(reader)?;
+                if !value.is_finite() {
+                    return Err(crate::profile::StateDecodeError::Invalid);
+                }
+                column
+                    .as_any_mut()
+                    .downcast_mut::<TypedStore<T>>()
+                    .expect("registered column type")
+                    .insert(row, value);
+                Ok(())
+            },
+            storage_bytes: TypedStore::<T>::allocation_bytes,
             encode: |world, component, digest| {
                 use crate::profile::StateEncode;
                 for slot in 0..world.capacity() {
@@ -125,7 +159,6 @@ impl ComponentRegistry {
                 None
             },
         });
-        Ok(key)
     }
     /// Register one game component type and its durable schema identity.
     ///
@@ -655,15 +688,23 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
 
 pub(super) struct ProfileComponent {
     pub(super) valid: fn(&dyn Any) -> bool,
-    pub(super) encode: fn(&RegisteredWorld, usize, &mut crate::profile::Digest),
+    pub(super) encode: fn(&RegisteredWorld, usize, &mut crate::profile::Digest<'_>),
+    pub(super) decode: DecodeProfileValue,
+    pub(super) storage_bytes: fn(usize, bool) -> Option<usize>,
     pub(super) validate: fn(&RegisteredWorld, usize) -> Option<u32>,
 }
+
+type DecodeProfileValue = fn(
+    &mut dyn StorageColumn,
+    usize,
+    &mut crate::profile::StateReader<'_>,
+) -> Result<(), crate::profile::StateDecodeError>;
 
 pub(super) struct ComponentEntry {
     pub(super) profile: Option<ProfileComponent>,
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
-    indexed: bool,
+    pub(super) indexed: bool,
     publication_copy: Box<dyn Any + Send + Sync>,
     pub(super) publication: Option<super::publication::PublicationFactory>,
     pub(super) capture: CaptureColumn,
