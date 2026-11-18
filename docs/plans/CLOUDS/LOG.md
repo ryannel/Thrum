@@ -427,3 +427,10 @@
   M6.2, M6.9, M7.6, M12.4, M14.2 to M14.4, M14.13, M15.1 and M15.4. Eleven cost records pass on their check alone. The Sun term stays
   as a starting point a builder may tune by eye. Design review MF1 is answered by a boundary weight: the view boundary is off inside
   the handover for both integrators and fades in beyond it, so near and far fog take one source. No item of a Done milestone changed.
+
+- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../evidence/CLOUDS/design-review.md)'s MF1, which read the design
+  before the boundary weight of the entry above. Settled as one boundary rule for every consumer of the Sun term, with both integrators
+  taking the term and its depths through the same two shader functions; [part XVII](../../evidence/CLOUDS/design-proof/handover-light-proof.txt)
+  and [the proof's README](../../evidence/CLOUDS/design-proof/README.md) hold the cases and figures. M14.13 is written again and M15.13,
+  an inspection, is new. S5 taken in the design; M2.11's wording and S4's M1.2 are left, since M2 and M1 are Done. No item of a Done
+  milestone changed. The design needs a review.

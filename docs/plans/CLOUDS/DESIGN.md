@@ -21,7 +21,9 @@ tick at a time by the step's own arithmetic, and the phase describes the target 
 Revised 17 November 2026 after [M3's handoff](../../evidence/CLOUDS/M3-handoff.md): the Sun term of
 [cloud light](#cloud-light) is a beam and a diffuse solution, in place of four fixed orders. Revised that day
 for [the owner's bar](#how-the-module-is-proved): the look and the speed decide, references are diagnostics, and
-near and far fog [share one Sun term](#condensate-that-meets-the-ground-mist-fog-and-low-cloud).
+near and far fog [share one Sun term](#condensate-that-meets-the-ground-mist-fog-and-low-cloud). Revised
+18 November 2026 after [the review of 17 November](../../evidence/CLOUDS/design-review.md) (finding MF1):
+[one boundary rule for every consumer](#cloud-light), what each integrator reads, and part XVII.
 
 ## The request
 
@@ -462,9 +464,11 @@ ticks it is 43 m from both ([the check](../../evidence/CLOUDS/M2-plan/display-tr
 
 The interpolation alpha is not that time. It stops at the committed tick, and a consumed target usually lies
 past it for part of every tick: at 60× in a 40 m/s wind M2's first capture drifted 3.2 m and 36.8 m on alternate
-frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, while
-the world's clock runs, equal intervals between consumed targets are equal steps of travel, across a tick's
-commit as within a tick. A frame whose platform target had expired consumes the time it was observed at, and
+frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, in a
+steady wind and time scale, while the world's clock runs and the phase is inside its bound, equal intervals
+between consumed targets are equal steps of travel, across a tick's commit as within a tick; through a ramp
+the steps follow the ramp, as **What the prediction guarantees** says below. A frame whose platform target
+had expired consumes the time it was observed at, and
 takes its travel there. While the clock is stopped, and until the first tick after a resume, the phase is 1 and
 the travel is the committed tick's.
 
@@ -650,8 +654,9 @@ changed. No item holds the shader to the equations below, to the model or to pho
   [self-shadow](#the-suns-path-one-optical-depth-product) reads it. `tau_col`, the whole depth of that Sun
   column through the layer: the product's last slice at the same column, and never less than `tau_sun`.
   `tau_up`, the vertical optical depth of the coarse density above the sample, from the weather map's column.
-  `tau_view`, the optical depth of condensate the view ray has crossed before the sample, which the march
-  holds as its transmittance. `μ₀` and `c₀`, the sine and cosine of the path direction's elevation, with `c₀`
+  `tau_view`, the optical depth of the condensate a march has itself crossed before the sample, which it
+  holds as its transmittance; only the view boundary reads it. `μ₀` and `c₀`, the sine and cosine of the
+  path direction's elevation, with `c₀`
   never under 0.3. `ω`, the unit vector from the sample toward the eye.
 - **The beam.**
   `S_beam = P₁(θ)·exp(−b₁·tau_sun) + HG(θ, g·g_B)·max(0, exp(−(1 − f)·tau_sun) − exp(−b₁·tau_sun))`, with
@@ -707,9 +712,24 @@ changed. No item holds the shader to the equations below, to the model or to pho
   of part XV are 1.4 to 3.3 times transport; with it, 0.9 to 1.2. `B` is the **boundary weight**, a function of
   the sample's distance from the camera alone: 0 out to the end of
   [the handover's ramp](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), rising smoothly to 1 at twice
-  that distance. Inside the ramp's end the camera may stand in the medium, where a boundary at the eye is wrong,
-  and two integrators draw one bank, so there the term has no view boundary for either. Every heaped cloud is
-  beyond twice that distance and takes the whole of it.
+  that distance. Every heaped cloud is beyond twice that distance and takes the whole of it. A profile without
+  Ground keeps the same two distances, so a cloud's light does not change when a scene adds mist.
+- **One boundary rule, for every consumer.** The trace, the medium coefficients and the sky overlay evaluate
+  the term at the boundary weight of the sample's distance from the camera, and that settles three cases
+  ([part XVII](#check-that-it-can-work)).
+  *Nearer than the ramp's end* no sample has a view boundary, whether the camera stands in the condensate or
+  outside it. A boundary at the eye is wrong for a camera in the medium, distance does not say which camera
+  this is, and two integrators draw one bank there, so the term reads no view depth: it is a function of the
+  sample's place, the Sun and the direction to the eye, and it is the same number whichever integrator asks. A
+  bank seen from outside at that range is lit on its flank as a column is, brighter than the boundary would
+  make it: by 19% in the review's bank.
+  *Beyond the ramp's end* only the trace draws, so the view depth is its own march's. That march holds its far
+  share of the condensate from the start of its interval and nothing nearer, so a far bank seen through mist
+  near the camera takes a little more boundary than the whole ray would give it: at most 0.15 of
+  [the yardstick](#how-the-module-is-proved), under 1% of its radiance, with the camera in mist or behind a
+  near bank, and 0.04 with the camera inside a layer that reaches every way.
+  *A bank the camera walks up to* brightens on its flank as the weight falls: by that 19% between 1,000 and
+  500 m, about 0.5% in 10 m at its steepest, in the one integrator, and by nothing as it crosses the ramp.
 - **How far it holds.** In a level layer the reflected share is within 0.017 of transport from a 45° Sun up
   and within 0.05 from 4° to 20° at depths of 2 and more, and low wherever it is more than 0.01 out (part XII). Radiance by direction is
   within 0.62 to 1.18 of transport at 45° and 90° from a depth of 8, and 0.47 to 1.34 at a depth of 2; the
@@ -998,16 +1018,19 @@ near the camera and this module's trace beyond it.
   that ([rulings 6 and 7](#what-clouds-asks-of-other-modules)). Each frame this module writes, for every cell
   of that volume, at the jittered point the volume names, three **medium coefficients**: the extinction `σ`;
   the solar kernel `σ · (S_beam + S_diffuse)`, which is [cloud light](#cloud-light)'s Sun term without the
-  Sun, from the one shader function the trace calls, at the boundary weight of the cell's distance, which is 0
-  everywhere in the volume, and with its depths from the ground band, which holds the whole path, and from the
-  condensate above the point;
-  and the ambient source, cloud light's ambient term. Each is multiplied by the **near
+  Sun; and the ambient source, cloud light's ambient term. The kernel comes from the one shader function the
+  trace calls, with the inputs the trace gives a sample at that point: `tau_sun`, `tau_col` and `tau_up`
+  through one shader function for the depths at a world point, which reads the Sun's path (the ground band,
+  which holds the whole path, below its top and the cloud band above) and the condensate above the point; the
+  path direction; and the direction from the point to the camera. The boundary weight is 0 wherever the near
+  weight is above 0, so the pass gives no view depth and needs none. Each is multiplied by the **near
   weight**. `ATMOSPHERE` multiplies the kernel by its Sun light at the point and by the scene's shadow there,
   adds the air's own coefficients and integrates once. This module never integrates the near field, and
   `ATMOSPHERE` never evaluates a density, a phase or a self-shadow.
 - **Beyond it: the trace.** The trace marches every condensate, ground sources included, weighted by the **far
-  weight**, lit by cloud light at the boundary weight of each sample's distance, so inside the ramp it evaluates
-  the same source as the view volume, with the surface visibility on its Sun term, stopping at the scene's depth with
+  weight**, lit by cloud light through the same two functions at the boundary weight of each sample's distance,
+  so inside the ramp it evaluates the same source as the view volume, with the surface visibility on its Sun
+  term, stopping at the scene's depth with
   [a stop at every pixel's depth](#the-visible-layer) and taking the air in parts. A far bank is then drawn at
   the layer's grain, a texel for every four pixels, where the view volume's cells are sixteen pixels across.
 - **The handover.** The near weight is 1 from the camera to the start of a ramp and falls to 0 at its end; the
@@ -1018,8 +1041,12 @@ near the camera and this module's trace beyond it.
   in 0.65 (`ATMOSPHERE`'s design review). That holds because both integrators take one source there: with a
   view boundary in the trace alone, a bank brightened by up to 19% as it crossed the ramp
   ([the review of 17 November](../../evidence/CLOUDS/design-review.md), finding MF1), which the boundary weight
-  removes. Beyond the ramp the boundary comes in over a distance as long as the ramp's end, in the one
-  integrator, so nothing steps. M15.4 judges the handover by eye, with a bank walked through it. The distance is short
+  removes. With it the review's bank is the same radiance at 200, 325 and 400 m, to rounding, and over every
+  case of part XVII the two integrators are within 0.17 of the yardstick of one integrator over the whole
+  ray: a bank with soft edges in the ramp, a long bank across it, and the camera inside condensate. Beyond the
+  ramp the boundary comes in over a distance as long as the ramp's end, in the one integrator, so nothing
+  steps. M15.13 judges one bank drawn by the view volume and by both integrators, side by side, and M15.4 the walk
+  through the ramp. The distance is short
   for three reasons: fog thick enough to hide the land is all inside it; every heaped cloud base is beyond it,
   so no cumulus is ever drawn at the volume's cell size; and a low deck overhead is featureless at that range.
 - **The world's light.** The [sky overlay](#the-sky-the-world-sees) traces every condensate from the camera, so
@@ -1289,6 +1316,25 @@ The model in it is [cloud light](#cloud-light)'s Sun term, written apart from an
   disagree; a droplet other than 24 µm; the disc-averaged phase in place of the point Sun's; ground
   condensate, whose three depths M14 takes from the ground band. M3's and M5's stills see the first.
 
+From `handover_light_proof.py`, run on 18 November against finding MF1 of
+[the review of 17 November](../../evidence/CLOUDS/design-review.md), on its bank and wider cases. Each case is
+one view ray drawn by the two integrators, each lighting its share with the term at the boundary weight,
+against one integrator over the whole ray with the view depth counted from the camera. Errors are shares of
+the yardstick, which is 5.5% of the reference radiance.
+
+- **XVII, one Sun term across the handover.** The review's bank, 50 m along the sight line at a 50 m visual
+  range with the camera outside it: the same radiance with its front at 200, 325 and 400 m, to rounding, where
+  the reviewed revision was 19%, 19% and 14% out, 2.6 to 3.5 times the yardstick. With its edges tapered:
+  0.17 at worst, in the ramp, which is the composition of part I and not the light. With the camera inside a
+  layer that reaches every way, at visual ranges of 50 m to 5 km, a 45° and a 10° Sun and three directions:
+  0.04. With the camera in mist that ends before the ramp, or behind a near bank, and the bank beyond the
+  ramp: 0.15. A bank 850 m long across the ramp and the rise of the weight: 0.02. Counting the trace's view
+  depth over the whole extinction it reads, in place of its share, changes none of these by 0.02. As the
+  camera comes up to the review's bank its flank brightens by 19% between 1,000 and 500 m, by 0.53% in the
+  steepest 10 m, and by nothing inside 450 m. Transmittance is exact throughout.
+- **Unrun:** the ground band's and the map's own errors in the three depths, which are the same read for both
+  integrators; the two grains, a cell sixteen pixels across against a texel of four. M15.13's stills see both.
+
 ## The system as it runs
 
 | State | Owner |
@@ -1431,6 +1477,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 8. **The handover shows**, as a ring a few hundred metres out where mist is softer on one side than the other, or
    where a low deck overhead is drawn at the volume's cell size. Early sign: M15's walk and pan. The fixes, in
    order: a longer ramp; a nearer handover; a finer grid inside it. Never a second density for the near field.
+   A bank that is brighter or dimmer from one integrator than the other, in M15.13's stills, is a different
+   fault: the two are not taking one source. The fix is to find the input that differs (a depth, the weight,
+   the direction to the eye), never a gain on one side.
 9. **Mist reads as a flat grey slab**, without the glow, the soft top and the wisps of the shipped bar. Early
    sign: M14's first stills. The look is in the fog table, the noise and the phase, and is tuned against M14's
    list with a fresh opinion; three failed looks on one cue go to the log and end `BLOCKED`.
@@ -1501,4 +1550,5 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | Does a far bank sit in the land's haze at visual ranges of 8 and 60 km? | M15.4's stills |
 | What stop tolerance keeps a surface's own stop through a walk and rejects its neighbour's, and how many texels does a pan trace out of turn? | M15 sets the profile's value and records the count |
 | Does the handover show at 300 to 500 m, and at what ramp? | M15 |
+| Is one bank as bright from the view volume and from both integrators? | M15.13's stills |
 | Can `examples/water` give a surface field from its water map without a change to `WATERS`? | M11; if not, the proposal goes to `WATERS`' log |

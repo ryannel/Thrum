@@ -1443,9 +1443,9 @@
         },
         {
           "id": "M14.13",
-          "statement": "Cloud light has one Sun term. The solar kernel of the medium coefficients is the trace's Sun term without the Sun, from the one shader function both call, with the view boundary at the weight the design gives that distance. The four fixed orders are gone from the model, its tests and the renderer.",
+          "statement": "Cloud light has one Sun term and one read of the depths it takes. The medium-coefficient pass and the trace call one shader function for the term and one for the depths at a world point, and the solar kernel is that term without the Sun. The boundary weight is the design's function of distance from the camera, 0 to the end of the ramp, so the pass gives the term no view depth. The four fixed orders are gone from the model, its tests and the renderer.",
           "check": "! grep -rnw Orders crates/thrum-cloud-model crates/thrum-clouds",
-          "ask": "Do the medium-coefficient pass and the trace call one Sun-term function, with no second copy of it? Do M13.7's handover cases still pass in `cargo test -p thrum-cloud-model` with a source that no longer comes from `Orders`?",
+          "ask": "Do the medium-coefficient pass and the trace call one Sun-term function and one depth function, with no second copy of either? Is the boundary weight 0 wherever the near weight is above 0? Do `thrum-cloud-model`'s tests still pass with no source that comes from `Orders`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1480,6 +1480,16 @@
           "id": "M15.4",
           "statement": "From 40 m above the valley at dawn, mist fills the hollows to the horizon and a bank stands across the valley 2 km off. Ridges in front of mist have clean edges, with no halo and no mist drawn over them. No ring, step or change of softness or brightness shows where the view volume hands over to the trace, with the camera still or walking, and a bank the camera walks up to keeps its look as it crosses the handover. A far bank sits in the same haze as the land beside and behind it, neither brighter nor bluer.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 Sun from 2 m and from 40 m, at clear-air visual ranges of 8 and 60 km, and a `realtime` walk toward the bank that takes it from beyond the handover to inside it. Judge each whole, native-size crops of a ridge line against mist and of the band 300 to 600 m from the camera, and the bank's face frame by frame through the walk.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.13",
+          "statement": "One bank is as bright whichever integrator draws it. A fog bank of about a 50 m visual range, seen from outside along its flank under a 45\u00b0 Sun, has the same brightness and the same shading across its face with its near face 200 m from the camera, where the view volume draws it, and at 350 m and 450 m, where the view volume and the trace share it. No edge or band lies across its face where the ramp is.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from 25 m above the ground, at a clear-air visual range of 60 km, of one bank with its near face 200, 350, 450 and 700 m from the camera and the view otherwise the same. Judge native-size crops of the flank from the first three side by side. At 700 m the bank is beyond the ramp, where the design's boundary weight has begun to dim its flank: judge there only that it is no brighter than the others and has no step.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

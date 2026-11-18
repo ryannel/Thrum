@@ -96,7 +96,7 @@ the same cue of M14.5 or M14.6, record them in the log and end `BLOCKED`.
 
 ## M15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 
-If the handover shows in M15.4, the eighth risk gives the fixes in order.
+If the handover shows in M15.4 or M15.13, the eighth risk gives the fixes in order.
 
 ## M16 Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome
 
