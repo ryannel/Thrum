@@ -310,10 +310,10 @@
           "ask": "Compare `scripts/environment_referee.mjs` and `crates/thrum-render/src/atmosphere/products/tests/` with the commit this milestone started from. In H1-H4, did any contract comparison's case, bound, wrong lookup or exposure repeat change? None may. In H5, are the changes only the ones the design names: the stored-cube probe and the stored-table rule added, and the closed-form and quadrature comparisons kept as recorded differences with no assertion on them, while the night term, the agreement across edges and corners, the furnace and the source scaling stand as they were? Is every changed expected value one of the design's five guards, the same on both targets, taken from the model or the producer's stored product and never from the lent library's output, and named in the log?",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M6/README.md#lent-products-on-chrome",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.7",
