@@ -311,6 +311,29 @@ fn game_restore_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
     });
 }
 
+fn open_metal_benchmark_device(gpu_timestamps: bool) -> OpenedDevice {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    let restriction = DeviceRestriction {
+        remove_features: wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS,
+        ..Default::default()
+    };
+    let opened = pollster::block_on(
+        DeviceRecipe {
+            restriction: (!gpu_timestamps).then_some(&restriction),
+            ..Default::default()
+        }
+        .open(&instance, None),
+    )
+    .expect("real Metal device required for this explicit benchmark");
+    let adapter_info = opened.adapter.get_info();
+    assert_eq!(adapter_info.backend, wgpu::Backend::Metal);
+    report_metal_adapter(&adapter_info);
+    opened
+}
+
 fn measure(
     bencher: Option<divan::Bencher<'_, '_>>,
     gpu_timestamps: bool,
@@ -322,31 +345,12 @@ fn measure(
     callbacks_per_sample: usize,
     mode: FrameMode,
 ) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let restriction = DeviceRestriction {
-        remove_features: wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS,
-        ..Default::default()
-    };
     let OpenedDevice {
-        adapter,
         device,
         queue,
         capabilities,
         ..
-    } = pollster::block_on(
-        DeviceRecipe {
-            restriction: (!gpu_timestamps).then_some(&restriction),
-            ..Default::default()
-        }
-        .open(&instance, None),
-    )
-    .expect("real Metal device required for this explicit benchmark");
-    let adapter_info = adapter.get_info();
-    assert_eq!(adapter_info.backend, wgpu::Backend::Metal);
-    report_metal_adapter(&adapter_info);
+    } = open_metal_benchmark_device(gpu_timestamps);
     let surface = surface_extent.map(|extent| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("V1 benchmark presentation target"),
