@@ -34,7 +34,6 @@ pub(super) trait UndoColumn: Send + Sync {
     fn has_rows(&self) -> bool;
     fn can_coalesce_without_drop_order(&self) -> bool;
     fn clear(&mut self);
-    fn copy_from(&mut self, source: &dyn UndoColumn);
     fn reserve(&mut self, additional: usize);
     fn reserved_bytes(&self) -> usize;
 }
@@ -42,15 +41,13 @@ pub(super) trait UndoColumn: Send + Sync {
 pub(super) struct TypedUndo<T> {
     rows: Vec<(u32, Option<T>)>,
     prior_ticks: Vec<u64>,
-    snapshot: fn(&T) -> T,
 }
 
 impl<T> TypedUndo<T> {
-    pub(super) fn new(snapshot: fn(&T) -> T) -> Self {
+    pub(super) fn new() -> Self {
         Self {
             rows: Vec::new(),
             prior_ticks: Vec::new(),
-            snapshot,
         }
     }
 
@@ -192,21 +189,6 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         self.prior_ticks.clear();
     }
 
-    fn copy_from(&mut self, source: &dyn UndoColumn) {
-        let source = source
-            .as_any()
-            .downcast_ref::<Self>()
-            .expect("registered undo column type");
-        self.rows.clear();
-        self.rows.extend(
-            source
-                .rows
-                .iter()
-                .map(|(slot, prior)| (*slot, prior.as_ref().map(self.snapshot))),
-        );
-        self.prior_ticks.clone_from(&source.prior_ticks);
-    }
-
     fn reserve(&mut self, additional: usize) {
         self.rows.reserve(additional);
         self.prior_ticks.reserve(additional);
@@ -225,7 +207,7 @@ mod tests {
 
     #[test]
     fn first_preimage_wins_after_multiple_writes_and_seen_storage_is_reusable() {
-        let mut undo = TypedUndo::new(|value| *value);
+        let mut undo = TypedUndo::new();
         undo.push_component(3, Some(10_u32), 1);
         undo.push_component(3, Some(20), 2);
         undo.push_component(5, None, 0);

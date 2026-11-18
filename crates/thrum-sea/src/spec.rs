@@ -1,9 +1,9 @@
 //! One typed resource/pass description drives allocation, binding, dispatch and graph access.
-use crate::{CACHE_SIZE, CHANNELS, LEVELS, MAX_QUERIES, PIXELS, records};
+use crate::{CACHE_SIZE, LEVELS, MAX_QUERIES, PACKED_CHANNELS, PIXELS, TRANSFORM_SIZE, records};
 use thrum_render::contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 use thrum_render::graph::{AccessKind, ResourceDescriptor, ResourceScope};
 
-pub(super) const MIP_LEVELS: u32 = crate::TRANSFORM_SIZE.ilog2();
+pub(super) const MIP_LEVELS: u32 = TRANSFORM_SIZE.ilog2();
 pub(super) const CASCADES: u32 = 3;
 pub(super) const MAX_LONG: usize = 192;
 
@@ -16,6 +16,7 @@ pub(super) enum BufferKey {
     TransformA,
     TransformB,
     TransformFinal,
+    Twiddles,
     Cascades,
     Moments(u32),
     LongField,
@@ -33,7 +34,7 @@ pub(super) struct Resource {
 
 pub(super) fn resources() -> Vec<Resource> {
     use BufferKey as B;
-    let work = u64::from(CASCADES) * CHANNELS * u64::from(PIXELS) * 8;
+    let work = u64::from(CASCADES * PACKED_CHANNELS * PIXELS) * size_of::<[f32; 2]>() as u64;
     let mut rows = vec![
         (
             B::Params,
@@ -58,6 +59,11 @@ pub(super) fn resources() -> Vec<Resource> {
         (B::TransformA, "sea transform A".into(), work),
         (B::TransformB, "sea transform B".into(), work),
         (B::TransformFinal, "sea final transform".into(), work),
+        (
+            B::Twiddles,
+            "sea transform twiddles".into(),
+            u64::from(TRANSFORM_SIZE / 2) * size_of::<[f32; 2]>() as u64,
+        ),
         (
             B::Cascades,
             "sea cascades".into(),
@@ -110,6 +116,7 @@ pub(super) fn resources() -> Vec<Resource> {
                         | B::Modes
                         | B::Long
                         | B::Queries
+                        | B::Twiddles
                         | B::MipParams(_)
                         | B::UploadStaging
                 ) {
@@ -241,23 +248,23 @@ pub(super) fn passes() -> Vec<PassSpec> {
             P::Rows,
             "sea cascade rows",
             "rows",
-            &[(4, B::TransformA, R), (5, B::TransformB, W)],
-            [
-                crate::TRANSFORM_SIZE,
-                CASCADES * u32::try_from(CHANNELS).expect("channel count"),
-                1,
+            &[
+                (4, B::TransformA, R),
+                (5, B::TransformB, W),
+                (9, B::Twiddles, R),
             ],
+            [TRANSFORM_SIZE, CASCADES * PACKED_CHANNELS, 1],
         ),
         PassSpec::new(
             P::Columns,
             "sea cascade columns",
             "columns",
-            &[(5, B::TransformB, R), (4, B::TransformFinal, W)],
-            [
-                crate::TRANSFORM_SIZE,
-                CASCADES * u32::try_from(CHANNELS).expect("channel count"),
-                1,
+            &[
+                (5, B::TransformB, R),
+                (4, B::TransformFinal, W),
+                (9, B::Twiddles, R),
             ],
+            [TRANSFORM_SIZE, CASCADES * PACKED_CHANNELS, 1],
         ),
         PassSpec::new(
             P::Unpack,
@@ -272,7 +279,7 @@ pub(super) fn passes() -> Vec<PassSpec> {
         ),
     ];
     for level in 1..=MIP_LEVELS {
-        let width = crate::TRANSFORM_SIZE >> level;
+        let width = TRANSFORM_SIZE >> level;
         let mut pass = PassSpec::new(
             P::Mip(level),
             &format!("sea moments mip {level}"),

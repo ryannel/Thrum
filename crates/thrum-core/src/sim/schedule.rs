@@ -211,7 +211,7 @@ impl ComponentRegistry {
             capture: Box::new(move |world| capture_component(world, snapshot, nested_bytes)),
             storage,
             pending: Box::new(|| Box::new(Pending::<T> { value: None })),
-            undo: Box::new(move || Box::new(super::undo::TypedUndo::<T>::new(snapshot))),
+            undo: Box::new(|| Box::new(super::undo::TypedUndo::<T>::new())),
             empty: Box::new(move || {
                 Box::new(TypedColumn::<T> {
                     rows: Vec::new(),

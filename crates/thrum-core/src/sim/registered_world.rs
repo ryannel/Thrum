@@ -99,15 +99,6 @@ impl<T> BatchUndoWriter<'_, T> {
 }
 
 impl WorldUndo {
-    pub(super) fn copy_from(&mut self, source: &Self) {
-        self.slots.clone_from(&source.slots);
-        self.structural_ticks.clone_from(&source.structural_ticks);
-        self.layout_swaps.clone_from(&source.layout_swaps);
-        for (target, source) in self.columns.iter_mut().zip(&source.columns) {
-            target.copy_from(source.as_ref());
-        }
-    }
-
     pub(super) fn visit_changed_components(&self, mut visit: impl FnMut(usize, u32)) {
         for (component, column) in self.columns.iter().enumerate() {
             column.visit_changed_slots(&mut |slot| visit(component, slot));

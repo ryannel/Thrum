@@ -3,8 +3,9 @@ use std::error::Error;
 
 #[test]
 fn image_import_failure_keeps_the_real_decoder_error() {
-    let error = cook_texture(b"not an image", false, Profile::Portable, Quality::Fast)
-        .expect_err("invalid encoded image");
+    let Err(error) = prepare_texture(b"not an image", false) else {
+        panic!("invalid encoded image");
+    };
     assert!(matches!(error, CookError::ImageImport(_)));
     let source = error.source().expect("decoder source");
     assert!(matches!(

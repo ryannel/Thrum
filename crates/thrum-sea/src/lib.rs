@@ -125,8 +125,8 @@ pub const LEVELS: u32 = 8;
 pub const CACHE_SIZE: u32 = 128;
 /// Maximum query batch size. Queries and cache use the same shader evaluator.
 pub const MAX_QUERIES: u32 = 4096;
-// The field carries every transformed scalar plus its derived Jacobian.
-const CHANNELS: u64 = (size_of::<records::Field>() / size_of::<f32>() - 1) as u64;
+// Eleven real fields share six complex transforms. The last lane is unused.
+const PACKED_CHANNELS: u32 = 6;
 
 /// Display seconds under C02: committed tick minus one plus interpolation alpha.
 /// Captures supply their own clock. At tick zero the analytic field can be

@@ -55,7 +55,7 @@ pub struct RuntimeDelta {
 
 /// Reusable sparse preimages for reversing one committed tick on this runtime.
 pub struct RuntimeUndo {
-    world: WorldUndo,
+    world: Arc<WorldUndo>,
     events: Vec<StructuralChange>,
     from: u64,
     to: u64,
@@ -580,17 +580,18 @@ enum FinalUndo<'a> {
     None,
     /// The unrecorded tick's transaction scratch.
     Abort,
-    /// Preimages kept for a deferred publication.
+    /// Preimages moved from an unrecorded tick.
     Deferred,
     /// A recorded tick's undo.
     Record(&'a WorldUndo),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
 enum PublicationState {
     Current,
     Skipped,
     SkippedWithUndo,
+    /// Share the committed preimages with the caller's undo record.
+    SkippedWithRecord(Arc<WorldUndo>),
 }
 
 /// One engine-owned registered world, compiled schedule and leased page ring.
@@ -657,7 +658,7 @@ impl<G: TickGame> GameRuntime<G> {
     /// Allocate one reusable sparse undo record for this registered schema.
     pub fn new_undo(&self) -> RuntimeUndo {
         RuntimeUndo {
-            world: self.world.empty_undo(),
+            world: Arc::new(self.world.empty_undo()),
             events: Vec::new(),
             from: 0,
             to: 0,
@@ -802,6 +803,9 @@ impl<G: TickGame> GameRuntime<G> {
             tick = step.from;
             revision = step.from_revision;
         }
+        // The recorded endpoint is about to be reversed. Release its page's
+        // reference before moving the preimages out of the records.
+        self.publication_state = PublicationState::Skipped;
         let coalesced = steps.len() > 1
             && steps
                 .iter()
@@ -834,7 +838,8 @@ impl<G: TickGame> GameRuntime<G> {
                 {
                     self.world.begin_tick(None);
                     for step in steps.iter_mut() {
-                        self.world.restore_first_seen(&mut step.world, component);
+                        let undo = Arc::get_mut(&mut step.world).expect("rewind owns preimages");
+                        self.world.restore_first_seen(undo, component);
                     }
                 }
             }
@@ -845,7 +850,8 @@ impl<G: TickGame> GameRuntime<G> {
             self.world.invalidate_change_frames();
         } else {
             for step in steps.iter_mut().rev() {
-                step.world.restore(&mut self.world, &step.events);
+                let undo = Arc::get_mut(&mut step.world).expect("rewind owns preimages");
+                undo.restore(&mut self.world, &step.events);
                 step.spent = true;
             }
         }
@@ -855,7 +861,6 @@ impl<G: TickGame> GameRuntime<G> {
         self.delta_ready = false;
         self.structural_journal.clear();
         self.pages.reset_timeline();
-        self.publication_state = PublicationState::Skipped;
         Ok(())
     }
 
@@ -1201,7 +1206,7 @@ impl<G: TickGame> GameRuntime<G> {
 
     /// Whether the latest immutable page represents the current authority tick.
     pub fn has_current_publication(&self) -> bool {
-        self.publication_state == PublicationState::Current && self.pages.has_latest()
+        matches!(self.publication_state, PublicationState::Current) && self.pages.has_latest()
     }
 
     /// Seal a full current baseline after optional publication was skipped.
@@ -1213,19 +1218,14 @@ impl<G: TickGame> GameRuntime<G> {
         candidate: &mut G::Candidate,
     ) -> bool {
         self.assert_usable();
-        if self.publication_state == PublicationState::Current {
+        if matches!(self.publication_state, PublicationState::Current) {
             return self.pages.has_latest();
         }
         if !self.pages.can_capture() {
             return false;
         }
-        let final_undo = if self.publication_state == PublicationState::SkippedWithUndo {
-            FinalUndo::Deferred
-        } else {
-            FinalUndo::None
-        };
         if self
-            .capture_latest(game, candidate, final_undo, true)
+            .capture_latest(game, candidate, FinalUndo::Deferred, true)
             .is_err()
         {
             return false;
@@ -1325,13 +1325,15 @@ impl<G: TickGame> GameRuntime<G> {
         publication: PublicationMode,
     ) {
         if publication == PublicationMode::Defer || !self.pages.can_capture() {
-            match undo {
-                Some(record) => self.deferred_undo.copy_from(&record.world),
+            self.publication_state = match undo {
+                Some(record) => PublicationState::SkippedWithRecord(Arc::clone(&record.world)),
                 // The unrecorded tick's preimages move out of the
                 // transaction scratch, which the next step clears.
-                None => std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo),
-            }
-            self.publication_state = PublicationState::SkippedWithUndo;
+                None => {
+                    std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo);
+                    PublicationState::SkippedWithUndo
+                }
+            };
             return;
         }
         let final_undo = undo.map_or(FinalUndo::Abort, |record| FinalUndo::Record(&record.world));
@@ -1358,6 +1360,7 @@ impl<G: TickGame> GameRuntime<G> {
             timeline,
             abort_undo,
             deferred_undo,
+            publication_state,
             structural_journal,
             executor,
             ..
@@ -1372,7 +1375,11 @@ impl<G: TickGame> GameRuntime<G> {
         let final_undo = match final_undo {
             FinalUndo::None => None,
             FinalUndo::Abort => Some(&*abort_undo),
-            FinalUndo::Deferred => Some(&*deferred_undo),
+            FinalUndo::Deferred => match &*publication_state {
+                PublicationState::SkippedWithRecord(record) => Some(record.as_ref()),
+                PublicationState::SkippedWithUndo => Some(&*deferred_undo),
+                _ => None,
+            },
             FinalUndo::Record(record) => Some(record),
         };
         let events: &[StructuralChange] = if journal { structural_journal } else { &[] };
@@ -1415,8 +1422,18 @@ impl<G: TickGame> GameRuntime<G> {
         }
         self.direct_dirty.clear();
         self.query_exclusions.clear();
+        // When a caller reuses its deferred endpoint's record, stage the new
+        // preimages separately. A refused tick keeps the old record usable.
+        let mut replacement = undo
+            .as_ref()
+            .filter(|record| Arc::strong_count(&record.world) > 1)
+            .map(|_| Arc::new(self.world.empty_undo()));
         let (txn_undo, mut undo_events) = match undo.as_deref_mut() {
-            Some(record) => (&mut record.world, Some(&mut record.events)),
+            Some(record) => (
+                Arc::get_mut(replacement.as_mut().unwrap_or(&mut record.world))
+                    .expect("tick owns transaction preimages"),
+                Some(&mut record.events),
+            ),
             None => (&mut self.abort_undo, None),
         };
         txn_undo.clear();
@@ -1592,6 +1609,9 @@ impl<G: TickGame> GameRuntime<G> {
             events.extend_from_slice(&self.structural_journal);
         }
         if let Some(record) = undo.as_deref_mut() {
+            if let Some(replacement) = replacement {
+                record.world = replacement;
+            }
             record.from = self.tick;
             record.to = next;
             record.from_revision = self.revision;

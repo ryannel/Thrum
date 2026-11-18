@@ -31,6 +31,9 @@ name = "declared_accesses"
 [[test]]
 name = "upload_bytes"
 
+[[test]]
+name = "packed_transforms"
+
 [lints]
 workspace = true
 

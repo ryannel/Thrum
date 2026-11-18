@@ -307,7 +307,7 @@ mod tests {
     fn undo_removal_and_restore_maintain_the_predicate_index() {
         let mut store = TypedStore::new_indexed(65, |value: &u32| *value >= 10);
         store.insert(64, 12);
-        let mut undo = TypedUndo::<u32>::new(|value| *value);
+        let mut undo = TypedUndo::<u32>::new();
         store.take_into_undo(64, 64, &mut undo);
         assert_eq!(store.get(64), None);
         assert_eq!(store.active_presence(), Some(&[0, 0][..]));

@@ -1,5 +1,6 @@
 use crate::AmbientError;
 use crate::{Ambient, CacheLevel, LEVELS, Profile, records, spec};
+use spec::BufferKey;
 use std::collections::BTreeMap;
 use thrum_render::runtime::DeviceSite;
 
@@ -78,17 +79,39 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
             label: Some(&resource.name),
             size: resource.size,
             usage: resource.usage,
-            mapped_at_creation: matches!(resource.key, spec::BufferKey::MipParams(_)),
+            mapped_at_creation: matches!(
+                resource.key,
+                BufferKey::MipParams(_) | BufferKey::Twiddles
+            ),
         });
-        if let spec::BufferKey::MipParams(level) = resource.key {
-            let record = records::Mip {
-                address: [0, 0, crate::TRANSFORM_SIZE >> level, 0],
-            };
-            buffer
-                .slice(..)
-                .get_mapped_range_mut()
-                .map_err(AmbientError::Mapping)?
-                .copy_from_slice(bytemuck::bytes_of(&record));
+        if matches!(resource.key, BufferKey::MipParams(_) | BufferKey::Twiddles) {
+            {
+                let mut mapped = buffer
+                    .slice(..)
+                    .get_mapped_range_mut()
+                    .map_err(AmbientError::Mapping)?;
+                match resource.key {
+                    BufferKey::MipParams(level) => {
+                        let record = records::Mip {
+                            address: [0, 0, crate::TRANSFORM_SIZE >> level, 0],
+                        };
+                        mapped.copy_from_slice(bytemuck::bytes_of(&record));
+                    }
+                    BufferKey::Twiddles => {
+                        let twiddles =
+                            std::array::from_fn::<_, { crate::TRANSFORM_SIZE as usize / 2 }, _>(
+                                |index| {
+                                    let angle = std::f64::consts::TAU * index as f64
+                                        / f64::from(crate::TRANSFORM_SIZE);
+                                    let (sin, cos) = angle.sin_cos();
+                                    [cos as f32, sin as f32]
+                                },
+                            );
+                        mapped.copy_from_slice(bytemuck::cast_slice(&twiddles));
+                    }
+                    _ => unreachable!("only mapped resources are initialized here"),
+                }
+            }
             buffer.unmap();
         }
         buffers.insert(resource.key, buffer);
@@ -119,7 +142,7 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
                         } else {
                             // WGSL declares bindings 4..8 read_write, even in entries which only read.
                             wgpu::BufferBindingType::Storage {
-                                read_only: b.slot < 4,
+                                read_only: b.slot < 4 || b.buffer == BufferKey::Twiddles,
                             }
                         },
                         has_dynamic_offset: false,
@@ -171,12 +194,12 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
         passes.insert(pass.key, PreparedPass { pipeline, groups });
     }
     let dynamic_size =
-        usize::try_from(buffers[&spec::BufferKey::UploadStaging].size()).expect("bounded upload");
+        usize::try_from(buffers[&BufferKey::UploadStaging].size()).expect("bounded upload");
     Ok(Ambient {
         filtered: crate::filtered::Filtered::new(
             device,
-            &buffers[&spec::BufferKey::Cascades],
-            &buffers[&spec::BufferKey::LongField],
+            &buffers[&BufferKey::Cascades],
+            &buffers[&BufferKey::LongField],
         ),
         profile,
         buffers,

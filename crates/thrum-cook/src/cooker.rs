@@ -48,6 +48,10 @@ pub struct CookReport {
     pub cooked: usize,
     /// Products reused from the action cache.
     pub reused: usize,
+    /// Texture sources decoded and mipmapped for the products cooked this cycle.
+    pub texture_preparations: usize,
+    /// Volume sources parsed and mipmapped for the products cooked this cycle.
+    pub volume_preparations: usize,
     /// Assets that failed, with the reason; their previous product (if any) stays published.
     pub failed: Vec<(String, String)>,
     /// Products a profile refused for its source, with the reason. The asset publishes without
@@ -79,6 +83,12 @@ struct Job {
     source: PathBuf,
     /// Relative input paths and the hashes the key was built from.
     inputs: Vec<(PathBuf, ContentHash)>,
+}
+
+enum PreparedSource {
+    Mesh(Vec<u8>),
+    Texture(texture::TextureMips),
+    Volume(texture::VolumeMips),
 }
 
 /// Incremental cooker owning one store.
@@ -262,36 +272,52 @@ impl Cooker {
                 None => misses.push(job),
             }
         }
-        let outcomes: Vec<(Job, Result<Product, CookError>)> = misses
+        // Planning emits all profiles of a source together. Cache hits leave
+        // that order intact, and only groups with misses need preparation.
+        let groups: Vec<_> = misses.chunk_by(|a, b| a.source == b.source).collect();
+        let outcomes: Vec<_> = groups
             .into_par_iter()
-            .map(|job| {
-                let outcome = self.run(&job);
-                (job, outcome)
+            .map(|jobs| {
+                let products = self.prepare(&jobs[0]).map(|prepared| {
+                    jobs.par_iter()
+                        .map(|job| self.run(job, &prepared))
+                        .collect::<Vec<_>>()
+                });
+                (jobs, products)
             })
             .collect();
         // A source can change after hashing but before cooking. Retry even if its next stable
         // hash equals the cached hash: no new revision would otherwise trigger that job.
         let mut retry = false;
-        for (job, outcome) in outcomes {
-            match outcome {
-                Ok(product) => {
-                    report.cooked += 1;
-                    self.remember_action(job.key, product);
-                    products.insert((job.name, job.profile), (job.kind, product));
-                }
-                Err(CookError::Refused(reason)) => {
-                    self.refusals.insert(job.key, reason.clone());
-                    refused.insert((job.name, job.profile), reason);
-                }
+        for (jobs, outcomes) in outcomes {
+            let outcomes = match outcomes {
+                Ok(outcomes) => outcomes,
                 Err(error) => {
-                    // A deterministic import failure has already been reported. Only unfinished
-                    // I/O or inputs that moved during the import need another unchanged sweep.
-                    retry |= matches!(&error, CookError::Io(_))
-                        || job.inputs.iter().any(|(path, hash)| {
-                            std::fs::read(self.config.source.join(path))
-                                .map_or(true, |bytes| ContentHash::of(&bytes) != *hash)
-                        });
-                    failed.push((job.name, error.to_string()));
+                    let job = &jobs[0];
+                    retry |= self.retry_failure(job, &error);
+                    failed.push((job.name.clone(), error.to_string()));
+                    continue;
+                }
+            };
+            report.texture_preparations += usize::from(jobs[0].kind == ProductKind::Texture);
+            report.volume_preparations += usize::from(jobs[0].kind == ProductKind::Volume);
+            for (job, outcome) in jobs.iter().zip(outcomes) {
+                match outcome {
+                    Ok(product) => {
+                        report.cooked += 1;
+                        self.remember_action(job.key, product);
+                        products.insert((job.name.clone(), job.profile), (job.kind, product));
+                    }
+                    Err(CookError::Refused(reason)) => {
+                        self.refusals.insert(job.key, reason.clone());
+                        refused.insert((job.name.clone(), job.profile), reason);
+                    }
+                    Err(error) => {
+                        // A deterministic import failure has already been reported. Only unfinished
+                        // I/O or inputs that moved during the import need another unchanged sweep.
+                        retry |= self.retry_failure(job, &error);
+                        failed.push((job.name.clone(), error.to_string()));
+                    }
                 }
             }
         }
@@ -465,7 +491,15 @@ impl Cooker {
         std::fs::write(self.config.store.join("actions").join(key.to_hex()), record).ok();
     }
 
-    fn run(&self, job: &Job) -> Result<Product, CookError> {
+    fn retry_failure(&self, job: &Job, error: &CookError) -> bool {
+        matches!(error, CookError::Io(_))
+            || job.inputs.iter().any(|(path, hash)| {
+                std::fs::read(self.config.source.join(path))
+                    .map_or(true, |bytes| ContentHash::of(&bytes) != *hash)
+            })
+    }
+
+    fn prepare(&self, job: &Job) -> Result<PreparedSource, CookError> {
         // The action key names the hashed input bytes; a product cooked from anything else would
         // poison the persistent action cache. Single-file sources are cooked from bytes checked
         // against their hash; multi-file meshes are re-verified after the importer reads them.
@@ -478,7 +512,7 @@ impl Cooker {
                 Err(changed())
             }
         };
-        let bytes = match job.kind {
+        match job.kind {
             ProductKind::Mesh => {
                 let bytes = mesh::cook(&job.source)?;
                 for (path, hash) in &job.inputs {
@@ -486,16 +520,33 @@ impl Cooker {
                         return Err(changed());
                     }
                 }
-                bytes
+                Ok(PreparedSource::Mesh(bytes))
             }
             ProductKind::Texture => {
                 let linear = classify(&job.source).is_some_and(|(_, _, linear)| linear);
-                texture::cook_texture(&read_verified()?, linear, job.profile, self.config.quality)?
+                texture::prepare_texture(&read_verified()?, linear).map(PreparedSource::Texture)
             }
-            ProductKind::Volume => texture::cook_volume(&read_verified()?, job.profile)?,
+            ProductKind::Volume => {
+                texture::prepare_volume(&read_verified()?).map(PreparedSource::Volume)
+            }
+        }
+    }
+
+    fn run(&self, job: &Job, prepared: &PreparedSource) -> Result<Product, CookError> {
+        let encoded;
+        let bytes = match prepared {
+            PreparedSource::Mesh(bytes) => bytes.as_slice(),
+            PreparedSource::Texture(texture) => {
+                encoded = texture.encode(job.profile, self.config.quality)?;
+                &encoded
+            }
+            PreparedSource::Volume(volume) => {
+                encoded = volume.encode(job.profile)?;
+                &encoded
+            }
         };
-        validate(job.kind, &bytes)?;
-        let hash = self.cas.put(&bytes)?;
+        validate(job.kind, bytes)?;
+        let hash = self.cas.put(bytes)?;
         Ok(Product {
             hash,
             len: bytes.len() as u64,
@@ -724,7 +775,9 @@ mod tests {
         assert_eq!(failed, Vec::<(String, String)>::new());
         // The save lands after the scan hashed the old bytes and before the cooker reads them.
         crate::demo::write_checker_png(&source.join("a.png"), 16, [0, 0, 200]).expect("edit");
-        let error = cooker.run(&jobs[0]).expect_err("stale key");
+        let Err(error) = cooker.prepare(&jobs[0]) else {
+            panic!("stale key");
+        };
         assert!(matches!(error, CookError::SourceChanged), "{error}");
         drop(cooker);
         std::fs::remove_dir_all(&root).ok();

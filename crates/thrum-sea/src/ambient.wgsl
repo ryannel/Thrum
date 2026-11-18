@@ -18,38 +18,30 @@ struct Moments { slope: vec4<f32>, extra: vec4<f32> }
 @group(0) @binding(6) var<storage, read_write> field: array<Field>;
 @group(0) @binding(7) var<storage, read_write> moments: array<Moments>;
 @group(0) @binding(8) var<storage, read_write> long_field: array<Field>;
+@group(0) @binding(9) var<storage, read> twiddles: array<vec2<f32>>;
 const TAU: f32 = 6.283185307179586;
 const N: u32 = 256u;
 const PIXELS: u32 = 65536u;
-const CHANNELS: u32 = 11u;
+const PACKED_CHANNELS: u32 = 6u;
 fn mul(x: vec2<f32>, y: vec2<f32>) -> vec2<f32> {
     return vec2(x.x*y.x-x.y*y.y, x.x*y.y+x.y*y.x);
 }
-fn fourier(bin: Bin, channel: u32, patch_length: f32) -> vec2<f32> {
+fn fourier(bin: Bin, patch_length: f32) -> array<vec2<f32>, 11> {
     let k = bin.physical.xy;
     let magnitude = length(k);
-    if magnitude == 0.0 { return vec2(0.0); }
+    if magnitude == 0.0 { return array<vec2<f32>, 11>(); }
     // Unsigned multiplication is modulo 2^32: phase precision is independent of uptime.
     let turns = bin.clock.x * p.time.x;
     let phase = bin.physical.w - f32(turns) * (TAU / 4294967296.0)
         + (k.x+k.y) * patch_length / 512.0;
     let h = 0.5 * bin.physical.z * vec2(cos(phase), sin(phase));
     let omega = f32(bin.clock.x) * TAU / 1024.0;
-    var factor = vec2(0.0);
-    switch channel {
-        case 0u: { factor.y = k.x/magnitude; }
-        case 1u: { factor.x = 1.0; }
-        case 2u: { factor.y = k.y/magnitude; }
-        case 3u: { factor.y = k.x; }
-        case 4u: { factor.y = k.y; }
-        case 5u: { factor.x = -k.x*k.x/magnitude; }
-        case 6u: { factor.x = -k.x*k.y/magnitude; }
-        case 7u: { factor.x = -k.y*k.y/magnitude; }
-        case 8u: { factor.x = omega*k.x/magnitude; }
-        case 9u: { factor.y = -omega; }
-        default: { factor.x = omega*k.y/magnitude; }
-    }
-    return mul(h, factor);
+    let ih = vec2(-h.y, h.x);
+    return array(
+        ih * (k.x/magnitude), h, ih * (k.y/magnitude), ih * k.x, ih * k.y,
+        h * (-k.x*k.x/magnitude), h * (-k.x*k.y/magnitude), h * (-k.y*k.y/magnitude),
+        h * (omega*k.x/magnitude), ih * -omega, h * (omega*k.y/magnitude),
+    );
 }
 @compute @workgroup_size(64)
 fn evolve(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -58,10 +50,18 @@ fn evolve(@builtin(global_invocation_id) id: vec3<u32>) {
     let band = i/PIXELS;
     let xy = i%PIXELS;
     let opposite = band*PIXELS + ((N-xy/N)%N)*N + (N-xy%N)%N;
-    for(var channel=0u; channel<CHANNELS; channel++) {
-        let v = fourier(modes[i], channel, p.lengths[band]);
-        let conjugate = fourier(modes[opposite], channel, p.lengths[band]);
-        a[(band*CHANNELS+channel)*PIXELS+xy] = v + vec2(conjugate.x,-conjugate.y);
+    let positive = fourier(modes[i], p.lengths[band]);
+    let negative = fourier(modes[opposite], p.lengths[band]);
+    for (var pair = 0u; pair < PACKED_CHANNELS; pair++) {
+        let first = 2u * pair;
+        let f = positive[first] + vec2(negative[first].x, -negative[first].y);
+        var g = vec2(0.0);
+        if first + 1u < 11u {
+            let second = first + 1u;
+            g = positive[second] + vec2(negative[second].x, -negative[second].y);
+        }
+        // Each field is Hermitian, so IFFT(F + iG) yields f in x and g in y.
+        a[(band*PACKED_CHANNELS+pair)*PIXELS+xy] = f + vec2(-g.y, g.x);
     }
 }
 var<workgroup> values: array<vec2<f32>,256>;
@@ -72,8 +72,7 @@ fn transform(lane: u32) {
         let first = (lane/half)*width + offset;
         var u = vec2(0.0); var v = vec2(0.0);
         if lane<128u {
-            let angle = TAU*f32(offset)/f32(width);
-            u=values[first]; v=mul(values[first+half],vec2(cos(angle),sin(angle)));
+            u=values[first]; v=mul(values[first+half],twiddles[offset*(N/width)]);
         }
         workgroupBarrier();
         if lane<128u { values[first]=u+v; values[first+half]=u-v; }
@@ -94,7 +93,9 @@ fn columns(@builtin(local_invocation_index) lane: u32, @builtin(workgroup_id) gr
     workgroupBarrier(); transform(lane);
     a[group.y*PIXELS+lane*N+group.x]=values[lane];
 }
-fn channel(band: u32, c: u32, i: u32) -> f32 { return a[(band*CHANNELS+c)*PIXELS+i].x; }
+fn channel(band: u32, c: u32, i: u32) -> f32 {
+    return a[(band*PACKED_CHANNELS+c/2u)*PIXELS+i][c%2u];
+}
 @compute @workgroup_size(64)
 fn unpack(@builtin(global_invocation_id) id: vec3<u32>) {
     let i=id.x; if i>=3u*PIXELS { return; }

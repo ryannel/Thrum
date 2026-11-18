@@ -27,20 +27,17 @@ pub enum Quality {
 pub(crate) const VOLUME_MAGIC: [u8; 4] = *b"TVOL";
 const VOLUME_HEADER: usize = 16;
 
-/// Cook an encoded image (PNG or JPEG) into a mip-mapped KTX2 texture for `profile`.
-pub(crate) fn cook_texture(
-    bytes: &[u8],
+pub(crate) struct TextureMips {
     linear: bool,
-    profile: Profile,
-    quality: Quality,
-) -> Result<Vec<u8>, CookError> {
+    has_alpha: bool,
+    levels: Vec<(u32, u32, Vec<u8>)>,
+}
+
+pub(crate) fn prepare_texture(bytes: &[u8], linear: bool) -> Result<TextureMips, CookError> {
     let image = image::load_from_memory(bytes)
         .map_err(CookError::ImageImport)?
         .to_rgba8();
     let (width, height) = image.dimensions();
-    if profile != Profile::Portable {
-        whole_blocks(profile, width, height)?;
-    }
     let mips = mip_chain(width, height, image.into_raw(), !linear);
     let has_alpha = mips[0]
         .2
@@ -48,65 +45,82 @@ pub(crate) fn cook_texture(
         .0
         .iter()
         .any(|texel| texel[3] != 255);
-    let (format, levels): (Ktx2Format, Vec<Vec<u8>>) = match profile {
-        Profile::Portable => (
-            if linear {
+    Ok(TextureMips {
+        linear,
+        has_alpha,
+        levels: mips,
+    })
+}
+
+impl TextureMips {
+    pub(crate) fn encode(&self, profile: Profile, quality: Quality) -> Result<Vec<u8>, CookError> {
+        let Self {
+            linear,
+            has_alpha,
+            levels: mips,
+        } = self;
+        let (width, height, _) = mips[0];
+        let linear = *linear;
+        if profile == Profile::Portable {
+            let format = if linear {
                 Ktx2Format::Rgba8Unorm
             } else {
                 Ktx2Format::Rgba8Srgb
-            },
-            mips.into_iter().map(|m| m.2).collect(),
-        ),
-        Profile::DesktopBc => {
-            let settings = match (quality, has_alpha) {
-                (Quality::Fast, false) => intel_tex_2::bc7::opaque_ultra_fast_settings(),
-                (Quality::Fast, true) => intel_tex_2::bc7::alpha_ultra_fast_settings(),
-                (Quality::Final, false) => intel_tex_2::bc7::opaque_basic_settings(),
-                (Quality::Final, true) => intel_tex_2::bc7::alpha_basic_settings(),
             };
-            let encode = |surface: &intel_tex_2::RgbaSurface<'_>, out: &mut [u8]| {
-                intel_tex_2::bc7::compress_blocks_into(&settings, surface, out);
-            };
-            let format = if linear {
-                Ktx2Format::Bc7Unorm
-            } else {
-                Ktx2Format::Bc7Srgb
-            };
-            (
-                format,
-                mips.iter()
-                    .map(|(w, h, data)| compress_rgba(*w, *h, data, encode))
-                    .collect(),
-            )
+            let levels: Vec<_> = mips.iter().map(|mip| mip.2.as_slice()).collect();
+            return Ok(ktx2(format, width, height, 0, &levels));
         }
-        Profile::AppleAstc => {
-            let preset = if quality == Quality::Fast {
-                astcenc_rs::PRESET_FAST
-            } else {
-                astcenc_rs::PRESET_THOROUGH
-            };
-            let format = if linear {
-                Ktx2Format::Astc4x4Unorm
-            } else {
-                Ktx2Format::Astc4x4Srgb
-            };
-            let levels = mips
-                .iter()
-                .map(|(w, h, data)| compress_astc(*w, *h, data, linear, preset))
-                .collect::<Result<_, _>>()?;
-            (format, levels)
-        }
-    };
-    Ok(ktx2(format, width, height, 0, &levels))
+        whole_blocks(profile, width, height)?;
+        let (format, levels): (Ktx2Format, Vec<Vec<u8>>) = match profile {
+            Profile::Portable => unreachable!("portable uses the uncompressed levels"),
+            Profile::DesktopBc => {
+                let settings = match (quality, *has_alpha) {
+                    (Quality::Fast, false) => intel_tex_2::bc7::opaque_ultra_fast_settings(),
+                    (Quality::Fast, true) => intel_tex_2::bc7::alpha_ultra_fast_settings(),
+                    (Quality::Final, false) => intel_tex_2::bc7::opaque_basic_settings(),
+                    (Quality::Final, true) => intel_tex_2::bc7::alpha_basic_settings(),
+                };
+                let encode = |surface: &intel_tex_2::RgbaSurface<'_>, out: &mut [u8]| {
+                    intel_tex_2::bc7::compress_blocks_into(&settings, surface, out);
+                };
+                let format = if linear {
+                    Ktx2Format::Bc7Unorm
+                } else {
+                    Ktx2Format::Bc7Srgb
+                };
+                (
+                    format,
+                    mips.iter()
+                        .map(|(w, h, data)| compress_rgba(*w, *h, data, encode))
+                        .collect(),
+                )
+            }
+            Profile::AppleAstc => {
+                let preset = if quality == Quality::Fast {
+                    astcenc_rs::PRESET_FAST
+                } else {
+                    astcenc_rs::PRESET_THOROUGH
+                };
+                let format = if linear {
+                    Ktx2Format::Astc4x4Unorm
+                } else {
+                    Ktx2Format::Astc4x4Srgb
+                };
+                let levels = mips
+                    .iter()
+                    .map(|(w, h, data)| compress_astc(*w, *h, data, linear, preset))
+                    .collect::<Result<_, _>>()?;
+                (format, levels)
+            }
+        };
+        Ok(ktx2(format, width, height, 0, &levels))
+    }
 }
 
-/// Cook a `TVOL` density volume into a mip-mapped 3D KTX2 for `profile`: BC4 sliced 3D on
-/// desktop, R8 elsewhere.
-pub(crate) fn cook_volume(bytes: &[u8], profile: Profile) -> Result<Vec<u8>, CookError> {
+pub(crate) struct VolumeMips(Vec<(u32, u32, u32, Vec<u8>)>);
+
+pub(crate) fn prepare_volume(bytes: &[u8]) -> Result<VolumeMips, CookError> {
     let (width, height, depth, voxels) = parse_volume(bytes)?;
-    if profile == Profile::DesktopBc {
-        whole_blocks(profile, width, height)?;
-    }
     let mut levels = vec![(width, height, depth, voxels.to_vec())];
     while let Some(&(w, h, d, ref data)) = levels.last() {
         if w == 1 && h == 1 && d == 1 {
@@ -114,20 +128,25 @@ pub(crate) fn cook_volume(bytes: &[u8], profile: Profile) -> Result<Vec<u8>, Coo
         }
         levels.push(downsample_volume(w, h, d, data));
     }
-    let (format, data) = match profile {
-        Profile::DesktopBc => (
-            Ktx2Format::Bc4Unorm,
-            levels
+    Ok(VolumeMips(levels))
+}
+
+impl VolumeMips {
+    pub(crate) fn encode(&self, profile: Profile) -> Result<Vec<u8>, CookError> {
+        let (width, height, depth, _) = self.0[0];
+        if profile == Profile::DesktopBc {
+            whole_blocks(profile, width, height)?;
+            let data: Vec<_> = self
+                .0
                 .iter()
                 .map(|(w, h, d, data)| compress_bc4_slices(*w, *h, *d, data))
-                .collect::<Vec<_>>(),
-        ),
-        Profile::Portable | Profile::AppleAstc => (
-            Ktx2Format::R8Unorm,
-            levels.into_iter().map(|level| level.3).collect(),
-        ),
-    };
-    Ok(ktx2(format, width, height, depth, &data))
+                .collect();
+            Ok(ktx2(Ktx2Format::Bc4Unorm, width, height, depth, &data))
+        } else {
+            let data: Vec<_> = self.0.iter().map(|level| level.3.as_slice()).collect();
+            Ok(ktx2(Ktx2Format::R8Unorm, width, height, depth, &data))
+        }
+    }
 }
 
 /// GPU APIs require a block-compressed base level to span whole 4×4 blocks, so a compressed

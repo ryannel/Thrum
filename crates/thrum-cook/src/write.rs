@@ -73,7 +73,7 @@ pub(crate) fn ktx2(
     width: u32,
     height: u32,
     depth: u32,
-    levels: &[Vec<u8>],
+    levels: &[impl AsRef<[u8]>],
 ) -> Vec<u8> {
     let dfd = data_format_descriptor(format);
     let index_end = HEADER_LEN + levels.len() * LEVEL_INDEX_LEN;
@@ -85,7 +85,7 @@ pub(crate) fn ktx2(
     for (level, data) in levels.iter().enumerate().rev() {
         cursor = cursor.next_multiple_of(alignment);
         offsets[level] = cursor;
-        cursor += data.len();
+        cursor += data.as_ref().len();
     }
     let mut out = vec![0; cursor];
     out[..12].copy_from_slice(&IDENTIFIER);
@@ -115,6 +115,7 @@ pub(crate) fn ktx2(
         u32::try_from(dfd.len()).expect("small descriptor"),
     );
     for (level, data) in levels.iter().enumerate() {
+        let data = data.as_ref();
         let record = HEADER_LEN + level * LEVEL_INDEX_LEN;
         put_u64(&mut out, record, offsets[level] as u64);
         put_u64(&mut out, record + 8, data.len() as u64);
