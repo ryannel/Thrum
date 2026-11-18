@@ -270,7 +270,7 @@
     {
       "id": "M5",
       "name": "Replay stops copying undo it never uses, the cooker decodes each texture once, and the sea transforms its cascades in half the passes its design allows for",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
