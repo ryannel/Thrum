@@ -21,10 +21,10 @@ pub fn shade_config() -> ShadeConfig {
     ShadeConfig {
         seed: 39,
         model: Profile {
-            pitch: 3000.0,
+            pitch: 4600.0,
             period: 1800.0,
             detail_mean: 0.5,
-            erosion: 0.7,
+            erosion: 0.61,
         },
         types: vec![
             Type {
@@ -37,11 +37,11 @@ pub fn shade_config() -> ShadeConfig {
             },
             Type {
                 base: 1600.0,
-                depth: [700.0, 2700.0],
+                depth: [650.0, 3600.0],
                 liquid_water: 0.00032,
                 droplet_radius: 0.000_012,
                 deck: 0.0,
-                profile: [0.13, 0.52],
+                profile: [0.16, 0.60],
             },
         ],
         weather: WeatherProfile {
@@ -81,7 +81,7 @@ pub fn shade_config() -> ShadeConfig {
 pub fn initial_state() -> State {
     State::new(
         Parameters {
-            coverage: 0.45,
+            coverage: 0.50,
             kind: 1.0,
             wind: [10.0, 0.0],
             time_scale: 1.0,

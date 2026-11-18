@@ -37,7 +37,10 @@ fn cloud_fade_integral(h:f32,width:f32)->f32 {
 // Density, above optical depth, below optical depth, local cloud thickness.
 fn cloud_column(point:vec3<f32>)->vec4<f32> {
     var result=vec4(0.0);
-    for(var level=3;level>=0;level--) {
+    var remaining=1.0;
+    // A fully covering fine window replaces every coarser value.
+    // Read coarse windows only for the uncovered fraction of the overlap.
+    for(var level=0;level<4;level++) {
         let m=cloud.weather[level];let uv=(point.xz-m.xy)/m.z;
         let edge=min(uv,vec2(m.w)-uv);let w=cloud_smooth(min(edge.x,edge.y)/(m.w*0.15));
         if w==0.0 {continue;}
@@ -50,7 +53,9 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
             let above=clamp((cloud_fade_integral(1.0-h,o.w)-max(0.0,0.5*o.z-cloud_fade_integral(h,o.z)))/integral,0.0,1.0);
             value=vec4(o.y/thickness*vertical/integral,o.y*above,o.y*(1.0-above),thickness);
         }
-        result=mix(result,value,w);
+        result+=value*(remaining*w);
+        if w==1.0 {break;}
+        remaining*=1.0-w;
     }
     return result;
 }

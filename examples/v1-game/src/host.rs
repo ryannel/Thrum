@@ -724,7 +724,7 @@ impl FrameHost {
                 extent: config.render_extent,
                 step: 15.0,
                 light_samples: 3,
-                refresh_stride: 2,
+                refresh_stride: 1,
             });
         let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Off {
             WorldDriver::new(setup.content, setup.route_overlay)?

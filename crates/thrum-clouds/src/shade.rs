@@ -121,7 +121,7 @@ impl Shade {
             QualitySettings::new(vec![
                 QualityKnob {
                     name: "cloud refresh exponent".into(),
-                    effect: "Refresh the cloud sky every 2^value frames",
+                    effect: "Refresh every cloud texel within 4^value frames",
                     value: profile.refresh_stride.trailing_zeros(),
                     range: 0..=2,
                     invalidation: QualityInvalidation::EffectHistory,

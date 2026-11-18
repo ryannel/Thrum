@@ -258,6 +258,8 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
         )
         .await
         .expect("visible cloud game");
+        sky.set_quality_knob("cloud refresh exponent", 1)
+            .expect("start with sparse refresh before testing a profile change");
         let eye = [0.0, 40.0, 0.0];
         let target = [0.0, 1600.0, -3000.0];
         let fov = std::f32::consts::FRAC_PI_3;

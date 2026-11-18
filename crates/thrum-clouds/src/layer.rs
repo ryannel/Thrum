@@ -29,6 +29,7 @@ pub struct SkyProfile {
     /// Number of local full-density Sun samples, from zero to three.
     pub light_samples: u32,
     /// Trace one texel per square block; 1, 2 or 4. A reset traces all texels.
+    /// One refresh cycle is this stride squared, in submitted frames.
     pub refresh_stride: u32,
 }
 
