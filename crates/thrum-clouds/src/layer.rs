@@ -283,7 +283,6 @@ impl Layer {
 
     #[expect(
         clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
         reason = "presentation coordinates and physical coefficients narrow to shader floats"
     )]
     pub(crate) fn upload(
@@ -355,7 +354,7 @@ impl Layer {
                 200_000.0,
             ],
             settings: [
-                weather.seed(),
+                0,
                 self.profile.light_samples,
                 self.profile.extent[0],
                 self.profile.extent[1],

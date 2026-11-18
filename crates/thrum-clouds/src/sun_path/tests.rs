@@ -3,8 +3,7 @@ use super::Uniform;
 #[test]
 fn sun_shader_and_uniform_layout_validate() {
     use wgpu::naga;
-    let module =
-        naga::front::wgsl::parse_str(include_str!("../sun_path.wgsl")).expect("Sun path WGSL");
+    let module = naga::front::wgsl::parse_str(super::SHADER).expect("Sun path WGSL");
     naga::valid::Validator::new(
         naga::valid::ValidationFlags::all(),
         naga::valid::Capabilities::all(),
@@ -26,7 +25,6 @@ fn sun_shader_and_uniform_layout_validate() {
         std::mem::offset_of!(Uniform, direction),
         std::mem::offset_of!(Uniform, physical),
         std::mem::offset_of!(Uniform, erosion),
-        std::mem::offset_of!(Uniform, noise),
         std::mem::offset_of!(Uniform, rows),
     ];
     assert_eq!(members.len(), offsets.len());

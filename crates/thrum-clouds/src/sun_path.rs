@@ -14,6 +14,11 @@ pub(crate) const PATH_PASSES: [&str; 3] = [
 ];
 pub(crate) const GROUND_PASS: &str = "cloud ground field";
 pub(crate) const FAR_PASS: &str = "cloud far transmittance";
+const SHADER: &str = concat!(
+    include_str!("sun_path.wgsl"),
+    "\n",
+    include_str!("erosion.wgsl")
+);
 
 /// One camera-following window of Sun-ray columns.
 #[derive(Clone, Copy, Debug)]
@@ -142,14 +147,7 @@ impl SunPath {
         };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cloud Sun path"),
-            source: wgpu::ShaderSource::Wgsl(
-                concat!(
-                    include_str!("sun_path.wgsl"),
-                    "\n",
-                    include_str!("erosion.wgsl")
-                )
-                .into(),
-            ),
+            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
         });
         let shape_noise = Noise::new(device, SHAPE_SIZE, "cloud shape noise");
         let noise_preparation = Some(shape_noise.prepare(device, weather.seed(), "shape"));
@@ -214,10 +212,7 @@ impl SunPath {
                         binding: 3,
                         resource: wgpu::BindingResource::TextureView(&product_views[i]),
                     },
-                    wgpu::BindGroupEntry {
-                        binding: 9,
-                        resource: wgpu::BindingResource::TextureView(&shape_noise.view),
-                    },
+                    shape_noise.bind(9),
                     wgpu::BindGroupEntry {
                         binding: 10,
                         resource: wgpu::BindingResource::Sampler(&shape_noise.sampler),
@@ -316,8 +311,7 @@ impl SunPath {
     /// Rejects a nonfinite camera, Sun, or unsupported density range.
     #[expect(
         clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "finite positions narrow once relative to snapped air anchors; noise lattice deliberately wraps to hash words"
+        reason = "finite positions and wrapped noise phases narrow relative to air anchors"
     )]
     pub fn upload(
         &mut self,

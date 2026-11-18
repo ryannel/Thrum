@@ -8,7 +8,7 @@ pub(crate) use thrum_cloud_model::{DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHA
 
 pub(crate) struct Noise {
     texture: wgpu::Texture,
-    pub(crate) view: wgpu::TextureView,
+    view: wgpu::TextureView,
     pub(crate) sampler: wgpu::Sampler,
 }
 
@@ -156,6 +156,22 @@ impl Noise {
                 multisampled: false,
             },
             count: None,
+        }
+    }
+
+    pub(crate) fn filtering(binding: u32) -> wgpu::BindGroupLayoutEntry {
+        wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+            count: None,
+        }
+    }
+
+    pub(crate) fn bind(&self, binding: u32) -> wgpu::BindGroupEntry<'_> {
+        wgpu::BindGroupEntry {
+            binding,
+            resource: wgpu::BindingResource::TextureView(&self.view),
         }
     }
 }

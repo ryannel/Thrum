@@ -553,7 +553,9 @@ fn texel_axes(
             let point = base + (f64::from(i) + 0.5) * texel;
             let mut axis = [0; 4];
             for (words, pitch) in axis
-                .chunks_exact_mut(2)
+                .as_chunks_mut::<2>()
+                .0
+                .iter_mut()
                 .zip([model.pitch, model.turret_pitch])
             {
                 let coordinate = point / pitch;

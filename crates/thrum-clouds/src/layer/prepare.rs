@@ -96,12 +96,7 @@ impl Layer {
                 super::light::storage_entry(10, true),
                 Noise::sampled(11),
                 Noise::sampled(12),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 13,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
+                Noise::filtering(13),
                 wgpu::BindGroupLayoutEntry {
                     binding: 8,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -155,14 +150,8 @@ impl Layer {
             resource: lighting.ambient.as_entire_binding(),
         });
         entries.extend([
-            wgpu::BindGroupEntry {
-                binding: 11,
-                resource: wgpu::BindingResource::TextureView(&sun.shape_noise.view),
-            },
-            wgpu::BindGroupEntry {
-                binding: 12,
-                resource: wgpu::BindingResource::TextureView(&detail_noise.view),
-            },
+            sun.shape_noise.bind(11),
+            detail_noise.bind(12),
             wgpu::BindGroupEntry {
                 binding: 13,
                 resource: wgpu::BindingResource::Sampler(&sun.shape_noise.sampler),
