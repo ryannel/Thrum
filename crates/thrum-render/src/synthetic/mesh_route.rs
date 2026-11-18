@@ -16,10 +16,13 @@
 use super::buckets::{
     BucketError, BucketKey, BucketLimits, Buckets, PipelineClass, SEGMENT_ALIGN, Segment,
 };
-use super::mesh_arena::{MeshArena, MeshId};
+use super::mesh_arena::{ArenaLimits, MeshArena, MeshId};
 use super::shadow::CasterDraw;
 use super::upload::InstanceUpload;
-use super::{RenderError, storage_layout};
+use super::{
+    MESH_COORDINATE_LIMIT, RenderError, SyntheticMesh, SyntheticMeshChoice, SyntheticScene,
+    storage_layout,
+};
 use crate::abi::InstanceRecord;
 use crate::visibility::{MemberInputs, MemberShape};
 
@@ -32,6 +35,81 @@ const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
 pub(super) struct MeshSelection {
     pub(super) slots: Vec<MeshId>,
     pub(super) aloft: Vec<MeshId>,
+}
+
+/// Build the arena and check every slot's choice: the admitted selection
+/// names only rows the arena holds. CPU-only, before any GPU work.
+pub(super) fn admit_meshes(
+    scene: &SyntheticScene,
+    mut limits: ArenaLimits,
+) -> Result<(MeshArena, Option<MeshSelection>), RenderError> {
+    if let Some(binding) = scene
+        .meshes
+        .as_ref()
+        .and_then(|meshes| meshes.updates.as_ref())
+        .and_then(|updates| updates.0.lock().ok().and_then(|state| state.binding_limit))
+    {
+        let selected = ArenaLimits::for_binding(binding);
+        limits.vertices = limits.vertices.min(selected.vertices);
+        limits.indices = limits.indices.min(selected.indices);
+    }
+    let mut arena = MeshArena::new(limits).map_err(|_| RenderError::SceneCapacity)?;
+    let Some(meshes) = scene.meshes.as_deref() else {
+        if !scene.aloft_mesh_rows.is_empty() {
+            return Err(RenderError::SceneCapacity);
+        }
+        return Ok((arena, None));
+    };
+    if meshes.slots.len() != scene.instances.len() {
+        return Err(RenderError::SceneCapacity);
+    }
+    let current = meshes
+        .updates
+        .as_ref()
+        .and_then(|updates| updates.0.lock().ok().map(|state| state.current.clone()));
+    let geometry: Vec<&SyntheticMesh> = current.as_ref().map_or_else(
+        || meshes.meshes.iter().collect(),
+        |rows| rows.iter().map(AsRef::as_ref).collect(),
+    );
+    if meshes.updates.is_some() {
+        arena.enable_live();
+    }
+    let rows = geometry
+        .iter()
+        .map(|mesh| {
+            let id = arena
+                .insert(&mesh.vertices, &mesh.indices)
+                .map_err(|_| RenderError::SceneCapacity)?;
+            let bounded = arena.row(id).is_some_and(|row| {
+                row.bounds
+                    .iter()
+                    .flatten()
+                    .all(|value| value.abs() <= MESH_COORDINATE_LIMIT)
+            });
+            if bounded {
+                Ok(id)
+            } else {
+                Err(RenderError::SceneCapacity)
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let aloft = scene
+        .aloft_mesh_rows
+        .iter()
+        .map(|&index| rows.get(usize::try_from(index).ok()?).copied())
+        .collect::<Option<Vec<_>>>()
+        .ok_or(RenderError::SceneCapacity)?;
+    let slots = meshes
+        .slots
+        .iter()
+        .map(|choice| match *choice {
+            SyntheticMeshChoice::Cube => Some(MeshId::CUBE),
+            SyntheticMeshChoice::Mesh(index) => rows.get(usize::try_from(index).ok()?).copied(),
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or(RenderError::SceneCapacity)?;
+    arena.retain_geometry(current.unwrap_or_default());
+    Ok((arena, Some(MeshSelection { slots, aloft })))
 }
 
 /// The classes in pipeline-array order.

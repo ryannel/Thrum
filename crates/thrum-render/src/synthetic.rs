@@ -82,7 +82,7 @@ use exposure::ExposureResolve;
 pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};
 use history_gpu::TransformHistory;
 use mesh_arena::{ArenaLimits, MeshArena};
-use mesh_route::{BucketRoute, MeshSelection};
+use mesh_route::{BucketRoute, MeshSelection, admit_meshes};
 pub use scene_apply::SceneApplyReport;
 use shadow::{CasterBox, CasterDraw, CasterDraws, ShadowPrepared, ShadowTarget};
 use stars::{StarPrepared, StarTarget};
@@ -194,80 +194,6 @@ pub struct SyntheticMeshes {
 /// 3.4e38, through the Sun fit and containment.
 const MESH_COORDINATE_LIMIT: f32 = 1e30;
 
-/// Build the arena and check every slot's choice: the admitted selection
-/// names only rows the arena holds. CPU-only, before any GPU work.
-fn admit_meshes(
-    scene: &SyntheticScene,
-    mut limits: ArenaLimits,
-) -> Result<(MeshArena, Option<MeshSelection>), RenderError> {
-    if let Some(binding) = scene
-        .meshes
-        .as_ref()
-        .and_then(|meshes| meshes.updates.as_ref())
-        .and_then(|updates| updates.0.lock().ok().and_then(|state| state.binding_limit))
-    {
-        let selected = ArenaLimits::for_binding(binding);
-        limits.vertices = limits.vertices.min(selected.vertices);
-        limits.indices = limits.indices.min(selected.indices);
-    }
-    let mut arena = MeshArena::new(limits).map_err(|_| RenderError::SceneCapacity)?;
-    let Some(meshes) = scene.meshes.as_deref() else {
-        if !scene.aloft_mesh_rows.is_empty() {
-            return Err(RenderError::SceneCapacity);
-        }
-        return Ok((arena, None));
-    };
-    if meshes.slots.len() != scene.instances.len() {
-        return Err(RenderError::SceneCapacity);
-    }
-    let current = meshes
-        .updates
-        .as_ref()
-        .and_then(|updates| updates.0.lock().ok().map(|state| state.current.clone()));
-    let geometry: Vec<&SyntheticMesh> = current.as_ref().map_or_else(
-        || meshes.meshes.iter().collect(),
-        |rows| rows.iter().map(AsRef::as_ref).collect(),
-    );
-    if meshes.updates.is_some() {
-        arena.enable_live();
-    }
-    let rows = geometry
-        .iter()
-        .map(|mesh| {
-            let id = arena
-                .insert(&mesh.vertices, &mesh.indices)
-                .map_err(|_| RenderError::SceneCapacity)?;
-            let bounded = arena.row(id).is_some_and(|row| {
-                row.bounds
-                    .iter()
-                    .flatten()
-                    .all(|value| value.abs() <= MESH_COORDINATE_LIMIT)
-            });
-            if bounded {
-                Ok(id)
-            } else {
-                Err(RenderError::SceneCapacity)
-            }
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    let aloft = scene
-        .aloft_mesh_rows
-        .iter()
-        .map(|&index| rows.get(usize::try_from(index).ok()?).copied())
-        .collect::<Option<Vec<_>>>()
-        .ok_or(RenderError::SceneCapacity)?;
-    let slots = meshes
-        .slots
-        .iter()
-        .map(|choice| match *choice {
-            SyntheticMeshChoice::Cube => Some(mesh_arena::MeshId::CUBE),
-            SyntheticMeshChoice::Mesh(index) => rows.get(usize::try_from(index).ok()?).copied(),
-        })
-        .collect::<Option<Vec<_>>>()
-        .ok_or(RenderError::SceneCapacity)?;
-    arena.retain_geometry(current.unwrap_or_default());
-    Ok((arena, Some(MeshSelection { slots, aloft })))
-}
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
     /// renders the active prefix. The default view uses the historical orthographic
