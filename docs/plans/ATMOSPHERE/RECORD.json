@@ -103,12 +103,12 @@
       }
     },
     "M6": {
-      "definitions": "47dc7b097ad69cf0d5952f9e1aee2f2197fe8730a8e2809b316495331427fbcc",
+      "definitions": "5eeebe562efd0bd23ec65e58cd5d874be8450c527f6cdfb6716dc69f5e80c2b7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix f",
-        "at": "2026-11-18T01:21:27Z"
+        "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix f",
+        "at": "2026-11-18T07:27:48Z"
       }
     },
     "M7": {
@@ -256,11 +256,15 @@
     {
       "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 3 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-18T01:21:27Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T07:27:48Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T01:21:27Z"
+    "at": "2026-11-18T07:27:48Z"
   },
   "design_history": [
     {
