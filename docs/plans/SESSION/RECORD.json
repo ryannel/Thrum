@@ -38,7 +38,36 @@
           "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
           "at": "2026-11-15T22:19:38Z"
         }
-      ]
+      ],
+      "ready_for_review": {
+        "commit": "828c3e901b581fadbb4c8ea1c55d9eb0229bdf24",
+        "checked": "828c3e901b581fadbb4c8ea1c55d9eb0229bdf24",
+        "at": "2026-11-18T15:44:27Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 723686,
+          "cached": 91813248,
+          "output": 155483,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 723686,
+          "cached": 91813248,
+          "output": 155483,
+          "turns": 3
+        }
+      }
     },
     "M2": {
       "definitions": "2194fd97cae047905a96629ed1d7ad7529528a5fa57cd8647bca38281e154c1b",
