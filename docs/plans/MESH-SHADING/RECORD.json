@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "2f3cf3e05bc2f1cef16e798ac761fd13a32cb5a6c155cb1b6d6281839c5ba7c3",
+      "definitions": "c97efd376ba2b90809c1ae4cd706eb149ec4fd4ee252efd193e0ff1d94879ac3",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must F",
-        "at": "2026-11-17T23:28:16Z"
+        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 4 Must F",
+        "at": "2026-11-18T03:41:28Z"
       }
     },
     "M2": {
-      "definitions": "c293259c9a2a7a494938dd1e2ecd2347645409e405444297cdb635f70cd69db7",
+      "definitions": "ed7b186771de7db2e6037d8632aeec579e1990ce0d57aae0e21db883167d6568",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must F",
-        "at": "2026-11-17T23:28:16Z"
+        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 4 Must F",
+        "at": "2026-11-18T03:41:28Z"
       }
     },
     "M3": {
-      "definitions": "ecde442a63269939b1727fd80c2acf1ad57e56ff3ab6ad264aa1fecbdea7910b",
+      "definitions": "7d2fbdb93cee717fd6573757dc4dbfbd025be38b74245ee15d5a4c7e39224f5f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must F",
-        "at": "2026-11-17T23:28:16Z"
+        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 4 Must F",
+        "at": "2026-11-18T03:41:28Z"
       }
     }
   },
@@ -60,11 +60,15 @@
     {
       "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nAlso apply the owner's 17 Nov bar (see ORCHESTRATE.md if the bar change has landed): visual work passes on shipped-game look and speed with performance tripwires; references diagnose, never gate; proof proportional to risk.",
       "at": "2026-11-17T23:28:16Z"
+    },
+    {
+      "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nLead: findings 2 and 3 return partly from the last round, both about the promotion machinery. Under the owner's 17 Nov bar (proof proportional to risk), prefer the simplest promotion rule that holds: an explicit, recorded per-device opt-in with a measured paired timing as a tripwire is acceptable; don't build general registry keying or exhaustive operand capture this module doesn't need. Off the V1 path.",
+      "at": "2026-11-18T03:41:28Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T23:28:16Z"
+    "at": "2026-11-18T03:41:28Z"
   },
   "design_history": [
     {
