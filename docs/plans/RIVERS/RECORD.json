@@ -440,12 +440,12 @@
       }
     },
     "M5": {
-      "definitions": "5346b8e9930d2dd6929f6a4e14a076e7c65b19d86a10e7dd8ab24825bd9ffe13",
+      "definitions": "98c453a8d8e0f6b6910aa4266a86b7af7c464baaeb8170020be46a417dfb91ae",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RIVERS at docs/evidence/RIVERS/design-review.md asked for changes. Resolve its 3 Must Fix findings ",
-        "at": "2026-11-18T03:31:43Z"
+        "task": "The design review of RIVERS at docs/evidence/RIVERS/design-review.md asked for changes. Resolve its 1 Must Fix findings ",
+        "at": "2026-11-18T05:20:57Z"
       }
     },
     "M6": {
@@ -487,11 +487,15 @@
     {
       "task": "The design review of RIVERS at docs/evidence/RIVERS/design-review.md asked for changes. Resolve its 3 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-18T03:31:43Z"
+    },
+    {
+      "task": "The design review of RIVERS at docs/evidence/RIVERS/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-18T05:20:57Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T03:31:43Z"
+    "at": "2026-11-18T05:20:57Z"
   },
   "design_history": [
     {
