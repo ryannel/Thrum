@@ -87,7 +87,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
             body.max_draft_error = body
                 .max_draft_error
                 .max((step.heave - step.waterline).abs());
-            if step.tick % 120 == 1 {
+            if step.tick % 120 == 1 || step.tick == u64::from(seconds) * 60 {
                 if let Some(begin) = body.energy {
                     let overage = step.energy - begin - body.input;
                     body.worst_energy_overage = body.worst_energy_overage.max(overage);
