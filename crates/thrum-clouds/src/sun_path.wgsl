@@ -37,7 +37,7 @@ fn column_density(point:vec3<f32>)->f32 {
         if depth>0.0 && point.y>c.x && point.y<c.y {
             let h=(point.y-c.x)/depth;
             let vertical=smooth_unit(h/o.z)*(1.0-smooth_unit((h-(1.0-o.w))/o.w));
-            density=o.y/depth*vertical/(1.0-(o.z+o.w)*0.5);
+            density=p.physical.z*c.z*vertical;
         }
         sigma=mix(sigma,density,w);
     }

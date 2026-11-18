@@ -40,7 +40,7 @@ pub fn shade_config() -> ShadeConfig {
             },
             Type {
                 base: 1600.0,
-                depth: [650.0, 3600.0],
+                depth: [1450.0, 3800.0],
                 liquid_water: 0.00032,
                 droplet_radius: 0.000_012,
                 deck: 0.0,

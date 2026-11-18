@@ -23,7 +23,7 @@ fn cloud_fade_integral(h:f32,width:f32)->f32 {
     let t=clamp(h/width,0.0,1.0);
     return width*t*t*t*(1.0-0.5*t)+max(0.0,h-width);
 }
-// Density, above optical depth, below optical depth, local cloud thickness.
+// Density, above optical depth, below optical depth, and column top.
 fn cloud_column(point:vec3<f32>)->vec4<f32> {
     var result=vec4(0.0);
     var remaining=1.0;
@@ -40,7 +40,12 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
             let vertical=cloud_smooth(h/o.z)*cloud_smooth((1.0-h)/o.w);
             let integral=1.0-(o.z+o.w)*0.5;
             let above=clamp((cloud_fade_integral(1.0-h,o.w)-max(0.0,0.5*o.z-cloud_fade_integral(h,o.z)))/integral,0.0,1.0);
-            value=vec4(o.y/thickness*vertical/integral,o.y*above,o.y*(1.0-above),thickness);
+            // Interpolate the profile itself. Interpolating the integral and
+            // dividing by thickness again would keep the cloudy texel's full
+            // profile as its neighbour thins continuously toward clear air.
+            let peak=cloud.physical.x*c.z;
+            let tau=peak*thickness*integral;
+            value=vec4(peak*vertical,tau*above,tau*(1.0-above),c.y-point.y);
         }
         result+=value*(remaining*w);
         if w==1.0 {break;}
@@ -51,13 +56,29 @@ fn cloud_column(point:vec3<f32>)->vec4<f32> {
 fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     return cloud_detail(cloud_column(point).x,point,footprint);
 }
+fn cloud_billow(point:vec3<f32>,footprint:f32)->f32 {
+    let uv=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
+    return textureSampleLevel(shape_noise,noise_sampler,uv,erosion_mip(footprint,50.0)).r;
+}
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
     if sigma<=0.0 || cloud.physical.x<=0.0 || cloud.physical.y==0.0 {return sigma;}
-    let shape_uv = point / 6400.0 + vec3(cloud.noise.x, 0.0, cloud.noise.y);
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
-    let shape = textureSampleLevel(shape_noise, noise_sampler, shape_uv, erosion_mip(footprint, 50.0)).r;
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
-    return cloud_erode(sigma, cloud.physical.x, cloud.physical.y, shape, detail);
+    return cloud_erode(sigma,cloud.physical.x,cloud.physical.y,cloud_billow(point,footprint),detail);
+}
+fn cloud_coarse_above(point:vec3<f32>,column:vec4<f32>,footprint:f32)->f32 {
+    if cloud.physical.y==0.0 {return column.y;}
+    // The lit plane compares two directions through the eroded field.
+    // Use a short quadrature for the vertical direction, with detail at mean.
+    let step=column.w/3.0;
+    var sum=0.0;
+    for (var j=0u;j<3u;j++) {
+        let sample=point+vec3(0.0,(f32(j)+0.5)*step,0.0);
+        let sigma=cloud_column(sample).x;
+        sum+=cloud_erode(sigma,cloud.physical.x,cloud.physical.y,
+            cloud_billow(sample,max(footprint,80.0)),cloud.physical.z);
+    }
+    return step*sum;
 }
 
 fn cloud_sun_depths(world:vec3<f32>)->vec2<f32> {
@@ -139,7 +160,8 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let world=camera+ray*at;
                 let sun_depths=cloud_local_sun(point,world,footprint);
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-                let source=cloud_source(solar,phase,sun_depths,column.yz,ray,at,total.transmittance*part.transmittance);
+                let above=cloud_coarse_above(point,column,footprint);
+                let source=cloud_source(solar,phase,sun_depths,column.yz,above,ray,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
                 // A part spans at most 0.25 of the lent air's optical depth.
