@@ -4,6 +4,7 @@
 use std::sync::{Arc, Mutex};
 
 use super::PreparedSynthetic;
+use crate::runtime::DeviceSite;
 
 /// Opt-in observer for mesh structure builds recorded on one device.
 #[derive(Clone)]
@@ -53,11 +54,9 @@ impl RayBuildSample {
 }
 
 impl PreparedSynthetic {
-    pub(crate) fn observe_ray_mesh_builds(
-        &mut self,
-        device: &wgpu::Device,
-    ) -> Option<RayBuildProbe> {
+    pub(crate) fn observe_ray_mesh_builds(&mut self) -> Option<RayBuildProbe> {
         self.ray_structure.as_ref()?;
+        let device = self.capabilities.site();
         if !device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
             return None;
         }
@@ -69,7 +68,8 @@ impl PreparedSynthetic {
 }
 
 impl RayBuildProbe {
-    fn new(device: &wgpu::Device) -> Self {
+    fn new(device: &DeviceSite) -> Self {
+        let _transition = device.transition("ray-mesh-build-probe");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("ray mesh timestamp marker"),
             source: wgpu::ShaderSource::Wgsl(include_str!("build_probe.wgsl").into()),
@@ -104,7 +104,7 @@ impl RayBuildProbe {
                 bind_group_layouts: groups,
                 immediate_size: 0,
             });
-            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("ray mesh timestamp marker"),
                 layout: Some(&layout),
                 module: &shader,
@@ -132,7 +132,7 @@ impl RayBuildProbe {
             }],
         });
         Self(Arc::new(Probe {
-            device: device.clone(),
+            device: wgpu::Device::clone(device),
             marker,
             consumer,
             binding,

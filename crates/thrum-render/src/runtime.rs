@@ -464,7 +464,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     #[must_use]
     pub fn observe_ray_mesh_builds(&mut self) -> Option<crate::synthetic::RayBuildProbe> {
-        self.prepared.observe_ray_mesh_builds(&self.device)
+        self.prepared.observe_ray_mesh_builds()
     }
 
     /// Inspect the actual scene structure from the latest recording.

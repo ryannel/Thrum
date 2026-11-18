@@ -70,3 +70,5 @@
   Inspected four T2 fixed valley pairs and native-size contact crops. The two contended timing runs found
   a cold terrain-build outlier and an estimated 0.737–0.905 ms added GPU cost for the edit.
   [M2 evidence](../../evidence/RAY-TRACING/M2/README.md).
+- 2026-11-18 Routed the opt-in M2 timing probe's two pipelines through the prepared scene's device
+  generation. The probe installation is recorded as a creation transition.
