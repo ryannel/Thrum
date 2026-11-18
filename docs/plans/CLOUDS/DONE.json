@@ -506,8 +506,8 @@
           "ask": "Is the motion compared with a displacement worked out from the CPU model and the wind, with temporal sampling selected, for two frames of one tick as well as for frames a tick apart?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M3-resume.md",
           "verdict": "",
           "review": ""
         },
@@ -572,8 +572,8 @@
           "statement": "The number of sampled textures each cloud pass binds, the lent environment group included, is on record against the capability record for both recipes and for WebGPU's default limits.",
           "ask": "Does `docs/evidence/CLOUDS/M3-bindings.md` give the count per pass and the limit it was checked against, and is every count within it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M3-bindings.md",
           "verdict": "",
           "review": ""
         },
@@ -582,8 +582,8 @@
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/design/maturity.json",
           "verdict": "",
           "review": ""
         },
