@@ -2786,37 +2786,16 @@ impl OffscreenTarget {
     pub(crate) fn belongs_to_device(&self, device: &wgpu::Device) -> bool {
         self.device == *device
     }
-    fn readback_bytes(&self) -> u64 {
-        u64::from(self.row_bytes) * u64::from(self.height)
-    }
     /// Allocate one bounded CPU readback slot for this exact generation/grid.
     pub fn readback(&self, device: &wgpu::Device) -> PixelReadback {
-        PixelReadback {
-            source: self.capture_source,
-            exposure_words: None,
-            has_exposure: false,
-            buffer: device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("synthetic pixel readback"),
-                size: self.readback_bytes() + exposure::SAMPLE_BYTES,
-                usage: wgpu::BufferUsages::COPY_DST
-                    | wgpu::BufferUsages::MAP_READ
-                    | if device
-                        .features()
-                        .contains(wgpu::Features::MAPPABLE_PRIMARY_BUFFERS)
-                    {
-                        wgpu::BufferUsages::STORAGE
-                    } else {
-                        wgpu::BufferUsages::empty()
-                    },
-                mapped_at_creation: false,
-            }),
-            generation: self.generation,
-            extent: self.extent(),
-            row_bytes: self.row_bytes,
-            pending: None,
-            copy_timing: None,
-            resolving_copy_timing: false,
-        }
+        PixelReadback::new(
+            device,
+            self.generation,
+            self.extent(),
+            self.capture_source,
+            self.row_bytes,
+            "synthetic pixel readback",
+        )
     }
 }
 

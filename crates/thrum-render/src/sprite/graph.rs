@@ -337,6 +337,7 @@ impl SpriteTarget {
             self.extent,
             self.source,
             self.row_bytes,
+            "sprite pixel readback",
         )
     }
 

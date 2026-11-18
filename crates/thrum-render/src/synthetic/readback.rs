@@ -163,13 +163,14 @@ impl PixelReadback {
         extent: [u32; 2],
         source: CaptureSource,
         row_bytes: u32,
+        label: &str,
     ) -> Self {
         Self {
             source,
             exposure_words: None,
             has_exposure: false,
             buffer: device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("scene pixel readback"),
+                label: Some(label),
                 size: u64::from(row_bytes) * u64::from(extent[1]) + super::exposure::SAMPLE_BYTES,
                 usage: wgpu::BufferUsages::COPY_DST
                     | wgpu::BufferUsages::MAP_READ
