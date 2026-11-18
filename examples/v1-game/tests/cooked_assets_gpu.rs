@@ -3,7 +3,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use thrum_asset::Profile;
@@ -22,6 +22,13 @@ const BUDGET: u64 = COPY_UNIT;
 
 /// Staging may never hold more than this, whatever a publication's size.
 const STAGING_BOUND: u64 = STAGING_CHUNKS * BUDGET;
+
+fn gpu_fixture() -> MutexGuard<'static, ()> {
+    // These fixtures allocate full scene targets and some keep two devices alive.
+    // Bound their combined GPU residency under the default parallel test runner.
+    static GPU_FIXTURE: Mutex<()> = Mutex::new(());
+    GPU_FIXTURE.lock().unwrap_or_else(PoisonError::into_inner)
+}
 
 fn assert_staging_bounded(stats: &CookedStats) {
     #[cfg(feature = "draw-probe")]
@@ -143,6 +150,7 @@ fn save(name: &str, pixels: &[u8]) {
 
 #[test]
 fn cooked_edits_become_visible_in_the_game_with_its_lighting() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         cooked_edits_become_visible_in_the_game_with_its_lighting_case(path);
     }
@@ -268,6 +276,7 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(path: CookedDr
 
 #[test]
 fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path);
     }
@@ -405,6 +414,7 @@ fn settle(host: &mut FrameHost, device: &wgpu::Device) {
 /// rendering. Both must then swap on the same submitted frame and draw identical pixels.
 #[test]
 fn discarded_frames_leave_no_trace_on_cooked_uploads() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         discarded_frames_leave_no_trace_on_cooked_uploads_case(path);
     }
@@ -684,6 +694,7 @@ fn timed(sample: &FrameSample, device: &wgpu::Device, drawing: bool) {
 
 #[test]
 fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_case(path);
     }
@@ -748,6 +759,7 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
 
 #[test]
 fn a_replaced_device_restages_and_draws_the_current_set() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_replaced_device_restages_and_draws_the_current_set_case(path, path);
         let other = if path == CookedDrawPath::Direct {
@@ -854,6 +866,7 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
 /// the set it counted.
 #[test]
 fn captures_never_establish_history_and_cull_counts_follow_their_set() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         captures_never_establish_history_and_cull_counts_follow_their_set_case(path);
     }
@@ -949,6 +962,7 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set_case(path: 
 
 #[test]
 fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path);
     }
@@ -1085,6 +1099,7 @@ impl thrum_asset::Fetch for LoopbackFetch {
 /// sample compressed variants listed in the manifest.
 #[test]
 fn a_fetched_generation_draws_like_the_mapped_store() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_fetched_generation_draws_like_the_mapped_store_case(path);
     }
@@ -1173,6 +1188,7 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(path: CookedDrawPath) {
 /// the edited product; the unchanged mesh is reused from the drawn set.
 #[test]
 fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path);
     }
@@ -1265,6 +1281,7 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path: CookedDrawPa
 /// the scene's back-face culling and lighting the two captures match.
 #[test]
 fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(path);
     }
@@ -1347,6 +1364,7 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(pat
 /// volume does the same again.
 #[test]
 fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path);
     }
@@ -1411,6 +1429,7 @@ fn wait_posted(stats: &Mutex<CookedStats>, generation: u64) {
 /// and drawn and generation 2 never is.
 #[test]
 fn a_newer_publication_supersedes_an_upload_still_being_filled() {
+    let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
         a_newer_publication_supersedes_an_upload_still_being_filled_case(path);
     }
@@ -1483,6 +1502,7 @@ fn selected_capabilities(
 
 #[test]
 fn adapter_less_public_host_selects_direct() {
+    let _fixture = gpu_fixture();
     let root = std::env::temp_dir().join(format!("thrum-g5-unknown-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
