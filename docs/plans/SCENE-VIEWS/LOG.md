@@ -310,5 +310,10 @@
   cases at both extents, with zero stored steps of difference from its ordinary view.
   Both Metal recipes matched explicit requests at all five control endpoints and the attachment
   readback confirmed the viewport coverage. The author guide links measured endpoints and a
-  per-resource byte inventory. The qualified cost record needs a sitting with the other builders paused.
+  per-resource byte inventory.
   [Target proofs](../../evidence/SCENE-VIEWS/M3/README.md)
+
+- 2026-11-18 M3.4 closure. The cost verifier passed the retained capture-off Metal record on both
+  recipes for both workloads and every control arm. The evidence, author guide and maturity ledger
+  describe the figures as taken under load. The second field slot's excess keeps its scheduling and
+  tile-store follow-up. [Cost record and investigations](../../evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost)

@@ -76,12 +76,12 @@
       "functional_validation": "M1 and M2 were independently reviewed on Metal, including stored-format equality, slot lifetime and absence, view-local light and shadow products, direct and indirect cooked draws, and composition from main-view marker colours. M3 verifies both knob endpoints against direct requests on both Metal recipes, checks main draw-buffer equality and reads the prepared viewport attachments. Chrome WebGPU matches its own main draw for entities and cooked placements to zero stored colour and depth steps, including the three hill-shadow camera cases at both extents, and passes both marker exposures.",
       "experienced_quality": "M2 passed noon, dawn, dusk and night mirror inspections and five elapsed-time motion routes on Mac Metal Portable. M3 builder inspected eight Chrome fixed poses and ten elapsed-time routes at noon and dusk against Metal Portable. AppleTile visual inspection is not claimed.",
       "platform_performance": {
-        "mac_portable": "Contended capture-off 2560\u00d71440 paired timestamps on Apple M3 Max. Median whole pass sums for zero, one and two views were 9.80, 12.28 and 13.41 ms in the mirror and 11.35, 17.05 and 22.40 ms in the 100,513-instance field.",
-        "mac_apple_tile": "Same device and paired workload, AppleTile selected. The mirror medians were 9.86, 13.41 and 14.90 ms and the field medians were 11.32, 16.55 and 21.82 ms. Contention and the second slot's extra work are recorded.",
+        "mac_portable": "Capture-off 2560\u00d71440 paired timestamps taken under load on Apple M3 Max. Median whole pass sums for zero, one and two views were 9.80, 12.28 and 13.41 ms in the mirror and 11.35, 17.05 and 22.40 ms in the 100,513-instance field.",
+        "mac_apple_tile": "Capture-off paired timestamps taken under load on the same device with AppleTile selected. The mirror medians were 9.86, 13.41 and 14.90 ms and the field medians were 11.32, 16.55 and 21.82 ms. The evidence records the load and the second slot's extra timing cost.",
         "browser": "No browser performance qualification.",
         "ios": "No simulator or physical iPhone qualification."
       },
-      "scope": "The documented view is opaque-only, shares terrain height maps on the main camera's vertical, and has no temporal history. The consumer composes sky and its own camera stretch. The recorded cost runs establish neither display cadence nor a qualified budget.",
+      "scope": "The documented view is opaque-only, shares terrain height maps on the main camera's vertical, and has no temporal history. The consumer composes sky and its own camera stretch. The cost figures apply to the recorded load, with no quiet-machine figures, display cadence or qualified budget claimed.",
       "evidence": [
         "../evidence/SCENE-VIEWS/M1-review.md",
         "../evidence/SCENE-VIEWS/M2-review.md",

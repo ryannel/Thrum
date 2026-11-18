@@ -318,8 +318,8 @@
             "docs/evidence/SCENE-VIEWS/M3/cost.json.gz"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost",
           "verdict": "",
           "review": ""
         },

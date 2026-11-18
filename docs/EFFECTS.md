@@ -154,7 +154,8 @@ describes cost scope and pass ownership.
 
 The endpoint table gives measured GPU time for each control on the authored mirror and the
 100,513-instance field. The paired runs used an Apple M3 Max at 2560×1440, with capture off and
-Portable and AppleTile selected separately. Another GPU workload was active during these runs.
+Portable and AppleTile selected separately. The figures were taken under load while another
+builder's GPU workload ran. They apply to those conditions, with no quiet-machine figures claimed.
 The resource table gives the logical bytes reserved before any view is requested.
 [Measured endpoints](evidence/SCENE-VIEWS/M3/README.md#measured-control-endpoints) ·
 [Prepared resource sizes](evidence/SCENE-VIEWS/M3/resource-bytes.md)
