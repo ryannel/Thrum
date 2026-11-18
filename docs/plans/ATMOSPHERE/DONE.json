@@ -242,7 +242,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Far shadows as over Red Dead Redemption 2's New Austin or Forza Horizon 5's Mexico seen from high ground: ridges and mesas shade the far ground steadily, and nothing in the air draws a hard bar across it or blinks one on and off. This milestone judges that one defect on the exit camera. The stepped edge of far terrain shadows and the finished image are judged in SHOWCASE M8.",
       "items": [
         {
@@ -254,8 +254,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/M10/README.md#m101--metal-shadow-layers",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M10-review.md"
         },
         {
           "id": "M10.2",
@@ -264,8 +264,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/M10/README.md#m102--fixed-metal-exit-flythrough",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M10-review.md"
         },
         {
           "id": "M10.3",
@@ -274,8 +274,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M10-review.md"
         }
       ]
     },

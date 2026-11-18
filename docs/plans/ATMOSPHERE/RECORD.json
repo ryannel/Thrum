@@ -209,7 +209,34 @@
     },
     "M10": {
       "definitions": "8f4676b34a39ae409040005004b4e648ac14c7dea48e49fbc36febbf1146b689",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "8cafb923210d9c4cd1f4831e5aade0db4a4462c6",
+          "review": "docs/evidence/ATMOSPHERE/M10-review.md",
+          "items": {
+            "M10.1": "pass",
+            "M10.2": "pass",
+            "M10.3": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 108572,
+            "cached": 2227712,
+            "output": 6613,
+            "turns": 1
+          },
+          "at": "2026-11-18T14:04:09Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of ATMOSPHERE at docs/evidence/ATMOSPHERE/design-review.md asked for changes. Resolve its 1 Must Fix f",
@@ -243,6 +270,13 @@
           "output": 49868,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8cafb923210d9c4cd1f4831e5aade0db4a4462c6",
+        "review": "docs/evidence/ATMOSPHERE/M10-review.md",
+        "checked": "b2c4e650a5037405fc488b871c8c484845dbaefe",
+        "at": "2026-11-18T14:04:09Z"
       }
     }
   },
