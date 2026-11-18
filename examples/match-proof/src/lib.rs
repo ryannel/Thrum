@@ -1,9 +1,7 @@
 //! Headless reference crowd proof through the registered session world.
 
 mod image;
-pub use image::capture;
-#[cfg(not(target_arch = "wasm32"))]
-pub use image::restore;
+pub use image::{capture, restore};
 
 use thrum_core::sim::RuleSetIdentity;
 
@@ -29,8 +27,8 @@ pub fn identity(mixed: bool) -> String {
 /// # Panics
 /// A reference trace tick fails.
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn restore(
+#[wasm_bindgen::prelude::wasm_bindgen(js_name = restore)]
+pub fn restore_in_browser(
     count: u32,
     mixed: bool,
     bytes: &[u8],
