@@ -232,6 +232,8 @@ impl Game for WindowGame {
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<WorldPort, GameScene>, String> {
         let render_extent = capture::capture_extent()?;
+        let setup = crate::selected_setup()?;
+        let exit = setup.content == crate::GameContent::Exit;
         let mut host = pollster::block_on(FrameHost::new_with_setup(
             gpu.device,
             gpu.queue,
@@ -240,7 +242,7 @@ impl Game for WindowGame {
                 render_extent,
                 surface: Some(gpu.surface),
             },
-            crate::selected_setup()?,
+            setup,
         ))?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let content = if let Some(cooked) = &self.capture_cooked {
@@ -248,7 +250,7 @@ impl Game for WindowGame {
         } else {
             crate::attach_cooked_scene(&mut host)?
         };
-        if std::env::var("THRUM_SCENE").as_deref() == Ok("exit") {
+        if exit {
             let selection = host.culling_selection();
             eprintln!(
                 "Exit culling: {:?} (requested {:?}, reason {:?})",
