@@ -331,10 +331,10 @@
             "what": "Screen Recording granted to the tool that captures the game window, with the Mac unlocked. The agent wakes the display, runs the capture and reviews it; nobody has to watch."
           },
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/D4.7.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.8",
