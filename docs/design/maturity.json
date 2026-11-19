@@ -932,7 +932,7 @@
       },
       "M4": {
         "implementation": "Render extents follow native backing grids and the browser canvas. The Mac retains its current generation through a debounced resize, builds replacement targets on a preparation thread, and configures in one step before publishing the replacement. iOS preserves an epoch-scoped transition between frames.",
-        "functional_validation": "Both Mac recipes presented during a 24-size AppKit sweep, with one configure per generation, and restored the old drawable after a rejected configure. Both simulator rotations reached the new extent and epoch within two replies.",
+        "functional_validation": "Both Mac recipes presented during a 24-size AppKit sweep, with one configure per generation, and restored the old drawable after a rejected configure. Both simulator rotations reached the new extent and epoch within two replies. Chrome WebGPU tested DPR 1 and 2 and reset the history predecessor at the first submission on the new grid.",
         "experienced_quality": "Both Mac recipes pass the submitted backing-grid stills. The simulator covers the oriented surface with individually resolved grid cells. Realtime Mac engine capture was inspected through both switches. OS-window motion inspection requires Screen Recording access.",
         "platform_performance": {
           "mac": "Under shared machine load, sweep render-worker p95 was 14.73 ms on Portable and 11.70 ms on Apple Tile, beside baselines of 7.44 ms and 8.18 ms. The worst-frame tripwire fired on both recipes. Configure durations were 0.10–0.36 ms.",

@@ -281,10 +281,10 @@
           "check": "node scripts/check_v1_browser.mjs --case extent",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/chrome.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.4",
