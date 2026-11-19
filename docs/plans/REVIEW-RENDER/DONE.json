@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -26,8 +26,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m11-light-buffer-ownership-and-exact-pixels",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -36,10 +36,10 @@
           "lock": "gpu",
           "ask": "Does the test raise a stale binding, an extent mismatch and a timing-capacity failure, and see each reported by its own kind? Is `.is_ok()` or `let _ =` used on a fallible encode anywhere in the runtime?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m12-surface-encode-faults",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -47,10 +47,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test frame_error_kinds",
           "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are M4.4's and are not judged here.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m13-frame-error-variants",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -59,8 +59,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -69,8 +69,24 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m15-surface-queries-and-the-medium-source",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Sprite presentation loses the timing-capacity fault",
+          "item": "M1.2",
+          "repeat": false
+        },
+        {
+          "name": "A cloud GPU limit is classified as a scene error",
+          "item": "M1.3",
+          "repeat": false
+        },
+        {
+          "name": "Owning-module exact controls were replaced",
+          "repeat": false
         }
       ]
     },

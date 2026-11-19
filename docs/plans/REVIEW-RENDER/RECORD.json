@@ -26,7 +26,52 @@
   "milestones": {
     "M1": {
       "definitions": "9aaaf2c52944b0306ca8d5c66c406efba11df4414869fe8387d76b16c38c5502",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "40770ce6feb538bc8fd2618890f5b380ee4f050e",
+          "review": "docs/evidence/REVIEW-RENDER/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "fail",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sprite presentation loses the timing-capacity fault",
+              "item": "M1.2",
+              "repeat": false
+            },
+            {
+              "name": "A cloud GPU limit is classified as a scene error",
+              "item": "M1.3",
+              "repeat": false
+            },
+            {
+              "name": "Owning-module exact controls were replaced",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 176562,
+            "cached": 6855040,
+            "output": 12772,
+            "turns": 1
+          },
+          "at": "2026-11-19T07:18:33Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of REVIEW-RENDER at docs/evidence/REVIEW-RENDER/design-review.md asked for changes. Resolve its 1 Must",
