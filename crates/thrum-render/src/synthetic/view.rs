@@ -786,11 +786,8 @@ mod temporal_tests {
         }
         expected[228..232].copy_from_slice(&7_u32.to_le_bytes());
         assert_eq!(record, expected);
-        let source = include_str!("../synthetic.wgsl")
-            .split("fn direct_brdf")
-            .next()
-            .unwrap();
-        let module = wgpu::naga::front::wgsl::parse_str(source).unwrap();
+        let source = super::super::scene_source::compose(false, false);
+        let module = wgpu::naga::front::wgsl::parse_str(&source).unwrap();
         for (name, span, offsets) in [
             (
                 "ViewRecord",

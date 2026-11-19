@@ -116,7 +116,9 @@ fn night_profile_survives_sky_sampling_and_the_incident_reduction() {
                     reference.height
                 );
             }
-            for (off, on) in off.irradiance[3][..3].iter().zip(on.irradiance[3]) {
+            let off_horizontal = off.environment.horizontal_irradiance;
+            let on_horizontal = on.environment.horizontal_irradiance;
+            for (off, on) in off_horizontal[..3].iter().zip(on_horizontal) {
                 let actual = f64::from(on - off);
                 assert!(
                     error(actual, reference.horizontal_lux) <= 0.05,
@@ -125,7 +127,7 @@ fn night_profile_survives_sky_sampling_and_the_incident_reduction() {
                     reference.horizontal_lux
                 );
             }
-            let incident = f64::from(on.irradiance[3][0] - off.irradiance[3][0]);
+            let incident = f64::from(on_horizontal[0] - off_horizontal[0]);
             writeln!(
                 std::io::stdout().lock(),
                 "height={} m max ray error={:.3}% incident={incident:e} lx",
@@ -133,7 +135,7 @@ fn night_profile_survives_sky_sampling_and_the_incident_reduction() {
                 ray_error * 100.0
             )
             .expect("write GPU observation");
-            let ambient = on.irradiance[4][0] - off.irradiance[4][0];
+            let ambient = on.environment.sky_diffuse[0][0] - off.environment.sky_diffuse[0][0];
             assert!(
                 ambient > 0.0,
                 "the same night light contributes to diffuse SH"

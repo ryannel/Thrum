@@ -7,6 +7,7 @@ use std::time::Duration;
 use crate::atmosphere::AtmosphereFrame;
 use crate::atmosphere::gpu::{AtmospherePrepared, EXTENTS, LUT_SHADER, prepare_compute};
 use crate::atmosphere::spectrum::Profile;
+use crate::light::EnvironmentLight;
 use crate::synthetic::SyntheticView;
 
 // The independent CPU reference integrates these original representative bands.
@@ -47,7 +48,7 @@ pub(super) struct Sky {
 
 pub(super) struct Probe {
     atmosphere: AtmospherePrepared,
-    directional: wgpu::Buffer,
+    environment: wgpu::Buffer,
     reader: wgpu::ComputePipeline,
     single_group: wgpu::BindGroup,
     transport_ready: bool,
@@ -61,8 +62,8 @@ impl Probe {
         directions: &[[f32; 4]],
         matched_medium: bool,
     ) -> Self {
-        let directional = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("reference directional output"),
+        let environment = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("reference environment output"),
             size: crate::light::ENVIRONMENT_BYTES,
             usage: wgpu::BufferUsages::UNIFORM
                 | wgpu::BufferUsages::STORAGE
@@ -75,7 +76,7 @@ impl Probe {
             1,
             frame(45.0, 2.0),
             &SyntheticView::default(),
-            &directional,
+            &environment,
             &super::super::super::sky_samples(device),
         );
         let zero = device.create_texture(&wgpu::TextureDescriptor {
@@ -174,7 +175,7 @@ impl Probe {
         });
         Self {
             atmosphere,
-            directional,
+            environment,
             reader,
             single_group,
             transport_ready: false,
@@ -260,9 +261,9 @@ impl Probe {
             .update(queue, frame, &SyntheticView::default(), [1, 1]);
         let texture = &self.atmosphere.textures[2];
         let snapshot = Snapshot::new(device, &self.reader, texture);
-        let directional = device.create_buffer(&wgpu::BufferDescriptor {
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("night meter and diffuse readback"),
-            size: self.directional.size(),
+            size: self.environment.size(),
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -283,18 +284,23 @@ impl Probe {
         let rays = self
             .rays
             .observe(device, &mut encoder, &self.atmosphere.uniform, texture);
-        encoder.copy_buffer_to_buffer(&self.directional, 0, &directional, 0, directional.size());
+        encoder.copy_buffer_to_buffer(&self.environment, 0, &readback, 0, readback.size());
         submit(
             device,
             queue,
             encoder,
-            [&snapshot.readback, &rays, &directional],
+            [&snapshot.readback, &rays, &readback],
         );
         self.transport_ready = true;
         NightSky {
             grid: snapshot.collect(1.0),
             rays: decode(&rays, 1.0),
-            irradiance: directional_values(&directional),
+            environment: bytemuck::pod_read_unaligned(
+                &readback
+                    .slice(..)
+                    .get_mapped_range()
+                    .expect("mapped environment light"),
+            ),
         }
     }
 
@@ -315,21 +321,7 @@ impl Probe {
 pub(super) struct NightSky {
     pub grid: Vec<[f64; 4]>,
     pub rays: Vec<[f64; 4]>,
-    pub irradiance: Vec<[f32; 4]>,
-}
-
-fn directional_values(buffer: &wgpu::Buffer) -> Vec<[f32; 4]> {
-    buffer
-        .slice(..)
-        .get_mapped_range()
-        .expect("mapped directional buffer")
-        .as_chunks::<16>()
-        .0
-        .iter()
-        .map(|pixel| {
-            std::array::from_fn(|channel| f32::from_le_bytes(pixel.as_chunks::<4>().0[channel]))
-        })
-        .collect()
+    pub environment: EnvironmentLight,
 }
 
 fn submit<const N: usize>(
