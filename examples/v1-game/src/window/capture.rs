@@ -4,6 +4,16 @@ mod admission;
 mod native_recovery;
 
 use super::RuntimeCaptureOutput;
+
+fn shadow_selection(selection: thrum_render::synthetic::ShadowSelection) -> Value {
+    json!({
+        "requested_sun": format!("{:?}", selection.requested_sun),
+        "sun": format!("{:?}", selection.sun),
+        "requested_lamps": selection.requested_lamps,
+        "lamps": selection.lamps,
+        "fallback": selection.fallback.map(|reason| format!("{reason:?}")),
+    })
+}
 use serde_json::{Value, json};
 use std::io::Write;
 use std::{
@@ -237,6 +247,7 @@ impl Trace {
             image.submitted_at.saturating_duration_since(origin),
         );
         self.images.push(json!({"submission_id":image.sample.submission_order,"tick":image.sample.tick,
+            "shadow_selection":shadow_selection(image.sample.shadow_selection),
             "epoch":image.source.epoch,"timeline":image.source.timeline,
             "previous_endpoint_tick":image.source.tick.checked_sub(1),"current_endpoint_tick":image.source.tick,
             "alpha":image.sample.presentation_alpha,"history_epoch":image.history_epoch,
@@ -306,6 +317,9 @@ impl Trace {
         while let Some(sample) = driver.completed()? {
             self.gpu.push(
                 json!({"submission_id":sample.submission_order,"tick":sample.tick,
+                "culling_selection":format!("{:?}",sample.culling_selection),
+                "shadow_selection":shadow_selection(sample.shadow_selection),
+                "timed_pass_span_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::timed_pass_span_nanoseconds),
                 "gpu_effect_boundary_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::effect_boundary_nanoseconds),
                 "gpu_not_run":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::not_run_passes),
                 "native_segment":sample.native_segment.as_ref().map(|segment| json!({"pass":segment.pass_name(),"generation":segment.generation,"submission":segment.submission,"clock":"Metal host seconds; uncorrelated with wgpu queries","outcome":format!("{:?}",segment.outcome())})),

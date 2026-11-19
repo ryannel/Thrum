@@ -62,6 +62,10 @@ pub enum ExitEntities {
 
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "independent opt-in presentation selections"
+)]
 pub struct GameSetup {
     /// Select the sprite test card at this integer output scale.
     pub sprite_scale: Option<u16>,
@@ -75,6 +79,10 @@ pub struct GameSetup {
     pub reconstruction: thrum_render::synthetic::Reconstruction,
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
     pub display_overlay: DisplayOverlay,
+    /// Main view's Sun shadow method.
+    pub sun_shadow_method: thrum_render::synthetic::SunShadowMethod,
+    /// Trace hard shadows from the main view's local lights.
+    pub lamp_shadows: bool,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
     pub diagnostic_clouds: bool,
     /// The grid or the dense flythrough field.
@@ -103,6 +111,8 @@ impl Default for GameSetup {
             cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
+            sun_shadow_method: thrum_render::synthetic::SunShadowMethod::Maps,
+            lamp_shadows: false,
             diagnostic_clouds: false,
             content: GameContent::Grid,
             exit_entities: ExitEntities::Draw,

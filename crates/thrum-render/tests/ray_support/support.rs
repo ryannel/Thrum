@@ -69,6 +69,29 @@ pub fn wait(device: &wgpu::Device) {
         .expect("GPU completes");
 }
 
+/// Encode an offscreen frame and collect its submitted SDR bytes.
+/// # Panics
+/// Encoding and the GPU readback must succeed.
+pub fn submit_bytes(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &PreparedSynthetic,
+    target: &OffscreenTarget,
+) -> Vec<u8> {
+    let generation = prepared.capabilities().generation();
+    let mut readback = target.readback(device);
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    prepared
+        .encode_with_readback(&mut encoder, generation, target, None, &mut readback)
+        .expect("encode submitted color");
+    queue.submit([encoder.finish()]);
+    wait(device);
+    readback
+        .try_collect(generation)
+        .expect("readback")
+        .expect("completed")
+}
+
 /// Collect the bytes of a submitted map-read buffer.
 /// # Panics
 /// The map and its completion callback must succeed.

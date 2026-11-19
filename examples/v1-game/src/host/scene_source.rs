@@ -255,6 +255,20 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
         }
     }
     scene.local_lights[0] = ROUTE_OVERLAY_LIGHT;
+    if overlay == scene::RouteOverlay::LampStop {
+        scene.local_lights = [
+            ([-1.35, 240.55, -3.0], [150.0, 65.0, 28.0]),
+            ([1.35, 240.50, -3.0], [32.0, 96.0, 150.0]),
+            ([-1.65, 240.55, -7.8], [38.0, 136.0, 58.0]),
+            ([1.65, 240.55, -7.8], [146.0, 58.0, 110.0]),
+        ]
+        .map(|(position, candela)| SyntheticPointLight {
+            position,
+            candela,
+            radius: 2.5,
+        })
+        .to_vec();
+    }
     if overlay == scene::RouteOverlay::LightOff {
         scene.local_lights[0].candela = [0.0; 3];
     }
@@ -473,6 +487,8 @@ impl GameScene {
             )
             .with_display_overlay(setup.display_overlay);
         scene.ray_structure = setup.display_overlay == DisplayOverlay::TracedGeometry;
+        scene.sun_shadow_method = setup.sun_shadow_method;
+        scene.lamp_shadows = setup.lamp_shadows;
         scene.camera_culling = setup.camera_culling;
         if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(

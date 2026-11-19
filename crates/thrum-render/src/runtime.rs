@@ -304,6 +304,8 @@ pub struct FrameSample {
     pub culling_mode: CullMode,
     /// Preparation-time request and capability reason for this frame's generation.
     pub culling_selection: crate::synthetic::CullingSelection,
+    /// Requested and resolved direct-light shadow methods.
+    pub shadow_selection: crate::synthetic::ShadowSelection,
     /// Instances camera culling drew, read back on completion without
     /// timestamps. `None` for Direct, which lists nothing, and when the
     /// readback failed.
@@ -564,9 +566,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// List contribution quality controls with committed values and declared invalidations.
     #[must_use]
     pub fn quality_knobs(&self) -> Vec<crate::contribution::QualityKnob> {
-        self.contribution
+        let mut knobs = self
+            .contribution
             .as_ref()
-            .map_or_else(Vec::new, |entry| entry.quality_knobs())
+            .map_or_else(Vec::new, |entry| entry.quality_knobs());
+        knobs.extend_from_slice(self.prepared.lamp_quality());
+        knobs
     }
     /// Stage a quality value for the next frame boundary.
     /// # Errors
@@ -576,6 +581,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         name: &str,
         value: u32,
     ) -> Result<(), crate::contribution::QualityError> {
+        if let Some(result) = self.prepared.set_lamp_quality(name, value) {
+            return result;
+        }
         self.contribution
             .as_mut()
             .ok_or(crate::contribution::QualityError::NoContribution)?
@@ -1747,6 +1755,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.restore_upload_slots()?;
         self.last_extracted = frame.extracted;
         let lighting = frame_scene.lighting;
+        self.history_reset_pending |= self.prepared.commit_lamp_quality(&self.queue);
         if self.contribution.as_mut().is_some_and(|entry| {
             entry.commit_quality_knobs() == crate::contribution::QualityInvalidation::ViewHistory
         }) {
@@ -1828,6 +1837,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 timing_requested: self.timing_requested,
                 culling_mode: self.prepared.camera_culling(),
                 culling_selection: self.prepared.culling_selection(),
+                shadow_selection: self.prepared.shadow_selection(),
                 camera_culling: None,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,

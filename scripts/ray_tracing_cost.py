@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import statistics
 import subprocess
+from statistics import median
 
 from ray_tracing_proof import run_test
 
@@ -141,12 +142,60 @@ def valley(output):
         output.write_text(text)
 
 
+def shadows(output):
+    machine = command("system_profiler", "SPHardwareDataType", "SPDisplaysDataType")
+    load_before = os.getloadavg()
+    rows = run_test("shadow_cost", release=True)
+    passes = ("synthetic Sun shadow near", "synthetic Sun shadow far")
+    measurements = {}
+    for method, lamps in (("Maps", False), ("Traced", False), ("Traced", True)):
+        selected = [row for row in rows if (row["method"], row["lamps"]) == (method, lamps)]
+        if not selected:
+            raise ValueError(f"missing {method} with lamps={lamps}")
+        for row in selected:
+            timings = row["passes_ns"]
+            if not all((name in timings) == (method == "Maps") for name in passes):
+                raise ValueError(f"incorrect cascade timings in {row}")
+            if "synthetic Sun horizon heights" not in timings:
+                raise ValueError(f"missing height pass in {row}")
+            if not all(math.isfinite(row[key]) and row[key] > 0
+                       for key in ("timed_pass_span_ns", "frame_cpu_ns")):
+                raise ValueError(f"missing measurement in {row}")
+        measurements[f"{method}, lamps {lamps}"] = {
+            key: median(row[key] for row in selected)
+            for key in ("timed_pass_span_ns", "frame_cpu_ns")
+        }
+    record = {
+        "revision": command("git", "rev-parse", "HEAD"),
+        "target": "mac-metal",
+        "os": command("sw_vers", "-productVersion"),
+        "machine": [line.strip() for line in machine.splitlines() if line.strip().startswith(
+            ("Chip:", "Chipset Model:", "Memory:", "Total Number of Cores:"))],
+        "load_average_before": load_before,
+        "load_average_after": os.getloadavg(),
+        "timed_pass_span_scope": (
+            "First timed pass begin through surface consumer end, including the scene structure "
+            "build on Traced. Queue::write_buffer transfers run ahead of that interval. Both "
+            "methods queue view/instance/light/cluster inputs and the caster heights' uniforms; "
+            "Maps also queues the two cascade view records. Lamp quality is held at its "
+            "prepared value and adds no repeated queue transfer. CPU time includes queue writes."
+        ),
+        "median_ns": measurements,
+        "samples": rows,
+    }
+    text = json.dumps(record, indent=2) + "\n"
+    print(text, end="")
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(text)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("profile", choices=["structure", "valley"])
+    parser.add_argument("profile", choices=["structure", "valley", "shadows"])
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    {"structure": structure, "valley": valley}[args.profile](args.output)
+    {"structure": structure, "valley": valley, "shadows": shadows}[args.profile](args.output)
 
 
 if __name__ == "__main__":

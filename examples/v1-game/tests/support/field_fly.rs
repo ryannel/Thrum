@@ -107,6 +107,7 @@ fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cel
                         valley_stars: false,
                         route_overlay: v1_game::RouteOverlay::Off,
                         field_meshes,
+                        ..GameSetup::default()
                     },
                 )
                 .await

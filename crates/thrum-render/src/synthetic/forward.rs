@@ -85,6 +85,9 @@ impl PreparedSynthetic {
         contribution: Option<&dyn SceneContribution>,
         exposure_side: usize,
     ) -> Result<(), RenderError> {
+        if let Some(lamps) = &self.lamp_shadows {
+            encoder.clear_buffer(lamps.unshadowed(), 0, None);
+        }
         let mut pass = self.begin_forward(encoder, target, compiled, timings)?;
         if let Some(atmosphere) = self.atmosphere.as_ref() {
             atmosphere.draw(&mut pass, exposure_side);
@@ -178,7 +181,11 @@ impl PreparedSynthetic {
         let offsets = [view_offset, 0];
         let bound = if self.bucket_route.is_some() { 2 } else { 1 };
         pass.set_bind_group(0, view_group, &offsets[..bound]);
-        pass.set_bind_group(1, &self.light[exposure_side], &[]);
+        if !depth_only && self.uses_shadow_rays() {
+            pass.set_bind_group(1, &self.ray_light_group(exposure_side)?, &[]);
+        } else {
+            pass.set_bind_group(1, &self.light[exposure_side], &[]);
+        }
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, self.history.read_group(), &[]);
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);

@@ -355,10 +355,11 @@ impl ShadowPrepared {
 
     /// Upload the fit for this recording, including retries after discarded encoders.
     /// Extreme contributed bounds can overflow the fit. Keep the base shadows in that case.
-    pub(super) fn write_recording(&self, bounds: Option<ShadowBounds>) -> bool {
+    pub(super) fn write_recording(&self, bounds: Option<ShadowBounds>, cascades: bool) -> bool {
         let cooked = bounds.and_then(|bounds| self.inputs.fit(Some(bounds)).ok());
         let fitted = cooked.as_ref().unwrap_or(&self.fitted);
-        for (index, cascade) in self.cascades.iter().enumerate() {
+        let first = if cascades { 0 } else { HEIGHT_LAYER };
+        for (index, cascade) in self.cascades.iter().enumerate().skip(first) {
             self.queue
                 .write_buffer(&cascade.buffer, 0, &fitted.caster_view(index));
         }

@@ -183,6 +183,18 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             Ok("on") => thrum_render::synthetic::DisplayOverlay::TracedGeometry,
             _ => return Err("THRUM_TRACED_VIEW must be off or on".to_owned()),
         },
+        sun_shadow_method: match launch_value("THRUM_SUN_SHADOW_METHOD").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("maps") => {
+                thrum_render::synthetic::SunShadowMethod::Maps
+            }
+            Ok("traced") => thrum_render::synthetic::SunShadowMethod::Traced,
+            _ => return Err("THRUM_SUN_SHADOW_METHOD must be maps or traced".to_owned()),
+        },
+        lamp_shadows: match launch_value("THRUM_LAMP_SHADOWS").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => false,
+            Ok("on") => true,
+            _ => return Err("THRUM_LAMP_SHADOWS must be off or on".to_owned()),
+        },
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,
         exit_entities: if content == crate::GameContent::Exit
@@ -205,9 +217,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             (Ok("valley"), Ok("reconstruction")) => crate::RouteOverlay::Reconstruction,
             (Ok("valley"), Ok("unmirrored")) => crate::RouteOverlay::Unmirrored,
             (Ok("valley"), Ok("light-off")) => crate::RouteOverlay::LightOff,
+            (Ok("valley"), Ok("lamp-stop")) => crate::RouteOverlay::LampStop,
             _ => {
                 return Err(
-                    "THRUM_ROUTE_OVERLAY must be off, proof, motion, unmirrored or light-off, with THRUM_SCENE=valley"
+                    "THRUM_ROUTE_OVERLAY must be off, proof, motion, reconstruction, unmirrored, light-off or lamp-stop, with THRUM_SCENE=valley"
                         .to_owned(),
                 );
             }

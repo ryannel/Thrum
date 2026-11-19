@@ -20,11 +20,15 @@ use thrum_test_support::{Gpu, Restriction};
 use v1_game::{FrameConfig, FrameHost, GameSetup};
 
 mod casters;
+mod contribution_shadows;
 mod cost;
 mod demand;
+mod shadows;
 pub(super) use casters::prove_casters;
+pub(super) use contribution_shadows::prove_contributions;
 pub(super) use cost::measure_valley;
 pub(super) use demand::prove_demand;
+pub(super) use shadows::{measure_shadows, prove_sun_out};
 
 pub(super) const EXTENT: [u32; 2] = [320, 180];
 pub(super) type Stats = Arc<Mutex<CookedStats>>;

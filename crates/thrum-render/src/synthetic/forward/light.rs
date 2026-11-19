@@ -23,6 +23,8 @@ impl LightBindings<'_> {
         device: &wgpu::Device,
         layout: &wgpu::BindGroupLayout,
         exposure: &[wgpu::Buffer; 2],
+        structure: Option<&wgpu::Tlas>,
+        lamps: Option<&super::super::raytrace::LampShadows>,
     ) -> [wgpu::BindGroup; 2] {
         let mut entries = vec![
             wgpu::BindGroupEntry {
@@ -92,6 +94,15 @@ impl LightBindings<'_> {
                     resource: cloud.uniform.as_entire_binding(),
                 },
             ]);
+        }
+        if let Some(structure) = structure {
+            entries.push(wgpu::BindGroupEntry {
+                binding: 15,
+                resource: structure.as_binding(),
+            });
+        }
+        if let Some(lamps) = lamps {
+            entries.extend(lamps.bindings());
         }
         std::array::from_fn(|side| {
             entries.push(wgpu::BindGroupEntry {

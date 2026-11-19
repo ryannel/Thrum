@@ -158,6 +158,7 @@ struct SceneInstances {
     count: usize,
     contributed: Vec<Option<wgpu::TlasInstance>>,
     traced_group: Option<wgpu::BindGroup>,
+    light_groups: Option<[wgpu::BindGroup; 2]>,
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     mesh_rows: Vec<u32>,
 }
@@ -174,6 +175,7 @@ impl SceneStructure {
                 count: 0,
                 contributed: Vec::new(),
                 traced_group: None,
+                light_groups: None,
                 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
                 mesh_rows: Vec::with_capacity(slots as usize),
             }),
@@ -218,6 +220,7 @@ impl SceneStructure {
             count: previous_count,
             contributed,
             traced_group,
+            light_groups,
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
             mesh_rows,
         } = &mut *state;
@@ -252,6 +255,7 @@ impl SceneStructure {
             );
             *previous_count = 0;
             *traced_group = None;
+            *light_groups = scene.create_ray_light_groups(tlas);
         }
         let list = tlas
             .get_mut_slice(0..count.max(*previous_count))
@@ -340,6 +344,50 @@ fn transform(row: &[u8; crate::abi::INSTANCE_BYTES], alpha: f32) -> [f32; 12] {
 }
 
 impl PreparedSynthetic {
+    pub(super) fn uses_shadow_rays(&self) -> bool {
+        (self.shadow.is_some() && !self.surface_uses_cascades()) || self.lamp_shadows.is_some()
+    }
+
+    fn create_ray_light_groups(&self, tlas: &wgpu::Tlas) -> Option<[wgpu::BindGroup; 2]> {
+        self.uses_shadow_rays().then(|| {
+            super::forward::LightBindings {
+                directional: &self.directional_buffer,
+                local: &self.local_light_buffer,
+                heads: &self.cluster_head_buffer,
+                indices: &self.cluster_index_buffer,
+                atmosphere: self.atmosphere.as_ref(),
+                cloud: self.cloud.as_ref(),
+                aerial: None,
+            }
+            .bind(
+                self.capabilities.device(),
+                &self.surface.light_layout,
+                &self.exposure.samples,
+                Some(tlas),
+                self.lamp_shadows.as_ref(),
+            )
+        })
+    }
+
+    pub(super) fn ray_light_group(&self, side: usize) -> Result<wgpu::BindGroup, RenderError> {
+        let mut state = self
+            .ray_structure
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .state
+            .lock()
+            .map_err(|_| RenderError::GraphPassMismatch)?;
+        let SceneInstances {
+            light_groups, tlas, ..
+        } = &mut *state;
+        if light_groups.is_none() {
+            *light_groups = self.create_ray_light_groups(tlas);
+        }
+        light_groups
+            .as_ref()
+            .map(|groups| groups[side].clone())
+            .ok_or(RenderError::GraphPassMismatch)
+    }
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn retained_ray_meshes(&self) -> Option<RetainedRayMeshes> {
         self.ray_structure.as_ref()?;
@@ -404,6 +452,9 @@ impl PreparedSynthetic {
             .record(self, &self.mesh_arena, encoder, contribution)
     }
 }
+
+mod lamps;
+pub(super) use lamps::{LampShadows, structure_layout_entry};
 
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 mod diagnostics;

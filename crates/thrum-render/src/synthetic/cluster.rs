@@ -10,7 +10,7 @@ pub(super) const X: usize = 32;
 pub(super) const Y: usize = 18;
 pub(super) const Z: usize = 16;
 const COUNT: usize = X * Y * Z;
-const CAPACITY: usize = 32;
+pub(super) const CAPACITY: usize = 32;
 pub(super) const GPU_MAX_SOURCES: usize = 4;
 
 /// One finite-radius local source in the synthetic fixture. Position is in

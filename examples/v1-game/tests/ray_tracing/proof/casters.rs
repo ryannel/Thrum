@@ -185,7 +185,7 @@ fn view(target: [f32; 3]) -> SyntheticView {
     .expect("frustum")
 }
 
-struct World;
+pub(super) struct World;
 const TICK: SourceTick = SourceTick {
     epoch: 1,
     timeline: 1,

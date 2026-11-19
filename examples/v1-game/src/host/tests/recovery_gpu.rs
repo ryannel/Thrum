@@ -396,6 +396,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
                 valley_stars: false,
                 route_overlay: crate::RouteOverlay::Off,
                 field_meshes: true,
+                ..crate::GameSetup::default()
             },
         )
         .await

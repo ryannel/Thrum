@@ -32,6 +32,7 @@ const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
 
 /// Each logical slot's admitted mesh row. Every slot names a row the arena
 /// holds.
+#[derive(Clone)]
 pub(super) struct MeshSelection {
     pub(super) slots: Vec<MeshId>,
     pub(super) aloft: Vec<MeshId>,

@@ -10,6 +10,22 @@ mod ray_tracing {
     use thrum_render::synthetic::mesh_rows::MeshRowStatus;
 
     #[test]
+    fn sun_out() {
+        proof::prove_sun_out();
+    }
+
+    #[test]
+    fn contributions() {
+        proof::prove_contributions();
+    }
+
+    #[test]
+    #[ignore = "contended valley timing is run by scripts/ray_tracing_cost.py"]
+    fn shadow_cost() {
+        proof::measure_shadows();
+    }
+
+    #[test]
     fn edit() {
         let metal = Metal::new(1);
         let mut fixture = Fixture::new("edit");

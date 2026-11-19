@@ -33,6 +33,7 @@ fn sample(order: u64) -> FrameSample {
         timing_fault: false,
         timing_requested: true,
         culling_mode: CullMode::Direct,
+        shadow_selection: thrum_render::synthetic::ShadowSelection::default(),
         culling_selection: CullingSelection {
             requested: CullMode::Direct,
             resolved: CullMode::Direct,

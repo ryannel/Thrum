@@ -76,8 +76,10 @@ impl Lighting {
         }
         .bind(
             device,
-            &prepared.surface.light_layout,
+            &prepared.map_light_layout,
             &prepared.exposure.samples,
+            None,
+            None,
         );
         Ok(Self {
             groups,

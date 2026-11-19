@@ -357,7 +357,8 @@ def run(args):
     else:
         environment.pop('THRUM_CAPTURE_RUNTIME_ROUTE', None)
     if store:
-        environment.update(THRUM_ASSET_STORE=str(store), THRUM_SCENE="exit" if args.case.startswith('exit-') else "valley")
+        scene = getattr(args, "scene", None) or ("exit" if args.case.startswith("exit-") else "valley")
+        environment.update(THRUM_ASSET_STORE=str(store), THRUM_SCENE=scene)
     manifest["environment"] = {key: value for key, value in environment.items() if key.startswith("THRUM_")}
     records = []
     process = None
@@ -458,6 +459,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--binary", type=Path, default=Path("target/debug/v1-game"))
     parser.add_argument("--store", type=Path)
+    parser.add_argument("--scene", choices=["valley", "exit"], help="cooked scene for a fixed checkpoint")
     parser.add_argument("--params", type=Path, default=ROOT / "examples/v1-game/params/showcase-noon.params.json")
     parser.add_argument("--route", type=Path, help="checked cooked route for --case route")
     parser.add_argument('--reconstruction', choices=['off','taau'])

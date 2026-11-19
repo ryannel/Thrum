@@ -100,6 +100,8 @@ pub enum RouteOverlay {
     Unmirrored,
     /// The proof overlay with the retuned light at zero intensity.
     LightOff,
+    /// Valley night stop with four visible lamps around the contact props.
+    LampStop,
     /// Diagnostic control: omit only the overlay's mirrored instance.
     #[cfg(feature = "draw-probe")]
     MirrorOmit,

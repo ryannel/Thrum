@@ -34,6 +34,48 @@ pub enum RayStructureSelection {
     /// The scene could not prepare its structures and fell back.
     PreparationFailed,
 }
+
+/// The requested or resolved method of surface Sun visibility.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum SunShadowMethod {
+    /// Raster cascades and caster heights.
+    #[default]
+    Maps,
+    /// Hard centre ray on the main view.
+    Traced,
+}
+
+/// Selection of the scene's direct-light shadow methods for one preparation.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ShadowSelection {
+    /// Requested Sun method.
+    pub requested_sun: SunShadowMethod,
+    /// Resolved Sun method.
+    pub sun: SunShadowMethod,
+    /// Requested lamp shadows.
+    pub requested_lamps: bool,
+    /// Whether the scene traces lamp shadows.
+    pub lamps: bool,
+    /// Shared refusal reason for any requested traced methods.
+    pub fallback: Option<RayStructureSelection>,
+}
+
+impl ShadowSelection {
+    pub(crate) fn resolve(
+        sun: SunShadowMethod,
+        lamps: bool,
+        admission: RayStructureSelection,
+    ) -> Self {
+        let admitted = admission == RayStructureSelection::Enabled;
+        Self {
+            requested_sun: sun,
+            sun: if admitted { sun } else { SunShadowMethod::Maps },
+            requested_lamps: lamps,
+            lamps: admitted && lamps,
+            fallback: (!admitted && (sun == SunShadowMethod::Traced || lamps)).then_some(admission),
+        }
+    }
+}
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub(crate) mod apple;
 
@@ -54,6 +96,8 @@ pub struct DeviceCapabilities {
     hardware: Vec<HardwareSelection>,
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     pub(crate) observe_ray_preparation: bool,
+    #[cfg(feature = "creation-counters")]
+    pub(crate) fail_traced_pipeline: bool,
 }
 
 impl DeviceCapabilities {
@@ -143,6 +187,8 @@ impl DeviceCapabilities {
             hardware: Vec::new(),
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
             observe_ray_preparation: false,
+            #[cfg(feature = "creation-counters")]
+            fail_traced_pipeline: false,
         }
     }
 
@@ -200,6 +246,14 @@ impl DeviceCapabilities {
         } else {
             RayStructureSelection::Enabled
         }
+    }
+
+    /// Inject a shader validation failure after allocating the traced candidate's structure.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn with_traced_pipeline_failure(mut self) -> Self {
+        self.fail_traced_pipeline = true;
+        self
     }
 
     /// Actual native unified-memory fact, unknown without a retained native adapter.

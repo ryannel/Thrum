@@ -198,6 +198,7 @@ pub async fn create_field_game(
             valley_stars: false,
             route_overlay: crate::RouteOverlay::Off,
             field_meshes,
+            ..crate::GameSetup::default()
         },
     )
     .await

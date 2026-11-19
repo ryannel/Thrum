@@ -14,7 +14,15 @@ pub struct RayStructureInstance {
 }
 
 impl PreparedSynthetic {
-    pub(crate) fn ray_inspection_shadow_volumes(
+    /// Exact forward source used by a diagnostic probe of the composed operations.
+    #[must_use]
+    pub fn forward_source_for_probe(&self) -> &str {
+        &self.surface.shader_source
+    }
+
+    /// Inspect the prepared caster volumes, including the independent height-map volume.
+    #[must_use]
+    pub fn ray_inspection_shadow_volumes(
         &self,
         bounds: Option<crate::contribution::ShadowBounds>,
     ) -> Vec<crate::contribution::SecondaryShadowCascade> {

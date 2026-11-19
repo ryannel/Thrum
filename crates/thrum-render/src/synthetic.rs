@@ -9,6 +9,7 @@
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared, CloudPrepared, SunOpticalDepth};
 use crate::capabilities::{DeviceCapabilities, RayStructureSelection};
+pub use crate::capabilities::{ShadowSelection, SunShadowMethod};
 use crate::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SurfaceParts,
 };
@@ -45,6 +46,7 @@ mod mesh_arena;
 mod mesh_route;
 pub mod mesh_rows;
 mod native_witness;
+mod preparation;
 mod raytrace;
 pub(crate) use raytrace::RetainedRayMeshes;
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
@@ -129,6 +131,10 @@ pub struct SyntheticScene {
     pub view: SyntheticView,
     /// Prepare two finite perspective Sun cascades; off avoids their maps and passes.
     pub sun_shadows: bool,
+    /// Main view's Sun visibility method, when the Sun casts shadows.
+    pub sun_shadow_method: SunShadowMethod,
+    /// Ask for hard shadows from the main view's local lights.
+    pub lamp_shadows: bool,
     /// Camera opaque draw: the direct oracle or GPU frustum compaction.
     pub camera_culling: CullMode,
     /// Optional immutable unit equatorial directions with incident lux in w.
@@ -268,6 +274,8 @@ impl SyntheticScene {
             local_lights: Vec::new(),
             view: SyntheticView::default(),
             sun_shadows: false,
+            sun_shadow_method: SunShadowMethod::Maps,
+            lamp_shadows: false,
             camera_culling: CullMode::Direct,
             star_catalogue: None,
             meshes: None,
@@ -494,6 +502,8 @@ pub enum RenderError {
     Timing(TimingError),
     /// Pipeline/resource creation was rejected by the device.
     Validation(String),
+    /// Preparing the optional scene ray structure failed.
+    RayPreparation,
     /// Empty/unreasonably large synthetic fixture.
     SceneCapacity,
     /// Changed instance slots were out of bounds, duplicated or unordered.
@@ -574,6 +584,8 @@ pub struct PreparedSynthetic {
     ray_structure: Option<raytrace::SceneStructure>,
     traced_view: Option<Box<raytrace::TracedView>>,
     ray_structure_selection: RayStructureSelection,
+    shadow_selection: ShadowSelection,
+    lamp_shadows: Option<raytrace::LampShadows>,
     row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
@@ -603,6 +615,7 @@ pub struct PreparedSynthetic {
     clusters: ClusterTable,
     cluster_compute: Option<ClusterCompute>,
     light: [wgpu::BindGroup; 2],
+    map_light_layout: wgpu::BindGroupLayout,
     materials: wgpu::BindGroup,
     history: TransformHistory,
     exposure: ExposureResolve,
@@ -686,7 +699,7 @@ impl SceneContext<'_> {
                 .contribution
                 .as_deref()
                 .and_then(SceneContribution::shadow_bounds);
-            shadow.write_recording(bounds)
+            shadow.write_recording(bounds, self.prepared.surface_uses_cascades())
         }))
     }
 
@@ -698,15 +711,23 @@ impl SceneContext<'_> {
             .caster_culling
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        culling
-            .encode(
+        let result = if self.prepared.surface_uses_cascades() {
+            culling.encode(
                 self.encoder,
                 self.generation,
                 pass,
                 self.timings.as_deref_mut(),
-            )?
-            .then_some(())
-            .ok_or(RenderError::GraphPassMismatch)
+            )
+        } else {
+            culling.encode_range(
+                self.encoder,
+                self.generation,
+                pass,
+                self.timings.as_deref_mut(),
+                shadow::HEIGHT_LAYER..shadow::MAPS,
+            )
+        };
+        result?.then_some(()).ok_or(RenderError::GraphPassMismatch)
     }
 
     fn shadow(&mut self, index: usize, pass: &CompiledPass) -> Result<(), RenderError> {
@@ -1034,785 +1055,6 @@ impl PreparedSynthetic {
         .await
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
-    )]
-    async fn prepare_with_meshes(
-        capabilities: &DeviceCapabilities,
-        queue: &wgpu::Queue,
-        scene: &SyntheticScene,
-        lighting: FrameLighting,
-        exposure: f32,
-        internal: Option<MeshSelection>,
-        retained_ray_meshes: Option<RetainedRayMeshes>,
-    ) -> Result<Self, RenderError> {
-        capabilities.recipe().map_err(RenderError::Recipe)?;
-        let mut ray_structure_selection =
-            capabilities.resolve_ray_structure(scene.ray_structure || scene.view.traced_geometry());
-        let culling_selection = CullingSelection::resolve(scene.camera_culling, capabilities);
-        let camera_mode = culling_selection.resolved;
-        let device = capabilities.device();
-        // Admit the whole selection before GPU work.
-        let (mut mesh_arena, admitted) = admit_meshes(
-            scene,
-            ArenaLimits::for_binding(device.limits().max_storage_buffer_binding_size),
-        )?;
-        let selection = internal.or(admitted);
-        let meshes = selection.as_ref();
-        let generation = capabilities.generation();
-        checked_display_gain(exposure)?;
-        let (mut light_data, background, presentation_light_clamps) =
-            pack_frame_lighting(lighting)?;
-        // Prepare the declared shadow recipe even while the Sun is dark, so a
-        // later live light change can use the same pipelines and target maps.
-        let shadow_enabled = scene.sun_shadows;
-        let gpu_clusters = (1..=cluster::GPU_MAX_SOURCES).contains(&scene.local_lights.len());
-        let clusters = if gpu_clusters {
-            ClusterTable::build_gpu(&scene.local_lights, &scene.view)?
-        } else {
-            ClusterTable::build(&scene.local_lights, &scene.view)?
-        };
-        let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
-        light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
-        let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
-        let dropped_light_references = clusters.dropped_references;
-        let limits = capabilities.limits();
-        if scene.sun_optical_depth.is_some() && !matches!(lighting, FrameLighting::Atmosphere(_)) {
-            return Err(RenderError::InvalidLighting);
-        }
-        if matches!(lighting, FrameLighting::Atmosphere(_))
-            && (limits.max_sampled_textures_per_shader_stage
-                < 9 + 2 * u32::from(shadow_enabled) + u32::from(scene.sun_optical_depth.is_some())
-                || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled)
-                || limits.max_bindings_per_bind_group
-                    < if scene.sun_optical_depth.is_some() {
-                        15
-                    } else {
-                        13
-                    })
-        {
-            return Err(AbiError::DeviceLimits.into());
-        }
-        let cloud = scene
-            .sun_optical_depth
-            .as_ref()
-            .map(|field| {
-                CloudPrepared::new(
-                    device,
-                    queue,
-                    field,
-                    match lighting {
-                        FrameLighting::Atmosphere(frame) => frame.simulation_time_seconds(),
-                        _ => 0.0,
-                    },
-                )
-            })
-            .transpose()?;
-        if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
-            .into_iter()
-            .any(|bytes| bytes > limits.max_storage_buffer_binding_size)
-        {
-            return Err(RenderError::SceneCapacity);
-        }
-        let classes = TextureClasses::defaults(limits)?;
-        let (material_bytes, instance_bytes) =
-            abi::table_bytes(scene.materials.len(), scene.instances.len(), limits)?;
-        let material_count =
-            u32::try_from(scene.materials.len()).map_err(|_| RenderError::SceneCapacity)?;
-        let instance_count =
-            u32::try_from(scene.instances.len()).map_err(|_| RenderError::SceneCapacity)?;
-        if u64::from(instance_count) * history_gpu::ENTRY_BYTES
-            > limits.max_storage_buffer_binding_size
-        {
-            return Err(RenderError::SceneCapacity);
-        }
-        let mut packed_materials = Vec::with_capacity(
-            usize::try_from(material_bytes).map_err(|_| RenderError::SceneCapacity)?,
-        );
-        for material in &scene.materials {
-            // This is a single opaque static closure, not admission for all PBR flags.
-            if material.flags != [0; 4] || material.texture_layers != [0; 4] {
-                return Err(RenderError::UnsupportedSyntheticMaterial);
-            }
-            packed_materials.extend_from_slice(&material.pack(&classes)?);
-        }
-        let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
-        let ray_structure = if ray_structure_selection == RayStructureSelection::Enabled {
-            let structure = raytrace::prepare(
-                capabilities,
-                queue,
-                &mut mesh_arena,
-                instance_count,
-                retained_ray_meshes,
-            )
-            .await;
-            if structure.is_none() {
-                ray_structure_selection = RayStructureSelection::PreparationFailed;
-            }
-            structure
-        } else {
-            None
-        };
-        let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
-        let material_buffer = storage_buffer(
-            device,
-            queue,
-            "synthetic materials",
-            &packed_materials,
-            material_bytes,
-        );
-        let instance_buffer = storage_buffer(
-            device,
-            queue,
-            "synthetic forward opaque",
-            &packed_instances.bytes,
-            instance_bytes,
-        );
-        let mut instance_upload = InstanceUpload::new(
-            instance_buffer,
-            packed_instances,
-            &scene.instances,
-            material_count,
-            instance_count,
-        );
-        let view_alignment = limits.min_uniform_buffer_offset_alignment.max(1);
-        let view_stride = u32::try_from(VIEW_BYTES)
-            .expect("view record fits u32")
-            .checked_add(view_alignment - 1)
-            .map(|bytes| bytes / view_alignment * view_alignment)
-            .filter(|stride| *stride <= u32::MAX / VIEW_SLOTS)
-            .ok_or(RenderError::SceneCapacity)?;
-        let view_capacity = u64::from(view_stride) * u64::from(VIEW_SLOTS);
-        if view_capacity > limits.max_buffer_size {
-            return Err(RenderError::SceneCapacity);
-        }
-        let view_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("synthetic ABI2 view"),
-            size: view_capacity,
-            usage: wgpu::BufferUsages::UNIFORM
-                | wgpu::BufferUsages::COPY_DST
-                | draw_witness_usage(),
-            mapped_at_creation: false,
-        });
-        queue.write_buffer(
-            &view_buffer,
-            0,
-            &scene.view.pack_view(&scene.view, exposure),
-        );
-        let view_entries = forward::view_entries(
-            meshes.is_some(),
-            camera_mode,
-            shadow_enabled,
-            matches!(lighting, FrameLighting::Atmosphere(_)),
-        );
-        let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("synthetic view and target aux"),
-            entries: &view_entries,
-        });
-        let mut light_entries = vec![
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(LIGHT_BYTES as u64),
-                },
-                count: None,
-            },
-            storage_layout(1, wgpu::ShaderStages::FRAGMENT, 32),
-            storage_layout(2, wgpu::ShaderStages::FRAGMENT, 8),
-            storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
-        ];
-        if matches!(lighting, FrameLighting::Atmosphere(_)) {
-            for (binding, dimension) in [
-                (4, wgpu::TextureViewDimension::D2Array),
-                (5, wgpu::TextureViewDimension::D2Array),
-                (8, wgpu::TextureViewDimension::Cube),
-                (9, wgpu::TextureViewDimension::D2),
-                (11, wgpu::TextureViewDimension::D2),
-            ] {
-                light_entries.push(wgpu::BindGroupLayoutEntry {
-                    binding,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: dimension,
-                        multisampled: false,
-                    },
-                    count: None,
-                });
-            }
-            for binding in [6, 10] {
-                light_entries.push(wgpu::BindGroupLayoutEntry {
-                    binding,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                });
-            }
-            light_entries.push(uniform_layout(7, 128, wgpu::ShaderStages::FRAGMENT));
-        }
-        light_entries.push(uniform_layout(12, 16, wgpu::ShaderStages::FRAGMENT));
-        if cloud.is_some() {
-            light_entries.push(wgpu::BindGroupLayoutEntry {
-                binding: 13,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            });
-            light_entries.push(uniform_layout(
-                14,
-                if scene
-                    .sun_optical_depth
-                    .as_ref()
-                    .is_some_and(SunOpticalDepth::gpu_written)
-                {
-                    size_of::<crate::atmosphere::GpuSunMapping>() as u64
-                } else {
-                    48
-                },
-                wgpu::ShaderStages::FRAGMENT,
-            ));
-        }
-        let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("synthetic directional and clustered sources"),
-            entries: &light_entries,
-        });
-        let directional = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("synthetic directional source"),
-            size: LIGHT_BYTES as u64,
-            usage: wgpu::BufferUsages::UNIFORM
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::STORAGE,
-            mapped_at_creation: false,
-        });
-        queue.write_buffer(&directional, 0, &light_data);
-        let exposure_samples = ExposureResolve::allocate_samples(device);
-        let atmosphere = match lighting {
-            FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
-                device,
-                queue,
-                generation,
-                frame,
-                &scene.view,
-                &directional,
-                &exposure_samples,
-            )),
-            _ => None,
-        };
-        let local_lights = storage_buffer(
-            device,
-            queue,
-            "synthetic local lights",
-            &clusters.lights,
-            local_light_bytes,
-        );
-        let cluster_heads = storage_buffer(
-            device,
-            queue,
-            "synthetic cluster heads",
-            &clusters.heads,
-            cluster_head_bytes,
-        );
-        let cluster_indices = storage_buffer(
-            device,
-            queue,
-            "synthetic cluster indices",
-            &clusters.indices,
-            cluster_index_bytes,
-        );
-        let cluster_compute = gpu_clusters.then(|| {
-            let bounds = storage_buffer(
-                device,
-                queue,
-                "synthetic cluster source bounds",
-                &clusters.bounds,
-                u64::try_from(clusters.bounds.len()).expect("32 sources fit u64"),
-            );
-            ClusterCompute::new(device, bounds, &cluster_heads, &cluster_indices)
-        });
-        let light = forward::LightBindings {
-            directional: &directional,
-            local: &local_lights,
-            heads: &cluster_heads,
-            indices: &cluster_indices,
-            atmosphere: atmosphere.as_ref(),
-            cloud: cloud.as_ref(),
-            aerial: None,
-        }
-        .bind(device, &light_layout, &exposure_samples);
-        let mut entries = vec![storage_layout(
-            0,
-            wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
-            abi::MATERIAL_BYTES as u64,
-        )];
-        for binding in 1..=4 {
-            entries.push(wgpu::BindGroupLayoutEntry {
-                binding,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2Array,
-                    multisampled: false,
-                },
-                count: None,
-            });
-        }
-        entries.push(wgpu::BindGroupLayoutEntry {
-            binding: 5,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-            count: None,
-        });
-        let material_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("ABI2 material table and classes"),
-            entries: &entries,
-        });
-        if mesh_arena.buffers().is_none() {
-            mesh_arena.upload(device, queue);
-        }
-        let cube_draw = mesh_arena
-            .row(mesh_arena::MeshId::CUBE)
-            .and_then(|row| {
-                let base = row.draw_base_vertex().ok()?;
-                Some((row.first_index..row.first_index + row.index_count, base))
-            })
-            .ok_or(RenderError::SceneCapacity)?;
-        let arena_buffers = mesh_arena.buffers().ok_or(RenderError::SceneCapacity)?;
-        let caster_boxes = meshes
-            .map(|selection| {
-                selection
-                    .slots
-                    .iter()
-                    .map(|&mesh| {
-                        mesh_arena
-                            .row(mesh)
-                            .map(|row| CasterBox::from_bounds(row.bounds))
-                    })
-                    .collect::<Option<Vec<_>>>()
-                    .ok_or(RenderError::SceneCapacity)
-            })
-            .transpose()?;
-        let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("ABI2 instance table"),
-            entries: &[
-                storage_layout(0, wgpu::ShaderStages::VERTEX, abi::INSTANCE_BYTES as u64),
-                storage_layout(1, wgpu::ShaderStages::VERTEX, history_gpu::ENTRY_BYTES),
-                uniform_layout(2, history_gpu::SERIAL_BYTES, wgpu::ShaderStages::VERTEX),
-                storage_layout(3, wgpu::ShaderStages::VERTEX, mesh_arena::VERTEX_BYTES),
-            ],
-        });
-        let history = TransformHistory::new(
-            device,
-            queue,
-            instance_upload.buffer(),
-            &arena_buffers.vertices,
-            &instance_layout,
-            instance_count,
-        );
-        let shadow = if shadow_enabled {
-            let direction = packed_light_direction(&light_data);
-            Some(ShadowPrepared::new(
-                device,
-                queue,
-                &scene.view,
-                (&scene.instances, caster_boxes.as_deref()),
-                direction,
-                &instance_layout,
-            )?)
-        } else {
-            None
-        };
-        let air_shadow = (shadow.is_some() && atmosphere.is_some()).then(|| {
-            AirShadowPrepared::new(device, shadow::SAMPLE_BYTES as u64, LIGHT_BYTES as u64)
-        });
-        if let Some(shadow) = shadow.as_ref() {
-            instance_upload.seed_shadow_clamps(&scene.instances, |slot, instance| {
-                instance.ids[3] != 0
-                    && !shadow.contains_caster(instance, caster_box(caster_boxes.as_deref(), slot))
-            });
-        }
-        let views: Vec<wgpu::TextureView> = classes
-            .arrays()
-            .iter()
-            .map(|array| {
-                let texture = device.create_texture(&wgpu::TextureDescriptor {
-                    label: Some("typed default texture class"),
-                    size: wgpu::Extent3d {
-                        width: 1,
-                        height: 1,
-                        depth_or_array_layers: 1,
-                    },
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: wgpu::TextureDimension::D2,
-                    format: array.class.format(),
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                    view_formats: &[],
-                });
-                queue.write_texture(
-                    wgpu::TexelCopyTextureInfo {
-                        texture: &texture,
-                        mip_level: 0,
-                        origin: wgpu::Origin3d::ZERO,
-                        aspect: wgpu::TextureAspect::All,
-                    },
-                    &array.class.default_texel(),
-                    wgpu::TexelCopyBufferLayout {
-                        offset: 0,
-                        bytes_per_row: Some(4),
-                        rows_per_image: Some(1),
-                    },
-                    wgpu::Extent3d {
-                        width: 1,
-                        height: 1,
-                        depth_or_array_layers: 1,
-                    },
-                );
-                texture.create_view(&wgpu::TextureViewDescriptor {
-                    dimension: Some(wgpu::TextureViewDimension::D2Array),
-                    ..Default::default()
-                })
-            })
-            .collect();
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
-        let materials = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("synthetic material classes"),
-            layout: &material_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: material_buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&views[0]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&views[1]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(&views[2]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::TextureView(&views[3]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 5,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                },
-            ],
-        });
-        let bind_group_layouts = [
-            Some(&view_layout),
-            Some(&light_layout),
-            Some(&material_layout),
-            Some(&instance_layout),
-        ];
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("synthetic ABI2"),
-            bind_group_layouts: &bind_group_layouts,
-            immediate_size: 0,
-        });
-        let (shader_source, shader, fragment_entry) = scene_source::prepare(
-            device,
-            atmosphere.is_some(),
-            air_shadow.is_some(),
-            scene.sun_optical_depth.as_ref(),
-            scene_source::SunShadows::from(shadow.is_some()),
-        );
-        let vertex_entry = camera_culling::vertex_entry(camera_mode);
-        let create_route_pipeline = |vertex_entry, primitive, depth_only: bool| {
-            device.render(&wgpu::RenderPipelineDescriptor {
-                label: Some("prepared opaque synthetic role"),
-                layout: Some(&layout),
-                vertex: wgpu::VertexState {
-                    module: &shader,
-                    entry_point: Some(vertex_entry),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[],
-                },
-                primitive,
-                depth_stencil: Some(wgpu::DepthStencilState {
-                    format: DEPTH_FORMAT,
-                    depth_write_enabled: Some(true),
-                    depth_compare: Some(wgpu::CompareFunction::Greater),
-                    stencil: wgpu::StencilState::default(),
-                    bias: wgpu::DepthBiasState::default(),
-                }),
-                multisample: wgpu::MultisampleState::default(),
-                // The depth prepass shares the module, vertex entry, primitive
-                // and depth state, so it rasterizes the same depth.
-                fragment: (!depth_only).then_some(wgpu::FragmentState {
-                    module: &shader,
-                    entry_point: Some(fragment_entry),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &[
-                        Some(wgpu::ColorTargetState {
-                            format: SCENE_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                        Some(wgpu::ColorTargetState {
-                            format: MOTION_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                        Some(wgpu::ColorTargetState {
-                            format: REACTIVE_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                    ],
-                }),
-                multiview_mask: None,
-                cache: None,
-            })
-        };
-        let create_pipeline = |cull_mode, depth_only| {
-            let primitive = wgpu::PrimitiveState {
-                cull_mode,
-                ..Default::default()
-            };
-            create_route_pipeline(vertex_entry, primitive, depth_only)
-        };
-        let bucket_route = meshes
-            .map(|selection| {
-                BucketRoute::new(
-                    device,
-                    queue,
-                    selection,
-                    &mesh_arena,
-                    &instance_upload,
-                    &scene.instances,
-                    |primitive, depth_only| {
-                        create_route_pipeline("compacted_vertex", primitive, depth_only)
-                    },
-                    camera_mode == CullMode::Occlusion,
-                )
-            })
-            .transpose()?;
-        let visibility = camera_culling::prepare(
-            device,
-            queue,
-            generation,
-            camera_mode,
-            (instance_count, instance_upload.active_count()),
-            bucket_route.as_ref().map(|route| (route, &mesh_arena)),
-        )?;
-        let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
-        let pipeline_two_sided = create_pipeline(None, false);
-        let depth_prepass = (camera_mode == CullMode::Occlusion).then(|| {
-            [
-                create_pipeline(Some(wgpu::Face::Back), true),
-                create_pipeline(None, true),
-            ]
-        });
-        let shadow_members = shadow
-            .as_ref()
-            .and_then(ShadowPrepared::member_layout)
-            .zip(bucket_route.as_ref())
-            .map(|(layout, route)| {
-                device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("synthetic Sun caster members"),
-                    layout,
-                    entries: &[route.members_entry(0)],
-                })
-            });
-        // Direct draws every admitted caster in every Sun pass: the oracle.
-        let caster_culling = match (&shadow, &bucket_route, &visibility) {
-            (Some(shadow), Some(route), Some(_)) => {
-                let layout = shadow
-                    .member_layout()
-                    .ok_or(RenderError::GraphPassMismatch)?;
-                let mut culling = CasterCulling::new(
-                    device,
-                    queue,
-                    &camera_culling::mesh_records(&mesh_arena)?,
-                    route.shape()?,
-                    &CasterInputs {
-                        instances: instance_upload.buffer(),
-                        serials: history.serial_buffer(),
-                        members: route.member_inputs(),
-                        views: shadow.caster_views(),
-                    },
-                );
-                culling.set_member_groups(route.groups());
-                let groups = culling
-                    .lists()
-                    .map(|(list, _)| {
-                        device.create_bind_group(&wgpu::BindGroupDescriptor {
-                            label: Some("synthetic Sun culled casters"),
-                            layout,
-                            entries: &[wgpu::BindGroupEntry {
-                                binding: 0,
-                                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                                    buffer: list,
-                                    offset: 0,
-                                    size: wgpu::BufferSize::new(culling.segment_bytes()),
-                                }),
-                            }],
-                        })
-                    })
-                    .collect();
-                Some((culling, groups))
-            }
-            _ => None,
-        };
-        let exposure_resolve = ExposureResolve::new(
-            device,
-            &directional,
-            history.serial_buffer(),
-            exposure_samples,
-        );
-        exposure_resolve.update(
-            queue,
-            scene.view.exposure_policy(exposure, atmosphere.is_some()),
-        );
-        let display = SdrToneStage::new(
-            device,
-            PipelineKey {
-                role: 1,
-                device_generation: generation,
-                revision: SYNTHETIC_REVISION,
-            },
-        );
-        let stars = if atmosphere.is_some() {
-            scene
-                .star_catalogue
-                .map(|records| {
-                    StarPrepared::new(
-                        device,
-                        records,
-                        limits.max_storage_buffer_binding_size,
-                        &light_data,
-                    )
-                })
-                .transpose()?
-        } else {
-            None
-        };
-        let temporal = temporal::TemporalInputs::new(device);
-        let taau = scene
-            .view
-            .reconstruction()
-            .then(|| match capabilities.reconstructor() {
-                crate::capabilities::Reconstructor::Taau => {
-                    taau::Taau::new(device, scene.view.reconstruction_reference())
-                }
-            });
-        let traced_view = (scene.view.traced_geometry() && ray_structure.is_some())
-            .then(|| Box::new(raytrace::TracedView::new(device, &view_layout)));
-        if let Some(error) = scope.pop().await {
-            return Err(RenderError::Validation(error.to_string()));
-        }
-        Ok(Self {
-            native: if scene.view.native_witness() == NativeWitness::Off {
-                None
-            } else {
-                Some(native_witness::Factory::new(
-                    capabilities,
-                    queue,
-                    scene.view.native_witness(),
-                ))
-            },
-            temporal_inputs: scene.view.temporal_inputs(),
-            temporal,
-            taau,
-            capabilities: capabilities.clone(),
-            culling_selection,
-            classes,
-            owner: Arc::new(()),
-            key: PipelineKey {
-                device_generation: generation,
-                revision: SYNTHETIC_REVISION,
-                role: 0,
-            },
-            pipeline,
-            pipeline_two_sided,
-            depth_prepass,
-            row_updates: scene
-                .meshes
-                .as_ref()
-                .and_then(|meshes| meshes.updates.clone())
-                .map(|updates| mesh_rows::LiveRows::new(updates, &mut mesh_arena)),
-            mesh_arena,
-            ray_structure,
-            traced_view,
-            ray_structure_selection,
-            bucket_route,
-            caster_boxes,
-            shadow_members,
-            caster_culling,
-            cube_draw,
-            display,
-            view_layout,
-            view_buffer,
-            view_stride,
-            view_sample: scene.view,
-            jitter_phase: 0,
-            pending_view: None,
-            frame_revision: 0,
-            cloud,
-            directional_buffer: directional,
-            local_light_buffer: local_lights,
-            cluster_head_buffer: cluster_heads,
-            cluster_index_buffer: cluster_indices,
-            clusters,
-            cluster_compute,
-            light,
-            materials,
-            history,
-            visibility,
-            stars,
-            secondary: Vec::new(),
-            secondary_handles: Vec::new(),
-            secondary_sources: Vec::new(),
-            exposure: exposure_resolve,
-            history_source: None,
-            instance_upload,
-            material_bytes,
-            instance_bytes,
-            instance_count,
-            exposure_bits: exposure.to_bits(),
-            local_light_bytes,
-            cluster_head_bytes,
-            cluster_index_bytes,
-            dropped_light_references,
-            presentation_light_clamps,
-            background,
-            shadow,
-            air_shadow,
-            atmosphere,
-            surface: SurfaceParts {
-                shader_source,
-                pipeline_layout: layout,
-                light_layout,
-                material_layout,
-                fragment_entry,
-            },
-            contribution_passes: ContributionPasses::default(),
-            effect_graph: crate::contribution::EffectGraph::default(),
-            effect_time: crate::contribution::EffectTime {
-                epoch: 0,
-                timeline: 0,
-                tick: 0,
-                tick_duration: std::time::Duration::from_secs_f64(1.0 / 60.0),
-                alpha: 1.0,
-                display_phase: 1.0,
-                capture: false,
-            },
-        })
-    }
     /// Immutable facts shared by every preparation on this adapter generation.
     pub fn capabilities(&self) -> &DeviceCapabilities {
         &self.capabilities
@@ -1839,7 +1081,12 @@ impl PreparedSynthetic {
     pub fn scene_pass_count(&self) -> u32 {
         5 + u32::from(self.temporal_witness_enabled())
             + u32::from(self.taau.is_some())
-            + u32::from(self.shadow.is_some()) * shadow::LAYERS
+            + u32::from(self.shadow.is_some())
+                * if self.surface_uses_cascades() {
+                    shadow::LAYERS
+                } else {
+                    1
+                }
             + u32::from(self.caster_culling.is_some())
             + camera_culling::pass_count(self.camera_culling())
             + u32::from(self.stars.is_some())
@@ -1872,6 +1119,64 @@ impl PreparedSynthetic {
     /// Whether the requested structure was prepared, or why the scene draws without it.
     pub fn ray_structure_selection(&self) -> RayStructureSelection {
         self.ray_structure_selection
+    }
+
+    /// Requested and resolved hard-shadow methods for this preparation.
+    #[must_use]
+    pub fn shadow_selection(&self) -> ShadowSelection {
+        self.shadow_selection
+    }
+
+    fn surface_uses_cascades(&self) -> bool {
+        self.shadow_selection.sun == SunShadowMethod::Maps
+    }
+
+    pub(crate) fn lamp_quality(&self) -> &[crate::contribution::QualityKnob] {
+        self.lamp_shadows
+            .as_ref()
+            .map_or(&[], |lamps| lamps.settings.knobs())
+    }
+
+    pub(crate) fn set_lamp_quality(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Option<Result<(), crate::contribution::QualityError>> {
+        self.lamp_shadows
+            .as_mut()
+            .filter(|_| name == raytrace::LampShadows::KNOB)
+            .map(|lamps| lamps.settings.set(name, value))
+    }
+
+    pub(crate) fn commit_lamp_quality(&mut self, queue: &wgpu::Queue) -> bool {
+        self.lamp_shadows.as_mut().is_some_and(|lamps| {
+            lamps.commit(queue) == crate::contribution::QualityInvalidation::ViewHistory
+        })
+    }
+
+    /// The counter written by the last encoded forward pass, or absent when
+    /// lamp shadows are off. A diagnostic consumer may copy it after encode.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn unshadowed_lamp_counter(&self) -> Option<&wgpu::Buffer> {
+        self.lamp_shadows
+            .as_ref()
+            .map(raytrace::LampShadows::unshadowed)
+    }
+
+    /// Set and commit the production lamp quality knob for an offscreen probe.
+    /// # Errors
+    /// The scene must trace lamps and the limit must fit the cluster capacity.
+    #[cfg(feature = "creation-counters")]
+    pub fn set_lamp_ray_limit_for_probe(
+        &mut self,
+        queue: &wgpu::Queue,
+        limit: u32,
+    ) -> Result<(), crate::contribution::QualityError> {
+        self.set_lamp_quality(raytrace::LampShadows::KNOB, limit)
+            .ok_or(crate::contribution::QualityError::NoContribution)??;
+        self.commit_lamp_quality(queue);
+        Ok(())
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -2497,6 +1802,17 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 impl OffscreenTarget {
+    /// Air-shadow height field, when CPU readback was requested at preparation.
+    #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+    #[must_use]
+    pub fn air_shadow_witness(&self) -> Option<&wgpu::Texture> {
+        let texture = self.textures.texture(self.ids.air_shadow.as_ref()?)?;
+        texture
+            .usage()
+            .contains(wgpu::TextureUsages::COPY_SRC)
+            .then_some(texture)
+    }
+
     #[cfg(feature = "creation-counters")]
     pub(crate) fn shadow_witness(&self) -> Option<&wgpu::Texture> {
         let texture = self.textures.texture(self.ids.shadow.as_ref()?)?;

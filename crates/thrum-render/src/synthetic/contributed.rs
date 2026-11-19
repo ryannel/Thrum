@@ -144,10 +144,7 @@ impl PreparedSynthetic {
         }
         let resources = self.effect_graph.append(graph, self.key, prepared_keys)?;
         accesses.extend_from_slice(&resources.opaque_reads);
-        Ok((
-            resources,
-            ray_structure.filter(|_| self.traced_view.is_some()),
-        ))
+        Ok((resources, ray_structure))
     }
 
     /// The forward pass a [`SceneContribution`] draws into.

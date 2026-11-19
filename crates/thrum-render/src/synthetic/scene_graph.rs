@@ -316,6 +316,10 @@ impl PreparedSynthetic {
         accesses
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "graph assembly follows the full frame's dependency order"
+    )]
     pub(super) fn compile_graph(
         &self,
         width: u32,
@@ -366,6 +370,9 @@ impl PreparedSynthetic {
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         self.append_material_textures(&mut graph, &mut accesses)?;
         let secondary_shared = self.secondary_inputs(&accesses, &route);
+        if let Some(structure) = ray_structure.as_ref().filter(|_| self.uses_shadow_rays()) {
+            accesses.push(Access::new(structure.clone(), 0..1, AccessKind::RayQuery));
+        }
         let [depth, scene, motion, reactive] =
             self.forward_attachments(&mut graph, &mut accesses, [width, height], capture_source)?;
         let camera = self.append_camera_visibility(
@@ -462,9 +469,11 @@ impl PreparedSynthetic {
             native.as_ref(),
             [width, height],
         )?;
-        let (output, display_pass) =
-            self.display
-                .append_graph(&mut graph, &pre_tone, ray_structure)?;
+        let (output, display_pass) = self.display.append_graph(
+            &mut graph,
+            &pre_tone,
+            ray_structure.filter(|_| self.traced_view.is_some()),
+        )?;
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
@@ -877,6 +886,11 @@ impl PreparedSynthetic {
         };
         // Culled camera modes on the bucket route: one compaction lists each
         // pass's casters against that pass's own view, which it reads.
+        let first = if self.surface_uses_cascades() {
+            0
+        } else {
+            shadow::LAYERS - 1
+        };
         let lists = match &self.caster_culling {
             Some((culling, _)) => {
                 let mut cull = vec![
@@ -890,6 +904,7 @@ impl PreparedSynthetic {
                 cull.extend(
                     matrices
                         .iter()
+                        .skip(first as usize)
                         .map(|matrix| uniform(matrix, shadow::CASTER_VIEW_RANGE)),
                 );
                 cull.extend_from_slice(route);
@@ -912,7 +927,7 @@ impl PreparedSynthetic {
             }
             None => None,
         };
-        for (index, matrix) in (0..shadow::LAYERS).zip(matrices) {
+        for (index, matrix) in (0..shadow::LAYERS).zip(matrices).skip(first as usize) {
             // Unculled casters read the route's member list; culled ones
             // read their own pass's list and records.
             let caster_reads: Vec<Access> = match &lists {
@@ -977,7 +992,7 @@ impl PreparedSynthetic {
         ));
         accesses.push(Access::new(
             maps.clone(),
-            0..u64::from(shadow::LAYERS),
+            u64::from(first)..u64::from(shadow::LAYERS),
             AccessKind::SampledRead,
         ));
         Ok(Some(maps))
@@ -1107,7 +1122,17 @@ impl PreparedSynthetic {
             .filter(|_| self.air_shadow.is_some())
             .map(|maps| {
                 keys.insert(key);
-                air_shadow::append_graph(graph, key, [maps.clone(), directional.clone()], accesses)
+                #[cfg(all(feature = "creation-counters", target_os = "macos"))]
+                let copy_heights = self.capabilities.observe_ray_preparation;
+                #[cfg(not(all(feature = "creation-counters", target_os = "macos")))]
+                let copy_heights = false;
+                air_shadow::append_graph(
+                    graph,
+                    key,
+                    [maps.clone(), directional.clone()],
+                    accesses,
+                    copy_heights,
+                )
             })
             .transpose()
     }

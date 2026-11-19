@@ -163,6 +163,7 @@ fn main() {
                         valley_stars: false,
                         route_overlay: v1_game::RouteOverlay::Off,
                         field_meshes,
+                        ..GameSetup::default()
                     },
                 )
                 .await

@@ -65,7 +65,7 @@ pub(crate) fn prove_demand() {
     std::fs::remove_dir_all(store).expect("remove owned cooked fixture");
 }
 
-fn valley_store(label: &str) -> PathBuf {
+pub(super) fn valley_store(label: &str) -> PathBuf {
     let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/showcase");
     let cook = configuration(source, scratch(label));
     let cooked = Cooker::open(cook.clone())

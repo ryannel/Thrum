@@ -305,7 +305,7 @@ impl SecondaryPrepared {
             label: Some(PASS),
             bind_group_layouts: &[
                 Some(&layout),
-                Some(&prepared.surface.light_layout),
+                Some(&prepared.map_light_layout),
                 Some(&prepared.surface.material_layout),
                 Some(&instances),
             ],
@@ -677,7 +677,7 @@ impl SecondaryPrepared {
             index,
             shader_source: &self.source,
             view_layout: &self.layout,
-            light_layout: &prepared.surface.light_layout,
+            light_layout: &prepared.map_light_layout,
             material_layout: &prepared.surface.material_layout,
             fragment_entry: if self.sun.is_some() {
                 "secondary_shadowed_fragment"

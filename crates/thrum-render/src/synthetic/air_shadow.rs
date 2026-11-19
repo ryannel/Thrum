@@ -72,6 +72,7 @@ pub(super) fn append_graph(
     key: PipelineKey,
     [maps, directional]: [ResourceId; 2],
     accesses: &mut Vec<Access>,
+    copy_heights: bool,
 ) -> Result<ResourceId, RenderError> {
     let sample = graph.resource(
         ResourceDescriptor::Buffer {
@@ -89,7 +90,13 @@ pub(super) fn append_graph(
             mips: 1,
             samples: 1,
             format: FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | wgpu::TextureUsages::TEXTURE_BINDING
+                | if copy_heights {
+                    wgpu::TextureUsages::COPY_SRC
+                } else {
+                    wgpu::TextureUsages::empty()
+                },
         },
         ResourceScope::Transient,
     )?;
@@ -110,7 +117,11 @@ pub(super) fn append_graph(
                 0..shadow::SAMPLE_BYTES as u64,
                 AccessKind::UniformRead,
             ),
-            read(maps, 0..u64::from(shadow::LAYERS), AccessKind::SampledRead),
+            read(
+                maps,
+                shadow::HEIGHT_LAYER as u64..u64::from(shadow::LAYERS),
+                AccessKind::SampledRead,
+            ),
             read(directional, 0..LIGHT_BYTES as u64, AccessKind::UniformRead),
             read(heights.clone(), 0..1, AccessKind::AttachmentClear),
         ],

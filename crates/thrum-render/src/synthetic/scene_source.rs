@@ -2,6 +2,7 @@
 //! [`crate::contribution::SceneSurface`] lends to contributions.
 
 use super::air_shadow;
+use crate::capabilities::{ShadowSelection, SunShadowMethod};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum SunShadows {
@@ -26,15 +27,23 @@ pub(super) fn prepare(
     air_shadow: bool,
     cloud: Option<&crate::atmosphere::SunOpticalDepth>,
     shadowed: SunShadows,
+    selection: ShadowSelection,
+    fail_pipeline: bool,
 ) -> (String, wgpu::ShaderModule, &'static str) {
     let source = compose_with_cloud(atmosphere, air_shadow, cloud.is_some(), shadowed);
     let source = cloud_variant(
         source,
         cloud.is_some_and(crate::atmosphere::SunOpticalDepth::gpu_written),
     );
+    let source = traced(source, shadowed, selection);
+    let wgsl = if fail_pipeline {
+        "intentionally invalid WGSL"
+    } else {
+        source.as_str()
+    };
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("prepared synthetic shader ABI2"),
-        source: wgpu::ShaderSource::Wgsl(source.as_str().into()),
+        source: wgpu::ShaderSource::Wgsl(wgsl.into()),
     });
     let entry = if shadowed == SunShadows::Enabled {
         "shadowed_fragment"
@@ -42,6 +51,54 @@ pub(super) fn prepare(
         "fragment"
     };
     (source, module, entry)
+}
+
+fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) -> String {
+    let sun = shadowed == SunShadows::Enabled && selection.sun == SunShadowMethod::Traced;
+    if !sun && !selection.lamps {
+        return source;
+    }
+    if sun {
+        let start = source.find("fn sun_visibility(").expect("Sun operation");
+        let end = start
+            + source[start..]
+                .find("// Within a few degrees")
+                .expect("end of Sun operation");
+        source.replace_range(start..end, include_str!("raytrace/sun.wgsl"));
+        source = source.replace(
+            "dpdx(input.world_position),\n        dpdy(input.world_position),normalize(input.normal)",
+            "vec3(0.0),vec3(0.0),select(-normalize(input.normal),normalize(input.normal),front_facing)",
+        );
+    }
+    if selection.lamps {
+        source = source
+            .replace("    var sum = vec3(0.0);\n    for", "    var sum = vec3(0.0);\n    var lamp_rays = 0u;\n    for")
+            .replace(
+                "        let hv = l+v;",
+                "        if dot(n,l) > 0.0 && distance_squared > 1e-12 {
+            if lamp_rays < lamp_shadow_quality.ray_limit {
+                lamp_rays += 1u;
+                if lamp_blocked(world_position, geometric_normal, source.position_radius.xyz) { continue; }
+            } else {
+                atomicAdd(&unshadowed_lamp_references, 1u);
+            }
+        }
+        let hv = l+v;",
+            )
+            .replace(
+                "n: vec3<f32>, v: vec3<f32>, world_position: vec3<f32>, screen_position: vec4<f32>)",
+                "n: vec3<f32>, v: vec3<f32>, world_position: vec3<f32>, screen_position: vec4<f32>, geometric_normal: vec3<f32>)",
+            )
+            .replace(
+                "n,v,input.world_position,input.position)",
+                "n,v,input.world_position,input.position,select(-normalize(input.normal),normalize(input.normal),front_facing))",
+            );
+        source.push_str(include_str!("raytrace/lamps.wgsl"));
+    }
+    format!(
+        "enable wgpu_ray_query;\n{source}\n{}",
+        include_str!("raytrace/shadows.wgsl"),
+    )
 }
 
 /// Both main and secondary views consume the provider's selected mapping layout.
@@ -165,6 +222,37 @@ pub(super) fn secondary(
 mod tests {
     use super::{SunShadows, compose, compose_with_cloud};
     use crate::contribution::{HookPointError, material_hook_point};
+
+    #[test]
+    fn traced_forward_sources_validate() {
+        use crate::capabilities::{RayStructureSelection, ShadowSelection, SunShadowMethod};
+        use wgpu::naga;
+
+        for shadows in [false, true] {
+            for (sun, lamps) in [
+                (SunShadowMethod::Traced, false),
+                (SunShadowMethod::Traced, true),
+                (SunShadowMethod::Maps, true),
+            ] {
+                let shadows = SunShadows::from(shadows);
+                let selection =
+                    ShadowSelection::resolve(sun, lamps, RayStructureSelection::Enabled);
+                let source = super::traced(
+                    compose_with_cloud(true, true, false, shadows),
+                    shadows,
+                    selection,
+                );
+                let module = naga::front::wgsl::parse_str(&source)
+                    .unwrap_or_else(|error| panic!("{}", error.emit_to_string(&source)));
+                naga::valid::Validator::new(
+                    naga::valid::ValidationFlags::all(),
+                    naga::valid::Capabilities::all(),
+                )
+                .validate(&module)
+                .unwrap_or_else(|error| panic!("{}", error.emit_to_string(&source)));
+            }
+        }
+    }
 
     #[test]
     fn unshadowed_entry_requires_no_sun_bindings() {
