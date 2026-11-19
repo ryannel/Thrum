@@ -2,15 +2,13 @@
 mod shadow_scene;
 use thrum_cloud_model::{Density, Field, Parameters, Profile, Sample, State, Type};
 use thrum_clouds::{Shade, ShadeConfig, SkyProfile, SunLevel, SunProfile, WeatherProfile};
-use thrum_render::capabilities::DeviceCapabilities;
+use thrum_render::{
+    capabilities::DeviceCapabilities,
+    contribution::{SceneContribution, SceneContributions},
+    runtime::{FrameConfig, FrameError},
+};
 
-#[test]
-fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
-    let Some(gpu) =
-        thrum_test_support::gpu("shadow-only cloud capability", Some(wgpu::Backend::Metal))
-    else {
-        return;
-    };
+fn shade_config() -> ShadeConfig {
     let model = Profile {
         pitch: 1000.0,
         turret_pitch: 260.0,
@@ -37,7 +35,79 @@ fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
             ..row
         },
     ];
-    let field = Field::new(7, model, types.clone()).expect("authored test weather");
+    ShadeConfig {
+        seed: 7,
+        model,
+        types,
+        weather: WeatherProfile {
+            size: 32,
+            texels: vec![20.0, 80.0, 320.0, 1600.0],
+            maximum_age: 0.5,
+        },
+        sun: SunProfile {
+            size: 32,
+            levels: [80.0, 320.0, 1600.0].map(|texel| SunLevel {
+                texel,
+                slices: 16,
+                maximum_age: 0.5,
+            }),
+            ground_size: 64,
+            lowest_elevation: 2.0_f64.to_radians(),
+            border_fraction: 0.1,
+        },
+    }
+}
+
+#[test]
+fn shade_device_limit_keeps_its_error_kind_in_a_contribution_list() {
+    use thrum_test_support::{Profile, Restriction};
+
+    let Some(gpu) = thrum_test_support::gpu("grouped Shade GPU limits", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (_device, queue, caps) = gpu
+        .device_with_hardware_adjusted(Profile::Portable, &Restriction::default(), 1, &[], |desc| {
+            desc.required_limits.max_storage_textures_per_shader_stage = 2;
+        })
+        .expect("restricted Metal device");
+    let config = shade_config();
+    let mut host = pollster::block_on(shadow_scene::prepare(
+        &caps,
+        &queue,
+        config.sun.ground_size,
+        FrameConfig {
+            render_extent: [64, 64],
+            surface: None,
+        },
+    ));
+    let shade = || Box::new(Shade::new(config.clone()).expect("valid Shade settings"));
+    let direct: Box<dyn SceneContribution> = shade();
+    let grouped = Box::new(SceneContributions::new(vec![
+        Box::new(SceneContributions::default()),
+        shade(),
+    ]));
+    for (route, contribution) in [("direct", direct), ("grouped", grouped)] {
+        let error = host
+            .attach_scene_contribution(contribution)
+            .expect_err("device cannot prepare Shade");
+        assert!(
+            matches!(&error, FrameError::Gpu(reason) if reason.contains("weather map texture limits")),
+            "{route}: {error:?}"
+        );
+    }
+}
+
+#[test]
+fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
+    let Some(gpu) =
+        thrum_test_support::gpu("shadow-only cloud capability", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let config = shade_config();
+    let field =
+        Field::new(config.seed, config.model, config.types.clone()).expect("authored test weather");
     let state = State::new(
         Parameters {
             coverage: 0.7,
@@ -83,27 +153,6 @@ fn both_recipes_keep_coarse_sun_paths_and_shadow_only_declares_no_layer() {
     eprintln!(
         "coarse/full Sun transmittance: probes={count}, changed={changed}, maximum={maximum}, RMS={rms}; design proof full/coarse 0.06–0.08 RMS inside cloud, local correction 0.02"
     );
-    let config = ShadeConfig {
-        seed: 7,
-        model,
-        types,
-        weather: WeatherProfile {
-            size: 32,
-            texels: vec![20.0, 80.0, 320.0, 1600.0],
-            maximum_age: 0.5,
-        },
-        sun: SunProfile {
-            size: 32,
-            levels: [80.0, 320.0, 1600.0].map(|texel| SunLevel {
-                texel,
-                slices: 16,
-                maximum_age: 0.5,
-            }),
-            ground_size: 64,
-            lowest_elevation: 2.0_f64.to_radians(),
-            border_fraction: 0.1,
-        },
-    };
     pollster::block_on(async {
         for (profile, recipe) in [
             (thrum_test_support::Profile::Portable, "portable"),

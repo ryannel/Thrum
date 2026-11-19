@@ -4,6 +4,7 @@ use super::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SecondaryShadowCascade,
     ShadowBounds,
 };
+use crate::runtime::FrameError;
 
 /// Contributions in game-selected order. Empty lists add no graph passes.
 #[derive(Default)]
@@ -21,6 +22,33 @@ impl SceneContributions {
             pass_counts: Vec::new(),
             after_counts: Vec::new(),
         }
+    }
+
+    fn rebuild_members<E>(
+        &mut self,
+        surface: &SceneSurface<'_>,
+        invalid_views: impl Fn(&str) -> E,
+        mut rebuild: impl FnMut(&mut dyn SceneContribution, &SceneSurface<'_>) -> Result<(), E>,
+    ) -> Result<(), E> {
+        self.pass_counts.clear();
+        self.after_counts.clear();
+        let mut first = 0;
+        for entry in &mut self.entries {
+            let end = first + entry.secondary_view_slots().len();
+            let mut member = surface.clone();
+            if !entry.secondary_views_enabled() {
+                member.secondary_surfaces.clear();
+            }
+            member.secondary_views = surface.secondary_views.get(first..end).ok_or_else(|| {
+                invalid_views("secondary view declaration changed during rebuild")
+            })?;
+            rebuild(entry.as_mut(), &member)?;
+            first = end;
+            let graph = entry.effect_graph();
+            self.pass_counts.push(graph.passes.len());
+            self.after_counts.push(graph.after_opaque.len());
+        }
+        Ok(())
     }
 }
 
@@ -250,26 +278,16 @@ impl SceneContribution for SceneContributions {
         Ok(())
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.pass_counts.clear();
-        self.after_counts.clear();
-        let mut first = 0;
-        for entry in &mut self.entries {
-            let end = first + entry.secondary_view_slots().len();
-            let mut member = surface.clone();
-            if !entry.secondary_views_enabled() {
-                member.secondary_surfaces.clear();
-            }
-            member.secondary_views = surface
-                .secondary_views
-                .get(first..end)
-                .ok_or_else(|| "secondary view declaration changed during rebuild".to_owned())?;
-            entry.rebuild(&member)?;
-            first = end;
-            self.pass_counts.push(entry.effect_graph().passes.len());
-            self.after_counts
-                .push(entry.effect_graph().after_opaque.len());
-        }
-        Ok(())
+        self.rebuild_members(surface, str::to_owned, |entry, member| {
+            entry.rebuild(member)
+        })
+    }
+    fn rebuild_for_attachment(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+        self.rebuild_members(
+            surface,
+            |message| FrameError::Scene(message.to_owned()),
+            |entry, member| entry.rebuild_for_attachment(member),
+        )
     }
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         for entry in &mut self.entries {
