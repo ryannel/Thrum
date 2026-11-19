@@ -231,7 +231,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
 }
 
 fn validate_sprite_launch() -> Result<(), String> {
-    if std::env::var_os("THRUM_ASSET_STORE").is_some() {
+    if !matches!(
+        launch_value("THRUM_ASSET_STORE"),
+        Err(std::env::VarError::NotPresent)
+    ) {
         return Err("2D scene refuses cooked placements through THRUM_ASSET_STORE".into());
     }
     for (name, enabled) in [
