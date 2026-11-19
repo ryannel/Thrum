@@ -158,6 +158,8 @@ def shadows(output):
                 raise ValueError(f"incorrect cascade timings in {row}")
             if "synthetic Sun horizon heights" not in timings:
                 raise ValueError(f"missing height pass in {row}")
+            if ("ray structure build" in timings) != (method == "Traced"):
+                raise ValueError(f"incorrect scene structure graph in {row}")
             if not all(math.isfinite(row[key]) and row[key] > 0
                        for key in ("timed_pass_span_ns", "frame_cpu_ns")):
                 raise ValueError(f"missing measurement in {row}")

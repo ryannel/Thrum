@@ -36,6 +36,7 @@ impl OffscreenTarget {
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
     shadows: Shadows,
+    cascades: bool,
     clusters: bool,
     transforms: bool,
     star_pass: Option<&'static str>,
@@ -74,6 +75,7 @@ impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
                 (true, false) => Shadows::Unculled,
                 (true, true) => Shadows::Culled,
             },
+            cascades: prepared.shadowed() && prepared.surface_uses_cascades(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
             star_pass: target.draw_stars.then_some(super::stars::PASS_NAME),
@@ -112,9 +114,8 @@ pub(crate) fn pass_durations(
     ];
     let raw_passes = passes;
     let names = ALL.into_iter().filter(|&name| match name {
-        "synthetic Sun shadow near"
-        | "synthetic Sun shadow far"
-        | "synthetic Sun horizon heights" => layout.shadows != Shadows::Off,
+        "synthetic Sun shadow near" | "synthetic Sun shadow far" => layout.cascades,
+        "synthetic Sun horizon heights" => layout.shadows != Shadows::Off,
         "synthetic cluster build" => layout.clusters,
         history_gpu::PASS_NAME => layout.transforms,
         _ => true,

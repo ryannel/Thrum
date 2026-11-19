@@ -5,6 +5,7 @@ const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
     star_pass: None,
     shadows: Shadows::Off,
+    cascades: false,
     clusters: false,
     culling: culling_passes(CullMode::Direct),
 };
@@ -155,6 +156,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         false,
         SceneTimingLayout {
             shadows: Shadows::Unculled,
+            cascades: true,
             ..TRANSFORMS
         },
     )
@@ -167,11 +169,23 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
             false,
             SceneTimingLayout {
                 shadows: Shadows::Unculled,
+                cascades: true,
                 ..TRANSFORMS
             }
         )
         .is_none()
     );
+    let heights_only = timings(&["synthetic Sun horizon heights"]);
+    let (values, _, _) = pass_durations(
+        &heights_only,
+        false,
+        SceneTimingLayout {
+            shadows: Shadows::Unculled,
+            ..TRANSFORMS
+        },
+    )
+    .expect("traced Sun keeps the height timing");
+    assert_eq!(&[values.shadow_near(), values.shadow_far()], &[0.0, 1.0]);
 }
 
 #[test]
@@ -254,6 +268,7 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
 fn the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket() {
     let layout = SceneTimingLayout {
         shadows: Shadows::Culled,
+        cascades: true,
         ..CULLED
     };
     let named = |names: &[&str]| -> Vec<PassTiming> {
