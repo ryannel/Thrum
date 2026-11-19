@@ -606,7 +606,8 @@ async fn record(
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture =
         mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift" | "content-edits");
-    if motion_capture || scenario == "sprites-field" {
+    let elapsed_observation = motion_capture || scenario == "sprites-field";
+    if elapsed_observation {
         driver.set_timing_requested(false);
     }
     let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
@@ -712,7 +713,7 @@ async fn record(
         let step = WorkClock::start().map_err(|e| e.to_string())?;
         let admission_usage = driver.capture_usage();
         let omissions_before = driver.omissions();
-        let report = if motion_capture {
+        let report = if elapsed_observation {
             // The elapsed-time capture has no future display to target.
             driver.step()?
         } else {
@@ -720,7 +721,7 @@ async fn record(
         };
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
-        if motion_capture && running && report.overload.is_some() {
+        if elapsed_observation && running && report.overload.is_some() {
             trace.observe_overload(&driver, origin, returned)?;
         }
         if observer_only && report.submitted {
@@ -775,7 +776,7 @@ async fn record(
     let phase_counts = trace.display_phase_counts();
     let mut result = json!({"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
         "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
-        "presentation_lead_policy":if motion_capture {"actual elapsed observation without a future target"} else {"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero"},
+        "presentation_lead_policy":if elapsed_observation {"actual elapsed observation without a future target"} else {"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero"},
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
         "recipe":format!("{:?}",capabilities.recipe()),"registry_digest":capabilities.registry_digest(),"unified_memory":capabilities.unified_memory(),"enabled_features":format!("{:?}",capabilities.features()),
         "extent":extent,"requested_hz":requested_hz,"interval_end_ns":interval_end_ns,
@@ -788,7 +789,7 @@ async fn record(
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
-    result["gpu_pass_timing"] = json!(!motion_capture && scenario != "sprites-field");
+    result["gpu_pass_timing"] = json!(!elapsed_observation);
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
