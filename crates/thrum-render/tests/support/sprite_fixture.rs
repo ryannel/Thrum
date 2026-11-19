@@ -100,6 +100,7 @@ impl FrameWorld for World {
 pub(crate) struct Scene {
     pub(crate) rows: Vec<SpriteRow>,
     pub(crate) scale: u8,
+    pub(crate) centre: [f64; 2],
     pub(crate) lighting: Option<FrameLighting>,
     pub(crate) view: SyntheticView,
 }
@@ -108,6 +109,7 @@ impl Scene {
         Self {
             rows,
             scale,
+            centre: [0.0; 2],
             lighting: None,
             view: SyntheticView::default(),
         }
@@ -137,7 +139,7 @@ impl SceneSource<SourceTick> for Scene {
         let [x, y] = extent.map(|side| f64::from(side % 2) / (2.0 * f64::from(self.scale)));
         Ok(SpriteFrame {
             view: SpriteView {
-                centre: [x, -y],
+                centre: [self.centre[0] + x, self.centre[1] - y],
                 pixels_per_unit,
             },
             rows: &self.rows,

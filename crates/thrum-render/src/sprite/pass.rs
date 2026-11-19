@@ -271,12 +271,7 @@ impl SpritePass {
             rows: bindings.count,
             bytes: size_of::<GpuView>() + bytes.len(),
             dropped: u32::try_from(frame.rows.len() - self.scratch.len()).unwrap_or(u32::MAX),
-            projection: glam::Mat4::from_scale(glam::Vec3::new(
-                clip_per_world[0],
-                clip_per_world[1],
-                1.0,
-            ))
-            .to_cols_array_2d(),
+            clip_scale: clip_per_world,
         })
     }
 

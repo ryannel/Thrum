@@ -6,7 +6,7 @@ use super::{
     duration_ns_u32, preparation,
 };
 use crate::{
-    contribution::{ContributionFrame, EffectTime, SceneContribution, SpriteContributionSurface},
+    contribution::{EffectTime, SceneContribution, SpriteContributionSurface},
     sprite::SpriteTarget,
     synthetic::{CaptureSource, CullMode, ShadowSelection},
 };
@@ -190,7 +190,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 None,
                 Some(&mut pixels),
                 self.contribution.as_deref_mut(),
-                contribution_frame(&target, self.generation, time),
+                time,
             )
             .map_err(|error| FrameError::Gpu(format!("capture sprite encode: {error:?}")))?;
         let submitted = self.queue.submit([encoder.finish()]);
@@ -225,21 +225,4 @@ fn check_stages(contribution: &dyn SceneContribution) -> Result<(), String> {
         return Err("2D scene refuses contribution opaque reads".into());
     }
     Ok(())
-}
-
-pub(super) fn contribution_frame(
-    target: &SpriteTarget,
-    generation: u64,
-    time: EffectTime,
-) -> ContributionFrame {
-    ContributionFrame {
-        time,
-        generation,
-        view_proj: target.projection,
-        camera: [0.0; 3],
-        exposure_side: 0,
-        environment: None,
-        view_uniform_offset: 0,
-        history_reset: false,
-    }
 }

@@ -8,7 +8,9 @@ use super::{
 };
 use crate::{
     capabilities::DeviceCapabilities,
-    contribution::{ContributionFrame, ContributionPasses, EffectGraph, SceneContribution},
+    contribution::{
+        ContributionFrame, ContributionPasses, EffectGraph, EffectTime, SceneContribution,
+    },
     graph::{
         Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
         GraphTextures, Pass, PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
@@ -51,14 +53,15 @@ pub(crate) struct SpriteTarget {
     plain: ExecutableGraph<SpriteGraph>,
     capture: ExecutableGraph<SpriteGraph>,
     surface: Option<ResourceId>,
-    pub(crate) projection: [[f32; 4]; 4],
+    camera_centre: [f64; 2],
+    clip_scale: [f32; 2],
 }
 
 pub(crate) struct SpriteUpload {
     pub(crate) rows: u32,
     pub(crate) bytes: usize,
     pub(crate) dropped: u32,
-    pub(crate) projection: [[f32; 4]; 4],
+    pub(super) clip_scale: [f32; 2],
 }
 
 struct SpriteGraph;
@@ -129,7 +132,8 @@ impl PreparedSprites {
             target.extent,
             &mut target.sprites,
         )?;
-        target.projection = upload.projection;
+        target.camera_centre = frame.view.centre;
+        target.clip_scale = upload.clip_scale;
         Ok(upload)
     }
 
@@ -140,8 +144,12 @@ impl PreparedSprites {
         mut timings: Option<&'a mut GpuTimings>,
         readback: Option<&'a mut PixelReadback>,
         contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
-        frame: ContributionFrame,
+        time: EffectTime,
     ) -> Result<(), RenderError> {
+        let frame = contribution
+            .is_some()
+            .then(|| target.contribution_frame(time))
+            .transpose()?;
         let graph = target.graph(readback.is_some());
         if let Some(timings) = timings.as_deref_mut() {
             let count = u32::try_from(graph.plan().pipeline_pass_count())
@@ -155,7 +163,7 @@ impl PreparedSprites {
             timings,
             readback,
             contribution,
-            frame: Some(frame),
+            frame,
             surface: None,
         })
     }
@@ -199,6 +207,42 @@ impl PreparedSprites {
 }
 
 impl SpriteTarget {
+    pub(crate) fn camera_relative_projection(&self) -> glam::Mat4 {
+        let [sx, sy] = self.clip_scale;
+        glam::Mat4::from_scale(glam::Vec3::new(sx, sy, 1.0))
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the contribution interface uses f32; conversion checks the finite range"
+    )]
+    fn contribution_frame(&self, time: EffectTime) -> Result<ContributionFrame, RenderError> {
+        let [x, y] = self.camera_centre;
+        let [sx, sy] = self.clip_scale;
+        let camera = glam::Vec3::new(x as f32, y as f32, 0.0);
+        let translation = glam::Vec4::new(
+            (-x * f64::from(sx)) as f32,
+            (-y * f64::from(sy)) as f32,
+            0.0,
+            1.0,
+        );
+        if !camera.is_finite() || !translation.is_finite() {
+            return Err(RenderError::InvalidView);
+        }
+        let mut projection = self.camera_relative_projection();
+        projection.w_axis = translation;
+        Ok(ContributionFrame {
+            time,
+            generation: self.generation,
+            view_proj: projection.to_cols_array_2d(),
+            camera: camera.to_array(),
+            exposure_side: 0,
+            environment: None,
+            view_uniform_offset: 0,
+            history_reset: false,
+        })
+    }
+
     pub(crate) fn prepare(
         prepared: &PreparedSprites,
         extent: [u32; 2],
@@ -314,7 +358,8 @@ impl SpriteTarget {
             plain: bind(plain)?,
             capture: bind(capture)?,
             surface: surface.map(|(surface, _)| surface),
-            projection: glam::Mat4::IDENTITY.to_cols_array_2d(),
+            camera_centre: [0.0; 2],
+            clip_scale: [1.0; 2],
         })
     }
 

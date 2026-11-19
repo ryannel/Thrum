@@ -293,14 +293,16 @@ pub struct ContributionFrame {
     /// The atmosphere's sole sampled environment, absent for diagnostic and
     /// authored photometric lighting. Every callback receives the same sample.
     pub environment: Option<crate::atmosphere::EnvironmentFrame>,
-    /// Column-major jittered reverse-Z view-projection of the frame being encoded.
-    /// Culling uses the same raster frustum as the forward vertices; motion uses
-    /// the separately bound unjittered matrices.
+    /// Column-major world-to-clip matrix of the frame being encoded. In 3D it
+    /// uses jittered reverse-Z and the forward raster frustum, while motion uses
+    /// the separately bound unjittered matrices. In 2D it is unjittered and maps
+    /// world X and Y to the sprite view's output pixels.
     pub view_proj: [[f32; 4]; 4],
     /// Dynamic byte offset of the packed main view selected for this recording.
     pub view_uniform_offset: u32,
-    /// Declared world-space camera position, without matrix inversion. A secondary
-    /// camera must copy coordinates 0 and 2 exactly to stand on this camera's vertical.
+    /// Declared world-space camera position, without matrix inversion. In 2D
+    /// this is the view centre in X and Y, with Z zero. In 3D a secondary camera
+    /// must copy coordinates 0 and 2 exactly to stand on this camera's vertical.
     pub camera: [f32; 3],
     /// Device generation of the encoder.
     pub generation: u64,

@@ -225,7 +225,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
                 attachments: [[0; 2], target.extent, [0; 2], target.extent],
                 target_textures,
                 target_bytes,
-                view_projection: target.projection,
+                view_projection: target.camera_relative_projection().to_cols_array_2d(),
                 previous_view_projection: [[0.0; 4]; 4],
                 source,
                 destination: presenter.extent(),

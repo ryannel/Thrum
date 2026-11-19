@@ -363,6 +363,7 @@ fn main() -> TaskResult {
             python(&["scripts/test_exact_baselines.py"])?;
             python(&["scripts/repo_check.py"])?;
             python(&["scripts/test_evidence_store.py"])?;
+            python(&["scripts/test_render2d.py"])?;
             python(&[
                 "-m",
                 "unittest",

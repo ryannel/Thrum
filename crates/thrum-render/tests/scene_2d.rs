@@ -375,7 +375,9 @@ fn attaches_and_runs_only_upload_and_simulate_before_sprites() {
         return;
     };
     let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
-    let (source, sprites) = inputs();
+    let (mut source, sprites) = inputs();
+    source.centre = [10.0, 5.0];
+    source.rows[0].position = [13.0, 3.0];
     let mut host = fixture::host(&caps, &queue, EXTENT, source, sprites.sheet);
     let entry = Contribution::default();
     let actions = std::sync::Arc::clone(&entry.actions);
@@ -416,7 +418,13 @@ fn attaches_and_runs_only_upload_and_simulate_before_sprites() {
         .as_ref()
         .expect("required prepared state or timing sample");
     assert!(times.get("effect 0: simulation witness").is_some());
-    println!("Upload, named simulate, sprite, tone and present completed on Metal");
+    let image = fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr);
+    let pixel = (28 * EXTENT[0] as usize + 38) * 4;
+    assert_eq!(image.rgba[pixel..pixel + 4], [225, 6, 104, 255]);
+    assert_eq!(image.rgba[pixel - 4..pixel], [0, 0, 0, 255]);
+    println!(
+        "Metal upload and simulate see camera (10, 5) and project the sprite pivot to (38, 28)"
+    );
 }
 
 #[derive(Default)]
@@ -425,6 +433,21 @@ struct Contribution {
     late: bool,
     prepared: Option<(wgpu::Buffer, wgpu::ComputePipeline)>,
     actions: std::sync::Arc<std::sync::Mutex<Vec<&'static str>>>,
+}
+
+fn assert_contribution_view(frame: &ContributionFrame) {
+    assert_eq!(
+        frame.camera.map(f32::to_bits),
+        [10.0_f32, 5.0, 0.0].map(f32::to_bits)
+    );
+    let clip = glam::Mat4::from_cols_array_2d(&frame.view_proj)
+        .project_point3(glam::Vec3::new(13.0, 3.0, 0.0));
+    let x = (clip.x + 1.0) * 32.0;
+    let y = (1.0 - clip.y) * 24.0;
+    assert!(
+        (x - 38.0).abs() < 1e-5 && (y - 28.0).abs() < 1e-5,
+        "{x}, {y}"
+    );
 }
 
 impl SceneContribution for Contribution {
@@ -491,7 +514,8 @@ impl SceneContribution for Contribution {
             compute: false,
         }
     }
-    fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
+    fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
+        assert_contribution_view(frame);
         self.actions
             .lock()
             .expect("contribution log is not poisoned")
@@ -510,8 +534,9 @@ impl SceneContribution for Contribution {
         &mut self,
         index: usize,
         pass: &mut wgpu::ComputePass<'_>,
-        _: &ContributionFrame,
+        frame: &ContributionFrame,
     ) {
+        assert_contribution_view(frame);
         assert_eq!(index, 0);
         self.actions
             .lock()

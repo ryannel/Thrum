@@ -14,7 +14,7 @@ use thrum_content_runtime::EnvironmentProduct;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     runtime,
-    synthetic::{CullMode, DisplayOverlay},
+    synthetic::{CullMode, DisplayOverlay, SunShadowMethod},
 };
 
 mod scene_source;
@@ -80,7 +80,7 @@ pub struct GameSetup {
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
     pub display_overlay: DisplayOverlay,
     /// Main view's Sun shadow method.
-    pub sun_shadow_method: thrum_render::synthetic::SunShadowMethod,
+    pub sun_shadow_method: SunShadowMethod,
     /// Trace hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
@@ -111,7 +111,7 @@ impl Default for GameSetup {
             cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
-            sun_shadow_method: thrum_render::synthetic::SunShadowMethod::Maps,
+            sun_shadow_method: SunShadowMethod::Maps,
             lamp_shadows: false,
             diagnostic_clouds: false,
             content: GameContent::Grid,
@@ -665,6 +665,35 @@ impl FrameHost {
             ));
         }
         if let Some(scale) = setup.sprite_scale {
+            let temporal_sampling = match setup.display_overlay {
+                DisplayOverlay::Off => false,
+                DisplayOverlay::TemporalInputs => true,
+                DisplayOverlay::TracedGeometry => {
+                    return Err(runtime::FrameError::InvalidState(
+                        "2D scene refuses traced geometry view (THRUM_TRACED_VIEW=on)",
+                    ));
+                }
+                DisplayOverlay::Motion => {
+                    return Err(runtime::FrameError::InvalidState(
+                        "2D scene refuses motion view",
+                    ));
+                }
+                DisplayOverlay::ExposureZones => {
+                    return Err(runtime::FrameError::InvalidState(
+                        "2D scene refuses exposure zones view",
+                    ));
+                }
+            };
+            if setup.sun_shadow_method == SunShadowMethod::Traced {
+                return Err(runtime::FrameError::InvalidState(
+                    "2D scene refuses traced sun shadows",
+                ));
+            }
+            if setup.lamp_shadows {
+                return Err(runtime::FrameError::InvalidState(
+                    "2D scene refuses lamp shadows",
+                ));
+            }
             if rows.is_some() || setup.cooked_mesh_rows == MeshRowSource::Cooked {
                 return Err(FrameError::InvalidState(
                     "2D scene refuses cooked placements",
@@ -692,7 +721,7 @@ impl FrameHost {
                 GameScene::new(setup),
                 crate::sprite_card::scene(scale)?,
                 runtime::SpriteSceneRequests {
-                    temporal_sampling: setup.display_overlay == DisplayOverlay::TemporalInputs,
+                    temporal_sampling,
                     culling: (setup.camera_culling != CullMode::Direct)
                         .then_some(setup.camera_culling),
                     reconstruction: setup.reconstruction,

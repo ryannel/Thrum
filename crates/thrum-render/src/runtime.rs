@@ -2009,19 +2009,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 timings,
                 readback,
                 contribution,
-                sprites::contribution_frame(
-                    target,
-                    self.generation,
-                    crate::contribution::EffectTime {
-                        epoch: prepared.source.epoch,
-                        timeline: prepared.source.timeline,
-                        tick: prepared.source.tick,
-                        tick_duration: self.world.tick_duration(),
-                        alpha: prepared.sample.presentation_alpha,
-                        display_phase: prepared.sample.display_phase,
-                        capture: false,
-                    },
-                ),
+                crate::contribution::EffectTime {
+                    epoch: prepared.source.epoch,
+                    timeline: prepared.source.timeline,
+                    tick: prepared.source.tick,
+                    tick_duration: self.world.tick_duration(),
+                    alpha: prepared.sample.presentation_alpha,
+                    display_phase: prepared.sample.display_phase,
+                    capture: false,
+                },
             ),
             _ => Err(RenderError::StaleTarget),
         };

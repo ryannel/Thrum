@@ -18,6 +18,11 @@ ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE = ROOT / "docs/evidence/RENDER-2D/M1"
 STARTING = "4392b652fb63994e6ca9090e9b5d20602777337d"
 TARGETS = ("mac-metal", "chrome-webgpu")
+BUILDS = {
+    "mac-metal": "cargo build --locked --offline --release -p v1-game --bin v1-game",
+    "chrome-webgpu": "sh examples/v1-game/web/build.sh (locked offline release)",
+}
+VALLEY_BUILD = "cargo build --locked --offline --release -p v1-game --bench valley_culling"
 EXTENTS = ((1920, 1080), (3456, 2234))
 SPRITES = "sprites"
 TONE = "display-referred tone encode"
@@ -151,7 +156,7 @@ def valley_pair(args, folder):
         "THRUM_RECIPE": "portable", "THRUM_CULLING_TIMING": "on", "THRUM_VALLEY_MESHES": "off",
     })
     return {
-        "build": "cargo build --locked --offline --release -p v1-game --bench valley_culling",
+        "build": VALLEY_BUILD,
         "route": "examples/v1-game/routes/moving-v1.json at 1920x1080",
         "route_sha256": digest(route), "cooked_head_sha256": digest(store / "HEAD"),
         "before_commit": STARTING, "before_binary_sha256": digest(args.valley_base_binary),
@@ -161,10 +166,57 @@ def valley_pair(args, folder):
     }
 
 
+def load_averages(values):
+    return isinstance(values, list) and len(values) == 3 and all(
+        type(value) in (float, int) and math.isfinite(value) and value >= 0 for value in values
+    )
+
+
+def text_rows(rows):
+    return isinstance(rows, list) and bool(rows) and all(
+        isinstance(row, str) and row.strip() for row in rows
+    )
+
+
+def load_snapshot(snapshot):
+    return (isinstance(snapshot, dict) and load_averages(snapshot.get("averages"))
+            and type(snapshot.get("logical_cpus")) is int and snapshot["logical_cpus"] > 0
+            and text_rows(snapshot.get("processes")))
+
+
+def validate_row_record(row, target):
+    extent = row["extent"]
+    pixels = math.prod(extent)
+    sizes = {"slots": 2, "scene_bytes_per_slot": pixels * 8, "sdr_bytes_per_slot": pixels * 4,
+             "present_bytes": pixels * 4}
+    storage_record = row.get("storage")
+    if not isinstance(storage_record, dict) or any(
+            type(storage_record.get(name)) is not int or storage_record[name] != size
+            for name, size in sizes.items()):
+        raise ValueError(f"{target} {extent}: missing or incorrect target storage bytes")
+
+    observations = row.get("load")
+    if isinstance(observations, dict):
+        if target == "chrome-webgpu":
+            if all(load_snapshot(observations.get(edge)) for edge in ("before", "after")):
+                return
+        elif (all(load_averages(observations.get(f"{edge}_load_1_5_15")) for edge in ("before", "after"))
+              and text_rows(observations.get("background_process_snapshot"))):
+            return
+    raise ValueError(f"{target} {extent}: missing before or after machine load observation")
+
+
+def sha256_field(value):
+    return isinstance(value, str) and bool(re.fullmatch("[a-f0-9]{64}", value))
+
+
 def validate(record, target):
+    toolchain = record.get("toolchain")
     if (record["target"] != target or record["profile"] != "release" or
             not re.fullmatch("[a-f0-9]{40}", record["commit"]) or
-            not re.fullmatch("[a-f0-9]{64}", record["binary_sha256"]) or
+            not sha256_field(record.get("binary_sha256")) or
+            record.get("build") != BUILDS[target] or not isinstance(toolchain, str) or
+            not re.match(r"^rustc \d+\.\d+\.\d+\b", toolchain) or
             len(record["runs"]) != 2):
         raise ValueError("missing target, release build identity or separate takes")
     takes = record["take_started_unix_ns"]
@@ -176,13 +228,14 @@ def validate(record, target):
             raise ValueError("missing 1080p or full backing size")
         summary = []
         for row in take:
-            if not row["adapter"] or not row["load"] or not row["storage"]:
-                raise ValueError("missing adapter, load or storage record")
+            if not row.get("adapter"):
+                raise ValueError("missing adapter record")
+            validate_row_record(row, target)
             if target == "chrome-webgpu":
                 if row["wasm"] != record["binary_sha256"] or not row["chrome"]:
                     raise ValueError("Chrome loaded a different build")
                 if set(row["limits"]) != {"sampled_textures", "array_layers", "storage_buffers"} or not all(
-                        isinstance(value, int) and value > 0 for value in row["limits"].values()):
+                        type(value) is int and value > 0 for value in row["limits"].values()):
                     raise ValueError("missing Chrome capability limits")
             summary.append(summarize(row["samples"]))
         summaries.append(summary)
@@ -204,10 +257,15 @@ def validate(record, target):
         for key in ("adapter", "extent", "capture_source", "recipe", "mode", "timing_only"):
             if before_header[key] != after_header[key]:
                 raise ValueError(f"unpaired valley settings: {key}")
-        if pair["before_commit"] != STARTING or not all(pair[key] for key in (
-                "before_load", "after_load", "route_sha256", "cooked_head_sha256",
-                "before_binary_sha256", "after_binary_sha256")):
+        if (pair["before_commit"] != STARTING or pair.get("build") != VALLEY_BUILD
+                or not pair.get("route") or not all(sha256_field(pair.get(key)) for key in (
+                    "route_sha256", "cooked_head_sha256", "before_binary_sha256", "after_binary_sha256"))):
             raise ValueError("missing valley build, route, cooked or load provenance")
+        for name, complete in (("before_load", load_averages), ("after_load", load_snapshot)):
+            observations = pair.get(name)
+            if (not isinstance(observations, list) or len(observations) != 2
+                    or not all(complete(entry) for entry in observations)):
+                raise ValueError(f"missing valley load observations: {name}")
         if set(before) != set(after) or len(before) < 300 or not all(
                 type(value) in (float, int) and math.isfinite(value) and value >= 0 for value in
                 [*before.values(), *after.values()]):
@@ -252,10 +310,8 @@ def main():
     commit = git("rev-parse", "HEAD")
     binary = args.binary.resolve() if metal else args.web_root.resolve() / "v1_game_bg.wasm"
     identity = digest(binary)
-    build = ("cargo build --locked --offline --release -p v1-game --bin v1-game" if metal
-             else "sh examples/v1-game/web/build.sh (locked offline release)")
     compiler = ["rustc"] if metal else ["rustup", "run", "stable", "rustc"]
-    record = {"target": args.target, "profile": "release", "commit": commit, "build": build,
+    record = {"target": args.target, "profile": "release", "commit": commit, "build": BUILDS[args.target],
               "toolchain": subprocess.check_output([*compiler, "--version"], text=True).strip(),
               "binary_sha256": identity, "runs": [], "take_started_unix_ns": []}
     for index in range(1, 3):
