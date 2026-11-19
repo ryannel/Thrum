@@ -108,7 +108,36 @@
     },
     "M2": {
       "definitions": "1548a03a19c82b9cbc47321ee1a8f1f3d951af764784010d0abb05e10916fef2",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "7a1695105b6486125c88c1827abb3634f685a3ed",
+          "review": "docs/evidence/GAME-SPLIT/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 71218,
+            "cached": 663680,
+            "output": 3251,
+            "turns": 1
+          },
+          "at": "2026-11-19T03:56:16Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
@@ -149,6 +178,13 @@
           "output": 74463,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "7a1695105b6486125c88c1827abb3634f685a3ed",
+        "review": "docs/evidence/GAME-SPLIT/M2-review.md",
+        "checked": "551de28bdb3bc26297457dfe5053d588e552bc2e",
+        "at": "2026-11-19T03:56:16Z"
       }
     },
     "M3": {
