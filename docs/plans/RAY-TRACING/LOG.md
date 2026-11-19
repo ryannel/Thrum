@@ -76,3 +76,8 @@
   same-device visual replacement, and gated initial cooked publication on completed mesh builds.
   Verified both Metal generations, the edit builds, and the traced view's instance colors and distance
   cue. [Review fix evidence](../../evidence/RAY-TRACING/M2/README.md).
+- 2026-11-19 Added opt-in hard Sun and lamp shadows with prepared fallback and map-only secondary views.
+  The Metal fixtures verified receiving-surface hits, cooked casters, no-Sun parity, air-shadow bytes, and
+  day, night and capture preparation on two device generations. Inspected the fixed route and three movers
+  at elapsed speed, and kept the night lamp contact crops. The contended repeat showed higher traced frame
+  CPU time and timed-pass span, with both cascade passes absent. [M3 evidence](../../evidence/RAY-TRACING/M3/README.md).

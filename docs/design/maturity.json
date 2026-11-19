@@ -95,6 +95,20 @@
         "../evidence/RAY-TRACING/M2/valley-cost.json"
       ]
     },
+    "RAY_TRACING_M3": {
+      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile, with a height-map producer for air, map-only secondary views, and whole-scene fallback during preparation.",
+      "functional_validation": "Mac Metal checks verified receiver visibility through 20 km coordinates, off-camera and cooked lamp casters, prepared fallback, matching secondary and air-shadow products, night parity, and two generations without late pipeline creation.",
+      "experienced_quality": "Builder inspected fixed T2 Maps and Traced pairs on the exit route at noon, low Sun and dusk, an elapsed-speed run around three balloon casters, and a four-lamp night stop.",
+      "platform_performance": {
+        "mac_apple_tile": "Contended repeat medians were 2.859, 3.854 and 4.245 ms timed-pass span for Maps and Traced with lamps off and on, respectively. Frame CPU medians were 0.936, 2.143 and 2.203 ms. No performance qualification.",
+        "browser": "Ordinary output is covered by the shared exact-images check. No traced browser qualification.",
+        "ios": "No traced iPhone qualification."
+      },
+      "evidence": [
+        "../evidence/RAY-TRACING/M3/README.md",
+        "../evidence/RAY-TRACING/M3/cost-repeat.json"
+      ]
+    },
     "SCENE_VIEWS": {
       "implementation": "Prepared contribution-owned secondary slots, per-frame camera and clip requests, separate entity and cooked visibility, Sun cascades, local-light clusters and aerial products, and same-frame colour, depth and record reads. The mirror pool composes two air stretches and declares five runtime quality controls.",
       "functional_validation": "M1 and M2 were independently reviewed on Metal, including stored-format equality, slot lifetime and absence, view-local light and shadow products, direct and indirect cooked draws, and composition from main-view marker colours. M3 verifies both knob endpoints against direct requests on both Metal recipes, checks main draw-buffer equality and reads the prepared viewport attachments. Chrome WebGPU matches its own main draw for entities and cooked placements to zero stored colour and depth steps, including the three hill-shadow camera cases at both extents, and passes both marker exposures.",

@@ -5674,6 +5674,22 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/RAY-TRACING/M3/fixed-pairs.zip",
+      "size": 67698732,
+      "sha256": "31dc396a93871748d95239a7bf9c71f3df22a127add6678eba6bd251d263b452",
+      "date": "2026-11-19T00:25:22.326675+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/RAY-TRACING/M3/route-frames.zst",
+      "size": 1744546562,
+      "sha256": "31dbeb99eb83ae8f6ef53bf650aa4916fd8974cb488ee7dda6d93e7dee9eccb6",
+      "date": "2026-11-19T00:28:17.677993+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/REVIEW-ENGINE/M1-review/12-landscape-strip.png",
       "size": 2356709,
