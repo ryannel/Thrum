@@ -37,7 +37,7 @@ fn metal_cooked_march_uses_each_world_sample_and_preserves_sky() {
         },
     );
     let cloud = thrum_render::atmosphere::CLOUD_SHADER_SOURCE;
-    let volume = super::cooked_source(true);
+    let volume = super::cooked_source("", true);
     let volume = volume
         .split_once("struct CookedVolume {")
         .expect("valid Metal qualification fixture")
