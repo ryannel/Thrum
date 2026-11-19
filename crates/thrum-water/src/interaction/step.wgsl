@@ -108,7 +108,7 @@ fn advance(@builtin(global_invocation_id) invocation: vec3<u32>) {
     let grid_k = vec2<f32>(signed) * (TAU / f32(WAKE_SIDE));
     let k = grid_k / step.metres;
     let magnitude = length(k);
-    let divider = TAU / 12.0;
+    let divider = TAU / WAKE_DIVIDER_METRES;
     let short = smoothstep(0.8 * divider, 1.2 * divider, magnitude);
     let band = select(short, 1.0 - short, step.level == 1u);
     // Taper the Nyquist bins; fractional translations of unpaired bins

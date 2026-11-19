@@ -2,6 +2,7 @@
 //! renderer and body query sample the same committed endpoint buffers.
 mod gpu;
 mod regions;
+mod static_dent;
 
 use std::{
     collections::{BTreeMap, BTreeSet},

@@ -2,6 +2,7 @@ use super::{
     BodyPressure, CELL_METRES, CELLS, DENSITY, GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox,
     Report, SIDE, Witness,
     regions::{Cell, DEPTHS, DRY, REST, Window},
+    static_dent,
 };
 use bytemuck::{Pod, Zeroable};
 use thrum_render::{
@@ -125,7 +126,8 @@ fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages
 
 pub(crate) fn shader_constants() -> String {
     format!(
-        "const WAKE_SIDE: u32 = {SIDE}u;\nconst REST_DEPTH: u32 = {REST}u;\nconst WATER_GRAVITY: f32 = {GRAVITY:?};\nconst WATER_DENSITY: f32 = {DENSITY:?};\n"
+        "const WAKE_SIDE: u32 = {SIDE}u;\nconst REST_DEPTH: u32 = {REST}u;\nconst WATER_GRAVITY: f32 = {GRAVITY:?};\nconst WATER_DENSITY: f32 = {DENSITY:?};\nconst WAKE_DIVIDER_METRES: f32 = {:?};\n",
+        static_dent::DIVIDER_METRES
     )
 }
 
@@ -654,10 +656,6 @@ impl Interaction {
         !self.dispatches.is_empty()
     }
 
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "query dent uses the GPU's float format"
-    )]
     pub(crate) fn dent(&self, tick: u64, body: u32, point: [f32; 2]) -> [f32; 4] {
         let Some(frame) = self.recorded.or(self.committed) else {
             return [0.0; 4];
@@ -678,26 +676,18 @@ impl Interaction {
         else {
             return [0.0; 4];
         };
-        // The full static dent represents both complementary bands. Do not
-        // add it back for a source the regional solve wholly or partly refused.
         let pressure = &pressures[index];
-        if pressure.levels != (1 << LEVELS) - 1 {
-            return [0.0; 4];
-        }
-        let source = pressure.body;
-        let [x, z] = std::array::from_fn(|i| f64::from(point[i]) - source.place[i]);
-        let (sin, cos) = source.heading.sin_cos();
-        let [along, across] = source.footprint;
-        let u = (cos * x + sin * z) / along;
-        let v = (-sin * x + cos * z) / across;
-        let h = source.force * (-0.5 * u.mul_add(u, v * v)).exp()
-            / (std::f64::consts::TAU * along * across * f64::from(DENSITY * GRAVITY));
-        [
-            h as f32,
-            (-h * (u * cos / along - v * sin / across)) as f32,
-            (-h * (u * sin / along + v * cos / across)) as f32,
-            0.0,
-        ]
+        let endpoint = if tick == previous.tick {
+            previous
+        } else {
+            current
+        };
+        static_dent::at(
+            pressure.body,
+            pressure.levels,
+            point.map(f64::from),
+            endpoint.origins,
+        )
     }
 
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {

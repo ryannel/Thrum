@@ -9,7 +9,8 @@ use thrum_water::{
     interaction::{BodyPressure, Limits},
     query::{BodyQuery, QueryLimits, QueryPoint},
 };
-use water_scene::floating::{WakeDemo, build_wake};
+use thrum_water_model::{Bed, BodyKind, Map, Stage};
+use water_scene::floating::{Body, Hull, WakeDemo, build_wake};
 use water_scene::island::Wind;
 
 #[test]
@@ -92,6 +93,161 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
 }
 
 #[test]
+fn moored_craft_keeps_its_draft_when_only_one_level_admits_pressure() {
+    let baseline = moored_strip_draft([1, 0], false);
+    eprintln!("Metal moored strip, pressure off: draft offset {baseline:.5} m");
+    for solves in [[1, 0], [0, 1]] {
+        let draft = moored_strip_draft(solves, true);
+        eprintln!("Metal moored strip, fine/coarse solves {solves:?}: draft offset {draft:.5} m");
+        assert!(
+            (draft - baseline).abs() < 0.03,
+            "{solves:?} solves changed the craft's draft by {} m",
+            draft - baseline
+        );
+    }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the public GPU query takes station coordinates in its float format"
+)]
+fn moored_strip_draft(expected_solves: [u32; 2], active: bool) -> f64 {
+    // At 10 m the fine level needs one depth operator and the coarse level
+    // needs two. In the other strip, only the fine grid sees the shallower
+    // column at x=9 m and needs a second operator.
+    let bed_at = |x| match expected_solves {
+        [1, 0] => -10.0,
+        _ if x == 9 => -6.0,
+        _ => -8.0,
+    };
+    let (min_x, max_x) = if expected_solves == [1, 0] {
+        (-16, 16)
+    } else {
+        // The coarse case must cover the window: beyond the bed the map
+        // would select the deep-water operator as well as the 8 m operator.
+        (-256, 256)
+    };
+    let row: Vec<_> = (min_x..=max_x).map(bed_at).collect();
+    let bed = Bed::new(
+        [f64::from(min_x), -268.0],
+        1.0,
+        [row.len(), 537],
+        row.repeat(537),
+    )
+    .expect("strip bed");
+    let map = Map::prepare(
+        bed,
+        vec![thrum_water_model::Body {
+            name: "Calm sea".into(),
+            kind: BodyKind::Sea,
+            level: 0.0,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 100_000.0,
+            gains: [1.0; 4],
+        }],
+        thrum_water_model::Profile {
+            margin_height: 0.8,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("calm strip map");
+    let water = Water::mapped(
+        Arc::new(Mutex::new(map)),
+        calm_spectrum(),
+        Profile {
+            interaction: Some(Limits {
+                bodies: 1,
+                impulses: 1,
+                solves: 1,
+            }),
+            query: Some(QueryLimits {
+                points: 6,
+                max_age: 4,
+            }),
+            ..Profile::default()
+        },
+    )
+    .expect("mapped wake contribution");
+    let sources = water.interaction_mailbox().expect("wake sources");
+    let queries = water.query_mailbox().expect("water query");
+    let report = water.report();
+    let mut fixture = support::Fixture::paired([96, 64], false);
+    fixture
+        .host
+        .set_scene_contribution(Box::new(water))
+        .expect("prepare mapped water");
+    fixture.frame_without_timings(0.0);
+    let step = Duration::from_nanos(16_666_667);
+    let mut craft = Body::new(1, Hull::Craft, [0.0; 2], 0.0, 0.0);
+    for tick in 1..=1200 {
+        let axis = craft.rotation.mul_vec3([1.0, 0.0, 0.0].into());
+        sources.post_bodies(
+            u64::from(tick),
+            None,
+            vec![BodyPressure {
+                id: 1,
+                place: [craft.position.x, craft.position.z],
+                heading: axis.z.atan2(axis.x),
+                footprint: [1.45, 0.58],
+                force: if active {
+                    3600.0 * craft.water_reaction
+                } else {
+                    0.0
+                },
+            }],
+        );
+        queries.post(
+            u64::from(tick - 1),
+            vec![BodyQuery {
+                id: 1,
+                generation: 0,
+                points: (0..6)
+                    .map(|index| {
+                        let p = craft.station(index);
+                        QueryPoint {
+                            position: [p.x as f32, p.z as f32],
+                            radius: 0.2784,
+                            use_tick: u64::from(tick),
+                        }
+                    })
+                    .collect(),
+            }],
+        );
+        fixture.frame_without_timings((step * tick).as_secs_f64());
+        let answers = queries.drain(u64::from(tick), step);
+        assert_eq!(answers.len(), 1, "query response at tick {tick}");
+        craft.advance(step.as_secs_f64(), |i, _| {
+            (answers[0].points[i].surface, Some(bed_at(0)))
+        });
+    }
+    let wake = report
+        .lock()
+        .expect("water report")
+        .interaction
+        .expect("interaction");
+    assert_eq!(wake.endpoints.expect("submitted endpoints")[1], 1200);
+    assert_eq!(wake.solves, expected_solves);
+    assert!(
+        craft.velocity.y.abs() < 0.015,
+        "craft still moving with solves {expected_solves:?}: {} m/s",
+        craft.velocity.y
+    );
+    craft.position.y + craft.draft()
+}
+
+fn calm_spectrum() -> Spectrum {
+    Spectrum {
+        long: Vec::new(),
+        cascades: [160.0, 37.0, 9.0].map(|length| Cascade::new(length, &[]).expect("calm cascade")),
+        tail_slope_variance: 0.0,
+    }
+}
+
+#[test]
 fn float_twenty_metres_off_track_responds_to_the_public_query() {
     let scene = build_wake(
         Wind::Calm,
@@ -151,14 +307,9 @@ fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
         assert_eq!(sample.body, body);
         assert!(sample.depth > 0.0);
     }
-    let spectrum = Spectrum {
-        long: Vec::new(),
-        cascades: [160.0, 37.0, 9.0].map(|length| Cascade::new(length, &[]).expect("calm cascade")),
-        tail_slope_variance: 0.0,
-    };
     let water = Water::mapped(
         Arc::new(Mutex::new(map)),
-        spectrum,
+        calm_spectrum(),
         Profile {
             interaction: Some(Limits::default()),
             query: Some(QueryLimits {
