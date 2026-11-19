@@ -83,5 +83,7 @@
   The sprite pass uses eight sheet slots and one draw, with frame rows, tint, flash and additive blending.
   Metal readback checks passed for pose and animation, exact and retained order, changed-row uploads and the
   CPU blend oracle. The V1 field drew 10,000 world rows and two frame rows with one draw and no drops on
-  Metal and Chrome. See the [M2 evidence](../../../.orchestrate/evidence/RENDER-2D/M2/README.md) for submitted
-  realtime sequences, the two release cost takes per target, and tripwires observed under load.
+  Metal and Chrome. The 22-second Chrome realtime capture showed the cyan sprite staying in front of the
+  purple sprite through the crossing, with fractional-alpha motion and zero world-clock overloads.
+  The [M2 evidence](../../../.orchestrate/evidence/RENDER-2D/M2/README.md) includes both realtime sequences,
+  two release cost takes per target, and tripwires observed under load.
