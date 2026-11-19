@@ -455,10 +455,9 @@ fn quiet(count: u32, nonreader: bool) -> Value {
     assert_eq!(away, close_at);
     game.neutral_at(slot, neutral);
     if !nonreader {
-        assert_eq!(
-            away - neutral,
-            u64::from(settings.absence - settings.held_expiry)
-        );
+        let peer = &game.players[player];
+        assert_eq!(neutral, peer.last_staged + u64::from(settings.held_expiry));
+        assert_eq!(away, peer.last_input + u64::from(settings.absence));
         assert!(
             rows.iter()
                 .filter(|row| (neutral..=away).contains(&row.tick))
@@ -467,6 +466,8 @@ fn quiet(count: u32, nonreader: bool) -> Value {
     }
     json!({"schedule": game.scheduled(), "reason": format!("{reason:?}"), "quiet_at": quiet_at,
         "closed_at": close_at, "neutral_at": neutral, "away_at": away,
+        "last_received_frame": game.players[player].last_input,
+        "last_staged_frame": game.players[player].last_staged,
         "reliable_full": counters.refused[2], "most_bytes": game.players[player].most_bytes,
         "most_sets": game.players[player].most_sets, "ring_cap": settings.backlog,
         "other_peer_comparisons": others})

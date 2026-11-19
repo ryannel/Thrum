@@ -179,7 +179,7 @@ pub enum Close {
     Synchronization = 4,
     /// Playing backlog exceeded the catch-up deadline.
     UnableToKeepUp = 5,
-    /// No new usable timed input by the absence limit.
+    /// No new authored timed input by the absence limit.
     Absent = 6,
     /// The connection exhausted its repair allowance.
     RepairLimit = 7,
@@ -268,7 +268,7 @@ pub enum Disposition {
     Refused,
     /// The authority ended the match before including this input.
     NotCommitted,
-    /// The link closed without a final authority endpoint.
+    /// The link closed or resynchronized before the result was observed.
     Uncertain,
 }
 

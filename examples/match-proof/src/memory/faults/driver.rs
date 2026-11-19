@@ -35,6 +35,8 @@ pub(super) struct Player {
     pub most_bytes: usize,
     pub max_staged: usize,
     pub max_link_bytes: usize,
+    pub last_input: u64,
+    pub last_staged: u64,
     pub backlog: Vec<(u64, u64, u64, usize)>,
     pub admissions: u64,
     pub commands: Vec<ResultEvent>,
@@ -137,6 +139,8 @@ impl Match {
             most_bytes: 0,
             max_staged: 0,
             max_link_bytes: 0,
+            last_input: 0,
+            last_staged: 0,
             backlog: Vec::new(),
             admissions: 0,
             commands: Vec::new(),
@@ -210,6 +214,8 @@ impl Match {
             if let Some(stream) = self.host.stream(player.host_link()) {
                 let sets = self.host.retained(player.host_link());
                 let staged = stream.staged_frames;
+                player.last_input = stream.last_input;
+                player.last_staged = stream.last_staged;
                 player.most_sets = player.most_sets.max(sets);
                 player.max_staged = player.max_staged.max(staged);
                 let queue = player.links[1].counters(self.now / 1_000);

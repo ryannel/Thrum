@@ -62,6 +62,8 @@ struct Peer<A> {
     behind_since: Option<u64>,
     last_input: u64,
     input_sequence: u64,
+    last_staged: u64,
+    staged_sequence: u64,
     input_credit: u64,
     credit_tick: u64,
     progress_sequence: Option<u64>,
@@ -127,6 +129,10 @@ pub struct PeerStream {
     pub staged_frames: usize,
     /// The peer is still transferring or catching up to a baseline.
     pub synchronizing: bool,
+    /// Authority endpoint when a new authored frame last arrived.
+    pub last_input: u64,
+    /// Authority endpoint when a new timed frame last entered the staging window.
+    pub last_staged: u64,
 }
 
 /// An authority that owns one world and commits through a single input barrier.
@@ -279,6 +285,8 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             repairs: peer.repairs,
             retained_bytes: self.retained_bytes(peer),
             synchronizing: matches!(peer.phase, Phase::Baseline { .. } | Phase::CatchingUp),
+            last_input: peer.last_input,
+            last_staged: peer.last_staged,
             staged_frames: peer.slot.map_or(0, |slot| {
                 self.staging.retained(binding(slot, MATCH_EPOCH).peer)
             }),
@@ -348,6 +356,8 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             behind_since: None,
             last_input: self.world.tick(),
             input_sequence: 0,
+            last_staged: self.world.tick(),
+            staged_sequence: 0,
             input_credit: self.input_burst(),
             credit_tick: self.world.tick(),
             progress_sequence: None,
@@ -554,7 +564,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             if idle >= u64::from(self.settings.absence) {
                 peer.link.close(Close::Absent as u32);
                 self.detach(peer, false);
-            } else if idle >= u64::from(self.settings.held_expiry) {
+            } else if tick - peer.last_staged >= u64::from(self.settings.held_expiry) {
                 self.neutral |= 1 << slot;
             }
         }
@@ -932,15 +942,19 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             for input in decoded.into_iter().flatten() {
                 let sequence = input.origin.sequence;
                 let tick = input.tick;
-                match self.staging.stage(input, |_| Ok(())) {
-                    Ok(_) => {
-                        if sequence > peer.input_sequence {
-                            peer.last_input = committed;
-                            peer.input_sequence = sequence;
-                        }
-                    }
-                    Err(FutureInputError::Late) => peer.late += 1,
-                    Err(_) => {}
+                let outcome = self.staging.stage(input, |_| Ok(()));
+                if matches!(outcome, Ok(_) | Err(FutureInputError::Late))
+                    && sequence > peer.input_sequence
+                {
+                    peer.last_input = committed;
+                    peer.input_sequence = sequence;
+                }
+                if outcome == Ok(StageResult::Queued) && sequence > peer.staged_sequence {
+                    peer.last_staged = committed;
+                    peer.staged_sequence = sequence;
+                }
+                if outcome == Err(FutureInputError::Late) {
+                    peer.late += 1;
                 }
                 if sequence > peer.margin_sequence {
                     let offset = i128::from(tick) - i128::from(committed) - 1;
@@ -986,6 +1000,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     _ => return None,
                 };
                 peer.last_input = committed;
+                peer.last_staged = committed;
             }
             peer.phase = Phase::Playing;
             peer.deadline = u64::MAX;
