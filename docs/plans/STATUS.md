@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-14 of 33 modules done · 17 in progress · 2 to come
+15 of 33 modules done · 16 in progress · 2 to come
 
 ### Needs you now
 
@@ -279,7 +279,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 ### Now and next
 
 - The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
-- Edits to meshes, textures and volumes appear in the running valley without a hitch, on Mac and in Chrome, and the content gate closes (CONTENT-LOOP M3): Ready for Review · [plan](CONTENT-LOOP/PLAN.md) · [latest review](../../.orchestrate/evidence/CONTENT-LOOP/M3-review.md)
 - The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome (SHOWCASE M6): In Progress · [plan](SHOWCASE/PLAN.md)
 - The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore (WATERS M6): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/M6-review.md)
 - The same sky and the same shade draw in Chrome (CLOUDS M4): In Progress · [plan](CLOUDS/PLAN.md)
@@ -291,6 +290,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Edits to meshes, textures and volumes appear in the running valley without a hitch, on Mac and in Chrome, and the content gate closes (CONTENT-LOOP M3), 19 Nov · [review](../../.orchestrate/evidence/CONTENT-LOOP/M3-review.md)
 - Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised (REVIEW-RENDER M1), 19 Nov · [review](../../.orchestrate/evidence/REVIEW-RENDER/M1-review.md)
 - A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it (WATERS M5), 19 Nov · [review](../../.orchestrate/evidence/WATERS/M5-review.md)
 - Four players on a simulated bad connection steer one crowd of 10,000, and every player's copy stays identical (SESSION M2), 19 Nov · [review](../../.orchestrate/evidence/SESSION/M2-review.md)
@@ -373,7 +373,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Done 17 Nov |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M3 of 4 · Ready for Review |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Done 19 Nov |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; ATMOSPHERE M10 for the populated valley's motion review; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | M6 of 5 · In Progress |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M6 of 16 · In Progress |
