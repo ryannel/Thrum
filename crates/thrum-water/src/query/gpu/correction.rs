@@ -43,11 +43,16 @@ pub(in crate::query) struct ReadyBody {
 pub(super) struct MapPrediction {
     revision: u64,
     cascades: [CascadeSample; 3],
+    wake: [f32; 4],
 }
 
 impl MapPrediction {
-    pub(super) fn new(revision: u64, cascades: [CascadeSample; 3]) -> Self {
-        Self { revision, cascades }
+    pub(super) fn new(revision: u64, cascades: [CascadeSample; 3], wake: [f32; 4]) -> Self {
+        Self {
+            revision,
+            cascades,
+            wake,
+        }
     }
 }
 
@@ -79,6 +84,7 @@ impl Correction {
                 *answer = self.recompose(
                     *answer,
                     prediction.cascades,
+                    prediction.wake,
                     map,
                     time,
                     dt,
@@ -97,6 +103,7 @@ impl Correction {
         &self,
         answer: QueryAnswer,
         cascades: [CascadeSample; 3],
+        wake: [f32; 4],
         map: &Map,
         time: f64,
         dt: f64,
@@ -147,6 +154,14 @@ impl Correction {
             for (value, delta) in sample.velocity.iter_mut().zip(wave.velocity) {
                 *value += delta;
             }
+        }
+        if row.depth > 0.0 {
+            corrected.sources[4] = answer.sources[4];
+            sample.height += f64::from(wake[0]);
+            sample.slope[0] += f64::from(wake[1]);
+            sample.slope[1] += f64::from(wake[2]);
+            sample.height_dt += f64::from(wake[3]);
+            sample.velocity[1] += f64::from(wake[3]);
         }
         corrected.surface = Surface {
             body: Some(row.body),

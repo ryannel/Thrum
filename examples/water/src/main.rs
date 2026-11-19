@@ -1,7 +1,10 @@
 //! Water example on the engine's normal window and controls.
 fn main() {
     let island = island_preset();
-    let floating = option("bodies", "THRUM_WATER_BODIES");
+    let wake = option("wake", "THRUM_WATER_WAKE");
+    let floating = wake
+        .clone()
+        .or_else(|| option("bodies", "THRUM_WATER_BODIES"));
     let draw_float =
         cfg!(target_arch = "wasm32") || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some();
     thrum_app::sky::run(
@@ -23,6 +26,25 @@ fn main() {
                 };
                 let chase = option("view", "THRUM_WATER_VIEW").as_deref() == Some("chase");
                 let lake = option("location", "THRUM_WATER_LOCATION").as_deref() == Some("lake");
+                if wake.is_some() {
+                    let view = option("view", "THRUM_WATER_VIEW");
+                    return water_scene::floating::build_wake(
+                        wind,
+                        lake,
+                        speed,
+                        heading,
+                        water_scene::floating::WakeDemo {
+                            view: water_scene::floating::WakeView::named(
+                                view.as_deref().unwrap_or_default(),
+                            ),
+                            stone: option("stone", "THRUM_WATER_STONE").as_deref() == Some("1"),
+                            body_capacity: option("wake-bodies", "THRUM_WATER_WAKE_BODIES")
+                                .and_then(|value| value.parse().ok()),
+                            ..Default::default()
+                        },
+                    )
+                    .map(|scene| scene.game);
+                }
                 return water_scene::floating::build(wind, lake, speed, heading, chase)
                     .map(|scene| scene.game);
             }

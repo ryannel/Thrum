@@ -3,7 +3,7 @@ mod draw;
 mod scene;
 
 use glam::{DQuat, DVec3};
-pub use scene::{FloatingScene, build, build_paired};
+pub use scene::{FloatingScene, WakeDemo, WakeView, build, build_paired, build_wake};
 use std::time::Duration;
 use thrum_sea_model::{LongWaves, Spectrum};
 use thrum_water::query::{BodyAnswers, BodyQuery, QueryMailbox, QueryPoint};
@@ -64,6 +64,8 @@ pub struct Body {
     pub angular: DVec3,
     /// Commanded speed in world x/z. Only a craft has a motor.
     pub propulsion: DVec3,
+    /// Most recent vertical water force per kilogram, before ground contact.
+    pub water_reaction: f64,
 }
 
 /// Actual positive work supplied to the normalized rigid-body state by water and motor.
@@ -109,6 +111,7 @@ impl Body {
             velocity: DVec3::ZERO,
             angular: DVec3::ZERO,
             propulsion: DVec3::ZERO,
+            water_reaction: GRAVITY,
         }
     }
 
@@ -200,6 +203,7 @@ impl Body {
         let mut force = -GRAVITY * DVec3::Y;
         let mut torque = DVec3::ZERO;
         let mut work = Work::default();
+        self.water_reaction = 0.0;
         for i in 0..SAMPLES {
             let lever = self.rotation * self.hull.lever(i);
             let position = self.position + lever;
@@ -242,6 +246,7 @@ impl Body {
                                 .max(0.0));
                 }
             }
+            self.water_reaction += reaction.y;
             if let Some(ground) = bed.filter(|ground| *ground > position.y) {
                 let support = ((ground - position.y) * 160.0 - v.y * 10.0).max(0.0) / 6.0;
                 reaction += DVec3::Y * support - v.with_y(0.0) * 2.0;

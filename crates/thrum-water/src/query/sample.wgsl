@@ -3,6 +3,7 @@ struct QueryPoint {
     level_current_bed: vec4<f32>,
     slope: vec2<f32>, body: u32, has_bed: u32,
     gains: vec4<f32>,
+    dent: vec4<f32>,
 }
 struct Component { vector: vec2<f32>, amplitude: f32, phase: f32, omega: f32, inverse_k: f32, padding: vec2<f32> }
 struct Settings {
@@ -23,6 +24,7 @@ struct Answer {
     body_flags: vec4<u32>,
     cascades: array<CascadeSample, 3>,
     padding: f32,
+    wake: vec4<f32>,
 }
 struct Wave {
     displacement: vec3<f32>,
@@ -156,7 +158,12 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
                 rate += band_rate;
             }
         }
-        let height = row.x + dot(out.layers, vec4(1.0));
+        out.wake = wake_at(point.position, point.dt) + point.dent;
+        if any(out.wake != vec4(0.0)) { out.body_flags.w |= 16u; }
+        let height = row.x + dot(out.layers, vec4(1.0)) + out.wake.x;
+        slope += out.wake.yz;
+        rate += out.wake.w;
+        velocity.y += out.wake.w;
         out.height_slope_rate = vec4(height, slope, rate);
         out.velocity_depth = vec4(velocity, depth);
         out.body_flags.y = u32(point.has_bed == 0u || height > row.w);

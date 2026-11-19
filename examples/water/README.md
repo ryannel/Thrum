@@ -76,3 +76,10 @@ results into a nonblocking staging ring. The game drains the mailbox at the star
 uses the long-wave CPU model as a fallback and retains the hull forces and rigid-body state.
 Run `node scripts/check_water_browser.mjs --case bodies` under the Chrome lock for the hardware
 WebGPU check and reply-age counters.
+The wake route uses the same floating bodies and adds their water reactions to the interaction step. Run the calm-sea overhead view with
+
+```sh
+THRUM_WATER_WAKE=calm THRUM_WATER_SPEED=3 THRUM_WATER_VIEW=overhead ./dev scene examples/water
+```
+
+Use `THRUM_WATER_LOCATION=lake`, `THRUM_WATER_STONE=1`, and `THRUM_WATER_VIEW=shore` for the lake impact. The craft speed and course can be changed while the scene runs. In the web scene the same options are `?wake=calm&speed=3&view=overhead` and `?wake=calm&location=lake&stone=1&view=shore`.

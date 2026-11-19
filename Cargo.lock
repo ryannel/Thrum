@@ -3349,6 +3349,7 @@ dependencies = [
  "thrum-sea-model",
  "thrum-test-support",
  "thrum-water-model",
+ "web-time",
  "wgpu",
 ]
 

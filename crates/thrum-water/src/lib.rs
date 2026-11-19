@@ -1,6 +1,7 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
 #[cfg(test)]
 mod fresnel_tests;
+pub mod interaction;
 pub mod map_gpu;
 mod prepare;
 pub mod query;
@@ -28,6 +29,8 @@ pub struct Profile {
     pub deep_scatter: [f32; 3],
     /// Optional body query capacity and age limits.
     pub query: Option<query::QueryLimits>,
+    /// Optional two-level interaction waves.
+    pub interaction: Option<interaction::Limits>,
 }
 
 /// Invalid water configuration or unavailable preparation dependency.
@@ -47,6 +50,8 @@ pub enum WaterError {
     InvalidLevel,
     /// The map cannot be represented by this GPU profile.
     UnsupportedMap(&'static str),
+    /// Interaction capacities exceed the supported implementation limits.
+    InvalidInteractionLimits,
 }
 impl std::fmt::Display for WaterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -60,6 +65,9 @@ impl std::fmt::Display for WaterError {
             }
             Self::InvalidLevel => f.write_str("water level must be finite"),
             Self::UnsupportedMap(reason) => f.write_str(reason),
+            Self::InvalidInteractionLimits => {
+                f.write_str("interaction requires 1–16 solves and at most 64 sources of each kind")
+            }
         }
     }
 }
@@ -74,6 +82,8 @@ pub struct WaterReport {
     pub bodies: Vec<(String, u32)>,
     /// Actual allocation sizes, keyed by resource name.
     pub resources: Vec<(String, u64)>,
+    /// Last submitted interaction counters, when enabled.
+    pub interaction: Option<interaction::Report>,
 }
 
 /// A single contribution containing the ambient passes and the displaced surface.
@@ -88,6 +98,8 @@ pub struct Water {
     layer_heights: [f32; 4],
     profile: Profile,
     query: Option<query::QueryMailbox>,
+    interaction: Option<interaction::Mailbox>,
+    interaction_tap: Option<interaction::WitnessTap>,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
@@ -126,6 +138,11 @@ impl Water {
         profile: Profile,
         mapped: bool,
     ) -> Result<Self, WaterError> {
+        if profile.interaction.is_some_and(|limits| {
+            limits.bodies > 64 || limits.impulses > 64 || !(1..=16).contains(&limits.solves)
+        }) {
+            return Err(WaterError::InvalidInteractionLimits);
+        }
         if profile
             .deep_scatter
             .iter()
@@ -177,6 +194,8 @@ impl Water {
                 .query
                 .filter(|limits| limits.points != 0)
                 .map(|limits| query::QueryMailbox::new(limits, map, long_waves, layer_heights)),
+            interaction: profile.interaction.map(interaction::Mailbox::new),
+            interaction_tap: None,
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
@@ -190,6 +209,16 @@ impl Water {
     /// Tick-page writer and answer mailbox for query-enabled water.
     pub fn query_mailbox(&self) -> Option<query::QueryMailbox> {
         self.query.clone()
+    }
+    /// Tick-page writer for body reactions and impacts.
+    pub fn interaction_mailbox(&self) -> Option<interaction::Mailbox> {
+        self.interaction.clone()
+    }
+    /// Attach a diagnostic receiver before transferring the contribution to the host.
+    pub fn tap_interaction(&mut self) -> interaction::WitnessTap {
+        self.interaction_tap
+            .get_or_insert_with(Default::default)
+            .clone()
     }
     /// Actual submitted mesh vertices (including the horizon skirt).
     pub fn vertices(&self) -> u32 {
@@ -220,6 +249,9 @@ impl Water {
             if let Some(query) = &p.query {
                 resources.extend(query.resource_bytes());
             }
+            if let Some(interaction) = &p.interaction {
+                resources.extend(interaction.resource_bytes());
+            }
             resources
         })
     }
@@ -236,17 +268,21 @@ impl SceneContribution for Water {
             .map
             .lock()
             .map_err(|_| WaterError::UnavailableMap.to_string())?;
+        let interaction = self.report.lock().expect("water report").interaction;
         self.prepared = Some(prepare::new(
             surface,
             self.profile,
             &map,
             self.mapped,
             self.query.clone(),
+            self.interaction.clone(),
+            interaction,
         )?);
         *self.report.lock().expect("water report") = WaterReport {
             vertices: self.vertices(),
             bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),
             resources: self.resource_bytes(),
+            interaction,
         };
         self.previous = None;
         Ok(())
@@ -271,6 +307,9 @@ impl SceneContribution for Water {
         if let Some(gpu) = &mut p.map {
             gpu.record(&p.queue, &map, frame.time);
         }
+        if let Some(interaction) = &mut p.interaction {
+            interaction.record(&p.queue, encoder, frame, &map);
+        }
         if let Some(query) = &mut p.query {
             query.record(
                 &p.queue,
@@ -279,6 +318,7 @@ impl SceneContribution for Water {
                 self.profile.waves.choppiness,
                 self.layer_heights,
                 &map,
+                p.interaction.as_ref(),
             );
         }
         drop(map);
@@ -314,8 +354,16 @@ impl SceneContribution for Water {
     }
     fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
-        self.prepared.as_ref().is_none_or(|p| {
-            index != p.ambient_passes || p.query.as_ref().is_some_and(query::Readback::pending)
+        self.prepared.as_ref().is_some_and(|p| {
+            if index < p.ambient_passes {
+                true
+            } else if index == p.ambient_passes
+                && let Some(interaction) = &p.interaction
+            {
+                interaction.pending()
+            } else {
+                p.query.as_ref().is_some_and(query::Readback::pending)
+            }
         })
     }
     fn encode_effect(
@@ -327,6 +375,10 @@ impl SceneContribution for Water {
         if let Some(p) = &self.prepared {
             if index < p.ambient_passes {
                 p.ambient.encode_pass(index, pass);
+            } else if index == p.ambient_passes
+                && let Some(interaction) = &p.interaction
+            {
+                interaction.encode(pass);
             } else if let Some(query) = &p.query {
                 query.encode(pass);
             }
@@ -334,7 +386,7 @@ impl SceneContribution for Water {
     }
     fn encode_effect_readback(&mut self, index: usize, encoder: &mut wgpu::CommandEncoder) {
         if let Some(p) = &self.prepared
-            && index == p.ambient_passes
+            && index == p.ambient_passes + usize::from(p.interaction.is_some())
             && let Some(query) = &p.query
         {
             query.copy(encoder);
@@ -379,6 +431,12 @@ impl SceneContribution for Water {
             }
             if let Some(query) = self.prepared.as_mut().and_then(|p| p.query.as_mut()) {
                 query.submit();
+            }
+            if let Some(interaction) = self.prepared.as_mut().and_then(|p| p.interaction.as_mut()) {
+                self.report.lock().expect("water report").interaction = interaction.submit();
+                if let Some(tap) = &self.interaction_tap {
+                    *tap.0.lock().expect("interaction witness") = interaction.witness();
+                }
             }
         }
     }

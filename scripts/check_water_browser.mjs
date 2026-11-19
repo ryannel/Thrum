@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake');
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -64,8 +64,49 @@ const observer = `
   };
   const create=GPUDevice.prototype.createBuffer;
   GPUDevice.prototype.createBuffer=function(desc){
-    if(desc.label==='sea parameters')desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
-    const b=create.call(this,desc);if(desc.label?.startsWith('sea '))__buffers[desc.label]=b;return b;
+    if(['sea parameters','interaction sample settings'].includes(desc.label))desc={...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC};
+    const b=create.call(this,desc);
+    if(desc.label?.startsWith('sea ')||desc.label?.startsWith('interaction '))__buffers[desc.label]=b;
+    return b;
+  };
+  const wakeWitnesses=new Map();
+  globalThis.__readWake=async(tick,points=[])=>{
+    const device=__devices.at(-1), commands=device.createCommandEncoder();
+    const stages=['interaction sample settings','interaction wave endpoints'].map(name=>{
+      const source=__buffers[name];
+      if(!source)throw Error('missing submitted '+name);
+      const buffer=device.createBuffer({size:source.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+      commands.copyBufferToBuffer(source,0,buffer,0,source.size);return buffer;
+    });
+    device.queue.submit([commands.finish()]);
+    const [settings,state]=await Promise.all(stages.map(async buffer=>{
+      await buffer.mapAsync(GPUMapMode.READ);
+      const bytes=buffer.getMappedRange().slice(0);buffer.unmap();buffer.destroy();return bytes;
+    }));
+    const rows=new Float32Array(settings),bases=new Uint32Array(settings,80,4);
+    const cells=new Float32Array(state);
+    const interpolate=([x,z])=>[2,3].reduce((sum,plane)=>{
+      const cx=(x-rows[plane*4])/rows[plane*4+2],cz=(z-rows[plane*4+1])/rows[plane*4+2];
+      if(cx<0||cz<0||cx>=255||cz>=255)return sum;
+      const i=2*(bases[plane]+Math.floor(cz)*256+Math.floor(cx));
+      const fx=cx%1,fz=cz%1;
+      const a=cells[i]+fx*(cells[i+2]-cells[i]);
+      const b=cells[i+512]+fx*(cells[i+514]-cells[i+512]);
+      return sum+a+fz*(b-a);
+    },0);
+    wakeWitnesses.set(tick,interpolate);
+    while(wakeWitnesses.size>4)wakeWitnesses.delete(wakeWitnesses.keys().next().value);
+    const peak=[2,3].map(plane=>{
+      let value=0;
+      for(let i=2*bases[plane],end=i+2*256*256;i<end;i+=2)value=Math.max(value,Math.abs(cells[i]));
+      return value;
+    });
+    return {tick,peak,heights:points.map(interpolate)};
+  };
+  globalThis.__checkWakeSample=([tick,used,requested,x,z,height])=>{
+    const sample=wakeWitnesses.get(tick);
+    if(!sample||used!==requested)return null;
+    return {tick,x,z,height,expected:sample([x,z])};
   };
   const begin=GPUCommandEncoder.prototype.beginComputePass;
   GPUCommandEncoder.prototype.beginComputePass=function(desc){
@@ -242,7 +283,7 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='island'?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=2560;document.querySelector('canvas').height=1440;});`},sid);
-  const route=mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
+  const route=mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'';
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
@@ -283,7 +324,52 @@ try {
     result.frames.push(record);return record;
   };
   for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
-  if(mode==='bodies'){
+  if(mode==='wake'){
+    const status=()=>evaluate('(game.report(),globalThis.waterBodyStatus)');
+    const head=await status(),samples=[],buoy=[];
+    assert(head?.poses.length===9,'wake scene did not publish its fleet');
+    let continuing=null;
+    for(let index=0;index<670;index++){
+      if(index===390)await evaluate(`game.apply_params('{"craft.speed":0}')`);
+      await until(()=>evaluate('game.frame_ready()'),'free wake frame slot');
+      await drive(1000/60);
+      const wake=await status();
+      if(!wake?.wakeTick)continue;
+      buoy.push([wake.wakeTick,wake.poses[1][1]-head.poses[1][1],wake.poses[0][0]]);
+      if(wake.wakeSample){
+        const sample=await evaluate('__checkWakeSample('+JSON.stringify(wake.wakeSample)+')');
+        if(sample&&!samples.some(entry=>entry.tick===sample.tick))samples.push(sample);
+      }
+      if(index>=170&&index%18===0||index>=408&&index<=410){
+        const read=await evaluate('__readWake('+wake.wakeTick+')');
+        if(index===408)continuing=read;
+      }
+    }
+    assert(Math.max(...buoy.map(item=>item[1]))>0.001&&Math.min(...buoy.map(item=>item[1]))< -0.001,
+      'the float did not rise and fall on the calm sea');
+    assert(continuing?.peak.some(value=>value>0.005),'no retained wake after the craft stopped');
+    assert(samples.length>1&&samples.some(sample=>Math.abs(sample.expected)>0.001),'no resolved public wake samples');
+    assert(samples.every(sample=>Math.abs(sample.height-sample.expected)<0.00002),'public query differs from submitted wake');
+    await capture('wake-sea',0);
+    result.wake_sea={public_query:samples,buoy,after_stop:continuing};
+
+    await cdp.call('Page.navigate',{url:url+'?wake=calm&location=lake&stone=1&view=shore&wake-bodies=0'},sid);
+    await until(()=>evaluate('!!window.game'),'lake wake scene');
+    now=0;
+    const rings=[];
+    for(let index=0;index<260;index++){
+      await until(()=>evaluate('game.frame_ready()'),'free ring frame slot');
+      await drive(index===0?0:1000/60);
+      const wake=await status();
+      if(index%12===0&&wake?.wakeTick)
+        rings.push(await evaluate('__readWake('+wake.wakeTick+',[[184,24],[184,28],[184,34],[104,93]])'));
+    }
+    assert(rings.some(r=>r.tick<60&&r.peak.every(value=>value===0)),'the lake was disturbed before the impact');
+    assert(rings.some(r=>r.tick>60&&r.peak[0]>0.002),'the impact did not raise rings');
+    assert(rings.every(r=>r.heights[3]===0),'the pond received the lake rings');
+    await capture('wake-lake',0);
+    result.wake_lake=rings;
+  }else if(mode==='bodies'){
     const bodyStatus=()=>evaluate('(game.report(),globalThis.waterBodyStatus)');
     const start=await bodyStatus();
     assert(start?.poses.length===9,'expected craft and eight floats');

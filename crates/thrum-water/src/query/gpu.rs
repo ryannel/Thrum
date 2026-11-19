@@ -1,6 +1,7 @@
 mod correction;
 
 use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
+use crate::interaction::Interaction;
 use bytemuck::{Pod, Zeroable};
 use correction::{CascadeSample, MapPrediction};
 pub(super) use correction::{Correction, ReadyBody};
@@ -8,7 +9,9 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
-use thrum_render::contribution::{EffectCadence, EffectGraph, EffectPass, EffectTime};
+use thrum_render::contribution::{
+    EffectAccess, EffectCadence, EffectGraph, EffectPass, EffectTime,
+};
 use thrum_sea_model::{Sample, Spectrum};
 use thrum_water_model::{Map, Surface};
 
@@ -29,6 +32,7 @@ struct Point {
     body: u32,
     has_bed: u32,
     gains: [f32; 4],
+    dent: [f32; 4],
 }
 
 #[repr(C)]
@@ -63,6 +67,7 @@ struct Answer {
     body_flags: [u32; 4],
     cascades: [CascadeSample; 3],
     padding: f32,
+    wake: [f32; 4],
 }
 
 struct Slot {
@@ -113,6 +118,7 @@ impl Readback {
         device: &thrum_render::runtime::DeviceSite,
         ambient: &thrum_sea::Ambient,
         mailbox: QueryMailbox,
+        wake: Option<&Interaction>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         let count = u64::from(mailbox.limits.points);
@@ -120,8 +126,9 @@ impl Readback {
             label: Some("water body query"),
             source: wgpu::ShaderSource::Wgsl(
                 format!(
-                    "{}\n{}",
+                    "{}\n{}\n{}",
                     include_str!("../gains.wgsl"),
+                    Interaction::sample_source(0, 5, 6, wake.is_some()),
                     include_str!("sample.wgsl")
                 )
                 .into(),
@@ -144,7 +151,7 @@ impl Readback {
                 },
             )
         };
-        let layout = [
+        let mut layout = vec![
             bind_buffer(0, wgpu::BufferBindingType::Uniform),
             bind_buffer(1, wgpu::BufferBindingType::Storage { read_only: true }),
             bind_buffer(2, wgpu::BufferBindingType::Storage { read_only: true }),
@@ -158,6 +165,9 @@ impl Readback {
                 },
             ),
         ];
+        if wake.is_some() {
+            layout.extend(Interaction::sample_layout(5, visibility));
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("water query bindings"),
             entries: &layout,
@@ -206,31 +216,35 @@ impl Readback {
                 answers.size(),
                 Usage::MAP_READ | Usage::COPY_DST,
             );
+            let mut entries = vec![
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: settings.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: points.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: components.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: answers.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(&ambient.filtered_views()[0]),
+                },
+            ];
+            if let Some(wake) = wake {
+                entries.extend(wake.sample_entries(5));
+            }
             let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("water query bindings"),
                 layout: &layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: settings.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: points.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: components.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: answers.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 4,
-                        resource: wgpu::BindingResource::TextureView(&ambient.filtered_views()[0]),
-                    },
-                ],
+                entries: &entries,
             });
             Slot {
                 group,
@@ -252,14 +266,23 @@ impl Readback {
         }
     }
 
-    pub(crate) fn declare(ambient: &thrum_sea::Ambient, graph: &mut EffectGraph) {
+    pub(crate) fn declare(
+        ambient: &thrum_sea::Ambient,
+        graph: &mut EffectGraph,
+        wake: Option<EffectAccess>,
+    ) {
         graph.passes.push(EffectPass {
             name: "water body query".into(),
             // The graph has no retained read of this output. The contribution
             // itself controls execution and the staging copy as one operation.
             cadence: EffectCadence::Skippable,
             async_eligible: false,
-            accesses: ambient.filtered_accesses().into_iter().take(1).collect(),
+            accesses: ambient
+                .filtered_accesses()
+                .into_iter()
+                .take(1)
+                .chain(wake)
+                .collect(),
         });
     }
 
@@ -275,6 +298,7 @@ impl Readback {
         chop: f64,
         heights: [f32; 4],
         map: &Map,
+        wake: Option<&Interaction>,
     ) {
         // A recording that never reached submit did not start a map.
         self.pending.clear();
@@ -342,8 +366,8 @@ impl Readback {
                 .collect();
             let (points, map_revisions): (Vec<_>, Vec<_>) = bodies
                 .iter()
-                .flat_map(|body| &body.points)
-                .map(|point| {
+                .flat_map(|body| body.points.iter().map(move |point| (body.id, point)))
+                .map(|(id, point)| {
                     let dt = frame_offset
                         + seconds_between(point.use_tick, time.tick, time.tick_duration);
                     // A future use tick holds the latest authored stage. A
@@ -354,7 +378,11 @@ impl Readback {
                     } else {
                         map
                     };
-                    (Point::new(point, dt, domain), domain.spatial_revision())
+                    let mut input = Point::new(point, dt, domain);
+                    if let Some(wake) = wake {
+                        input.dent = wake.dent(point.use_tick.min(time.tick), id, point.position);
+                    }
+                    (input, domain.spatial_revision())
                 })
                 .unzip();
             let count = u32::try_from(points.len()).expect("points admitted by query capacity");
@@ -541,9 +569,15 @@ impl Batch {
                             });
                         }
                     }
+                    if raw.body_flags[3] & 16 != 0 {
+                        sources[4] = Some(
+                            point.use_tick.min(self.frame.tick) as f64
+                                * self.frame.tick_duration.as_secs_f64(),
+                        );
+                    }
                     (
                         raw.decode(index, point, sources),
-                        MapPrediction::new(revision, raw.cascades),
+                        MapPrediction::new(revision, raw.cascades, raw.wake),
                     )
                 })
                 .unzip();

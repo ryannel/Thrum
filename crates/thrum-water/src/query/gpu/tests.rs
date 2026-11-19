@@ -1,12 +1,11 @@
-use super::{Answer, CascadeSample, Component, Point, Settings};
+use super::{Answer, CascadeSample, Component, Interaction, Point, Settings};
 
 #[test]
 fn query_records_match_the_shader_layout() {
-    let source = concat!(
-        include_str!("../../gains.wgsl"),
-        include_str!("../sample.wgsl")
-    );
-    let shader = wgpu::naga::front::wgsl::parse_str(source).expect("water query shader");
+    let source = Interaction::sample_source(0, 5, 6, true)
+        + include_str!("../../gains.wgsl")
+        + include_str!("../sample.wgsl");
+    let shader = wgpu::naga::front::wgsl::parse_str(&source).expect("water query shader");
     macro_rules! check {
         ($host:ty, $name:literal, $($member:ident),+ $(,)?) => {
             let ty = shader.types.iter().map(|(_, ty)| ty).find(|ty| ty.name.as_deref() == Some($name)).expect($name);
@@ -32,7 +31,8 @@ fn query_records_match_the_shader_layout() {
         slope,
         body,
         has_bed,
-        gains
+        gains,
+        dent
     );
     check!(
         Component,
@@ -71,6 +71,7 @@ fn query_records_match_the_shader_layout() {
         current_bed,
         body_flags,
         cascades,
-        padding
+        padding,
+        wake
     );
 }

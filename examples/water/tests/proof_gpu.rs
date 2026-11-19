@@ -38,7 +38,24 @@ fn floating_game(wind: Wind, water: bool) -> water_scene::floating::FloatingScen
         .expect("craft speed")
         .parse()
         .expect("valid speed");
-    let chase = std::env::var("THRUM_WATER_VIEW").is_ok_and(|v| v == "chase");
+    let view = std::env::var("THRUM_WATER_VIEW").unwrap_or_default();
+    let chase = view == "chase";
+    if wake_wind().is_some() {
+        let lake = std::env::var("THRUM_WATER_LOCATION").is_ok_and(|v| v == "lake");
+        return water_scene::floating::build_wake(
+            wind,
+            lake,
+            speed,
+            std::f32::consts::PI,
+            water_scene::floating::WakeDemo {
+                view: water_scene::floating::WakeView::named(&view),
+                stone: std::env::var_os("THRUM_WATER_STONE").is_some(),
+                disabled: !water,
+                body_capacity: None,
+            },
+        )
+        .expect("wake scene");
+    }
     let heading = if chase {
         std::f32::consts::FRAC_PI_2
     } else {
@@ -49,7 +66,16 @@ fn floating_game(wind: Wind, water: bool) -> water_scene::floating::FloatingScen
 }
 
 fn floating_wind() -> Option<Wind> {
-    std::env::var("THRUM_WATER_BODIES")
+    wake_wind().or_else(|| {
+        std::env::var("THRUM_WATER_BODIES")
+            .ok()
+            .as_deref()
+            .and_then(Wind::named)
+    })
+}
+
+fn wake_wind() -> Option<Wind> {
+    std::env::var("THRUM_WATER_WAKE")
         .ok()
         .as_deref()
         .and_then(Wind::named)
@@ -129,6 +155,15 @@ fn driver() {
                         let mut record = sample_json(&sample);
                         record["completion_upper_ms"] =
                             json!(fixture.last_elapsed.as_secs_f64() * 1000.0);
+                        if let Some(wake) = fixture.report.lock().expect("report").interaction {
+                            record["interaction"] = json!({
+                                "endpoints": wake.endpoints,
+                                "regions": wake.regions,
+                                "solves": wake.solves,
+                                "labelling_cpu_ms": wake.labelling_ms,
+                                "refused_regions": wake.refused_regions,
+                            });
+                        }
                         frames.push(record);
                     }
                 }

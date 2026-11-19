@@ -82,6 +82,9 @@ struct VertexOut {
         let b=field_at(q,vertex.z*2.0,surface_vertex(q,body).gains);
         f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,0.5),b,0.5);
     }
+    let wake=wake_at(rest,0.0);
+    f.displacement.y+=wake.x;
+    f.velocity.y+=wake.w;
     var world=vec3(rest.x+f.displacement.x,row.level+f.displacement.y,rest.y+f.displacement.z);
     // Infinite final edge: clamp reverse-Z to the far plane, preserving the horizon.
     if sea && max(abs(vertex.x),abs(vertex.y))>=524288.0 {world=vec3(anchor.x+vertex.x*100.0,row.level,anchor.y+vertex.y*100.0);}
@@ -121,6 +124,8 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
 }
 @fragment fn water_fragment(input:VertexOut)->Output {
     let dx=dpdx(input.rest);let dy=dpdy(input.rest);
+    let wake_slope=wake_at(input.rest,0.0).yz;
+    let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
     let row=surface_pixel(input.rest,input.body);
     if !row.owned { discard; }
     // Select a cache only for spatial coverage. Hardware filters each layer
@@ -129,7 +134,10 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     var slope=vec2(0.0);
     let gain=tail_gain(row);
     let tail=water.lengths.w*0.5*gain*gain;
-    var covariance=vec3(tail,0.0,tail);
+    let wake_xx=dot(vec2(wake_dx.x,wake_dy.x),vec2(wake_dx.x,wake_dy.x));
+    let wake_xz=wake_dx.x*wake_dx.y+wake_dy.x*wake_dy.y;
+    let wake_zz=dot(vec2(wake_dx.y,wake_dy.y),vec2(wake_dx.y,wake_dy.y));
+    var covariance=vec3(tail,0.0,tail)+vec3(wake_xx,wake_xz,wake_zz)/12.0;
     var differential=vec3(1.0,0.0,1.0);
     let fade=1.0-smoothstep(4000.0,8000.0,length(input.rest-view.camera_xyz_time.xz));
     var long_mean=vec2(0.0);var long_second=vec3(0.0);var long_differential=vec3(0.0);
@@ -143,6 +151,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         long_differential+=w*m.differential;
     }
     slope=row.gains.x*fade*long_mean;
+    slope+=wake_slope;
     covariance+=row.gains.x*row.gains.x*(long_second-fade*fade*vec3(long_mean.x*long_mean.x,long_mean.x*long_mean.y,long_mean.y*long_mean.y));
     differential+=row.gains.x*fade*long_differential;
     for(var band=0u;band<3u;band++) {

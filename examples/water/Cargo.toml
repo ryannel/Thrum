@@ -23,6 +23,8 @@ name = "stage_gpu"
 name = "floating_gpu"
 [[test]]
 name = "inland_floating_gpu"
+[[test]]
+name = "wake_scene_gpu"
 
 [lints]
 workspace = true
