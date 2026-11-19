@@ -70,7 +70,7 @@
     {
       "id": "M2",
       "name": "No engine crate reaches into a game or an example, and the engine's tests build with the games taken away",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
