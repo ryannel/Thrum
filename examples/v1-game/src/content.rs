@@ -247,7 +247,7 @@ fn validate_sprite_launch() -> Result<(), String> {
             return Err(format!("2D scene refuses {name}={enabled}"));
         }
     }
-    for name in ["THRUM_STARS", "THRUM_ROUTE_OVERLAY"] {
+    for name in ["THRUM_STARS", "THRUM_ROUTE_OVERLAY", "THRUM_NATIVE_WITNESS"] {
         if let Ok(request) = launch_value(name)
             && request != "off"
         {
