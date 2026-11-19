@@ -240,7 +240,6 @@ impl<G: Game + 'static> App<G> {
 
     fn observe_extent(&mut self, extent: [u32; 2]) -> Result<(), String> {
         if extent != self.observed_extent {
-            self.invalidate_surface()?;
             self.observed_extent = extent;
         }
         Ok(())
@@ -479,6 +478,11 @@ impl<G: Game + 'static> App<G> {
         );
         if let Some(capture) = &self.extent_capture {
             capture.prepare_window(&window)?;
+        }
+        if let Some(probe) = std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE") {
+            let id = display_link::window_number(&window)?;
+            std::fs::write(std::path::Path::new(&probe).join("window-id"), id.to_string())
+                .map_err(|error| error.to_string())?;
         }
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
@@ -776,7 +780,15 @@ impl<G: Game + 'static> App<G> {
         let now = self.origin.elapsed();
         self.last_call = now;
         self.callbacks += 1;
-        let size = self.window.as_ref().ok_or("window missing")?.inner_size();
+        let window = self.window.as_ref().ok_or("window missing")?;
+        if std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE").is_some()
+            && (60..100).contains(&self.callbacks)
+        {
+            let step = self.callbacks as u32 - 60;
+            let _ = window
+                .request_inner_size(winit::dpi::LogicalSize::new(960 - step * 8, 540 - step * 4));
+        }
+        let size = window.inner_size();
         let extent = [size.width, size.height];
         self.observe_extent(extent)?;
         self.edits.carry(self.game.frame_edits());

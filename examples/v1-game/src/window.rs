@@ -97,6 +97,10 @@ pub fn run_window(hardware: Vec<HardwareRequest>, capture: Option<thrum_app::Win
     // are reported when the host is prepared.
     let (window_title, title) = match crate::selected_setup() {
         Ok(crate::GameSetup {
+            sprite_scale: Some(_),
+            ..
+        }) => ("Thrum V1 — sprites", "Thrum V1 sprites"),
+        Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Frustum,
             ..
@@ -135,6 +139,7 @@ pub fn run_window(hardware: Vec<HardwareRequest>, capture: Option<thrum_app::Win
             world: None,
             held_keys: 0,
             capture_route: None,
+            capture_eye: None,
             capture_cooked: None,
             cloud_capture: false,
             hardware,
@@ -153,6 +158,7 @@ struct WindowGame {
     world: Option<WorldControls>,
     held_keys: u8,
     capture_route: Option<String>,
+    capture_eye: Option<[f32; 3]>,
     capture_cooked: Option<CaptureCooked>,
     cloud_capture: bool,
     hardware: Vec<HardwareRequest>,
@@ -161,13 +167,18 @@ struct WindowGame {
 struct CaptureCooked {
     folder: std::path::PathBuf,
     path: thrum_asset_gpu::CookedDrawPath,
+    preview: Option<ContentPreviewCapture>,
 }
+
+type ContentPreviewCapture =
+    std::sync::Arc<std::sync::Mutex<Option<crate::content_preview::PreviewRecord>>>;
 
 impl CaptureCooked {
     fn new(folder: &std::path::Path, capture: RuntimeCaptureOutput) -> Self {
         Self {
             folder: folder.to_owned(),
             path: capture.cooked_path(),
+            preview: None,
         }
     }
 }
@@ -189,6 +200,11 @@ fn capture_game_with_route_limit(
         held_keys: 0,
         cloud_capture,
         capture_cooked,
+        capture_eye: crate::content::launch_value("THRUM_CAPTURE_FIXED_EYE")
+            .ok()
+            .map(|value| serde_json::from_str(&value))
+            .transpose()
+            .map_err(|error| format!("fixed capture eye: {error}"))?,
         hardware: Vec::new(),
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .map(std::fs::read_to_string)
@@ -246,11 +262,28 @@ impl Game for WindowGame {
             crate::selected_setup()?,
         ))?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
-        let content = if let Some(cooked) = &self.capture_cooked {
+        let preview = self
+            .capture_cooked
+            .as_ref()
+            .and_then(|cooked| cooked.preview.as_ref());
+        let content = if let Some(preview) = preview {
+            *preview.lock().map_err(|error| error.to_string())? =
+                Some(crate::content::attach_content_preview(&mut host)?);
+            None
+        } else if let Some(cooked) = &self.capture_cooked {
             crate::content::attach_cooked_scene_with_path(&mut host, cooked.path)?
         } else {
             crate::attach_cooked_scene(&mut host)?
         };
+        if let Some(eye) = self.capture_eye {
+            if self.capture_route.is_some() {
+                return Err("a fixed capture eye cannot override an active route".to_owned());
+            }
+            let camera = host
+                .scene_camera()
+                .ok_or("fixed capture eye needs a cooked scene")?;
+            host.set_scene_camera(camera.at(eye)?)?;
+        }
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
             capture::prepare_route(

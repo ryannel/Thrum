@@ -133,6 +133,8 @@ pub(super) struct FrameReply {
     pub(super) pending_frames: usize,
     pub(super) target: TargetLeadStatus,
     pub(super) acquired: bool,
+    /// Lease configuration at the call to acquire, if acquisition was attempted.
+    pub(super) acquire_configuration: Option<Option<(u64, [u32; 2])>>,
     pub(super) presentable_encode: bool,
     pub(super) configured: bool,
     pub(super) stalled: bool,
@@ -328,6 +330,7 @@ impl FrameReply {
             pending_frames: 0,
             target,
             acquired: false,
+            acquire_configuration: None,
             presentable_encode: false,
             configured: false,
             stalled: false,
@@ -864,6 +867,7 @@ impl Gpu {
                 return Ok(Some(encoded.cancel_background()));
             }
             let acquiring = Instant::now();
+            reply.acquire_configuration = Some(leased.configured);
             let texture = leased.surface.get_current_texture();
             reply.acquire = acquiring.elapsed();
             if is_lost() {

@@ -131,9 +131,9 @@ impl ExtentCapture {
                     "device_generation": image.device_generation,
                 });
                 std::fs::write(self.output.join("submitted.rgba"), &image.rgba)
-                    .map_err(|error| error.to_string())?;
+                    .map_err(|error| FrameError::Scene(error.to_string()))?;
                 std::fs::write(self.output.join("submitted.json"), record.to_string())
-                    .map_err(|error| error.to_string())?;
+                    .map_err(|error| FrameError::Scene(error.to_string()))?;
                 host.disable_submitted_capture();
                 return Ok(true);
             }

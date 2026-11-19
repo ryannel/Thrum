@@ -60,6 +60,8 @@ pub(super) struct Witness {
     resize_open: bool,
     /// Frame replies since the latest resize, until a new-extent present.
     resize_replies: u64,
+    resize_first_present: Option<(u64, [u32; 2], u64)>,
+    unconfigured_acquires: u64,
     /// Most frame replies any resize waited for a new-extent present.
     pub(super) max_resize_gap_replies: u64,
     /// Presents admitted on an epoch a resize had already revoked.
@@ -172,6 +174,7 @@ impl Witness {
         self.resize_epoch = epoch;
         self.resize_open = true;
         self.resize_replies = 0;
+        self.resize_first_present = None;
     }
 
     pub(super) fn recovered(&mut self, recovered: &Recovered) {
@@ -198,6 +201,11 @@ impl Witness {
         self.surface_samples += u64::from(frame.surface_samples);
         self.presentable_encodes += u64::from(frame.presentable_encode);
         self.acquired += u64::from(frame.acquired);
+        self.unconfigured_acquires += u64::from(
+            frame
+                .acquire_configuration
+                .is_some_and(|configuration| configuration != Some((frame.epoch, frame.extent))),
+        );
         self.configured += u64::from(frame.configured);
         self.max_pending_frames = self.max_pending_frames.max(frame.pending_frames);
         self.max_acquire_us = self.max_acquire_us.max(frame.acquire.as_micros());
@@ -224,7 +232,9 @@ impl Witness {
                 self.presented_epoch = frame.epoch;
                 self.presented_extent = frame.extent;
                 self.presented_generation = frame.generation;
-                if frame.epoch >= self.resize_epoch {
+                if self.resize_open && frame.epoch >= self.resize_epoch {
+                    self.resize_first_present =
+                        Some((frame.epoch, frame.drawable, self.resize_replies));
                     self.resize_open = false;
                 }
             }
@@ -405,6 +415,19 @@ impl Witness {
             ("old_window_touches", self.old_window_touches.to_string()),
             ("resize_events", self.resize_events.to_string()),
             ("resize_epoch", self.resize_epoch.to_string()),
+            (
+                "resize_first_present",
+                self.resize_first_present.map_or_else(
+                    String::new,
+                    |(epoch, [width, height], replies)| {
+                        format!("{epoch},{width}x{height},{replies}")
+                    },
+                ),
+            ),
+            (
+                "unconfigured_acquires",
+                self.unconfigured_acquires.to_string(),
+            ),
             (
                 "max_resize_gap_replies",
                 self.max_resize_gap_replies.to_string(),
