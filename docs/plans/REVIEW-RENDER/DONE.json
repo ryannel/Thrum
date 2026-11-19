@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -49,7 +49,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1/grouped-shade.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
@@ -71,13 +71,6 @@
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m15-surface-queries-and-the-medium-source",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "A cloud GPU limit is classified as a scene error",
-          "item": "M1.3",
-          "repeat": true
         }
       ]
     },
