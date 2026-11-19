@@ -130,7 +130,7 @@ impl SceneSource<SourceTick> for Source {
     }
 }
 
-pub(crate) fn beach(ratio: f64) -> Map {
+pub(crate) fn beach(ratio: f64, max_stage: f64) -> Map {
     let heights = (0_i16..7)
         .flat_map(|_| (-48_i16..=48).map(|x| f64::from(x) * HEIGHT_SLOPE))
         .collect();
@@ -142,7 +142,7 @@ pub(crate) fn beach(ratio: f64) -> Map {
             level: 0.0,
             stage: Stage {
                 min: 0.0,
-                max: 0.0,
+                max: max_stage,
                 value: 0.0,
             },
             fetch: 10_000.0,
@@ -348,7 +348,7 @@ fn submitted_depth_waterline_matches_the_cpu_wave_at_display_time() {
     let period = std::f64::consts::TAU / wave.frequency();
     let mut elapsed = 1.0 / 60.0;
     for ratio in [0.7, 0.0] {
-        let map = Arc::new(Mutex::new(beach(ratio)));
+        let map = Arc::new(Mutex::new(beach(ratio, 0.0)));
         let spectrum = Spectrum {
             long: vec![wave],
             cascades: [160.0, 37.0, 9.0]

@@ -133,8 +133,9 @@ impl Water {
         {
             return Err(WaterError::InvalidOptics);
         }
-        thrum_sea_model::LongWaves::new(spectrum.long.clone(), profile.waves.choppiness)
-            .map_err(|e| WaterError::InvalidSpectrum(format!("long waves: {e:?}")))?;
+        let long_waves =
+            thrum_sea_model::LongWaves::new(spectrum.long.clone(), profile.waves.choppiness)
+                .map_err(|e| WaterError::InvalidSpectrum(format!("long waves: {e:?}")))?;
         let contraction =
             thrum_sea_model::contraction_bound(&spectrum.long, profile.waves.choppiness)
                 .map_err(|e| WaterError::InvalidSpectrum(format!("long waves: {e:?}")))?;
@@ -161,6 +162,7 @@ impl Water {
         if !row.level.is_finite() {
             return Err(WaterError::InvalidLevel);
         }
+        let layer_heights = records::layer_heights(&spectrum);
         Ok(Self {
             report: Arc::default(),
             map: Arc::clone(&map),
@@ -168,13 +170,13 @@ impl Water {
             body,
             long_variances: records::long_variances(&spectrum),
             height_rms: records::height_rms(&spectrum),
-            layer_heights: records::layer_heights(&spectrum),
+            layer_heights,
             spectrum,
             profile,
             query: profile
                 .query
                 .filter(|limits| limits.points != 0)
-                .map(|limits| query::QueryMailbox::new(limits, map)),
+                .map(|limits| query::QueryMailbox::new(limits, map, long_waves, layer_heights)),
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),

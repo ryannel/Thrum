@@ -9,12 +9,20 @@ struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
     lengths_chop: vec4<f32>, heights: vec4<f32>, swash_margin: vec4<f32>,
 }
+struct CascadeSample {
+    height: f32,
+    slope: array<f32, 2>,
+    differential: array<f32, 3>,
+    velocity: array<f32, 3>,
+}
 struct Answer {
     height_slope_rate: vec4<f32>,
     velocity_depth: vec4<f32>,
     layers: vec4<f32>,
     current_bed: vec4<f32>,
     body_flags: vec4<u32>,
+    cascades: array<CascadeSample, 3>,
+    padding: f32,
 }
 struct Wave {
     displacement: vec3<f32>,
@@ -111,6 +119,21 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     var out: Answer;
     out.body_flags = vec4(point.body, 0u, point.has_bed, 0u);
     out.current_bed = vec4(row.yzw, 0.0);
+    // A stage change can make a dry or sheltered point gain wave support
+    // before its use tick. Keep the actual frame samples for that case.
+    var bands: array<Wave, 3>;
+    for (var band = 0u; band < 3u; band++) {
+        if settings.heights[band + 1u] > 0.0 {
+            let wave = cascade_wave(point, band);
+            bands[band] = wave;
+            out.cascades[band] = CascadeSample(
+                wave.displacement.y,
+                array(wave.slope.x, wave.slope.y),
+                array(wave.differential.x, wave.differential.y, wave.differential.z),
+                array(wave.velocity.x, wave.velocity.y, wave.velocity.z),
+            );
+        }
+    }
     if point.body != 0xffffffffu {
         let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
         let gains = limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
@@ -123,7 +146,7 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
         for (var band = 0u; band < 3u; band++) {
             let gain = gains[band + 1u];
             if gain > 0.0 {
-                let wave = cascade_wave(point, band);
+                let wave = bands[band];
                 let band_slope = world_slope(Wave(wave.displacement, gain * wave.slope, gain * wave.differential, wave.velocity));
                 // The cascades are sampled at a fixed column in their periodic lattice.
                 let band_rate = gain * wave.velocity.y;

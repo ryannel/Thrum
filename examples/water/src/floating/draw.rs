@@ -261,6 +261,7 @@ fn round_strip<const N: usize>(
 }
 
 fn craft(vertices: &mut Vec<Vertex>) {
+    const DECK: f32 = 1.36;
     let outline = [
         [2.9, 0.0],
         [1.72, 0.74],
@@ -286,48 +287,48 @@ fn craft(vertices: &mut Vec<Vertex>) {
     strip(
         vertices,
         ring(0.56, 0.94),
-        ring(0.92, 1.0),
+        ring(DECK, 1.0),
         [0.011, 0.13, 0.16],
     );
-    cap(vertices, ring(0.92, 1.0), [0.30, 0.17, 0.085]);
+    cap(vertices, ring(DECK, 1.0), [0.30, 0.17, 0.085]);
     strip(
         vertices,
-        ring(0.89, 1.012),
-        ring(0.94, 1.012),
+        ring(DECK - 0.03, 1.012),
+        ring(DECK + 0.02, 1.012),
         [0.13, 0.072, 0.042],
     );
     let cabin = |y, front, back, half| {
         [
-            vec3(front, y, half),
-            vec3(back, y, half),
-            vec3(back, y, -half),
-            vec3(front, y, -half),
+            vec3(front, DECK + y, half),
+            vec3(back, DECK + y, half),
+            vec3(back, DECK + y, -half),
+            vec3(front, DECK + y, -half),
         ]
     };
     strip(
         vertices,
-        cabin(0.94, 0.68, -0.95, 0.59),
-        cabin(1.39, 0.65, -0.92, 0.56),
+        cabin(0.02, 0.68, -0.95, 0.59),
+        cabin(0.47, 0.65, -0.92, 0.56),
         [0.61, 0.58, 0.46],
     );
     strip(
         vertices,
-        cabin(1.39, 0.65, -0.92, 0.56),
-        cabin(1.86, 0.37, -0.84, 0.49),
+        cabin(0.47, 0.65, -0.92, 0.56),
+        cabin(0.94, 0.37, -0.84, 0.49),
         [0.018, 0.047, 0.062],
     );
     strip(
         vertices,
-        cabin(1.86, 0.50, -0.93, 0.54),
-        cabin(1.95, 0.50, -0.93, 0.54),
+        cabin(0.94, 0.50, -0.93, 0.54),
+        cabin(1.03, 0.50, -0.93, 0.54),
         [0.63, 0.61, 0.52],
     );
-    cap(vertices, cabin(1.95, 0.50, -0.93, 0.54), [0.63, 0.61, 0.52]);
+    cap(vertices, cabin(1.03, 0.50, -0.93, 0.54), [0.63, 0.61, 0.52]);
     for side in [-1.0, 1.0] {
-        let a = vec3(-0.24, 1.39, side * 0.568);
-        let b = vec3(-0.16, 1.39, side * 0.568);
-        let c = vec3(-0.25, 1.86, side * 0.498);
-        let d = vec3(-0.33, 1.86, side * 0.498);
+        let a = vec3(-0.24, DECK + 0.47, side * 0.568);
+        let b = vec3(-0.16, DECK + 0.47, side * 0.568);
+        let c = vec3(-0.25, DECK + 0.94, side * 0.498);
+        let d = vec3(-0.33, DECK + 0.94, side * 0.498);
         let frame = [0.63, 0.61, 0.52];
         if side > 0.0 {
             triangle(vertices, [a, b, c], frame);

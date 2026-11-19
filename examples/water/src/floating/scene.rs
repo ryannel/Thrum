@@ -248,7 +248,7 @@ pub fn build_paired(
             number,
             step,
             &world_mailbox,
-            &map.lock().expect("water map"),
+            &map,
             &fallback,
             fleet.observe.as_deref_mut(),
         );
@@ -328,7 +328,10 @@ fn camera(body: &Body, chase: bool, level: f64) -> Camera {
     } else {
         centre + 10.2 * across + 3.7 * DVec3::Y
     };
-    let target = centre + 0.7 * across;
+    let mut target = centre + 0.7 * across;
+    if !chase {
+        target.y += 0.4;
+    }
     Camera::look_at(
         position.as_vec3().to_array(),
         target.as_vec3().to_array(),

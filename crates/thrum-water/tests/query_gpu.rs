@@ -95,7 +95,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
         view: &target,
         extent: EXTENT,
     };
-    let map = Arc::new(Mutex::new(swash_gpu::beach(0.7)));
+    let map = Arc::new(Mutex::new(swash_gpu::beach(0.7, 3.0)));
     let mut spectrum = Spectrum::build(&Forcing {
         wind_speed: 25.0,
         wind_direction: 0.0,
@@ -218,6 +218,43 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     assert_eq!(mailbox.stats().blocking_reads, 0);
     drop(domain);
     check_delay(&mut host, &device, &surface, &mailbox, step);
+
+    let point = QueryPoint {
+        position: [22.0, 0.0],
+        radius: 0.5,
+        use_tick: 12,
+    };
+    let position = point.position.map(f64::from);
+    assert!(map.lock().expect("beach").sample(position).is_none());
+    mailbox.post(
+        10,
+        vec![BodyQuery {
+            id: 1,
+            generation: 7,
+            points: vec![point],
+        }],
+    );
+    assert!(
+        host.drive(10 * step, Some(&surface))
+            .expect("submit dry point")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("dry point readback");
+    map.lock()
+        .expect("beach")
+        .set_stage(0, 3.0)
+        .expect("rise after dispatch");
+    let flooded = mailbox.drain(12, step);
+    assert_eq!(flooded.len(), 1);
+    let domain = map.lock().expect("beach");
+    check_flooded_waves(&flooded[0].points[0], &domain, &spectrum, &oracle, step);
+    assert_eq!(
+        mailbox.stats().late,
+        2,
+        "on-time stage correction is not extrapolation"
+    );
 }
 
 #[test]
@@ -300,7 +337,7 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
         .expect("chart")
         .set_stage(0, 0.10)
         .expect("stage at tick 8");
-    mailbox.post(8, request(9));
+    mailbox.post(8, request(10));
     drop(
         host.advance(8 * step)
             .expect("tentative frame")
@@ -367,7 +404,13 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     let second = mailbox.drain(10, step);
     assert_eq!(second.len(), 1);
     assert_eq!(second[0].posted, 8);
-    check(&second[0].points[0], 0.10);
+    assert_eq!(second[0].points[0].point.use_tick, 10);
+    check(&second[0].points[0], 0.20);
+    assert_eq!(mailbox.stats().late, 1, "only the historical page is late");
+    map.lock()
+        .expect("chart")
+        .set_stage(0, 0.30)
+        .expect("stage at tick 11");
     let third = mailbox.drain(11, step);
     assert_eq!(third.len(), 1);
     assert_eq!(third[0].posted, 9);
@@ -394,6 +437,55 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     assert_eq!(mailbox.drain(15, step)[0].posted, 13);
     assert_eq!(mailbox.drain(16, step)[0].posted, 14);
     assert_eq!(mailbox.stats().age_older, 0);
+}
+
+fn check_flooded_waves(
+    answer: &thrum_water::query::QueryAnswer,
+    map: &thrum_water_model::Map,
+    spectrum: &Spectrum,
+    oracle: &LongWaves,
+    step: Duration,
+) {
+    let position = answer.point.position.map(f64::from);
+    let row = map.sample(position).expect("new stage owns this point");
+    let variances = [
+        spectrum
+            .long
+            .iter()
+            .map(|c| 0.5 * c.amplitude.powi(2))
+            .sum(),
+        spectrum.cascades[0].variance(),
+        spectrum.cascades[1].variance(),
+        spectrum.cascades[2].variance(),
+    ];
+    let gains = thrum_water_model::limit(row.row, row.depth, variances, map.profile()).gains;
+    let time = 12.0 * step.as_secs_f64();
+    let frame = 10.0 * step.as_secs_f64();
+    assert_eq!(answer.surface.body, Some(0));
+    assert!((answer.surface.depth - row.depth).abs() < 0.000_002);
+    assert_eq!(
+        answer.sources,
+        [Some(time), Some(frame), Some(frame), Some(frame), None]
+    );
+    let long = oracle
+        .scaled(gains[0])
+        .expect("depth-limited gain")
+        .evaluate(position, time)
+        .expect("long wave");
+    assert!((f64::from(answer.wave_heights[0]) - long.height).abs() < 0.002);
+    let mut height = row.row.level + long.height;
+    for (band, cascade) in spectrum.cascades.iter().enumerate() {
+        let expected =
+            gains[band + 1] * filtered_height(cascade, position, 0.5, frame, time - frame);
+        let error = (f64::from(answer.wave_heights[band + 1]) - expected).abs();
+        assert!(
+            error / cascade.variance().sqrt() < 0.0004,
+            "recovered band {band}: {error}"
+        );
+        height += expected;
+    }
+    assert!((answer.surface.sample.height - height).abs() < 0.002);
+    assert_eq!(answer.surface.wet, row.bed.is_none_or(|bed| height > bed));
 }
 
 fn check_delay(

@@ -325,7 +325,7 @@ fn advance_fleet(
     tick: u64,
     step: Duration,
     mailbox: &QueryMailbox,
-    map: &thrum_water_model::Map,
+    map: &std::sync::Mutex<thrum_water_model::Map>,
     field: &Field,
     mut observe: Option<&mut (dyn FnMut(BodyStep) + Send + 'static)>,
 ) -> Vec<BodyAnswers> {
@@ -336,6 +336,7 @@ fn advance_fleet(
         mailbox.drain(tick, step)
     };
     if tick != 0 {
+        let map = map.lock().expect("water map");
         for body in bodies.iter_mut() {
             let answer = answers.iter().find(|answer| answer.id == body.id);
             let mut gpu_points = 0;

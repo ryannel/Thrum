@@ -3,12 +3,14 @@ mod gpu;
 
 pub(super) use gpu::Readback;
 pub(super) use gpu::validate;
+use gpu::{Correction, ReadyBody};
 use std::{
     cmp::Reverse,
     collections::{BTreeMap, VecDeque},
     sync::{Arc, Mutex},
     time::Duration,
 };
+use thrum_sea_model::LongWaves;
 use thrum_water_model::{Map, Surface};
 
 /// Query capacity in points and the maximum age in ticks since posting.
@@ -84,7 +86,7 @@ pub struct QueryStats {
     pub busy: u64,
     /// Points moved from their requested tick on use.
     pub late: u64,
-    /// Body results dropped for age, or unavailable uses reported by the game.
+    /// Body results dropped for age or failed sampling, and unavailable uses reported by the game.
     pub unavailable: u64,
     /// Waiting GPU readbacks. The query only uses submission callbacks.
     pub blocking_reads: u64,
@@ -100,10 +102,36 @@ pub struct QueryStats {
 struct State {
     pages: VecDeque<Page>,
     maps: VecDeque<(u64, Arc<Map>)>,
-    ready: BTreeMap<(u32, u64), BodyAnswers>,
+    last_post: Option<u64>,
+    ready: BTreeMap<(u32, u64), ReadyBody>,
     generations: BTreeMap<u32, u32>,
     epoch: u64,
     stats: QueryStats,
+}
+
+impl State {
+    fn remember_map(&mut self, tick: u64, map: &Map, max_age: u32) {
+        let index = self.maps.partition_point(|(previous, _)| *previous < tick);
+        let same_tick = self
+            .maps
+            .get(index)
+            .filter(|(previous, _)| *previous == tick);
+        let previous = same_tick.or_else(|| index.checked_sub(1).and_then(|i| self.maps.get(i)));
+        let snapshot = previous
+            .filter(|(_, old)| old.spatial_revision() == map.spatial_revision())
+            .map_or_else(|| Arc::new(map.clone()), |(_, old)| Arc::clone(old));
+        if same_tick.is_some() {
+            self.maps[index].1 = snapshot;
+        } else {
+            self.maps.insert(index, (tick, snapshot));
+        }
+        // Each live page can request up to three ticks before it was posted.
+        // Keep the preceding map as well, for intervals with no publication.
+        let newest = self.maps.back().expect("just remembered a map").0;
+        let oldest = newest.saturating_sub(u64::from(max_age) + 3);
+        let expired = self.maps.partition_point(|(tick, _)| *tick < oldest);
+        self.maps.drain(..expired.saturating_sub(1));
+    }
 }
 
 struct Page {
@@ -116,14 +144,21 @@ struct Page {
 pub struct QueryMailbox {
     state: Arc<Mutex<State>>,
     map: Arc<Mutex<Map>>,
+    correction: Arc<Correction>,
     limits: QueryLimits,
 }
 
 impl QueryMailbox {
-    pub(super) fn new(limits: QueryLimits, map: Arc<Mutex<Map>>) -> Self {
+    pub(super) fn new(
+        limits: QueryLimits,
+        map: Arc<Mutex<Map>>,
+        long_waves: LongWaves,
+        heights: [f32; 4],
+    ) -> Self {
         Self {
             state: Arc::default(),
             map,
+            correction: Arc::new(Correction::new(long_waves, heights)),
             limits,
         }
     }
@@ -135,11 +170,11 @@ impl QueryMailbox {
     pub fn post(&self, tick: u64, mut bodies: Vec<BodyQuery>) {
         let map = self.map.lock().expect("water query map");
         let mut state = self.state.lock().expect("water query mailbox");
-        if let Some((previous, _)) = state.maps.back() {
-            if *previous == tick {
+        if let Some(previous) = state.last_post {
+            if previous == tick {
                 return;
             }
-            if *previous > tick {
+            if previous > tick {
                 state.pages.clear();
                 state.maps.clear();
                 state.ready.clear();
@@ -148,21 +183,10 @@ impl QueryMailbox {
         }
         // Static maps share one snapshot, even across a frame that catches up
         // multiple ticks. A changed revision keeps its own connectivity and rows.
-        let snapshot = state
-            .maps
-            .back()
-            .filter(|(_, old)| old.spatial_revision() == map.spatial_revision())
-            .map_or_else(|| Arc::new(map.clone()), |(_, old)| Arc::clone(old));
+        state.remember_map(tick, &map, self.limits.max_age);
+        state.last_post = Some(tick);
         drop(map);
-        state.maps.push_back((tick, snapshot));
         let oldest_page = tick.saturating_sub(u64::from(self.limits.max_age));
-        while state
-            .maps
-            .front()
-            .is_some_and(|(t, _)| *t < oldest_page.saturating_sub(3))
-        {
-            state.maps.pop_front();
-        }
         while state
             .pages
             .front()
@@ -186,7 +210,7 @@ impl QueryMailbox {
             ..
         } = &mut *state;
         ready.retain(|(id, posted), answer| {
-            if generations.get(id) != Some(&answer.generation) {
+            if generations.get(id) != Some(&answer.answers.generation) {
                 return false;
             }
             if *posted < oldest_page {
@@ -222,14 +246,17 @@ impl QueryMailbox {
     /// result within the normal one-to-two tick window so the newer result can
     /// serve the next tick. A newer result supersedes one outside that window.
     /// Correct height once from the requested tick, and reject expired results.
+    /// Call after releasing the water map lock, once this tick's stage is known.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
     pub fn drain(&self, tick: u64, step: Duration) -> Vec<BodyAnswers> {
+        let map = self.map.lock().expect("water query map");
         let mut state = self.state.lock().expect("water query mailbox");
+        state.remember_map(tick, &map, self.limits.max_age);
         let mut answers: Vec<BodyAnswers> = Vec::new();
         let mut ready = std::mem::take(&mut state.ready).into_iter().peekable();
         while let Some(((id, posted), mut body)) = ready.next() {
-            if state.generations.get(&id) != Some(&body.generation) {
+            if state.generations.get(&id) != Some(&body.answers.generation) {
                 continue;
             }
             let age = tick.saturating_sub(posted);
@@ -251,6 +278,23 @@ impl QueryMailbox {
                 state.ready.insert((id, posted), body);
                 continue;
             }
+            if self
+                .correction
+                .resolve(&mut body, |use_tick| {
+                    if use_tick >= tick {
+                        return &map;
+                    }
+                    let index = state.maps.partition_point(|(saved, _)| *saved <= use_tick);
+                    index
+                        .checked_sub(1)
+                        .map_or(&map, |index| &state.maps[index].1)
+                })
+                .is_none()
+            {
+                state.stats.unavailable += 1;
+                continue;
+            }
+            let mut body = body.answers;
             match age {
                 1 => state.stats.age_one += 1,
                 2 => state.stats.age_two += 1,

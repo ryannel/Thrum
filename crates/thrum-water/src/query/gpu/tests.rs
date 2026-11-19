@@ -1,4 +1,4 @@
-use super::{Answer, Component, Point, Settings};
+use super::{Answer, CascadeSample, Component, Point, Settings};
 
 #[test]
 fn query_records_match_the_shader_layout() {
@@ -55,12 +55,22 @@ fn query_records_match_the_shader_layout() {
         swash_margin
     );
     check!(
+        CascadeSample,
+        "CascadeSample",
+        height,
+        slope,
+        differential,
+        velocity
+    );
+    check!(
         Answer,
         "Answer",
         height_slope_rate,
         velocity_depth,
         layers,
         current_bed,
-        body_flags
+        body_flags,
+        cascades,
+        padding
     );
 }

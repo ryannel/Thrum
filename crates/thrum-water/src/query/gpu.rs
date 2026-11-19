@@ -1,5 +1,9 @@
+mod correction;
+
 use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
 use bytemuck::{Pod, Zeroable};
+use correction::{CascadeSample, MapPrediction};
+pub(super) use correction::{Correction, ReadyBody};
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -57,6 +61,8 @@ struct Answer {
     layers: [f32; 4],
     current_bed: [f32; 4],
     body_flags: [u32; 4],
+    cascades: [CascadeSample; 3],
+    padding: f32,
 }
 
 struct Slot {
@@ -77,6 +83,7 @@ struct Batch {
     seconds: f64,
     count: u32,
     bodies: Vec<BodyQuery>,
+    map_revisions: Vec<u64>,
 }
 
 pub(crate) struct Readback {
@@ -333,7 +340,7 @@ impl Readback {
                     }
                 })
                 .collect();
-            let points: Vec<_> = bodies
+            let (points, map_revisions): (Vec<_>, Vec<_>) = bodies
                 .iter()
                 .flat_map(|body| &body.points)
                 .map(|point| {
@@ -347,9 +354,9 @@ impl Readback {
                     } else {
                         map
                     };
-                    Point::new(point, dt, domain)
+                    (Point::new(point, dt, domain), domain.spatial_revision())
                 })
-                .collect();
+                .unzip();
             let count = u32::try_from(points.len()).expect("points admitted by query capacity");
             let settings = Settings {
                 origin,
@@ -378,6 +385,7 @@ impl Readback {
                 seconds,
                 count,
                 bodies,
+                map_revisions,
             });
         }
     }
@@ -510,19 +518,19 @@ impl Batch {
         if state.epoch != self.epoch {
             return;
         }
-        let mut values = values.iter();
+        let mut values = values.iter().zip(self.map_revisions);
         for body in self.bodies {
             let mut fields = (&mut values).take(body.points.len());
             if state.generations.get(&body.id) != Some(&body.generation) {
                 fields.nth(body.points.len() - 1);
                 continue;
             }
-            let points = body
+            let (points, predictions) = body
                 .points
                 .into_iter()
                 .zip(fields)
                 .enumerate()
-                .map(|(index, (point, raw))| {
+                .map(|(index, (point, (raw, revision)))| {
                     let mut sources = [None; 5];
                     for (layer, source) in sources[..4].iter_mut().enumerate() {
                         if raw.body_flags[3] & (1 << layer) != 0 {
@@ -533,16 +541,27 @@ impl Batch {
                             });
                         }
                     }
-                    raw.decode(index, point, sources)
+                    (
+                        raw.decode(index, point, sources),
+                        MapPrediction::new(revision, raw.cascades),
+                    )
                 })
-                .collect();
+                .unzip();
             state.ready.insert(
                 (body.id, self.tick),
-                BodyAnswers {
-                    id: body.id,
-                    generation: body.generation,
-                    posted: self.tick,
-                    points,
+                ReadyBody {
+                    answers: BodyAnswers {
+                        id: body.id,
+                        generation: body.generation,
+                        posted: self.tick,
+                        points,
+                    },
+                    predictions,
+                    frame_offset: (1.0 - f64::from(self.frame.alpha))
+                        * self.frame.tick_duration.as_secs_f64(),
+                    frame_tick: self.frame.tick,
+                    frame_seconds: self.seconds,
+                    step: self.frame.tick_duration,
                 },
             );
         }
