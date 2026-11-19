@@ -158,7 +158,85 @@
     },
     "M2": {
       "definitions": "2194fd97cae047905a96629ed1d7ad7529528a5fa57cd8647bca38281e154c1b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "a319249fb549d3eddf232614e10609b38b4dd7e0",
+          "review": "docs/evidence/SESSION/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "fail",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "fail",
+            "M2.7": "pass",
+            "M2.8": "fail",
+            "M2.9": "fail",
+            "M2.10": "pass",
+            "M2.11": "pass",
+            "M2.12": "fail"
+          },
+          "findings": [
+            {
+              "name": "Expired hello renews its own deadline",
+              "item": "M2.6",
+              "repeat": false
+            },
+            {
+              "name": "Loss observer runs while holding the session link mutex",
+              "item": "M2.9",
+              "repeat": false
+            },
+            {
+              "name": "Held counts attributed to player index instead of negotiated slot",
+              "item": "M2.8",
+              "repeat": false
+            },
+            {
+              "name": "Cost command never compares the previous comparable run",
+              "item": "M2.8",
+              "repeat": false
+            },
+            {
+              "name": "Image tripwire times the image writer alone",
+              "item": "M2.8",
+              "repeat": false
+            },
+            {
+              "name": "Stall duration omits the interval ending at recovery",
+              "item": "M2.12",
+              "repeat": false
+            },
+            {
+              "name": "Playout rates cannot be set by the match",
+              "item": "M2.12",
+              "repeat": false
+            },
+            {
+              "name": "Initial authoring tick uses half the specified round trip",
+              "item": "M2.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 122376,
+            "cached": 2398080,
+            "output": 9424,
+            "turns": 1
+          },
+          "at": "2026-11-19T05:34:56Z"
+        }
+      ],
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/SESSION/design-review.md",
