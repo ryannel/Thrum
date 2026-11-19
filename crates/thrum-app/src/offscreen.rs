@@ -370,6 +370,15 @@ impl<G: Game> Offscreen<G> {
         (self.host.scene_kind(), bytes, self.host.storage_report())
     }
 
+    /// Pass names compiled for an ordinary frame of the prepared scene.
+    /// # Errors
+    /// Returns a host graph inspection failure.
+    pub fn scene_pass_names(&self) -> Result<Vec<String>, FrameError> {
+        self.host
+            .scene_graph()
+            .map(|graph| graph.pass_names().map(str::to_owned).collect())
+    }
+
     /// Outcomes of the optional labelled native composition diagnostic.
     #[must_use]
     pub fn native_witness_report(&self) -> Option<thrum_render::synthetic::NativeWitnessReport> {

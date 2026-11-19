@@ -14,8 +14,8 @@ pub(crate) fn scene(scale: u16) -> Result<SpriteScene, FrameError> {
             "sprite card scale must be an integer from 1 to 6",
         ));
     }
-    Ok(SpriteScene {
-        sheet: EmbeddedSheet {
+    Ok(SpriteScene::new(
+        EmbeddedSheet {
             extent: SIZE,
             rgba: texels().into(),
             frames: [SpriteRect {
@@ -25,8 +25,8 @@ pub(crate) fn scene(scale: u16) -> Result<SpriteScene, FrameError> {
             .into(),
             texels_per_unit: 1.0,
         },
-        row_capacity: 1,
-    })
+        1,
+    ))
 }
 
 pub(crate) fn frame(scale: u16, extent: [u32; 2]) -> SpriteFrame<'static> {

@@ -3,8 +3,9 @@
 use std::collections::BTreeSet;
 
 use super::{
-    SpriteFrame, SpriteScene,
+    SpriteFrame, SpriteFrameStats, SpriteScene, SpriteSink,
     pass::{self, SpriteBindings, SpritePass},
+    world::SpriteWorld,
 };
 use crate::{
     capabilities::DeviceCapabilities,
@@ -35,6 +36,8 @@ pub(crate) struct PreparedSprites {
     pub(crate) contribution_passes: ContributionPasses,
     pub(crate) effects: EffectGraph,
     sprites: SpritePass,
+    world: SpriteWorld,
+    ordering: std::time::Duration,
     tone: DisplayReferredStage,
 }
 
@@ -42,6 +45,8 @@ pub(crate) struct SpriteTarget {
     pub(crate) extent: [u32; 2],
     pub(crate) source: CaptureSource,
     row_bytes: u32,
+    sprite_rows_bytes: u64,
+    sprite_order_bytes: u64,
     generation: u64,
     textures: GraphTextures,
     scene: ResourceId,
@@ -61,6 +66,8 @@ pub(crate) struct SpriteUpload {
     pub(crate) rows: u32,
     pub(crate) bytes: usize,
     pub(crate) dropped: u32,
+    pub(crate) moving: u32,
+    pub(crate) stats: SpriteFrameStats,
     pub(super) clip_scale: [f32; 2],
 }
 
@@ -74,6 +81,7 @@ struct RecordContext<'a> {
     scene: &'a PreparedSprites,
     target: &'a SpriteTarget,
     encoder: &'a mut wgpu::CommandEncoder,
+    stats: Option<&'a mut SpriteFrameStats>,
     timings: Option<&'a mut GpuTimings>,
     readback: Option<&'a mut PixelReadback>,
     contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
@@ -122,6 +130,8 @@ impl PreparedSprites {
         }
         Ok(Self {
             capabilities: capabilities.clone(),
+            world: SpriteWorld::new(scene.world_capacity),
+            ordering: std::time::Duration::ZERO,
             scene,
             contribution_passes: ContributionPasses::default(),
             effects: EffectGraph::default(),
@@ -130,19 +140,51 @@ impl PreparedSprites {
         })
     }
 
+    pub(crate) fn clear_world_history(&mut self) {
+        self.world.clear_history();
+        self.sprites.forget_world_source();
+    }
+
+    pub(crate) fn inherit_world(&mut self, previous: &mut Self) {
+        std::mem::swap(&mut self.world, &mut previous.world);
+    }
+
+    pub(crate) fn extract(
+        &mut self,
+        source: crate::extract::SourceTick,
+        visit: impl FnOnce(&mut SpriteSink<'_>),
+    ) -> std::time::Duration {
+        if self.world.source() == Some(source) {
+            return std::time::Duration::ZERO;
+        }
+        let start = crate::runtime::Instant::now();
+        self.world.extract(&self.scene, source, visit);
+        let extraction = start.elapsed();
+        let order_start = crate::runtime::Instant::now();
+        self.world.order_tick(self.scene.order_band);
+        self.ordering = order_start.elapsed();
+        extraction
+    }
+
     pub(crate) fn upload(
         &mut self,
         queue: &wgpu::Queue,
         target: &mut SpriteTarget,
         frame: SpriteFrame<'_>,
+        alpha: f32,
+        measure_coverage: bool,
     ) -> Result<SpriteUpload, RenderError> {
-        let upload = self.sprites.upload(
+        let mut upload = self.sprites.upload(
             queue,
-            &self.scene.sheet,
+            &self.scene,
+            &self.world,
             frame,
             target.extent,
+            alpha,
+            measure_coverage,
             &mut target.sprites,
         )?;
+        upload.stats.order_cpu += std::mem::take(&mut self.ordering);
         target.camera_centre = frame.view.centre;
         target.clip_scale = upload.clip_scale;
         Ok(upload)
@@ -155,6 +197,7 @@ impl PreparedSprites {
         mut timings: Option<&'a mut GpuTimings>,
         readback: Option<&'a mut PixelReadback>,
         contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
+        stats: Option<&'a mut SpriteFrameStats>,
         time: EffectTime,
     ) -> Result<(), RenderError> {
         let frame = contribution
@@ -171,6 +214,7 @@ impl PreparedSprites {
             scene: self,
             target,
             encoder,
+            stats,
             timings,
             readback,
             contribution,
@@ -198,6 +242,7 @@ impl PreparedSprites {
                 scene: self,
                 target,
                 encoder,
+                stats: None,
                 timings,
                 readback: None,
                 contribution: None,
@@ -209,9 +254,9 @@ impl PreparedSprites {
     pub(crate) fn storage_report(&self) -> String {
         format!(
             "embedded sprite sheet {:?} {}x{}\nsprite frames bytes={}",
-            self.sprites.sheet.format(),
-            self.sprites.sheet.width(),
-            self.sprites.sheet.height(),
+            self.sprites.sheets[0].0.format(),
+            self.sprites.sheets[0].0.width(),
+            self.sprites.sheets[0].0.height(),
             self.sprites.frames.size()
         )
     }
@@ -364,6 +409,8 @@ impl SpriteTarget {
             sdr,
             scene_view,
             sdr_view,
+            sprite_rows_bytes: prepared.sprites.rows.size(),
+            sprite_order_bytes: prepared.sprites.order.size(),
             sprites: prepared.sprites.bind(device),
             tone_input,
             plain: bind(plain)?,
@@ -404,13 +451,14 @@ impl SpriteTarget {
     pub(crate) fn storage_report(&self) -> String {
         let pixels = u64::from(self.extent[0]) * u64::from(self.extent[1]);
         format!(
-            "sprite colour {:?} bytes={}\nSDR output {:?} bytes={}\nsprite view bytes={}\nsprite rows bytes={}\nunique textures/nominal bytes={:?}",
+            "sprite colour {:?} bytes={}\nSDR output {:?} bytes={}\nsprite view bytes={}\nsprite rows bytes={}\nsprite order bytes={}\nunique textures/nominal bytes={:?}",
             self.scene_view.texture().format(),
             pixels * 8,
             self.sdr_view.texture().format(),
             pixels * 4,
             self.sprites.view.size(),
-            self.sprites.rows.size(),
+            self.sprite_rows_bytes,
+            self.sprite_order_bytes,
             self.allocation()
         )
     }
@@ -454,7 +502,7 @@ impl SpriteTarget {
 }
 
 fn sprite_inputs(graph: &mut FrameGraph, sprites: &SpritePass) -> Result<Vec<Access>, RenderError> {
-    let mut accesses = Vec::with_capacity(4);
+    let mut accesses = Vec::with_capacity(4 + sprites.sheets.len());
     for (bytes, usage, kind) in [
         (
             pass::VIEW_BYTES,
@@ -462,7 +510,12 @@ fn sprite_inputs(graph: &mut FrameGraph, sprites: &SpritePass) -> Result<Vec<Acc
             AccessKind::UniformRead,
         ),
         (
-            sprites.rows_bytes,
+            sprites.rows.size(),
+            wgpu::BufferUsages::STORAGE,
+            AccessKind::StorageRead,
+        ),
+        (
+            sprites.order.size(),
             wgpu::BufferUsages::STORAGE,
             AccessKind::StorageRead,
         ),
@@ -478,21 +531,22 @@ fn sprite_inputs(graph: &mut FrameGraph, sprites: &SpritePass) -> Result<Vec<Acc
         )?;
         accesses.push(Access::new(id, 0..bytes, kind));
     }
-    let sheet = &sprites.sheet;
-    let id = graph.resource(
-        ResourceDescriptor::Texture {
-            dimension: TextureKind::D2,
-            width: sheet.width(),
-            height: sheet.height(),
-            layers: 1,
-            mips: 1,
-            samples: 1,
-            format: sheet.format(),
-            usage: sheet.usage(),
-        },
-        ResourceScope::Imported { initialized: true },
-    )?;
-    accesses.push(Access::new(id, 0..1, AccessKind::SampledRead));
+    for (sheet, _) in &sprites.sheets {
+        let id = graph.resource(
+            ResourceDescriptor::Texture {
+                dimension: TextureKind::D2,
+                width: sheet.width(),
+                height: sheet.height(),
+                layers: 1,
+                mips: 1,
+                samples: 1,
+                format: sheet.format(),
+                usage: sheet.usage(),
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access::new(id, 0..1, AccessKind::SampledRead));
+    }
     Ok(accesses)
 }
 
@@ -599,14 +653,18 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
 }
 
 fn record_sprites(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(), RenderError> {
-    frame.scene.sprites.draw(
+    let draws = frame.scene.sprites.draw(
         frame.encoder,
         pass,
         &frame.target.scene,
         &frame.target.scene_view,
         &frame.target.sprites,
         frame.timings.as_deref_mut(),
-    )
+    )?;
+    if let Some(stats) = frame.stats.as_deref_mut() {
+        stats.draws += draws;
+    }
+    Ok(())
 }
 
 fn record_tone(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(), RenderError> {

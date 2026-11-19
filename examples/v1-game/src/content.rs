@@ -160,6 +160,19 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     };
     Ok(crate::GameSetup {
         sprite_scale,
+        sprite_rows: if sprite_scale.is_some() {
+            match launch_value("THRUM_SPRITE_ROWS") {
+                Ok(count) => Some(
+                    count
+                        .parse::<u32>()
+                        .map_err(|_| "THRUM_SPRITE_ROWS must be a whole number")?,
+                ),
+                Err(std::env::VarError::NotPresent) => None,
+                Err(error) => return Err(error.to_string()),
+            }
+        } else {
+            None
+        },
         cloud_weather: if clouds == crate::CloudSelection::Off {
             crate::clouds::initial_state().parameters()
         } else {

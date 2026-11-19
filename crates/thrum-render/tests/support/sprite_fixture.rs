@@ -13,7 +13,7 @@ use thrum_render::{
         CaptureLimits, FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource,
         SpriteSceneRequests, SubmittedImage, SurfaceOutput,
     },
-    sprite::{EmbeddedSheet, SpriteFrame, SpriteRect, SpriteRow, SpriteScene, SpriteView},
+    sprite::{EmbeddedSheet, SpriteFrame, SpriteRect, SpriteRow, SpriteScene, SpriteSink, SpriteView},
     synthetic::{CaptureSource, FrameLighting, SyntheticView},
 };
 
@@ -41,15 +41,26 @@ pub(crate) fn metal(
     (device, queue, caps)
 }
 
-#[derive(Default)]
-pub(crate) struct World(u64);
+pub(crate) struct World {
+    pub(crate) tick: u64,
+    pub(crate) timeline: u64,
+    pub(crate) alpha: f32,
+    pub(crate) running: bool,
+}
+
+impl Default for World {
+    fn default() -> Self {
+        Self { tick: 0, timeline: 0, alpha: 1.0, running: true }
+    }
+}
+
 impl FrameWorld for World {
     type Page = SourceTick;
     fn source(&self) -> SourceTick {
         SourceTick {
             epoch: 1,
-            timeline: 0,
-            tick: self.0,
+            timeline: self.timeline,
+            tick: self.tick,
         }
     }
     fn has_current_page(&self) -> bool {
@@ -59,11 +70,11 @@ impl FrameWorld for World {
         false
     }
     fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, String> {
-        self.0 += 1;
+        self.tick += u64::from(self.running);
         Ok(WorldAdvance {
-            tick: self.0,
+            tick: self.tick,
             overload: None,
-            completed_ticks: 1,
+            completed_ticks: u32::from(self.running),
             queued_ticks: 0,
             projected_changes: 0,
             projection_lost_ticks: 0,
@@ -76,17 +87,17 @@ impl FrameWorld for World {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
-                tick: self.0,
+                tick: self.tick,
             },
-            timeline: 0,
+            timeline: self.timeline,
             page: self.source(),
         })
     }
     fn presentation_alpha_at(&self, _: Duration) -> f32 {
-        1.0
+        self.alpha
     }
     fn display_phase_at(&self, _: Duration) -> f32 {
-        1.0
+        self.alpha
     }
     fn is_interpolating(&self) -> bool {
         false
@@ -99,6 +110,7 @@ impl FrameWorld for World {
 #[derive(Clone)]
 pub(crate) struct Scene {
     pub(crate) rows: Vec<SpriteRow>,
+    pub(crate) world_rows: Vec<(u32, u64, u128, SpriteRow)>,
     pub(crate) scale: u8,
     pub(crate) centre: [f64; 2],
     pub(crate) lighting: Option<FrameLighting>,
@@ -108,6 +120,7 @@ impl Scene {
     pub(crate) fn new(rows: Vec<SpriteRow>, scale: u8) -> Self {
         Self {
             rows,
+            world_rows: Vec::new(),
             scale,
             centre: [0.0; 2],
             lighting: None,
@@ -133,6 +146,11 @@ impl SceneSource<SourceTick> for Scene {
             view: self.view,
             lighting: self.lighting.expect("2D host sampled the 3D camera"),
         })
+    }
+    fn extract_sprites(&self, sink: &mut SpriteSink<'_>, _: &SourceTick) {
+        for &(slot, generation, identity, row) in &self.world_rows {
+            sink.push(slot, generation, identity, row);
+        }
     }
     fn sprites(&self, _: SourceTick, _: f32, extent: [u32; 2]) -> Result<SpriteFrame<'_>, String> {
         let pixels_per_unit = f32::from(self.scale);
@@ -169,16 +187,19 @@ pub(crate) fn host(
     scene: Scene,
     sheet: EmbeddedSheet,
 ) -> Host {
+    configured_host(caps, queue, extent, scene, SpriteScene::new(sheet, 32))
+}
+
+pub(crate) fn configured_host(
+    caps: &DeviceCapabilities, queue: &wgpu::Queue, extent: [u32; 2], scene: Scene, config: SpriteScene,
+) -> Host {
     pollster::block_on(FrameHost::new_2d(
         caps,
         queue,
         scene_config(extent),
         World::default(),
         scene,
-        SpriteScene {
-            sheet,
-            row_capacity: 32,
-        },
+        config,
         SpriteSceneRequests::default(),
     ))
     .expect("prepare the sprite scene")

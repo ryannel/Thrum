@@ -217,6 +217,7 @@ pub async fn create_field_game(
 pub async fn create_sprite_game(
     canvas: HtmlCanvasElement,
     scale: u16,
+    sprite_rows: Option<u32>,
     culling: Option<String>,
     reconstruction: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
@@ -240,6 +241,7 @@ pub async fn create_sprite_game(
         canvas,
         crate::GameSetup {
             sprite_scale: Some(scale),
+            sprite_rows,
             reconstruction,
             ..crate::GameSetup::default()
         },

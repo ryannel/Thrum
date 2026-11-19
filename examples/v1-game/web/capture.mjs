@@ -1,5 +1,5 @@
 // A separate capture driver. The deterministic route page keeps its original refusals.
-import init, { create_route_game, fetch_cooked_valley } from './v1_game.js';
+import init, { create_route_game, create_sprite_game, fetch_cooked_valley } from './v1_game.js';
 import { startCaptureUploadWorker, uploadCapture } from './capture_upload.mjs';
 const record = { done: false, complete: false, opportunities: [], images: [], actions: [], export_peak: 0 };
 window.thrumCapture = record;
@@ -8,16 +8,17 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
+const spriteField = scene === 'sprites-field';
 const witness = query.get('witness') ?? 'off';
 const clouds = query.get('clouds') ?? 'off';
 const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
-const exportSlots = (scene === 'exit' || witness !== 'off' || clouds !== 'off') && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
+const exportSlots = (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off') && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
-  (scene === 'exit' || witness !== 'off' || clouds !== 'off');
+  (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off');
 const useAnimationFrame = (scene === 'exit' || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
-if (!['day', 'night', 'noon', 'exit'].includes(scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit', 'sprites-field'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
@@ -61,6 +62,7 @@ async function runCapture() {
   if (!['fixed', 'realtime'].includes(mode)) fail('mode must be fixed or realtime');
   if (hidden) fail('capture page started hidden');
   await init();
+  if (spriteField) return captureSpriteField();
   let text = await (await fetch('/'+(query.get('route') ?? 'moving-v1.json'))).text();
   const route = JSON.parse(text);
   const view = cloudView ? await (await fetch('/capture-view.json')).json() : undefined;
@@ -282,6 +284,70 @@ async function runCapture() {
   record.end_ms = performance.now();
   record.final_report = JSON.parse(game.route_report(0));
   if (record.renderer_omissions || record.export_omissions || exportError) fail(`incomplete capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
+  record.complete = true;
+}
+
+async function captureSpriteField() {
+  if (mode !== 'realtime' || control !== 'ordinary' || source !== 'sdr') fail('sprite field requires a realtime SDR capture');
+  const canvas = document.querySelector('canvas');
+  const extent = [1920, 1080];
+  [canvas.width, canvas.height] = extent;
+  game = await create_sprite_game(canvas, 2, 10000);
+  game.capture_without_pass_timings();
+  game.set_visible(true, 0);
+  game.set_paused(true, 0);
+  uploadWorker = await startCaptureUploadWorker(true);
+  for (let index = 0; index < exportSlots; index++) {
+    reusablePixels.push(new Uint8Array(extent[0] * extent[1] * 4));
+  }
+  const deadline = performance.now() + 15000;
+  while (!game.route_slot_ready() || game.presented() === 0n) {
+    if (performance.now() > deadline) fail('sprite field warmup deadline');
+    game.frame(0);
+    await wait(2);
+  }
+  record.initial_report = JSON.parse(game.route_report(0));
+  record.graph = JSON.parse(game.sprite_scene_report()).passes;
+  record.scene = scene;
+  record.mode = mode;
+  record.pixel_source = source;
+  record.extent = extent;
+  record.scheduling = 'visible headless page using elapsed animation frame observations, up to 60 opportunities per second';
+  record.gpu_pass_timing = false;
+  record.start_before_ms = performance.now();
+  game.begin_submitted_capture(1);
+  const start = performance.now();
+  record.start_after_ms = start;
+  game.set_paused(false, 0);
+  let last = -Infinity;
+  while (performance.now() - start < 22400) {
+    const rafMs = await new Promise(requestAnimationFrame);
+    if (hidden) fail('sprite capture page became hidden');
+    drain();
+    const elapsed = performance.now() - start;
+    if (elapsed - last < 13) continue;
+    last = elapsed;
+    game.frame(elapsed);
+    record.opportunities.push({
+      ordinal: record.opportunities.length, raf_ms: rafMs, frame_ms: elapsed,
+      returned_ms: performance.now(), tick: game.committed_tick(), presented: Number(game.presented()),
+    });
+  }
+  const drainUntil = performance.now() + 10000;
+  for (;;) {
+    drain();
+    if (game.submitted_capture_pending() === 0) break;
+    if (performance.now() >= drainUntil) fail('sprite field readback deadline');
+    await wait(2);
+  }
+  await Promise.all(inflight);
+  record.renderer_omissions = game.submitted_capture_omissions();
+  record.end_ms = performance.now();
+  record.final_report = JSON.parse(game.route_report(0));
+  if (record.renderer_omissions || record.export_omissions || exportError || !record.images.length) {
+    fail(`incomplete sprite capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
+  }
+  if (record.images.at(-1).submit_ms - record.images[0].submit_ms < 20000) fail('sprite capture spans less than twenty seconds');
   record.complete = true;
 }
 

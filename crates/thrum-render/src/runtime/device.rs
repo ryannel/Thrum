@@ -320,7 +320,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         #[cfg(target_arch = "wasm32")]
         let contribution_prepared = false;
-        let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
+        let mut scene = candidate.scene.take().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
         let discarded = self.pending_frames().saturating_add(self.completed.len());
@@ -334,6 +334,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.submitted_clock = None;
         self.native_failed_generation = None;
         self.render_extent = candidate.render_extent;
+        if let (PreparedRenderer::TwoD(current), PreparedRenderer::TwoD(next)) =
+            (&mut self.prepared, &mut scene.prepared)
+        {
+            next.inherit_world(current);
+        }
         self.prepared = scene.prepared;
         self.slots = scene.slots;
         self.retired_slots.clear();

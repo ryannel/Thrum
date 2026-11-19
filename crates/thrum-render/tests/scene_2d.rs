@@ -35,8 +35,8 @@ const CAPTURE: [&str; 4] = [
 fn inputs() -> (fixture::Scene, SpriteScene) {
     (
         fixture::Scene::new(vec![SpriteRow::new(0, [0.0, 0.0])], 2),
-        SpriteScene {
-            sheet: fixture::sheet(
+        SpriteScene::new(
+            fixture::sheet(
                 [1, 1],
                 &[225, 6, 104, 255],
                 &[SpriteRect {
@@ -44,8 +44,8 @@ fn inputs() -> (fixture::Scene, SpriteScene) {
                     size: [1; 2],
                 }],
             ),
-            row_capacity: 32,
-        },
+            32,
+        ),
     )
 }
 
@@ -105,7 +105,7 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
         );
         let storage = host.storage_report();
         let slot = "sprite colour Rgba16Float bytes=24576\nSDR output Rgba8Unorm bytes=12288\n\
-            sprite view bytes=16\nsprite rows bytes=1536\nunique textures/nominal bytes=(2, 36864)";
+            sprite view bytes=32\nsprite rows bytes=3584\nsprite order bytes=128\nunique textures/nominal bytes=(2, 36864)";
         assert_eq!(
             storage,
             format!(
@@ -271,7 +271,13 @@ fn rejects_each_3d_request_without_changing_the_sprite_scene() {
     };
     let (device, queue, caps) = fixture::metal(&gpu, fixture::RECIPES[0], 1);
     let (source, sprites) = inputs();
-    let mut host = fixture::host(&caps, &queue, EXTENT, source.clone(), sprites.sheet.clone());
+    let mut host = fixture::host(
+        &caps,
+        &queue,
+        EXTENT,
+        source.clone(),
+        sprites.sheets[0].sheet.clone(),
+    );
     let reference = fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr).rgba;
     for (label, requests) in [
         (
@@ -378,7 +384,13 @@ fn attaches_and_runs_only_upload_and_simulate_before_sprites() {
     let (mut source, sprites) = inputs();
     source.centre = [10.0, 5.0];
     source.rows[0].position = [13.0, 3.0];
-    let mut host = fixture::host(&caps, &queue, EXTENT, source, sprites.sheet);
+    let mut host = fixture::host(
+        &caps,
+        &queue,
+        EXTENT,
+        source,
+        sprites.sheets[0].sheet.clone(),
+    );
     let entry = Contribution::default();
     let actions = std::sync::Arc::clone(&entry.actions);
     host.set_scene_contribution(Box::new(entry))

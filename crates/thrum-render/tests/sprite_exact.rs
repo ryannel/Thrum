@@ -52,14 +52,18 @@ fn clips_each_edge_and_keeps_asymmetric_texels_exact_on_both_recipes() {
                 ];
                 let rows = corners
                     .iter()
-                    .map(|[x, y]| {
-                        SpriteRow::new(
+                    .zip(0_u32..)
+                    .map(|([x, y], order)| {
+                        let mut row = SpriteRow::new(
                             0,
                             [
                                 f64::from(x - width / 2) / f64::from(s),
                                 f64::from(height / 2 - y) / f64::from(s),
                             ],
-                        )
+                        );
+                        // Preserve the original test card's authored overlap order.
+                        row.sort = Some(f64::from(order));
+                        row
                     })
                     .collect();
                 *host.source_mut() = fixture::Scene::new(rows, scale);

@@ -384,6 +384,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             },
             crate::GameSetup {
                 sprite_scale: None,
+                sprite_rows: None,
                 cooked_mesh_rows: crate::MeshRowSource::Code,
                 clouds: crate::CloudSelection::Off,
                 cloud_weather: crate::clouds::initial_state().parameters(),

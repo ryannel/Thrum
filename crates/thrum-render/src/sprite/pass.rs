@@ -1,36 +1,52 @@
-//! Embedded sheet preparation, view/row upload and the single sprite draw.
+//! Embedded sheets, changed-row uploads and the single ordered sprite draw.
 
-use super::{EmbeddedSheet, SpriteFrame, SpriteScene};
+use super::{
+    EmbeddedSheet, SpriteFrame, SpriteFrameStats, SpriteRect, SpriteScene,
+    world::{self, OrderedRow, Pose, SpriteWorld},
+};
 use crate::{
     capabilities::DeviceCapabilities,
+    extract::SourceTick,
     graph::{CompiledPass, GraphColorAttachment, PipelineKey, ResourceId},
+    runtime::Instant,
     synthetic::{RenderError, SCENE_FORMAT},
     timing::GpuTimings,
 };
+use crate::records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView};
+use bytemuck::Zeroable;
+use coverage::coverage_at;
+
+mod coverage;
 use wgpu::util::DeviceExt;
 
 pub(crate) const PASS: &str = "sprites";
-pub(super) const SHEET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+const SHEET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+const SHEET_SLOTS: usize = 8;
 
 #[cfg(test)]
 mod tests;
 
-use crate::records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView};
-
 pub(super) struct SpritePass {
     pub(super) key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
-    pub(super) rows_bytes: u64,
+    pub(super) rows: wgpu::Buffer,
+    pub(super) order: wgpu::Buffer,
     pub(super) frames: wgpu::Buffer,
-    pub(super) sheet: wgpu::Texture,
-    sheet_view: wgpu::TextureView,
+    pub(super) sheets: Vec<(wgpu::Texture, wgpu::TextureView)>,
+    frame_bases: Vec<u32>,
+    world_capacity: usize,
     row_capacity: usize,
-    scratch: Vec<GpuRow>,
+    world_source: Option<SourceTick>,
+    cpu_rows: Vec<GpuRow>,
+    frame_keys: Vec<OrderedRow>,
+    frame_order: Vec<u32>,
+    current_order: Vec<u32>,
+    visible_world: Vec<u32>,
+    uploaded_order: Vec<u32>,
 }
 
 pub(super) struct SpriteBindings {
     pub(super) view: wgpu::Buffer,
-    pub(super) rows: wgpu::Buffer,
     group: wgpu::BindGroup,
     count: u32,
 }
@@ -57,55 +73,108 @@ impl SpritePass {
         scene: &SpriteScene,
         key: PipelineKey,
     ) -> Result<Self, RenderError> {
+        if let Some(excess) = scene.sheets.get(SHEET_SLOTS) {
+            return Err(RenderError::Validation(format!(
+                "sprite sheet '{}' exceeds the {SHEET_SLOTS} sheet slots",
+                excess.name
+            )));
+        }
         let limits = capabilities.limits();
-        let sheet = &scene.sheet;
-        let [width, height] = sheet.extent;
-        let pixel_bytes = u64::from(width) * u64::from(height);
-        let rows_bytes = u64::from(scene.row_capacity) * size_of::<GpuRow>() as u64;
-        let frame_bytes = sheet.frames.len() as u64 * size_of::<GpuRect>() as u64;
         let max_binding = limits
             .max_storage_buffer_binding_size
             .min(limits.max_buffer_size);
-        if sheet
-            .extent
-            .into_iter()
-            .any(|side| side == 0 || side > limits.max_texture_dimension_2d)
-            || pixel_bytes.checked_mul(4) != Some(sheet.rgba.len() as u64)
-            || !sheet.texels_per_unit.is_finite()
-            || sheet.texels_per_unit <= 0.0
-            || scene.row_capacity == 0
+        let total = scene
+            .world_capacity
+            .checked_add(scene.row_capacity)
+            .ok_or(RenderError::SceneCapacity)?;
+        let rows_bytes = u64::from(total) * size_of::<GpuRow>() as u64;
+        if total == 0
             || rows_bytes > max_binding
-            || sheet.frames.is_empty()
-            || frame_bytes > max_binding
-            || sheet.frames.iter().any(|rect| {
-                (0..2).any(|axis| {
-                    rect.size[axis] == 0
-                        || rect.origin[axis]
-                            .checked_add(rect.size[axis])
-                            .is_none_or(|end| end > sheet.extent[axis])
-                })
-            })
+            || scene.sheets.is_empty()
+            || !scene.order_band.is_finite()
+            || scene.order_band < 0.0
         {
             return Err(RenderError::Validation(
-                "invalid embedded sheet or sprite row capacity".into(),
+                "invalid sprite sheets, row capacity or order band".into(),
             ));
         }
-        let device = capabilities.site();
-        let frames: Vec<_> = sheet
-            .frames
+        let frame_count: usize = scene
+            .sheets
             .iter()
-            .map(|rect| GpuRect {
+            .map(|entry| entry.sheet.frames.len())
+            .sum();
+        if frame_count as u64 > max_binding / size_of::<GpuRect>() as u64 {
+            return Err(RenderError::SceneCapacity);
+        }
+        for entry in &scene.sheets {
+            let source = &entry.sheet;
+            let [width, height] = source.extent;
+            if source
+                .extent
+                .into_iter()
+                .any(|side| side == 0 || side > limits.max_texture_dimension_2d)
+                || (u64::from(width) * u64::from(height)).checked_mul(4)
+                    != Some(source.rgba.len() as u64)
+                || !source.texels_per_unit.is_finite()
+                || source.texels_per_unit <= 0.0
+                || source.frames.is_empty()
+                || source.frames.iter().any(|rect| {
+                    (0..2).any(|axis| {
+                        rect.size[axis] == 0
+                            || rect.origin[axis]
+                                .checked_add(rect.size[axis])
+                                .is_none_or(|end| end > source.extent[axis])
+                    })
+                })
+            {
+                return Err(RenderError::Validation(format!(
+                    "invalid embedded sprite sheet '{}'",
+                    entry.name
+                )));
+            }
+        }
+        let device = capabilities.site();
+        let mut table = Vec::with_capacity(frame_count);
+        let mut frame_bases = Vec::with_capacity(scene.sheets.len());
+        let mut sheets = Vec::with_capacity(SHEET_SLOTS);
+        for entry in &scene.sheets {
+            frame_bases.push(u32::try_from(table.len()).map_err(|_| RenderError::SceneCapacity)?);
+            table.extend(entry.sheet.frames.iter().map(|rect| GpuRect {
                 origin: rect.origin,
                 size: rect.size,
-            })
-            .collect();
+            }));
+            sheets.push(upload_sheet(device, queue, &entry.sheet));
+        }
+        if sheets.len() < SHEET_SLOTS {
+            sheets.push(upload_sheet(
+                device,
+                queue,
+                &EmbeddedSheet {
+                    extent: [1; 2],
+                    rgba: [0; 4].into(),
+                    frames: [].into(),
+                    texels_per_unit: 1.0,
+                },
+            ));
+        }
         let frames = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("sprite frames"),
-            contents: bytemuck::cast_slice(&frames),
+            contents: bytemuck::cast_slice(&table),
             usage: wgpu::BufferUsages::STORAGE,
         });
-        let (sheet, sheet_view) = upload_sheet(device, queue, sheet);
-        let shader = crate::shaders::Shader::Sprite.compile(device, "sprites");
+        let rows = buffer(
+            device,
+            "sprite rows",
+            rows_bytes,
+            wgpu::BufferUsages::STORAGE,
+        );
+        let order = buffer(
+            device,
+            "sprite order",
+            u64::from(total) * 4,
+            wgpu::BufferUsages::STORAGE,
+        );
+        let shader = crate::shaders::Shader::Sprite.compile(device, PASS);
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some(PASS),
             layout: None,
@@ -115,7 +184,10 @@ impl SpritePass {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 buffers: &[],
             },
-            primitive: wgpu::PrimitiveState::default(),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                ..wgpu::PrimitiveState::default()
+            },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
@@ -134,51 +206,59 @@ impl SpritePass {
         Ok(Self {
             key,
             pipeline,
-            rows_bytes,
+            rows,
+            order,
             frames,
-            sheet,
-            sheet_view,
+            sheets,
+            frame_bases,
+            world_capacity: scene.world_capacity as usize,
             row_capacity: scene.row_capacity as usize,
-            scratch: Vec::with_capacity(scene.row_capacity as usize),
+            world_source: None,
+            cpu_rows: vec![GpuRow::zeroed(); total as usize],
+            frame_keys: Vec::with_capacity(scene.row_capacity as usize),
+            frame_order: Vec::with_capacity(scene.row_capacity as usize),
+            current_order: Vec::with_capacity(total as usize),
+            visible_world: Vec::with_capacity(scene.world_capacity as usize),
+            uploaded_order: Vec::with_capacity(total as usize),
         })
     }
 
+    pub(super) fn forget_world_source(&mut self) {
+        self.world_source = None;
+    }
+
     pub(super) fn bind(&self, device: &wgpu::Device) -> SpriteBindings {
-        let buffer = |label, size, usage| {
-            device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some(label),
-                size,
-                usage: usage | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            })
-        };
-        let view = buffer("sprite view", VIEW_BYTES, wgpu::BufferUsages::UNIFORM);
-        let rows = buffer("sprite rows", self.rows_bytes, wgpu::BufferUsages::STORAGE);
+        let view = buffer(
+            device,
+            "sprite view",
+            VIEW_BYTES,
+            wgpu::BufferUsages::UNIFORM,
+        );
+        let mut entries = Vec::with_capacity(4 + SHEET_SLOTS);
+        for (binding, source) in [&view, &self.rows, &self.frames, &self.order]
+            .into_iter()
+            .enumerate()
+        {
+            entries.push(wgpu::BindGroupEntry {
+                binding: u32::try_from(binding).expect("sprite buffer binding"),
+                resource: source.as_entire_binding(),
+            });
+        }
+        for (binding, (_, texture)) in (4..12).zip(self.sheets.iter().chain(std::iter::repeat(
+            self.sheets.last().expect("at least one bound sheet"),
+        ))) {
+            entries.push(wgpu::BindGroupEntry {
+                binding,
+                resource: wgpu::BindingResource::TextureView(texture),
+            });
+        }
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("sprite inputs"),
             layout: &self.pipeline.get_bind_group_layout(0),
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: view.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: rows.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: self.frames.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(&self.sheet_view),
-                },
-            ],
+            entries: &entries,
         });
         SpriteBindings {
             view,
-            rows,
             group,
             count: 0,
         }
@@ -187,77 +267,189 @@ impl SpritePass {
     pub(super) fn upload(
         &mut self,
         queue: &wgpu::Queue,
-        sheet: &EmbeddedSheet,
+        scene: &SpriteScene,
+        world: &SpriteWorld,
         frame: SpriteFrame<'_>,
         extent: [u32; 2],
+        alpha: f32,
+        measure_coverage: bool,
         bindings: &mut SpriteBindings,
     ) -> Result<crate::sprite::graph::SpriteUpload, RenderError> {
-        let view = frame.view;
-        let clip_per_world = view.clip_scale(extent)?;
-        self.scratch.clear();
-        for row in frame.rows {
-            if self.scratch.len() == self.row_capacity {
-                break;
-            }
-            let Some(rect) = sheet.frames.get(row.frame as usize) else {
+        let clip_scale = frame.view.clip_scale(extent)?;
+        let mut stats = SpriteFrameStats::default();
+        let mut moving = 0;
+        let mut dropped = world.dropped;
+        let new_tick = self.world_source != world.source();
+        if new_tick {
+            self.upload_world(queue, scene, world, &mut stats);
+            self.world_source = world.source();
+        }
+
+        self.frame_keys.clear();
+        self.frame_order.clear();
+        let mut coverage = 0.0;
+        self.visible_world.clear();
+        for &slot in &world.order {
+            let row = world.row(slot);
+            let gpu = &self.cpu_rows[slot as usize];
+            let Some(area) = coverage_at(
+                scene,
+                gpu,
+                row.current.frame,
+                frame.view,
+                extent,
+                alpha,
+                measure_coverage,
+            ) else {
+                dropped = dropped.saturating_add(1);
                 continue;
             };
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "camera-relative values enter the GPU domain once and are checked below"
-            )]
-            let pivot = [0, 1].map(|axis| (row.position[axis] - view.centre[axis]) as f32);
-            let [x, y] = row.scale.map(|axis| axis / sheet.texels_per_unit);
-            let (sin, cos) = row.rotation.sin_cos();
-            let right = [cos * x, sin * x];
-            let down = [sin * y, -cos * y];
-            let valid = (0..2).all(|axis| {
-                ((pivot[axis].abs()
-                    + right[axis].abs() * rect.size[0] as f32
-                    + down[axis].abs() * rect.size[1] as f32)
-                    * clip_per_world[axis])
-                    .is_finite()
-            });
-            if !valid
-                || x == 0.0
-                || y == 0.0
-                || !row
-                    .tint
-                    .into_iter()
-                    .all(|value| value.is_finite() && (0.0..=65_504.0).contains(&value))
-                || row.tint[3] > 1.0
-            {
-                continue;
-            }
-            self.scratch.push(GpuRow {
-                pivot,
-                right,
-                down,
-                frame: row.frame,
-                padding: 0,
-                tint: row.tint,
-            });
+            self.visible_world.push(slot);
+            moving += u32::from(row.moving);
+            coverage += area;
         }
-        let bytes = bytemuck::cast_slice(&self.scratch);
+
+        let mut frame_bytes = 0;
+        let mut frame_run = None;
+        for (index, &row) in frame.rows.iter().enumerate() {
+            if self.frame_keys.len() == self.row_capacity {
+                break;
+            }
+            let Some(key) = world::describe(scene, row, true, index as u128) else {
+                continue;
+            };
+            let gpu = pack(scene, &self.frame_bases, row, row.into());
+            let Some(area) = coverage_at(
+                scene,
+                &gpu,
+                row.frame,
+                frame.view,
+                extent,
+                1.0,
+                measure_coverage,
+            ) else {
+                continue;
+            };
+            let slot = self.world_capacity + self.frame_keys.len();
+            if bytemuck::bytes_of(&self.cpu_rows[slot]) != bytemuck::bytes_of(&gpu) {
+                self.cpu_rows[slot] = gpu;
+                frame_run.get_or_insert(slot);
+            } else if let Some(first) = frame_run.take() {
+                frame_bytes += write_rows(queue, &self.rows, &self.cpu_rows, first, slot);
+            }
+            self.frame_order
+                .push(u32::try_from(slot).map_err(|_| RenderError::SceneCapacity)?);
+            self.frame_keys.push(key);
+            coverage += area;
+        }
+        let count = self.frame_keys.len();
+        dropped =
+            dropped.saturating_add(u32::try_from(frame.rows.len() - count).unwrap_or(u32::MAX));
+        if let Some(first) = frame_run {
+            frame_bytes += write_rows(
+                queue,
+                &self.rows,
+                &self.cpu_rows,
+                first,
+                self.world_capacity + count,
+            );
+        }
+        let uploaded_frame_rows = u32::try_from(frame_bytes / size_of::<GpuRow>())
+            .map_err(|_| RenderError::SceneCapacity)?;
+
+        let start = Instant::now();
+        let key = |slot: u32| {
+            let index = slot as usize;
+            if index < self.world_capacity {
+                world.row(slot).ordered.key
+            } else {
+                self.frame_keys[index - self.world_capacity].key
+            }
+        };
+        self.frame_order
+            .sort_unstable_by(|left, right| key(*left).compare(key(*right)));
+        self.current_order.clear();
+        world::merge_order(
+            &self.visible_world,
+            &self.frame_order,
+            &mut self.current_order,
+            |left, right| key(*left).compare(key(*right)),
+        );
+        stats.order_cpu = start.elapsed();
+        if (new_tick || self.current_order != self.uploaded_order) && !self.current_order.is_empty()
+        {
+            let bytes = bytemuck::cast_slice(&self.current_order);
+            queue.write_buffer(&self.order, 0, bytes);
+            stats.order_upload_bytes = bytes.len();
+        }
+        self.uploaded_order.clone_from(&self.current_order);
+        let [x, y, x_low, y_low] = split(frame.view.centre);
         queue.write_buffer(
             &bindings.view,
             0,
             bytemuck::bytes_of(&GpuView {
-                clip_per_world,
-                padding: [0.0; 2],
+                clip_per_world: clip_scale,
+                centre_high: [x, y],
+                centre_low: [x_low, y_low],
+                alpha,
+                padding: 0.0,
             }),
         );
-        if !bytes.is_empty() {
-            queue.write_buffer(&bindings.rows, 0, bytes);
-        }
+
         bindings.count =
-            u32::try_from(self.scratch.len()).map_err(|_| RenderError::SceneCapacity)?;
+            u32::try_from(self.current_order.len()).map_err(|_| RenderError::SceneCapacity)?;
+        stats.world_rows =
+            u32::try_from(self.visible_world.len()).map_err(|_| RenderError::SceneCapacity)?;
+        stats.frame_rows = u32::try_from(count).map_err(|_| RenderError::SceneCapacity)?;
+        stats.shaded_pixels = coverage;
         Ok(crate::sprite::graph::SpriteUpload {
-            rows: bindings.count,
-            bytes: size_of::<GpuView>() + bytes.len(),
-            dropped: u32::try_from(frame.rows.len() - self.scratch.len()).unwrap_or(u32::MAX),
-            clip_scale: clip_per_world,
+            rows: stats.world_upload_rows + uploaded_frame_rows,
+            bytes: size_of::<GpuView>()
+                + frame_bytes
+                + stats.world_upload_bytes
+                + stats.order_upload_bytes,
+            dropped,
+            moving,
+            clip_scale,
+            stats,
         })
+    }
+
+    fn upload_world(
+        &mut self,
+        queue: &wgpu::Queue,
+        scene: &SpriteScene,
+        world: &SpriteWorld,
+        stats: &mut SpriteFrameStats,
+    ) {
+        // These buffers belong to the queue rather than a frame slot. The
+        // host's exclusive frame token serializes encoder preparation, writes
+        // and submission; earlier submissions see their earlier queue contents.
+        let mut run = None;
+        for (index, saved) in world.slots.iter().enumerate() {
+            let updated = saved
+                .filter(|row| Some(row.source) == world.source())
+                .map(|row| pack(scene, &self.frame_bases, row.current, row.previous));
+            let changed = updated
+                .filter(|row| bytemuck::bytes_of(row) != bytemuck::bytes_of(&self.cpu_rows[index]));
+            if let Some(row) = changed {
+                self.cpu_rows[index] = row;
+                run.get_or_insert(index);
+                stats.world_upload_rows += 1;
+            } else if let Some(first) = run.take() {
+                stats.world_upload_bytes +=
+                    write_rows(queue, &self.rows, &self.cpu_rows, first, index);
+            }
+        }
+        if let Some(first) = run {
+            stats.world_upload_bytes += write_rows(
+                queue,
+                &self.rows,
+                &self.cpu_rows,
+                first,
+                self.world_capacity,
+            );
+        }
     }
 
     pub(super) fn draw(
@@ -268,7 +460,7 @@ impl SpritePass {
         view: &wgpu::TextureView,
         bindings: &SpriteBindings,
         timings: Option<&mut GpuTimings>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<u32, RenderError> {
         let mut pass = compiled
             .begin_render(
                 encoder,
@@ -285,9 +477,87 @@ impl SpritePass {
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &bindings.group, &[]);
-        pass.draw(0..6, 0..bindings.count);
-        Ok(())
+        pass.draw(0..4, 0..bindings.count);
+        Ok(1)
     }
+}
+
+fn buffer(
+    device: &wgpu::Device,
+    label: &str,
+    size: u64,
+    usage: wgpu::BufferUsages,
+) -> wgpu::Buffer {
+    device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some(label),
+        size,
+        usage: usage | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    })
+}
+
+fn write_rows(
+    queue: &wgpu::Queue,
+    buffer: &wgpu::Buffer,
+    rows: &[GpuRow],
+    first: usize,
+    end: usize,
+) -> usize {
+    let bytes = bytemuck::cast_slice(&rows[first..end]);
+    if !bytes.is_empty() {
+        queue.write_buffer(buffer, (first * size_of::<GpuRow>()) as u64, bytes);
+    }
+    bytes.len()
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "split f64 supplies two f32 components at the GPU boundary"
+)]
+fn split([x, y]: [f64; 2]) -> [f32; 4] {
+    let high = [x as f32, y as f32];
+    [
+        high[0],
+        high[1],
+        (x - f64::from(high[0])) as f32,
+        (y - f64::from(high[1])) as f32,
+    ]
+}
+
+fn pack(scene: &SpriteScene, frame_bases: &[u32], row: super::SpriteRow, previous: Pose) -> GpuRow {
+    let sheet = row.sheet as usize;
+    let units = scene.sheets[sheet].sheet.texels_per_unit;
+    let [x, y] = row.scale.map(|scale| scale / units);
+    let [old_x, old_y] = previous.scale.map(|scale| scale / units);
+    let (rotation, delta) = angles(previous.rotation, row.rotation);
+    GpuRow {
+        current: split(row.position),
+        previous: split(previous.position),
+        scales: [old_x, old_y, x, y],
+        rotation,
+        rotation_delta: delta,
+        frame: frame_bases[sheet] + row.frame,
+        sheet: row.sheet,
+        tint: row.tint,
+        flash: row.flash,
+        additive: row.additive,
+        padding0: 0,
+        padding1: 0,
+        padding2: 0,
+    }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "one normalized turn fits in f32 GPU radians"
+)]
+fn angles(previous: f32, current: f32) -> (f32, f32) {
+    let turn = std::f64::consts::TAU;
+    let half = std::f64::consts::PI;
+    let previous = f64::from(previous) % turn;
+    let current = f64::from(current) % turn;
+    let delta = (current - previous + half).rem_euclid(turn) - half;
+    (previous as f32, delta as f32)
 }
 
 fn upload_sheet(

@@ -23,6 +23,7 @@ mod scene;
 mod showcase;
 pub mod simulation;
 mod sprite_card;
+mod sprite_field;
 #[cfg(target_os = "macos")]
 mod window;
 

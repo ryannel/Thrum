@@ -195,14 +195,27 @@ records! {
     ExposureSample { values: [f32; 4], metadata: [u32; 4] }
     ReconstructionParams { inverse: Matrix, previous_view: Matrix, view: Matrix, state: [f32; 4], jitter: [f32; 4] }
     LampShadowQuality { ray_limit: u32 }
-    SpriteView { clip_per_world: [f32; 2], padding: [f32; 2] }
+    SpriteView {
+        clip_per_world: [f32; 2],
+        centre_high: [f32; 2],
+        centre_low: [f32; 2],
+        alpha: f32,
+        padding: f32,
+    }
     SpriteRow {
-        pivot: [f32; 2],
-        right: [f32; 2],
-        down: [f32; 2],
+        current: [f32; 4],
+        previous: [f32; 4],
+        scales: [f32; 4],
+        rotation: f32,
+        rotation_delta: f32,
         frame: u32,
-        padding: u32,
+        sheet: u32,
         tint: [f32; 4],
+        flash: [f32; 4],
+        additive: f32,
+        padding0: u32,
+        padding1: u32,
+        padding2: u32,
     }
     SpriteFrameRecord { origin: [u32; 2], size: [u32; 2] }
 }

@@ -25,8 +25,8 @@ async fn sprite_host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> 
             publication: source,
         },
         Policy::default(),
-        SpriteScene {
-            sheet: EmbeddedSheet {
+        SpriteScene::new(
+            EmbeddedSheet {
                 extent: [1, 1],
                 rgba: Arc::from([255; 4]),
                 frames: Arc::from([SpriteRect {
@@ -35,8 +35,8 @@ async fn sprite_host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> 
                 }]),
                 texels_per_unit: 1.0,
             },
-            row_capacity: 1,
-        },
+            1,
+        ),
         SpriteSceneRequests::default(),
     )
     .await

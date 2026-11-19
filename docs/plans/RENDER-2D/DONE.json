@@ -297,7 +297,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it."
     },
     {

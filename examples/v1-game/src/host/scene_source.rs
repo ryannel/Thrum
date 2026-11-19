@@ -325,6 +325,7 @@ fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
 
 pub(crate) struct GameScene {
     sprite_scale: Option<u16>,
+    sprite_rows: Option<u32>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -416,6 +417,7 @@ impl GameScene {
             });
         Self {
             sprite_scale: setup.sprite_scale,
+            sprite_rows: setup.sprite_rows,
             cloud_input: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
@@ -604,6 +606,16 @@ impl super::FrameHost {
 }
 
 impl SceneSource<PublishedPage> for GameScene {
+    fn extract_sprites(
+        &self,
+        into: &mut thrum_render::sprite::SpriteSink<'_>,
+        page: &PublishedPage,
+    ) {
+        if self.sprite_rows.is_some() {
+            crate::sprite_field::extract(into, page);
+        }
+    }
+
     fn sprites(
         &self,
         _source: SourceTick,
@@ -611,7 +623,11 @@ impl SceneSource<PublishedPage> for GameScene {
         extent: [u32; 2],
     ) -> Result<thrum_render::sprite::SpriteFrame<'_>, String> {
         let scale = self.sprite_scale.ok_or("sprite scene is not selected")?;
-        Ok(crate::sprite_card::frame(scale, extent))
+        Ok(if self.sprite_rows.is_some() {
+            crate::sprite_field::frame(extent)
+        } else {
+            crate::sprite_card::frame(scale, extent)
+        })
     }
 
     #[expect(
@@ -938,6 +954,7 @@ mod tests {
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
             sprite_scale: None,
+            sprite_rows: None,
             cloud_input: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,

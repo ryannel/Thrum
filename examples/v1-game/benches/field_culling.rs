@@ -151,6 +151,7 @@ fn main() {
                     },
                     GameSetup {
                         sprite_scale: None,
+                        sprite_rows: None,
                         cooked_mesh_rows: v1_game::MeshRowSource::Code,
                         clouds: v1_game::CloudSelection::Off,
                         cloud_weather: v1_game::clouds::initial_state().parameters(),

@@ -143,6 +143,9 @@ pub trait SceneSource<P> {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String>;
+    /// Map the committed publication to world sprite rows.
+    fn extract_sprites(&self, _into: &mut crate::sprite::SpriteSink<'_>, _page: &P) {}
+
     /// Sample the game's unjittered 2D view and frame rows on the physical pixel grid.
     /// # Errors
     /// Refuses a missing or invalid game presentation policy.
@@ -375,6 +378,8 @@ pub struct FrameSample {
     pub camera_culling: Option<CullingCounts>,
     /// Records whose changed ABI bytes were enqueued for upload.
     pub uploaded_rows: u32,
+    /// Sprite pass measurements for a 2D scene.
+    pub sprites: Option<crate::sprite::SpriteFrameStats>,
     /// Queue payload bytes for this update.
     pub uploaded_bytes: usize,
     /// Accepted movers with valid adjacent-tick previous positions.
@@ -865,6 +870,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Change presentation policy between frames. Invalidate retained extraction
     /// and GPU correspondence because the mapping itself may have changed.
     pub fn source_mut(&mut self) -> &mut V {
+        if let PreparedRenderer::TwoD(scene) = &mut self.prepared {
+            scene.clear_world_history();
+        }
         self.extractor.invalidate_history();
         self.last_view_source = None;
         self.history_reset_pending = true;
@@ -1032,7 +1040,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "initial publication is not current",
             ));
         }
-        drop(initial);
         source
             .sprites(initial_source, 0.0, extent)
             .map_err(FrameError::Scene)?
@@ -1059,6 +1066,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             None => None,
         };
         gpu.bind_presenter(presenter.as_ref())?;
+        if let PreparedRenderer::TwoD(prepared) = &mut gpu.prepared {
+            prepared.extract(initial_source, |sink| {
+                source.extract_sprites(sink, &initial.page);
+            });
+        }
+        drop(initial);
         drop(build);
         creations.ready();
         Ok(Self::from_prepared(
@@ -1745,11 +1758,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let extract_start = Instant::now();
         let snapshot = self.world.publication().map_err(FrameError::World)?;
         let source = publication_source(&snapshot);
-        let sprites = self.scene_kind() == SceneKind::TwoD;
         let extractor = &mut self.extractor;
         let reused_source =
             extractor.frame().source() == Some(source) && self.last_view_source == Some(source);
-        let extracted = if sprites {
+        let mut extract_cpu = None;
+        let extracted = if let PreparedRenderer::TwoD(prepared) = &mut self.prepared {
+            extract_cpu = Some(prepared.extract(source, |sink| {
+                self.source.extract_sprites(sink, &snapshot.page);
+            }));
             ExtractReport::default()
         } else if reused_source {
             self.last_extracted
@@ -1760,7 +1776,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(SubmitFrame {
             extracted,
             reused_source,
-            extract_cpu: extract_start.elapsed(),
+            extract_cpu: extract_cpu.unwrap_or_else(|| extract_start.elapsed()),
             tick_cpu,
             completed_ticks,
             queued_ticks,
@@ -1928,6 +1944,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 culling_selection: self.prepared.culling_selection(),
                 shadow_selection: self.prepared.shadow_selection(),
                 camera_culling: None,
+                sprites: None,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,
                 moving: u32::try_from(moving).unwrap_or(u32::MAX),
@@ -1984,7 +2001,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     fn encode_scene_only(
         &mut self,
         slot_index: usize,
-        prepared: PreparedSample,
+        mut prepared: PreparedSample,
     ) -> Result<RecordedScene, FrameError> {
         let start = Instant::now();
         let mut encoder = self
@@ -2030,6 +2047,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 timings,
                 readback,
                 contribution,
+                prepared.sample.sprites.as_mut(),
                 crate::contribution::EffectTime {
                     epoch: prepared.source.epoch,
                     timeline: prepared.source.timeline,

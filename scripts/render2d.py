@@ -12,6 +12,7 @@ import re
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -282,9 +283,180 @@ def validate(record, target):
                       "thresholds": "reported observations only"}, indent=2))
 
 
+FIELD_COUNTS = (2000, 5000, 10000)
+FIELD_COLUMNS = (*CPU, "order_cpu_ns", "sprite_gpu_ns", "whole_gpu_ns", "cpu_plus_gpu_ns",
+                 "upload_bytes", "world_upload_bytes", "order_upload_bytes", "shaded_pixels")
+
+
+def field_samples(rows, count, target):
+    """Check the scene and measure complete frames that uploaded the whole moving field."""
+    expanded = []
+    seen_ticks = set()
+    fractional_frames = 0
+    for row in rows:
+        sprite = row.get("sprites")
+        if not sprite or (sprite["world_rows"], sprite["frame_rows"], sprite["draws"],
+                          sprite["dropped"], sprite["surface_presented"]) != (count, 2, 1, 0, True):
+            raise ValueError(f"wrong submitted sprite workload at {target}: {sprite}")
+        if sprite["moving"] == count and 0 < sprite["alpha"] < 1:
+            fractional_frames += 1
+        if sprite["moving"] != count or sprite["tick"] in seen_ticks:
+            continue
+        if sprite["world_upload_rows"] == 0:
+            # A second display sample at a committed tick may carry no row writes.
+            continue
+        if sprite["world_upload_rows"] != count or sprite["world_upload_bytes"] % count:
+            raise ValueError("an all-moving tick did not write exactly the world field")
+        if sprite["order_upload_bytes"] != (count + 2) * 4:
+            raise ValueError("the queue did not write the full tick order")
+        if target == "mac-metal":
+            measured = sample(row, row["gpu_pass_ns"], row["gpu_present_ns"], row["submission_id"])
+            span = row["timed_pass_span_ns"]
+        else:
+            measured = sample(row, row["pass_ns"], row["present_ns"], row["submission"])
+            span = row["gpu_span_ns"]
+        if span is None:
+            raise ValueError("missing complete frame GPU timestamp span")
+        measured.update(sprite, gpu_pass_span_ns=span)
+        measured["cpu_plus_gpu_ns"] = measured["render_cpu_ns"] + span
+        if any(type(measured.get(key)) not in (int, float) or not math.isfinite(measured[key])
+               or measured[key] < 0 for key in FIELD_COLUMNS):
+            raise ValueError(f"incomplete field timing: {measured}")
+        if not measured["world_upload_bytes"] or not measured["shaded_pixels"]:
+            raise ValueError("missing writes or shaded pixels for the field")
+        expanded.append(measured)
+        seen_ticks.add(sprite["tick"])
+    if len(expanded) < 32 or fractional_frames < 10:
+        raise ValueError(f"incomplete advancing/interpolating workload: {len(expanded)} ticks, "
+                         f"{fractional_frames} fractional frames, {target} {count} rows")
+    return expanded[:90], fractional_frames
+
+
+def native_field_run(folder, count, extent, binary, commit, sha256):
+    output = folder / f"{count}-{extent[0]}x{extent[1]}"
+    run([sys.executable, "scripts/capture_v1_runtime.py", "--binary", str(binary),
+         "--case", "sprites-field-cost", "--mode", "realtime", "--recipe", "portable",
+         "--extent", *map(str, extent), "--output", str(output)],
+        env={**os.environ, "THRUM_SCENE": "sprites", "THRUM_SPRITE_ROWS": str(count)})
+    manifest, runtime = read(output / "manifest.json"), read(output / "runtime.json")
+    if (manifest["source_revision"] != commit or manifest["binary_sha256"] != sha256 or
+            not manifest["complete"] or runtime["scene_kind"] != "TwoD" or
+            tuple(runtime["scene_pass_names"]) != PASSES or
+            not runtime["observer_only"] or runtime["backend"] != "Metal"):
+        raise ValueError("wrong native scene, build or capture arm")
+    samples, fractional_frames = field_samples(
+        [row for row in runtime["gpu"] if row.get("gpu_present_ns") is not None], count, "mac-metal")
+    return {"count": count, "extent": extent, "load": manifest["system_load"], "adapter": runtime["adapter"],
+            "recipe": runtime["recipe"], "samples": samples, "fractional_frames": fractional_frames,
+            "pass_names": PASSES}
+
+
+def browser_field_run(folder, web, sha256):
+    before = load()
+    run(["node", "scripts/check_v1_browser.mjs", "--case", "sprites-field-cost",
+         "--web-root", str(web), "--output", str(folder)])
+    after = load()
+    gpu = read(folder / "browser-gpu.json")
+    rows = read(folder / "sprites-field-cost.json")["rows"]
+    if [row["world_rows"] for row in rows] != list(FIELD_COUNTS):
+        raise ValueError("missing Chrome workload")
+    result = []
+    for row in rows:
+        report = row["measurement"]
+        if tuple(report["passes"]) != PASSES:
+            raise ValueError("wrong WebGPU graph")
+        samples, _ = field_samples(report["samples"], row["world_rows"], "chrome-webgpu")
+        if not row["wasm"] or digest(web / "v1_game_bg.wasm") != sha256:
+            raise ValueError("wrong WebGPU build receipt")
+        result.append({"count": row["world_rows"], "extent": row["extent"],
+                       "load": {"before": before, "after": after},
+                       "chrome": gpu["version"]["product"], "adapter": gpu["gpu"]["gpu"]["devices"],
+                       "wasm": row["wasm"], "pass_names": PASSES, "samples": samples,
+                       "fractional_frames": report["fractional_frames"]})
+    return result
+
+
+def field_tripwires(runs, target):
+    flagged = []
+    timed = ("extract_cpu_ns", "order_cpu_ns", "sprite_gpu_ns", "gpu_pass_span_ns", "cpu_plus_gpu_ns")
+    first = {}
+    for take, rows in enumerate(runs, start=1):
+        previous = {}
+        for row in rows:
+            key = tuple(row["extent"])
+            metrics = row["summary"] = {
+                field: {"p50": statistics.median(frame[field] for frame in row["samples"]),
+                        "p95": statistics.quantiles([frame[field] for frame in row["samples"]], n=20,
+                                                    method="inclusive")[18]}
+                for field in (*FIELD_COLUMNS, "gpu_pass_span_ns")
+            }
+            name = f"take {take}, {row['count']} rows, {key[0]}x{key[1]}"
+            if target == "mac-metal" and row["count"] == 10000:
+                over = sum(frame["cpu_plus_gpu_ns"] > 1e9 / 120 for frame in row["samples"])
+                if over:
+                    flagged.append(f"{name}: {over} samples exceeded the 120 Hz CPU + GPU tripwire")
+            if key in previous:
+                smaller = previous[key]
+                work_ratio = (row["count"] * metrics["shaded_pixels"]["p50"] /
+                              (smaller["count"] * smaller["summary"]["shaded_pixels"]["p50"]))
+                for field in timed:
+                    if metrics[field]["p50"] > work_ratio * smaller["summary"][field]["p50"]:
+                        flagged.append(f"{name}: {field} grew faster than rows times shaded pixels")
+            previous[key] = row
+            comparable = (key, row["count"])
+            if take == 1:
+                first[comparable] = metrics
+            else:
+                for field in timed:
+                    if metrics[field]["p50"] > 1.25 * first[comparable][field]["p50"]:
+                        flagged.append(f"{name}: {field} median over 25% slower than take 1")
+    return flagged
+
+
+def prove_field(args, scratch):
+    metal = args.target == "mac-metal"
+    if args.action == "field" and not metal:
+        raise ValueError("use the ordinary sprites-field browser case for Chrome")
+    binary = args.binary.resolve()
+    if metal:
+        run(BUILDS[args.target].split(), stdout=sys.stderr)
+        identity = digest(binary)
+    else:
+        run(["sh", "examples/v1-game/web/build.sh"], stdout=sys.stderr,
+            env={**os.environ, "CARGO_TARGET_DIR": "target", "RUSTC_WRAPPER": ""})
+        identity = digest(args.web_root.resolve() / "v1_game_bg.wasm")
+    commit = git("rev-parse", "HEAD")
+    compiler = ["rustc"] if metal else ["rustup", "run", "stable", "rustc"]
+    result = {"target": args.target, "profile": "release", "commit": commit,
+              "build": BUILDS[args.target], "artifact_sha256": identity,
+              "toolchain": subprocess.check_output([*compiler, "--version"], text=True).strip(),
+              "time_units": "nanoseconds", "coverage": "clipped pixel centres of axis-aligned quads including overdraw",
+              "run_started_unix_ns": [], "runs": []}
+    if args.action == "field":
+        result["runs"].append([native_field_run(scratch, 10000, EXTENTS[0], binary, commit, identity)])
+    else:
+        for index in (1, 2):
+            take = scratch / f"take-{index}"
+            result["run_started_unix_ns"].append(time.time_ns())
+            if metal:
+                result["runs"].append([native_field_run(take, count, extent, binary, commit, identity)
+                                       for extent in EXTENTS for count in FIELD_COUNTS])
+            else:
+                result["runs"].append(browser_field_run(take, args.web_root.resolve(), identity))
+        result["tripwires_flagged"] = field_tripwires(result["runs"], args.target)
+    if args.output:
+        args.output.write_text(json.dumps(result, indent=2) + "\n")
+    for take, rows in enumerate(result["runs"], start=1):
+        for row in rows:
+            print(json.dumps({key: value for key, value in row.items() if key not in ("samples", "load")}
+                             | {"take": take, "measured_ticks": len(row["samples"]), "commit": commit,
+                                "build": result["build"], "artifact_sha256": identity}))
+    print(json.dumps({"tripwires_flagged": result.get("tripwires_flagged", [])}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("costs", "record-costs"))
+    parser.add_argument("action", choices=("field", "costs", "record-costs"))
     parser.add_argument("--target", choices=TARGETS, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--binary", type=Path, default=ROOT / "target/release/v1-game")
@@ -293,9 +465,13 @@ def main():
         parser.add_argument(f"--valley-{name}", type=Path)
     args = parser.parse_args()
     retained = EVIDENCE / f"cost-{args.target}.json.gz"
-    if args.action == "costs":
-        with gzip.open(retained, "rt") as data:
-            validate(json.load(data), args.target)
+    if args.action in ("field", "costs"):
+        if args.action == "costs":
+            with gzip.open(retained, "rt") as data:
+                validate(json.load(data), args.target)
+        (ROOT / "tmp").mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="render2d-field-", dir=ROOT / "tmp") as scratch:
+            prove_field(args, Path(scratch))
         return
     if not args.output:
         parser.error("record-costs requires a new --output under tmp/")

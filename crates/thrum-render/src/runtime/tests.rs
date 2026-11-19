@@ -61,6 +61,7 @@ fn sample(tick: u64) -> FrameSample {
             reason: crate::synthetic::CullingReason::RequestedDirect,
         },
         camera_culling: None,
+        sprites: None,
         uploaded_rows: 0,
         uploaded_bytes: 0,
         moving: 0,

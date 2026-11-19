@@ -68,6 +68,8 @@ pub(super) fn run(
             | "exit-route"
             | "exit-drift"
             | "exit-stop"
+            | "sprites-field"
+            | "sprites-field-cost"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -339,7 +341,7 @@ impl Trace {
                 "gpu_effect_boundary_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::effect_boundary_nanoseconds),
                 "gpu_not_run":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::not_run_passes),
                 "native_segment":sample.native_segment.as_ref().map(|segment| json!({"pass":segment.pass_name(),"generation":segment.generation,"submission":segment.submission,"clock":"Metal host seconds; uncorrelated with wgpu queries","outcome":format!("{:?}",segment.outcome())})),
-                "encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),"render_cpu_ns":sample.render_cpu.as_nanos(),"wall_ns":sample.wall.as_nanos(),"tick_cpu_ns":sample.tick_cpu.as_nanos(),"gpu_present_ns":sample.gpu_present_ns}),
+                "sprites":crate::sprite_field::sample_stats(&sample),"encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),"render_cpu_ns":sample.render_cpu.as_nanos(),"wall_ns":sample.wall.as_nanos(),"tick_cpu_ns":sample.tick_cpu.as_nanos(),"gpu_present_ns":sample.gpu_present_ns}),
             );
         }
         if let Some(writer) = writer {
@@ -429,7 +431,7 @@ fn start_writer(
         encoding,
         if matches!(
             scenario,
-            "clouds-drift" | "clouds-route" | "exit-route" | "exit-drift"
+            "clouds-drift" | "clouds-route" | "exit-route" | "exit-drift" | "sprites-field"
         ) || recovery != super::NativeRecovery::Disabled
         {
             4096
@@ -524,6 +526,8 @@ fn world_moves(scenario: &str) -> bool {
                 | "content-edits"
                 | "clouds-drift"
                 | "exit-drift"
+                | "sprites-field"
+                | "sprites-field-cost"
         )
 }
 
@@ -531,7 +535,11 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
     (!active_world || matches!(scenario, "reconstruction-pan" | "content-edits"))
         && !matches!(
             scenario,
-            "reconstruction-stars" | "reconstruction-scrub" | "exit-stop"
+            "reconstruction-stars"
+                | "reconstruction-scrub"
+                | "exit-stop"
+                | "sprites-field"
+                | "sprites-field-cost"
         )
 }
 
@@ -552,7 +560,7 @@ fn prepare_parameters<G: Game>(
         .map(std::fs::read_to_string)
         .transpose()
         .map_err(|error| error.to_string())?;
-    if is_route(scenario) {
+    if is_route(scenario) || scenario.starts_with("sprites-field") {
         driver.parameters(r#"{"world.paused":true}"#)?;
     } else {
         driver.parameters(
@@ -598,13 +606,14 @@ async fn record(
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
     let motion_capture =
         mode == "realtime" && matches!(scenario, "exit-route" | "exit-drift" | "content-edits");
-    if motion_capture {
+    if motion_capture || scenario == "sprites-field" {
         driver.set_timing_requested(false);
     }
     let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
     reset_native_capture(&mut driver);
-    let observer_only = capture_output == RuntimeCaptureOutput::ObserverOnly;
-    if observer_only && !motion_capture {
+    let sprite_cost = scenario == "sprites-field-cost";
+    let observer_only = sprite_cost || capture_output == RuntimeCaptureOutput::ObserverOnly;
+    if observer_only && !motion_capture && !sprite_cost {
         return Err(
             "observer-only control requires realtime exit or content-edit motion".to_owned(),
         );
@@ -779,7 +788,7 @@ async fn record(
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
-    result["gpu_pass_timing"] = json!(!motion_capture);
+    result["gpu_pass_timing"] = json!(!motion_capture && scenario != "sprites-field");
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
@@ -818,6 +827,11 @@ fn write_runtime_report<G: Game>(
     let (scene_kind, present_target_bytes, storage) = driver.scene_storage();
     if scene_kind == thrum_render::runtime::SceneKind::TwoD {
         result["scene_kind"] = json!("TwoD");
+        result["scene_pass_names"] = json!(
+            driver
+                .scene_pass_names()
+                .map_err(|error| error.to_string())?
+        );
         result["present_target_bytes"] = json!(present_target_bytes);
         result["storage"] = json!(storage);
     }
@@ -968,10 +982,11 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         return (24.0, 20.0, 3.0);
     }
     match scenario {
+        "sprites-field-cost" => (4.5, 3.0, 3.0),
         "clouds-drift" => (22.5, 22.0, 21.0),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
-        "exit-drift" => (25.0, 23.0, 23.0),
+        "exit-drift" | "sprites-field" => (25.0, 23.0, 23.0),
         "content-edits" => (13.0, 12.0, 12.0),
         "route" => (8.4, 8.0, f64::INFINITY),
         _ => (6.0, 4.0, 3.0),
@@ -1016,6 +1031,8 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "clouds-drift"
                 | "exit-route"
                 | "exit-drift"
+                | "sprites-field"
+                | "sprites-field-cost"
         )
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());

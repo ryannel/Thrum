@@ -119,11 +119,6 @@ impl GameContent {
             Self::Field => crate::field::ENTITY_COUNT,
         }
     }
-
-    /// The local peer's controlled entity: the content's last slot.
-    pub(crate) fn controlled_id(self) -> StableId {
-        StableId((self.entity_count() - 1) as u128)
-    }
 }
 
 pub(crate) fn simulation(
@@ -224,7 +219,10 @@ pub fn exit_authority() -> Result<Simulation, crate::simulation::SimError> {
 }
 
 /// The last `PEER_COUNT` slots are owned by, and registered to, the peers.
-fn peer_ownership(entity_count: usize, index: usize) -> Result<Option<Ownership>, String> {
+pub(crate) fn peer_ownership(
+    entity_count: usize,
+    index: usize,
+) -> Result<Option<Ownership>, String> {
     let peer_number = entity_count - index;
     if peer_number > PEER_COUNT {
         return Ok(None);
@@ -234,7 +232,7 @@ fn peer_ownership(entity_count: usize, index: usize) -> Result<Option<Ownership>
     ))))
 }
 
-fn register_peers(sim: &mut Simulation, entity_count: usize) -> Result<(), String> {
+pub(crate) fn register_peers(sim: &mut Simulation, entity_count: usize) -> Result<(), String> {
     for peer_number in 1..=PEER_COUNT {
         let peer = PeerId(u64::try_from(peer_number).map_err(|error| error.to_string())?);
         let id = StableId(

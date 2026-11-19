@@ -40,6 +40,7 @@ impl BrowserGame {
                     "present_ns": present,
                     "gpu_span_ns": timings.timed_pass_span_nanoseconds(),
                     "rows": sample.uploaded_rows,
+                    "sprites": crate::sprite_field::sample_stats(sample),
                 }))
             })
             .collect();

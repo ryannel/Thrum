@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 mod graph;
 mod pass;
+mod world;
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
+pub use world::SpriteSink;
 
 /// One frame's 2D camera. The host supplies the drawable's physical extent.
 #[derive(Clone, Copy, Debug)]
@@ -21,7 +23,11 @@ impl SpriteView {
         extent: [u32; 2],
     ) -> Result<[f32; 2], crate::synthetic::RenderError> {
         let scale = extent.map(|side| self.pixels_per_unit / side as f32 * 2.0);
-        if self.centre.into_iter().all(f64::is_finite)
+        let limit = f64::from(f32::MAX) / 16.0;
+        if self
+            .centre
+            .into_iter()
+            .all(|axis| (-limit..=limit).contains(&axis))
             && scale
                 .into_iter()
                 .all(|value| value.is_finite() && value > 0.0)
@@ -58,15 +64,75 @@ pub struct EmbeddedSheet {
 /// Preparation-time assets and maximum frame-row count for a 2D scene.
 #[derive(Clone, Debug)]
 pub struct SpriteScene {
-    /// Pixel-art sheet resident for this scene.
-    pub sheet: EmbeddedSheet,
+    /// Pixel-art sheets in slot order, addressed by sprite rows.
+    pub sheets: Vec<NamedSheet>,
+    /// Number of physical world slots available to extraction.
+    pub world_capacity: u32,
     /// Maximum number of valid rows retained from any frame's list.
     pub row_capacity: u32,
+    /// World-space tolerance for exchanges between nearby world rows.
+    pub order_band: f64,
+}
+
+impl SpriteScene {
+    /// Prepare a scene with one sheet and frame rows only.
+    #[must_use]
+    pub fn new(sheet: EmbeddedSheet, row_capacity: u32) -> Self {
+        Self {
+            sheets: vec![NamedSheet {
+                name: "default".into(),
+                sheet,
+            }],
+            world_capacity: 0,
+            row_capacity,
+            order_band: 0.0,
+        }
+    }
+}
+
+/// One embedded sheet and its identity in preparation diagnostics.
+#[derive(Clone, Debug)]
+pub struct NamedSheet {
+    /// Name reported for invalid sheets or an excess sheet slot.
+    pub name: String,
+    /// Authored pixels and their frames.
+    pub sheet: EmbeddedSheet,
+}
+
+/// Measurements from one recorded sprite frame.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SpriteFrameStats {
+    /// Accepted world rows visible to the pass (before GPU clipping).
+    pub world_rows: u32,
+    /// Accepted frame rows.
+    pub frame_rows: u32,
+    /// World row records written to the queue.
+    pub world_upload_rows: u32,
+    /// Payload of world row writes, in bytes.
+    pub world_upload_bytes: usize,
+    /// Payload of order-list writes, in bytes.
+    pub order_upload_bytes: usize,
+    /// CPU time spent updating and merging the retained order.
+    pub order_cpu: std::time::Duration,
+    /// Sum of projected quad area clipped to the output (overdraw included).
+    pub shaded_pixels: f64,
+    /// Draws recorded by the sprite pass.
+    pub draws: u32,
 }
 
 /// One frame row, with a top-left pivot and signed scale for flipping each axis.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SpriteRow {
+    /// Embedded sheet slot.
+    pub sheet: u32,
+    /// Layers draw in increasing order.
+    pub layer: i32,
+    /// Optional explicit sort value in world units. Defaults to minus Y.
+    pub sort: Option<f64>,
+    /// Straight linear flash RGB and replacement amount.
+    pub flash: [f32; 4],
+    /// Fraction of source alpha suppressed after shading.
+    pub additive: f32,
     /// Rectangle index in the sheet's frame table.
     pub frame: u32,
     /// World position of the top-left pivot.
@@ -84,6 +150,11 @@ impl SpriteRow {
     #[must_use]
     pub const fn new(frame: u32, position: [f64; 2]) -> Self {
         Self {
+            sheet: 0,
+            layer: 0,
+            sort: None,
+            flash: [0.0; 4],
+            additive: 0.0,
             frame,
             position,
             rotation: 0.0,
@@ -93,11 +164,11 @@ impl SpriteRow {
     }
 }
 
-/// View and rows sampled together by the game. Rows draw in supplied order.
+/// View and frame rows sampled together by the game.
 #[derive(Clone, Copy)]
 pub struct SpriteFrame<'a> {
     /// Unjittered view used by every row.
     pub view: SpriteView,
-    /// Back-to-front frame rows, borrowed during host preparation.
+    /// Frame rows borrowed during host preparation, with list position breaking ties.
     pub rows: &'a [SpriteRow],
 }

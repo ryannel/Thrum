@@ -297,7 +297,7 @@ pub(crate) struct WorldDriver {
 }
 
 pub(super) struct GameWorld {
-    content: GameContent,
+    entity_count: usize,
     route_overlay: scene::RouteOverlay,
     pub(super) sim: Simulation,
     projections: Option<ProjectionOutbox>,
@@ -309,7 +309,7 @@ pub(super) struct GameWorld {
 impl WorldDriver {
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn controlled_id(&self) -> thrum_core::StableId {
-        self.world.game().content.controlled_id()
+        self.world.game().controlled_id()
     }
 
     pub(super) fn new(
@@ -319,19 +319,36 @@ impl WorldDriver {
         Self::selected(content, route_overlay, None)
     }
 
+    pub(super) fn sprite_field(count: u32) -> Result<Self, String> {
+        Self::with_simulation(
+            scene::RouteOverlay::Off,
+            crate::sprite_field::simulation(count)?,
+            count as usize,
+        )
+    }
+
     pub(super) fn selected(
         content: GameContent,
         route_overlay: scene::RouteOverlay,
         clouds: Option<thrum_cloud_model::Parameters>,
     ) -> Result<Self, String> {
+        let sim = if clouds.is_some() {
+            scene::weather_simulation(content, route_overlay, clouds)?
+        } else {
+            scene::simulation(content, route_overlay)?
+        };
+        Self::with_simulation(route_overlay, sim, content.entity_count())
+    }
+
+    fn with_simulation(
+        route_overlay: scene::RouteOverlay,
+        sim: Simulation,
+        entity_count: usize,
+    ) -> Result<Self, String> {
         let game = GameWorld {
-            content,
             route_overlay,
-            sim: if clouds.is_some() {
-                scene::weather_simulation(content, route_overlay, clouds)?
-            } else {
-                scene::simulation(content, route_overlay)?
-            },
+            sim,
+            entity_count,
             projections: None,
             desired_axes: [0.0; 3],
             admitted_axes: [0.0; 3],
@@ -406,7 +423,7 @@ impl WorldDriver {
     pub(super) fn controlled_position(&self) -> Option<[f64; 3]> {
         let game = self.world.game();
         let sim = &game.sim;
-        sim.handle(game.content.controlled_id())
+        sim.handle(game.controlled_id())
             .and_then(|handle| sim.get(handle).ok())
             .map(|entity| entity.position.0)
     }
@@ -426,7 +443,7 @@ impl WorldDriver {
                 .sim
                 .published_page()
                 .map_err(|error| format!("world page: {error:?}"))?;
-            let mut outbox = ProjectionOutbox::new(game.content.entity_count());
+            let mut outbox = ProjectionOutbox::new(game.entity_count);
             outbox.reset_full(&page);
             game.projections = Some(outbox);
         }
@@ -522,6 +539,12 @@ impl std::error::Error for GameWorldError {
             Self::Simulation { source, .. } => Some(source),
             _ => None,
         }
+    }
+}
+
+impl GameWorld {
+    fn controlled_id(&self) -> thrum_core::StableId {
+        thrum_core::StableId((self.entity_count - 1) as u128)
     }
 }
 

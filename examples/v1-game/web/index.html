@@ -111,8 +111,12 @@
         if (sprites && (!Number.isInteger(scale) || scale < 1 || scale > 6)) {
           throw new Error("Sprite scale must be an integer from 1 to 6");
         }
+        const spriteRows = probe.has("rows") ? Number(probe.get("rows")) : undefined;
+        if (sprites && spriteRows !== undefined && (!Number.isInteger(spriteRows) || spriteRows < 4 || spriteRows > 10000)) {
+          throw new Error("Sprite row count must be a whole number in 4..10000");
+        }
         const game = sprites
-          ? await create_sprite_game(canvas, scale, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
+          ? await create_sprite_game(canvas, scale, spriteRows, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);

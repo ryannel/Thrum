@@ -69,6 +69,8 @@ pub enum ExitEntities {
 pub struct GameSetup {
     /// Select the sprite test card at this integer output scale.
     pub sprite_scale: Option<u16>,
+    /// If selected with sprites, map this many simulated entities instead of the card.
+    pub sprite_rows: Option<u32>,
     /// Valley entity meshes follow cooked publications instead of code-authored props.
     pub cooked_mesh_rows: MeshRowSource,
     /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
@@ -106,6 +108,7 @@ impl Default for GameSetup {
     fn default() -> Self {
         Self {
             sprite_scale: None,
+            sprite_rows: None,
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
@@ -732,7 +735,11 @@ impl FrameHost {
                 }
             }
             let world = WorldPort::Inline(Box::new(
-                WorldDriver::new(setup.content, RouteOverlay::Off).map_err(FrameError::World)?,
+                match setup.sprite_rows {
+                    Some(count) => WorldDriver::sprite_field(count),
+                    None => WorldDriver::new(setup.content, RouteOverlay::Off),
+                }
+                .map_err(FrameError::World)?,
             ));
             let inner = Runtime::new_2d(
                 capabilities,
@@ -740,7 +747,10 @@ impl FrameHost {
                 config,
                 world,
                 GameScene::new(setup),
-                crate::sprite_card::scene(scale)?,
+                match setup.sprite_rows {
+                    Some(count) => crate::sprite_field::scene(count),
+                    None => crate::sprite_card::scene(scale)?,
+                },
                 runtime::SpriteSceneRequests {
                     temporal_sampling,
                     culling: (setup.camera_culling != CullMode::Direct)

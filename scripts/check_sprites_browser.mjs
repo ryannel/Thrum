@@ -184,3 +184,53 @@ export async function qualifySprites({ cdp, origin, output, mode, timeout, wasm,
   await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
   return record;
 }
+
+// Qualify the simulation-backed field through the ordinary page and surface.
+export async function qualifySpriteField({ cdp, origin, output, mode, timeout, wasm, existingGame, waitFor, commit }) {
+  const rows = [];
+  const width = 1920, height = 1080;
+  for (const count of mode === 'sprites-field' ? [10000] : [2000, 5000, 10000]) {
+    const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
+    const call = (method, params = {}) => cdp.call(method, params, sessionId);
+    const url = `${origin}/?scene=sprites&rows=${count}&backing=${width}x${height}`;
+    try {
+      await call('Page.enable');
+      await call('Runtime.enable');
+      await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+      await installWasmReceipt(cdp, sessionId);
+      await cdp.call('Target.activateTarget', { targetId });
+      await call('Page.navigate', { url });
+      await waitFor(async () => {
+        const status = await call('Runtime.evaluate', {
+          expression: 'document.querySelector("#status")?.textContent', returnByValue: true,
+        });
+        const message = status.result.value;
+        if (/fault:/i.test(message ?? '')) throw new Error(message);
+        return message?.startsWith('Running');
+      }, timeout, 'ordinary sprite field startup');
+      const game = await existingGame(cdp, sessionId);
+      const result = await waitFor(async () => {
+        const report = await game.invoke('return JSON.parse(game.sprite_scene_report());');
+        if (report.kind !== 'TwoD' || report.reconstructor !== null ||
+            JSON.stringify(report.passes) !== JSON.stringify(graphPasses)) throw new Error(JSON.stringify(report));
+        if (report.samples.some(({ sprites: s }) => !s?.surface_presented || s.world_rows !== count ||
+            s.frame_rows !== 2 || s.draws !== 1 || s.dropped !== 0)) throw new Error('Unexpected WebGPU sprite-field admission');
+        const moving = report.samples.filter(({ sprites: s }) => s.moving === count && s.world_upload_rows === count);
+        const interpolating = report.samples.filter(({ sprites: s }) => s.moving === count && s.alpha > 0 && s.alpha < 1);
+        if (moving.length >= 52 && interpolating.length >= 10) {
+          return { ...report, samples: moving.slice(12, 52), fractional_frames: interpolating.length };
+        }
+        return undefined;
+      }, timeout, `complete WebGPU ${count}-row field samples`);
+      const proof = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
+      rows.push({ world_rows: count, extent: [width, height], measurement: result, wasm: proof });
+      console.log(`${mode}: ${count} world rows, 2 frame rows, one draw, ${result.fractional_frames} interpolating frames`);
+    } finally {
+      await cdp.call('Target.closeTarget', { targetId });
+    }
+  }
+  const record = { case: mode, target: 'chrome-webgpu', commit, rows };
+  await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
+  return record;
+}

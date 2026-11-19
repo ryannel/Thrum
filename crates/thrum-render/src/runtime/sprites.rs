@@ -99,7 +99,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             entry.commit_quality_knobs();
         }
         let upload = prepared
-            .upload(&self.queue, target, sprites)
+            .upload(
+                &self.queue,
+                target,
+                sprites,
+                frame.presentation_alpha,
+                self.timing_requested,
+            )
             .map_err(|error| FrameError::Scene(format!("sprite view update: {error:?}")))?;
         let upload_cpu = start.elapsed();
         Ok(Some(PreparedSample {
@@ -140,7 +146,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 camera_culling: None,
                 uploaded_rows: upload.rows,
                 uploaded_bytes: upload.bytes,
-                moving: 0,
+                sprites: Some(upload.stats),
+                moving: upload.moving,
                 dropped_presentation: upload.dropped,
                 dropped_light_references: 0,
                 clamped_light_channels: 0,
@@ -160,10 +167,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "capture publication is not current",
             ));
         }
-        drop(snapshot);
         let PreparedRenderer::TwoD(prepared) = &mut self.prepared else {
             unreachable!()
         };
+        prepared.extract(source, |sink| {
+            self.source.extract_sprites(sink, &snapshot.page);
+        });
+        drop(snapshot);
         let mut target =
             SpriteTarget::prepare(prepared, self.render_extent, CaptureSource::Sdr, None)
                 .map_err(|error| FrameError::Gpu(format!("capture sprite target: {error:?}")))?;
@@ -172,7 +182,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .sprites(source, 1.0, target.extent)
             .map_err(FrameError::Scene)?;
         let upload = prepared
-            .upload(&self.queue, &mut target, frame)
+            .upload(&self.queue, &mut target, frame, 1.0, false)
             .map_err(|error| FrameError::Gpu(format!("capture sprite update: {error:?}")))?;
         self.dropped_capture_rows = self
             .dropped_capture_rows
@@ -197,6 +207,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 None,
                 Some(&mut pixels),
                 self.contribution.as_deref_mut(),
+                None,
                 time,
             )
             .map_err(|error| FrameError::Gpu(format!("capture sprite encode: {error:?}")))?;
