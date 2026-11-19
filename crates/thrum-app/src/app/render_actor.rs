@@ -337,14 +337,14 @@ impl<G: Game> Actor<G> {
         ensure_device(&self.gpu.watch)?;
         ensure_running(&self.stopped)?;
         let current = self.surface_generation.load(Ordering::Acquire) == request.surface_generation;
-        if !current {
-            self.needs_reconfigure = true;
-        } else {
+        if current {
             if request.surface_generation != self.surface_epoch {
                 self.surface_epoch = request.surface_generation;
                 self.needs_reconfigure = true;
             }
             self.advance_extent(request, reply)?;
+        } else {
+            self.needs_reconfigure = true;
         }
         let ready = current
             && !request.extent.contains(&0)
