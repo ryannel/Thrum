@@ -267,7 +267,65 @@
     },
     "M3": {
       "definitions": "eff32c7c07d695534c5e5f2bdd6573434e6edeae5c6656181993e370c96509cd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3a6ce80630c4ccb202d3f7229ad0f54aea62f8f1",
+          "review": "docs/evidence/RAY-TRACING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "fail",
+            "M3.3": "pass",
+            "M3.4": "fail",
+            "M3.5": "fail",
+            "M3.6": "fail",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Native traced pipeline errors bypass Maps fallback",
+              "item": "M3.6",
+              "repeat": false
+            },
+            {
+              "name": "Mirrored lamp receiver shadows its exposed faces",
+              "item": "M3.5",
+              "repeat": false
+            },
+            {
+              "name": "Dark facets interrupt low-Sun balloon terminators",
+              "item": "M3.2",
+              "repeat": false
+            },
+            {
+              "name": "Off-screen lamp wall overlaps the Sun height pass",
+              "item": "M3.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 185764,
+            "cached": 8557184,
+            "output": 17099,
+            "turns": 1
+          },
+          "at": "2026-11-19T07:20:06Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
