@@ -614,7 +614,7 @@
     {
       "id": "M4",
       "name": "The same sky and the same shade draw in Chrome",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -673,17 +673,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The background merge gate must finish and confirm the fix landed on `origin/main`.",
-        "work": {
-          "commit": "e80a57a207814ffa8738fd507de8f08d8e9f21f4",
-          "branch": "build/clouds",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/CLOUDS/M4-handoff.md"
-      }
+      ]
     },
     {
       "id": "M5",
