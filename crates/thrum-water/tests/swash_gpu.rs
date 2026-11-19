@@ -27,19 +27,18 @@ const EXTENT: [u32; 2] = [640, 192];
 const HEIGHT_SLOPE: f64 = 0.1;
 const MAP_TOLERANCE_METRES: f64 = 0.00004;
 
-#[derive(Default)]
 pub(crate) struct Clock {
     tick: u64,
     interpolate: bool,
     now: Duration,
 }
 
-#[allow(dead_code, reason = "the query integration test imports this fixture")]
 impl Clock {
-    pub(crate) fn interpolating() -> Self {
+    pub(crate) fn new(interpolate: bool) -> Self {
         Self {
-            interpolate: true,
-            ..Self::default()
+            tick: 0,
+            interpolate,
+            now: Duration::ZERO,
         }
     }
 }
@@ -291,7 +290,7 @@ fn submitted_depth_waterline_matches_the_cpu_wave_at_display_time() {
             render_extent: EXTENT,
             surface: Some(surface),
         },
-        Clock::default(),
+        Clock::new(false),
         Source { view, lighting },
         scene,
         1.0,

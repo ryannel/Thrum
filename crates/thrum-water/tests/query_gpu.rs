@@ -90,7 +90,7 @@ fn query_host(
 #[test]
 fn mailbox_samples_the_gale_at_its_use_tick() {
     let (device, queue, caps) = metal();
-    let (mut host, target) = query_host(&device, &queue, &caps, Clock::default());
+    let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(false));
     let surface = SurfaceOutput {
         view: &target,
         extent: EXTENT,
@@ -224,7 +224,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
 fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     use thrum_water_model::{Bed, BodyKind, Chart, Map, Stage};
     let (device, queue, caps) = metal();
-    let (mut host, target) = query_host(&device, &queue, &caps, Clock::interpolating());
+    let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(true));
     let output = SurfaceOutput {
         view: &target,
         extent: EXTENT,
