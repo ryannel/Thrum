@@ -638,8 +638,8 @@
           "check": "node scripts/check_v1_browser.mjs --case clouds-state",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#m42-ground-field-review-correction",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
         },

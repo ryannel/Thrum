@@ -538,3 +538,8 @@
 - 2026-11-19 M4 releases the lifecycle observer's device handles and unloads the recovered page before closing
   Chrome. The [shutdown evidence](../../../.orchestrate/evidence/CLOUDS/M4/README.md#chrome-shutdown-after-device-recovery)
   records the verifier's shutdown timeout and the follow-up Chrome runs.
+
+- 2026-11-20 M4.2 now checks each written Sun-path ground slice against an independent replay through the verified
+  weather map and carries that comparison through retained rows. The [Chrome lifecycle evidence](../../../.orchestrate/evidence/CLOUDS/M4/README.md#m42-ground-field-review-correction)
+  records 19 passing submissions, including five on the replacement device. The review's constant-depth control
+  fails at the first ground-slice texel. The production Sun-path shader assembles to the same bytes.
