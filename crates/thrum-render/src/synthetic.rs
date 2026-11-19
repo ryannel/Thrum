@@ -207,6 +207,8 @@ impl SyntheticScene {
     pub(crate) fn empty() -> Self {
         Self {
             ray_structure: false,
+            sun_shadow_method: SunShadowMethod::Maps,
+            lamp_shadows: false,
             sun_optical_depth: None,
             materials: Vec::new(),
             instances: Vec::new(),

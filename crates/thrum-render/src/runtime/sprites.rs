@@ -8,7 +8,7 @@ use super::{
 use crate::{
     contribution::{ContributionFrame, EffectTime, SceneContribution, SpriteContributionSurface},
     sprite::SpriteTarget,
-    synthetic::{CaptureSource, CullMode},
+    synthetic::{CaptureSource, CullMode, ShadowSelection},
 };
 use std::{sync::Arc, time::Duration};
 
@@ -128,6 +128,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 timing_requested: self.timing_requested,
                 culling_mode: CullMode::Direct,
                 culling_selection: self.culling_selection(),
+                shadow_selection: ShadowSelection::default(),
                 camera_culling: None,
                 uploaded_rows: upload.rows,
                 uploaded_bytes: upload.bytes,
