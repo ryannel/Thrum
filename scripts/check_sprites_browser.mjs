@@ -198,13 +198,20 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
       await call('Page.enable');
       await call('Runtime.enable');
       await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
-      // Headless macOS can throttle RAF to 30 Hz. Give the ordinary page
-      // elapsed 120 Hz callback opportunities so the 60 Hz simulation
-      // publishes adjacent endpoints and the check can observe sub-tick poses.
-      await call('Page.addScriptToEvaluateOnNewDocument', { source: `
-        window.requestAnimationFrame = callback => window.setTimeout(() => callback(performance.now()), 1000 / 120);
+      // Headless macOS can throttle RAF to 30 Hz. The function check
+      // observes elapsed sub-tick samples. The cost take uses fixed input
+      // timestamps to keep the same moving-row workload under varying load.
+      const fixedClock = mode === 'sprites-field-cost';
+      await call('Page.addScriptToEvaluateOnNewDocument', { source: `{
+        let base;
+        let index = 0;
+        window.requestAnimationFrame = callback => window.setTimeout(() => {
+          const now = performance.now();
+          base ??= now;
+          callback(${fixedClock} ? base + index++ * 1000 / 120 : now);
+        }, 1000 / 120);
         window.cancelAnimationFrame = id => window.clearTimeout(id);
-      ` });
+      }` });
       await installWasmReceipt(cdp, sessionId);
       await cdp.call('Target.activateTarget', { targetId });
       await call('Page.navigate', { url });
@@ -238,7 +245,9 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
     }
   }
   const record = { case: mode, target: 'chrome-webgpu', commit, rows,
-    schedule: 'ordinary page callbacks at elapsed timer opportunities, 120 Hz requested' };
+    schedule: mode === 'sprites-field-cost'
+      ? 'ordinary page with fixed 120 Hz input timestamps and elapsed CPU/GPU measurements'
+      : 'ordinary page callbacks at elapsed timer opportunities, 120 Hz requested' };
   await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
   return record;
 }

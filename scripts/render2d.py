@@ -357,7 +357,8 @@ def browser_field_run(folder, web, sha256):
          "--web-root", str(web), "--output", str(folder)])
     after = load()
     gpu = read(folder / "browser-gpu.json")
-    rows = read(folder / "sprites-field-cost.json")["rows"]
+    browser_record = read(folder / "sprites-field-cost.json")
+    rows = browser_record["rows"]
     if [row["world_rows"] for row in rows] != list(FIELD_COUNTS):
         raise ValueError("missing Chrome workload")
     result = []
@@ -376,6 +377,7 @@ def browser_field_run(folder, web, sha256):
         result.append({"count": row["world_rows"], "extent": row["extent"],
                        "load": {"before": before, "after": after},
                        "chrome": gpu["version"]["product"], "adapter": gpu["gpu"]["gpu"]["devices"],
+                       "schedule": browser_record["schedule"],
                        "wasm": row["wasm"], "pass_names": PASSES, "samples": samples,
                        "fractional_frames": report["fractional_frames"]})
     return result
