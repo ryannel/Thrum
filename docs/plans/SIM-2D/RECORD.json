@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/SIM-2D/design-review.md",
-    "commit": "aed1cd02c2333f4fa1ad039a448074b64dca7306",
+    "commit": "f6f6aa5ab5321740a0b3225891f2c098606dc78c",
     "hash": "aa42cd7603497013c63d2132d789e38165a2842de547a873b72977bd8336041e",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "2aa357818ab5abcf130d46ab9d0dff0cc7d09024",
+          "commit": "996bac579e17124798b44cdf2eadc4a23f18b45d",
           "review": ".orchestrate/evidence/SIM-2D/M1-review-1.md",
           "items": {
             "M1.1": "fail",
@@ -86,7 +86,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "b13711488def74f7f29d85d32c7ff8393ce32fc8",
+          "commit": "687194afe1a071a97cd23d0742388a71e886a07a",
           "review": ".orchestrate/evidence/SIM-2D/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -133,8 +133,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "d8d6be30e41bc7ea088a3fa849d1851519cabb43",
-        "checked": "fd2a2679b4e442d13a55f6643acfcf54a746b04b",
+        "commit": "975e1cdf6d4f26a19793dc06d72019358bd125c4",
+        "checked": "0c8e1608dcd726d1c8d7f3d7be2c13ffe2cb1354",
         "at": "2026-11-16T08:30:39Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -160,9 +160,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "b13711488def74f7f29d85d32c7ff8393ce32fc8",
+        "commit": "687194afe1a071a97cd23d0742388a71e886a07a",
         "review": ".orchestrate/evidence/SIM-2D/M1-review.md",
-        "checked": "fd2a2679b4e442d13a55f6643acfcf54a746b04b",
+        "checked": "0c8e1608dcd726d1c8d7f3d7be2c13ffe2cb1354",
         "at": "2026-11-16T09:25:42Z"
       }
     },
@@ -171,7 +171,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "07fe891982906a064c141ab7419ab83b89376bb5",
+          "commit": "fbd407c90c3e71f8fa39248193118d7235f37077",
           "review": ".orchestrate/evidence/SIM-2D/M2-review-1.md",
           "items": {
             "M2.1": "pass",
@@ -218,7 +218,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "8176afb5083a87eaa032d98bf9c5d24ab4588373",
+          "commit": "61b0743154a7f073e5e1abe62e33999ed9c494fa",
           "review": ".orchestrate/evidence/SIM-2D/M2-review-2.md",
           "items": {
             "M2.1": "pass",
@@ -265,7 +265,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "511927183f158ef5c3fa16ca668c0c0afbe1f6fc",
+          "commit": "8f0eb711082258469158d6bef5e4d15e812b412a",
           "review": ".orchestrate/evidence/SIM-2D/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -312,8 +312,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "6c9d5f2cea36d09b90c0d3a583fe3b89d43720e6",
-        "checked": "6c9d5f2cea36d09b90c0d3a583fe3b89d43720e6",
+        "commit": "d58a89e1728618c2968c86b51639fd0b80239edc",
+        "checked": "d58a89e1728618c2968c86b51639fd0b80239edc",
         "at": "2026-11-17T08:09:12Z",
         "reused": [
           "Test command"
@@ -342,9 +342,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "511927183f158ef5c3fa16ca668c0c0afbe1f6fc",
+        "commit": "8f0eb711082258469158d6bef5e4d15e812b412a",
         "review": ".orchestrate/evidence/SIM-2D/M2-review.md",
-        "checked": "6c9d5f2cea36d09b90c0d3a583fe3b89d43720e6",
+        "checked": "d58a89e1728618c2968c86b51639fd0b80239edc",
         "at": "2026-11-17T08:22:04Z"
       }
     },
@@ -353,7 +353,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "647b38f2079026e1836e3f515fe80b97c541993d",
+          "commit": "8bd42fe3b57f2cf59774d5ff4e8996ebb04a8085",
           "review": ".orchestrate/evidence/SIM-2D/M3-review-1.md",
           "items": {
             "M3.1": "pass",
@@ -391,7 +391,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "5ca20ca8ee3a0d0b060c11b45f72aae887b6a92d",
+          "commit": "f18ecee6958ec387bf78e8b296816256083f7dd2",
           "review": ".orchestrate/evidence/SIM-2D/M3-review-2.md",
           "items": {
             "M3.1": "pass",
@@ -429,7 +429,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "7a024294bbb713f72347ec20223251acb98a0229",
+          "commit": "992e95d15639393b965be21b555488255dafeca2",
           "review": ".orchestrate/evidence/SIM-2D/M3-review-3.md",
           "items": {
             "M3.1": "pass",
@@ -467,7 +467,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "8dcc2caef58ee2e5ebacc58324dc65745ef44bbb",
+          "commit": "a29d0686fc6b077593c9030bec840615db8c89e7",
           "review": ".orchestrate/evidence/SIM-2D/M3-review.md",
           "items": {
             "M3.1": "pass",
@@ -511,8 +511,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "e7ab728744d1a922b10e150aaca566199f1801eb",
-        "checked": "ff8a30e76b5d03daeae065e5ea197e6cf294b361",
+        "commit": "e1fdfd04110084908781e6a6f44e38e90cd5cb32",
+        "checked": "e1d130689617271ea0b8f5bebf45894562c10af2",
         "at": "2026-11-18T05:54:21Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -538,9 +538,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "8dcc2caef58ee2e5ebacc58324dc65745ef44bbb",
+        "commit": "a29d0686fc6b077593c9030bec840615db8c89e7",
         "review": ".orchestrate/evidence/SIM-2D/M3-review.md",
-        "checked": "ff8a30e76b5d03daeae065e5ea197e6cf294b361",
+        "checked": "e1d130689617271ea0b8f5bebf45894562c10af2",
         "at": "2026-11-18T06:31:04Z"
       }
     }
@@ -571,7 +571,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SIM-2D/design-review-1.md",
-      "commit": "081d74e86a6663988955fa4ce7bf71a305ace6b5",
+      "commit": "6d7e5a3aaa7eef8aa25a99b149013b72a875939f",
       "hash": "c80a9eadceff7ad395739b5613aa93336bbe7af27209f4efacb4b0b5d348a27a",
       "by": "review",
       "host": "codex",

@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/GAME-UI/design-review.md",
-    "commit": "10e6260f449810203f0f79bd24939f0d5e671bf5",
+    "commit": "04ecff7932b4939f52ca742a0b8bb17d7ecad9e9",
     "hash": "854283c3731c1d5a72172948d75de64ddfc61aeb0fb28a66dd0d14f186cfa437",
     "by": "review",
     "host": "codex",
@@ -147,7 +147,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/GAME-UI/design-review-1.md",
-      "commit": "faa2d8433be9e7d9a6b83b7acc31b201308e0ff1",
+      "commit": "2bf6e24f05c28f9d03a6a4365b512a359bbbd09f",
       "hash": "8f8e794c178d912575a2e7494ba70ad0af3302f9a45921bc90e2daf7ce36ba24",
       "by": "review",
       "host": "codex",
@@ -170,7 +170,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/GAME-UI/design-review-2.md",
-      "commit": "97b83136ffb65764a32329a0c5e50cf38b72d3bb",
+      "commit": "46eddd9a6e7da5d0f9fc5ecac0ff6fd9e9c70b4b",
       "hash": "62b614fd13ce740a6ee2435d8a0240d1e632af7e7715a7209e1963d6117f3238",
       "by": "review",
       "host": "codex",

@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/CULLING/design-review.md",
-    "commit": "979f3c42a64a9becd186e0201c181b2e433ece86",
+    "commit": "390abd364e08c6f1471075f5904836623f0090bf",
     "hash": "03068e2919ab490d997f8f9a897aeaa3b3edcf9b794cd15f0aab67c066f42bdb",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "9cba741733015cc6608322bc505a70a0b138ed0f",
+          "commit": "ccd4855bcd3ae20a80458999f81fe63b8c29a35d",
           "review": ".orchestrate/evidence/CULLING/M1-review-1.md",
           "items": {
             "M1.1": "pass",
@@ -64,7 +64,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "d4b5109f867d4b69fef1464c196e17ef6debf695",
+          "commit": "799fff5de704570f37dcf23de36e3a34ff4f473c",
           "review": ".orchestrate/evidence/CULLING/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -97,8 +97,8 @@
         "at": "2026-11-11T15:55:43Z"
       },
       "ready_for_review": {
-        "commit": "c6e50cf67956c8ac70dcef04041efc1772525ab8",
-        "checked": "c6e50cf67956c8ac70dcef04041efc1772525ab8",
+        "commit": "1d88f75d31c62859d3bd2e0d9e02e187804e37c3",
+        "checked": "1d88f75d31c62859d3bd2e0d9e02e187804e37c3",
         "at": "2026-11-13T00:53:58Z",
         "reused": [
           "Test command",
@@ -129,9 +129,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "d4b5109f867d4b69fef1464c196e17ef6debf695",
+        "commit": "799fff5de704570f37dcf23de36e3a34ff4f473c",
         "review": ".orchestrate/evidence/CULLING/M1-review.md",
-        "checked": "c6e50cf67956c8ac70dcef04041efc1772525ab8",
+        "checked": "1d88f75d31c62859d3bd2e0d9e02e187804e37c3",
         "at": "2026-11-13T00:59:08Z"
       }
     },
@@ -140,7 +140,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "85a3212c50a6bbe951cf82550c5a040909716fa0",
+          "commit": "d5b5c6f808088872b8d9ec213a4d86cc3c7ca37b",
           "review": ".orchestrate/evidence/CULLING/M2-review-1.md",
           "items": {
             "M2.1": "pass",
@@ -175,7 +175,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "e6f7a54a3675d22179f0e276838778cdff129480",
+          "commit": "41b3d8675f67b695170704c4824d33e79ce85ac5",
           "review": ".orchestrate/evidence/CULLING/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -208,8 +208,8 @@
         "at": "2026-11-11T15:55:43Z"
       },
       "ready_for_review": {
-        "commit": "0146f8d2fbcfda02f81c872c955abe5223a4d0be",
-        "checked": "081d74e86a6663988955fa4ce7bf71a305ace6b5",
+        "commit": "2816a29cbb6cc59fb3c3eae4b034bdb3b979a22c",
+        "checked": "6d7e5a3aaa7eef8aa25a99b149013b72a875939f",
         "at": "2026-11-13T15:54:04Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -235,9 +235,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "e6f7a54a3675d22179f0e276838778cdff129480",
+        "commit": "41b3d8675f67b695170704c4824d33e79ce85ac5",
         "review": ".orchestrate/evidence/CULLING/M2-review.md",
-        "checked": "081d74e86a6663988955fa4ce7bf71a305ace6b5",
+        "checked": "6d7e5a3aaa7eef8aa25a99b149013b72a875939f",
         "at": "2026-11-13T15:58:07Z"
       }
     },
@@ -246,7 +246,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "21aa3fb764d1931b88ba2d08f919cd290d7adc82",
+          "commit": "cf4074f69225d2a302f32b1e2cf1290be8ba4101",
           "review": ".orchestrate/evidence/CULLING/M3-review-1.md",
           "items": {
             "M3.1": "pass",
@@ -290,7 +290,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "e7311c49fd8900309a61f2dcde9f55d936bbe8ad",
+          "commit": "33954ba9f830831a386a3ada0e1d6174b4c24d58",
           "review": ".orchestrate/evidence/CULLING/M3-review-2.md",
           "items": {
             "M3.1": "pass",
@@ -338,7 +338,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "70c5b0f6c8fc10a069c370291eebbf04472e3486",
+          "commit": "ced4eaf23cb98da91d7088ab5f9f2ffc9dcad47e",
           "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "items": {
             "M3.1": "pass",
@@ -379,8 +379,8 @@
         "at": "2026-11-17T02:56:04Z"
       },
       "ready_for_review": {
-        "commit": "cabbb65d59c11887d8eb5a65796371ce5cc351f1",
-        "checked": "6b00f90b070b92a29d9f7b8fe3a82b2fe754df65",
+        "commit": "4c561dfe2c30760d8040a86a2d196ab670e731d6",
+        "checked": "a4b8ec591918ba2fd26d0468abd7983c680267e2",
         "at": "2026-11-17T05:06:42Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -406,9 +406,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "70c5b0f6c8fc10a069c370291eebbf04472e3486",
+        "commit": "ced4eaf23cb98da91d7088ab5f9f2ffc9dcad47e",
         "review": ".orchestrate/evidence/CULLING/M3-review.md",
-        "checked": "6b00f90b070b92a29d9f7b8fe3a82b2fe754df65",
+        "checked": "a4b8ec591918ba2fd26d0468abd7983c680267e2",
         "at": "2026-11-17T05:39:24Z"
       }
     }
@@ -459,7 +459,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/CULLING/design-review-1.md",
-      "commit": "d90f66ac1638407b9821fee3868c060cd361bdca",
+      "commit": "8809d30994c1a62920b0c037059b207aea509f21",
       "hash": "a662555c5cb4a91c46963bb4c774b311d6ed4eb51afcb16a4e748fe66bc124b3",
       "by": "review",
       "host": "codex",
@@ -482,7 +482,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/CULLING/design-review-2.md",
-      "commit": "42ec5975715eeea889522d54f7521f2ee2d43fd1",
+      "commit": "f823d9bf56c171890abd3ed00f7954ed15923944",
       "hash": "a1945c9b6a2132a25385a38a7e6bca0c5d5a9344fda415df514481a7137cb388",
       "by": "review",
       "host": "codex",
@@ -505,7 +505,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/CULLING/design-review-3.md",
-      "commit": "598bbd74841b40416ea736ef4fda5fa08e757279",
+      "commit": "f88d864afa2003b0f453de81103312b82769361e",
       "hash": "ea38e76559efd1dc0d8fa4157743456b1604795306593eb7192ccd6e915ed6d7",
       "by": "review",
       "host": "codex",
@@ -528,7 +528,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/CULLING/design-review-4.md",
-      "commit": "43523943da4bd39e859708c6bd22110fa23cb108",
+      "commit": "df959527259a3ebbfd53c7844565ee999d8e9e7c",
       "hash": "4cd24f7e82ffa607ee72aaee14ae0c27f6ce32c88c88f354fae59c2e66d6e55b",
       "by": "review",
       "host": "codex",
@@ -551,7 +551,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/CULLING/design-review-5.md",
-      "commit": "33968a448af0b999cee529c12643b48a89852a2f",
+      "commit": "2f08c119beab3c74cb4bf3dcfde1f29dbdd3b6f4",
       "hash": "1c408c023e9bd38b8a70428098ead1e46a198de8a0313f9ed394fe41c1359ce1",
       "by": "review",
       "host": "codex",
@@ -574,7 +574,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/CULLING/design-review-6.md",
-      "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc",
+      "commit": "f0a5d7d0dadc5ccaba78713f5aa5eb7cd7943d7f",
       "hash": "8aa0afae7b149f854c0a10c76935469ecd7e4f03bbc7608f6319b745d2059061",
       "by": "review",
       "host": "codex",
@@ -597,7 +597,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/CULLING/design-review-7.md",
-      "commit": "a409bc13acc1c037a17ce33a8f0bb00ec1e08a24",
+      "commit": "3b3550e92b9071d0f5275089b1339d01baf6f334",
       "hash": "cad1b326f4ebae508f7747bab70425b938f4325bb47d39c2e0cfd4a50c86c831",
       "by": "review",
       "host": "codex",
@@ -620,7 +620,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/CULLING/design-review-8.md",
-      "commit": "db921439a0ab83c866af3cae4b86b0f42cddae81",
+      "commit": "766b45cf6b462671e71f06c8d8d3c67ec33207dd",
       "hash": "0d481210de1810f3b5955c144bbce363304226698e0ea2eda6f42089db43c8b8",
       "by": "review",
       "host": "codex",

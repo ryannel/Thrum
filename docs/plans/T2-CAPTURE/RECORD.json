@@ -4,7 +4,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/T2-CAPTURE/design-review.md",
-    "commit": "352cd3e661bf317cd5f44b69c03e30fb118a0f2c",
+    "commit": "45c4aeef54049961b1449ba309af87fe7177b7e1",
     "hash": "ae54d73cb282b72d99f536b859684865ae80d87c76b1e8e6f12254fde5b9c5f1",
     "by": "review",
     "host": "codex",
@@ -50,7 +50,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+          "commit": "9502a54d229007b32564a2f35944529c29079915",
           "review": ".orchestrate/evidence/T2-CAPTURE/M2-review.md",
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -69,8 +69,8 @@
         "at": "2026-11-09T18:29:05Z"
       },
       "ready_for_review": {
-        "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
-        "checked": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+        "commit": "9502a54d229007b32564a2f35944529c29079915",
+        "checked": "9502a54d229007b32564a2f35944529c29079915",
         "at": "2026-11-10T00:40:50Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -84,9 +84,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+        "commit": "9502a54d229007b32564a2f35944529c29079915",
         "review": ".orchestrate/evidence/T2-CAPTURE/M2-review.md",
-        "checked": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+        "checked": "9502a54d229007b32564a2f35944529c29079915",
         "at": "2026-11-10T00:57:24Z"
       }
     },
@@ -95,7 +95,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "4b1b818419c066320515be5c08453d50c34b11c5",
+          "commit": "27c071969021ea13e57ce2e128737a3e518b07d7",
           "review": ".orchestrate/evidence/T2-CAPTURE/M3-review.md",
           "items": {
             "M3.1": "pass",
@@ -128,8 +128,8 @@
         "at": "2026-11-16T15:36:07Z"
       },
       "ready_for_review": {
-        "commit": "82352848cbd3a1b89acf2ec0e164768055d29c15",
-        "checked": "82352848cbd3a1b89acf2ec0e164768055d29c15",
+        "commit": "2a72aa897d56cf2a02e53daf462bba0f98044d07",
+        "checked": "2a72aa897d56cf2a02e53daf462bba0f98044d07",
         "at": "2026-11-16T23:02:19Z",
         "reused": [
           "Test command"
@@ -158,9 +158,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "4b1b818419c066320515be5c08453d50c34b11c5",
+        "commit": "27c071969021ea13e57ce2e128737a3e518b07d7",
         "review": ".orchestrate/evidence/T2-CAPTURE/M3-review.md",
-        "checked": "82352848cbd3a1b89acf2ec0e164768055d29c15",
+        "checked": "2a72aa897d56cf2a02e53daf462bba0f98044d07",
         "at": "2026-11-16T23:46:32Z"
       }
     }
@@ -179,7 +179,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/T2-CAPTURE/design-review-1.md",
-      "commit": "bce5a43206979da35aba1f1d432dc74f8e9da5a7",
+      "commit": "39e89597e1e3aec7330d1002430c9bb5cde73b3a",
       "hash": "ae14ac7bb699e5a75f183b34c41ae4f4268b1f9b1f31af21900ca6334a71ad1e",
       "by": "review",
       "host": "codex",

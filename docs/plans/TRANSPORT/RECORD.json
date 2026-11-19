@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/TRANSPORT/design-review.md",
-    "commit": "51e404c67c7ba37c89e4e7e4b24622a7e0b6328f",
+    "commit": "5495de2c26c898f65b0c6a4963651bb803163d83",
     "hash": "d2531eabb70627398afa739d5559156847d672370f40617f66f77fd7e8534cad",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
+          "commit": "4d6d9f89ed1fccd4f78dbc11b6b37564318de062",
           "review": ".orchestrate/evidence/TRANSPORT/M1-review-1.md",
           "items": {
             "M1.1": "pass",
@@ -70,7 +70,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "5b68d69480590089b8920389c214e202897d2c47",
+          "commit": "f16cf0b9c89792e476e6f067b1bb88747b0a3ac3",
           "review": ".orchestrate/evidence/TRANSPORT/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -117,8 +117,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "97d24110717a7099108e227fd06c2e17e252ffe8",
-        "checked": "b99cd3d9e875eb37b05d0635ef843c582f4b80c9",
+        "commit": "6504e5616a19be9e195c8c97baada420668599eb",
+        "checked": "55845a9db69c6c83de3218cb68b510bce785bc5a",
         "at": "2026-11-16T10:52:05Z",
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -146,9 +146,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "5b68d69480590089b8920389c214e202897d2c47",
+        "commit": "f16cf0b9c89792e476e6f067b1bb88747b0a3ac3",
         "review": ".orchestrate/evidence/TRANSPORT/M1-review.md",
-        "checked": "b99cd3d9e875eb37b05d0635ef843c582f4b80c9",
+        "checked": "55845a9db69c6c83de3218cb68b510bce785bc5a",
         "at": "2026-11-16T11:22:17Z"
       }
     },
@@ -157,7 +157,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+          "commit": "dd83938996e82af79d39681c09ae691330f20626",
           "review": ".orchestrate/evidence/TRANSPORT/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -203,8 +203,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "d8ee70f101b34cc1e5eea1f79c56754d3c186f50",
-        "checked": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+        "commit": "6dc5b662e2d44f77bf0b06453eac0dd1f2d8c91b",
+        "checked": "b0df0938057eebd65c099cd2f22b90857ebf4b3c",
         "at": "2026-11-16T18:17:56Z",
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -231,9 +231,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+        "commit": "dd83938996e82af79d39681c09ae691330f20626",
         "review": ".orchestrate/evidence/TRANSPORT/M2-review.md",
-        "checked": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+        "checked": "b0df0938057eebd65c099cd2f22b90857ebf4b3c",
         "at": "2026-11-16T19:17:04Z"
       }
     }
@@ -276,7 +276,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/TRANSPORT/design-review-1.md",
-      "commit": "f574992194499bc5f2e5f6f5e6450e90eabacff2",
+      "commit": "c4d8f50e709224ec1c1d9d042848c0459f5f9379",
       "hash": "c9fda0855c1b38df50ff421e538a15c61d6a9c56db811378d7f10597655a7382",
       "by": "review",
       "host": "codex",
@@ -299,7 +299,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/TRANSPORT/design-review-2.md",
-      "commit": "50be8377a702f2cee6da806e1aef1c0fc89052d6",
+      "commit": "185b974b437e9af8a576300b56a08eb4bd31d02d",
       "hash": "e6d2a207e6c8fb6638026da9535a6c0bcccf95c1d5a4fb42b0107bd5ad534a7a",
       "by": "review",
       "host": "codex",
@@ -322,7 +322,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/TRANSPORT/design-review-3.md",
-      "commit": "4e9956d6dbae7bc5facfd4dca2bbaaa1a6e85a7a",
+      "commit": "a2fa60962287cb95f8a896af2301d211ea7c9c2a",
       "hash": "d62a824a707b898992b568f5175c7892321136563f20691718976287f51c5b73",
       "by": "review",
       "host": "codex",
@@ -345,7 +345,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/TRANSPORT/design-review-4.md",
-      "commit": "6c01e8cadca9be4ef2e9be3376e3838a96468488",
+      "commit": "73dbf58149886a4ef60c8b13349af866c4e52aa6",
       "hash": "c3981c8da6327787b36885bd59a0c0322662feac18c8c339a4e68465114541c7",
       "by": "review",
       "host": "codex",

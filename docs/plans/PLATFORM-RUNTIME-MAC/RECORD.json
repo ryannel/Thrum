@@ -4,7 +4,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/design-review.md",
-    "commit": "4af24b81f803bbc055fad6b72ac6fc5e87b85fb7",
+    "commit": "771645f62ca0467c5cb20805a53c511e0a2aefe7",
     "hash": "5da7ef2559c905c4c67a18177cd365fd35d19cf3a22de538263c5c75cdc76501",
     "by": "review",
     "host": "codex",
@@ -50,7 +50,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "53137ce1506a37ec27c04082701d0e9ac1061bd9",
+          "commit": "61e545fa9d6ca842e79d0d23d166dfa532b2a944",
           "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M2-review-1.md",
           "items": {
             "M2.1": "could_not_judge",
@@ -95,7 +95,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "e119993ac1c087014571ad0862668d33b912841a",
+          "commit": "b8045fdba10e604934023e28cb1313c37cc7f4ea",
           "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -146,8 +146,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "a024524b6bc287e6e55d7df8186c8250d5a1314c",
-        "checked": "a024524b6bc287e6e55d7df8186c8250d5a1314c",
+        "commit": "4af3611fbe9497a6a18577b7fa80a41053772d2c",
+        "checked": "4af3611fbe9497a6a18577b7fa80a41053772d2c",
         "at": "2026-11-13T11:01:35Z",
         "reused": [
           "Test command",
@@ -177,9 +177,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "e119993ac1c087014571ad0862668d33b912841a",
+        "commit": "b8045fdba10e604934023e28cb1313c37cc7f4ea",
         "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
-        "checked": "a024524b6bc287e6e55d7df8186c8250d5a1314c",
+        "checked": "4af3611fbe9497a6a18577b7fa80a41053772d2c",
         "at": "2026-11-13T19:32:21Z"
       }
     },
@@ -188,7 +188,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "15282d3e74bb52d4895b5f75452a52e7508246bd",
+          "commit": "7583d69d6d427b7f2a016835f01eef1db6103c90",
           "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
           "items": {
             "M3.1": "pass",
@@ -248,7 +248,7 @@
       },
       "done": {
         "by": "review",
-        "commit": "15282d3e74bb52d4895b5f75452a52e7508246bd",
+        "commit": "7583d69d6d427b7f2a016835f01eef1db6103c90",
         "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
         "checked": "f0b9f4da4f32db7521672a7214776ca26af3e8af",
         "at": "2026-11-14T16:46:51Z"
@@ -273,7 +273,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/design-review-1.md",
-      "commit": "9d6c6f6fcdd0b7ad533cce994a01f9567ab33887",
+      "commit": "cf6671b98ad52c342f321c2907510cb819b52d5b",
       "hash": "62f9cfc194cb7b91694f8525389d7d981daa7bbd85383ca0fd7f88e9ffe48892",
       "by": "review",
       "host": "codex",
@@ -290,7 +290,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/PLATFORM-RUNTIME-MAC/design-review-2.md",
-      "commit": "3e5be4a760190434acd2655d43d7cf92c549ee8e",
+      "commit": "7d2d8a0644e50c1d249743d3c108be3e79f54430",
       "hash": "117d14185437deddac6d76a47385e449d91cedad2838dc9756efc2c9adbe84f9",
       "by": "review",
       "host": "codex",

@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/HOST/design-review.md",
-    "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
+    "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
     "hash": "dbc26334970d06d60a70183338a114262237e091446473bc29446ba1be7b8034",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "72ca6c9ebb4a2ae12827cbf5d347309841491dd8",
+          "commit": "20ac9f595935bc0d66b944d6f9fe26c02ed566b4",
           "review": ".orchestrate/evidence/HOST/M1-review.md",
           "items": {
             "M1.1": "fail",
@@ -198,7 +198,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/HOST/design-review-1.md",
-      "commit": "2df2e3c54da1ec5ac7c012707830d484cf7975eb",
+      "commit": "42beb35b682777a8f5e59fff9c4fbe575c5949b2",
       "hash": "8231998c99e5d3edfcb4060a6f9524917804a01325d33e3d6ddf28d7aa3b5824",
       "by": "review",
       "host": "codex",

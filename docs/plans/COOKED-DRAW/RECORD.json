@@ -4,7 +4,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/COOKED-DRAW/design-review.md",
-    "commit": "58c3414ee8f86cc06fe0dd5867cf07c1a9fc7372",
+    "commit": "8a9112e93a6f22c4b700336297db34a19c2a7f1b",
     "hash": "7141bf98b406161e0f9ee76086122f114898f7c15bffbf5fbf7be63544db5d0a",
     "by": "review",
     "host": "codex",
@@ -24,7 +24,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+          "commit": "96ad557c4783bfef5c565e7557c0b40ad62ddbac",
           "review": ".orchestrate/evidence/COOKED-DRAW/M1-review.md",
           "host": "codex",
           "model": "gpt-6.1-sol",
@@ -44,8 +44,8 @@
         "at": "2026-11-09T18:29:05Z"
       },
       "ready_for_review": {
-        "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
-        "checked": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+        "commit": "96ad557c4783bfef5c565e7557c0b40ad62ddbac",
+        "checked": "96ad557c4783bfef5c565e7557c0b40ad62ddbac",
         "at": "2026-11-09T19:27:59Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -59,9 +59,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+        "commit": "96ad557c4783bfef5c565e7557c0b40ad62ddbac",
         "review": ".orchestrate/evidence/COOKED-DRAW/M1-review.md",
-        "checked": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+        "checked": "96ad557c4783bfef5c565e7557c0b40ad62ddbac",
         "at": "2026-11-09T20:01:03Z"
       }
     }

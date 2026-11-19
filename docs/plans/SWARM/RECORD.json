@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/SWARM/design-review.md",
-    "commit": "6120fdc54e2df6f18aad5a6628df6884376ffe19",
+    "commit": "68ac79706e7730b7abc1aa64753dacd1849cc6a5",
     "hash": "589a73719a98438affd4a29eaf7a1e2592dac3674b4f8ab4423efb37ffcd3070",
     "by": "review",
     "host": "codex",
@@ -184,7 +184,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SWARM/design-review-1.md",
-      "commit": "cea01c770118aafb3d7b65302d8fccb3c17ef483",
+      "commit": "bf1764bcacf1d3908322fd86825bc415cb6711bd",
       "hash": "fc8255c7aaaefc34339b0650f7a0c3c4131113c43ae973f89962fbd8c113a5a4",
       "by": "review",
       "host": "codex",
@@ -207,7 +207,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SWARM/design-review-2.md",
-      "commit": "b7fbe03e9d36faebaac6a58060bec72e1a0abbaf",
+      "commit": "67877d9e818fb1041683bedb4cabcda120b9b02e",
       "hash": "a41e2ad543e7f9a20cde2b1367f7277a7b47e0424074c9ef2a27560b5c031af4",
       "by": "review",
       "host": "codex",
@@ -230,7 +230,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/SWARM/design-review-3.md",
-      "commit": "f0a23e96738f6623cf4974e22bbc205aee72cb11",
+      "commit": "8ae1c4283b64e91ba101478528d399731b56ef53",
       "hash": "075eb1b669206b7002354ede27256a12f23e6c66642d4bb58279a6ec4b64857f",
       "by": "review",
       "host": "codex",
@@ -253,7 +253,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/SWARM/design-review-4.md",
-      "commit": "91cf8eae7587d811ee6ac2783df6385af3bc1aee",
+      "commit": "46df92ed608c790cb1803a54a7c2d1080db64a72",
       "hash": "dad18716bb771b8aceee9764f22ceb29925d7aeb69873cb0b6b4381b2199f987",
       "by": "review",
       "host": "codex",

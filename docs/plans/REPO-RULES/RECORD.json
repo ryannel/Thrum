@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/REPO-RULES/design-review.md",
-    "commit": "0c23368e9e4962d74431a7cc109bfd58c5faf1e2",
+    "commit": "238fe9d01fc7966aa6ea5f67d899d69fe2205c45",
     "hash": "baad289d6b0c3e84abef42043af73d347221ffff4bc7215ef6743139ebc48a7f",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "4426db09669c847f5d138505592fd366b3b44859",
+          "commit": "29b8747f450658519fcbd095b367e6257a93be02",
           "review": ".orchestrate/evidence/REPO-RULES/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -70,8 +70,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
-        "checked": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
+        "commit": "538a47eec6fdd414473e75c59ab4fb69a1b62a9c",
+        "checked": "538a47eec6fdd414473e75c59ab4fb69a1b62a9c",
         "at": "2026-11-16T02:46:43Z",
         "reused": [
           "Test command"
@@ -100,9 +100,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "4426db09669c847f5d138505592fd366b3b44859",
+        "commit": "29b8747f450658519fcbd095b367e6257a93be02",
         "review": ".orchestrate/evidence/REPO-RULES/M1-review.md",
-        "checked": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
+        "checked": "538a47eec6fdd414473e75c59ab4fb69a1b62a9c",
         "at": "2026-11-16T03:49:00Z"
       }
     },
@@ -111,7 +111,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "38d9019b78a7ea4e893ceab0ecb7f73a262dbb7a",
+          "commit": "0edbf3236c669f46338499088dc6bd71c5cf13a9",
           "review": ".orchestrate/evidence/REPO-RULES/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -152,8 +152,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "a3c00222b7eec9c89b82b858c51a35615f8ef831",
-        "checked": "382cefab4d21d89cc746a7263fc0e907687af9c8",
+        "commit": "a45591b3affbe6bfbda06ef655b53618e9137a7d",
+        "checked": "66ae46ae0617f1102a9ce51e92c95a43448b7706",
         "at": "2026-11-16T08:47:08Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -179,9 +179,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "38d9019b78a7ea4e893ceab0ecb7f73a262dbb7a",
+        "commit": "0edbf3236c669f46338499088dc6bd71c5cf13a9",
         "review": ".orchestrate/evidence/REPO-RULES/M2-review.md",
-        "checked": "382cefab4d21d89cc746a7263fc0e907687af9c8",
+        "checked": "66ae46ae0617f1102a9ce51e92c95a43448b7706",
         "at": "2026-11-16T09:22:40Z"
       }
     },
@@ -244,7 +244,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/REPO-RULES/design-review-1.md",
-      "commit": "11f781ec2a7d843ace86fba5145d15ec3647e2ce",
+      "commit": "00d350d606940a563596eee46713109ef1fe3c02",
       "hash": "d4708147bb7b60fd76c9c9dd3d4bf8f0eb93cd821b1aa569e07e0a8c8a6be1c3",
       "by": "review",
       "host": "codex",
@@ -267,7 +267,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/REPO-RULES/design-review-2.md",
-      "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
+      "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
       "hash": "dff233b0c643f333992a87bbb296c20bcd1b55c1406c9d673e6973b7767cb480",
       "by": "review",
       "host": "codex",

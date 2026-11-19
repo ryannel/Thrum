@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/REVIEW-RENDER/design-review.md",
-    "commit": "026d81bcde80ce2707049c061469fd472ceae567",
+    "commit": "3e6c52a8ae682a3879e63579b3c1f3fec570a720",
     "hash": "f316ef430e3a792aa101369f9905d52429c06c2cb0d10d2b513d6f2581f67d80",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "40770ce6feb538bc8fd2618890f5b380ee4f050e",
+          "commit": "c8bcaf11e8ad04cd79302da354c0c795308aae70",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -203,7 +203,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/REVIEW-RENDER/design-review-1.md",
-      "commit": "2e794e581af5b6dc494214824e7d9470fa4668aa",
+      "commit": "df6d4614f876523e4035d93b8620e9ffa1b32d59",
       "hash": "6605a544b39d8c1b3b1cc06e4f27a2ce740d4011734aa2e05499c931bced41b3",
       "by": "review",
       "host": "codex",
@@ -226,7 +226,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/REVIEW-RENDER/design-review-2.md",
-      "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
+      "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
       "hash": "517dfba7cee29ea9096f33bf8aad00773cfe452b2b86d59e0be8c9923dc18ad5",
       "by": "review",
       "host": "codex",
@@ -249,7 +249,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/REVIEW-RENDER/design-review-3.md",
-      "commit": "ba15995ef06341ec4d59778135625ad7df202aaa",
+      "commit": "c6170ed7c0028f06c4a89954bbdccee697dee721",
       "hash": "2a1a497fcbc1b4842c6db6a2a3a0c7d72dafe5609e14cd9679f066acdd65b383",
       "by": "review",
       "host": "codex",

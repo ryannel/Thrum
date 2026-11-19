@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/MESH-SHADING/design-review.md",
-    "commit": "c302189638ba7e2d740e3b5ae327127d57cd82a6",
+    "commit": "0fbfce6f0d39ba49f82529cdc3f4d477955e4029",
     "hash": "c30d98934d2a9d0ab8c494a3877c3b50c5fa7bcfd63cd13fdc9b3634d007c739",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "aa79c981394f0338f329aaad7470c10f57de0489",
+          "commit": "6b7b475ea814bb382f794b8f700da7a5c9d95d9f",
           "review": ".orchestrate/evidence/MESH-SHADING/M1-review-1.md",
           "items": {
             "M1.1": "fail",
@@ -78,7 +78,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "cd4e1790e0644d1e9cecca258fae509e4d7f7185",
+          "commit": "a7cd42ca11143ef3980ee05e35391326e0852671",
           "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -116,7 +116,7 @@
       },
       "ready_for_review": {
         "commit": "611efa7f822a71ca549a76437a587cb5f339cc8b",
-        "checked": "a61e745df780f4295fbb6755c28444d35b00cd7e",
+        "checked": "864141b4d085e53d958b2054eb6dad0c22f19748",
         "at": "2026-11-18T13:36:32Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -142,9 +142,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "cd4e1790e0644d1e9cecca258fae509e4d7f7185",
+        "commit": "a7cd42ca11143ef3980ee05e35391326e0852671",
         "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md",
-        "checked": "a61e745df780f4295fbb6755c28444d35b00cd7e",
+        "checked": "864141b4d085e53d958b2054eb6dad0c22f19748",
         "at": "2026-11-18T14:29:42Z"
       }
     },
@@ -153,7 +153,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "098e5c73a36403431772c434c3e927b9ce3907c7",
+          "commit": "4aaceaee767c116dbf1d6fdf638baf8169b53284",
           "review": ".orchestrate/evidence/MESH-SHADING/M2-review-1.md",
           "items": {
             "M2.1": "pass",
@@ -197,7 +197,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "389c7ec51090fab31c038433144687b5bf92a145",
+          "commit": "03776f54c46e79d82fcef506e8e0c58ec1acba4a",
           "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -235,7 +235,7 @@
       },
       "ready_for_review": {
         "commit": "3b23132e98191b124375b9fecb307cb1465efe93",
-        "checked": "d57b16d86471a4c0d14b6d9d0449c34619936d6d",
+        "checked": "9ddd820a761e21636ab85e88f04bc212ca4fde14",
         "at": "2026-11-18T21:16:54Z",
         "reused": [
           "Test command"
@@ -264,9 +264,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "389c7ec51090fab31c038433144687b5bf92a145",
+        "commit": "03776f54c46e79d82fcef506e8e0c58ec1acba4a",
         "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md",
-        "checked": "d57b16d86471a4c0d14b6d9d0449c34619936d6d",
+        "checked": "9ddd820a761e21636ab85e88f04bc212ca4fde14",
         "at": "2026-11-18T22:18:04Z"
       }
     },
@@ -306,7 +306,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/MESH-SHADING/design-review-1.md",
-      "commit": "d4968d34d66380aaf2b51db6ea618c31bb928646",
+      "commit": "6ca79408ce251264f3020d7532e9887b07c2864a",
       "hash": "667aceebf3f088438c747e174f011e268514c97510292c3cdef09d6286a1a194",
       "by": "review",
       "host": "codex",
@@ -329,7 +329,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/MESH-SHADING/design-review-2.md",
-      "commit": "56fa1b612b27961a4ffe89a9378f65437e2d4b97",
+      "commit": "1d04de4cf10044fa5afd33e3e2915a1d830db189",
       "hash": "560693c1b401d0bc60d7b427cf856587165ec74cbe78a804aef2949a161208ff",
       "by": "review",
       "host": "codex",
@@ -352,7 +352,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/MESH-SHADING/design-review-3.md",
-      "commit": "1ef8e1e0cede49159ead3c81258f35ca3e805d7b",
+      "commit": "d6193448d180bda0e7c72e3edf58be8c9e06c1ae",
       "hash": "f5722ae9d175830feed494d16b90f3200d7e2cb484a3bbaf16c21857bf48e72b",
       "by": "review",
       "host": "codex",
@@ -375,7 +375,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/MESH-SHADING/design-review-4.md",
-      "commit": "70bbbf7a99a83ce4000ebf558779d0a443133e78",
+      "commit": "b52b6a463b1e56451a08e40e1dae4b006bf90d90",
       "hash": "1ccee2673829d47d9120267a2314f9f37fe0411b3ccc295125b449dc1ba79ffe",
       "by": "review",
       "host": "codex",

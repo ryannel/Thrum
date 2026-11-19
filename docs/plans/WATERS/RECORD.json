@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/WATERS/design-review.md",
-    "commit": "0eb478baf38e583544d907fb381f76923339f3bd",
+    "commit": "8ea4cc031771db6faca4071b221ec2608ed96ce6",
     "hash": "8bfbf9f6a991a4448ef17697a1c0ce6ea40923d66d58746f4850a78e394c9d49",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "3b9f5da0ae009b9eec9ec19901c02425f906fbc8",
+          "commit": "b5dae2f233cc6ca1bb15ed4e965b48f5e91d3072",
           "review": ".orchestrate/evidence/WATERS/M1-review-1.md",
           "items": {
             "M1.1": "pass",
@@ -77,7 +77,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "b552afe0fea07b4f145c424b499d5f4d96d6123d",
+          "commit": "2f8d01ebf8115b3330f9602b37a26222504add7a",
           "review": ".orchestrate/evidence/WATERS/M1-review-2.md",
           "items": {
             "M1.1": "fail",
@@ -120,7 +120,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "6edd2823fd273ee49d7736873090f56410a22c44",
+          "commit": "a53d727013983a384afebe98cc8fd8f5ddaa876f",
           "review": ".orchestrate/evidence/WATERS/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -161,8 +161,8 @@
         "at": "2026-11-14T04:10:30Z"
       },
       "ready_for_review": {
-        "commit": "110a84ec7061fb5a6e47225814547c03f3b95472",
-        "checked": "110a84ec7061fb5a6e47225814547c03f3b95472",
+        "commit": "54daa5e527bf5f65d403ca40e16ee9ed2f430dab",
+        "checked": "54daa5e527bf5f65d403ca40e16ee9ed2f430dab",
         "at": "2026-11-15T14:57:40Z",
         "reused": [
           "Test command",
@@ -203,9 +203,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "6edd2823fd273ee49d7736873090f56410a22c44",
+        "commit": "a53d727013983a384afebe98cc8fd8f5ddaa876f",
         "review": ".orchestrate/evidence/WATERS/M1-review.md",
-        "checked": "110a84ec7061fb5a6e47225814547c03f3b95472",
+        "checked": "54daa5e527bf5f65d403ca40e16ee9ed2f430dab",
         "at": "2026-11-15T15:01:37Z"
       }
     },
@@ -214,7 +214,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "0c97361d6bc381d17e91424e295fe105b4ce0c7b",
+          "commit": "d6ac9853f85c906e4fff3b338baabc62b6f65cf9",
           "review": ".orchestrate/evidence/WATERS/M2-review-1.md",
           "items": {
             "M2.1": "pass",
@@ -254,7 +254,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "f080d0242ab32c87e41267231ac3bd219a805b67",
+          "commit": "b08d6ac6de632072e5eefb79dc907a8e39da1d91",
           "review": ".orchestrate/evidence/WATERS/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -292,8 +292,8 @@
         "at": "2026-11-16T17:59:30Z"
       },
       "ready_for_review": {
-        "commit": "d51e4233356ebf340d111801c68db238f605363c",
-        "checked": "6e9f75b86134bcac4d9bd4d1329513be6406515d",
+        "commit": "dc2e61aeae283a387d2eeeee501f2ed851868f50",
+        "checked": "0aa21a207b69301066e949d63657081d95e16cbe",
         "at": "2026-11-17T06:47:26Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -319,9 +319,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "f080d0242ab32c87e41267231ac3bd219a805b67",
+        "commit": "b08d6ac6de632072e5eefb79dc907a8e39da1d91",
         "review": ".orchestrate/evidence/WATERS/M2-review.md",
-        "checked": "6e9f75b86134bcac4d9bd4d1329513be6406515d",
+        "checked": "0aa21a207b69301066e949d63657081d95e16cbe",
         "at": "2026-11-17T07:57:17Z"
       }
     },
@@ -330,7 +330,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "9364759b57ae4bb6e456747b2d380acec8997923",
+          "commit": "e451366458d93f8de784d54e4a203c64d0362275",
           "review": ".orchestrate/evidence/WATERS/M3-review-1.md",
           "items": {
             "M3.1": "pass",
@@ -365,7 +365,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "1cee07d3c0a7a42ab747dbe3f13cd68b40105bcd",
+          "commit": "d5e0feb74f59457bf46ba250d0da24e86373e75a",
           "review": ".orchestrate/evidence/WATERS/M3-review-2.md",
           "items": {
             "M3.1": "pass",
@@ -399,7 +399,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "b227b02ec42a5f257e6b3eeec72d72bf2ed6660d",
+          "commit": "9b2554a72ffa1df161f1e58b4627dc1ade624e2b",
           "review": ".orchestrate/evidence/WATERS/M3-review.md",
           "items": {
             "M3.1": "pass",
@@ -439,8 +439,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "7a3eb9e9e7b8678135812753c3ed604882ffe95d",
-        "checked": "491eff8a00f9afe95a091b9355d1639f58ca0d6c",
+        "commit": "1cfc93f3c29373e8fab03456340828fbf5c81b1b",
+        "checked": "b7e5f80a70c94304d31b028e9c07680152746560",
         "at": "2026-11-18T08:20:45Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -466,9 +466,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "b227b02ec42a5f257e6b3eeec72d72bf2ed6660d",
+        "commit": "9b2554a72ffa1df161f1e58b4627dc1ade624e2b",
         "review": ".orchestrate/evidence/WATERS/M3-review.md",
-        "checked": "491eff8a00f9afe95a091b9355d1639f58ca0d6c",
+        "checked": "b7e5f80a70c94304d31b028e9c07680152746560",
         "at": "2026-11-18T09:01:55Z"
       }
     },
@@ -477,7 +477,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "c7654cc9e9bccbc336a633a05b31941327de35cb",
+          "commit": "4e8e9fc17b0749cb1521a8c5159cb7eb37bb998b",
           "review": ".orchestrate/evidence/WATERS/M4-review-1.md",
           "items": {
             "M4.1": "pass",
@@ -522,7 +522,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "280ba4bcba9223006ab878b2b31010aa336a8a33",
+          "commit": "c92c1b5a15f60d6010244c29885f0f6922537fa5",
           "review": ".orchestrate/evidence/WATERS/M4-review.md",
           "items": {
             "M4.1": "pass",
@@ -560,8 +560,8 @@
         "at": "2026-11-17T23:05:22Z"
       },
       "ready_for_review": {
-        "commit": "6ad433e059470186e2bcd25a101078f778f32d26",
-        "checked": "329cb668f21b814a44a14f4e22493e308d564b66",
+        "commit": "deed4288c8c53dadfc0aab246c614d051dc992ce",
+        "checked": "2aaca9a541b171af93ce1bf0f18fa7f3d0d4a2d3",
         "at": "2026-11-18T17:50:15Z",
         "reused": [
           "Test command"
@@ -590,9 +590,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "280ba4bcba9223006ab878b2b31010aa336a8a33",
+        "commit": "c92c1b5a15f60d6010244c29885f0f6922537fa5",
         "review": ".orchestrate/evidence/WATERS/M4-review.md",
-        "checked": "329cb668f21b814a44a14f4e22493e308d564b66",
+        "checked": "2aaca9a541b171af93ce1bf0f18fa7f3d0d4a2d3",
         "at": "2026-11-18T18:02:23Z"
       }
     },
@@ -601,7 +601,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "7dec527f11d56f87ba5ac28fff5ed005e964170a",
+          "commit": "4bd30f460391a84231a31bda2efc8a6fe358d8c3",
           "review": ".orchestrate/evidence/WATERS/M5-review-1.md",
           "items": {
             "M5.1": "fail",
@@ -665,7 +665,7 @@
         },
         {
           "verdict": "fail",
-          "commit": "6e583c1c57f1423cda4e63b8e9c651d996c370f1",
+          "commit": "af35b87aa2e3a1c3f32e0722997a65b6ece57bd1",
           "review": ".orchestrate/evidence/WATERS/M5-review-2.md",
           "items": {
             "M5.1": "fail",
@@ -755,8 +755,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "acec9955857965b60c36b4271e7a6dab9f927a99",
-        "checked": "e1b402163c112f182f138a542de247cc95917dba",
+        "commit": "8a1685c191f21dff8e820fe3c0da64ea0b4cfe31",
+        "checked": "254e03ed3753d6a2564bcde61be58fa3bbdb7d21",
         "at": "2026-11-19T10:18:33Z",
         "reused": [
           "M5.2",
@@ -788,7 +788,7 @@
         "by": "review",
         "commit": "033eac6999680fd79d11d016eae05053a1ff06d4",
         "review": ".orchestrate/evidence/WATERS/M5-review.md",
-        "checked": "e1b402163c112f182f138a542de247cc95917dba",
+        "checked": "254e03ed3753d6a2564bcde61be58fa3bbdb7d21",
         "at": "2026-11-19T10:54:30Z"
       }
     },
@@ -885,7 +885,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "eec4204bb166862a0efcda2d3b3fc8c0e40d2a84",
+          "commit": "ae5fe54f3a1319bb739258608cc0d36c0ef19a08",
           "review": ".orchestrate/evidence/WATERS/M12-review.md",
           "items": {
             "M12.1": "pass",
@@ -932,8 +932,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "befaf3f758c87061510d8ec24cb20b5c6d1fd975",
-        "checked": "befaf3f758c87061510d8ec24cb20b5c6d1fd975",
+        "commit": "2d7dfd7f019b1a1ccf7ca986af8366265c9b16d7",
+        "checked": "2d7dfd7f019b1a1ccf7ca986af8366265c9b16d7",
         "at": "2026-11-16T05:20:01Z",
         "reused": [
           "Test command"
@@ -962,9 +962,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "eec4204bb166862a0efcda2d3b3fc8c0e40d2a84",
+        "commit": "ae5fe54f3a1319bb739258608cc0d36c0ef19a08",
         "review": ".orchestrate/evidence/WATERS/M12-review.md",
-        "checked": "befaf3f758c87061510d8ec24cb20b5c6d1fd975",
+        "checked": "2d7dfd7f019b1a1ccf7ca986af8366265c9b16d7",
         "at": "2026-11-16T05:57:16Z"
       }
     },
@@ -1071,7 +1071,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/WATERS/design-review-1.md",
-      "commit": "b2d0778af38e5f685e9291d68486aab5cbc98e0c",
+      "commit": "98e5fb7d19ec3a6cda234b6ab2e67b7546dd4f10",
       "hash": "d614dc980fa88b10a14fddc33c6f20b67870ca8d2f8cf6a6184fe8a29f2dbe0a",
       "by": "review",
       "host": "codex",
@@ -1094,7 +1094,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/WATERS/design-review-2.md",
-      "commit": "f3c0021c8b361702c2d29048e8bfd8b59f17b477",
+      "commit": "ac99d38c3bbbc18c6fa70b7fd20a74ab8b7ada03",
       "hash": "d55b2e0d95df2f6202d8be85770c6f382332bf66366c75f5d454bd4973c226dc",
       "by": "review",
       "host": "codex",
@@ -1117,7 +1117,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/WATERS/design-review-3.md",
-      "commit": "def29817814c836c63ebbd616669c1a3c77c3107",
+      "commit": "89662699b805660450975ad8f7e144d2af95d794",
       "hash": "35cd30110b7b7125c9a56969dc3cdcc11f7378fa33c54a6315b26b8957a7f6e3",
       "by": "review",
       "host": "codex",
@@ -1140,7 +1140,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/WATERS/design-review-4.md",
-      "commit": "d97ace65f924d96e733dcb91d050410f4702c37e",
+      "commit": "f71ff6179c7f15539c69e905ea9b1fdf5b6b3357",
       "hash": "b868b0bd4f28c4e00d2ba095e8182242ff734883912711a13165e5317e45ea67",
       "by": "review",
       "host": "codex",
@@ -1163,7 +1163,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/WATERS/design-review-5.md",
-      "commit": "d3074c52e9805d688020df45b53049f3421b6ba0",
+      "commit": "ac9f91e544b250a3a90c16d798ade7ca50f5b1a0",
       "hash": "b3cf317474be6fb9857e2a1560e75a03382373e480eaae66cfcb82073d6048b7",
       "by": "review",
       "host": "codex",
@@ -1186,7 +1186,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/WATERS/design-review-6.md",
-      "commit": "3f3708d16a546508ef2eeef47a5afe009edad9fd",
+      "commit": "b35f0aae46390263ea2196f5819885843bf1872a",
       "hash": "1e4909a0e2082f96da0c9c038d8e97b167a2dca0d6b4eb4758d8bc4ee25af1d0",
       "by": "review",
       "host": "codex",
@@ -1232,7 +1232,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/WATERS/design-review-8.md",
-      "commit": "69d5bd653c0d0be056659def9e85f7a3648e8b8f",
+      "commit": "27fa8d982597a6eb294f0d5a1c98fbc0630f4007",
       "hash": "0af1ff08f183f293c97d322d1d7341992066d685c9a8858fe92ae3857dd891be",
       "by": "review",
       "host": "codex",
@@ -1255,7 +1255,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/WATERS/design-review-9.md",
-      "commit": "0fa0fb62710a56ab14d9348e00eae5af2f7b8839",
+      "commit": "ee68888cec4c83be8f1b6be0d597b81d2dcfd409",
       "hash": "24c64894be1a9ad92e5c89a92a3b549b3c2683647f60bd5e6f26e405f2a77193",
       "by": "review",
       "host": "codex",

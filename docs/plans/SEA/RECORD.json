@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/SEA/design-review.md",
-    "commit": "25345e8f99772193380689ccb89eb38827e4a589",
+    "commit": "7e2cc31dc0477855a47e698cc4d588a297432ebe",
     "hash": "2645235a8be549d1df3117cd8e5c14ec5e3da99263e76dcdfa0ad2b7a24285c7",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "8e29020eacff49ce9be8b22c66eb6d8adb58596b",
+          "commit": "7c65f750aa8e392aff6500fdaa22ad0f9a606be9",
           "review": ".orchestrate/evidence/SEA/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -66,8 +66,8 @@
         "at": "2026-11-13T21:50:42Z"
       },
       "ready_for_review": {
-        "commit": "d0b8c06ef11e41f615bdad9c43c55a30603f06f4",
-        "checked": "d0b8c06ef11e41f615bdad9c43c55a30603f06f4",
+        "commit": "953ce30e1ad48ffd5e775740832f799a8bb3c3cb",
+        "checked": "953ce30e1ad48ffd5e775740832f799a8bb3c3cb",
         "at": "2026-11-14T01:25:04Z",
         "reused": [
           "Test command",
@@ -97,9 +97,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "8e29020eacff49ce9be8b22c66eb6d8adb58596b",
+        "commit": "7c65f750aa8e392aff6500fdaa22ad0f9a606be9",
         "review": ".orchestrate/evidence/SEA/M1-review.md",
-        "checked": "d0b8c06ef11e41f615bdad9c43c55a30603f06f4",
+        "checked": "953ce30e1ad48ffd5e775740832f799a8bb3c3cb",
         "at": "2026-11-14T01:52:10Z"
       }
     },
@@ -108,7 +108,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "3e1eac88c20c28a491f53f5f1a2b33931b7564c3",
+          "commit": "462113dcf5d0809c2c48c7aa77203d52b301898f",
           "review": ".orchestrate/evidence/SEA/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -145,8 +145,8 @@
         "at": "2026-11-14T00:03:20Z"
       },
       "ready_for_review": {
-        "commit": "e59149ed7d0ad232d98fa4bd93992e6b94fc3efe",
-        "checked": "50e55915dc0ee4cbf308bd00b6f4563180fb2456",
+        "commit": "396811cf39fb9667bf468483b7e0f3b70f0db086",
+        "checked": "a5b8b87d5a3639ac0838a9f2c5dc01e26a621f71",
         "at": "2026-11-14T14:03:13Z",
         "reused": [
           "M2.2",
@@ -177,9 +177,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "3e1eac88c20c28a491f53f5f1a2b33931b7564c3",
+        "commit": "462113dcf5d0809c2c48c7aa77203d52b301898f",
         "review": ".orchestrate/evidence/SEA/M2-review.md",
-        "checked": "50e55915dc0ee4cbf308bd00b6f4563180fb2456",
+        "checked": "a5b8b87d5a3639ac0838a9f2c5dc01e26a621f71",
         "at": "2026-11-14T14:07:07Z"
       }
     }
@@ -210,7 +210,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SEA/design-review-1.md",
-      "commit": "53767d79505df0d3ed7be9edc1553c4a7fb0c0c7",
+      "commit": "9b1829916d4252f3af9c3c5400d2a32f5f3acd21",
       "hash": "541394fc4f5d6471d98530a8da9123b2e3eb0db19f7c1b95aded1faf22c8944c",
       "by": "review",
       "host": "codex",
@@ -233,7 +233,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/SEA/design-review-2.md",
-      "commit": "7c7744bb5a632ad26c9376b4d2a8746f2a5f399b",
+      "commit": "f8d12f017132439da11845af7884f52d5374f023",
       "hash": "e84f0e8bcd8061a43e4ac3b877770b3808cef89824867e8d8607b4e17a861a3e",
       "by": "review",
       "host": "codex",

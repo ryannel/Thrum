@@ -4,7 +4,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/APPLE-TILE/design-review.md",
-    "commit": "8d8bf889ed704befbea47ec5393ae0238c68f08c",
+    "commit": "99a81d89d58bfe8fa587e1fa7e13d74ebf48df46",
     "hash": "062dea2d6dd62734467d48c202f10523e348f62830d7a24ac3f2f16df1c73be5",
     "by": "review",
     "host": "codex",
@@ -30,7 +30,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
+          "commit": "a2cee95b72ee9fd7b3d414ba16c5805033b9bb3c",
           "review": ".orchestrate/evidence/APPLE-TILE/M0-review.md",
           "host": "claude",
           "model": "claude-opus-5-5",
@@ -56,8 +56,8 @@
         "at": "2026-11-11T01:45:14Z"
       },
       "ready_for_review": {
-        "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
-        "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
+        "commit": "a2cee95b72ee9fd7b3d414ba16c5805033b9bb3c",
+        "checked": "19898ef95389cc9780d261fa36c751adf745865c",
         "at": "2026-11-11T03:23:46Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -77,9 +77,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
+        "commit": "a2cee95b72ee9fd7b3d414ba16c5805033b9bb3c",
         "review": ".orchestrate/evidence/APPLE-TILE/M0-review.md",
-        "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
+        "checked": "19898ef95389cc9780d261fa36c751adf745865c",
         "at": "2026-11-11T03:34:51Z"
       }
     },
@@ -88,7 +88,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+          "commit": "d9de577ed2153c73f14c5c090c56e9649b342a98",
           "review": ".orchestrate/evidence/APPLE-TILE/M1-review.md",
           "items": {
             "D1.1": "pass",
@@ -121,8 +121,8 @@
         "at": "2026-11-09T14:02:56Z"
       },
       "ready_for_review": {
-        "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
-        "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "commit": "d9de577ed2153c73f14c5c090c56e9649b342a98",
+        "checked": "d9de577ed2153c73f14c5c090c56e9649b342a98",
         "at": "2026-11-11T05:33:44Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -142,9 +142,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "commit": "d9de577ed2153c73f14c5c090c56e9649b342a98",
         "review": ".orchestrate/evidence/APPLE-TILE/M1-review.md",
-        "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "checked": "d9de577ed2153c73f14c5c090c56e9649b342a98",
         "at": "2026-11-11T05:52:52Z"
       }
     },
@@ -188,7 +188,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
+          "commit": "17ba4eea225b079dafd40834ee5a719ece87323c",
           "review": ".orchestrate/evidence/APPLE-TILE/M2-review.md",
           "items": {
             "D2.1": "pass",
@@ -247,8 +247,8 @@
         }
       ],
       "ready_for_review": {
-        "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
-        "checked": "22850993580103eafe7d63166484e3f51151fae2",
+        "commit": "17ba4eea225b079dafd40834ee5a719ece87323c",
+        "checked": "ed30a65bcb08a0c71195dc8d235305a04816596f",
         "at": "2026-11-11T14:52:06Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -276,9 +276,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
+        "commit": "17ba4eea225b079dafd40834ee5a719ece87323c",
         "review": ".orchestrate/evidence/APPLE-TILE/M2-review.md",
-        "checked": "22850993580103eafe7d63166484e3f51151fae2",
+        "checked": "ed30a65bcb08a0c71195dc8d235305a04816596f",
         "at": "2026-11-11T15:24:43Z"
       }
     },
@@ -287,7 +287,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "e2129272a95335ae94aeb680668dc553c60b61d4",
+          "commit": "4c792301355d0eca75304dd688030f5606799268",
           "review": ".orchestrate/evidence/APPLE-TILE/M3-review-1.md",
           "items": {
             "D3.1": "pass",
@@ -322,7 +322,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "9d6318cff422df7f2b05519f7a30b72821f73b63",
+          "commit": "3df9587b8c27006c3d6873b68ee32c3df4bea73f",
           "review": ".orchestrate/evidence/APPLE-TILE/M3-review.md",
           "items": {
             "D3.1": "pass",
@@ -355,8 +355,8 @@
       },
       "counted_after": 1,
       "ready_for_review": {
-        "commit": "c9efb1eb08d3ed28822055c9951490b60a89267a",
-        "checked": "79d39ed1e247cc941502b89938c4debe48bf500e",
+        "commit": "957d4ed517d5aaea0307e38882270770db387105",
+        "checked": "3d46c1c11ed14471970e39cfb9b94e4d3a769b7f",
         "at": "2026-11-14T02:55:15Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
@@ -383,9 +383,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "9d6318cff422df7f2b05519f7a30b72821f73b63",
+        "commit": "3df9587b8c27006c3d6873b68ee32c3df4bea73f",
         "review": ".orchestrate/evidence/APPLE-TILE/M3-review.md",
-        "checked": "79d39ed1e247cc941502b89938c4debe48bf500e",
+        "checked": "3d46c1c11ed14471970e39cfb9b94e4d3a769b7f",
         "at": "2026-11-14T03:18:03Z"
       }
     },
@@ -394,7 +394,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "f1e4b7deaaafbc63a62545da7f86122b0d991150",
+          "commit": "f9559727bd1ecc8fbb009319763196e88e7ba3ab",
           "review": ".orchestrate/evidence/APPLE-TILE/M10-review.md",
           "items": {
             "D10.1": "pass",
@@ -429,7 +429,7 @@
       "counted_after": 0,
       "ready_for_review": {
         "commit": "693e3bf54e5b1fe8d7cffcd466c891ab70c70150",
-        "checked": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+        "checked": "dd83938996e82af79d39681c09ae691330f20626",
         "at": "2026-11-16T18:35:59Z",
         "reused": [
           "Test command"
@@ -458,9 +458,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "f1e4b7deaaafbc63a62545da7f86122b0d991150",
+        "commit": "f9559727bd1ecc8fbb009319763196e88e7ba3ab",
         "review": ".orchestrate/evidence/APPLE-TILE/M10-review.md",
-        "checked": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+        "checked": "dd83938996e82af79d39681c09ae691330f20626",
         "at": "2026-11-16T20:14:58Z"
       }
     },
@@ -469,7 +469,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "ce4b9786d61bd164cbba1ff45ef6b063dd1bea02",
+          "commit": "8dce532e9f0013124a07396f56a3b2e6b0928c47",
           "review": ".orchestrate/evidence/APPLE-TILE/M11-review-1.md",
           "items": {
             "D11.1": "pass",
@@ -502,7 +502,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "e98423cea50356861380455ae7d23f6dbaf290ef",
+          "commit": "103444f022d06354c41ca970feac0fa471b33da0",
           "review": ".orchestrate/evidence/APPLE-TILE/M11-review.md",
           "items": {
             "D11.1": "pass",
@@ -534,7 +534,7 @@
       },
       "ready_for_review": {
         "commit": "1f1e2231006620f8afb68da6a6804b7952ae448a",
-        "checked": "979f3c42a64a9becd186e0201c181b2e433ece86",
+        "checked": "390abd364e08c6f1471075f5904836623f0090bf",
         "at": "2026-11-17T03:31:43Z",
         "reused": [
           "Test command"
@@ -563,9 +563,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "e98423cea50356861380455ae7d23f6dbaf290ef",
+        "commit": "103444f022d06354c41ca970feac0fa471b33da0",
         "review": ".orchestrate/evidence/APPLE-TILE/M11-review.md",
-        "checked": "979f3c42a64a9becd186e0201c181b2e433ece86",
+        "checked": "390abd364e08c6f1471075f5904836623f0090bf",
         "at": "2026-11-17T03:56:17Z"
       }
     },
@@ -574,7 +574,7 @@
       "reviews": [
         {
           "verdict": "pass",
-          "commit": "21cfda4c36a87d25e5f6b5158c7c0f317f849c42",
+          "commit": "978c2df6532d512d2b5a9d3be01f6bd13ce4d079",
           "review": ".orchestrate/evidence/APPLE-TILE/M12-review.md",
           "items": {
             "D12.1": "pass",
@@ -616,7 +616,7 @@
       ],
       "ready_for_review": {
         "commit": "3db6ff25fe8f9ec3f98d1c0901d456466eea8271",
-        "checked": "9364759b57ae4bb6e456747b2d380acec8997923",
+        "checked": "e451366458d93f8de784d54e4a203c64d0362275",
         "at": "2026-11-17T11:57:11Z",
         "reused": [
           "Test command",
@@ -646,9 +646,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "21cfda4c36a87d25e5f6b5158c7c0f317f849c42",
+        "commit": "978c2df6532d512d2b5a9d3be01f6bd13ce4d079",
         "review": ".orchestrate/evidence/APPLE-TILE/M12-review.md",
-        "checked": "9364759b57ae4bb6e456747b2d380acec8997923",
+        "checked": "e451366458d93f8de784d54e4a203c64d0362275",
         "at": "2026-11-17T14:14:57Z"
       }
     }
@@ -706,7 +706,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/APPLE-TILE/design-review-1.md",
-      "commit": "2514d8240876d2ca6772698cfe6f451332fc48b4",
+      "commit": "94306ca0afb45af5ea103e421a1deec889395066",
       "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
       "by": "review",
       "host": "codex",
@@ -723,7 +723,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/APPLE-TILE/design-review-3.md",
-      "commit": "019f849d519ba0978f31971d55da1780888023bb",
+      "commit": "f4ee3d3447877838b1a105068780a1d5c2053b68",
       "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
       "by": "review",
       "host": "codex",

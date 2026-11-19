@@ -3,7 +3,7 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/SCENE-VIEWS/design-review.md",
-    "commit": "5006e94c7affbfaa2df26f91703d0da301ef8bb5",
+    "commit": "b521a30e9e0231d2d24606a88d17dfffcd2f22c4",
     "hash": "4c38f487c28b6bce98ad49c441bd9841bdac643c12701ad2cc8e770a46305ec7",
     "by": "review",
     "host": "codex",
@@ -29,7 +29,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "3a6690e5d4bc76b190eb13b38b957e8b49d5f68d",
+          "commit": "57b4d4deb6aa329c4d71af9cdfefcbe6aef52d77",
           "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review-1.md",
           "items": {
             "M1.1": "pass",
@@ -72,7 +72,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "c588943c79e86571169cad883124ce82e89feea0",
+          "commit": "bd9554c78be4e33032227380a5e89d7ed92dd566",
           "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md",
           "items": {
             "M1.1": "pass",
@@ -114,8 +114,8 @@
         "at": "2026-11-16T14:54:04Z"
       },
       "ready_for_review": {
-        "commit": "b8c8e71bd6b3ba0c14bc2f951c5899153f202915",
-        "checked": "b8c8e71bd6b3ba0c14bc2f951c5899153f202915",
+        "commit": "2321c7c0a887eef0b7c9875f27ea74059a5f6757",
+        "checked": "2321c7c0a887eef0b7c9875f27ea74059a5f6757",
         "at": "2026-11-17T22:06:29Z",
         "reused": [
           "M1.10"
@@ -128,9 +128,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "c588943c79e86571169cad883124ce82e89feea0",
+        "commit": "bd9554c78be4e33032227380a5e89d7ed92dd566",
         "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md",
-        "checked": "b8c8e71bd6b3ba0c14bc2f951c5899153f202915",
+        "checked": "2321c7c0a887eef0b7c9875f27ea74059a5f6757",
         "at": "2026-11-17T22:36:38Z"
       }
     },
@@ -139,7 +139,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "ca138c501f47ab774230a8566a34509ca3034e8c",
+          "commit": "eb180e89d6a8fa790a42cb027bfc85b5c1f53676",
           "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review-1.md",
           "items": {
             "M2.1": "pass",
@@ -189,7 +189,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "d784f44bc18f24c0ba35242cac0cd88dd297dc81",
+          "commit": "59dc5dfdeba763f68b40f24d9ef7e6040b9865fc",
           "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md",
           "items": {
             "M2.1": "pass",
@@ -224,8 +224,8 @@
         "at": "2026-11-16T13:14:05Z"
       },
       "ready_for_review": {
-        "commit": "730f321178d9b6da49360eaea2800c5173c1fbf6",
-        "checked": "56eaa9019b454f6b3f2606e20ab80eb2c8b836c0",
+        "commit": "d94fd81900c21c006ffc18c2b4d257be17965683",
+        "checked": "571ffff3d222fdb2463510cfd01a5cd7d415b97d",
         "at": "2026-11-18T03:48:39Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
@@ -251,9 +251,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "d784f44bc18f24c0ba35242cac0cd88dd297dc81",
+        "commit": "59dc5dfdeba763f68b40f24d9ef7e6040b9865fc",
         "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md",
-        "checked": "56eaa9019b454f6b3f2606e20ab80eb2c8b836c0",
+        "checked": "571ffff3d222fdb2463510cfd01a5cd7d415b97d",
         "at": "2026-11-18T03:54:32Z"
       }
     },
@@ -262,7 +262,7 @@
       "reviews": [
         {
           "verdict": "fail",
-          "commit": "f246ab22f889ba43cbda9ca88cd907212013fdec",
+          "commit": "0997520f795f2178647797cdbc200b4e2331b61a",
           "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review-1.md",
           "items": {
             "M3.1": "fail",
@@ -318,7 +318,7 @@
         },
         {
           "verdict": "pass",
-          "commit": "095b511fcd7b0d56e81d9e05690215fd750a3e4b",
+          "commit": "da940c7a4508970dcbfaea2899bde11ff82e3830",
           "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md",
           "items": {
             "M3.1": "pass",
@@ -353,8 +353,8 @@
         "at": "2026-11-18T10:26:13Z"
       },
       "ready_for_review": {
-        "commit": "c08d14b1060da9e3c6a67250383bdc124ab87f97",
-        "checked": "675c1a21d6cbc1a31df093be8e9ff847b1b06169",
+        "commit": "0e7a878be70586ae77c7e52f21c886b90f39b1e5",
+        "checked": "28e75266d58c8ede49ba2c06cb135eea5f0e9f7b",
         "at": "2026-11-18T12:00:55Z",
         "reused": [
           "Test command",
@@ -384,9 +384,9 @@
       },
       "done": {
         "by": "review",
-        "commit": "095b511fcd7b0d56e81d9e05690215fd750a3e4b",
+        "commit": "da940c7a4508970dcbfaea2899bde11ff82e3830",
         "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md",
-        "checked": "675c1a21d6cbc1a31df093be8e9ff847b1b06169",
+        "checked": "28e75266d58c8ede49ba2c06cb135eea5f0e9f7b",
         "at": "2026-11-18T12:29:32Z"
       }
     }
@@ -429,7 +429,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SCENE-VIEWS/design-review-1.md",
-      "commit": "96a17fc44abe67030dcf31bd16badcdf1419ca44",
+      "commit": "a302becac119b63f5539e1b40f2ea1ac9d0a81cb",
       "hash": "f94005c910db47598ae062ab0db96c09682f076f7254bc9b88823845181f27df",
       "by": "review",
       "host": "codex",
@@ -452,7 +452,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SCENE-VIEWS/design-review-2.md",
-      "commit": "8cc72abc669b88506d86898b3b9f1e152385608b",
+      "commit": "5ae862f5170f5f409c1750f8fc3a2b0253c92483",
       "hash": "ddec45f1da91a455f6c6d93fe02060cdfd150364746865129a924a9dc15f1067",
       "by": "review",
       "host": "codex",
@@ -475,7 +475,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SCENE-VIEWS/design-review-3.md",
-      "commit": "57d100e2469a39db7215ef04c31b961d4fca3b64",
+      "commit": "71ee724802ae3305ae29aaf128a0e45f3bd92a96",
       "hash": "a27da469c81f858b87b93709269ccbf9dd6ee7b39b028ee885342c6905e23698",
       "by": "review",
       "host": "codex",
@@ -498,7 +498,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/SCENE-VIEWS/design-review-4.md",
-      "commit": "5ca7ea13077386cab8a113663a48f1e0d0d18500",
+      "commit": "b0dd5eee7572a8625faacffefadfbfff7c3d0024",
       "hash": "1ab0e5d72945368c9d38b3e9c614dc5777d20bed00d2d009a598dd156c36ee06",
       "by": "review",
       "host": "codex",
@@ -521,7 +521,7 @@
     {
       "verdict": "changes",
       "review": ".orchestrate/evidence/SCENE-VIEWS/design-review-5.md",
-      "commit": "05ac8f6e0ae1fbedfc3c36f974229fe8d8ec2877",
+      "commit": "e90ad324abe5fc12c66d83402e08809d89f86d4f",
       "hash": "1ab0e5d72945368c9d38b3e9c614dc5777d20bed00d2d009a598dd156c36ee06",
       "by": "review",
       "host": "codex",
@@ -567,7 +567,7 @@
     {
       "verdict": "ok",
       "review": ".orchestrate/evidence/SCENE-VIEWS/design-review-7.md",
-      "commit": "1d79f4d19a6b691ec8f37712f44b8de0d17e31ec",
+      "commit": "401d430a152b651c69e7e27c78c5983b2dc28c2d",
       "hash": "d7bb301178f4bba48da67f4be36938e1fdc2e06d9856c2985a49b4cb3e3079a1",
       "by": "review",
       "host": "codex",
