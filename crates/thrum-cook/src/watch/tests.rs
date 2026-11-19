@@ -85,6 +85,62 @@ fn watchdog(
 }
 
 #[test]
+fn initial_cook_and_sweep_publish_while_notice_registration_is_stalled() {
+    let fixture = Fixture::new("registration");
+    fixture.write("original.tvol", 1);
+    let mut cooker = fixture.cooker("store");
+    let stop = Arc::new(AtomicBool::new(false));
+    let (done, timer) = watchdog(&stop, Duration::from_secs(10));
+    let (started, registering) = mpsc::channel();
+    let (release, blocked) = mpsc::channel::<()>();
+    let mut generation = 0;
+    super::watch_with_registration(
+        &mut cooker,
+        &fixture.source,
+        &stop,
+        |event| {
+            let head = event
+                .report
+                .as_ref()
+                .expect("cycle")
+                .published
+                .expect("HEAD");
+            generation = head.generation;
+            match generation {
+                1 => {
+                    registering
+                        .recv_timeout(Duration::from_secs(5))
+                        .expect("worker started");
+                    fixture.write("original.tvol", 2);
+                }
+                2 => {
+                    let manifest = thrum_asset::AssetStore::new(fixture.root.join("store"))
+                        .load_manifest(&head)
+                        .expect("manifest");
+                    fixture.matches_fresh(&manifest, generation);
+                    stop.store(true, Ordering::Relaxed);
+                }
+                _ => panic!("unexpected generation {generation}"),
+            }
+        },
+        move |_, _| {
+            started.send(()).expect("registration began");
+            blocked
+                .recv_timeout(Duration::from_secs(15))
+                .expect("registration released");
+            Ok(())
+        },
+    )
+    .expect("watch loop");
+    release
+        .send(())
+        .expect("registration was still pending when the loop stopped");
+    done.send(()).ok();
+    timer.join().expect("timer");
+    assert_eq!(generation, 2);
+}
+
+#[test]
 fn missed_notices_publish_edits_nested_additions_and_deletions() {
     let fixture = Fixture::new("missed");
     fixture.write("original.tvol", 1);
@@ -149,8 +205,10 @@ fn notice_alone_uses_named_paths_and_loss_rescans_everything() {
                 1 => {
                     fixture.write("a.tvol", 3);
                     sender
-                        .send(Ok(notify::Event::new(notify::EventKind::Any)
-                            .add_path(fixture.source.join("a.tvol"))))
+                        .send(super::Notice::Event(Ok(notify::Event::new(
+                            notify::EventKind::Any,
+                        )
+                        .add_path(fixture.source.join("a.tvol")))))
                         .expect("notice");
                 }
                 2 => {
@@ -162,8 +220,10 @@ fn notice_alone_uses_named_paths_and_loss_rescans_everything() {
                     );
                     fixture.write("b.tvol", 4);
                     sender
-                        .send(Ok(notify::Event::new(notify::EventKind::Other)
-                            .set_flag(notify::event::Flag::Rescan)))
+                        .send(super::Notice::Event(Ok(notify::Event::new(
+                            notify::EventKind::Other,
+                        )
+                        .set_flag(notify::event::Flag::Rescan))))
                         .expect("loss notice");
                 }
                 3 => {
@@ -394,9 +454,10 @@ fn unrelated_notice_traffic_cannot_postpone_a_sweep() {
     let feeder = std::thread::spawn(move || {
         while !feeder_stop.load(Ordering::Relaxed) {
             if sender
-                .send(Ok(
-                    notify::Event::new(notify::EventKind::Any).add_path(path.clone())
-                ))
+                .send(super::Notice::Event(Ok(notify::Event::new(
+                    notify::EventKind::Any,
+                )
+                .add_path(path.clone()))))
                 .is_err()
             {
                 break;

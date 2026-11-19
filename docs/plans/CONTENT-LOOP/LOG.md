@@ -168,3 +168,8 @@
   at 256³ in the size probe. Five failure cases retained the previous pixels through mapped and fetched readers.
   The preview convergence test and shipping scan passed. G5 scope, the maturity ledger and creator instructions
   record the preview boundary and measurement limits. [Evidence](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md)
+- 2026-11-19 M3 check repair. A sample of the failing watcher test caught the Mac blocked in native notice
+  registration before its first cook. The watcher now registers and tears down native notices on a worker.
+  The initial cook and periodic sweep keep publishing while registration is pending. A regression test holds
+  registration open through startup, a saved edit and shutdown, and compares the edit with a fresh cook.
+  [Diagnosis and verification](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md#watcher-startup-repair)
