@@ -1,27 +1,14 @@
 {
   "module": "RAY-TRACING",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/RAY-TRACING/design-review.md",
-    "commit": "cb6efe8a9c805cf6112c324936967f10d1c68350",
-    "hash": "bd27e0457e621f37e5ed67783cfd3942b65666e7fa1f61877823d6658fd1267b",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
-    "path": "headless",
-    "usage": {
-      "input": 85164,
-      "cached": 898304,
-      "output": 7078,
-      "turns": 1
-    },
-    "at": "2026-11-19T19:28:24Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "cd7be671cc89537afc19c842bc2feed511e5c2ab85d6cfb43d6a79c865a88792",
+    "after": [
+      ".orchestrate/evidence/RAY-TRACING/design-review-5.md",
+      ".orchestrate/evidence/RAY-TRACING/design-review.md"
+    ],
+    "at": "2026-11-19T20:13:14Z"
   },
   "milestones": {
     "M1": {
@@ -376,12 +363,12 @@
       }
     },
     "M4": {
-      "definitions": "220b441853fc20a06fd8d0745bf7f80cf2f2556762ef66d9a29e2503bcbbc474",
+      "definitions": "8ffbc403ea1a509566cf41658cbac9632412752207efd7f37c35181ed41c3cb5",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Mu",
-        "at": "2026-11-19T19:19:10Z"
+        "at": "2026-11-19T20:13:14Z"
       }
     },
     "M5": {
@@ -427,11 +414,15 @@
     {
       "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-19T19:19:10Z"
+    },
+    {
+      "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. This is the last of 2 design review rounds: the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-19T20:13:14Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-19T19:19:10Z"
+    "at": "2026-11-19T20:13:14Z"
   },
   "design_history": [
     {
@@ -548,6 +539,29 @@
         "turns": 1
       },
       "at": "2026-11-19T15:42:59Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/RAY-TRACING/design-review.md",
+      "commit": "cb6efe8a9c805cf6112c324936967f10d1c68350",
+      "hash": "bd27e0457e621f37e5ed67783cfd3942b65666e7fa1f61877823d6658fd1267b",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 85164,
+        "cached": 898304,
+        "output": 7078,
+        "turns": 1
+      },
+      "at": "2026-11-19T19:28:24Z"
     }
   ]
 }
