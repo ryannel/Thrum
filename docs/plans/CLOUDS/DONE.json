@@ -627,8 +627,8 @@
           "check": "node scripts/check_v1_browser.mjs --case clouds-first-frame",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M4/checks/first-frame.json",
           "verdict": "",
           "review": ""
         },
@@ -638,8 +638,8 @@
           "check": "node scripts/check_v1_browser.mjs --case clouds-state",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M4/checks/state.json",
           "verdict": "",
           "review": ""
         },
@@ -648,8 +648,8 @@
           "statement": "In Chrome at noon the fair sky passes M3.1's, M3.2's and M3.3's lists, and any difference from the Mac's portable recipe at the same views is recorded.",
           "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at M3.1's and M3.2's views. Judge them by those lists, then compare native-size crops with the Mac's portable-recipe stills.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#m43-fair-sky-distance-and-light",
           "verdict": "",
           "review": ""
         },
@@ -658,8 +658,8 @@
           "statement": "In Chrome the shade crosses the valley as M2.6 describes and the layer is stable in a pan as M3.7 describes. The page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
           "inspect": "Capture `fixed` stills at M2.6's views and a `realtime` 10-second pan in Chrome. Judge them by M2.6's and M3.7's lists.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#m44-valley-shade-and-cloud-motion",
           "verdict": "",
           "review": ""
         },
@@ -668,8 +668,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

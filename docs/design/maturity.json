@@ -2840,6 +2840,13 @@
         "device": "Apple M3 Max Metal with WebGPU-default-limit admission. The first visible submission cost 42.770 ms under load against an 8.333 ms panel interval. The record covers engine output and GPU measurements on this Mac.",
         "record": "../evidence/CLOUDS/M3-type-plane/README.md"
       },
+      "chrome_evidence": {
+        "implementation": "CLOUDS M4 carries the V1 Shade and Sky selections through the ordinary browser page and cooked-valley attachment using the portable recipe.",
+        "correctness": "Chrome WebGPU passed the first submitted Sky frame and compared all weather texels with the CPU at their row source. The lifecycle run checked row cadence and packed ground shade across repeated and advancing ticks, real tab visibility, a page hitch and device replacement. The authored weather uses the same numerical bounds on portable Metal.",
+        "visuals": "Held Chrome captures show the same fair sky and valley shade at noon and low Sun. Native-size crops align with the portable Metal reference. The ten-second Chrome pan, 40 m walk and cut retain complete submitted sequences.",
+        "device": "Chrome WebGPU on the Apple M3 Max. The 720p pan recorded a 16.7 ms median animation-frame interval on the page clock under shared load.",
+        "record": "../../.orchestrate/evidence/CLOUDS/M4/README.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

@@ -528,3 +528,9 @@
 - 2026-11-19 M3.9 checks all 31 named byte counts in both committed and fresh Sky runs.
   [The Metal cost check](../../../.orchestrate/evidence/CLOUDS/M3-cost.md#m39-review-fix) passed and the refusal controls rejected
   the all-absent record and all 31 single-resource omissions.
+
+- 2026-11-19 M4 carries Shade and Sky into the Chrome game, including cooked-valley attachment.
+  The [target evidence](../../../.orchestrate/evidence/CLOUDS/M4/README.md) records both Chrome checks, the matched portable Metal
+  stills, the valley shade passing the receivers, and the ten-second pan at the page's callback cadence.
+  The shared Metal and Chrome test expresses thickness and optical-depth errors in the M2 fixture's physical scale.
+  The shared `exact-images` check supplies the merged baseline verdict.

@@ -5,6 +5,7 @@ use thrum_cloud_model::Field;
 use thrum_clouds::{RowStamp, ShadeConfig};
 
 /// The committed axes, rows and products of a submitted Weather Map.
+#[derive(Clone, Copy)]
 pub struct WeatherSnapshot<'a> {
     /// Column, optical and exact integer-identity textures.
     pub textures: &'a [wgpu::Texture; 3],
