@@ -3,6 +3,8 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use crate::surface::{SurfaceAction, surface_action};
+
 use thrum_render::{
     capabilities::{
         DeviceCapabilities, DeviceProfile, DeviceRecipe, DeviceWatch, OpenedDevice,
@@ -117,28 +119,21 @@ impl Replacement {
         }
         // WebGPU configure returns void and can defer failure until acquire.
         // Check a real candidate lease; dropping it does not submit/present.
-        let reconfigure = match surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(lease) => {
-                drop(lease);
-                false
-            }
-            wgpu::CurrentSurfaceTexture::Suboptimal(lease) => {
-                drop(lease);
-                true
-            }
-            wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
-                return Err("replacement canvas configuration did not become usable".to_owned());
-            }
-            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
-                return Ok(None);
-            }
-            wgpu::CurrentSurfaceTexture::Validation => {
-                return Err("replacement canvas surface validation fault".to_owned());
-            }
-        };
+        let action = surface_action(surface.get_current_texture());
         if self.gpu.fault.is_lost() {
             return Err("replacement graphics device was lost during activation".to_owned());
         }
+        let reconfigure = match action {
+            SurfaceAction::Draw { frame, reconfigure } => {
+                drop(frame);
+                reconfigure
+            }
+            SurfaceAction::Skip { .. } => return Ok(None),
+            SurfaceAction::Reconfigure => {
+                self.configured_extent = None;
+                return Ok(None);
+            }
+        };
         host.publish_device(&mut self.prepared)
             .map_err(|error| error.to_string())?;
         Ok(Some(reconfigure))

@@ -945,16 +945,6 @@ impl FrameHost {
     pub fn resume(&mut self, now: Duration) -> Result<(), String> {
         self.inner.world_mut().resume(now)
     }
-    /// Resume when accepted ticks have drained on ordinary drives.
-    /// A queued resume keeps hidden elapsed time excluded until the drain ends.
-    /// # Errors
-    /// Refuses a threaded or already-active world, or a backwards timestamp.
-    pub fn resume_after_drain(&mut self, now: Duration) -> Result<(), String> {
-        self.inner
-            .world_mut()
-            .inline_lifecycle()?
-            .resume_after_drain(now)
-    }
     /// Latest committed authority tick.
     pub fn tick(&self) -> u64 {
         self.inner.world().tick()

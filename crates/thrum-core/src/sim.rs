@@ -18,6 +18,7 @@ mod transaction;
 mod undo;
 #[cfg(not(target_arch = "wasm32"))]
 mod world_lane;
+mod world_lifecycle;
 
 pub use clocked_world::{
     ClockedWorld, ClockedWorldError, WorldAdvance, WorldGame, WorldPublication, WorldStep,
@@ -42,5 +43,8 @@ pub use snapshot_ring::{DirtyPage, PublicationBusy, SnapshotRing};
 pub use transaction::{Edit, EditError, EditWriter};
 #[cfg(not(target_arch = "wasm32"))]
 pub use world_lane::{
-    WorldLane, WorldLaneControls, WorldLaneFault, WorldLifecycle, WorldLifecycleReply, WorldTask,
+    WorldLane, WorldLaneControls, WorldLaneFault, WorldLifecycleReply, WorldTask,
+};
+pub use world_lifecycle::{
+    UnexpectedLifecycleReply, WorldLifecycle, WorldLifecyclePolicy, WorldLifecycleStatus,
 };

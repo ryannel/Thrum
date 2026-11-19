@@ -28,7 +28,8 @@ use v1_game::{
 const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
 /// Sleep slice inside qualification holds, so a loss can land inside them.
 const HOLD_SLICE: Duration = Duration::from_millis(20);
-use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
+use thrum_app::surface::{SurfaceAction, surface_action};
+use wgpu::TextureViewDescriptor;
 
 use crate::lease::{Leased, SurfaceLease};
 
@@ -864,35 +865,29 @@ impl Gpu {
                 return Ok(Some(encoded.cancel_background()));
             }
             let acquiring = Instant::now();
-            let texture = leased.surface.get_current_texture();
+            let action = surface_action(leased.surface.get_current_texture());
             reply.acquire = acquiring.elapsed();
             if is_lost() {
                 // wgpu's callback fired during the acquire.
-                reply.acquired = matches!(
-                    texture,
-                    CurrentSurfaceTexture::Success(_) | CurrentSurfaceTexture::Suboptimal(_)
-                );
-                drop(texture);
+                reply.acquired = matches!(action, SurfaceAction::Draw { .. });
+                drop(action);
                 return Ok(abandon(encoded, reply));
             }
-            let frame = match texture {
-                CurrentSurfaceTexture::Success(frame) => frame,
-                CurrentSurfaceTexture::Suboptimal(frame) => {
-                    leased.configured = None;
+            let frame = match action {
+                SurfaceAction::Draw { frame, reconfigure } => {
+                    if reconfigure {
+                        leased.configured = None;
+                    }
                     frame
                 }
-                CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded => {
+                SurfaceAction::Skip { .. } => {
                     reply.status = SurfaceStatus::Missing;
                     return Ok(Some(cancel_revoked(encoded, reply, background)));
                 }
-                CurrentSurfaceTexture::Outdated | CurrentSurfaceTexture::Lost => {
+                SurfaceAction::Reconfigure => {
                     leased.configured = None;
                     reply.status = SurfaceStatus::Reconfigure;
                     return Ok(Some(cancel_revoked(encoded, reply, background)));
-                }
-                CurrentSurfaceTexture::Validation => {
-                    cancel_revoked(encoded, reply, background);
-                    return Err(FrameError::InvalidState("iOS surface validation fault"));
                 }
             };
             reply.acquired = true;

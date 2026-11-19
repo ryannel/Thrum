@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_core::sim::{WorldLaneFault, WorldLifecycle};
+use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecyclePolicy};
 use thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 use winit::{
     application::ApplicationHandler,
@@ -21,7 +21,6 @@ use winit::{
 use crate::{
     gesture::{Gesture, Phase},
     lease::Take,
-    world_policy::WorldPolicy,
 };
 
 mod capture;
@@ -270,7 +269,7 @@ struct Shell {
     /// The render owner reported that it holds a stalled section.
     stalling: bool,
     controls: Option<v1_game::WorldControls>,
-    policy: WorldPolicy,
+    policy: WorldLifecyclePolicy,
     gesture: Gesture,
     witness: Witness,
     error: Option<String>,
@@ -307,7 +306,7 @@ impl Shell {
             sample_actor: false,
             stalling: false,
             controls: None,
-            policy: WorldPolicy::default(),
+            policy: WorldLifecyclePolicy::default(),
             gesture: Gesture::new(),
             witness: Witness::new(),
             error: None,
@@ -474,7 +473,7 @@ impl Shell {
         self.pending_target = None;
         self.release_surface();
         self.clear_input()?;
-        self.policy.set_background(true);
+        self.policy.request(true);
         self.state = State::Suspended;
         self.witness.suspends += 1;
         self.witness.lifecycle_thread = thread_name();
@@ -490,7 +489,7 @@ impl Shell {
         self.signals.background.store(false, Ordering::Release);
         self.restore = true;
         self.finish_release(event_loop)?;
-        self.policy.set_background(false);
+        self.policy.request(false);
         self.state = State::Active;
         self.witness.resumes += 1;
         self.reconcile_world()?;
@@ -759,11 +758,6 @@ impl Shell {
                     self.witness.stalls += 1;
                     self.witness.stall_status = format!("{:?}", frame.status);
                 }
-                if let Some(report) = frame.report
-                    && let Some(refused) = report.overload
-                {
-                    self.policy.overloaded(refused);
-                }
                 self.witness.frame(&frame);
                 if frame.status == render::SurfaceStatus::DeviceLost
                     && frame.acquired
@@ -849,7 +843,9 @@ impl Shell {
                 .poll_lifecycle_reply()
                 .map_err(|error| error.to_string())?
         {
-            self.policy.acknowledge(reply.request)?;
+            self.policy
+                .acknowledge(reply.request)
+                .map_err(|error| error.to_string())?;
             self.witness
                 .world_reply(reply.request, reply.id.epoch.0, reply.id.tick);
             self.write();
@@ -883,7 +879,7 @@ impl Shell {
         self.witness.state = format!("{:?}", self.state);
         self.witness.epoch = self.lease.epoch();
         self.witness.world_paused = self.policy.confirmed_paused();
-        self.witness.overloads = self.policy.overloads();
+        self.witness.overloads = self.policy.overload_count();
         self.witness.refused_ticks = self.policy.refused_ticks();
         self.witness.gesture = self.gesture.counters();
         self.witness.input_epoch = self.gesture.epoch();

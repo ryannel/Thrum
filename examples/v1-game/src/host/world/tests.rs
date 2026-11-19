@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use thrum_core::sim::WorldTask;
+use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy, WorldTask};
 
 use super::{GameWorld, WorldDriver};
 use thrum_core::sim::ClockedWorld;
@@ -86,6 +86,7 @@ fn exhausted_sequence_refuses_before_admitting_input_and_keeps_the_tick_queued()
 
 #[test]
 fn inline_overload_reports_once_and_drains_over_display_drives() {
+    let mut lifecycle = WorldLifecyclePolicy::default();
     let mut driver = WorldDriver::new(
         crate::scene::GameContent::Grid,
         crate::scene::RouteOverlay::Off,
@@ -104,8 +105,8 @@ fn inline_overload_reports_once_and_drains_over_display_drives() {
     let overloaded = driver.advance(now).expect("overload");
     assert_eq!(overloaded.overload, Some(24));
     assert_eq!((overloaded.tick, overloaded.queued_ticks), (2, 4));
-    driver.pause();
-    driver.resume_after_drain(now).expect("request resume");
+    lifecycle.overloaded(overloaded.overload.expect("refused ticks"));
+    reconcile(&mut driver, &mut lifecycle, overloaded.queued_ticks, now);
     assert_eq!(driver.tick(), 2);
 
     for tick in 3..=6 {
@@ -114,6 +115,7 @@ fn inline_overload_reports_once_and_drains_over_display_drives() {
         assert_eq!(drained.tick, tick);
         assert_eq!(drained.completed_ticks, 1);
         assert_eq!(drained.overload, None);
+        reconcile(&mut driver, &mut lifecycle, drained.queued_ticks, later);
     }
     let resumed = driver
         .advance(Duration::from_millis(6017))
@@ -123,6 +125,7 @@ fn inline_overload_reports_once_and_drains_over_display_drives() {
 
 #[test]
 fn a_new_inline_pause_cancels_deferred_resume() {
+    let mut lifecycle = WorldLifecyclePolicy::default();
     let mut driver = WorldDriver::new(
         crate::scene::GameContent::Grid,
         crate::scene::RouteOverlay::Off,
@@ -130,15 +133,35 @@ fn a_new_inline_pause_cancels_deferred_resume() {
     .expect("fixture world");
     driver.world = driver.world.with_tick_work_slice(Duration::ZERO);
     let now = Duration::from_millis(50);
-    driver.advance(now).expect("first of three ticks");
-    driver.pause();
-    driver.resume_after_drain(now).expect("request resume");
-    driver.pause();
+    let first = driver.advance(now).expect("first of three ticks");
+    for paused in [true, false, true] {
+        lifecycle.request(paused);
+        reconcile(&mut driver, &mut lifecycle, first.queued_ticks, now);
+    }
 
     for tick in 2..=3 {
-        let drained = driver.advance(Duration::from_secs(tick)).expect("drain");
+        let now = Duration::from_secs(tick);
+        let drained = driver.advance(now).expect("drain");
         assert_eq!(drained.tick, tick);
+        reconcile(&mut driver, &mut lifecycle, drained.queued_ticks, now);
     }
     let held = driver.advance(Duration::from_secs(4)).expect("held");
     assert_eq!((held.tick, held.queued_ticks), (3, 0));
+}
+
+fn reconcile(
+    driver: &mut WorldDriver,
+    policy: &mut WorldLifecyclePolicy,
+    queued: u32,
+    now: Duration,
+) {
+    policy
+        .drive_inline(queued, |request| match request {
+            WorldLifecycle::Pause => {
+                driver.pause();
+                Ok(())
+            }
+            WorldLifecycle::Resume => driver.resume(now),
+        })
+        .expect("apply lifecycle request");
 }

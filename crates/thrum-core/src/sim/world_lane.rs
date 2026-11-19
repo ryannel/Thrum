@@ -12,7 +12,7 @@ use std::{
 
 use crate::{ClockSample, WorldEpoch};
 
-use super::{SnapshotId, WorldAdvance, WorldPublication, WorldUpdate};
+use super::{SnapshotId, WorldAdvance, WorldLifecycle, WorldPublication, WorldUpdate};
 
 /// A game-owned clock and rules task moved into the resident engine lane.
 /// Continuous controls replace one sampled state; discrete actions use the
@@ -51,15 +51,6 @@ pub trait WorldTask: Send + 'static {
     /// # Errors
     /// Refuses an invalid transition without changing the task's clock.
     fn resume(&mut self, now: Duration) -> Result<(), Self::Error>;
-}
-
-/// Explicit authority policy, independent of surface availability or occlusion.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum WorldLifecycle {
-    /// Stop admission and drain already accepted ticks before acknowledgement.
-    Pause,
-    /// Restart from the worker's observed time, excluding the paused interval.
-    Resume,
 }
 
 /// Immutable summary from the exact update acknowledging one lifecycle request.

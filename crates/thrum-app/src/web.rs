@@ -14,6 +14,7 @@
 
 use std::{future::Future, rc::Rc, time::Duration};
 
+use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy};
 use thrum_render::{
     capabilities::{DeviceCapabilities, DeviceWatch, configure_surface},
     contribution::SceneContribution,
@@ -24,7 +25,10 @@ use thrum_render::{
 };
 use web_sys::HtmlCanvasElement;
 
-use crate::web_clock::{PageClock, Transition};
+use crate::{
+    surface::{SurfaceAction, surface_action},
+    web_clock::PageClock,
+};
 
 mod capture;
 mod recovery;
@@ -39,10 +43,10 @@ pub trait WebWorld: FrameWorld {
     /// # Errors
     /// Returns a world lifecycle refusal.
     fn pause(&mut self) -> Result<(), String>;
-    /// Resume from `now`, or once the accepted ticks have drained on later frames.
+    /// Resume from `now` after the accepted ticks have drained.
     /// # Errors
     /// Returns a clock state or timestamp refusal.
-    fn resume_after_drain(&mut self, now: Duration) -> Result<(), String>;
+    fn resume(&mut self, now: Duration) -> Result<(), String>;
 }
 
 /// The first device, handed to the game to prepare its runtime. The `FrameHost` it returns
@@ -106,8 +110,8 @@ pub struct WebShell<W: WebWorld, V: SceneSource<W::Page>> {
     callbacks: u64,
     presented: u64,
     unavailable: u64,
-    overload_events: u64,
-    refused_ticks: u64,
+    lifecycle: WorldLifecyclePolicy,
+    queued_ticks: u32,
     needs_reconfigure: bool,
     samples: Vec<FrameSample>,
     profile: crate::profile::ProfileWindow,
@@ -177,8 +181,8 @@ where
         callbacks: 0,
         presented: 0,
         unavailable: 0,
-        overload_events: 0,
-        refused_ticks: 0,
+        lifecycle: WorldLifecyclePolicy::default(),
+        queued_ticks: 0,
         needs_reconfigure: false,
         samples: Vec::with_capacity(SAMPLES),
         profile: crate::profile::ProfileWindow::new(),
@@ -265,10 +269,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                 .host
                 .advance_without_rendering(now)
                 .map_err(|error| error.to_string())?;
-            if let Some(refused_ticks) = report.overload {
-                self.recover_overload(refused_ticks, now)?;
-            }
-            return Ok(());
+            return self.observe_world(report, now);
         }
         let mut resize = extent != [self.config.width, self.config.height];
         if (resize || self.needs_reconfigure)
@@ -295,24 +296,19 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         let report = if can_acquire {
             let encoded = advanced.encode_scene().map_err(|error| error.to_string())?;
             let frame = if encoded.can_acquire_surface() {
-                match self.surface.get_current_texture() {
-                    wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
-                    wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
-                        self.needs_reconfigure = true;
+                match surface_action(self.surface.get_current_texture()) {
+                    SurfaceAction::Draw { frame, reconfigure } => {
+                        self.needs_reconfigure |= reconfigure;
                         Some(frame)
                     }
-                    wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
+                    SurfaceAction::Reconfigure => {
                         self.needs_reconfigure = true;
                         self.unavailable += 1;
                         None
                     }
-                    wgpu::CurrentSurfaceTexture::Timeout
-                    | wgpu::CurrentSurfaceTexture::Occluded => {
+                    SurfaceAction::Skip { .. } => {
                         self.unavailable += 1;
                         None
-                    }
-                    wgpu::CurrentSurfaceTexture::Validation => {
-                        return Err("canvas surface validation fault".to_owned());
                     }
                 }
             } else {
@@ -340,9 +336,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         } else {
             advanced.submit(None).map_err(|error| error.to_string())?
         };
-        if let Some(refused_ticks) = report.overload {
-            self.recover_overload(refused_ticks, now)?;
-        }
+        self.observe_world(report, now)?;
         self.collect_completed()
     }
 
@@ -506,8 +500,8 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             callbacks: self.callbacks,
             presented: self.presented,
             unavailable: self.unavailable,
-            overload_events: self.overload_events,
-            refused_ticks: self.refused_ticks,
+            overload_events: self.lifecycle.overload_count(),
+            refused_ticks: self.lifecycle.refused_ticks(),
             timestamp_clamps: self.clock.clamps(),
             last_frame: self.clock.last(),
             generation: self.recovery.generation,
@@ -532,20 +526,30 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     }
 
     fn set_play(&mut self, visible: bool, user_paused: bool, now: Duration) -> Result<(), String> {
-        // Record the play state only once the world has applied it, so a refusal is retried.
-        match self.clock.transition(visible, user_paused) {
-            Transition::Resume => self.host.world_mut().resume_after_drain(now)?,
-            Transition::Pause => self.host.world_mut().pause()?,
-            Transition::None => {}
-        }
+        self.lifecycle.request(!visible || user_paused);
+        self.reconcile_world(now)?;
         self.clock.set_play(visible, user_paused, now);
         Ok(())
     }
 
-    fn recover_overload(&mut self, refused_ticks: u64, now: Duration) -> Result<(), String> {
-        self.overload_events += 1;
-        self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);
-        self.host.world_mut().pause()?;
-        self.host.world_mut().resume_after_drain(now)
+    fn observe_world(
+        &mut self,
+        report: thrum_render::runtime::DriveReport,
+        now: Duration,
+    ) -> Result<(), String> {
+        self.queued_ticks = report.queued_ticks;
+        if let Some(refused) = report.overload {
+            self.lifecycle.overloaded(refused);
+        }
+        self.reconcile_world(now)
+    }
+
+    fn reconcile_world(&mut self, now: Duration) -> Result<(), String> {
+        let world = self.host.world_mut();
+        self.lifecycle
+            .drive_inline(self.queued_ticks, |request| match request {
+                WorldLifecycle::Pause => world.pause(),
+                WorldLifecycle::Resume => world.resume(now),
+            })
     }
 }

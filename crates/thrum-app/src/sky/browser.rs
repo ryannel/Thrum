@@ -37,8 +37,8 @@ impl WebWorld for StillWorld {
         StillWorld::pause(self);
         Ok(())
     }
-    fn resume_after_drain(&mut self, now: Duration) -> Result<(), String> {
-        self.resume(now);
+    fn resume(&mut self, now: Duration) -> Result<(), String> {
+        StillWorld::resume(self, now);
         Ok(())
     }
 }

@@ -21,7 +21,9 @@ use thrum_render::{
         SurfaceOutput,
     },
 };
-use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
+use wgpu::TextureViewDescriptor;
+
+use crate::surface::{SurfaceAction, surface_action};
 use winit::event_loop::EventLoopProxy;
 
 /// Completed GPU samples polled per job; the runtime retains at most this many frames.
@@ -349,23 +351,20 @@ impl<G: Game> Actor<G> {
         let acquired = self.recipe.surface.get_current_texture();
         reply.acquire_wall = Some(acquire.elapsed());
         let encoded = check_encoded_device(&self.gpu.watch, encoded)?;
-        let frame = match acquired {
-            CurrentSurfaceTexture::Success(frame) => frame,
-            CurrentSurfaceTexture::Suboptimal(frame) => {
-                self.needs_reconfigure = true;
+        let frame = match surface_action(acquired) {
+            SurfaceAction::Draw { frame, reconfigure } => {
+                self.needs_reconfigure |= reconfigure;
                 frame
             }
-            CurrentSurfaceTexture::Timeout => {
-                reply.surface_status = SurfaceStatus::Unavailable;
+            SurfaceAction::Skip { occluded } => {
+                reply.surface_status = if occluded {
+                    SurfaceStatus::Occluded
+                } else {
+                    SurfaceStatus::Unavailable
+                };
                 return Ok(encoded.skip());
             }
-            CurrentSurfaceTexture::Occluded => {
-                reply.surface_status = SurfaceStatus::Occluded;
-                return Ok(encoded.skip());
-            }
-            CurrentSurfaceTexture::Outdated
-            | CurrentSurfaceTexture::Lost
-            | CurrentSurfaceTexture::Validation => {
+            SurfaceAction::Reconfigure => {
                 self.needs_reconfigure = true;
                 reply.surface_status = SurfaceStatus::NeedsReconfigure;
                 return Ok(encoded.skip());

@@ -25,6 +25,7 @@ mod game;
 pub mod offscreen;
 pub mod profile;
 pub mod sky;
+pub mod surface;
 #[cfg(target_arch = "wasm32")]
 pub mod web;
 #[cfg(any(target_arch = "wasm32", test))]

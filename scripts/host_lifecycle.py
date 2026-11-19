@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild and run the existing Mac and Chrome device lifecycle checks."""
+"""Rebuild and run the Mac, Chrome and iPhone simulator lifecycle checks."""
 
 import argparse
 import json
@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 
 from cooked_draw_fixture import environment
+from host_overload import check_ios_overload, check_mac_overload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +20,7 @@ MAC_WITNESS = ROOT / 'docs/evidence/HOST/mac-window-check'
 ASSETS = ROOT / 'examples/v1-game/assets/showcase'
 PRESET = ROOT / 'examples/v1-game/params/showcase-noon.params.json'
 WEB_CHECK = ROOT / 'scripts/check_v1_browser.mjs'
-WEB_CASES = ('normal', 'device-loss', 'late-device-loss', 'device-recovery',
+WEB_CASES = ('normal', 'controls', 'overload', 'device-loss', 'late-device-loss', 'device-recovery',
              'device-recovery-retry', 'valley-recovery', 'valley-late-attach')
 COOKER = ROOT / 'target/debug/thrum-cook'
 BUILD_INPUTS = ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo',
@@ -72,6 +73,7 @@ def check_mac(folder, revision):
         [sys.executable, str(MAC_WITNESS / 'audit_live_witness.py'), str(folder)], cwd=ROOT, text=True)
     (folder / 'audit.json').write_text(report)
     print(report, end='')
+    check_mac_overload(folder, PRESET)
 
 
 def prepare_web(env):
@@ -89,14 +91,37 @@ def check_web(folder):
             '--cook', COOKER, '--output', folder / case)
 
 
+def check_ios(folder):
+    env = dict(environment(), CARGO_TARGET_DIR=str(ROOT / 'target'),
+               THRUM_V1_ROUTE_OUT=str(folder / 'route'))
+    run('bash', ROOT / 'examples/v1-game-ios/ios/check-simulator.sh', env=env)
+    check_ios_overload(folder, ROOT / 'target/v1-game-ios-sim/ThrumV1.app')
+
+
+def check_locked(lock, target, output):
+    script = os.environ.get('ORCHESTRATE_SCRIPT')
+    if not script:
+        raise RuntimeError(f'Set ORCHESTRATE_SCRIPT to agent_loop.py to acquire the {lock} lock')
+    run(sys.executable, script, 'lock', lock, '--', sys.executable, __file__, 'run-target',
+        '--target', target, '--output', output)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['check', 'prepare'])
-    parser.add_argument('--target', action='append', required=True, choices=['mac-metal', 'chrome-webgpu'])
+    parser.add_argument('action', choices=['check', 'prepare', 'run-target'])
+    parser.add_argument('--target', action='append', required=True,
+                        choices=['mac-metal', 'chrome-webgpu', 'ios-sim'])
     parser.add_argument('--output', type=Path)
     parser.add_argument('--prepared', action='store_true',
                         help='only run the target checks from a previously prepared output')
     args = parser.parse_args()
+    if args.action == 'run-target':
+        # Internal callback for a target protected by check_locked.
+        if args.output is None or len(args.target) != 1 or args.target[0] == 'mac-metal':
+            parser.error('run-target requires one Chrome or simulator target and --output')
+        check = check_web if args.target[0] == 'chrome-webgpu' else check_ios
+        check(args.output)
+        return
     if args.prepared and (args.output is None or args.action != 'check'):
         parser.error('--prepared requires check and an explicit --output')
     scratch = ROOT / 'tmp'
@@ -117,16 +142,24 @@ def main():
     if not args.prepared:
         revision_file.write_text(revision + '\n')
         env = dict(environment(), CARGO_TARGET_DIR=str(ROOT / 'target'))
-        run('cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook', env=env)
+        if any(target != 'ios-sim' for target in args.target):
+            run('cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook', env=env)
         if 'mac-metal' in args.target:
             prepare_mac(output / 'mac', revision, env)
         if 'chrome-webgpu' in args.target:
             prepare_web(env)
     if args.action == 'check':
         if 'mac-metal' in args.target:
-            check_mac(output / 'mac', revision)
+            keep_awake = subprocess.Popen(['caffeinate', '-d', '-i'])
+            try:
+                check_mac(output / 'mac', revision)
+            finally:
+                keep_awake.terminate()
+                keep_awake.wait()
         if 'chrome-webgpu' in args.target:
-            check_web(output / 'chrome')
+            check_locked('chrome', 'chrome-webgpu', output / 'chrome')
+        if 'ios-sim' in args.target:
+            check_locked('simulator', 'ios-sim', output / 'ios')
 
 
 if __name__ == '__main__':

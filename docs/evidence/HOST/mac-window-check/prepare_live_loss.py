@@ -164,7 +164,10 @@ replace(window, "        host::time_of_day(host)\n    }", """        let time = 
         time
     }""")
 
-replace(app, "            self.pause.acknowledge(reply.request)?;", """            self.pause.acknowledge(reply.request)?;
+acknowledge = """            self.pause
+                .acknowledge(reply.request)
+                .map_err(|error| error.to_string())?;"""
+replace(app, acknowledge, acknowledge + """
             if std::env::var_os("THRUM_M1_WITNESS").is_some() {
                 eprintln!("m1 app pause-ack request={:?} endpoint={:?}",
                     reply.request, reply.id);

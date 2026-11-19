@@ -8,8 +8,6 @@ mod gesture;
 mod ios;
 #[cfg(any(target_os = "ios", test))]
 mod lease;
-#[cfg(any(target_os = "ios", test))]
-mod world_policy;
 
 /// Enter the iOS shell from Swift's process main. UIKit owns the process and
 /// Winit owns the window event loop; the world lane and render owner run off

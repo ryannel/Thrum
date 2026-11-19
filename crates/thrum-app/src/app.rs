@@ -4,7 +4,6 @@
 mod device;
 mod display_link;
 mod edit_flow;
-mod pause;
 mod profile_recording;
 mod qualification;
 mod qualification_signpost;
@@ -22,14 +21,13 @@ use std::{
 use device::WindowDevice;
 use display_link::ViewDisplayLink;
 use edit_flow::EditFlow;
-use pause::PauseIntent;
 use recovery::Recovery;
 use render_actor::{
     FrameCounters, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome, RenderReply,
     RenderWorker, SurfaceStatus,
 };
 use thrum_controls::macos::MacPanel;
-use thrum_core::sim::WorldLaneFault;
+use thrum_core::sim::{WorldLaneFault, WorldLifecyclePolicy, WorldLifecycleStatus};
 use thrum_render::{
     capabilities::{FIRST_DEVICE_GENERATION, configure_surface},
     frame::TargetLeadStatus,
@@ -93,7 +91,7 @@ struct App<G: Game> {
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
     render: Option<RenderWorker<G>>,
-    pause: PauseIntent,
+    pause: WorldLifecyclePolicy,
     recovery: Recovery,
     recovery_error: Option<String>,
     device_losses: u64,
@@ -184,7 +182,7 @@ impl<G: Game + 'static> App<G> {
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
-            pause: PauseIntent::default(),
+            pause: WorldLifecyclePolicy::default(),
             recovery: Recovery::new(FIRST_DEVICE_GENERATION),
             recovery_error: None,
             device_losses: 0,
@@ -320,7 +318,9 @@ impl<G: Game + 'static> App<G> {
                 .poll_lifecycle_reply()
                 .map_err(|error| error.to_string())?
         {
-            self.pause.acknowledge(reply.request)?;
+            self.pause
+                .acknowledge(reply.request)
+                .map_err(|error| error.to_string())?;
             self.world_tick = reply.id.tick;
         }
         // Consume the acknowledgement before checking current health: an old
@@ -347,7 +347,15 @@ impl<G: Game + 'static> App<G> {
     /// The pause label, or "Still" for a game with no world link, which has nothing to pause.
     fn world_status(&self) -> &'static str {
         if self.game.world().is_some() {
-            self.pause.label()
+            match self.pause.status() {
+                WorldLifecycleStatus::Running => "Running (P)",
+                WorldLifecycleStatus::Pausing => "Pausing (P)",
+                WorldLifecycleStatus::Paused => "Paused (P)",
+                WorldLifecycleStatus::Resuming => "Resuming (P)",
+                WorldLifecycleStatus::OverloadDraining => "Overloaded: draining (P)",
+                WorldLifecycleStatus::OverloadPaused => "Overloaded: paused (P)",
+                WorldLifecycleStatus::OverloadResuming => "Overloaded: resuming (P)",
+            }
         } else {
             "Still"
         }
@@ -1325,10 +1333,8 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                             Ok(())
                         }
                     } else if code == KeyCode::KeyP && self.game.world().is_some() {
-                        if self
-                            .pause
-                            .key(event.state == ElementState::Pressed, event.repeat)
-                        {
+                        if event.state == ElementState::Pressed && !event.repeat {
+                            self.pause.request(!self.pause.desired());
                             self.game.observe_paused(self.pause.desired());
                             self.sync_panel();
                             self.reconcile_pause()

@@ -299,6 +299,22 @@ impl<G: WorldGame> ClockedWorld<G> {
             tick_cpu,
         })
     }
+
+    /// Advance an inline host's world. Once the host has applied an explicit
+    /// pause in response to an overload, the drained world may render again.
+    /// The underlying overload stays latched until resume.
+    /// # Errors
+    /// Returns the clock or game failure from [`Self::advance`].
+    pub fn advance_inline(
+        &mut self,
+        now: Duration,
+    ) -> Result<WorldAdvance, ClockedWorldError<G::Error>> {
+        let mut progress = self.advance(now)?;
+        if self.clock.state() == ClockState::Paused {
+            progress.overload = None;
+        }
+        Ok(progress)
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]

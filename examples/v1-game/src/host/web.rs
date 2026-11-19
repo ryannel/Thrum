@@ -36,8 +36,8 @@ impl thrum_app::web::WebWorld for WorldPort {
     fn pause(&mut self) -> Result<(), String> {
         WorldPort::pause(self)
     }
-    fn resume_after_drain(&mut self, now: Duration) -> Result<(), String> {
-        self.inline_lifecycle()?.resume_after_drain(now)
+    fn resume(&mut self, now: Duration) -> Result<(), String> {
+        WorldPort::resume(self, now)
     }
 }
 

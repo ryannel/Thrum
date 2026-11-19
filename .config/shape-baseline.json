@@ -155,7 +155,6 @@
       "version": 1,
       "files": {
         "crates/thrum-app/src/app/edit_flow.rs": 1,
-        "crates/thrum-app/src/app/pause.rs": 1,
         "crates/thrum-app/src/app/recovery.rs": 1,
         "crates/thrum-app/src/app/render_actor.rs": 1,
         "crates/thrum-app/src/file_watch.rs": 1,
@@ -202,7 +201,7 @@
         "examples/v1-game/src/camera/route.rs": 3,
         "examples/v1-game/src/content.rs": 3,
         "examples/v1-game/src/effect/qualification.rs": 2,
-        "examples/v1-game/src/host.rs": 32,
+        "examples/v1-game/src/host.rs": 31,
         "examples/v1-game/src/host/scene_source.rs": 3,
         "examples/v1-game/src/host/world_thread.rs": 1,
         "examples/v1-game/src/scene.rs": 1,
