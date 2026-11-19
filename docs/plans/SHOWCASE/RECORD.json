@@ -177,7 +177,37 @@
     },
     "M6": {
       "definitions": "3e521777bc17f6575990043f9c5d2b2a46087c67f5a8c84e046292a382ff3a33",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "4dd7f3e9a7d5524d0b27f44c1e50acba901f77f8",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "pass",
+            "M6.3": "pass",
+            "M6.4": "pass",
+            "M6.5": "pass",
+            "M6.6": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 152001,
+            "cached": 4848512,
+            "output": 13470,
+            "turns": 1
+          },
+          "at": "2026-11-19T21:59:09Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
@@ -218,6 +248,13 @@
           "output": 95553,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "4dd7f3e9a7d5524d0b27f44c1e50acba901f77f8",
+        "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
+        "checked": "f739473c77f0fd71d663660aab8235547dcbb80a",
+        "at": "2026-11-19T21:59:09Z"
       }
     },
     "M7": {

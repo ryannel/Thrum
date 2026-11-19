@@ -156,7 +156,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#metal-equality",
-          "builder_result": "pass"
+          "builder_result": "pass",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md"
         },
         {
           "id": "M6.2",
@@ -165,7 +167,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#chrome-equality",
-          "builder_result": "pass"
+          "builder_result": "pass",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md"
         },
         {
           "id": "M6.3",
@@ -173,8 +177,8 @@
           "ask": "Do the two retained runs support the default the code sets, by the rule in CULLING's design? Do the rows show Occlusion's prepass non-empty and slots hidden, so that a row cannot repeat Frustum? Did this milestone change any culling code or comparison?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#default-by-measurement",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -183,8 +187,8 @@
           "inspect": "Capture the exit flythrough and a fast yaw across the densest scatter with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and at occluder silhouettes.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#metal-real-time-inspection",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -193,8 +197,8 @@
           "inspect": "Capture the exit flythrough in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and the ridge line.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#chrome-real-time-inspection",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md",
           "builder_result": "pass"
         },
         {
@@ -203,13 +207,15 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "builder_result": "pass"
+          "builder_result": "pass",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M6-review.md"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the populated valley, nothing pops at a screen edge or at a ridge or boulder silhouette, with the movers moving."
     },
     {
