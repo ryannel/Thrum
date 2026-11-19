@@ -302,6 +302,15 @@ async function captureCloudView(view, extent) {
   game.set_cloud_capture_eye(...view.eye);
   const edits = JSON.parse(game.apply_parameters(JSON.stringify(view.params), 0));
   if (edits.problems.length || game.committed_tick() !== 0 || !game.paused()) fail(`invalid held cloud view: ${JSON.stringify(edits)}`);
+  const warmupEnd = performance.now() + 3000;
+  const warmupStart = game.presented();
+  while (performance.now() < warmupEnd) {
+    if (hidden) fail('cloud view became hidden during warmup');
+    if (game.route_slot_ready()) game.frame(0);
+    await wait(2);
+  }
+  record.held_warmup_submissions = Number(game.presented() - warmupStart);
+  if (!record.held_warmup_submissions || game.committed_tick() !== 0) fail('cloud view warmup missed the held tick');
   await ready(() => game.route_slot_ready(), 'cloud view has no free frame slot');
   record.initial_report = JSON.parse(game.route_report(0));
   record.culling = game.report();
