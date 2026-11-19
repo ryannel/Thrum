@@ -771,8 +771,8 @@
           "check": "cargo test --locked --offline -p water-scene --test wake_scene_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+      "builder_result": "pass",
+      "evidence": ".orchestrate/evidence/WATERS/M6/moored-bands-metal.txt",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
@@ -816,7 +816,7 @@
           "inspect": "A `realtime` sequence following the craft at 6 m/s in a trade wind from 40 m above: the windows' edges, and the water about 30 m behind the craft, where the fine wake ends.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/trade-6-overhead/realtime.json",
+      "evidence": ".orchestrate/evidence/WATERS/M6/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },

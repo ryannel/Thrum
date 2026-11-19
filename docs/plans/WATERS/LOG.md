@@ -512,3 +512,9 @@
   The 1440p cost record adds water-absent arms and compares the two water-present arms with the prior same-view record.
   The sea timing diagnostic confirmed stale shadow end counters. [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
   The endpoint test suite uses one Metal device at a time and collects no pass timestamps for its correctness assertions.
+
+- 2026-11-20 M6 adds back the moored craft's static pressure from whichever wake bands admitted it.
+  On Metal the settled draft moved 0.38 mm with the fine level alone and 1.16 mm with the coarse level alone.
+  The body used all six public query replies on each step. The existing Metal tests also passed for the float,
+  the island's isolated waters and the settled waterlines around the moored craft.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
