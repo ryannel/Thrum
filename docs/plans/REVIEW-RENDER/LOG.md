@@ -37,3 +37,8 @@
   On the restricted Metal device, direct and grouped Shade both returned the Weather
   map device limit as a GPU error. Secondary-view regressions passed.
   [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M1/grouped-shade.md).
+- 2026-11-19 Built M2. The renderer reflects its production WGSL against 31 host records and gives each shared
+  declaration one source file. The scene, visibility and atmosphere write typed records, and the build generates
+  shared shader constants from Rust. The Mac tests rejected a type change and a copied declaration and exercised
+  the changed renderer paths on Metal. Registered images use the shared main-branch proof.
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md).

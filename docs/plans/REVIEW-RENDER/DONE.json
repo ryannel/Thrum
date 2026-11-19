@@ -77,7 +77,7 @@
     {
       "id": "M2",
       "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -90,8 +90,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test wgsl_records",
           "ask": "Does the test find bound structs by reflection over the composed sources production builds, so a new shader or struct cannot be left out? Change one field's type in a WGSL struct: does the test fail?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m21-reflected-host-layouts",
           "verdict": "",
           "review": ""
         },
@@ -100,8 +100,8 @@
           "statement": "Each such record is written whole from its struct. No uniform or storage record in the scene renderer, the atmosphere or visibility is packed by byte offsets, and the atmosphere reads the view record through its struct, not through offsets into another module's bytes.",
           "ask": "Search the three modules for `to_le_bytes` and `copy_from_slice` on record bytes: is any record a shader reads still assembled that way? Does one flag still have two writers, as `has_local_lights` did?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m22-whole-record-writes",
           "verdict": "",
           "review": ""
         },
@@ -110,8 +110,8 @@
           "statement": "A WGSL record used by several shaders has one authoritative declaration, composed into each. The test fails when two source files each declare the struct a registered record is bound as; a declaration repeated by composition counts once, and shader-local structs that only share a name are not duplicates.",
           "check": "cargo test --locked --offline -p thrum-render --test wgsl_single_declaration",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m23-shared-wgsl-declarations",
           "verdict": "",
           "review": ""
         },
@@ -120,8 +120,8 @@
           "statement": "A constant used on both sides is generated into the shader from the Rust value: the scene renderer's and the atmosphere's shared constants appear as literals in no `.wgsl` file.",
           "ask": "Take the constants the review lists under M23 and M29: is each now generated? Is any number still typed into both a `.rs` and a `.wgsl` file?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-generated-constants",
           "verdict": "",
           "review": ""
         },
@@ -130,8 +130,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
