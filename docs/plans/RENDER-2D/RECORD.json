@@ -26,7 +26,63 @@
   "milestones": {
     "M1": {
       "definitions": "dba48701ac4076b505ac4a68262f93b4d93e5af1f3e8eeb8c908de1f49979ab5",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "5dd82c28ed3dce629f542c24259d060badc382d7",
+          "review": "docs/evidence/RENDER-2D/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "fail",
+            "M1.10": "fail",
+            "M1.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sprite launch silently accepts a traced-geometry view",
+              "item": "M1.3",
+              "repeat": false
+            },
+            {
+              "name": "Metal cost verifier accepts missing target byte counts",
+              "item": "M1.9",
+              "repeat": false
+            },
+            {
+              "name": "Chrome cost verifier accepts missing load measurements",
+              "item": "M1.10",
+              "repeat": false
+            },
+            {
+              "name": "Sprite contributions receive the origin for a displaced camera",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 163953,
+            "cached": 4365952,
+            "output": 12136,
+            "turns": 1
+          },
+          "at": "2026-11-19T03:28:46Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
