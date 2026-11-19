@@ -12,7 +12,7 @@ gates live in [the brief](../plans/BRIEF.md#purpose) and the build order in [the
 - [Baseline](BASELINE-SPEC.md): initial scope, devices and workload admission; [construction order](CONSTRUCTION-PACKAGES.md).
 - Owning mechanisms: [foundation](FOUNDATION-SPEC.md), [render](RENDER-SPEC.md), [play/environment](PLAY-ENVIRONMENT-SPEC.md), [network](NETWORK-SPEC.md).
 - [Water commission and wider-provider design](modules/WATER.md): reviewed bounded dynamics/whitewater/optics, shared contracts, cost/proof plan and explicit remaining family gaps.
-- [I1 headless slice](I1-HEADLESS.md): selected action/world/replica mechanism, cost account and [local evidence](../evidence/i1-headless/QUALIFICATION.md).
+- [I1 headless slice](I1-HEADLESS.md): selected action/world/replica mechanism, cost account and [local evidence](../../.orchestrate/evidence/i1-headless/QUALIFICATION.md).
 - [Maturity](MATURITY.md) and [ledger](maturity.json): current design versus implementation, quality and platform evidence.
 - [Simplification findings and resolutions](SIMPLIFICATION-REVIEW.md): coordinated closure; [earlier review](PLAN-REVIEW.md).
 - Creator acceptance: [scenarios](SCENARIO-WALKTHROUGHS.md), [first use](FIRST-USE-WALKTHROUGHS.md), [from scratch](FROM-SCRATCH-WALKTHROUGHS.md).

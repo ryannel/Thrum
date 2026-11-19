@@ -1,6 +1,6 @@
 # Audit: alternative physical and presentation models
 
-1 November 2026. Independent challenge to the proposed reusable 3D engine architecture. I wrote the [pre-design derivation](../../evidence/handoffs/2026-11-01-engine-audit/models-independent.md) before opening the engine-rebuild notes. This audit compares that derivation with the integrated design, composition model, C01–C12, environment/render/play/tooling modules and relevant source/review notes. **Recommendations below are proposed, not selected changes to the architecture.** Sources establish mathematical or production precedent within the stated scope; none measures this engine.
+1 November 2026. Independent challenge to the proposed reusable 3D engine architecture. I wrote the [pre-design derivation](../../../.orchestrate/evidence/handoffs/2026-11-01-engine-audit/models-independent.md) before opening the engine-rebuild notes. This audit compares that derivation with the integrated design, composition model, C01–C12, environment/render/play/tooling modules and relevant source/review notes. **Recommendations below are proposed, not selected changes to the architecture.** Sources establish mathematical or production precedent within the stated scope; none measures this engine.
 
 ## What the design already gets right
 

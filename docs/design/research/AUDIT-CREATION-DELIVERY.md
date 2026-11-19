@@ -1,6 +1,6 @@
 # Creation-to-delivery architecture audit
 
-1 November 2026. Independent comparison against selected major-engine creation workflows. This audits **decisions**, not implementation quality. The [pre-inspection checklist](../../evidence/handoffs/2026-11-01-engine-audit/delivery-independent.md) was written from the user brief and primary engine documentation before reading the engine-rebuild design. The governing design examined here was the working tree on 1 November; its pages were not runtime-tested. The findings below are proposed corrections for the coordinator and affected owners, not unilateral changes to C01–C12.
+1 November 2026. Independent comparison against selected major-engine creation workflows. This audits **decisions**, not implementation quality. The [pre-inspection checklist](../../../.orchestrate/evidence/handoffs/2026-11-01-engine-audit/delivery-independent.md) was written from the user brief and primary engine documentation before reading the engine-rebuild design. The governing design examined here was the working tree on 1 November; its pages were not runtime-tested. The findings below are proposed corrections for the coordinator and affected owners, not unilateral changes to C01–C12.
 
 ## Scope and method
 

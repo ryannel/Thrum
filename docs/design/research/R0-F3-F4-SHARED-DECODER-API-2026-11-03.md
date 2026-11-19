@@ -73,7 +73,7 @@ accepted-pin copy succeeds. Its private constructor prevents a caller from
 pairing a header for one byte slice with another. Neither consumer repeats
 the header walk inside `prepare_render_v1`. Exact Rust names can change; the
 two phases, ownership and failure distinctions cannot. A private compiled
-[envelope slice](../../evidence/render/R0-F3-RENDER-ENVELOPE-2026-11-03.md)
+[envelope slice](../../../.orchestrate/evidence/render/R0-F3-RENDER-ENVELOPE-2026-11-03.md)
 now proves the byte-bound token and fixed-count borrowed collection handoff;
 it is not wired into dispatch or the remaining typed grammar. Structural
 preparation checks the complete typed record
@@ -222,11 +222,11 @@ a terminal validation rejection for `(epoch,key)`.
 
 1. Add the **inactive** shared structural decoder, closure code and immutable
    descriptor to `thrum-source`; test the [complete candidate
-   fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md),
+   fixture](../../../.orchestrate/evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md),
    escaped/reordered equivalents, canonical structural-error selection for
    valid IDs, exact numeric oracles and aborting
    projections with in-memory sinks. The [private transformed-box
-   predicate](../../evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md)
+   predicate](../../../.orchestrate/evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md)
    is compiled but has no decoder caller yet. Keep admission dispatch disabled.
 2. Integrate scene schema 3 and the render root into F3 staged parsing.
    Keep `core.scene@1/@2` semantics and existing constant-light descriptors

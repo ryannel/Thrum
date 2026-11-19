@@ -2,7 +2,7 @@
 
 3 November 2026. This follows the [sharp real-number bound and scaled GGX
 candidate](R0-ARITHMETIC-ENVELOPE-2026-11-03.md) and the [independent numeric
-oracle](../../evidence/render/R0-GGX-NUMERIC-ORACLE-2026-11-03.md). Two
+oracle](../../../.orchestrate/evidence/render/R0-GGX-NUMERIC-ORACLE-2026-11-03.md). Two
 independent read-only reviews checked the algebra and its implementation
 limits. This note chooses the next **experiment**, not WGSL, a source
 acceptance rule, or a visual/device qualification.
@@ -111,7 +111,7 @@ component errors `|δx_i|≤a_i`, `|δy_i|≤b_i`, add a separately proved
 No such source certificate exists yet. This constant filter adds two
 comparisons/branches but can send many bright grazing fragments to the
 expensive path; fallback occupancy and full five-light cost are unmeasured.
-The [independent finite-operation oracle](../../evidence/render/R0-SIGNED-DOT-FILTER-ORACLE-2026-11-03.md)
+The [independent finite-operation oracle](../../../.orchestrate/evidence/render/R0-SIGNED-DOT-FILTER-ORACLE-2026-11-03.md)
 checks selected adjacent-rounding, FTZ and fusion schedules against exact
 represented dots; it does not establish a WGSL/backend implementation.
 An adversarial review identified a further gate: the `2^-20` filter certifies
@@ -179,13 +179,13 @@ not a universal recovery path for subnormal **input** components. Supporting
 those inputs would need an upstream integer encoding or a separately proved
 representation path; the accumulator above already covers their exponent
 lattice if their bits are reliably available.
-The [raw-`u32` Metal diagnostic](../../evidence/render/R0-EXACT-REPRESENTED-DOT-METAL-2026-11-03.md)
+The [raw-`u32` Metal diagnostic](../../../.orchestrate/evidence/render/R0-EXACT-REPRESENTED-DOT-METAL-2026-11-03.md)
 now matches an independent exact oracle for 189,803 selected records and
 returns magnitude without a tiny-float conversion. Its input interface
 bypasses float-to-bit recovery, and its isolated cost includes large
 diagnostic writes; it does not select a fragment fallback or prove general
 WGSL/backend performance.
-The [single-accumulator optimization diagnostic](../../evidence/render/R0-EXACT-DOT-OPT-METAL-2026-11-03.md)
+The [single-accumulator optimization diagnostic](../../../.orchestrate/evidence/render/R0-EXACT-DOT-OPT-METAL-2026-11-03.md)
 keeps that exact output and cuts the isolated 189,803-record full-output pass
 from about 1.04–1.06 ms to 0.20–0.23 ms on the tested Metal device. Its direct
 10.37-million-dot compact-output control still took 20.5–33.9 ms and had
@@ -205,7 +205,7 @@ certificate per face/light/view update could avoid most fragment tests in
 such a fixture. A normal cone extends this only with bounded normal-map,
 tangent, interpolation and transform error. It is a specialized proof path,
 not a general content restriction.
-The [independent planar source-sign oracle](../../evidence/render/R0-PLANAR-SOURCE-SIGN-ORACLE-2026-11-03.md)
+The [independent planar source-sign oracle](../../../.orchestrate/evidence/render/R0-PLANAR-SOURCE-SIGN-ORACLE-2026-11-03.md)
 now checks exact decoded-binary64 plane/Sun/camera signs for one static,
 identity-transform, flat-normal fixture. It also exhibits opposite source
 signs that narrow to identical f32 direction words. Its proof-local F4
@@ -231,6 +231,6 @@ normal, magnitude or general mapped/interpolated material path.
 No angular early exit, source-wide certificate removal, complete fallback,
 physical shader safety or device performance is claimed by this note.
 The [independent offline one-ratio and represented-dot
-oracle](../../evidence/render/R0-ONE-RATIO-ORACLE-2026-11-03.md) checks the
+oracle](../../../.orchestrate/evidence/render/R0-ONE-RATIO-ORACLE-2026-11-03.md) checks the
 candidate algebra and information-loss witnesses on bounded CPU fixtures.
 It does not close the WGSL, source or device gates above.

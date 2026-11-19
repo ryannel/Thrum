@@ -167,7 +167,7 @@ were not promoted into the repository.
 
 ## Broadsides reconciliation and evidence limits
 
-The [first reconciliation](../../evidence/integration/BROADSIDES-MODULE-RECONCILIATION-2026-11-02.md)
+The [first reconciliation](../../../.orchestrate/evidence/integration/BROADSIDES-MODULE-RECONCILIATION-2026-11-02.md)
 inspected older TypeScript paths. Current Rust worktrees add a more relevant
 render/cloud foundation; the standalone water-system build supplies a separate
 lake candidate. The three module studies document exact paths and revisions.

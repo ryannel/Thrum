@@ -1,6 +1,6 @@
 # R0 texture source bytes without an F3 texel copy
 
-3 November 2026. **Selected decoder representation with an inactive implementation candidate.** A reviewed candidate replaces the earlier object-wide decoded texture scratch assumption in the [shared F3/F4 decoder API](R0-F3-F4-SHARED-DECODER-API-2026-11-03.md). The [implementation evidence](../../evidence/render/R0-F3-TEXTURE-STREAM-IMPLEMENTATION-2026-11-03.md) records focused conformance, independent review and initial scalar cost. This changes no source meaning or active F3/F4 path. The one versioned source grammar remains in thrum-source; F3 and F4 use different projections over the same validated bytes.
+3 November 2026. **Selected decoder representation with an inactive implementation candidate.** A reviewed candidate replaces the earlier object-wide decoded texture scratch assumption in the [shared F3/F4 decoder API](R0-F3-F4-SHARED-DECODER-API-2026-11-03.md). The [implementation evidence](../../../.orchestrate/evidence/render/R0-F3-TEXTURE-STREAM-IMPLEMENTATION-2026-11-03.md) records focused conformance, independent review and initial scalar cost. This changes no source meaning or active F3/F4 path. The one versioned source grammar remains in thrum-source; F3 and F4 use different projections over the same validated bytes.
 
 ## Field and byte path
 

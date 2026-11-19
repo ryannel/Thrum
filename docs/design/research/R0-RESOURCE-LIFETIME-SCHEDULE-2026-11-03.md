@@ -166,8 +166,8 @@ key or physical gameplay state changes because a resize defers.
 
 ## Synthetic proof and remaining gates
 
-The standalone [Rust oracle](../../evidence/render/R0-RESOURCE-LIFETIME-ORACLE.rs)
-and [evidence record](../../evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
+The standalone [Rust oracle](../../../.orchestrate/evidence/render/R0-RESOURCE-LIFETIME-ORACLE.rs)
+and [evidence record](../../../.orchestrate/evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
 exercise four typed texture roles, checked logical bytes, one scratch set
 across two held submissions, a refused third credit, an old/new resize
 overlap and 60 MiB V1-owner loading path. They distinguish healthy-device
@@ -186,14 +186,14 @@ overlap and actual high-water alongside frame time, and compare target budget
 and full output/surface cost separately. Full four-slot backend behaviour,
 display correctness and ordinary-game visuals remain unrun.
 
-A [narrow public-wgpu Metal diagnostic](../../evidence/render/R0-GPU-LIFETIME-PUBLIC-DIAGNOSTIC-2026-11-03.md)
+A [narrow public-wgpu Metal diagnostic](../../../.orchestrate/evidence/render/R0-GPU-LIFETIME-PUBLIC-DIAGNOSTIC-2026-11-03.md)
 subsequently verified exact red/blue readbacks after two submissions reused
 one tracked 720p texture, plus a green 1080p new texture. It checks every
 pixel after completion. It does **not** hold genuine GPU-incomplete old work,
 exercise these four scratch roles, or measure driver memory. Those parts of
 the backend premise remain unrun.
 
-A later [strict-event Metal diagnostic](../../evidence/render/R0-GPU-INCOMPLETE-LIFETIME-2026-11-03.md)
+A later [strict-event Metal diagnostic](../../../.orchestrate/evidence/render/R0-GPU-INCOMPLETE-LIFETIME-2026-11-03.md)
 held three submitted command buffers GPU-incomplete across allocation of a
 separate 1080p texture. A/B used one tracked 720p allocation in queue order;
 after gate release, independent native tail events and exact full-pixel
@@ -204,7 +204,7 @@ two-credit policy and does not exercise the four-role graph, F4 leases,
 retirement, surface ownership or physical memory high-water. The native
 gate adds synchronization work and gives no ordinary-frame timing evidence.
 
-A separate [one-frame four-role synthetic Metal chain](../../evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
+A separate [one-frame four-role synthetic Metal chain](../../../.orchestrate/evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
 then exercised the selected D32 shadow/view, RGBA16Float linear/encoded and
 independent RGBA8 output descriptors through actual read dependencies. A
 half-aware CPU oracle matched every one of 921,600 output pixels. This
@@ -212,7 +212,7 @@ validates one format/usage/pass combination, but the fixture has no held
 frames, resize, two-credit admission, F4 leases, real surface or physical
 memory measurement. Its uniform FXAA case is not an edge-quality proof.
 
-The later [held four-role diagnostic](../../evidence/render/R0-FOUR-ROLE-HELD-LIFETIME-2026-11-03.md)
+The later [held four-role diagnostic](../../../.orchestrate/evidence/render/R0-FOUR-ROLE-HELD-LIFETIME-2026-11-03.md)
 combined those roles with two genuinely incomplete 720p submissions, early
 third-credit refusal, 1080p old/new graph overlap, A-only credit reclaim,
 distinct native tails and exact A/B/C pixel checks. Old application view and

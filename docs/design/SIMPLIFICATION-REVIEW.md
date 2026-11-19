@@ -26,9 +26,9 @@ Broader live streaming and richer providers still require their own scoped detai
 completion automatically qualifies the whole family. [Conversation coverage](ARCHITECTURE-BRIEF.md#conversation-coverage-and-retained-scope)
 traces all E01–E20 requirements through the smaller sequence.
 The independent reports contain counterexamples, baseline line references and coverage limits:
-[network](../evidence/handoffs/2026-11-01-engine-simplification-review/NETWORK.md),
-[creator simplicity](../evidence/handoffs/2026-11-01-engine-simplification-review/SIMPLICITY.md), and
-[delivery](../evidence/handoffs/2026-11-01-engine-simplification-review/DELIVERY.md).
+[network](../../.orchestrate/evidence/handoffs/2026-11-01-engine-simplification-review/NETWORK.md),
+[creator simplicity](../../.orchestrate/evidence/handoffs/2026-11-01-engine-simplification-review/SIMPLICITY.md), and
+[delivery](../../.orchestrate/evidence/handoffs/2026-11-01-engine-simplification-review/DELIVERY.md).
 
 ## Keep the core small
 

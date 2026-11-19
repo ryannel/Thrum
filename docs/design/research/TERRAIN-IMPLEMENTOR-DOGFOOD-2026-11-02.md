@@ -1,6 +1,6 @@
 # Terrain implementor dogfood — 2 November 2026
 
-**Status:** proposed concrete first-fixture recipe and paper implementation walkthrough; no engine code, artifact cook, image acceptance or device measurement. A later [bounded exact final-triangle proof](../../evidence/terrain/T1-FINAL-TRIANGLE-CERTIFICATE-2026-11-03.md) exercises one numerical geometry slice of this recipe, with its limitations stated there. This record applies [C05/C07/C09/C10](../CONTRACTS.md), the selected [foundation](../FOUNDATION-SPEC.md), [P3/P5/E1 baseline](../PLAY-ENVIRONMENT-SPEC.md), [terrain research](TERRAIN-SURFACE-RESEARCH-2026-11-02.md) and [environment-source proposal](ENVIRONMENT-SOURCE-RESEARCH-2026-11-02.md). It supplies implementor decisions for review; it does not amend those authorities or establish a second terrain specification. All type/field names and fixture values below are proposals, not available SDK APIs or commands.
+**Status:** proposed concrete first-fixture recipe and paper implementation walkthrough; no engine code, artifact cook, image acceptance or device measurement. A later [bounded exact final-triangle proof](../../../.orchestrate/evidence/terrain/T1-FINAL-TRIANGLE-CERTIFICATE-2026-11-03.md) exercises one numerical geometry slice of this recipe, with its limitations stated there. This record applies [C05/C07/C09/C10](../CONTRACTS.md), the selected [foundation](../FOUNDATION-SPEC.md), [P3/P5/E1 baseline](../PLAY-ENVIRONMENT-SPEC.md), [terrain research](TERRAIN-SURFACE-RESEARCH-2026-11-02.md) and [environment-source proposal](ENVIRONMENT-SOURCE-RESEARCH-2026-11-02.md). It supplies implementor decisions for review; it does not amend those authorities or establish a second terrain specification. All type/field names and fixture values below are proposals, not available SDK APIs or commands.
 
 ## First complete fixture and deliberate limits
 
@@ -145,7 +145,7 @@ These are semantic distinctions to implement using existing F1/F3/F4/W2 error/pu
 ## First fixture oracles and tests to implement independently
 
 Every row below is a proposed full interaction check. The later [offline
-geometry certificate](../../evidence/terrain/T1-FINAL-TRIANGLE-CERTIFICATE-2026-11-03.md)
+geometry certificate](../../../.orchestrate/evidence/terrain/T1-FINAL-TRIANGLE-CERTIFICATE-2026-11-03.md)
 runs the vertical/planar-bank and protected-sill subsets on one synthetic
 source/product; the remaining consumer and assembled rows are unrun. A checker
 sharing the candidate's wrong triangulation/receiver omission is not

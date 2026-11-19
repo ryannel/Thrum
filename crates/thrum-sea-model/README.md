@@ -48,5 +48,5 @@ Preparation is O(192*512 + 3*N²) work and O(3*N²) storage, excluding quadratur
 counts; it is not per point. A point query is O(components*iterations), with an
 allocated phase scratch vector. The scalar reference transform is O(11*N² log N),
 allocating an eleven-channel complex grid and a column. GPU and frame-time evidence
-is in [SEA M2](../../docs/evidence/SEA/M2.md). [Provenance](../../docs/evidence/SEA/PROVENANCE.md)
+is in [SEA M2](../../.orchestrate/evidence/SEA/M2.md). [Provenance](../../.orchestrate/evidence/SEA/PROVENANCE.md)
 records the published sources and confirms no Broadsides code was lifted.

@@ -75,7 +75,7 @@ an always-live ID map until a workload justifies its memory. The product retains
 the caption and fixed identity/provenance/input digests; the input buffers are dropped
 after cooking. Serialization allocates one bounded output buffer; load hashes the
 bytes once before decoding fixed fields.
-The [first executable proof](../../evidence/i2a/F4-HEADLESS-SCENE-COOK.md) checks edits,
+The [first executable proof](../../../.orchestrate/evidence/i2a/F4-HEADLESS-SCENE-COOK.md) checks edits,
 unrelated files, historical pins and failure retention. End-to-end edit-to-ready,
 product storage and runtime performance are still unqualified.
 
@@ -98,7 +98,7 @@ verification. The test-only `i1-mobile-game` integration exercises a real
 `include_bytes!` of its rule module to derive test metadata, an accepted scene product, a subsequent
 unmatched code edit and an action on the old authority/replica. Native source/cook
 tooling is only a development dependency of that example, leaving its phone
-runtime dependency closure unchanged. The [proof record](../../evidence/i2a/F4-LINKED-RULE-SOURCE.md)
+runtime dependency closure unchanged. The [proof record](../../../.orchestrate/evidence/i2a/F4-LINKED-RULE-SOURCE.md)
 states the residual build and save obligations.
 
 ### Temporary native build inputs from an accepted pin
@@ -131,7 +131,7 @@ to ordinary concurrent writers; this is not a sandbox
 for untrusted build scripts. T2 must bind the exact target/toolchain/dependency
 closure, isolate compiler writes from the input tree and verify its binary
 artifact before publishing a `BuildRevision`. The [native materialization
-proof](../../evidence/i2a/F4-PINNED-MATERIALIZATION.md) measures the small
+proof](../../../.orchestrate/evidence/i2a/F4-PINNED-MATERIALIZATION.md) measures the small
 fixture only.
 
 ### Fixed first headless build declaration
@@ -143,7 +143,7 @@ spelling and entry-scene match against the cooked product from the same source
 root. The declaration is bounded to 64 KiB and parsed off the game callback.
 It does not parse Cargo or attest an executable. An admitted source with invalid
 build metadata stays accepted but fails build preparation while earlier ready
-identities remain independent. The [bounded proof](../../evidence/i2a/F4-BUILD-DECLARATION.md)
+identities remain independent. The [bounded proof](../../../.orchestrate/evidence/i2a/F4-BUILD-DECLARATION.md)
 checks a duplicate key and a missing named toolchain file. T2 compiler isolation,
 complete package closure, artifact retention and verified `BuildRevision`
 publication remain the next implementation gates.

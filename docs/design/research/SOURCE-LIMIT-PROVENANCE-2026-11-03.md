@@ -8,7 +8,7 @@ remain authoritative.
 
 ## Origin and correction
 
-The [1 November foundation handoff](../../evidence/handoffs/2026-11-01-engine-decisions/FOUNDATION-CLOSURE.md#4-checkout-mirror-crash-recovery-and-gc)
+The [1 November foundation handoff](../../../.orchestrate/evidence/handoffs/2026-11-01-engine-decisions/FOUNDATION-CLOSURE.md#4-checkout-mirror-crash-recovery-and-gc)
 chose a 64 GiB native operating profile: 52 GiB SQLite main, 2 GiB WAL,
 2 GiB managed temporary/cache and 8 GiB unallocated headroom. It required an
 operation to reserve projected physical peak and leave 8 GiB actually free.
@@ -16,7 +16,7 @@ The handoff supplies the accounting intent and checkpoint behavior; it does not
 derive those four values from a named project workload, a device population or
 a proved APFS allocation bound. They were selected engineering defaults.
 
-The [2 November policy decision](../../evidence/i2a/SOURCE-PHYSICAL-GUARD-DECISION.md)
+The [2 November policy decision](../../../.orchestrate/evidence/i2a/SOURCE-PHYSICAL-GUARD-DECISION.md)
 and commit `cffdf01` changed those values into **configurable planning targets**.
 The current Foundation specification explicitly rejects hard file-size caps or
 a guarantee that SQLite or another process cannot consume more space. It
@@ -52,7 +52,7 @@ bounds record bytes, nodes and depth. Its first semantic profile has a
 files** at 4,096: the constant-light bridge's 4,096-record fixture had 4,098
 files after project/history and was correctly refused, while 4,094 records
 fit. This is a profile mismatch, not evidence that 4,094 is a useful product
-limit. The [bridge proof](../../evidence/i2a/E1-CONSTANT-LIGHT-F4-LEASE-BRIDGE-2026-11-03.md)
+limit. The [bridge proof](../../../.orchestrate/evidence/i2a/E1-CONSTANT-LIGHT-F4-LEASE-BRIDGE-2026-11-03.md)
 measures that historical store at its exact checkpoint; current accepted-source
 code must be evaluated separately.
 

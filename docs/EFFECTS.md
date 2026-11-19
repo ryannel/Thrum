@@ -157,8 +157,8 @@ The endpoint table gives measured GPU time for each control on the authored mirr
 Portable and AppleTile selected separately. The figures were taken under load while another
 builder's GPU workload ran. They apply to those conditions, with no quiet-machine figures claimed.
 The resource table gives the logical bytes reserved before any view is requested.
-[Measured endpoints](evidence/SCENE-VIEWS/M3/README.md#measured-control-endpoints) ·
-[Prepared resource sizes](evidence/SCENE-VIEWS/M3/resource-bytes.md)
+[Measured endpoints](../.orchestrate/evidence/SCENE-VIEWS/M3/README.md#measured-control-endpoints) ·
+[Prepared resource sizes](../.orchestrate/evidence/SCENE-VIEWS/M3/resource-bytes.md)
 
 When timestamps are available, `SceneGpuTimings::execution(name)` distinguishes `Timed(0)` from `NotRun`
 and `Unmeasured`. The last denotes transfers without counters. Disabled timing remains absent.

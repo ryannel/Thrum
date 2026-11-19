@@ -6,7 +6,7 @@
 
 The earlier paired M3 Max prototype measured owned SoA versus hecs at 10k/100k: tick plus page p95 17.12/143.21 versus 26.67/245.54 µs. It omitted the scheduler, peers, checked handles and full pages, so it selected ownership but did not qualify the game. Current integrated shuffled S1 is roughly 0.06/1.4 ms p95 at 10k/100k under concurrent host load; S2 is roughly 0.4 ms. A 4,519-sample Instruments run attributed 1,713 inclusive samples to Position publication and 1,398 to the typed motion query. These are diagnostic, not gate results.
 
-The [G2R evidence page](../../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) retains the earlier rows. The fixed G2S rows, not that page, own promotion.
+The [G2R evidence page](../../../.orchestrate/evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) retains the earlier rows. The fixed G2S rows, not that page, own promotion.
 
 ## Representation and invariants
 

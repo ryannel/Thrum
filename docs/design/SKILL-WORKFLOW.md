@@ -46,7 +46,7 @@ Proposed SDK skills will be written against implemented, version-matched command
 tool workflow was installed in this pass. The AI design's larger rule/tool tables are architectural reference material,
 not proposed mandatory text for every skill invocation.
 
-A fresh Sol High [instruction audit](../evidence/handoffs/2026-11-01-engine-ai-workflows/ASTRA-ALIGNMENT.md) recommended
+A fresh Sol High [instruction audit](../../.orchestrate/evidence/handoffs/2026-11-01-engine-ai-workflows/ASTRA-ALIGNMENT.md) recommended
 no changes to the two skill entrypoints. Its one refinement was applied: the seed/pointer creation example is explicitly
 illustrative, so it cannot become a compulsory recipe for headless or other input styles. This is a document review,
 not a test of Astra's behavior.

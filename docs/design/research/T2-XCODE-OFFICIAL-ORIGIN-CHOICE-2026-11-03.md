@@ -37,7 +37,7 @@ Application Signing and an Apple certificate chain. `spctl --assess --type
 execute` accepted it with `source=Mac App Store`. The same assessment inside
 the command sandbox returned an internal Code Signing subsystem error, so
 the successful outside-sandbox result is the relevant observation. The
-existing [local origin candidate](../../evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
+existing [local origin candidate](../../../.orchestrate/evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
 records earlier matching observations. These commands did not capture the
 original App Store download transaction or establish an Apple-published hash
 for the installed Xcode bundle.

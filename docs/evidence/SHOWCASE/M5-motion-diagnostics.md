@@ -14,7 +14,7 @@ signals completion, the receiver verifies the originals and packages them lossle
 timeline records the actual submissions and their gaps.
 
 The six refreshed fixed Chrome submissions contain 10,000 active rows and match the retained Chrome
-RGBA bytes at each paired Mac stop. [Retained fixed images](M5-fixed-submitted.tar.gz)
+RGBA bytes at each paired Mac stop. [Retained fixed images](../../../.orchestrate/evidence/SHOWCASE/M5-fixed-submitted.tar.gz)
 
 ## Diagnostic runs under shared load
 
@@ -61,6 +61,6 @@ Chrome's 64-buffer profile retained 1,450 images in a complete take, with gaps o
 9.238 seconds and 176.1 ms at 22.828 seconds.
 
 [Per-attempt timings, build identities and fixed-stop receipts](M5-motion-diagnostics.json)
-· [Lossless excerpts and source timing records](M5-motion-diagnostic-source.tar.gz)
+· [Lossless excerpts and source timing records](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostic-source.tar.gz)
 
 Restore the archive via `python3 scripts/evidence_store.py restore docs/evidence/SHOWCASE/M5-motion-diagnostic-source.tar.gz`.

@@ -6,7 +6,7 @@ publication from the G5 dev server and draws it with the same placements, camera
 native. Chrome fetches Portable products. The native store can select compressed variants.
 
 ![Chrome 156 WebGPU on the M3 Max. Sunrise at the authored framing, sunset, twilight at the authored framing,
-and noon looking up](g3s-first-light/chrome-valley.png)
+and noon looking up](../../../.orchestrate/evidence/v1-workload/g3s-first-light/chrome-valley.png)
 
 ## Change
 
@@ -54,7 +54,7 @@ and noon looking up](g3s-first-light/chrome-valley.png)
 ## Live edits
 
 ![Chrome, paused world at noon. Left: generation 1. Right: after retinting the shared base-colour texture
-in the watched source](g3s-first-light/chrome-live-edit.png)
+in the watched source](../../../.orchestrate/evidence/v1-workload/g3s-first-light/chrome-live-edit.png)
 
 - **Feed.** `CookedSource::Remote` now takes a `RemoteFeed`. `RemoteFeed::publish` hands in a newer fetched
   generation, and the contribution prepares it on the render thread at its next upload. It reuses every product
@@ -71,7 +71,7 @@ in the watched source](g3s-first-light/chrome-live-edit.png)
 
 ## Device recovery
 
-![Chrome after two GPU device replacements with the cooked valley attached](g3s-first-light/chrome-valley-recovered.png)
+![Chrome after two GPU device replacements with the cooked valley attached](../../../.orchestrate/evidence/v1-workload/g3s-first-light/chrome-valley-recovered.png)
 
 `check_v1_browser.mjs --case valley-recovery` runs the existing device-recovery procedure with the valley
 attached. It destroys the actual `GPUDevice` twice and restores it with the real button, on the same world.
@@ -91,10 +91,10 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
   17.70 h, so this is sparse sampling of a real crossing, not a Chrome defect.
 - **Saturated orange glow and a hard step at the near-floor silhouette (Sun-facing presets).** Native
   `sunset-sun` at the same time and direction shows both identically. They were shared look items: in-scatter
-  over shadowed distant terrain. Fixed by [shadowed aerial in-scatter](G3S-SHADOWED-AERIAL-2026-11-07.md).
+  over shadowed distant terrain. Fixed by [shadowed aerial in-scatter](../../../.orchestrate/evidence/v1-workload/G3S-SHADOWED-AERIAL-2026-11-07.md).
 - **Noon preset.** It pitches up to the sky. The reviewer read it as dull and noted faint column banding and
   ridge fringes. The banding was 8-bit contouring, now dithered
-  ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)). The fringes are a smooth crest fall-off, not a defect.
+  ([evidence](../../../.orchestrate/evidence/v1-workload/G3S-DISPLAY-DITHER-2026-11-07.md)). The fringes are a smooth crest fall-off, not a defect.
 
 ## Edit and replacement timing
 
@@ -150,7 +150,7 @@ Chrome through the checker's `route` case, one fresh page per preset.
 The M3 Max GPU was shared with other agents throughout.
 
 ![Native (left) and Chrome (right), each from its preset, at sunrise, noon, the 17.4 h clear Sun, 17.9 h sunset,
-twilight and night looking upslope](g7-showcase/route-mac-vs-chrome.png)
+twilight and night looking upslope](../../../.orchestrate/evidence/v1-workload/g7-showcase/route-mac-vs-chrome.png)
 
 | Check | Result |
 |---|---|
@@ -290,7 +290,7 @@ Lower–upper bound in ms, raw:
 (1.0, 0.55, 0.45), turning the ground red-brown (`ff297966…` to `e732b3ff…`). Nothing else changes. The checked-in
 scene, assets and baseline are the control and were not touched.
 
-![Per stop, left to right: canonical native, edited native, edited Chrome, canonical Chrome](g7-showcase/route-edited-source.png)
+![Per stop, left to right: canonical native, edited native, edited Chrome, canonical Chrome](../../../.orchestrate/evidence/v1-workload/g7-showcase/route-edited-source.png)
 
 The sheet is built from check-174420 (canonical) and check-174724 (edited) by `tmp/g7-showcase/m3/sheet_edit.py`,
 with rows in route order: sunrise, noon, the 17.4 h clear Sun, 17.9 h sunset, twilight and night upslope.
@@ -419,7 +419,7 @@ within one 8-bit code, and fewer than 1 in 100,000 channel values differ. `./dev
 
 The sheet's canonical columns come from M3's integration check-20261107-180843, at root `59f0484f…`.
 
-![Per stop, left to right: canonical native, E native, E Chrome, canonical Chrome](g7-showcase/route-ground-e.png)
+![Per stop, left to right: canonical native, E native, E Chrome, canonical Chrome](../../../.orchestrate/evidence/v1-workload/g7-showcase/route-ground-e.png)
 
 **Calibration.** E's first route check (check-20261107-191252, `--recalibrate`) put the worst valley at 0.027
 (median), 0.052 (95th percentile) and 0.148 (maximum). The rule lands on the 1.0 floor again, so the thresholds stay

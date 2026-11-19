@@ -200,9 +200,9 @@ architectural mechanisms by trial. Record task completion, unexpected concepts, 
 output quality and real target costs. Fresh-agent runs and, later, people using the engine establish usability; these
 paper traces cannot establish that it feels simple or produces beautiful results.
 
-Full agent traces: [small games](../evidence/handoffs/2026-11-01-engine-dogfood/SMALL-GAMES.md),
-[model-heavy games](../evidence/handoffs/2026-11-01-engine-dogfood/MODEL-GAMES.md),
-[developer circumstances](../evidence/handoffs/2026-11-01-engine-dogfood/DEVELOPER-LOOP.md).
+Full agent traces: [small games](../../.orchestrate/evidence/handoffs/2026-11-01-engine-dogfood/SMALL-GAMES.md),
+[model-heavy games](../../.orchestrate/evidence/handoffs/2026-11-01-engine-dogfood/MODEL-GAMES.md),
+[developer circumstances](../../.orchestrate/evidence/handoffs/2026-11-01-engine-dogfood/DEVELOPER-LOOP.md).
 
 Independent follow-up readers challenged the synthesized developer loop, model cases and revised composition/tooling
 recommendation. Corrections made snapshot admission conditional, prevented recovery wording from implying cross-branch

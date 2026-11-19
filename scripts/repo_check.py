@@ -58,6 +58,8 @@ def check_links(root, files):
             url = urlsplit(value)
             if url.scheme or url.netloc:
                 continue
+            if url.path and Path(os.path.normpath(path.parent / unquote(url.path))).is_relative_to(root / ".orchestrate"):
+                continue  # orchestrate's working folder: evidence kept on this computer, outside git
             dest = (path.parent / unquote(url.path)).resolve() if url.path else path
             count += 1
             label = f"{path.relative_to(root)}: {value}"

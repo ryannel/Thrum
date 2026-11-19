@@ -19,7 +19,7 @@ worktrees**, **74 GiB in `.git`** (about 71 GiB LFS objects), and **37 GiB acros
 folders**. Sample worktrees contained large nested scratch, build outputs and materialized source libraries.
 Current generation candidates were a much smaller share. These are directory footprints, not verified reclaimable
 space; APFS sharing, snapshots and concurrent writes prevent summing them into a deletion estimate.
-See [inventory and limitations](../evidence/handoffs/2026-11-01-engine-storage-lifecycle/INVENTORY.md).
+See [inventory and limitations](../../.orchestrate/evidence/handoffs/2026-11-01-engine-storage-lifecycle/INVENTORY.md).
 
 The policy is **retain the selected result and its complete recovery chain; bound the working set that produced it**.
 Explicit user-retention choices and unique feedback/playtests remain protected unless deliberately released.
@@ -174,8 +174,8 @@ then inspect nested scratch/builds and selected-source recovery. LFS recovery an
 passes. The inventory alone authorizes no deletion and cannot predict recovered space. Measure both retained bytes
 and actual free space after any later cleanup; do not mistake moving files on this disk for freeing it.
 
-Design inputs: fresh Sol High [asset lifecycle](../evidence/handoffs/2026-11-01-engine-storage-lifecycle/ASSETS.md) and
-[build retention](../evidence/handoffs/2026-11-01-engine-storage-lifecycle/BUILDS.md) challenges, reconciled by the coordinator.
+Design inputs: fresh Sol High [asset lifecycle](../../.orchestrate/evidence/handoffs/2026-11-01-engine-storage-lifecycle/ASSETS.md) and
+[build retention](../../.orchestrate/evidence/handoffs/2026-11-01-engine-storage-lifecycle/BUILDS.md) challenges, reconciled by the coordinator.
 
 ## Exact admitted-source handoff
 

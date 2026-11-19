@@ -197,14 +197,14 @@ complete mechanism before construction. Paper closure does not certify the full 
 
 The [I1 design](I1-HEADLESS.md) governs the bounded executable authority/replica path. A game-owned
 collect/open rule uses the same validation and commitment in standalone and match roles. The
-[running evidence](../evidence/i1-headless/QUALIFICATION.md) includes correctness tests and
+[running evidence](../../.orchestrate/evidence/i1-headless/QUALIFICATION.md) includes correctness tests and
 local release-mode cost fixtures at 64, 4,096 and 16,384 objects. Separate records cover the
-[clock](../evidence/i1-headless/CLOCK.md), [native headless callback](../evidence/i1-headless/HOST.md)
-and [two controlled peers](../evidence/i1-headless/TWO-PEER.md). Later selected fixed-slot and
+[clock](../../.orchestrate/evidence/i1-headless/CLOCK.md), [native headless callback](../../.orchestrate/evidence/i1-headless/HOST.md)
+and [two controlled peers](../../.orchestrate/evidence/i1-headless/TWO-PEER.md). Later selected fixed-slot and
 bounded structural hosts charge their engine-owned publication, pending and result storage through
-a shared pool; the [combined scope record](../evidence/i1-headless/FOUNDATION-STATUS-2026-11-02.md)
+a shared pool; the [combined scope record](../../.orchestrate/evidence/i1-headless/FOUNDATION-STATUS-2026-11-02.md)
 separates those local proofs from general game allocations and device behavior. The proposed
-universal process-memory cap was [retired](../evidence/i1-headless/MEMORY-DIRECTION-2026-11-02.md);
+universal process-memory cap was [retired](../../.orchestrate/evidence/i1-headless/MEMORY-DIRECTION-2026-11-02.md);
 allocation, RSS and pressure response still need representative measurement. F1, F3, W1, P6 and N1
 remain `partial` for implementation and functional validation in their bounded scopes; F1/W1/P6/N1
 have `modelled` I1 cost accounts. Existing review hashes and whole-module design stages are

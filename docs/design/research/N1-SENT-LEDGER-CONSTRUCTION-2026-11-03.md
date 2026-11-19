@@ -2,9 +2,9 @@
 
 3 November 2026. The selected [network protocol](../NETWORK-SPEC.md)
 separates an unsent R4 payload from an assigned application sequence. The
-[finite unsent queue](../../evidence/integration/N1-UNSENT-QUEUE-2026-11-03.md)
+[finite unsent queue](../../../.orchestrate/evidence/integration/N1-UNSENT-QUEUE-2026-11-03.md)
 now owns copied payloads and can transfer them only after a sink reserves
-exact retained bytes and ACK metadata. The [baseline ACK oracle](../../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md)
+exact retained bytes and ACK metadata. The [baseline ACK oracle](../../../.orchestrate/evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md)
 proves disposition arithmetic in a tree model, not physical storage. This
 note records a **candidate implementation**, not a qualified ledger.
 
@@ -129,10 +129,10 @@ measurement does not cover that peak.
 
 ## Integration boundary after the first physical slices
 
-The [ordinary ledger](../../evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md)
+The [ordinary ledger](../../../.orchestrate/evidence/integration/N1-ORDINARY-SENT-LEDGER-2026-11-03.md)
 now owns exact StateGroup frames, pending result/event IDs, one application
 sequence and the result-retirement frontier. It conservatively closes after
-an exact Reject. The [physical baseline oracle](../../evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md)
+an exact Reject. The [physical baseline oracle](../../../.orchestrate/evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md)
 proves two chunk slots and tombstones, but its externally supplied sequence
 numbers are not joined to that production owner. The next implementation
 must put ordinary and baseline frame kinds under **one** sequence allocator.

@@ -104,8 +104,8 @@ game may choose background pause; a client cannot pause remote authority. Keep w
 and distinguish Activity pause from surface destruction. Typed input preserves accepted discrete actions; cancellation,
 focus/surface loss and recreation clear gestures so an old release cannot become a new action. The iOS worker/late
 acquisition migration and simulator lifecycle sequence remain G3b work; Android qualification follows V1. Simulator
-checks prove function, never device speed. Historical [I1 core](../../evidence/i1-headless/MOBILE-CORE-PORTABILITY.md)
-and [shell](../../evidence/i1-headless/MOBILE-APP-SHELL.md) records describe retired prototypes, not V1 qualification.
+checks prove function, never device speed. Historical [I1 core](../../../.orchestrate/evidence/i1-headless/MOBILE-CORE-PORTABILITY.md)
+and [shell](../../../.orchestrate/evidence/i1-headless/MOBILE-APP-SHELL.md) records describe retired prototypes, not V1 qualification.
 
 Developer play defaults to a separate player process with pinned source/build/profile, fresh session/world identity
 and private save authority. Browser/mobile isolate worlds and workers where supported, without claiming a security

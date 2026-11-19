@@ -6,8 +6,8 @@
 
 Tested 31 October–1 November 2026 against two realistic requests without prior skill rationale, reviewer conclusions or existing engine module designs. Generated isolated answer artifacts; exact selected evaluation outputs are retained in the handoff below (test artifacts, not adopted engine designs):
 
-- [A: reusable custom-host architecture commissions](../evidence/handoffs/2026-11-01-engine-design/skill-forward-A.md)
-- [B: wetness/snow response module design](../evidence/handoffs/2026-11-01-engine-design/skill-forward-B.md)
+- [A: reusable custom-host architecture commissions](../../.orchestrate/evidence/handoffs/2026-11-01-engine-design/skill-forward-A.md)
+- [B: wetness/snow response module design](../../.orchestrate/evidence/handoffs/2026-11-01-engine-design/skill-forward-B.md)
 
 ## Observed result
 

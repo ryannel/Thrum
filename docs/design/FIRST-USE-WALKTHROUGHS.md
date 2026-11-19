@@ -172,6 +172,6 @@ user-edited files, error recovery, task completion and actual cold/warm edit-to-
 arbitrary success time or usability score is assigned now. Clean target exports, device tests and
 [agent visual review](AI-DEVELOPMENT.md#visual-review-and-human-steering) remain distinct evidence. These checks validate reasoned workflows; they do not substitute for missing architecture.
 
-Full traces: [games](../evidence/handoffs/2026-11-01-engine-first-use/GAMES.md),
-[extensions](../evidence/handoffs/2026-11-01-engine-first-use/EXTENSIONS.md),
-[art](../evidence/handoffs/2026-11-01-engine-first-use/ART.md).
+Full traces: [games](../../.orchestrate/evidence/handoffs/2026-11-01-engine-first-use/GAMES.md),
+[extensions](../../.orchestrate/evidence/handoffs/2026-11-01-engine-first-use/EXTENSIONS.md),
+[art](../../.orchestrate/evidence/handoffs/2026-11-01-engine-first-use/ART.md).

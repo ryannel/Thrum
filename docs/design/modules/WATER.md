@@ -56,7 +56,7 @@ authored parameters distinguished. They do not replace the selected initial oper
 | [Optics](WATER-OPTICS.md) | Common surface/attachment, bounded regional visibility with screen-space acceleration, one virtual-source light partition, oriented media/shells, bounded ordered layers and coverage-aware fallback under V3. Actual-interface focused caustics remain a separate open profile |
 | [Integration and proof](WATER-INTEGRATION.md) | Common body/fluid candidates and event recomputation, atomic publication/leases, content/save/replica/off-state products, explicit operation/byte account and least-established coupling first |
 
-[Independent cross-review](../../evidence/water/DESIGN-REVIEW-2026-11-01.md) found and corrected material coupling
+[Independent cross-review](../../../.orchestrate/evidence/water/DESIGN-REVIEW-2026-11-01.md) found and corrected material coupling
 errors before any build. It also found a genuine missing dry-slope transport mechanism: exact thin-cell volume/energy
 can still create detached downhill wet patches. WAT-06 remains open beyond the bounded selection. Traversable mixed
 domains, overlapping hull pressure supports, thin-wall exclusion, richer spatial sea spectra/open boundaries, moving
@@ -178,7 +178,7 @@ scope. Its B/C refresh records decision-level inspections and comparisons; it is
 Each consequential decision in B/C must refresh relevant successors across dynamics, appearance, optics and cost,
 use substantive conference material, and record why an alternative changes the choice. Newness alone is insufficient.
 
-[Alignment evidence](../../evidence/water/ALIGNMENT-2026-11-01.md) records the independent capability challenge and
+[Alignment evidence](../../../.orchestrate/evidence/water/ALIGNMENT-2026-11-01.md) records the independent capability challenge and
 historical lessons. Prior Broadsides code/research is context, not a runtime/build dependency or transferred proof; lifted Rust/WESL
 modules re-derive their goldens in Thrum under the port decision.
 Thrum's current `E1.water` selection and initial specification status remain intact. Wider detailed design,

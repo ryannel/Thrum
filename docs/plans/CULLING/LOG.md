@@ -21,7 +21,7 @@
   runs per recipe retain Frustum as the valley default. The resumed builder inspected the fixed
   checkpoints and consecutive native-size edge, ridge and cover sequences on Mac and Chrome, plus
   mixed-field fixed-time entrance/exit frames, finding no culling discontinuity. [M3
-  evidence](../../evidence/CULLING/M3.md) records the G3c clause audit and updated ledger, while
+  evidence](../../../.orchestrate/evidence/CULLING/M3.md) records the G3c clause audit and updated ledger, while
   retaining the individually unattributed historical failures. M3 remains `in_progress` for the
   final repository gate and checked merge.
 
@@ -68,7 +68,7 @@
 
 - 2026-11-13 Resumed M3 from `f8255e6b`. Promoted the selected native/Chrome fixed and realtime inspection frames,
   the mixed-field readbacks and the independent-Direct SDR/scene-linear failure bytes. [M3
-  evidence](../../evidence/CULLING/M3.md) distinguishes historical passes from pending committed-source
+  evidence](../../../.orchestrate/evidence/CULLING/M3.md) distinguishes historical passes from pending committed-source
   qualification; [the investigation](../../../.orchestrate/evidence/CULLING/M3-investigation.md) records the exact failures. A
   temporary depth readback finds all 361 near-shadow maps identical across Direct, Frustum, Occlusion and
   independent Direct; the other layers remain queued. Shadowed-air-only ablation still fails at tick 180.

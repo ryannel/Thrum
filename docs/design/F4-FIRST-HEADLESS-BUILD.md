@@ -63,7 +63,7 @@ identifiable and the newly accepted source separately available.
 
 The first macOS fixture can place compiler output in a private same-volume
 root outside the admitted project, with `TMPDIR` nested under the one
-write-granted output child. Its [A/B and guard-loss proof](../evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md)
+write-granted output child. Its [A/B and guard-loss proof](../../.orchestrate/evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md)
 checks the real sandbox and retained A, but the fixture's external directory
 is not yet a durably registered T2 job or a composed space claim.
 
@@ -110,7 +110,7 @@ it, even when a corruption test restores identical bytes: macOS can keep a
 stale kernel code-signature cache and kill a later launch. Binary and wrapper
 tamper tests therefore use disposable candidate copies with distinct inodes;
 the selected A artifact remains untouched. The [native signature fault
-proof](../evidence/i2a/T2-RETAINED-MACOS-SIGNATURE-2026-11-03.md) records the
+proof](../../.orchestrate/evidence/i2a/T2-RETAINED-MACOS-SIGNATURE-2026-11-03.md) records the
 earlier failure and three corrected A/B runs. These extra copies are fixture
 work and are not part of candidate publication cost.
 
@@ -140,7 +140,7 @@ edit without changing `Cargo.lock`; a cache pruned for the old graph is then
 insufficient. Ordinary Rust code edits leave this selection identity intact.
 Cargo's resolver may need index records for lockfile packages outside the
 selected host compile; a package list from filtered workspace metadata is not
-the selected build-unit graph. The [local private-cache experiment](../evidence/i2a/F4-PRIVATE-CARGO-CACHE.md)
+the selected build-unit graph. The [local private-cache experiment](../../.orchestrate/evidence/i2a/F4-PRIVATE-CARGO-CACHE.md)
 found 212 distinct registry index names and 37 cached archives (8.7 MB of
 archive bytes) sufficient for this workspace's host build, while only one
 registry crate compiled. This is a fixture observation, not a general minimum.
@@ -148,7 +148,7 @@ T2 must verify the exact cache root, selected units and paths the compiler
 actually reads before calling any build ready. Per-edit work should reuse an
 unchanged verified dependency root; copying the entire shared registry for
 each edit is outside the selected cost model.
-An [offline full-workspace vendor experiment](../evidence/i2a/F4-VENDOR-FEASIBILITY.md)
+An [offline full-workspace vendor experiment](../../.orchestrate/evidence/i2a/F4-VENDOR-FEASIBILITY.md)
 produced 229 package directories and 425 MB of local disk use. Cargo's
 vendored checksums protect against accidental changes, but do not themselves
 establish release provenance. The first profile therefore keeps the smaller
@@ -176,7 +176,7 @@ input attestation or a substitute for source immutability during compilation.
 The local per-edit rehash is an explicit latency cost; a future authenticated,
 immutable dependency root may use a cheaper verified retention mechanism only
 after proving the same byte-integrity guarantee.
-The first [release-input matcher](../evidence/i2a/F4-RELEASE-INPUT-MATCHER.md)
+The first [release-input matcher](../../.orchestrate/evidence/i2a/F4-RELEASE-INPUT-MATCHER.md)
 can compare that portable selection, cache root and selected Rust/linker/SDK
 root bytes to a caller-selected manifest. It cannot establish that the
 manifest was reviewed or that all compiler reads and outputs are closed.
@@ -210,7 +210,7 @@ observe rustc's implicit file reads, loaded
 libraries, linker subprocess reads or the full macOS system boundary, and its
 own executable still needs release selection. It runs per rustc process, not
 per engine tick or source-file scan; cold tool/dependency inventory stays
-outside the edit path. See the [local receipt proof](../evidence/i2a/F4-RUSTC-RECEIPTS.md).
+outside the edit path. See the [local receipt proof](../../.orchestrate/evidence/i2a/F4-RUSTC-RECEIPTS.md).
 The cache preparer also walks normal/build metadata edges from the headless
 package and refuses custom-build/proc-macro targets in that possible set before
 compilation. Cargo metadata unions workspace feature use: this walk includes
@@ -247,7 +247,7 @@ selected native linker toolchain and selected SDK. It streams each regular
 file, records directory membership and symlink target bytes, and refuses
 symlinks escaping a selected root. It is separate from cache preparation so
 its 4.86 GB logical read is not repeated for each candidate source or cache.
-The first [local inventory proof](../evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
+The first [local inventory proof](../../.orchestrate/evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
 does not authenticate a release or close the remaining system-library reads.
 
 W1/F1 construct a fresh bounded headless world only from a target-ready pinned
@@ -280,7 +280,7 @@ Proof order:
 2. Qualify a trusted native compiler adapter against a complete pinned local
    Rust workspace, with no checkout read, network or input-tree writes. Record
    exact compiler/dependency/output provenance and failed-compile recovery.
-   The [first native compile proof](../evidence/i2a/F4-ADMITTED-HEADLESS-COMPILE.md)
+   The [first native compile proof](../../.orchestrate/evidence/i2a/F4-ADMITTED-HEADLESS-COMPILE.md)
    exercises the actual game and failed-edit retention from a pinned workspace.
    An opt-in macOS sandbox run denies network, checkout reads and input-tree
    writes. A later local run uses a private Cargo home, restricted source and
@@ -288,7 +288,7 @@ Proof order:
    unproved index completeness, unreviewed release inputs and unclosed selected
    build units remain. It does not attest the compiler/dependency closure or
    make the adapter trusted.
-   The [narrow metadata proof](../evidence/i2a/F4-NARROW-METADATA.md)
+   The [narrow metadata proof](../../.orchestrate/evidence/i2a/F4-NARROW-METADATA.md)
    removes global metadata permission for the local A/B compile and denies
    unrelated file and directory metadata; its Xcode support paths and host
    runtime bytes still need release and retention qualification.

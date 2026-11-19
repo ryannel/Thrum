@@ -4,7 +4,7 @@
 [render-source grammar](R0-F3-RENDER-SOURCE-GRAMMAR-2026-11-03.md) and
 [first admitted handoff](R0-FIRST-ADMITTED-RENDER-SOURCE-2026-11-03.md).
 No F4 render cook, V1 pipeline or device-ready build exists yet. The
-[complete candidate source fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
+[complete candidate source fixture](../../../.orchestrate/evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
 supplies reproducible bytes and CPU checks, not an F3-admitted source. The
 [governing render ABI](../RENDER-SPEC.md#2-material-closure-and-binding-abi)
 already fixes the 160-byte view, 128-byte auxiliary view, 64-byte material
@@ -157,7 +157,7 @@ the render preparation recipe still needs an exact source/binding shape for
 Sun receiver volume, light-space projection, 2048² map, four comparison taps,
 dimensioned constant/slope bias, viewport/output extent, storage scale,
 shader/pass/operator revisions and target limits. The [provisional six-face
-positions and texels](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
+positions and texels](../../../.orchestrate/evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
 are saved as candidate bytes and CPU checked; they still need F3 admission,
 offscreen-caster device visibility, mask consistency, visual cards and moving
 output. Then

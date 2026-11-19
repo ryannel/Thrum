@@ -15,10 +15,10 @@ nesting, declared-record and required-edge bounds continue to apply.
 An embedded UUID is source identity even when no edge targets it. F3 must
 reject collisions against the complete declared namespace and resolve typed
 edges, including those in unselected records. The [compact-index
-probe](../../evidence/render/R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.md) has
+probe](../../../.orchestrate/evidence/render/R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.md) has
 332,016 embedded IDs but only four required edges in four bounded roots;
 the [strict typed-decoder
-prototype](../../evidence/render/R0-F3-TYPED-DECODER-PROTOTYPE-2026-11-03.md)
+prototype](../../../.orchestrate/evidence/render/R0-F3-TYPED-DECODER-PROTOTYPE-2026-11-03.md)
 decodes the same source-shaped fixture at 24.02 MiB median peak RSS. Neither
 measurement establishes a useful maximum ID count or the full F3 peak with
 stage buffers and old/new pins. A fixed count chosen from either would make

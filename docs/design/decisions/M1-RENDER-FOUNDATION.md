@@ -69,7 +69,7 @@ Queue completion cannot certify image acceptance. GPU histories remain unbuilt.
 
 Timestamp batches reserve two queries per pass; unsupported enabled-device features
 allocate no query/readback resources or fake zero durations. After the known
-[Metal stale-counter fault](../../evidence/render/R0-FXAA-1080P-TIMESTAMP-2026-11-03.md),
+[Metal stale-counter fault](../../../.orchestrate/evidence/render/R0-FXAA-1080P-TIMESTAMP-2026-11-03.md),
 the selected protocol resolves/copies only in a later host-owned submission after
 render completion. Collection never waits/submits; pending slots cannot overwrite,
 and old device generations or zero/error/inverted counters refuse publication.
@@ -91,7 +91,7 @@ history resets and source packing. The ignored real-adapter test checks padded
 65×33 readback, material/instance strides, direct/emissive/roughness/metalness
 response against an independent f64 oracle, grazing light, both depth orders,
 stale generations, repeated/disabled timing and 10,000 cubes at 1080p.
-The [lit-scene evidence](../../evidence/render/M1-LIT-SCENE-2026-11-03.md) records
+The [lit-scene evidence](../../../.orchestrate/evidence/render/M1-LIT-SCENE-2026-11-03.md) records
 Apple M3 Max/Metal pixel checks, native crop inspection and isolated GPU/CPU
 intervals. Browser/iPhone execution, sustained pacing/thermal cost and device
 memory remain unqualified; repository checks cannot establish those results.

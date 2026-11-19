@@ -4,7 +4,7 @@
 
 ## Why this boundary exists
 
-[Frame evidence](../../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) records the quiet CPU miss and recording/submission allocations. Pinned wgpu 30.0.1 creates fresh encoder/buffer Arc owners and collects nonempty submissions into a Vec each frame. These costs survive retained bundles and pooled uploads: strict zero Rust allocations cannot pass through this ordinary public path. Bundles reduce validation/recording but replay native encoding at `finish`. Primary-source references and alternatives: `tmp/g3b-wgpu-public-path-input.txt`.
+[Frame evidence](../../../.orchestrate/evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) records the quiet CPU miss and recording/submission allocations. Pinned wgpu 30.0.1 creates fresh encoder/buffer Arc owners and collects nonempty submissions into a Vec each frame. These costs survive retained bundles and pooled uploads: strict zero Rust allocations cannot pass through this ordinary public path. Bundles reduce validation/recording but replay native encoding at `finish`. Primary-source references and alternatives: `tmp/g3b-wgpu-public-path-input.txt`.
 
 The owner-approved eight-second Metal System Trace shows little drawable-wait overlap with this app's GPU work. Native encoding occurs after acquisition at `finish`. Split portable pre-submit stays parked at `30ae560`: more allocations, no whole-frame CPU win. No raw drawable bridge is selected. Trace spans and offscreen rows do not qualify displayed cadence or latency; native recording alone does not remove camera/shadow CPU costs.
 

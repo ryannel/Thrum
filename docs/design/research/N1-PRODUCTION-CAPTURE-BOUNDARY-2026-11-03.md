@@ -2,7 +2,7 @@
 
 3 November 2026. The [network specification](../NETWORK-SPEC.md) and
 [C02/C13 contracts](../CONTRACTS.md) own behavior. The
-[running W1-to-N1 fixture](../../evidence/integration/N1-W1-CAPTURE-2026-11-03.md)
+[running W1-to-N1 fixture](../../../.orchestrate/evidence/integration/N1-W1-CAPTURE-2026-11-03.md)
 shows that real host callbacks can feed four peer-owned queues without
 retaining world snapshots, including a slow peer and twelve event-free
 results per three-tick window. Its hardcoded `Cell` mapping is not a reusable
@@ -56,7 +56,7 @@ submission, known-offset write, validated disposition and teardown; the
 game-specific projection hook remains narrow. The current separate types
 are useful construction slices, not proof that a public split is safe.
 
-An [ordinary-only peer owner](../../evidence/integration/N1-ORDINARY-PEER-OWNER-2026-11-03.md)
+An [ordinary-only peer owner](../../../.orchestrate/evidence/integration/N1-ORDINARY-PEER-OWNER-2026-11-03.md)
 now holds one queue and ordinary ledger under a single identity, stops after
 capture fault/unwind, exact Reject or uncertain write, and keeps frame/journal
 pressure retryable. It has no baseline/sync storage or game projection; its
@@ -64,7 +64,7 @@ constructor still relies on an externally admitted baseline. The production
 owner remains incomplete until those states and the unified cross-kind
 sequence/supersession transaction join this same boundary.
 
-The owner now also has a [bounded complete-tick projection callback](../../evidence/integration/N1-PROJECTED-CAPTURE-2026-11-03.md).
+The owner now also has a [bounded complete-tick projection callback](../../../.orchestrate/evidence/integration/N1-PROJECTED-CAPTURE-2026-11-03.md).
 It borrows one reusable four-group scratch, exposes only a push-only writer to
 the game hook, checks the exact baseline partition set and common tick, then
 atomically copies validated bytes to its unsent queue. Sticky scratch faults
@@ -72,7 +72,7 @@ and callback unwind close the peer even if the game hook suppresses an error.
 The present API deliberately requires all admitted partitions at each capture;
 it does not yet select a sparse producer or prove W1 snapshot/result provenance.
 
-A [test-only W1 consumer](../../evidence/integration/N1-W1-OWNED-PROJECTION-2026-11-03.md)
+A [test-only W1 consumer](../../../.orchestrate/evidence/integration/N1-W1-OWNED-PROJECTION-2026-11-03.md)
 now feeds that owner from real committed callbacks for four peers. Shared
 128-cell extraction and the per-peer capture loop have one outer unwind guard:
 if it is caught, every affected ordinary peer closes before the panic resumes.
@@ -113,7 +113,7 @@ schema API should remain the same whichever internal path wins.
    fit an atomic R4 group or a declared rate cannot fit the simultaneous
    queue/journal reserve.
 2. Build the private peer owner and a complete per-peer capture transaction.
-   The [four-group queue preflight](../../evidence/integration/N1-ATOMIC-CAPTURE-BATCH-2026-11-03.md)
+   The [four-group queue preflight](../../../.orchestrate/evidence/integration/N1-ATOMIC-CAPTURE-BATCH-2026-11-03.md)
    now proves the byte/cursor slice; whole-peer producer and lifecycle state remain open.
    Prove a capacity refusal after a multi-partition plan does not leave a
    partially publishable tick, and a projection-hook unwind poisons the peer,

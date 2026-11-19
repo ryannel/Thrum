@@ -76,7 +76,7 @@ within a deliberately permitted subtree, but the policy must name every
 permitted subtree and account for path-ancestor metadata and discovery. It
 must not silently restore global metadata access to make a build pass.
 
-The first [APFS clone candidate](../evidence/i2a/T2-APFS-CLONE-CANDIDATE.md)
+The first [APFS clone candidate](../../.orchestrate/evidence/i2a/T2-APFS-CLONE-CANDIDATE.md)
 uses held source descriptors and explicit same-volume `fclonefileat` calls,
 then hashes the entire cloned root against an independently supplied exact
 inventory. Final digest equality can establish the selected **byte set** even
@@ -86,10 +86,10 @@ current caller uses unreviewed local digests. An opt-in A/B qualification now
 launches Cargo/Rustc and Clang/SDK from the clones; explicit sandbox controls
 deny reads and metadata from the corresponding installed tool files. The
 private-cache metadata phase now uses the selected cloned Cargo/Rustc in the
-[later A/B qualification](../evidence/i2a/T2-SELECTED-METADATA-TOOLS-2026-11-03.md).
+[later A/B qualification](../../.orchestrate/evidence/i2a/T2-SELECTED-METADATA-TOOLS-2026-11-03.md).
 Xcode discovery and selected support files still use installed paths before
 the metadata sandbox, and same-user writes to the clones remain possible.
-The [later metadata sandbox reduction](../evidence/i2a/T2-METADATA-SANDBOX-READS-2026-11-03.md)
+The [later metadata sandbox reduction](../../.orchestrate/evidence/i2a/T2-METADATA-SANDBOX-READS-2026-11-03.md)
 also limits its file data to selected source/cache/tool roots and named macOS
 runtime paths, with metadata reads inside those subtrees and on their path
 ancestors. It preserves broad
@@ -152,11 +152,11 @@ rescanning gigabytes on every edit. A fresh process must revalidate cold state
 before relying on the record, including after an interrupted preparation.
 Measure lock wait, seal walk, physical allocation and build overlap separately
 before claiming a performance benefit.
-The [first held-root candidate](../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
+The [first held-root candidate](../../.orchestrate/evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
 proves this lifecycle one caller-selected APFS clone at a time, including
 local full Rust, Xcode linker and SDK cold preparations. It has not held the
 complete reviewed selection through a real Cargo job. A later
-[admitted A/B qualification](../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md)
+[admitted A/B qualification](../../.orchestrate/evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md)
 did hold those three sealed roots through private-cache preparation, real
 Cargo A/B, receipt checks and output verification, then rehashed them before
 owned scratch cleanup. It did not hold the cache, support or host-runtime
@@ -176,41 +176,41 @@ the second offline resolution and exact private-root inventory have completed.
 A dependency-selection change creates a new private home; a code-only edit may
 reuse the held selection.
 
-The [cold retained-cache candidate](../evidence/i2a/T2-HELD-CARGO-CACHE-CANDIDATE-2026-11-03.md)
+The [cold retained-cache candidate](../../.orchestrate/evidence/i2a/T2-HELD-CARGO-CACHE-CANDIDATE-2026-11-03.md)
 now binds the two digest domains and a sealed manifest under a held APFS root
 lease. Six synthetic macOS fixtures cover extra-directory drift, manifest
 drift, interrupted publication, concurrent readers and lease release after a
 sidecar-close error, plus a held Rust/cache pair that checks only the source
 dependency key on a code edit. These fixtures use a tiny synthetic cache.
 
-A subsequent [admitted A/B qualification](../evidence/i2a/T2-HELD-CACHE-NATIVE-AB-2026-11-03.md)
+A subsequent [admitted A/B qualification](../../.orchestrate/evidence/i2a/T2-HELD-CACHE-NATIVE-AB-2026-11-03.md)
 did use the full sealed cache as compiler `CARGO_HOME`, with a cooperating
 guard holding its shared lease from before A until after B and final output
 checks. The one-host cold cache preparation took 1.55 seconds and verified
 open 363 ms for 2,923 files/67.8 MB. This proves consumption and lifetime
 for that fixture; that first integration still paid full cache rehashes before
-A and B. The later [held reuse check](../evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md)
+A and B. The later [held reuse check](../../.orchestrate/evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md)
 uses one persistent guard to hold both Rust and cache leases and validate the
 source key without repeating those two full hashes. Two real A/B guard checks
 reported 2 ms and 1 ms; the qualification fixture still has separate full
 cache/tool checks, so complete warm edit cost remains unmeasured.
-The later [held build scan-removal qualification](../evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md#held-build-scan-removal)
+The later [held build scan-removal qualification](../../.orchestrate/evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md#held-build-scan-removal)
 removed two redundant full-cache tree scans and separate pre/post Cargo/Rustc assertions
 from that fixture only while the persistent guard lives. The selected compiler
 file checks and outer post-build inventory remain; this is not a complete
 release-owner or warm edit-to-ready timing result.
-A later [real materialized-lockfile drift check](../evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md#real-materialized-lockfile-drift)
+A later [real materialized-lockfile drift check](../../.orchestrate/evidence/i2a/T2-HELD-CACHE-REUSE-CHECK-2026-11-03.md#real-materialized-lockfile-drift)
 refused reuse after B's compiler job and receipt audit when one byte changed
 in its owned scratch lockfile. The guard kept its held selection and closed
 normally; this does not test writes during a running compiler.
-The [four-root guard candidate](../evidence/i2a/T2-FOUR-ROOT-NATIVE-GUARD-2026-11-03.md)
+The [four-root guard candidate](../../.orchestrate/evidence/i2a/T2-FOUR-ROOT-NATIVE-GUARD-2026-11-03.md)
 now cold-verifies and holds cache, Rust, linker and SDK together across A/B
 compilation and output checks. The outer qualifier stopped duplicating those
 tool-root cold opens and still re-inventories all four before cleanup. The
 guard starts after cache metadata preparation; installed Xcode support and
 host-runtime bytes, reviewed origin and full compiler read closure remain
 outside this selection.
-The [observed guard-loss qualification](../evidence/i2a/T2-FOUR-ROOT-NATIVE-GUARD-2026-11-03.md#guard-loss-during-an-admitted-build)
+The [observed guard-loss qualification](../../.orchestrate/evidence/i2a/T2-FOUR-ROOT-NATIVE-GUARD-2026-11-03.md#guard-loss-during-an-admitted-build)
 now polls the owned guard during Cargo, sends SIGTERM to the bounded supervisor
 if the guard exits, and requires an unready cleanup report before releasing
 ordinary fixture scratch. One real A build fault after a pending compile-kind
@@ -218,7 +218,7 @@ wrapper receipt retained that receipt, published no candidate and left four
 root inventories unchanged. A normal A/B run still passed. This does not prove
 Rustc had started when the guard died or cover guard loss during candidate
 staging, supervisor SIGKILL or detached compiler descendants.
-The [held-tool hash fast path](../evidence/i2a/T2-HELD-TOOL-HASH-FAST-PATH-2026-11-03.md)
+The [held-tool hash fast path](../../.orchestrate/evidence/i2a/T2-HELD-TOOL-HASH-FAST-PATH-2026-11-03.md)
 now omits repeated hashes of the exact Cargo/Rustc/Clang files only while that
 four-root guard is live. Installed Xcode support and LibreSSL config remain
 unheld and checked around each compiler job; unheld builds retain complete
@@ -245,7 +245,7 @@ that verifies then exits cannot confer that lease on a later compiler process.
 The existing origin comparisons remain local candidate evidence until a
 reviewed release manifest and preparation job bind their acquisition. The
 real metadata-to-sealed-home A/B build passed under the cooperating guard.
-The [pinned Cargo bookkeeping probe](../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md#pinned-cargo-cache-bookkeeping-probe)
+The [pinned Cargo bookkeeping probe](../../.orchestrate/evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md#pinned-cargo-cache-bookkeeping-probe)
 passed with `.global-cache` and `.package-cache-mutate` absent and cache writes
 denied during unsealed A/B compilation; this establishes the compiler's
 read-only behavior for that fixture. Bind the selected dependency key to a
@@ -341,9 +341,9 @@ by immutable hashes. Unsupported Xcode discovery must fail rather than widen
 the read grant. The selected release matcher and this policy generator must
 consume one cold environment identity before publication is possible.
 
-The [first local metadata proof](../evidence/i2a/F4-NARROW-METADATA.md) passed
+The [first local metadata proof](../../.orchestrate/evidence/i2a/F4-NARROW-METADATA.md) passed
 the A/B fixture with ancestor grants and explicit Xcode support paths. The
-[subsequent grant reduction](../evidence/i2a/T2-COMPILER-SUPPORT-GRANTS-2026-11-03.md)
+[subsequent grant reduction](../../.orchestrate/evidence/i2a/T2-COMPILER-SUPPORT-GRANTS-2026-11-03.md)
 removes those compiler-time exceptions. It does not select immutable support
 bytes for metadata preparation, close system reads or join the release
 matcher to the compiler launch, so the candidate remains unready.
@@ -382,10 +382,10 @@ Prove in order:
    game. This local candidate proof has passed; keep it unready while
    host-runtime reads remain broad.
 3. Bound Cargo stdout/stderr, time and descendant lifetime; audit successful,
-   failed and interrupted receipts. The local [failed-B audit](../evidence/i2a/F4-RUSTC-RECEIPTS.md)
+   failed and interrupted receipts. The local [failed-B audit](../../.orchestrate/evidence/i2a/F4-RUSTC-RECEIPTS.md)
    now reconciles one ordinary failed compile with successful units and Cargo's
    failed finish, while the supervisor checks bounded stderr separately.
-   A [fault-report slice](../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
+   A [fault-report slice](../../.orchestrate/evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
    now writes an unready, bounded observed-receipt inventory after a caught
    SIGTERM or timeout. A real pinned Cargo process with the actual receipt
    wrapper and a controlled sleeping compiler shim exercised both SIGTERM and
@@ -399,9 +399,9 @@ Prove in order:
    Interrupted and timed-out receipt closure remains open. An overproducing or hung child must not
    retain an input tree or make adapter-held diagnostic memory unbounded.
    Measure compiler-job peak RSS separately; this profile has no hard process
-   memory ceiling. The [withdrawn Rust collector experiment](../evidence/i2a/F4-BOUNDED-NATIVE-BUILD.md)
+   memory ceiling. The [withdrawn Rust collector experiment](../../.orchestrate/evidence/i2a/F4-BOUNDED-NATIVE-BUILD.md)
    identifies interruption, escaped-descendant and inherited-stdin faults
-   that the next supervisor proof must reject. A [Python supervisor candidate](../evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
+   that the next supervisor proof must reject. A [Python supervisor candidate](../../.orchestrate/evidence/i2a/F4-NATIVE-SUPERVISOR-CANDIDATE.md)
    now bounds the local A/B build and detects owner loss, but cannot yet
    contain an escaped session or provide a release job identity. The
    [macOS job-containment analysis](research/T2-MACOS-COMPILER-JOB-CONTAINMENT-2026-11-03.md)
@@ -413,7 +413,7 @@ Prove in order:
    same-group paths plus retained receipt closure still need qualification.
 4. Bind a candidate output report to F3 source root, F4 product bytes,
    environment selection, complete receipt set and streamed executable hash.
-   The [local retained-output proof](../evidence/i2a/F4-RETAINED-NATIVE-CANDIDATE.md)
+   The [local retained-output proof](../../.orchestrate/evidence/i2a/F4-RETAINED-NATIVE-CANDIDATE.md)
    copies the real A build into a separate candidate directory, then deletes
    its materialized source and original Cargo output before checking the
    executable and every retained file against an externally held report hash.

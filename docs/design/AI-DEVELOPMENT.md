@@ -290,9 +290,9 @@ Do not grade only wording, headings or invocation. This follows OpenAI's
 [behavioral skill evaluation guidance](https://developers.openai.com/blog/eval-skills), with correctness checks and
 judgment separated. Skill syntax validation is useful but does not establish workflow reliability.
 
-Full analyses: [enforcement](../evidence/handoffs/2026-11-01-engine-ai-workflows/ENFORCEMENT.md),
-[skills/setup](../evidence/handoffs/2026-11-01-engine-ai-workflows/SKILLS-SETUP.md),
-[game workflows](../evidence/handoffs/2026-11-01-engine-ai-workflows/GAME-WORKFLOWS.md).
+Full analyses: [enforcement](../../.orchestrate/evidence/handoffs/2026-11-01-engine-ai-workflows/ENFORCEMENT.md),
+[skills/setup](../../.orchestrate/evidence/handoffs/2026-11-01-engine-ai-workflows/SKILLS-SETUP.md),
+[game workflows](../../.orchestrate/evidence/handoffs/2026-11-01-engine-ai-workflows/GAME-WORKFLOWS.md).
 
 The [lifecycle skill walkthrough](LIFECYCLE-WALKTHROUGHS.md#skill-support-now-and-later) refines existing Broadsides
 storage/performance references now. Future SDK task skills should invoke implemented package inspection, publication

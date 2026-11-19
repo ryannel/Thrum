@@ -83,4 +83,4 @@ all outputs from the CPU model; capture and discarded frames retain no output hi
 
 The Metal tests require the repository's `gpu` lock and never skip an unavailable device. They
 record timestamps and resource bytes in `tmp/sea-m2`; the selected measurement and bounds are
-retained in [M2 evidence](../../docs/evidence/SEA/M2.md).
+retained in [M2 evidence](../../.orchestrate/evidence/SEA/M2.md).

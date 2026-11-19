@@ -38,7 +38,7 @@ Every extra concept or step on this path needs a scenario that benefits from it.
 
 ## What G6 built
 
-The [evidence](../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md) records the checks. Against the
+The [evidence](../../.orchestrate/evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md) records the checks. Against the
 budgets above:
 
 - **One command.** `./dev starter`, or `./dev scene <folder>` for a copy, cooks the scene's assets, watches them and
@@ -73,7 +73,7 @@ budgets above:
   - a lighthouse with its own generated mesh and material in 74.
 
   The last two used only the sky kit and `Config`. Their friction was fixed or recorded; the evidence lists which.
-  These historical exercises were Mac-only. [CREATOR M3](../evidence/CREATOR/M3.md) retains a fresh builder's
+  These historical exercises were Mac-only. [CREATOR M3](../../.orchestrate/evidence/CREATOR/M3.md) retains a fresh builder's
   34-line folded-sail scene on Mac and hardware Chrome; its independent fresh review remains open.
   Saved-file reload is proved offscreen and in the visible starter window, with a real Sun drag and saved
   parameter/mesh changes in the same windows, without a key press. This proves creator function only.
@@ -84,7 +84,7 @@ budgets above:
   Numbers are medians over up to 120 frames, refreshed every 250 ms; unavailable rows state why.
   Callback interval is not physical display cadence. See the
   [starter's keys and interpretation](../../examples/starter/README.md#see-where-frame-time-goes).
-  [CREATOR M2 evidence](../evidence/CREATOR/M2.md) records the switch, load changes and paired cost observations.
+  [CREATOR M2 evidence](../../.orchestrate/evidence/CREATOR/M2.md) records the switch, load changes and paired cost observations.
 
 For a working scene, follow the [starter README](../../examples/starter/README.md) from **Run it** through
 **Make your own scene**, **Write your scene**, **Place meshes** and **Bring your own mesh**. It gives the
@@ -260,7 +260,7 @@ Make the current state clear: editing, preparing an update, running the last adm
 play session never appears to contain newly rejected code. Human and agent diagnostics share structured causes and
 source references while the human message stays short. Prerequisite, source, content, compatibility, build and device
 failures need different remedies; a generic “validation failed” is insufficient. G6 measures this with the fresh-agent
-friction log; the [evidence](../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md#slice-4-one-command-starter-and-fresh-agent-scenes)
+friction log; the [evidence](../../.orchestrate/evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md#slice-4-one-command-starter-and-fresh-agent-scenes)
 records three runs.
 
 ## Source and play semantics

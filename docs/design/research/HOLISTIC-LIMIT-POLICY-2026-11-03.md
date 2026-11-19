@@ -164,7 +164,7 @@ or an analytical worksheet does not mark the integrated row complete.
    source and product closure, recheck intended source/target selection and
    build generation, and atomically publish only after every required product
    succeeds. Stale, failed or interrupted work leaves the previous ready root.
-   The [provisional bridge](../../evidence/i2a/E1-CONSTANT-LIGHT-F4-LEASE-BRIDGE-2026-11-03.md)
+   The [provisional bridge](../../../.orchestrate/evidence/i2a/E1-CONSTANT-LIGHT-F4-LEASE-BRIDGE-2026-11-03.md)
    is a frozen earlier-checkpoint proof, not current accepted-pin qualification.
 5. I1/I2n prove timebase compatibility and aggregate due work for the selected
    headless/R4 paths, without making water/navigation prerequisites for R0.

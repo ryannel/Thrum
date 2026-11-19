@@ -19,14 +19,14 @@ agents independently read the same **45 Markdown files plus the maturity ledger*
 module designs and 12 research notes. They distinguished the superseded host/Traveller assessments and historical
 reviews from the current proposal. After their independent reports, each read and challenged the other two reports.
 The coordinator checked the material source passages, independently reproduced the transform counterexample and
-merged duplicate findings. The [baseline inventory](../evidence/handoffs/2026-11-01-engine-whole-plan-review/BASELINE.md)
+merged duplicate findings. The [baseline inventory](../../.orchestrate/evidence/handoffs/2026-11-01-engine-whole-plan-review/BASELINE.md)
 records hashes; all 46 inputs remained unchanged through the independent reading and cross-review.
 
 | Perspective | Independent report | Principal contribution |
 | --- | --- | --- |
-| Systems architect | [Systems](../evidence/handoffs/2026-11-01-engine-whole-plan-review/SYSTEMS.md) | State/representation correctness, integration boundaries and inherited maturity gaps |
-| Game technical director / creator | [Creator](../evidence/handoffs/2026-11-01-engine-whole-plan-review/CREATOR.md) | Small-game path, artist composition and SDK evolution |
-| Delivery / platform / maintenance lead | [Delivery](../evidence/handoffs/2026-11-01-engine-whole-plan-review/DELIVERY.md) | Executable milestones, early platform compatibility and support obligations |
+| Systems architect | [Systems](../../.orchestrate/evidence/handoffs/2026-11-01-engine-whole-plan-review/SYSTEMS.md) | State/representation correctness, integration boundaries and inherited maturity gaps |
+| Game technical director / creator | [Creator](../../.orchestrate/evidence/handoffs/2026-11-01-engine-whole-plan-review/CREATOR.md) | Small-game path, artist composition and SDK evolution |
+| Delivery / platform / maintenance lead | [Delivery](../../.orchestrate/evidence/handoffs/2026-11-01-engine-whole-plan-review/DELIVERY.md) | Executable milestones, early platform compatibility and support obligations |
 
 This was a document review, not a new external-engine survey or runtime audit. Existing source citations were assessed
 at their recorded scope; their external pages were not all reverified. No engine was built, device tested, asset

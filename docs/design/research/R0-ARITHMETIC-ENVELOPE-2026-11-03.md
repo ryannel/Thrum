@@ -100,7 +100,7 @@ evaluation recipe. For example, `α=0.1024` and
 `c_i=c_o=2^-126` give a denominator near `4.81e-39`: a finite ideal
 grazing contribution can become `0/0` if intermediate subnormals flush.
 The shader needs a scaled ratio or a proved negligible-angle exit before
-forming that denominator. The [independent numeric check](../../evidence/render/R0-ARITHMETIC-BOUND-2026-11-03.md)
+forming that denominator. The [independent numeric check](../../../.orchestrate/evidence/render/R0-ARITHMETIC-BOUND-2026-11-03.md)
 confirms the half-range witness and the illustrative real-number inequality;
 it does not establish WGSL behaviour.
 
@@ -181,7 +181,7 @@ possible. Do not introduce optional angle-based early exits until their
 absolute radiance, post-tone and moving-image error are independently
 bounded for the selected exposure and source profile.
 
-The [independent high-precision CPU oracle](../../evidence/render/R0-GGX-NUMERIC-ORACLE-2026-11-03.md)
+The [independent high-precision CPU oracle](../../../.orchestrate/evidence/render/R0-GGX-NUMERIC-ORACLE-2026-11-03.md)
 checks the original and scaled real expressions, sharp family and selected
 f32/FTZ/fusion diagnostics. It confirms algebraic equivalence on its tested
 domain and exposes bright sign loss and directional narrowing. It does not

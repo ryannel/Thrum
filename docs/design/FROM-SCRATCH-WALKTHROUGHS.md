@@ -165,6 +165,6 @@ Such an export reports its unqualified claims. Release qualification adds its ac
 evidence. Test a clean development checkout separately from a nondeveloper recipient's packaged game; missing caches,
 source masters and prerequisites must be visible. No elapsed-time or ease-of-use result is assigned by this paper pass.
 
-Full traces: [newcomers](../evidence/handoffs/2026-11-01-engine-from-scratch/NEWCOMERS.md),
-[veterans](../evidence/handoffs/2026-11-01-engine-from-scratch/VETERANS.md),
-[circumstances](../evidence/handoffs/2026-11-01-engine-from-scratch/CIRCUMSTANCES.md).
+Full traces: [newcomers](../../.orchestrate/evidence/handoffs/2026-11-01-engine-from-scratch/NEWCOMERS.md),
+[veterans](../../.orchestrate/evidence/handoffs/2026-11-01-engine-from-scratch/VETERANS.md),
+[circumstances](../../.orchestrate/evidence/handoffs/2026-11-01-engine-from-scratch/CIRCUMSTANCES.md).

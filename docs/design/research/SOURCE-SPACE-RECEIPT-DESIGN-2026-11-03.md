@@ -2,11 +2,11 @@
 
 This note specifies the next narrow F3/T2 diagnostic slice. It follows the
 [cross-owner limit policy](HOLISTIC-LIMIT-POLICY-2026-11-03.md), the
-[marginal preflight proof](../../evidence/i2a/SOURCE-MARGINAL-SPACE-2026-11-03.md),
+[marginal preflight proof](../../../.orchestrate/evidence/i2a/SOURCE-MARGINAL-SPACE-2026-11-03.md),
 the [APFS study](SOURCE-APFS-PHYSICAL-ADMISSION-OPTIONS-2026-11-03.md) and
 C11/C12. It changes no source identity, disk threshold, accepted-store format
-or publication rule. Its [stage-local portion](../../evidence/i2a/SOURCE-STAGE-SPACE-DETAIL-2026-11-03.md)
-and [accepted-store portion](../../evidence/i2a/SOURCE-STORE-SPACE-DETAIL-2026-11-03.md)
+or publication rule. Its [stage-local portion](../../../.orchestrate/evidence/i2a/SOURCE-STAGE-SPACE-DETAIL-2026-11-03.md)
+and [accepted-store portion](../../../.orchestrate/evidence/i2a/SOURCE-STORE-SPACE-DETAIL-2026-11-03.md)
 are implemented; T2/F4 composition remains open. Neither the design nor
 those local details are a physical-space guarantee.
 

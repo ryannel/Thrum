@@ -33,9 +33,9 @@ Engine-wide platform lists do not certify each feature or the editor on every pl
 | [Defold product](https://defold.com/product/), [size optimization](https://defold.com/manuals/optimization-size/), [Live Update](https://defold.com/manuals/live-update/) | Feature removal should reduce actual output; distinguish base package from on-demand content and installed content from memory residency. | Its strengths emphasize 2D; no inference of our 3D visual quality. [HTML5](https://defold.com/manuals/html5/) has hosting/threading and reload constraints. |
 
 Independent source extractions and detailed caveats:
-[major engines](../evidence/handoffs/2026-11-01-engine-capability-survey/MAJOR.md),
-[smaller/native frameworks](../evidence/handoffs/2026-11-01-engine-capability-survey/MODERN.md),
-[web/mobile](../evidence/handoffs/2026-11-01-engine-capability-survey/WEB-MOBILE.md).
+[major engines](../../.orchestrate/evidence/handoffs/2026-11-01-engine-capability-survey/MAJOR.md),
+[smaller/native frameworks](../../.orchestrate/evidence/handoffs/2026-11-01-engine-capability-survey/MODERN.md),
+[web/mobile](../../.orchestrate/evidence/handoffs/2026-11-01-engine-capability-survey/WEB-MOBILE.md).
 The coordinator reconciled recommendations against the owner designs: the initial major-engine suggestion to add
 semantic accessibility was already covered. Localization runtime was also present; production tooling is the delta.
 

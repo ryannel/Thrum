@@ -73,11 +73,11 @@ Containment does not spend a `RequiredReferences` edge. The account,
 complete allocation audit and combined stage/pin measurements must be
 proved before this schema becomes an active admission profile; a bounded
 external sort is a separately owned future path.
-The [isolated embedded-index microprobe](../../evidence/render/R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.md)
+The [isolated embedded-index microprobe](../../../.orchestrate/evidence/render/R0-F3-EMBEDDED-INDEX-PROBE-2026-11-03.md)
 shows this dimension is independent: four bounded source-shaped roots can
 carry 332,016 embedded IDs with only four edges. Its generic JSON parser
 dominates peak memory, so it does not yet justify a numeric capacity.
-An [isolated strict typed-decoder prototype](../../evidence/render/R0-F3-TYPED-DECODER-PROTOTYPE-2026-11-03.md)
+An [isolated strict typed-decoder prototype](../../../.orchestrate/evidence/render/R0-F3-TYPED-DECODER-PROTOTYPE-2026-11-03.md)
 reduces that fixture's measured peak by releasing per-object scratch and
 preserves escaped-string semantics, but it is outside F3 and does not measure
 combined stage/pin work or select a host work allowance.
@@ -269,17 +269,17 @@ existing Foundation-envelope constraints with a schema-local bound shape,
 not new R0 fixture limits. A valid source can still be unrepresentable in
 the first R0 device profile.
 An [isolated exact transformed-bound
-probe](../../evidence/render/R0-F3-TRANSFORMED-BOUND-PROBE-2026-11-03.md)
+probe](../../../.orchestrate/evidence/render/R0-F3-TRANSFORMED-BOUND-PROBE-2026-11-03.md)
 now supplies an 84-limb width argument and 2,655 independent rational
 oracle matches, but its predicate-only 50,000-instance fallback families
 take 1.47–3.61 s on the named Mac. This is an implementation pressure to
 optimize and measure in the complete F3 path, not an admitted edit-latency
 or memory qualification.
-The independently reproduced [normalized-dyadic follow-up](../../evidence/render/R0-F3-TRANSFORMED-BOUND-OPT-2026-11-03.md)
+The independently reproduced [normalized-dyadic follow-up](../../../.orchestrate/evidence/render/R0-F3-TRANSFORMED-BOUND-OPT-2026-11-03.md)
 keeps the 84-limb argument and lowers selected all-fallback medians to
 119–312 ms per 50,000 instances, including unique transforms. It remains
 predicate-only and does not select a host work allowance or prove F3 peak.
-A [private production predicate slice](../../evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md)
+A [private production predicate slice](../../../.orchestrate/evidence/render/R0-F3-TRANSFORMED-BOUND-PRODUCTION-2026-11-03.md)
 now matches all 3,588 archived rational vectors through its entry point.
 No shared decoder calls it yet, so source admission and complete-path costs
 remain unqualified.
@@ -297,7 +297,7 @@ material evaluator revision and relevant exact values. Formatting-only edits
 change the exact source binding but may reuse semantic products. Target or
 view changes can invalidate a representation certificate without recooking
 immutable geometry.
-An [isolated exact-triangle probe](../../evidence/render/R0-F3-EXACT-TRIANGLE-PROBE-2026-11-03.md)
+An [isolated exact-triangle probe](../../../.orchestrate/evidence/render/R0-F3-EXACT-TRIANGLE-PROBE-2026-11-03.md)
 now supplies a 36-limb width argument under the Foundation local extent,
 independent rational signs for 8,009 cases, and a predicate-only 39,000-case
 all-fallback timing. It does not replace the actual typed parser, combined

@@ -16,7 +16,7 @@ the same volume, recreated each relative symlink, and created directories.
 It did not use `cp -c`, which may fall back to a physical copy. The
 [existing descriptor-bound inventory](../../../scripts/inventory_headless_tool_roots.py)
 then checked each clone and its installed source against the previously
-recorded [tool-root digest](../../evidence/i2a/F4-TOOL-ROOT-INVENTORY.md).
+recorded [tool-root digest](../../../.orchestrate/evidence/i2a/F4-TOOL-ROOT-INVENTORY.md).
 The experiment removed each clone in a `finally` block after its checks.
 
 | Root | Regular files | Symlinks | Logical bytes | Clone time | Observed free-space change |

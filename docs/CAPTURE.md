@@ -105,7 +105,7 @@ actual GPU exposure packet as eight raw u32 words in each image's provenance. It
 inverse gain, EV100, lux, flags, submission serial low/high and display selector.
 
 The complete APPLE-TILE M0 command, its fixed controls and retained sources are documented in
-[the M0 evidence](evidence/render/apple-tile-m0/README.md).
+[the M0 evidence](../.orchestrate/evidence/render/apple-tile-m0/README.md).
 
 Ordinary pan/running/off schedules contain no diagnostic actions.
 
@@ -211,7 +211,7 @@ Create a task storage record before bulk work. A four-second session needs 16 Gi
 allowance including compressed source/PNG/preview coexistence. Run sessions serially. Verify the archive, timing records and
 selected promoted evidence before deleting owned reconstructible expanded PNG files. Retain complete local sources
 through review with an explicit expiry decision. Promote compact selected excerpts, hashes, timings and previews
-to Git. The [current M0 evidence](evidence/render/t2-capture-m0/reliability/README.md) records the repeated series, all attempts and controlled observer arms. Local bulk archives are not durable backups; no remote/LFS store is configured or implied.
+to Git. The [current M0 evidence](../.orchestrate/evidence/render/t2-capture-m0/reliability/README.md) records the repeated series, all attempts and controlled observer arms. Local bulk archives are not durable backups; no remote/LFS store is configured or implied.
 
 Archive record ordinal `k` maps to its `submission_id`, RGBA hash and `submit_ns` in `manifest.json`.
 `scripts/capture_spool.py:decoded_frames` streams verified originals from `frames.zst` using the writer's hashes
@@ -299,4 +299,4 @@ Cases include disabled capture, three held-world cooked pans, running semantic a
 
 The simulator uses six GPU slots, 32 CPU buffers and a 1 GiB pixel allowance, plus the shared finite 256 MiB encoded reserve and codec scratch. Writer output is bounded at 8 GiB, 1,024 records, 16 seconds and ten seconds to finalize. The complete driver preflights 20 GiB. Exhaustion/cancellation refuses continuous evidence. Callback dispositions and exact source extent, adjacent endpoint, alpha, history, surface/device identity and original hashes accompany every session. Source images retain native resolution.
 
-`python3 scripts/package_v1_simulator.py --session <output>/01-pan` independently decodes every original, verifies PNG round trips and packages a VFR 1x viewing aid from actual submission time. Selected full-native PNGs and native crops accompany the preview. Keep full local spools through review. The driver restarts IconServices only in its owned simulator before app launch to recover headless fresh-device startup. See [M2 qualification](evidence/render/t2-capture-m2/qualified/README.md) for measured results, exact provenance, exceptions and retention.
+`python3 scripts/package_v1_simulator.py --session <output>/01-pan` independently decodes every original, verifies PNG round trips and packages a VFR 1x viewing aid from actual submission time. Selected full-native PNGs and native crops accompany the preview. Keep full local spools through review. The driver restarts IconServices only in its owned simulator before app launch to recover headless fresh-device startup. See [M2 qualification](../.orchestrate/evidence/render/t2-capture-m2/qualified/README.md) for measured results, exact provenance, exceptions and retention.

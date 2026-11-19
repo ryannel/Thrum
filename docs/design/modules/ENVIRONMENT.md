@@ -233,7 +233,7 @@ moves real material between dry/wet subsets during inundation and recession.
 For the tide-only prescribed scalar-stage profile, F4's prepared affine-area
 polynomials let E1 integrate changing first-hit area against rain over source
 time; numerical partitions do not change the physical receipt identity. The
-[exact offline first-hit proof](../../evidence/water/MOVING-SHORE-FIRST-HIT-2026-11-02.md)
+[exact offline first-hit proof](../../../.orchestrate/evidence/water/MOVING-SHORE-FIRST-HIT-2026-11-02.md)
 supports that source operator only. Film/coating exchange, finite-water
 hydraulics, floating-point error and assembled runtime cost remain unproved.
 The initial bounded physical closure stays pinned while active; it has no

@@ -1,8 +1,8 @@
 # Asset and optimization lifecycle walkthroughs
 
 1 November 2026. Four concrete paper journeys challenge the [storage lifecycle](STORAGE-LIFECYCLE.md).
-Two fresh Sol High agents explored [assets](../evidence/handoffs/2026-11-01-engine-lifecycle-walkthroughs/ASSETS.md)
-and [campaigns](../evidence/handoffs/2026-11-01-engine-lifecycle-walkthroughs/CAMPAIGNS.md); the coordinator reconciled
+Two fresh Sol High agents explored [assets](../../.orchestrate/evidence/handoffs/2026-11-01-engine-lifecycle-walkthroughs/ASSETS.md)
+and [campaigns](../../.orchestrate/evidence/handoffs/2026-11-01-engine-lifecycle-walkthroughs/CAMPAIGNS.md); the coordinator reconciled
 simplicity, acceptance and current tool limits. These are proposed interactions, not generated assets, measured
 optimizations, executed publications or cleanup. Example names and counts do not describe new real packages.
 
@@ -167,7 +167,7 @@ precise discovery, conditional detail, useful decision boundaries and completion
 judgment in short task guidance and put hashes, closure checks, publication and storage admission in tested tools.
 The creator-facing guidance does not need the engine's collector protocol or the entire architecture programme.
 
-An independent [paper skill trial](../evidence/handoffs/2026-11-01-engine-lifecycle-walkthroughs/SKILL-TRIAL.md) uses raw
+An independent [paper skill trial](../../.orchestrate/evidence/handoffs/2026-11-01-engine-lifecycle-walkthroughs/SKILL-TRIAL.md) uses raw
 operator cases without the synthesis above. Its decisions are reviewed separately; it cannot prove runtime safety,
 Astra behavior, restore reliability or tool enforcement. Real validation remains one modest asset delivery and one
 campaign closeout after the relevant implementation exists, with no mass migration or cleanup implied here.

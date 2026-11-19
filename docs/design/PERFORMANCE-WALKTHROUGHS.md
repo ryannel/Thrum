@@ -234,6 +234,6 @@ can tune away the missing meaning of a field, query or readiness state.
 
 These extend the existing T2 commission/result design and coordinator handoff, not the runtime module map. No new
 mandatory plugin system or universal benchmark service follows, and appearance still needs agent visual review rather than a scalar score. Independent inputs:
-[rendering](../evidence/handoffs/2026-11-01-engine-performance-walkthroughs/RENDER.md),
-[browser](../evidence/handoffs/2026-11-01-engine-performance-walkthroughs/BROWSER.md),
-[mobile](../evidence/handoffs/2026-11-01-engine-performance-walkthroughs/MOBILE.md).
+[rendering](../../.orchestrate/evidence/handoffs/2026-11-01-engine-performance-walkthroughs/RENDER.md),
+[browser](../../.orchestrate/evidence/handoffs/2026-11-01-engine-performance-walkthroughs/BROWSER.md),
+[mobile](../../.orchestrate/evidence/handoffs/2026-11-01-engine-performance-walkthroughs/MOBILE.md).

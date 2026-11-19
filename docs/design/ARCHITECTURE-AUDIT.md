@@ -23,9 +23,9 @@ exposure; the agents' initial derivations were separate from that exposure.
 
 | Audit | Preserved initial derivation | Detailed comparison |
 | --- | --- | --- |
-| Core, composition and execution | [Core baseline](../evidence/handoffs/2026-11-01-engine-audit/core-independent.md) | [Core report](research/AUDIT-CORE.md) |
-| Alternative physical/presentation models | [Model baseline](../evidence/handoffs/2026-11-01-engine-audit/models-independent.md) | [Model report](research/AUDIT-MODELS.md) |
-| Creation and delivery | [Delivery baseline](../evidence/handoffs/2026-11-01-engine-audit/delivery-independent.md) | [Delivery report](research/AUDIT-CREATION-DELIVERY.md) |
+| Core, composition and execution | [Core baseline](../../.orchestrate/evidence/handoffs/2026-11-01-engine-audit/core-independent.md) | [Core report](research/AUDIT-CORE.md) |
+| Alternative physical/presentation models | [Model baseline](../../.orchestrate/evidence/handoffs/2026-11-01-engine-audit/models-independent.md) | [Model report](research/AUDIT-MODELS.md) |
+| Creation and delivery | [Delivery baseline](../../.orchestrate/evidence/handoffs/2026-11-01-engine-audit/delivery-independent.md) | [Delivery report](research/AUDIT-CREATION-DELIVERY.md) |
 
 Comparisons sampled official Bevy, Unreal, Unity, Godot, O3DE and PlayCanvas documentation, plus primary atmosphere
 and water research where model validity changes architecture. Sources support the named mechanisms, not comparative

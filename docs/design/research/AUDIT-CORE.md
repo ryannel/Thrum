@@ -1,6 +1,6 @@
 # Core-engine architecture challenger audit
 
-1 November 2026. Independent derivation was preserved first in [`tmp/handoffs/2026-11-01-engine-audit/core-independent.md`](../../evidence/handoffs/2026-11-01-engine-audit/core-independent.md), before inspecting this design package. This is a **decision audit**, not an implementation, benchmark, exhaustive engine comparison or certification. The custom host is a user choice. The target is a reusable 3D engine for overhead/isometric/third/first-person games on Mac, PC, browser demos and native mobile stores; AI-assisted development does not imply an in-game LLM. Ordinary networking is undecided. Existing code is not the target by default.
+1 November 2026. Independent derivation was preserved first in [`tmp/handoffs/2026-11-01-engine-audit/core-independent.md`](../../../.orchestrate/evidence/handoffs/2026-11-01-engine-audit/core-independent.md), before inspecting this design package. This is a **decision audit**, not an implementation, benchmark, exhaustive engine comparison or certification. The custom host is a user choice. The target is a reusable 3D engine for overhead/isometric/third/first-person games on Mac, PC, browser demos and native mobile stores; AI-assisted development does not imply an in-game LLM. Ordinary networking is undecided. Existing code is not the target by default.
 
 ## Most consequential result
 

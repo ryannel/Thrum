@@ -13,10 +13,10 @@ The first native adapter consumes an admitted Rust workspace, lockfile,
 registry metadata and archives, Cargo/Rustc and their loaded toolchain files,
 Clang, the selected SDK, required system libraries, a fixed recipe and a
 controlled environment. Its executable and cooked scene product are derived
-outputs. The [local tool-root inventory](../evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
-and [private-cache proof](../evidence/i2a/F4-PRIVATE-CARGO-CACHE.md) identify
+outputs. The [local tool-root inventory](../../.orchestrate/evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
+and [private-cache proof](../../.orchestrate/evidence/i2a/F4-PRIVATE-CARGO-CACHE.md) identify
 candidate bytes and reject local drift; they do not establish where the first
-bytes came from. The [vendor experiment](../evidence/i2a/F4-VENDOR-FEASIBILITY.md)
+bytes came from. The [vendor experiment](../../.orchestrate/evidence/i2a/F4-VENDOR-FEASIBILITY.md)
 shows that moving to a full-workspace directory source would grow the local
 dependency tree to 425 MB without solving its origin.
 
@@ -133,7 +133,7 @@ because selected compiler reads, system libraries, output provenance and
 publication remain open.
 
 Cold verification streams the selected Rust/linker/SDK roots once per release
-selection, using the [measured candidate inventory](../evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
+selection, using the [measured candidate inventory](../../.orchestrate/evidence/i2a/F4-TOOL-ROOT-INVENTORY.md)
 of about 4.86 GB logical reads and 11 seconds on this host. The dependency
 cache's 67.8 MB local rehash remains in the per-edit path until a sealed-root
 mechanism proves equivalent retention. Do not charge the cold tool scan to
@@ -154,14 +154,14 @@ installer-metadata file identities needed for one-pass root matching and keeps
 It does not fetch the inputs or attest their HTTPS transport, make the
 installed tree immutable, verify other components, or replace human review of
 the release preparation job and complete tool/SDK/dependency closure. The
-[local Cargo/Rustc/host-standard-library component proof](../evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
+[local Cargo/Rustc/host-standard-library component proof](../../.orchestrate/evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
 is one host's partial origin candidate.
 
 The cold [crates.io archive comparator](../../scripts/verify_crates_io_archive_origin.py)
 streams each archive listed by a selected private-cache candidate from its
 official HTTPS CDN URL, refuses redirects, and compares fetched bytes with the
 candidate, private cache and selected lockfile checksum. The complete private
-cache is inventoried before and after. Its [37-archive local proof](../evidence/i2a/T2-CRATES-ORIGIN-CANDIDATE.md)
+cache is inventoried before and after. Its [37-archive local proof](../../.orchestrate/evidence/i2a/T2-CRATES-ORIGIN-CANDIDATE.md)
 is still an origin candidate: cached sparse-index records, extracted source,
 selected build-unit closure and the release preparation environment are not
 authenticated by archive matching. It also reports `buildReady:false`.
@@ -169,7 +169,7 @@ authenticated by archive matching. It also reports `buildReady:false`.
 The separate [sparse-index comparator](../../scripts/verify_crates_io_index_origin.py)
 parses only the pinned Cargo 1.99.1 cache layout and compares every cached
 version JSON line with the corresponding official `index.crates.io` HTTPS
-record. The [212-name local comparison](../evidence/i2a/T2-CRATES-INDEX-ORIGIN-CANDIDATE.md)
+record. The [212-name local comparison](../../.orchestrate/evidence/i2a/T2-CRATES-INDEX-ORIGIN-CANDIDATE.md)
 matched 9,203 cached versions and the exact registry configuration. It proves
 origin for those recorded bytes; it does not prove the cache includes every
 upstream version, extracted source is archive-identical, or a particular
@@ -179,7 +179,7 @@ selected build and environment are fully closed. It reports
 The cold [crate extraction comparator](../../scripts/verify_crate_extraction.py)
 compares each selected locked archive's regular tar payload with the matching
 private Cargo source tree, including complete file and directory membership.
-The [37-package local pass](../evidence/i2a/T2-CRATE-EXTRACTION-CANDIDATE.md)
+The [37-package local pass](../../.orchestrate/evidence/i2a/T2-CRATE-EXTRACTION-CANDIDATE.md)
 matched 2,634 extracted files against the same private-root digest used by the
 archive and index origin candidates. It closes that local byte link, while
 selected build-unit and compiler/system reads, release review and target
@@ -191,7 +191,7 @@ profile. Such records require declared environment values or checked extra
 paths before a build could be promoted. This refusal does not trace implicit
 compiler reads or establish that rustc reported every input.
 
-The local [compiler-receipt candidate](../evidence/i2a/F4-RUSTC-RECEIPTS.md)
+The local [compiler-receipt candidate](../../.orchestrate/evidence/i2a/F4-RUSTC-RECEIPTS.md)
 uses Cargo's stable wrapper hook to record exact rustc invocation bytes and
 completion, then reconciles them with the fresh Cargo artifact stream. The
 selected rustc environment contains Cargo's macOS

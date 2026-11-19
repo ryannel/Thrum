@@ -14,5 +14,5 @@ as baselines and investigate visible stutter or comparable regressions.
 Display-link targets, submit times and GPU samples are independent of
 measured physical presentation. Report input-to-photon only if an
 identified input and its displayed response are measured together.
-Simulator proves function only. [Evidence](../../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
+Simulator proves function only. [Evidence](../../../.orchestrate/evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
 separates ownership, correctness, visuals and measured timing.

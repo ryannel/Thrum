@@ -1,6 +1,6 @@
 # SHOWCASE design review
 
-**Changes requested.** M9 gives the sunset and sunrise defects to the module that owns the valley, and its proposed terrain and lighting changes are feasible. Four findings affect what can be proved about the scene that ships. I reviewed `fed63e999d52` against the approved G7 brief, all eight planner tasks, the review of `f745a82b5f56`, and the ATMOSPHERE handoff at `b65cab08fd6c`. [Project brief](../../plans/BRIEF.md) · [Planner tasks](../../plans/SHOWCASE/RECORD.json) · [Handoff](../ATMOSPHERE/M6-handoff.md)
+**Changes requested.** M9 gives the sunset and sunrise defects to the module that owns the valley, and its proposed terrain and lighting changes are feasible. Four findings affect what can be proved about the scene that ships. I reviewed `fed63e999d52` against the approved G7 brief, all eight planner tasks, the review of `f745a82b5f56`, and the ATMOSPHERE handoff at `b65cab08fd6c`. [Project brief](../../plans/BRIEF.md) · [Planner tasks](../../plans/SHOWCASE/RECORD.json) · [Handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md)
 
 ## Must Fix
 

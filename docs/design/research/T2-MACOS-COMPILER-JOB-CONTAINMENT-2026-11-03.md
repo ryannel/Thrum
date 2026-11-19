@@ -67,7 +67,7 @@ family but does not turn the current process-group cleanup into an OS job
 container. A compiler/tool failure, a compromised selected tool or an
 unexpected helper could still escape; output publication must refuse and
 owned scratch cannot be assumed safe to delete merely because Cargo exited.
-The [append-only held tool-root candidate](../../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
+The [append-only held tool-root candidate](../../../.orchestrate/evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
 keeps already sealed selected pathnames stable after an owner exits; it does
 not make materialized source/output scratch safe to remove or prove all
 compiler children have stopped.

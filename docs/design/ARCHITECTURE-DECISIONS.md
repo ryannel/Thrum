@@ -236,10 +236,10 @@ Dependency resolution, executable APIs/conformance, recovery injection, measured
 qualification remain implementation evidence. Unsupported richer providers are recorded as extensions with design
 obligations; they are not promised by the selected baseline. No experiments or builds were used to invent these rules.
 
-Three decision studies and their cross-reviews informed this synthesis: [source/sessions](../evidence/handoffs/2026-11-01-engine-decisions/SESSIONS-SOURCE.md),
-[shader/media](../evidence/handoffs/2026-11-01-engine-decisions/SHADERS-MEDIA.md),
-[water domains](../evidence/handoffs/2026-11-01-engine-decisions/WATER-DOMAINS.md) and the follow-up
-[storage comparison](../evidence/handoffs/2026-11-01-engine-decisions/STORAGE-REUSE.md). They contain source citations and
+Three decision studies and their cross-reviews informed this synthesis: [source/sessions](../../.orchestrate/evidence/handoffs/2026-11-01-engine-decisions/SESSIONS-SOURCE.md),
+[shader/media](../../.orchestrate/evidence/handoffs/2026-11-01-engine-decisions/SHADERS-MEDIA.md),
+[water domains](../../.orchestrate/evidence/handoffs/2026-11-01-engine-decisions/WATER-DOMAINS.md) and the follow-up
+[storage comparison](../../.orchestrate/evidence/handoffs/2026-11-01-engine-decisions/STORAGE-REUSE.md). They contain source citations and
 rejected alternatives. The later FOUNDATION-SPEC supersedes the first source report’s proposed transform constants with a derived finite
 world/object/error envelope and an explicit residual test.
 

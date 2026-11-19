@@ -5,5 +5,5 @@ whole engine, contracts and selected initial mechanisms. [Repository layout](REP
 [asset lifecycle](ASSET-LIFECYCLE.md) apply to work here. [Message links](TRANSPORT.md) is the game maker's guide to
 `thrum-transport`.
 
-[Evidence](evidence/README.md) contains dated supporting reports, which can be superseded by the
+[Evidence](../.orchestrate/evidence/README.md) contains dated supporting reports, which can be superseded by the
 current specifications. [Import provenance](provenance/IMPORT.md) explains source history and hashes.

@@ -374,8 +374,8 @@ Additional primary measurement references, inspected by the measurement agent on
 (profiling can alter pass execution), and [Android game optimization](https://developer.android.com/games/optimize)
 (sustained device/thermal conditions). Availability of these tools does not implement our cross-platform harness.
 
-Independent design inputs: [measurement](../evidence/handoffs/2026-11-01-engine-ai-performance/MEASUREMENT.md) and
-[search scope](../evidence/handoffs/2026-11-01-engine-ai-performance/SEARCH.md). Coordinator synthesis distinguishes
+Independent design inputs: [measurement](../../.orchestrate/evidence/handoffs/2026-11-01-engine-ai-performance/MEASUREMENT.md) and
+[search scope](../../.orchestrate/evidence/handoffs/2026-11-01-engine-ai-performance/SEARCH.md). Coordinator synthesis distinguishes
 proposal search from independent qualification and preserves source/evaluator and whole-engine ownership.
 
 ## Storage across a campaign

@@ -6,9 +6,9 @@ ordinary full-state group is sampled at 20 Hz. It is a **provisional design**
 for the first direct-connect R4 recipe, not a running N1 implementation or a
 new wire protocol. C02 and C13 keep W1 publication, authoritative results
 and replica admission as separate owners. The [private inline ownership
-probe](../../evidence/i1-headless/SLOW-PEER-PROJECTION-PROBE.md) demonstrates
+probe](../../../.orchestrate/evidence/i1-headless/SLOW-PEER-PROJECTION-PROBE.md) demonstrates
 only a selected two-peer handoff; it does not qualify this cadence algorithm.
-The [private cadence model oracle](../../evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md)
+The [private cadence model oracle](../../../.orchestrate/evidence/integration/N1-CADENCE-MODEL-ORACLE-2026-11-03.md)
 now exercises ordered mandatory units, complete-state-only coalescing and a
 result-bearing unchanged controller across two three-tick windows. Its
 separate reference replica lanes do not close the production multi-group
@@ -198,9 +198,9 @@ This is a **candidate layout**, not a selected runtime or a measured cost:
   compare it with a direct-index/hash alternative
   under the actual four-peer change pattern before selecting. An entity that
   leaves visibility retains its partition assignment until atomic baseline
-  replacement. The [composite replica oracle](../../evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md)
+  replacement. The [composite replica oracle](../../../.orchestrate/evidence/integration/N1-MULTI-GROUP-REPLICA-ORACLE-2026-11-03.md)
   proves this semantic need using clone-backed trees; it is not this layout.
-  The [isolated four-peer lookup probe](../../evidence/integration/N1-MEMBERSHIP-LOOKUP-2026-11-03.md)
+  The [isolated four-peer lookup probe](../../../.orchestrate/evidence/integration/N1-MEMBERSHIP-LOOKUP-2026-11-03.md)
   found sorted merge faster at 32/128 changed IDs and binary lookup faster
   at eight IDs; one middle-ID binary/hash lookup is similar. It does not price
   sorting, assignment maintenance or the whole callback, so the production
@@ -213,7 +213,7 @@ This is a **candidate layout**, not a selected runtime or a measured cost:
   32 KiB baseline chunk slots permit out-of-order staging ACK without arena
   compaction. Two outstanding chunk frames occupy 65,688 bytes including
   their 76-byte per-frame overhead, plus Begin/End and sequence tombstones.
-  The [credit oracle](../../evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md)
+  The [credit oracle](../../../.orchestrate/evidence/integration/N1-BASELINE-ACK-LEDGER-ORACLE-2026-11-03.md)
   proves counts and disposition logic only; a concrete allocator must show
   that released holes and partial writes never require more than the charged
   bytes. The immutable 256 KiB baseline image, 256 KiB sync closure,

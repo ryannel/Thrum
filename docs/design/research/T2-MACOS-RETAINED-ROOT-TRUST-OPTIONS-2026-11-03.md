@@ -13,9 +13,9 @@ compiler inputs. T2 must retain one selected byte set from cold preparation
 through Cargo metadata, compilation, receipt verification and artifact
 publication. The initial APFS helper clones files into an owned destination
 and verifies the whole-root inventory, but its clone is writable afterward.
-A later [held-root candidate](../../evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
+A later [held-root candidate](../../../.orchestrate/evidence/i2a/T2-HELD-TOOL-ROOT-CANDIDATE-2026-11-03.md)
 seals one caller-selected clone at a time and opens shared read leases. A
-[later admitted A/B qualification](../../evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md)
+[later admitted A/B qualification](../../../.orchestrate/evidence/i2a/T2-HELD-NATIVE-AB-2026-11-03.md)
 held all three selected tool roots through the real Cargo consumer and
 verified their unchanged bytes afterward. The older compiler proof had
 granted reads from unsealed clones and denied corresponding installed files.

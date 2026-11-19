@@ -3,7 +3,7 @@
 3 November 2026. This resolves the next F3/F4/T2 coordination boundary in the
 [cross-owner policy](HOLISTIC-LIMIT-POLICY-2026-11-03.md), [source receipt
 design](SOURCE-SPACE-RECEIPT-DESIGN-2026-11-03.md), and C05/C10/C12. The
-[two-materialization proof](../../evidence/integration/T2-SAME-VOLUME-MATERIALIZATION-2026-11-03.md)
+[two-materialization proof](../../../.orchestrate/evidence/integration/T2-SAME-VOLUME-MATERIALIZATION-2026-11-03.md)
 demonstrates the current asymmetric local limits. This is an implementer design,
 not a physical APFS allocation guarantee or an implemented coordinator. F3
 source identity and root/outcome remain independent of these operational values.
@@ -149,7 +149,7 @@ guarantee.
    For the first macOS compiler sandbox, put `TMPDIR` beneath that job's
    compiler `OUTPUT` child: the write grant covers only `OUTPUT`, not the
    whole job root or adjacent registrations. The [external-output A/B
-   fixture](../../evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md)
+   fixture](../../../.orchestrate/evidence/integration/T2-EXTERNAL-COMPILER-OUTPUT-2026-11-03.md)
    exercises this placement and its unready guard-loss path, without a T2
    account or durable registration.
    This prevents F3's declared-tree inventory and managed-temporary scanner
@@ -277,7 +277,7 @@ syncs precede refund. An uncertain close or identity fault quarantines the
 host with the full claim. Host destruction leaves active registered inputs
 for restart inspection; restart currently refuses every retained or unknown
 root rather than reconstructing claims. A process kill after registration has
-been exercised. The [focused proof](../../evidence/integration/T2-F4-JOB-HOST-2026-11-03.md)
+been exercised. The [focused proof](../../../.orchestrate/evidence/integration/T2-F4-JOB-HOST-2026-11-03.md)
 records the exact cases and limitations.
 
 Input access now requires an owned per-job read lease. The host can admit or
@@ -289,7 +289,7 @@ job and one reference-count operation per lease, outside F4's streamed copy.
 It does not supervise a compiler process; a future compiler owner must retain
 the lease through the entire process family and pair it with output claims.
 
-One [bounded same-volume APFS fault](../../evidence/integration/T2-REGISTERED-F4-NATIVE-FAULT-2026-11-03.md)
+One [bounded same-volume APFS fault](../../../.orchestrate/evidence/integration/T2-REGISTERED-F4-NATIVE-FAULT-2026-11-03.md)
 now reaches native `ENOSPC` during a registered F4 copy after its own
 preflight. Checked input/root retirement precedes refund, and the same pin
 retries after external filler removal. This slice still does not account F3

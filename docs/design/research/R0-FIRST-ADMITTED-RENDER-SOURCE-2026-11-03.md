@@ -6,8 +6,8 @@ local-light fixture from one accepted F3 pin through authenticated F4 products
 to a numerical certificate. It is not an adopted schema, a ready build or a
 renderer. The governing contracts remain [Foundation](../FOUNDATION-SPEC.md),
 [C08/C09](../CONTRACTS.md) and [R0](../RENDER-SPEC.md#8-r0-first-rendered-game-contract-and-proof).
-The [flat-face source-sign oracle](../../evidence/render/R0-PLANAR-SOURCE-SIGN-ORACLE-2026-11-03.md)
-and [raw-integer Metal diagnostic](../../evidence/render/R0-EXACT-REPRESENTED-DOT-METAL-2026-11-03.md)
+The [flat-face source-sign oracle](../../../.orchestrate/evidence/render/R0-PLANAR-SOURCE-SIGN-ORACLE-2026-11-03.md)
+and [raw-integer Metal diagnostic](../../../.orchestrate/evidence/render/R0-EXACT-REPRESENTED-DOT-METAL-2026-11-03.md)
 motivate the split between source and representation evidence; neither is
 source-to-shader conformance.
 
@@ -151,7 +151,7 @@ roughness at least 0.32. Material cards should vary dielectric/metal,
 base/ORM/emission while the mask has exact cutoff 0.5. The offscreen caster
 must demonstrably shadow a visible receiver region; source coordinates,
 shadow receiver volume/bias and exact texels are still to be pinned in an
-admitted build. The [candidate source fixture](../../evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
+admitted build. The [candidate source fixture](../../../.orchestrate/evidence/render/R0-AUTHORED-FIXTURE-2026-11-03.md)
 saves one exact byte choice and independently checks its CPU geometry and
 texture expectations; bias/contact limits and target proof remain open.
 

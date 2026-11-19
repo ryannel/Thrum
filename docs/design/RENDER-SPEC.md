@@ -4,7 +4,7 @@
 [selected architecture](ARCHITECTURE-DECISIONS.md),
 [C4](CONTRACTS.md),
 [rendering](modules/RENDERING.md) and
-[environment](modules/ENVIRONMENT.md). An [isolated R0 GPU diagnostic](../evidence/render/R0-GPU-DIAGNOSTIC-2026-11-02.md)
+[environment](modules/ENVIRONMENT.md). An [isolated R0 GPU diagnostic](../../.orchestrate/evidence/render/R0-GPU-DIAGNOSTIC-2026-11-02.md)
 has since run, but no integrated renderer was built or device-performance qualified.
 The limits below are **design admission targets**, not measured performance,
 hardware support floors or permission to substitute physical gameplay content. [The baseline specification](BASELINE-SPEC.md) owns
@@ -523,18 +523,18 @@ named target. These are unrun gates.
 
 The [bounded first resource-lifetime schedule](research/R0-RESOURCE-LIFETIME-SCHEDULE-2026-11-03.md)
 selects one queue and four scratch textures for an isolated 720p spatial proof.
-Its [logical oracle](../evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
+Its [logical oracle](../../.orchestrate/evidence/render/R0-RESOURCE-LIFETIME-ORACLE-2026-11-03.md)
 tests frame credits, held submissions and resize retirement. It does not
 establish a real output surface, F4 leases, GPU allocation or target viability.
-The [synthetic four-role Metal chain](../evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
+The [synthetic four-role Metal chain](../../.orchestrate/evidence/render/R0-FOUR-ROLE-SYNTHETIC-2026-11-03.md)
 executes those scratch formats and one output path with exact offscreen pixels;
 it does not yet execute the authored R0 game, a two-credit held-frame resize
 or measured device-memory residency.
 
 **Spatial implementation input.** The selected spatial operator is FXAA 3.11
 Quality on the encoded scene image. Its exact reference bytes, provenance and
-first port configuration are [pinned here](../evidence/render/FXAA-SOURCE-SELECTION-2026-11-02.md).
-An isolated [masked GPU diagnostic](../evidence/render/R0-GPU-DIAGNOSTIC-2026-11-02.md)
+first port configuration are [pinned here](../../.orchestrate/evidence/render/FXAA-SOURCE-SELECTION-2026-11-02.md).
+An isolated [masked GPU diagnostic](../../.orchestrate/evidence/render/R0-GPU-DIAGNOSTIC-2026-11-02.md)
 ran a first WGSL port on Metal. Before calling the pass complete, promote a
 versioned port with its notices, offline Naga validation, independent
 reference-image checks and whole-R0 cost. NVIDIA's
