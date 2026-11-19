@@ -16,7 +16,7 @@ from host_overload import check_ios_overload, check_mac_overload
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAC_WITNESS = ROOT / 'docs/evidence/HOST/mac-window-check'
+MAC_WITNESS = ROOT / 'scripts/host_witness'
 ASSETS = ROOT / 'examples/v1-game/assets/showcase'
 PRESET = ROOT / 'examples/v1-game/params/showcase-noon.params.json'
 WEB_CHECK = ROOT / 'scripts/check_v1_browser.mjs'
