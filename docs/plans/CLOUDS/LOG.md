@@ -534,3 +534,7 @@
   stills, the valley shade passing the receivers, and the ten-second pan at the page's callback cadence.
   The shared Metal and Chrome test expresses thickness and optical-depth errors in the M2 fixture's physical scale.
   The shared `exact-images` check supplies the merged baseline verdict.
+
+- 2026-11-19 M4 releases the lifecycle observer's device handles and unloads the recovered page before closing
+  Chrome. The [shutdown evidence](../../../.orchestrate/evidence/CLOUDS/M4/README.md#chrome-shutdown-after-device-recovery)
+  records the verifier's shutdown timeout and the follow-up Chrome runs.

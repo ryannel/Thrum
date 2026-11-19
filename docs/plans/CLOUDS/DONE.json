@@ -639,7 +639,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M4/checks/state.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#chrome-shutdown-after-device-recovery",
           "verdict": "",
           "review": ""
         },

@@ -1262,12 +1262,33 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       await waitFor(async () => /^Running/.test((await poll()).status ?? ''), timeout, 'cloud game startup');
       const game = await existingGame(cdp, sessionId);
       const proof = await qualifyClouds({ cdp, sessionId, targetId, mode, poll, game, timeout, waitFor,
-        destroy: () => destroyActualDevice(cdp, sessionId, undefined, onDestroy) });
+        destroy: async () => {
+          const { device, allDevices } = await destroyActualDevice(cdp, sessionId, undefined, onDestroy);
+          await cdp.call('Runtime.releaseObject', { objectId: device }, sessionId);
+          await cdp.call('Runtime.releaseObject', { objectId: allDevices }, sessionId);
+        } });
       if (!response || response.response.status !== 200) throw new Error('Cloud case did not load the game Wasm');
       const actualWasmSha256 = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
       const record = { case: mode, ...proof, actualWasmSha256,
         source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() };
       await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
+      if (mode === 'clouds-state') {
+        // Unload the recovered WebGPU document before closing its target and the browser.
+        // Target.closeTarget only accepts a close request and can overlap renderer teardown.
+        await cdp.call('Runtime.releaseObject', { objectId: game.objectId }, sessionId);
+        await cdp.call('Page.navigate', { url: 'about:blank' }, sessionId);
+        await waitFor(async () => {
+          const { result } = await cdp.call('Runtime.evaluate', {
+            expression: "location.href === 'about:blank' && document.readyState === 'complete'",
+            returnByValue: true,
+          }, sessionId).catch(error => {
+            if (/execution context was destroyed|cannot find context/i.test(error.message)) return {};
+            throw error;
+          });
+          return result?.value === true;
+        }, timeout, 'cloud lifecycle document unloaded');
+        log('Recovered WebGPU page unloaded');
+      }
       return record;
     }
     if (skyCase) {
