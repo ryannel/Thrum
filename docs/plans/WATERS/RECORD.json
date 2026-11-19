@@ -794,7 +794,71 @@
     },
     "M6": {
       "definitions": "333161dbd71c967dcdda4551f43fd323eb219025b14fc3b882f6f7387cab1696",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7bdb4c2df239e2236a2f677c06dff2fc2bd5704c",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md",
+          "items": {
+            "M6.3": "pass",
+            "M6.4": "fail",
+            "M6.5": "fail",
+            "M6.6": "fail",
+            "M6.7": "pass",
+            "M6.15": "pass",
+            "M6.8": "pass",
+            "M6.9": "pass",
+            "M6.10": "pass",
+            "M6.11": "pass",
+            "M6.12": "fail",
+            "M6.13": "fail",
+            "M6.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "Refused regional pressure still lifts the querying body",
+              "item": "M6.4",
+              "repeat": false
+            },
+            {
+              "name": "Future impulse pages evict admitted drops before their tick",
+              "item": "M6.5",
+              "repeat": false
+            },
+            {
+              "name": "The paired cost baseline still renders water and lacks the prior comparison",
+              "item": "M6.12",
+              "repeat": false
+            },
+            {
+              "name": "The moored-craft check never observes waves outside the settled hull",
+              "item": "M6.6",
+              "repeat": false
+            },
+            {
+              "name": "The lifecycle test submits the first endpoint write before discarding",
+              "item": "M6.13",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 190807,
+            "cached": 11522176,
+            "output": 21801,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:35:22Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",

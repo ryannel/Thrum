@@ -723,8 +723,8 @@
     {
       "id": "M6",
       "name": "The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -739,8 +739,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.4",
@@ -749,10 +749,10 @@
           "ask": "Does the test read the state of the water beyond the bar, not of the land, and does it fail when the window is solved as one region?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.5",
@@ -760,10 +760,10 @@
           "check": "cargo test --locked --offline -p thrum-water --test interaction_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.6",
@@ -771,10 +771,10 @@
           "check": "cargo test --locked --offline -p water-scene --test wake_scene_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/metal.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.7",
@@ -785,8 +785,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/metal.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.15",
@@ -797,8 +797,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.8",
@@ -807,8 +807,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.9",
@@ -817,8 +817,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/trade-6-overhead/realtime.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.10",
@@ -827,8 +827,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.11",
@@ -838,8 +838,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/chrome-final/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.12",
@@ -847,10 +847,10 @@
           "check": "python3 scripts/water_cost.py check --scene wake",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/cost.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.13",
@@ -859,10 +859,10 @@
           "ask": "Does the test's hitch move the body's pressure along its path over the step, and does it fail when the pressure is held at the body's last place? Does the run discard the frame that first writes an endpoint?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/interaction.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
           "id": "M6.14",
@@ -871,8 +871,35 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Refused regional pressure still lifts the querying body",
+          "item": "M6.4",
+          "repeat": false
+        },
+        {
+          "name": "Future impulse pages evict admitted drops before their tick",
+          "item": "M6.5",
+          "repeat": false
+        },
+        {
+          "name": "The paired cost baseline still renders water and lacks the prior comparison",
+          "item": "M6.12",
+          "repeat": false
+        },
+        {
+          "name": "The moored-craft check never observes waves outside the settled hull",
+          "item": "M6.6",
+          "repeat": false
+        },
+        {
+          "name": "The lifecycle test submits the first endpoint write before discarding",
+          "item": "M6.13",
+          "repeat": false
         }
       ]
     },
