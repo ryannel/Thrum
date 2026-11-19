@@ -72,3 +72,7 @@
   On Metal, upload and simulate projected the known world point to the submitted sprite pixel with a displaced view.
   The cost checks accepted both retained target records and rejected missing build, storage and load observations.
   Timing excursions are still reported without failing a complete record. [Evidence](../../../.orchestrate/evidence/RENDER-2D/M1.md#review-follow-up)
+- 2026-11-19 M1 named-refusal follow-up. Sprite startup identifies each rejected content option on Mac and
+  Chrome. A Mac release capture reproduced the silent acceptance of explicit shadow maps and the rebuilt
+  launch refused that request by name. All 19 Mac startup probes refused before submission, and the Metal
+  scene admission and contribution checks passed. [Evidence](../../../.orchestrate/evidence/RENDER-2D/M1/launch-refusals.md)
