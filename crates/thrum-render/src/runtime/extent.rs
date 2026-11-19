@@ -1,6 +1,94 @@
 //! Coherent target-ring and surface transitions on the render owner.
 
 use super::{FrameError, FrameHost, FrameWorld, SceneSource, creation::CreationPhase, preparation};
+use std::sync::Arc;
+#[cfg(not(target_arch = "wasm32"))]
+use {
+    super::{FrameSlot, SlotState, creation::Ledger},
+    crate::{
+        present::{PresenterInputs, SurfacePresenter},
+        synthetic::CaptureSource,
+    },
+    std::sync::atomic::{AtomicBool, Ordering},
+};
+
+/// Detached preparation for a new render and output extent. The inputs
+/// retain handles to the current device's pipelines and extent-independent
+/// resources, and own no world, queue submission state or surface.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct ExtentPrepareInputs {
+    extent: [u32; 2],
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    creations: Ledger,
+    targets: preparation::TargetPreparation,
+    presenter: PresenterInputs,
+    owner: Arc<()>,
+    generation: u64,
+    source: CaptureSource,
+}
+
+/// A fully bound generation that can be taken after the surface configures.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct PreparedExtent {
+    extent: [u32; 2],
+    slots: Vec<FrameSlot>,
+    presenter: SurfacePresenter,
+    owner: Arc<()>,
+    generation: u64,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl ExtentPrepareInputs {
+    /// Build entirely on the preparation thread. Cancellation discards the
+    /// detached resources there while the host may keep presenting.
+    /// # Errors
+    /// Returns a preparation, allocation or validation fault for this request.
+    pub fn build(self, cancel: &AtomicBool) -> Result<Option<PreparedExtent>, FrameError> {
+        if cancel.load(Ordering::Acquire) {
+            return Ok(None);
+        }
+        let _region = self
+            .creations
+            .region(CreationPhase::Transition, "prepare scene extent");
+        let allocation = self.device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+        let validation = self.device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let result = (|| {
+            let presenter = self
+                .presenter
+                .prepare(self.extent, self.extent)
+                .map_err(|error| FrameError::Gpu(format!("scene presenter extent: {error:?}")))?;
+            let mut slots = self.targets.prepare_slots(
+                &self.queue,
+                self.extent,
+                true,
+                Some(presenter.profile()),
+                self.source,
+                Some(cancel),
+            )?;
+            if cancel.load(Ordering::Acquire) {
+                return Ok(None);
+            }
+            self.targets.bind_presenter(&mut slots, &presenter)?;
+            Ok(Some(PreparedExtent {
+                extent: self.extent,
+                slots,
+                presenter,
+                owner: self.owner,
+                generation: self.generation,
+            }))
+        })();
+        let validation_error = pollster::block_on(validation.pop());
+        let allocation_error = pollster::block_on(allocation.pop());
+        if cancel.load(Ordering::Acquire) {
+            return Ok(None);
+        }
+        if let Some(error) = validation_error.or(allocation_error) {
+            return Err(FrameError::Gpu(format!("extent preparation: {error}")));
+        }
+        result
+    }
+}
 
 /// Resource and camera state of one encoded frame, without GPU readback.
 #[derive(Clone, Copy, Debug, Default)]
@@ -28,6 +116,59 @@ pub struct FrameExtent {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+    /// Retain the preparation inputs for the current scene and device.
+    /// # Errors
+    /// Refuses a host without a presenter.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn extent_prepare_inputs(
+        &self,
+        extent: [u32; 2],
+    ) -> Result<ExtentPrepareInputs, FrameError> {
+        let presenter = self
+            .presenter
+            .as_ref()
+            .ok_or(FrameError::InvalidState("host has no surface presenter"))?;
+        Ok(ExtentPrepareInputs {
+            extent,
+            device: self.device.clone(),
+            queue: self.queue.clone(),
+            creations: self.creations.clone(),
+            targets: preparation::TargetPreparation::new(&self.prepared),
+            presenter: presenter.inputs(),
+            owner: Arc::clone(&self.visual_owner),
+            generation: self.generation,
+            source: self.slots[0].target.capture_source(),
+        })
+    }
+
+    /// Validate a finished generation before the platform enters configure.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn admits_extent(&self, candidate: &PreparedExtent) -> bool {
+        candidate.generation == self.generation && Arc::ptr_eq(&self.visual_owner, &candidate.owner)
+    }
+
+    /// Take a generation after the matching configure succeeds. The old
+    /// ring remains alive until its submission and timestamp work is collected.
+    /// Returns false for a stale device or scene preparation.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn publish_extent(&mut self, candidate: PreparedExtent) -> bool {
+        if !self.admits_extent(&candidate) {
+            return false;
+        }
+        let previous = std::mem::replace(&mut self.slots, candidate.slots);
+        self.retired_slots.extend(
+            previous
+                .into_iter()
+                .filter(|slot| !matches!(slot.state, SlotState::Free)),
+        );
+        self.presenter = Some(candidate.presenter);
+        self.render_extent = candidate.extent;
+        self.presenter_generation += 1;
+        self.visual_owner = Arc::new(());
+        self.reset_replacement_history();
+        true
+    }
+
     /// Change the scene grid and surface together between completed frames.
     /// Zero extents and occupied slots defer with `false`. Retry with the latest
     /// extent after normal completion polling. Identical extents reuse resources.
@@ -105,7 +246,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.scene.view = view;
         }
         self.presenter_generation += 1;
-        self.visual_owner = std::sync::Arc::new(());
+        self.visual_owner = Arc::new(());
         self.reset_replacement_history();
         if self
             .prepared

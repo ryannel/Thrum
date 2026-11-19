@@ -9,6 +9,7 @@ const WIDTH: u32 = 96;
 const HEIGHT: u32 = 64;
 const PROFILE: &[u8; (WIDTH * HEIGHT * 4) as usize] = include_bytes!("night/earth.rg16f");
 
+#[derive(Clone)]
 pub(super) struct NightProfile {
     texture: wgpu::Texture,
     pub(super) control: wgpu::Buffer,

@@ -9,6 +9,7 @@ pub(crate) const PASS: &str = "camera depth pyramid";
 const GROUP: u32 = 8;
 
 /// Compute pipelines and layouts; independent of target size.
+#[derive(Clone)]
 pub(crate) struct PyramidPrepared {
     first: wgpu::ComputePipeline,
     down: wgpu::ComputePipeline,

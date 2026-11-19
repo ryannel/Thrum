@@ -2,7 +2,7 @@
 use super::{DEPTH_FORMAT, OffscreenTarget, scene_graph::CompiledScene};
 use crate::capabilities::Recipe;
 
-impl super::PreparedSynthetic {
+impl super::SyntheticTargetInputs {
     pub(super) fn target_row_bytes(
         &self,
         device: &wgpu::Device,
@@ -124,7 +124,7 @@ impl OffscreenTarget {
     }
 }
 
-impl super::PreparedSynthetic {
+impl super::SyntheticTargetInputs {
     pub(super) fn prepare_star_target(
         &self,
         device: &wgpu::Device,
@@ -139,7 +139,7 @@ impl super::PreparedSynthetic {
                     device,
                     depth,
                     atmosphere,
-                    &self.exposure.samples,
+                    &self.exposure_samples,
                     (initial_view, extent),
                 );
                 (Some(binding), draw)

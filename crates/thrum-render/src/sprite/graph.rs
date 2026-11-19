@@ -87,6 +87,17 @@ struct RecordContext<'a> {
 }
 
 impl PreparedSprites {
+    pub(crate) fn target_inputs(&self) -> Self {
+        Self {
+            capabilities: self.capabilities.clone(),
+            scene: self.scene.clone(),
+            contribution_passes: self.contribution_passes,
+            effects: self.effects.clone(),
+            sprites: self.sprites.target_inputs(),
+            tone: self.tone.clone(),
+        }
+    }
+
     pub(crate) async fn prepare(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,

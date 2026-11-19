@@ -67,8 +67,8 @@ const fn culling_passes(mode: CullMode) -> u8 {
     }
 }
 
-impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
-    fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
+impl From<&PreparedSynthetic> for SceneTimingLayout {
+    fn from(prepared: &PreparedSynthetic) -> Self {
         Self {
             shadows: match (prepared.shadowed(), prepared.caster_culling.is_some()) {
                 (false, _) => Shadows::Off,
@@ -78,9 +78,22 @@ impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
             cascades: prepared.shadowed() && prepared.surface_uses_cascades(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
-            star_pass: target.draw_stars.then_some(super::stars::PASS_NAME),
+            star_pass: None,
             culling: culling_passes(prepared.camera_culling()),
         }
+    }
+}
+
+impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
+    fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
+        Self::from(prepared).with_stars(target)
+    }
+}
+
+impl SceneTimingLayout {
+    pub(crate) fn with_stars(mut self, target: &OffscreenTarget) -> Self {
+        self.star_pass = target.draw_stars.then_some(super::stars::PASS_NAME);
+        self
     }
 }
 

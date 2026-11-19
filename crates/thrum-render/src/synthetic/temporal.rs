@@ -9,6 +9,7 @@ use std::collections::BTreeSet;
 /// The shared submitted temporal-input qualification witness, as UTF-8 JSON.
 pub const TEMPORAL_WITNESS_JSON: &str = include_str!("temporal/witness.json");
 
+#[derive(Clone)]
 pub(super) struct TemporalInputs {
     pipelines: [wgpu::RenderPipeline; 2],
 }
@@ -113,6 +114,12 @@ impl TemporalInputs {
 }
 
 impl PreparedSynthetic {
+    pub(super) fn temporal_witness_enabled(&self) -> bool {
+        self.temporal_inputs && (self.taau.is_none() || self.view_sample.temporal_diagnostic())
+    }
+}
+
+impl super::SyntheticTargetInputs {
     pub(super) fn temporal_witness_enabled(&self) -> bool {
         self.temporal_inputs && (self.taau.is_none() || self.view_sample.temporal_diagnostic())
     }

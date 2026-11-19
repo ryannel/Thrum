@@ -9,6 +9,14 @@ impl OffscreenTarget {
         prepared: &PreparedSynthetic,
         profile: crate::present::SurfaceProfile,
     ) -> Result<(), RenderError> {
+        self.bind_surface_graph_with_inputs(&prepared.target_inputs(), profile)
+    }
+
+    pub(crate) fn bind_surface_graph_with_inputs(
+        &mut self,
+        prepared: &super::SyntheticTargetInputs,
+        profile: crate::present::SurfaceProfile,
+    ) -> Result<(), RenderError> {
         let compiled = prepared.compile_graph(
             self.width,
             self.height,
@@ -26,7 +34,7 @@ impl OffscreenTarget {
                 &compiled.night.as_ref().unwrap_or(&compiled.day).readback,
             )
             .map_err(RenderError::Graph)?;
-        self.display = prepared.sdr_tone_stage().prepare_input(
+        self.display = prepared.display.prepare_input(
             &self.device,
             compiled.ids.pre_tone.clone(),
             PreToneViews {
@@ -47,7 +55,7 @@ impl OffscreenTarget {
                     &self.scene_view
                 },
                 motion: &self.motion_view,
-                exposure: &prepared.exposure.samples,
+                exposure: &prepared.exposure_samples,
             },
         )?;
         self.ids = compiled.ids;
@@ -59,7 +67,7 @@ impl OffscreenTarget {
         Ok(())
     }
 }
-impl PreparedSynthetic {
+impl super::SyntheticTargetInputs {
     pub(super) fn prepare_target_display(
         &self,
         device: &wgpu::Device,
@@ -70,7 +78,7 @@ impl PreparedSynthetic {
         native: Option<&native_witness::Binding>,
         taau: Option<&super::taau::TaauTarget>,
     ) -> Result<PreparedPreToneInput, RenderError> {
-        self.sdr_tone_stage().prepare_input(
+        self.display.prepare_input(
             device,
             ids.pre_tone.clone(),
             PreToneViews {
@@ -88,7 +96,7 @@ impl PreparedSynthetic {
                     scene
                 },
                 motion,
-                exposure: &self.exposure.samples,
+                exposure: &self.exposure_samples,
             },
         )
     }

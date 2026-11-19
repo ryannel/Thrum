@@ -150,6 +150,25 @@ impl PipelineClass {
     }
 }
 
+pub(super) struct TargetMembers {
+    members: wgpu::Buffer,
+    table: wgpu::Buffer,
+    pub(super) segment_bytes: u64,
+}
+
+impl TargetMembers {
+    pub(super) fn member_inputs(&self) -> MemberInputs<'_> {
+        MemberInputs {
+            members: &self.members,
+            table: &self.table,
+        }
+    }
+
+    pub(super) fn members_entry(&self, binding: u32) -> wgpu::BindGroupEntry<'_> {
+        members_entry(&self.members, self.segment_bytes, binding)
+    }
+}
+
 pub(super) struct BucketRoute {
     buckets: Buckets,
     slot_meshes: Vec<MeshId>,
@@ -176,6 +195,13 @@ pub(super) struct BucketRoute {
 }
 
 impl BucketRoute {
+    pub(super) fn target_members(&self) -> TargetMembers {
+        TargetMembers {
+            members: self.members.clone(),
+            table: self.table.clone(),
+            segment_bytes: self.segment_bytes,
+        }
+    }
     pub(super) fn mesh_for_slot(&self, slot: u32) -> MeshId {
         self.slot_meshes[slot as usize]
     }
@@ -440,14 +466,7 @@ impl BucketRoute {
 
     /// Direct: the member list, bound one segment wide.
     pub(super) fn members_entry(&self, binding: u32) -> wgpu::BindGroupEntry<'_> {
-        wgpu::BindGroupEntry {
-            binding,
-            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                buffer: &self.members,
-                offset: 0,
-                size: wgpu::BufferSize::new(self.segment_bytes),
-            }),
-        }
+        members_entry(&self.members, self.segment_bytes, binding)
     }
 
     /// Draw every bucket with its class pipeline. `view` is the view group
@@ -485,6 +504,17 @@ impl BucketRoute {
             }
         }
         Ok(())
+    }
+}
+
+fn members_entry(buffer: &wgpu::Buffer, bytes: u64, binding: u32) -> wgpu::BindGroupEntry<'_> {
+    wgpu::BindGroupEntry {
+        binding,
+        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+            buffer,
+            offset: 0,
+            size: wgpu::BufferSize::new(bytes),
+        }),
     }
 }
 

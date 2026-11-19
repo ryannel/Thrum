@@ -336,6 +336,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.render_extent = candidate.render_extent;
         self.prepared = scene.prepared;
         self.slots = scene.slots;
+        self.retired_slots.clear();
         self.presenter = candidate.presenter.take();
         self.presenter_generation += 1;
         if let Some(view) = view {

@@ -201,11 +201,7 @@ impl Witness {
         self.surface_samples += u64::from(frame.surface_samples);
         self.presentable_encodes += u64::from(frame.presentable_encode);
         self.acquired += u64::from(frame.acquired);
-        self.unconfigured_acquires += u64::from(
-            frame
-                .acquire_configuration
-                .is_some_and(|configuration| configuration != Some((frame.epoch, frame.extent))),
-        );
+        self.unconfigured_acquires += u64::from(frame.unconfigured_acquire);
         self.configured += u64::from(frame.configured);
         self.max_pending_frames = self.max_pending_frames.max(frame.pending_frames);
         self.max_acquire_us = self.max_acquire_us.max(frame.acquire.as_micros());
@@ -389,7 +385,7 @@ impl Witness {
         let actor = self
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
-        let tail: [(&str, String); 47] = [
+        let tail = [
             ("actor_samples", self.actor_samples.to_string()),
             ("actor_position", actor),
             ("stall_active", self.stall_active.to_string()),

@@ -1,5 +1,5 @@
 //! Late effects share one refraction source and independently request scene depth.
-use super::{PreparedSynthetic, RenderError, SceneContext, TargetResources};
+use super::{RenderError, SceneContext, SyntheticTargetInputs, TargetResources};
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphDepthAttachment, Pass,
     PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
@@ -48,7 +48,7 @@ impl super::OffscreenTarget {
     }
 }
 
-impl PreparedSynthetic {
+impl SyntheticTargetInputs {
     pub(super) fn late_key(&self, index: usize) -> PipelineKey {
         PipelineKey {
             role: 3000 + u32::try_from(index).unwrap_or(u32::MAX),

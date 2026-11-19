@@ -237,6 +237,7 @@ impl SunOpticalDepth {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct CloudPrepared {
     packed: [u8; CLOUD_FIELD_BYTES],
     field: SunOpticalDepth,

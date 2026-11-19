@@ -8,11 +8,14 @@ use crate::{
     sprite::{PreparedSprites, SpriteTarget},
     synthetic::{
         CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, RetainedRayMeshes,
-        SceneTimingLayout, SyntheticScene,
+        SceneTimingLayout, SyntheticScene, SyntheticTargetInputs,
     },
     timing::GpuTimings,
 };
-use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 pub(super) struct PreparedScene {
     pub(super) prepared: PreparedRenderer,
@@ -81,6 +84,68 @@ pub(super) fn rebuild_3d_contribution(
 pub(super) enum PreparedRenderer {
     ThreeD(Box<PreparedSynthetic>),
     TwoD(Box<PreparedSprites>),
+}
+
+pub(super) enum TargetInputs {
+    ThreeD(Box<SyntheticTargetInputs>),
+    TwoD(Box<PreparedSprites>),
+}
+
+pub(super) struct TargetPreparation {
+    inputs: TargetInputs,
+    capabilities: DeviceCapabilities,
+    timing: Option<SceneTimingLayout>,
+    passes: u32,
+}
+
+impl TargetPreparation {
+    pub(super) fn new(prepared: &PreparedRenderer) -> Self {
+        let (inputs, timing) = match prepared {
+            PreparedRenderer::ThreeD(scene) => (
+                TargetInputs::ThreeD(Box::new(scene.target_inputs())),
+                Some(SceneTimingLayout::from(&**scene)),
+            ),
+            PreparedRenderer::TwoD(scene) => {
+                (TargetInputs::TwoD(Box::new(scene.target_inputs())), None)
+            }
+        };
+        Self {
+            inputs,
+            timing,
+            capabilities: prepared.capabilities().clone(),
+            passes: prepared.scene_pass_count(),
+        }
+    }
+
+    pub(super) fn bind_presenter(
+        &self,
+        slots: &mut [FrameSlot],
+        presenter: &SurfacePresenter,
+    ) -> Result<(), FrameError> {
+        let device = self.capabilities.device();
+        for slot in slots {
+            slot.presentation =
+                Some(
+                    match (&self.inputs, &mut slot.target) {
+                        (TargetInputs::TwoD(_), FrameTarget::TwoD(target)) => presenter
+                            .bind_output(device, self.capabilities.generation(), target.output()),
+                        (TargetInputs::ThreeD(inputs), FrameTarget::ThreeD(target)) => {
+                            target
+                                .bind_surface_graph_with_inputs(inputs, presenter.profile())
+                                .map_err(|error| {
+                                    FrameError::Gpu(format!("merged surface graph: {error:?}"))
+                                })?;
+                            presenter.bind_target(device, target)
+                        }
+                        _ => unreachable!("targets come from the same preparation"),
+                    }
+                    .map_err(|error| {
+                        FrameError::Gpu(format!("replacement surface binding: {error:?}"))
+                    })?,
+                );
+        }
+        Ok(())
+    }
 }
 
 impl PreparedRenderer {
@@ -287,45 +352,58 @@ pub(super) fn prepare_capture_slots(
     profile: Option<SurfaceProfile>,
     source: CaptureSource,
 ) -> Result<Vec<FrameSlot>, FrameError> {
-    let capabilities = prepared.capabilities();
-    let mut slots: Vec<FrameSlot> = Vec::with_capacity(IN_FLIGHT);
-    for _ in 0..IN_FLIGHT {
-        let (target, timing_layout) = match prepared {
-            PreparedRenderer::ThreeD(prepared) => {
-                let mut target = OffscreenTarget::with_capture_source(
-                    capabilities.device(),
-                    prepared,
-                    extent[0],
-                    extent[1],
-                    source,
-                )
-                .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
-                if let Some(first) = slots.first() {
-                    target.share_reconstruction_history(prepared, &first.target);
+    TargetPreparation::new(prepared).prepare_slots(queue, extent, surface, profile, source, None)
+}
+
+impl TargetPreparation {
+    pub(super) fn prepare_slots(
+        &self,
+        queue: &wgpu::Queue,
+        extent: [u32; 2],
+        surface: bool,
+        profile: Option<SurfaceProfile>,
+        source: CaptureSource,
+        cancel: Option<&AtomicBool>,
+    ) -> Result<Vec<FrameSlot>, FrameError> {
+        let capabilities = &self.capabilities;
+        let mut slots: Vec<FrameSlot> = Vec::with_capacity(IN_FLIGHT);
+        for _ in 0..IN_FLIGHT {
+            if cancel.is_some_and(|flag| flag.load(Ordering::Acquire)) {
+                return Err(FrameError::InvalidState("target preparation cancelled"));
+            }
+            let (target, timing_layout) = match &self.inputs {
+                TargetInputs::ThreeD(prepared) => {
+                    let mut target = OffscreenTarget::with_target_inputs(
+                        capabilities.device(),
+                        prepared,
+                        extent[0],
+                        extent[1],
+                        source,
+                    )
+                    .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
+                    if let Some(first) = slots.first() {
+                        target.share_reconstruction_history(prepared, &first.target);
+                    }
+                    let timing_layout = self.timing.map(|layout| layout.with_stars(&target));
+                    (FrameTarget::ThreeD(Box::new(target)), timing_layout)
                 }
-                let timing_layout = SceneTimingLayout::from((&**prepared, &target));
-                (FrameTarget::ThreeD(Box::new(target)), Some(timing_layout))
-            }
-            PreparedRenderer::TwoD(prepared) => {
-                let target = SpriteTarget::prepare(prepared, extent, source, profile)
-                    .map_err(|error| FrameError::Gpu(format!("sprite target: {error:?}")))?;
-                (FrameTarget::TwoD(Box::new(target)), None)
-            }
-        };
-        slots.push(FrameSlot {
-            target,
-            presentation: None,
-            timings: GpuTimings::new(
-                capabilities,
-                queue,
-                prepared.scene_pass_count() + u32::from(surface),
-            )
-            .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
-            timing_layout,
-            timing_readback: false,
-            render_done: Arc::new(AtomicBool::new(false)),
-            state: SlotState::Free,
-        });
+                TargetInputs::TwoD(prepared) => {
+                    let target = SpriteTarget::prepare(prepared, extent, source, profile)
+                        .map_err(|error| FrameError::Gpu(format!("sprite target: {error:?}")))?;
+                    (FrameTarget::TwoD(Box::new(target)), None)
+                }
+            };
+            slots.push(FrameSlot {
+                target,
+                presentation: None,
+                timings: GpuTimings::new(capabilities, queue, self.passes + u32::from(surface))
+                    .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
+                timing_layout,
+                timing_readback: false,
+                render_done: Arc::new(AtomicBool::new(false)),
+                state: SlotState::Free,
+            });
+        }
+        Ok(slots)
     }
-    Ok(slots)
 }

@@ -9,6 +9,7 @@ use crate::visibility::casters::{CasterCulling, CasterInputs};
 
 pub(super) const PASS: &str = "secondary view Sun cascade";
 const CULL_PASS: &str = "secondary view Sun caster cull";
+#[derive(Clone)]
 pub(super) struct Sun {
     pub(super) prepared: shadow::ShadowPrepared,
     pub(super) target: shadow::ShadowTarget<2>,

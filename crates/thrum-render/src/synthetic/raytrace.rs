@@ -394,14 +394,16 @@ impl PreparedSynthetic {
             self.mesh_arena.mesh_structures().to_vec(),
         ))
     }
+}
 
+impl super::SyntheticTargetInputs {
     pub(super) fn append_ray_structure(
         &self,
         graph: &mut FrameGraph,
         mesh: &[Access; 2],
         contribution_products: Option<&ResourceId>,
     ) -> Result<Option<ResourceId>, GraphError> {
-        if self.ray_structure.is_none() {
+        if !self.ray_structure {
             return Ok(None);
         }
         let structure = graph.resource(
@@ -439,7 +441,9 @@ impl PreparedSynthetic {
         });
         Ok(Some(structure))
     }
+}
 
+impl PreparedSynthetic {
     pub(super) fn record_ray_structure(
         &self,
         encoder: &mut wgpu::CommandEncoder,

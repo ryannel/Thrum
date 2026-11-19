@@ -101,6 +101,7 @@ pub(crate) enum Phase {
 }
 
 /// Device-local pipelines and the mesh table.
+#[derive(Clone)]
 pub(crate) struct VisibilityPrepared {
     layout: wgpu::BindGroupLayout,
     count: wgpu::ComputePipeline,
@@ -137,6 +138,7 @@ pub(crate) struct MemberShape {
     pub(crate) segment_bytes: u64,
 }
 
+#[derive(Clone)]
 struct MemberCompaction {
     shape: MemberShape,
     /// Workgroups in the current member list.
@@ -151,6 +153,7 @@ pub(crate) struct MemberInputs<'a> {
 }
 
 /// Frame-slot-owned outputs and the bind group that produces them.
+#[derive(Clone)]
 pub(crate) struct VisibilityTarget {
     visible: wgpu::Buffer,
     args: wgpu::Buffer,

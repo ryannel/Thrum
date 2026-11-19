@@ -75,6 +75,7 @@ pub(crate) struct SecondarySet {
     sources: Vec<super::SyntheticPointLight>,
 }
 
+#[derive(Clone)]
 pub(super) struct SecondaryPrepared {
     handle: SecondaryView,
     queue: wgpu::Queue,
@@ -82,7 +83,7 @@ pub(super) struct SecondaryPrepared {
     aux: wgpu::Buffer,
     layout: wgpu::BindGroupLayout,
     pipelines: [wgpu::RenderPipeline; 3],
-    source: String,
+    source: Arc<str>,
     key: PipelineKey,
     lighting: lighting::Lighting,
     aerial: Option<crate::atmosphere::SecondaryAerial>,
@@ -174,7 +175,9 @@ impl PreparedSynthetic {
         self.secondary = prepared;
         Ok(())
     }
+}
 
+impl super::SyntheticTargetInputs {
     pub(super) fn append_secondary_views(
         &self,
         graph: &mut FrameGraph,
@@ -412,7 +415,7 @@ impl SecondaryPrepared {
             aux: buffer("secondary raster auxiliary", super::AUX_BYTES as u64),
             layout,
             pipelines,
-            source,
+            source: source.into(),
             key: PipelineKey {
                 role: ROLE_BASE + index * STAGES,
                 ..prepared.key
@@ -433,7 +436,7 @@ impl SecondaryPrepared {
         &self,
         device: &wgpu::Device,
         main: &[wgpu::BindGroupEntry<'_>],
-        route: Option<&super::BucketRoute>,
+        route: Option<&super::mesh_route::TargetMembers>,
     ) -> wgpu::BindGroup {
         let mut entries = main.to_vec();
         if let Some(sun) = &self.sun {
@@ -466,8 +469,7 @@ impl SecondaryPrepared {
                 1 => entry.resource = self.aux.as_entire_binding(),
                 5 => {
                     if let Some((_, target)) = &self.culling {
-                        let size =
-                            route.map(|route| route.shape().expect("admitted route").segment_bytes);
+                        let size = route.map(|route| route.segment_bytes);
                         entry.resource = wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                             buffer: target.visible(),
                             offset: 0,

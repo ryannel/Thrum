@@ -62,6 +62,8 @@ mod shadow;
 pub(crate) mod stars;
 mod taau;
 mod target;
+mod target_inputs;
+pub(crate) use target_inputs::SyntheticTargetInputs;
 mod target_storage;
 mod temporal;
 mod upload;
@@ -926,12 +928,6 @@ impl SceneContext<'_> {
 }
 
 impl PreparedSynthetic {
-    /// The prepared, generation-bound SDR stage for graph composition. G4 may
-    /// declare and prepare a reconstruction output through this same stage.
-    pub(crate) fn sdr_tone_stage(&self) -> &SdrToneStage {
-        &self.display
-    }
-
     /// Prepare on the V1 executor's existing device and upload queue. No private
     /// adapter, device, submission or cook authority is created here.
     /// # Errors
@@ -1430,6 +1426,9 @@ impl PreparedSynthetic {
     pub fn pipeline_key(&self) -> PipelineKey {
         self.key
     }
+}
+
+impl SyntheticTargetInputs {
     fn exposure_key(&self) -> PipelineKey {
         PipelineKey {
             role: 6,
@@ -1476,6 +1475,9 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
+}
+
+impl PreparedSynthetic {
     /// Encode an already prepared draw. The caller owns submission and device
     /// polling. Skipping or failing this method cannot advance view histories.
     /// # Errors
@@ -1849,6 +1851,22 @@ impl OffscreenTarget {
         height: u32,
         capture_source: CaptureSource,
     ) -> Result<Self, RenderError> {
+        Self::with_target_inputs(
+            device,
+            &prepared.target_inputs(),
+            width,
+            height,
+            capture_source,
+        )
+    }
+
+    pub(crate) fn with_target_inputs(
+        device: &wgpu::Device,
+        prepared: &SyntheticTargetInputs,
+        width: u32,
+        height: u32,
+        capture_source: CaptureSource,
+    ) -> Result<Self, RenderError> {
         let row_bytes = prepared.target_row_bytes(device, [width, height], capture_source)?;
         let compiled = prepared.compile_graph(width, height, row_bytes, capture_source, None)?;
         let recipe = prepared
@@ -1876,7 +1894,7 @@ impl OffscreenTarget {
             &textures,
             &ids.temporal,
             [&depth, &motion_view, &reactive_view],
-            &prepared.exposure.samples,
+            &prepared.exposure_samples,
         )?;
         let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
         let native = prepared
@@ -1966,7 +1984,7 @@ impl OffscreenTarget {
             view_entries.extend([
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: prepared_shadow.sample_buffer.as_entire_binding(),
+                    resource: prepared_shadow.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,

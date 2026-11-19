@@ -30,12 +30,14 @@ pub(crate) struct CasterInputs<'a> {
 
 /// One Sun pass's culled list: members in the route's segment layout and one
 /// indexed indirect record per bucket.
+#[derive(Clone)]
 pub(crate) struct CasterList {
     visible: wgpu::Buffer,
     args: wgpu::Buffer,
     group: wgpu::BindGroup,
 }
 
+#[derive(Clone)]
 pub(crate) struct CasterCulling {
     meshes: wgpu::Buffer,
     count: wgpu::ComputePipeline,

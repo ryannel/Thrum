@@ -52,6 +52,7 @@ const GROUND_VALID: u8 = 16;
 const REFLECTION_VALID: u8 = 32;
 const DFG_VALID: u8 = 64;
 
+#[derive(Clone)]
 pub(crate) struct AtmospherePrepared {
     frame: AtmosphereFrame,
     environment: super::environment::EnvironmentState,

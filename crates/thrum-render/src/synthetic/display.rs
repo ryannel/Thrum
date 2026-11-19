@@ -66,6 +66,7 @@ pub(crate) const DISPLAY_REFERRED_SHADER: &str = concat!(
 pub(crate) const DISPLAY_REFERRED_PASS: &str = "display-referred tone encode";
 
 /// Fixed-exposure SDR output used when the scene publishes colour only.
+#[derive(Clone)]
 pub(crate) struct DisplayReferredStage(wgpu::RenderPipeline);
 
 impl DisplayReferredStage {
@@ -131,6 +132,7 @@ impl DisplayReferredStage {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct SdrToneStage {
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,

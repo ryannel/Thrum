@@ -13,6 +13,7 @@ pub(super) const MAX_CENTRE_NDC: f64 = 2.0;
 pub(super) const RADIUS_SIGMAS: f64 = 4.0;
 pub(super) const PIXEL_HALF_WIDTH: f64 = 0.5;
 
+#[derive(Clone)]
 pub(super) struct DaylightBound {
     inverse_at_one_code: f64,
     direct_lux: f32,

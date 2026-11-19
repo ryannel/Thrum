@@ -38,6 +38,19 @@ pub(super) struct SpriteBindings {
 pub(super) const VIEW_BYTES: u64 = size_of::<GpuView>() as u64;
 
 impl SpritePass {
+    pub(super) fn target_inputs(&self) -> Self {
+        Self {
+            key: self.key,
+            pipeline: self.pipeline.clone(),
+            rows_bytes: self.rows_bytes,
+            frames: self.frames.clone(),
+            sheet: self.sheet.clone(),
+            sheet_view: self.sheet_view.clone(),
+            row_capacity: self.row_capacity,
+            scratch: Vec::new(),
+        }
+    }
+
     pub(super) fn prepare(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,

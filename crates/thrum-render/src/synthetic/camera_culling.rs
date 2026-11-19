@@ -254,7 +254,7 @@ pub(super) fn prepass_view_group(
     })
 }
 
-impl PreparedSynthetic {
+impl super::SyntheticTargetInputs {
     /// Culled modes: declare the visibility passes and the forward reads of
     /// the drawn list (storage) and its arguments (indirect). Frustum
     /// declares one compute pass. Occlusion declares the prepass list, the
@@ -369,7 +369,9 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
+}
 
+impl PreparedSynthetic {
     pub(super) fn draw_camera(
         &self,
         pass: &mut wgpu::RenderPass<'_>,
@@ -405,7 +407,9 @@ impl PreparedSynthetic {
         }
         Ok(())
     }
+}
 
+impl super::SyntheticTargetInputs {
     /// The drawn list's target (frustum, or Occlusion's final cull), and
     /// Occlusion's prepass list over the pyramid of the private
     /// `prepass_depth`.
@@ -420,20 +424,24 @@ impl PreparedSynthetic {
         };
         let inputs = (
             &self.view_buffer,
-            self.instance_upload.buffer(),
-            self.history.serial_buffer(),
+            &self.instance_buffer,
+            &self.history_serials,
         );
-        let members = self.bucket_route.as_ref().map(BucketRoute::member_inputs);
+        let members = self
+            .bucket_route
+            .as_ref()
+            .map(super::mesh_route::TargetMembers::member_inputs);
         let occlusion = prepass_depth.and_then(|depth| {
             prepared.occlusion_target(device, inputs.0, inputs.1, inputs.2, depth, extent, members)
         });
         if let Some((last, prepass)) = occlusion {
             return (Some(last), Some(prepass));
         }
-        let members = self.bucket_route.as_ref().map(BucketRoute::member_inputs);
         (Some(prepared.member_target(device, inputs, members)), None)
     }
+}
 
+impl PreparedSynthetic {
     /// Occlusion only: the prepass list draws depth only into the private
     /// target, with the forward vertex entry, primitive state, two-sided
     /// choice, bindings and indices, so its depth equals what the forward

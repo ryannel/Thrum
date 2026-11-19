@@ -3,7 +3,7 @@
 //! height below which air is hidden from the Sun, sampled by the shadowed aerial
 //! perspective. Prepared with the shadow recipe when atmosphere lighting is on.
 
-use super::shadow::{ShadowPrepared, ShadowTarget};
+use super::shadow::ShadowTarget;
 use super::{DIRECTIONAL_BYTES, RenderError, shadow};
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
@@ -132,6 +132,7 @@ pub(super) fn append_graph(
     Ok(heights)
 }
 
+#[derive(Clone)]
 pub(super) struct AirShadowPrepared {
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
@@ -209,11 +210,11 @@ impl AirShadowPrepared {
         &self,
         device: &wgpu::Device,
         texture: &wgpu::Texture,
-        shadow: Option<(&ShadowPrepared, &ShadowTarget)>,
+        shadow: Option<(&wgpu::Buffer, &ShadowTarget)>,
         light: &wgpu::Buffer,
     ) -> Result<AirShadowTarget, RenderError> {
-        let (prepared, maps) = shadow.ok_or(RenderError::GraphPassMismatch)?;
-        let (samples, maps) = (&prepared.sample_buffer, &maps.array_view);
+        let (samples, maps) = shadow.ok_or(RenderError::GraphPassMismatch)?;
+        let maps = &maps.array_view;
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic Sun air shadow heights"),

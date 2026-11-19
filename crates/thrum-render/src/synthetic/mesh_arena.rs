@@ -164,6 +164,7 @@ impl ArenaLimits {
 }
 
 /// GPU copies of the arena. Replaced whole when the arena outgrows them.
+#[derive(Clone)]
 pub(super) struct ArenaBuffers {
     pub(super) vertices: wgpu::Buffer,
     pub(super) indices: wgpu::Buffer,

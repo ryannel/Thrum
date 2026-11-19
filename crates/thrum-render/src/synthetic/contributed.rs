@@ -32,13 +32,6 @@ impl PreparedSynthetic {
         self.effect_time = time;
     }
 
-    pub(super) fn contribution_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 1000,
-            ..self.key
-        }
-    }
-
     /// Declare the graph passes of the scene contribution drawn into this scene's targets.
     /// Targets created afterwards include them; existing targets are unchanged.
     pub(crate) fn set_contribution_passes(&mut self, passes: ContributionPasses) {
@@ -48,6 +41,15 @@ impl PreparedSynthetic {
     /// The contribution passes targets of this scene include.
     pub(crate) fn contribution_passes(&self) -> ContributionPasses {
         self.contribution_passes
+    }
+}
+
+impl super::SyntheticTargetInputs {
+    pub(super) fn contribution_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 1000,
+            ..self.key
+        }
     }
 
     /// Declare the contribution's upload and compute passes before forward; forward reads what
@@ -74,7 +76,7 @@ impl PreparedSynthetic {
                 graph,
                 wgpu::BufferUsages::COPY_DST
                     | wgpu::BufferUsages::STORAGE
-                    | if self.mesh_arena.ray_demand() {
+                    | if self.ray_demand {
                         wgpu::BufferUsages::BLAS_INPUT
                     } else {
                         wgpu::BufferUsages::empty()
@@ -146,7 +148,9 @@ impl PreparedSynthetic {
         accesses.extend_from_slice(&resources.opaque_reads);
         Ok((resources, ray_structure))
     }
+}
 
+impl PreparedSynthetic {
     /// The forward pass a [`SceneContribution`] draws into.
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {

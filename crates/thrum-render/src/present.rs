@@ -69,6 +69,15 @@ pub struct SurfacePresenter {
     owner: Arc<()>,
 }
 
+pub(crate) struct PresenterInputs {
+    device: wgpu::Device,
+    pipeline: wgpu::RenderPipeline,
+    layout: wgpu::BindGroupLayout,
+    generation: u64,
+    extent_limit: u32,
+    format: wgpu::TextureFormat,
+}
+
 struct PresentFamily;
 
 impl RecordFamily for PresentFamily {
@@ -326,17 +335,38 @@ impl SurfacePresenter {
         source_extent: [u32; 2],
         extent: [u32; 2],
     ) -> Result<Self, PresentError> {
-        check_extent(self.extent_limit, source_extent)?;
-        check_extent(self.extent_limit, extent)?;
-        let profile = SurfaceProfile {
-            format: self.profile.format,
-            extent,
-        };
-        let (plan, surface_resource) = compile_plan(self.generation, source_extent, profile)?;
-        Ok(Self {
+        self.inputs().prepare(source_extent, extent)
+    }
+
+    pub(crate) fn inputs(&self) -> PresenterInputs {
+        PresenterInputs {
             device: self.device.clone(),
             pipeline: self.pipeline.clone(),
             layout: self.layout.clone(),
+            generation: self.generation,
+            extent_limit: self.extent_limit,
+            format: self.profile.format,
+        }
+    }
+}
+
+impl PresenterInputs {
+    pub(crate) fn prepare(
+        self,
+        source_extent: [u32; 2],
+        extent: [u32; 2],
+    ) -> Result<SurfacePresenter, PresentError> {
+        check_extent(self.extent_limit, source_extent)?;
+        check_extent(self.extent_limit, extent)?;
+        let profile = SurfaceProfile {
+            format: self.format,
+            extent,
+        };
+        let (plan, surface_resource) = compile_plan(self.generation, source_extent, profile)?;
+        Ok(SurfacePresenter {
+            device: self.device,
+            pipeline: self.pipeline,
+            layout: self.layout,
             plan,
             surface_resource,
             generation: self.generation,
@@ -346,7 +376,9 @@ impl SurfacePresenter {
             owner: Arc::new(()),
         })
     }
+}
 
+impl SurfacePresenter {
     /// Source grid and viewport used by the presentation pass.
     pub fn source_viewport(&self) -> ([u32; 2], [u32; 4]) {
         (

@@ -489,8 +489,11 @@ impl<G: Game + 'static> App<G> {
         }
         if let Some(probe) = std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE") {
             let id = display_link::window_number(&window)?;
-            std::fs::write(std::path::Path::new(&probe).join("window-id"), id.to_string())
-                .map_err(|error| error.to_string())?;
+            std::fs::write(
+                std::path::Path::new(&probe).join("window-id"),
+                id.to_string(),
+            )
+            .map_err(|error| error.to_string())?;
         }
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;

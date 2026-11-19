@@ -1,5 +1,23 @@
 //! Read-only native inspection, scoped to retained wgpu handles.
+#[cfg(target_os = "macos")]
+use objc2_metal::MTLTexture;
 use objc2_metal::{MTLDevice, MTLResource};
+
+/// Read the actual Metal texture's dimensions while the wgpu lease is held.
+/// A failed surface configure can leave wgpu's descriptor out of agreement.
+#[cfg(target_os = "macos")]
+#[must_use]
+#[expect(
+    unsafe_code,
+    reason = "Read-only size through a retained Metal texture guard"
+)]
+pub fn drawable_extent(texture: &wgpu::Texture) -> Option<[u32; 2]> {
+    // SAFETY: The guard retains the texture for the two synchronous property
+    // reads. No native handle escapes or changes ownership.
+    let native = unsafe { texture.as_hal::<wgpu::hal::api::Metal>() }?;
+    let raw = native.raw_handle();
+    Some([raw.width().try_into().ok()?, raw.height().try_into().ok()?])
+}
 
 #[expect(
     unsafe_code,

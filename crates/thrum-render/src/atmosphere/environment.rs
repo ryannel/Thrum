@@ -53,6 +53,7 @@ pub struct EnvironmentFrame {
     pub surface_sun: SurfaceSun,
 }
 
+#[derive(Clone)]
 pub(super) struct EnvironmentState {
     lut_generation: u64,
     frame: AtmosphereFrame,

@@ -5,6 +5,8 @@ use crate::runtime::DeviceSite;
 mod device;
 mod hardware;
 mod recipe;
+#[cfg(target_os = "macos")]
+pub use apple::drawable_extent;
 pub use device::{
     DeviceProfile, DeviceRecipe, DeviceRestriction, DeviceWatch, FIRST_DEVICE_GENERATION,
     OpenedDevice, PREFERRED_SDR_FORMAT, SurfaceConfigError, configure_surface, sdr_surface_config,

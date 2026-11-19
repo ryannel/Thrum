@@ -6,6 +6,7 @@ use super::{
 };
 
 pub(crate) const PASS: &str = "secondary view visibility";
+#[derive(Clone)]
 pub(crate) struct SecondaryVisibility {
     pipelines: [wgpu::ComputePipeline; 3],
     record: wgpu::BindGroup,

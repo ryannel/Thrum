@@ -7,12 +7,14 @@ use super::{
     SyntheticView,
 };
 use crate::synthetic::{SyntheticPointLight, cluster::ClusterTable, cluster_gpu::ClusterCompute};
+use std::sync::Arc;
 
 pub(super) const PASS: &str = "secondary view clusters";
 
+#[derive(Clone)]
 pub(super) struct Lighting {
     pub(super) groups: [wgpu::BindGroup; 2],
-    state: Mutex<ClusterState>,
+    state: Arc<Mutex<ClusterState>>,
     pub(super) gpu: bool,
 }
 
@@ -84,12 +86,12 @@ impl Lighting {
         );
         Ok(Self {
             groups,
-            state: Mutex::new(ClusterState {
+            state: Arc::new(Mutex::new(ClusterState {
                 table,
                 heads,
                 indices,
                 compute,
-            }),
+            })),
             gpu,
         })
     }

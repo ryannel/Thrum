@@ -251,9 +251,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.presenter.as_ref(),
             )?;
             if let Some(prepared) = self.prepared.three_d() {
+                let inputs = prepared.target_inputs();
                 for slot in &mut slots {
                     slot.target
-                        .share_reconstruction_history(prepared, &self.slots[0].target);
+                        .share_reconstruction_history(&inputs, &self.slots[0].target);
                 }
             }
             Some(slots)

@@ -28,6 +28,7 @@ const fn prefilter_sample_count() -> u32 {
     total
 }
 
+#[derive(Clone)]
 pub(super) struct ReflectionPrepared {
     pub(super) cube: wgpu::Texture,
     pub(super) dfg: wgpu::Texture,

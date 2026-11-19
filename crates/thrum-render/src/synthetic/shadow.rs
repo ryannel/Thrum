@@ -44,6 +44,7 @@ fn split_depth(near: f32, far: f32) -> f32 {
     near.midpoint(far).midpoint((near * far).sqrt())
 }
 
+#[derive(Clone)]
 struct Cascade {
     buffer: wgpu::Buffer,
     view_group: wgpu::BindGroup,
@@ -124,6 +125,7 @@ pub(super) enum CasterContribution<'a> {
     Secondary(&'a dyn SceneContribution, usize, SecondaryShadowCascade),
 }
 
+#[derive(Clone)]
 struct FittedShadow {
     matrices: [Mat4; MAPS],
     samples: ShadowCascades,
@@ -166,6 +168,7 @@ fn matrix_contains_caster(
     })
 }
 
+#[derive(Clone)]
 pub(super) struct ShadowPrepared {
     pipeline: wgpu::RenderPipeline,
     pipeline_two_sided: wgpu::RenderPipeline,
@@ -180,6 +183,7 @@ pub(super) struct ShadowPrepared {
     pub(super) sample_buffer: wgpu::Buffer,
 }
 
+#[derive(Clone)]
 pub(super) struct ShadowTarget<const MAP_COUNT: usize = MAPS> {
     views: [wgpu::TextureView; MAP_COUNT],
     pub(super) array_view: wgpu::TextureView,
@@ -476,6 +480,7 @@ impl<const MAP_COUNT: usize> ShadowTarget<MAP_COUNT> {
     }
 }
 
+#[derive(Clone)]
 struct FitInputs {
     projection: Projection,
     camera: Vec3,

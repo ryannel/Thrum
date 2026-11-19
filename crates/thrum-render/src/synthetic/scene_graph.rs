@@ -74,7 +74,7 @@ impl SceneGraphs<CompiledGraph> {
 
     pub(super) fn bind(
         self,
-        prepared: &PreparedSynthetic,
+        prepared: &super::SyntheticTargetInputs,
     ) -> Result<SceneGraphs<ExecutableGraph<SceneFamily>>, RenderError> {
         Ok(SceneGraphs {
             scene: prepared.bind_scene_graph(self.scene)?,
@@ -121,7 +121,9 @@ impl PreparedSynthetic {
         self.check_target(target)?;
         Ok(target.graph(readback).plan().clone())
     }
+}
 
+impl super::SyntheticTargetInputs {
     fn append_forward_epilogues(
         &self,
         graph: &mut FrameGraph,
@@ -138,7 +140,7 @@ impl PreparedSynthetic {
             crate::visibility::ARGS_BYTES,
             VisibilityPrepared::args_bytes,
         );
-        Self::append_camera_stats(graph, stats, bytes)?;
+        PreparedSynthetic::append_camera_stats(graph, stats, bytes)?;
         self.append_history_publish(graph, keys, forward, instance, history_write, history_bytes)
     }
     /// Declares one cleared full-view attachment and its forward access.
@@ -208,10 +210,7 @@ impl PreparedSynthetic {
     /// The arena's vertex (storage) and index reads, shared by every camera
     /// pass that draws meshes.
     fn mesh_arena_reads(&self, graph: &mut FrameGraph) -> Result<[Access; 2], RenderError> {
-        let buffers = self
-            .mesh_arena
-            .buffers()
-            .ok_or(RenderError::GraphPassMismatch)?;
+        let buffers = &self.mesh_buffers;
         let mut read = |buffer: &wgpu::Buffer, usage, kind| {
             let bytes = buffer.size();
             graph
@@ -370,7 +369,7 @@ impl PreparedSynthetic {
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         self.append_material_textures(&mut graph, &mut accesses)?;
         let secondary_shared = self.secondary_inputs(&accesses, &route);
-        if let Some(structure) = ray_structure.as_ref().filter(|_| self.uses_shadow_rays()) {
+        if let Some(structure) = ray_structure.as_ref().filter(|_| self.uses_shadow_rays) {
             accesses.push(Access::new(structure.clone(), 0..1, AccessKind::RayQuery));
         }
         let [depth, scene, motion, reactive] =
@@ -472,7 +471,7 @@ impl PreparedSynthetic {
         let (output, display_pass) = self.display.append_graph(
             &mut graph,
             &pre_tone,
-            ray_structure.filter(|_| self.traced_view.is_some()),
+            ray_structure.filter(|_| self.traced_view),
         )?;
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
@@ -892,7 +891,7 @@ impl PreparedSynthetic {
             shadow::LAYERS - 1
         };
         let lists = match &self.caster_culling {
-            Some((culling, _)) => {
+            Some(culling) => {
                 let mut cull = vec![
                     Access::new(
                         instance.clone(),
@@ -1018,7 +1017,7 @@ impl PreparedSynthetic {
                     usage: wgpu::BufferUsages::STORAGE,
                 },
                 ResourceScope::Imported {
-                    initialized: index == 0 || self.cluster_compute.is_none(),
+                    initialized: index == 0 || self.cluster_bounds_bytes.is_none(),
                 },
             )?;
             accesses.push(Access::new(
@@ -1028,11 +1027,10 @@ impl PreparedSynthetic {
             ));
             resources.push(storage);
         }
-        if self.cluster_compute.is_some() {
+        if let Some(bounds_bytes) = self.cluster_bounds_bytes {
             let bounds = graph.resource(
                 ResourceDescriptor::Buffer {
-                    bytes: u64::try_from(self.clusters.bounds.len())
-                        .map_err(|_| RenderError::SceneCapacity)?,
+                    bytes: bounds_bytes,
                     usage: wgpu::BufferUsages::STORAGE,
                 },
                 ResourceScope::Imported { initialized: true },
@@ -1046,8 +1044,7 @@ impl PreparedSynthetic {
                     Access {
                         view: None,
                         resource: bounds,
-                        range: 0..u64::try_from(self.clusters.bounds.len())
-                            .map_err(|_| RenderError::SceneCapacity)?,
+                        range: 0..bounds_bytes,
                         kind: AccessKind::StorageRead,
                         store: true,
                     },

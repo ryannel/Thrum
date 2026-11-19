@@ -12,8 +12,7 @@ use crate::graph::{
 };
 
 use super::{
-    DirectionalLight, PreparedSynthetic, Projection, RenderError, SCENE_FORMAT, SceneContext,
-    SyntheticView, exposure,
+    DirectionalLight, Projection, RenderError, SCENE_FORMAT, SceneContext, SyntheticView, exposure,
 };
 
 mod daylight;
@@ -27,6 +26,7 @@ const SHADER: &str = concat!(
     wgsl!("synthetic/stars.wgsl")
 );
 
+#[derive(Clone)]
 pub(super) struct StarPrepared {
     catalogue: wgpu::Buffer,
     sampler: wgpu::Sampler,
@@ -244,7 +244,7 @@ impl StarPrepared {
     }
 }
 
-impl PreparedSynthetic {
+impl super::SyntheticTargetInputs {
     pub(super) fn star_key(&self) -> PipelineKey {
         PipelineKey {
             role: 9,

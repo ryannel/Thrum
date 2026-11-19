@@ -9,6 +9,7 @@ use std::collections::BTreeSet;
 
 const PARAM_BYTES: u64 = size_of::<crate::records::ReconstructionParams>() as u64;
 
+#[derive(Clone)]
 pub(super) struct Taau {
     pipeline: wgpu::ComputePipeline,
     reference: bool,
@@ -223,6 +224,9 @@ impl PreparedSynthetic {
             .as_ref()
             .map_or(super::Reconstruction::Off, Taau::selection)
     }
+}
+
+impl super::SyntheticTargetInputs {
     pub(super) fn prepare_taau_target(
         &self,
         device: &wgpu::Device,
@@ -241,7 +245,7 @@ impl PreparedSynthetic {
                     .taau
                     .as_ref()
                     .ok_or(RenderError::GraphPassMismatch)?
-                    .target(device, output, inputs, &self.exposure.samples))
+                    .target(device, output, inputs, &self.exposure_samples))
             })
             .transpose()
     }
@@ -394,7 +398,7 @@ impl TaauTarget {
 impl OffscreenTarget {
     pub(crate) fn share_reconstruction_history(
         &mut self,
-        prepared: &PreparedSynthetic,
+        prepared: &super::SyntheticTargetInputs,
         first: &Self,
     ) {
         if let (Some(taau), Some(target), Some(source)) =
@@ -412,7 +416,7 @@ impl OffscreenTarget {
                 ],
                 (&target.output, &target.history, &target.depth),
                 &target.params,
-                &prepared.exposure.samples,
+                &prepared.exposure_samples,
             );
         }
     }

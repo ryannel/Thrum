@@ -37,6 +37,7 @@ mod extent;
 mod preparation;
 mod sprites;
 mod submitted_capture;
+mod surface_switch;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod visual;
@@ -50,7 +51,10 @@ pub use creation::{
 pub use creation::{CreationRegion, DeviceSite};
 pub use device::{DevicePrepareInputs, PreparedDevice};
 pub use extent::FrameExtent;
+#[cfg(not(target_arch = "wasm32"))]
+pub use extent::{ExtentPrepareInputs, PreparedExtent};
 pub use submitted_capture::{CaptureLimits, SubmittedImage};
+pub use surface_switch::{SurfaceSwitch, SurfaceSwitchOutcome, SurfaceSwitchRecord};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
 pub use visual::{PreparedVisual, VisualPrepareInputs};
@@ -532,6 +536,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     prepared: PreparedRenderer,
     presenter: Option<SurfacePresenter>,
     slots: Vec<FrameSlot>,
+    retired_slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
     submitted_clock: Option<SubmittedFrameClock>,
@@ -1112,6 +1117,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             prepared: gpu.prepared,
             presenter,
             slots: gpu.slots,
+            retired_slots: Vec::with_capacity(IN_FLIGHT),
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
             submitted_clock: None,
@@ -1543,6 +1549,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn pending_frames(&self) -> usize {
         self.slots
             .iter()
+            .chain(&self.retired_slots)
             .filter(|slot| !matches!(slot.state, SlotState::Free))
             .count()
     }
@@ -1564,6 +1571,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let oldest_pending = self
             .slots
             .iter()
+            .chain(&self.retired_slots)
             .filter_map(|slot| match &slot.state {
                 SlotState::Free => None,
                 SlotState::Rendering(sample) | SlotState::Resolving(sample) => {
@@ -2488,16 +2496,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     fn check_native_completion(&mut self) -> Result<(), FrameError> {
         if self.native_failed_generation.is_none() {
-            self.native_failed_generation = self.slots.iter().find_map(|slot| {
-                let sample = match &slot.state {
-                    SlotState::Rendering(sample) | SlotState::Resolving(sample) => sample,
-                    SlotState::Free => return None,
-                };
-                sample.native_segment.as_ref().and_then(|segment| {
-                    (segment.outcome() == crate::synthetic::NativeOutcome::Failed)
-                        .then_some(segment.generation)
-                })
-            });
+            self.native_failed_generation =
+                self.slots
+                    .iter()
+                    .chain(&self.retired_slots)
+                    .find_map(|slot| {
+                        let sample = match &slot.state {
+                            SlotState::Rendering(sample) | SlotState::Resolving(sample) => sample,
+                            SlotState::Free => return None,
+                        };
+                        sample.native_segment.as_ref().and_then(|segment| {
+                            (segment.outcome() == crate::synthetic::NativeOutcome::Failed)
+                                .then_some(segment.generation)
+                        })
+                    });
         }
         if let Some(generation) = self.native_failed_generation {
             self.history_reset_pending = true;
@@ -2521,7 +2533,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // queries: a later failed slot must also forbid earlier readback work.
         self.check_native_completion()?;
         let max_passes = self.prepared.scene_pass_count() + u32::from(self.presenter.is_some());
-        for slot in &mut self.slots {
+        for slot in self.slots.iter_mut().chain(&mut self.retired_slots) {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);
             match state {
                 SlotState::Free => {}
@@ -2611,6 +2623,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 }
             }
         }
+        self.retired_slots
+            .retain(|slot| !matches!(slot.state, SlotState::Free));
         Ok(())
     }
 }
