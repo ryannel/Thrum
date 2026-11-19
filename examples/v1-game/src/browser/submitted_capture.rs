@@ -56,7 +56,7 @@ impl BrowserGame {
         let Some(image) = self.shell.next_submitted_image().map_err(super::js_error)? else {
             return Ok(JsValue::UNDEFINED);
         };
-        let metadata = serde_json::json!({
+        let mut metadata = serde_json::json!({
             "session": image.session,
             "pixel_source": format!("{:?}", image.pixel_source),
             "exposure_gpu_words": image.exposure_gpu_words,
@@ -72,6 +72,10 @@ impl BrowserGame {
             "submit_ms": image.submitted_elapsed.as_secs_f64() * 1000.0,
             "surface_presented": image.sample.surface_presented,
         });
+        if let Some(stats) = image.sample.sprites {
+            metadata["sprite_movers"] = image.sample.moving.into();
+            metadata["sprite_draws"] = stats.draws.into();
+        }
         let pixels = if let Some(reuse) =
             reuse.filter(|buffer| buffer.length() as usize == image.rgba.len())
         {

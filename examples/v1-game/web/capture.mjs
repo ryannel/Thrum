@@ -312,26 +312,31 @@ async function captureSpriteField() {
   record.mode = mode;
   record.pixel_source = source;
   record.extent = extent;
-  record.scheduling = 'visible headless page using elapsed animation frame observations, up to 60 opportunities per second';
+  record.scheduling = 'elapsed timer opportunities against a 60 Hz schedule on the visible headless page';
   record.gpu_pass_timing = false;
   record.start_before_ms = performance.now();
   game.begin_submitted_capture(1);
   const start = performance.now();
   record.start_after_ms = start;
   game.set_paused(false, 0);
-  let last = -Infinity;
+  const period = 1000 / 60;
+  let next = 0;
   while (performance.now() - start < 22400) {
-    const rafMs = await new Promise(requestAnimationFrame);
     if (hidden) fail('sprite capture page became hidden');
     drain();
     const elapsed = performance.now() - start;
-    if (elapsed - last < 13) continue;
-    last = elapsed;
+    if (elapsed < next) {
+      await wait(Math.min(3, next - elapsed));
+      continue;
+    }
+    const ordinal = Math.floor(elapsed / period);
+    next = (ordinal + 1) * period;
     game.frame(elapsed);
     record.opportunities.push({
-      ordinal: record.opportunities.length, raf_ms: rafMs, frame_ms: elapsed,
-      returned_ms: performance.now(), tick: game.committed_tick(), presented: Number(game.presented()),
+      ordinal, frame_ms: elapsed, returned_ms: performance.now(),
+      tick: game.committed_tick(), presented: Number(game.presented()),
     });
+    await wait(0);
   }
   const drainUntil = performance.now() + 10000;
   for (;;) {

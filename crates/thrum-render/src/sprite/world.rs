@@ -140,13 +140,17 @@ impl SpriteSink<'_> {
             return false;
         };
         let old = saved.filter(|old| {
-            old.source.epoch == self.source.epoch
+            Some(old.source) == self.world.source
+                && old.source.epoch == self.source.epoch
                 && old.source.timeline == self.source.timeline
-                && old.source.tick.checked_add(1) == Some(self.source.tick)
                 && old.generation == generation
                 && old.ordered.key.identity == identity
         });
-        let previous = old.map_or(row, |old| old.current);
+        // A missed publication removes the pose interval. The retained list
+        // can still compare the same live identities at the next observed tick.
+        let previous = old
+            .filter(|old| old.source.tick.checked_add(1) == Some(self.source.tick))
+            .map_or(row, |old| old.current);
         *saved = Some(WorldRow {
             source: self.source,
             generation,

@@ -221,6 +221,11 @@ fn overlap_pixels_obey_the_pair_rule_with_travel_chains_and_entity_churn() {
                 }
             }
         }
+        if tick == 2 {
+            // A display callback can miss publications. The same live
+            // identities still keep their overlap order on this timeline.
+            host.world_mut().tick += 3;
+        }
         let next = read_order(&mut host, &device, &state);
         if tick < 4 {
             assert_eq!(next, [0, 1], "travelling pair at tick {tick}");
