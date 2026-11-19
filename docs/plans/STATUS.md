@@ -8,7 +8,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ### Needs you now
 
-- Nothing.
+- APPLE-PRESENTATION M4 The valley fills the window at any size, and keeps presenting while the window is resized: Blocked: Needs Access, D4.7: On the Mac a resize reads cleanly in the window itself. While the edge moves, the old picture fills the window, scaled smoothly, with no band or blank area. The switch to the new size is one clean change in the window, with no black frame, flash, half-drawn frame or ghost of the old picture, and no hold on the last frame long enough to read as a freeze. (Screen Recording granted to the tool that captures the game window, with the Mac unlocked. The agent wakes the display, runs the capture and reviews it; nobody has to watch.). You approve it at the machine, in a visible run the lead starts
 
 ### Choices made for you
 
@@ -277,7 +277,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Edits to meshes, textures and volumes appear in the running valley without a hitch, on Mac and in Chrome, and the content gate closes (CONTENT-LOOP M3): In Progress · [plan](CONTENT-LOOP/PLAN.md)
 - The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome (SHOWCASE M6): In Progress · [plan](SHOWCASE/PLAN.md)
 - The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore (WATERS M6): Not Started · [plan](WATERS/PLAN.md)
@@ -355,7 +354,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2), 13 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M2-review.md)
 - A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome (EFFECT-GRAPH M2), 13 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M2-review.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1), 13 Nov · [review](../../.orchestrate/evidence/CULLING/M1-review.md)
-- An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused (EFFECT-GRAPH M1), 12 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M1-review.md)
 
 ## All modules
 
@@ -367,7 +365,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Done 17 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · Blocked: Needs Access |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | Waiting: On Dependency, SHOWCASE:M9 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
