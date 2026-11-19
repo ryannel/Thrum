@@ -301,7 +301,10 @@ Seams 5–9 were settled on 14 November 2026, when M4 to M12 were planned. Each 
 changes and no exact comparison is loosened. Once built, each belongs to its owner: later work there keeps its
 tests passing.
 - seam 5 (render extent and generation transitions; `PLATFORM-RUNTIME-MAC`'s render actor, the frame runtime,
-  and `PLATFORM-RUNTIME-IOS`'s render owner) is built in M4. The surface lease on iOS is not changed. The Mac's cadence
+  and `PLATFORM-RUNTIME-IOS`'s render owner) is built in M4. The surface lease on iOS is not changed, and iOS keeps
+  preparing a new extent in its render owner between two frames. GPU work a module runs off the render thread on
+  the game's device runs as a job on the frame host's preparation thread, so that a surface switch can exclude
+  every other submitter. The Mac's cadence
   qualification (`PLATFORM-RUNTIME-MAC` M3) stands for the path it measured, and `SHOWCASE` M8's attended record
   measures the path as it ships;
 - seam 6 (the platform display record, the EDR layer properties, and engine capture's tap reading the float

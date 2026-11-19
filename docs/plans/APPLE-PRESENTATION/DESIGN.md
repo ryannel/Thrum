@@ -11,8 +11,10 @@
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
 fresh design review of that revision passed on 11 November. Revised 14 November for M4 to M12
-([settled below](#m4-to-m12-settled-14-november-2026)), and on 19 November for
-[the surface across a transition](#the-surface-across-a-transition-m4); a design review of this revision is owed. It answers the three independent reviews of revision 1
+([settled below](#m4-to-m12-settled-14-november-2026)), and twice on 19 November for
+[the surface across a transition](#the-surface-across-a-transition-m4), the second time after
+[its design review](../../evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
+after a failed configure and for a stated iOS transition. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -415,8 +417,10 @@ gate.
 The render extent is the surface's backing size on the Mac, the oriented surface's on iOS and the canvas's
 backing size in Chrome. A host is still created at an extent its caller names, so offscreen runs, engine capture
 and every exact baseline keep the extent they were retained at: M4 moves no retained image. Chrome has one
-thread, so there a new extent is prepared between two frames as it is today, and the page records the gap; only
-the Mac and iOS build off the render thread.
+thread, so there a new extent is prepared between two frames as it is today, and the page records the gap. iOS
+prepares between two frames too, in its render owner, because its lease lets it present nothing meanwhile
+([the surface across a transition](#the-surface-across-a-transition-m4) says why). Only the Mac builds off the
+render thread, and the lifecycle below is the Mac's.
 
 ### The lifecycle of a generation build (M4)
 
@@ -428,8 +432,8 @@ the device generation. The frame host holds the latest request, and one build at
 | Steady | A generation is current and matches the request | Draws it |
 | Debouncing | The request's extent changed during a live resize | Draws the current generation at its own extent. The surface stays as configured, and the layer scales the picture to the window |
 | Building | The extent has been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor holds |
-| Ready | The build finished and its request is still the latest for the current device generation | At the next frame boundary, with no surface texture held, reconfigures the surface for the new generation, swaps the generation in and resets history and reconstruction |
-| Unmet | The build for the latest request failed, and the request has not changed | Draws the current generation at its own extent; the surface stays as configured and the layer scales the picture. No build runs, and the governor runs |
+| Ready | The build finished and its request is still the latest for the current device generation | Draws the current generation until a frame boundary where the switch may be entered: no surface texture held, and no job on the preparation thread. There it reconfigures the surface for the new generation, swaps the generation in and resets history and reconstruction |
+| Unmet | The build for the latest request failed, or its switch ended in a configure error, and the request has not changed | Draws the current generation at its own extent; the surface stays as configured and the layer scales the picture. No build runs, and the governor runs |
 | Retiring | The swap happened | Keeps the old generation, providers included, until its frames in flight complete, as retirement works today |
 
 - **Cancellation.** A newer request sets the running build's cancel flag, which the builder reads between
@@ -443,33 +447,82 @@ the device generation. The frame host holds the latest request, and one build at
   retried in a loop.
 - **The switch** is pointer swaps on the render thread, with one full upload of the new frame buffers in its
   first frame. No texture, view, bind group or pipeline is created on the render thread at any point of a
-  transition, which the creation counters prove by thread. Recovery preparation after a lost device is not a
+  Mac transition, which the creation counters prove by thread. Recovery preparation after a lost device is not a
   transition, and is counted apart. So is the surface texture each acquisition returns, with the view of it:
   those are presentation, made in every steady frame, and belong to no generation.
 
 ### The surface across a transition (M4)
 
 **The rule.** The surface's configured extent and format are the current generation's, at every frame. They
-change only in the switch, in one step with the generation, or not at all.
+change only in the switch, in one step with the generation, or not at all. The host also has one answer for the
+drawable's size: it acquires a drawable only while the last `Surface::configure` call on that surface succeeded.
+
+On the Mac:
 
 - **While the size changes, nothing touches the surface.** The drawable keeps the old generation's extent and the
   present pass stays one render pixel to one drawable pixel. Core Animation scales the drawable to the layer's
   bounds with linear filtering, in step with the window: that is the layer's default contents gravity, `resize`,
-  which the layer wgpu makes through raw-window-metal leaves in place on the Mac and on iOS for this purpose.
-  `resize` stretches to fill. The builder may set aspect fill instead if the stretch reads worse under D4.7;
-  neither leaves a band. The host therefore has no scaled present path, and the presenter extent, the history
-  key and engine capture's tap all stay still until the switch.
-- **At the switch the surface is reconfigured once**, through `Surface::configure`, with no surface texture held.
-  wgpu waits inside that call for every submission on the device to finish. The wait is paid once for each
+  which the layer wgpu makes through raw-window-metal leaves in place on the Mac. `resize` stretches to fill. The
+  builder may set aspect fill instead if the stretch reads worse under D4.7; neither leaves a band. The host
+  therefore has no scaled present path, and the presenter extent, the history key and engine capture's tap all
+  stay still until the switch.
+- **At the switch the surface is reconfigured once**, by one call to `Surface::configure`, with no surface texture
+  held. wgpu waits inside that call for every submission on the device to finish. The wait is paid once for each
   generation taken, it is bounded by the frames in flight, and the compositor goes on showing the last drawable,
   scaled, while it lasts. A display tick it costs is recorded with that reason and the wait's duration, as a
   tripwire. The frames in flight have completed when the call returns, so the old generation retires at once.
-- **A refused reconfigure changes nothing.** wgpu refuses when another thread submits during its wait. The old
-  generation and the old configuration stay, the ready generation is kept, and the switch is tried at the next
-  frame boundary while its request is still the latest. The preparation thread starts no build while a switch is
-  under way. A second refusal for the same request ends as a failed build does: Unmet, and reported.
-- **iOS** follows the same rule inside its lease section. The lease, its epochs and revocation do not change.
-  Chrome is not affected: its canvas is resized by the page and prepared between two frames.
+- **A switch that cannot be entered is deferred, and nothing is called.** The host enters the switch only at a
+  frame boundary where it holds no surface texture and its preparation thread runs no job. The preparation thread
+  is the only other thread that submits on the game's device, and it is the host's: a build, and any later GPU
+  work off the render thread, runs as a job on it, and the host starts none until the switch has returned. So no
+  submission can land inside wgpu's wait, which is the one way released wgpu refuses a valid reconfigure. A
+  deferral leaves `Surface::configure` uncalled and every size as it was. The ready generation is kept, the old
+  one presents, and the host tries again at the next frame boundary. A deferral needs no limit of its own: it
+  ends when the job does, or when a newer request makes the ready generation stale.
+- **An error from the call is repaired before anything is acquired.** The switch reads the call's result through
+  an error scope. It does not use the immediate retry in `configure_surface`, which exists for the stale drawable
+  a lost device leaves and stays as it is for attach and recovery. On any error, public wgpu 30.0.1 has already
+  cached the configuration it was asked for, whatever wgpu-core and the layer did, so the next surface texture
+  would report the new size over a drawable of the old one. The host therefore takes nothing from the surface
+  until it is whole: in the same step it configures the surface again with the current generation's
+  configuration.
+  - *The restore succeeds.* wgpu, wgpu-core and the layer agree on the old extent again. The ready generation is
+    dropped unbound, the old one presents, and the host is Unmet with the error reported, as after a failed
+    build. The same request is not tried again.
+  - *The restore fails too.* The surface is refused. The host acquires nothing and presents nothing, and reports
+    it as the render actor reports a refused configuration today. It acquires again only after a later configure
+    succeeds: the next switch, or the platform's reconfigure for a new surface generation.
+  - *The device was lost.* Recovery takes over, as it does for a build.
+- **The record keeps these apart.** Each switch records its deferrals, its configure calls, whether the
+  generation was taken, and a restore with its result. A generation taken is exactly one successful call, and a
+  deferral is no call.
+
+**iOS takes a new extent between two frames, and presents nothing in between.** The lease admits a present only
+when the drawable's size is the extent UIKit last observed, and the module list's ruling on seam 5 keeps the lease
+as it is. Once a rotation is observed, no old-extent frame can be shown, so a build off the owner's thread would
+buy no picture: the owner would answer requests it could present nothing for, past the bound the route already
+holds. The owner therefore keeps the coherent transition `PLATFORM-RUNTIME-IOS` M7 built:
+
+- `Resized` bumps the surface epoch and publishes the new extent, as today. A section admitted before it may
+  still present once, which is the race the lease has always allowed and counted.
+- At the first request under the new epoch with no frame pending, the owner prepares the new extent's generation
+  in place, configures the surface inside the lease section, resets history, and only then acquires. It takes no
+  drawable under the new epoch before that, so no frame is encoded to be dropped. The pre-present extent check
+  stays as the backstop it is.
+- In between, the compositor shows the last presented image. The Swift shell sets the Metal layer's gravity to
+  `resizeAspect` when it creates the surface, which is `PLATFORM-RUNTIME-IOS`'s choice and stays: the old picture
+  is fitted whole and undistorted into the animating bounds, with the view's background beside it, until the
+  first frame at the new extent replaces it.
+- That frame is presented within the route's existing bound of six frame replies after the resize, with at most
+  one raced present and no old-extent present outside it. PID, window, lease and device generation are kept.
+- A configure error ends the request with nothing acquired, as today: the owner acquires only after a configure
+  for the current epoch and extent has succeeded.
+
+So the two targets differ on purpose. The Mac goes on submitting old-generation frames through a transition; iOS
+holds one image and resumes at the new extent. D4.10 observes the iOS interval in the owner's frame replies, and
+the route's simulator recording across each rotation is kept beside them as a witness.
+
+Chrome is not affected: its canvas is resized by the page and prepared between two frames.
 
 **Why the surface is not resized as the edge moves.** Released wgpu-core 30.0.1 makes that wait in
 `Device::configure_surface` on every backend, for any surface of the device and from any thread, and the wgpu
@@ -492,7 +545,8 @@ from a frame encoded in the hold. The frame host marks those frames, so the rule
 time its sample arrives.
 
 A build ends in one of four ways: its generation is taken, it fails, it is cancelled, or its result is dropped as
-stale. If the next build starts at once, the hold continues. Otherwise the hold ends:
+stale. A ready generation whose switch ends in a configure error counts as a failed build, and while a switch is
+deferred the build has not ended. If the next build starts at once, the hold continues. Otherwise the hold ends:
 
 - **with a switch**, after the new generation's first frame, whose sample carries the full upload and is not
   admitted;
@@ -587,7 +641,8 @@ second:
    travels as one blob, the stage record of each of its functions followed by the Metal library, in the bytes
    wgpu-core already hands the backend. The pinned loader splits the blob, and pipeline creation fills the same
    fields the WGSL path fills, so the encoder binds threadgroup memory and buffer sizes through the code it
-   already has. Bytes with no record section behave as in the release. The WGSL path is not changed.
+   already has. Bytes with no record section behave as in the release. The WGSL path translates and runs as in
+   the release: the patch may expose what its translation call already returns, and changes nothing it does.
 2. *The archive (M12)*, below.
 
 Three techniques, each behind the registry, each kept only if M9's and M12's launch records show it wins:
@@ -732,7 +787,7 @@ pixels of the window, which is why the governor exists before the paired proof.
   replayed scale trace.
 - **EDR changes SDR appearance.** Guard: the H = 1 identity (D6.3) and the agents' inspection of the float
   captures (D6.8). The owner's look at the panel is an observation, and it gates nothing.
-- **The pinned backend drifts from the release, or changes the WGSL path.** Guard: the pin check (D10.6), which
+- **The pinned backend drifts from the release, or changes what the WGSL path does.** Guard: the pin check (D10.6), which
   rebuilds the copy from the release and the retained patches, and the exact baselines under `./dev check`.
 - **Adding a third forward target breaks contributors.** Guard: SceneContribution and cooked-pipeline tests in G4 M2.
 - **The reactive target is declared but inert, or history advances before submission, on one target only.** Nothing

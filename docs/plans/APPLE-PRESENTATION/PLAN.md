@@ -20,6 +20,7 @@ the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, 
 - Assumption: the numbers the drafts carried stay as drafted: a 100 ms resize debounce, three frames over budget before the governor drops scale, one recovery step a second, and at most two scale changes on an unloaded route. None came from you, and none is a frame-time gate.
 - Assumption: from M4 the game draws at the window's full pixel size, three milestones before the governor exists (M7). At full screen the frame rate may dip in between. Times are recorded, not gated.
 - Assumption: taking a new window size costs one short wait for the GPU, at the moment the picture switches and never while the edge moves, because released wgpu waits inside its surface call. Removing that wait means a patched copy of wgpu-core as well, from M4, or the engine owning the drawables beside wgpu. I chose neither.
+- Assumption: on the iPhone a rotation holds the last picture, fitted whole with the background at its sides, until the first frame at the new size. Only the Mac keeps drawing through a resize, because the iPhone's surface rules refuse old-size frames and were to stay as they are.
 - Assumption: a patched copy of wgpu's Metal backend (wgpu-hal 30.0.1) is kept in this repository from M10, one milestone earlier than planned, because the released backend cannot run shaders compiled ahead of time; M12 adds the archive to the same copy. Nothing is posted upstream; that stays yours (U1).
 
 ## M1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
@@ -28,33 +29,26 @@ the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, 
 ## M2 Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames: done
 [review](../../evidence/APPLE-PRESENTATION/M2-review.md)
 
-## M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome
-
-This is the first in-game reconstruction on portable. It runs at the current 640×360 extent, after G3t M3, so
-TAAU's linear output feeds G3t's pre-tone input; the existing SDR transform still runs once.
-
-- [ ] `taau.rs` and `taau.wgsl`: dilation, YCoCg clip, luma weighting, reactive and depth rejection, linear-depth
-      history, p rescale (→D3.1, D3.3).
-- [ ] Registry-resolved `Reconstructor`, with TAAU as the default (→D3.1).
-- [ ] `reference.rs`: the accumulation mode (the 32-phase cycle run twice, the two averages compared) and the
-      CIEDE2000 comparison (→D3.2).
-- [ ] Reset wiring (→D3.4).
-- [ ] Timing row (→D3.5).
+## M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome: done
+[review](../../evidence/APPLE-PRESENTATION/M3-review.md)
 
 ## M4 The valley fills the window at any size, and keeps presenting while the window is resized
 
 The extent work and the proof arms for D4.1 to D4.3 are on `build/apple-presentation` at `71577cd6`; what was
-tried is in [the handoff](../../evidence/APPLE-PRESENTATION/M4-handoff.md). D4.4 to D4.7 are built on
-[the surface across a transition](DESIGN.md#the-surface-across-a-transition-m4): no reconfigure while the size
-changes, one at the switch. Before anything else, show in the real window that a surface left alone is scaled to
-fill a resized window, since the rest stands on it. `render_actor.rs` reconfigures at each resize step today, and
-resizing is synchronous in `runtime/extent.rs` and `runtime/preparation.rs`: `PreparedSynthetic` has to split
-into a shared prepared part and per-generation state before a build can run off the render thread. Engine
-capture's tap is replaced once, at the switch, and D4.7's realtime capture has to keep its submission identity
-across that. The iOS render owner is `examples/v1-game-ios/src/ios/render.rs`: leave its surface lease as it is.
-Other modules' tests and every exact baseline name their own extents; keep them doing so. `APPLE-TILE` M10 and
-M11 work in the same runtime files: integrate on what has landed, and keep the native segment's providers inside
-the generation a build makes.
+tried is in [the handoff](../../evidence/APPLE-PRESENTATION/M4-handoff.md). The rest is built on
+[the surface across a transition](DESIGN.md#the-surface-across-a-transition-m4). Before anything else, show in the
+real window that a surface left alone is scaled to fill a resized window, since the rest stands on it.
+`render_actor.rs` reconfigures at each resize step today, and resizing is synchronous in `runtime/extent.rs` and
+`runtime/preparation.rs`: `PreparedSynthetic` has to split into a shared prepared part and per-generation state
+before a build can run off the render thread. The switch calls `Surface::configure` itself, once:
+`configure_surface` in `capabilities/device.rs` retries at once, which suits attach and recovery, so leave it
+as it is. If a thread other than the render and preparation threads submits on the game's device, say so in the
+log before building on the deferral rule. Engine capture's tap is replaced once, at the
+switch, and D4.7's realtime capture has to keep its submission identity across that. On iOS nothing moves off the
+owner's thread: `examples/v1-game-ios/src/ios/render.rs` keeps its lease, extent check and synchronous
+transition, and D4.10 reads the replies `examples/v1-game-ios/ios/route.py` already counts. Other modules' tests and every exact baseline name their own
+extents; keep them doing so. `APPLE-TILE` M10 and M11 work in the same runtime files: integrate on what has
+landed, and keep the native segment's providers inside the generation a build makes.
 
 ## M5 Render scale steps during play with no hitch and no history reset
 
