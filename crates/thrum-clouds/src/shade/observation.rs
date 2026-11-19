@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use super::{Mailbox, Prepared, WeatherInput};
-use crate::RowStamp;
+use crate::{RowStamp, sun_path::ground_reference::GroundReference};
 
 /// One submitted weather map and the Sun paths used to compose its ground field.
 /// Copy the products on the supplied queue before the next render callback.
@@ -30,19 +30,33 @@ pub struct CloudSubmission {
     pub ground: wgpu::Texture,
     /// First trace distance, opacity, sample count and traced flag when Sky is enabled.
     pub sky_front: Option<wgpu::Texture>,
+    ground_reference: Option<GroundReference>,
+}
+
+impl CloudSubmission {
+    /// Replay the ground slice at every row stamped with this submission's tick.
+    /// The caller must drain the readback before allowing another submission.
+    pub fn replay_ground_slices(&self) -> Option<&wgpu::Texture> {
+        Some(self.ground_reference.as_ref()?.replay(
+            &self.device,
+            &self.queue,
+            &self.sun_rows,
+            self.state.tick(),
+        ))
+    }
 }
 
 #[derive(Default)]
 pub(super) struct Observation {
-    armed: bool,
+    armed: Option<bool>,
     latest: Option<CloudSubmission>,
 }
 
 impl WeatherInput {
     /// Arm an inspection of the next submitted cloud products.
-    pub fn observe_next_submission(&self) {
+    pub fn observe_next_submission(&self, ground: bool) {
         if let Ok(mut input) = self.0.lock() {
-            input.observation.armed = true;
+            input.observation.armed = Some(ground);
             input.observation.latest = None;
         }
     }
@@ -54,11 +68,18 @@ impl WeatherInput {
 }
 
 impl Mailbox {
-    pub(super) fn observe(&mut self, gpu: &Prepared, generation: u64) {
-        if !std::mem::take(&mut self.observation.armed) {
+    pub(super) fn observe(&mut self, gpu: &mut Prepared, generation: u64) {
+        let Some(ground) = self.observation.armed.take() else {
             return;
-        }
+        };
         if let Some(state) = &self.state {
+            let ground_reference = ground.then(|| {
+                gpu.ground_reference
+                    .get_or_insert_with(|| {
+                        GroundReference::new(&gpu.device, &gpu.sun, &gpu.weather)
+                    })
+                    .clone()
+            });
             self.observation.latest = Some(CloudSubmission {
                 device: gpu.device.clone(),
                 queue: gpu.queue.clone(),
@@ -70,6 +91,7 @@ impl Mailbox {
                 sun: gpu.sun.products().clone(),
                 sun_rows: gpu.sun.row_stamps().clone(),
                 ground: gpu.sun.ground().clone(),
+                ground_reference,
                 sky_front: self.sky.as_ref().map(|sky| sky.fresh_front.clone()),
             });
         }

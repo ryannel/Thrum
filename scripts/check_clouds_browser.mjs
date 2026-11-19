@@ -56,7 +56,7 @@ export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game
   const before = await until(({frames}) => frames.length >= 3 && frames.every(row => row.tick === first.tick), 'repeated submitted tick');
   await game.invoke('game.set_paused(false, performance.now());');
   const partial = await until(({frames}) => frames.some(row => row.weather_rows.some(level => level.current_rows > 0 &&
-    level.current_rows < 256) && row.ground.rows.some(level => level.current_rows > 0 && level.current_rows < 256)), 'partially refreshed weather and Sun rows');
+    level.current_rows < 256) && row.ground.reference_texels.some(count => count > 0 && count < 256 * 256)), 'partially refreshed weather and Sun rows');
 
   const { targetId: other } = await cdp.call('Target.createTarget', { url: 'about:blank', background: true });
   let hidden, resumed;
@@ -92,7 +92,8 @@ export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game
   await game.invoke('thrumCloudCheck.hold = true;');
   const final = await until(value => value.frames.length === value.presented, 'replacement readbacks drained');
   const firstReplacement = final.frames.find(row => row.generation === 2);
-  if (firstReplacement.presented !== lost.presented + 1 ||
+  if ([first, firstReplacement].some(row => !row.ground.reference_texels.every(count => count === 256 * 256)) ||
+      firstReplacement.presented !== lost.presented + 1 ||
       [...firstReplacement.weather_rows, ...firstReplacement.ground.rows].some(row => row.oldest_tick !== firstReplacement.tick)) {
     throw new Error('Replacement device did not rebuild every row on its first submission');
   }
@@ -106,5 +107,5 @@ export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game
   return { frames: final.frames, visibility: final.visibility, gpuErrors: final.gpuErrors, repeated_through: before.presented,
     partial_refresh_by: partial.presented, hidden_at: hidden.presented, resumed_at: resumed.presented,
     hitch, after_hitch: afterHitch.presented, lost_at: lost.presented, first_replacement: firstReplacement.presented,
-    scope: 'Every observed actual page submission; weather against its CPU row source; packed ground against the three retained Sun-path footprints, with cadence bounds on their rows' };
+    scope: 'Every observed actual page submission; weather against its CPU row source; every written Sun-path ground slice against an independent march through the verified weather map, retained rows against the last observed write, and every packed ground texel against those slices, with cadence bounds' };
 }

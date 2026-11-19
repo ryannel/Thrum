@@ -23,7 +23,7 @@ impl BrowserGame {
     pub fn observe_next_cloud_submission(&mut self, ground: bool) -> Result<(), JsValue> {
         game::cloud_input(&self.shell)
             .ok_or_else(|| js_error("cloud observation requires Shade or Sky"))?
-            .observe_next_submission();
+            .observe_next_submission(ground);
         if ground && self.cloud_observation.is_none() {
             self.cloud_observation = Some(Rc::default());
         }
@@ -70,10 +70,21 @@ async fn inspect(
     let ground = if let Some(previous) = previous {
         let limits = config.sun.levels.map(|level| level.maximum_age);
         let ages = row_ages(&frame, &frame.sun_rows, &limits, config.sun.size)?;
-        let check = ground_error(&frame, &config.sun).await?;
+        let replay = previous.borrow().has_new_rows(&frame);
+        let reference = if replay {
+            let texture = frame
+                .replay_ground_slices()
+                .ok_or("missing ground reference")?;
+            Some(read_texture_bytes(&frame.device, &frame.queue, texture, 0, 4).await?)
+        } else {
+            None
+        };
+        let check = ground_error(&frame, &config.sun, reference.as_deref()).await?;
         let changes = previous.borrow_mut().observe(&frame, check.fingerprints)?;
         serde_json::json!({
             "max_depth_error": check.max_depth_error, "shade_texels": check.shade_texels,
+            "reference_texels": check.reference_texels,
+            "max_reference_depth_error": check.max_reference_depth_error,
             "rows": ages, "unchanged_stamp_and_changed_value_counts": changes,
         })
     } else {
@@ -106,10 +117,24 @@ async fn inspect(
 #[derive(Default)]
 pub(super) struct PreviousSun {
     generation: u64,
-    levels: [Vec<(u64, u64)>; 3],
+    levels: [Vec<(RowStamp, u64)>; 3],
 }
 
 impl PreviousSun {
+    fn has_new_rows(&self, frame: &CloudSubmission) -> bool {
+        self.generation != frame.generation
+            || frame
+                .sun_rows
+                .iter()
+                .zip(&self.levels)
+                .any(|(stamps, previous)| {
+                    stamps
+                        .iter()
+                        .zip(previous)
+                        .any(|(stamp, (before, _))| stamp.tick != before.tick)
+                })
+    }
+
     fn observe(
         &mut self,
         frame: &CloudSubmission,
@@ -119,21 +144,37 @@ impl PreviousSun {
         let same_device = self.generation == frame.generation;
         let next = fingerprints.into_iter().zip(&frame.sun_rows);
         for (level, ((fingerprints, stamps), old)) in next.zip(&mut self.levels).enumerate() {
-            let rows = stamps
-                .iter()
-                .map(|stamp| stamp.tick)
-                .zip(fingerprints)
-                .collect::<Vec<_>>();
-            if same_device {
-                for (row, (&(tick, fingerprint), &(old_tick, old_fingerprint))) in
-                    rows.iter().zip(old.iter()).enumerate()
+            let rows = stamps.iter().copied().zip(fingerprints).collect::<Vec<_>>();
+            for (row, &(stamp, fingerprint)) in rows.iter().enumerate() {
+                // A retained row inherits the reference comparison of its write.
+                // A new row must claim this submission's source, never an unseen tick.
+                if same_device
+                    && let Some(&(before, old_fingerprint)) = old.get(row)
+                    && stamp.tick == before.tick
                 {
-                    if tick < old_tick || (tick == old_tick && fingerprint != old_fingerprint) {
+                    if stamp.time.to_bits() != before.time.to_bits()
+                        || stamp.parameters != before.parameters
+                        || fingerprint != old_fingerprint
+                    {
                         return Err(format!(
-                            "Sun-path level {level} row {row}: value changed at the same source tick, or source regressed ({old_tick} to {tick})"
+                            "Sun-path level {level} row {row}: retained source or value changed at tick {}",
+                            stamp.tick
                         ));
                     }
-                    changes[level][0] += usize::from(tick == old_tick);
+                    changes[level][0] += 1;
+                    continue;
+                }
+                if stamp.tick != frame.state.tick()
+                    || stamp.time.to_bits() != frame.state.time().to_bits()
+                    || stamp.parameters != frame.state.parameters()
+                {
+                    return Err(format!(
+                        "Sun-path level {level} row {row}: new row claims tick {} at submission tick {}",
+                        stamp.tick,
+                        frame.state.tick()
+                    ));
+                }
+                if same_device && let Some(&(_, old_fingerprint)) = old.get(row) {
                     changes[level][1] += usize::from(fingerprint != old_fingerprint);
                 }
             }
@@ -177,12 +218,21 @@ struct GroundCheck {
     max_depth_error: f64,
     shade_texels: usize,
     fingerprints: [Vec<u64>; 3],
+    reference_texels: [usize; 3],
+    max_reference_depth_error: f64,
 }
 
 async fn ground_error(
     frame: &CloudSubmission,
     profile: &thrum_clouds::SunProfile,
+    reference: Option<&[u8]>,
 ) -> Result<GroundCheck, String> {
+    let size = profile.size as usize;
+    let mut reference_texels = [0; 3];
+    let mut max_reference_depth_error = 0.0_f64;
+    if reference.is_some_and(|bytes| bytes.len() != 3 * size * size * 4) {
+        return Err("incomplete ground reference readback".into());
+    }
     let mut sources = Vec::new();
     let mut fingerprints = std::array::from_fn(|_| Vec::new());
     for (level, texture) in frame.sun.iter().enumerate() {
@@ -197,23 +247,27 @@ async fn ground_error(
                 hasher.finish()
             })
             .collect();
-        sources.push(
-            bytes
-                .as_chunks::<8>()
-                .0
-                .iter()
-                .map(|texel| depth(texel, 3))
-                .collect::<Vec<_>>(),
-        );
+        if bytes.len() != size * size * 8 {
+            return Err("incomplete Sun-path readback".into());
+        }
+        let depths = bytes
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|texel| depth(texel, 3))
+            .collect::<Vec<_>>();
+        if let Some(expected) = reference {
+            let (count, maximum) = compare_ground_reference(frame, level, size, &depths, expected)?;
+            reference_texels[level] = count;
+            max_reference_depth_error = max_reference_depth_error.max(maximum);
+        }
+        sources.push(depths);
     }
     let pixels = read_texture_bytes(&frame.device, &frame.queue, &frame.ground, 0, 8).await?;
     let ground = profile.ground_size as usize;
     let half = ground / 2;
-    let size = profile.size as usize;
-    if pixels.len() != ground * ground * 8
-        || sources.iter().any(|source| source.len() != size * size)
-    {
-        return Err("incomplete Sun path or ground readback".into());
+    if pixels.len() != ground * ground * 8 {
+        return Err("incomplete ground readback".into());
     }
     let mut max_error = 0.0_f64;
     let mut shade = 0;
@@ -247,7 +301,46 @@ async fn ground_error(
         max_depth_error: max_error,
         shade_texels: shade,
         fingerprints,
+        reference_texels,
+        max_reference_depth_error,
     })
+}
+
+fn compare_ground_reference(
+    frame: &CloudSubmission,
+    level: usize,
+    size: usize,
+    actual: &[f64],
+    expected: &[u8],
+) -> Result<(usize, f64), String> {
+    let expected = &expected.as_chunks::<4>().0[level * size * size..(level + 1) * size * size];
+    let mut maximum = 0.0_f64;
+    let mut count = 0;
+    for (y, stamp) in frame.sun_rows[level].iter().enumerate() {
+        if stamp.tick != frame.state.tick() {
+            continue;
+        }
+        let row = y * size..(y + 1) * size;
+        for (x, (&actual, &expected)) in actual[row.clone()].iter().zip(&expected[row]).enumerate()
+        {
+            let expected = f64::from(f32::from_le_bytes(expected));
+            let error = (actual - expected).abs();
+            let rounded = f16::from_f64(expected);
+            let ulp = f16::from_bits(rounded.to_bits() + 1).to_f64() - rounded.to_f64();
+            // A binary16 store can use either adjacent value. The independent
+            // f32 kernels also differ in filtering and accumulation order.
+            let tolerance = ulp + expected * 0.000_1 + 0.000_01;
+            if !error.is_finite() || actual < 0.0 || error > tolerance {
+                return Err(format!(
+                    "Sun-path reference mismatch at level {level} texel {x},{y} tick {}: depth {actual}, expected {expected}, bound {tolerance}",
+                    stamp.tick
+                ));
+            }
+            maximum = maximum.max(error);
+            count += 1;
+        }
+    }
+    Ok((count, maximum))
 }
 
 fn depth(texel: &[u8; 8], channel: usize) -> f64 {

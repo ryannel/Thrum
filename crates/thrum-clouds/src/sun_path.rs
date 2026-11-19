@@ -1,3 +1,6 @@
+#[cfg(target_arch = "wasm32")]
+pub(crate) mod ground_reference;
+
 use crate::noise::{Noise, SHAPE_PERIOD, SHAPE_SIZE};
 use crate::{Error, RowStamp, WeatherMap};
 use thrum_cloud_model::State;
@@ -15,7 +18,16 @@ pub(crate) const PATH_PASSES: [&str; 3] = [
 pub(crate) const GROUND_PASS: &str = "cloud ground field";
 pub(crate) const FAR_PASS: &str = "cloud far transmittance";
 const SHADER: &str = concat!(
+    include_str!("sun_path/params.wgsl"),
     include_str!("sun_path.wgsl"),
+    "\n",
+    include_str!("erosion.wgsl")
+);
+
+#[cfg(any(test, target_arch = "wasm32"))]
+const GROUND_REFERENCE_SHADER: &str = concat!(
+    include_str!("sun_path/params.wgsl"),
+    include_str!("sun_path/ground_reference.wgsl"),
     "\n",
     include_str!("erosion.wgsl")
 );

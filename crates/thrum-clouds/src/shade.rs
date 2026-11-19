@@ -104,6 +104,8 @@ struct Prepared {
     queue: wgpu::Queue,
     #[cfg(target_arch = "wasm32")]
     device: wgpu::Device,
+    #[cfg(target_arch = "wasm32")]
+    ground_reference: Option<crate::sun_path::ground_reference::GroundReference>,
 }
 
 impl Shade {
@@ -313,6 +315,8 @@ impl SceneContribution for Shade {
             queue: surface.queue.clone(),
             #[cfg(target_arch = "wasm32")]
             device: wgpu::Device::clone(surface.device),
+            #[cfg(target_arch = "wasm32")]
+            ground_reference: None,
         }));
         Ok(())
     }
