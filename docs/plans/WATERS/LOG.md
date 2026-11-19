@@ -505,3 +505,10 @@
   cover both speeds, a turn, a stop and restart, trade wind and the lake. The cost record includes both
   1440p views and the sea timestamp faults. Hardware Chrome verified the float, surviving wake, lake rings
   and 29 public query samples. [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
+
+- 2026-11-19 M6 review fixes tie the query's dent to admitted endpoint pressure and keep queued impulses until submission.
+  Metal verified zero height for a refused source, the earliest of 33 future drops, and discard before initial publication.
+  All eight floats near the moored craft measured under 0.24 mm of waterline variation after settling.
+  The 1440p cost record adds water-absent arms and compares the two water-present arms with the prior same-view record.
+  The sea timing diagnostic confirmed stale shadow end counters. [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
+  The endpoint test suite uses one Metal device at a time and collects no pass timestamps for its correctness assertions.

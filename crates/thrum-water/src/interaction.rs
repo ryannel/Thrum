@@ -59,10 +59,38 @@ pub struct BodyPressure {
 struct Page {
     follow: Option<u32>,
     bodies: Vec<BodyPressure>,
+    refused_bodies: u64,
+}
+
+#[derive(Default)]
+struct ImpulsePage {
     impulses: Vec<Impulse>,
     impulse_ids: BTreeSet<u64>,
-    refused_bodies: u64,
     refused_impulses: u64,
+}
+
+#[derive(Default)]
+struct Pages {
+    bodies: BTreeMap<u64, Page>,
+    impulses: BTreeMap<u64, ImpulsePage>,
+    retired_through: Option<u64>,
+}
+
+impl Pages {
+    fn retire_impulses(&mut self, tick: u64, reseek: bool) {
+        if reseek {
+            self.impulses.clear();
+        } else {
+            while self
+                .impulses
+                .first_key_value()
+                .is_some_and(|(&first, _)| first <= tick)
+            {
+                self.impulses.pop_first();
+            }
+        }
+        self.retired_through = Some(tick);
+    }
 }
 
 /// Tick pages of forces and impulses. Posting the same tick replaces its page
@@ -70,7 +98,7 @@ struct Page {
 #[derive(Clone)]
 pub struct Mailbox {
     limits: Limits,
-    pages: Arc<Mutex<BTreeMap<u64, Page>>>,
+    pages: Arc<Mutex<Pages>>,
 }
 
 impl Mailbox {
@@ -94,15 +122,18 @@ impl Mailbox {
         bodies.sort_by_key(|body| body.id);
         bodies.dedup_by_key(|body| body.id);
         let mut pages = self.pages.lock().expect("water interaction mailbox");
-        let page = pages.entry(tick).or_default();
+        let page = pages.bodies.entry(tick).or_default();
         page.follow = follow;
         page.refused_bodies = bodies.len().saturating_sub(self.limits.bodies as usize) as u64;
         bodies.truncate(self.limits.bodies as usize);
         page.bodies = bodies;
-        retain_recent(&mut pages);
+        while pages.bodies.len() > 32 {
+            pages.bodies.pop_first();
+        }
     }
 
-    /// Post a vertical impulse for its named tick.
+    /// Post a vertical impulse for its named tick. Pending impulses remain
+    /// queued until submission reaches that tick. Retired ticks ignore late posts.
     /// # Panics
     /// Panics if another thread poisoned the mailbox.
     pub fn post_impulse(&self, impulse: Impulse) {
@@ -114,7 +145,13 @@ impl Mailbox {
             return;
         }
         let mut pages = self.pages.lock().expect("water interaction mailbox");
-        let page = pages.entry(impulse.tick).or_default();
+        if pages
+            .retired_through
+            .is_some_and(|tick| impulse.tick <= tick)
+        {
+            return;
+        }
+        let page = pages.impulses.entry(impulse.tick).or_default();
         if page.impulse_ids.insert(impulse.id) {
             let index = page.impulses.partition_point(|entry| entry.id < impulse.id);
             page.impulses.insert(index, impulse);
@@ -123,13 +160,6 @@ impl Mailbox {
                 page.refused_impulses += 1;
             }
         }
-        retain_recent(&mut pages);
-    }
-}
-
-fn retain_recent(pages: &mut BTreeMap<u64, Page>) {
-    while pages.len() > 32 {
-        pages.pop_first();
     }
 }
 

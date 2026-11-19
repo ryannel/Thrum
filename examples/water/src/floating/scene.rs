@@ -166,7 +166,21 @@ pub fn build_wake(
     heading: f32,
     demo: WakeDemo,
 ) -> Result<FloatingScene, Box<dyn Error>> {
-    build_scene(wind, lake, speed, heading, true, true, Some(demo))
+    build_wake_paired(wind, lake, speed, heading, demo, true)
+}
+
+/// Build the same wake route with or without the water contribution.
+/// # Errors
+/// Returns invalid scene, mesh, spectrum, map or controls.
+pub fn build_wake_paired(
+    wind: Wind,
+    lake: bool,
+    speed: f32,
+    heading: f32,
+    demo: WakeDemo,
+    draw_water: bool,
+) -> Result<FloatingScene, Box<dyn Error>> {
+    build_scene(wind, lake, speed, heading, true, draw_water, Some(demo))
 }
 
 #[expect(

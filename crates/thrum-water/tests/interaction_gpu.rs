@@ -125,7 +125,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
         Limits {
             solves: 3,
             impulses: 2,
-            bodies: 1,
+            bodies: 2,
         },
     ) else {
         return;
@@ -134,6 +134,23 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
     fixture.mailbox.post_impulse(impact(1, 90, -4.0, 64_000.0));
     fixture.mailbox.post_impulse(impact(1, 10, -4.0, 400.0));
     fixture.mailbox.post_impulse(impact(1, 20, 6.0, 400.0));
+    fixture.mailbox.post_bodies(
+        1,
+        Some(1),
+        vec![pressure(1, [-4.0, 0.0], 0.0), pressure(2, [6.0, 0.0], 0.0)],
+    );
+    fixture.query.post(
+        0,
+        vec![BodyQuery {
+            id: 2,
+            generation: 1,
+            points: vec![QueryPoint {
+                position: [6.0, 0.0],
+                radius: 0.0,
+                use_tick: 1,
+            }],
+        }],
+    );
     fixture.draw(1);
     let report = fixture
         .report
@@ -142,10 +159,17 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
         .interaction
         .expect("interaction");
     assert_eq!(report.refused_impulses, 1);
-    assert_eq!(report.refused_regions, [1, 1]);
+    assert_eq!(report.refused_regions, [2, 2]);
     assert_eq!(report.regions, [2, 2]);
     assert_eq!(report.solves, [3, 2]);
     let witness = fixture.read();
+    let answer = &fixture.query.drain(1, Fixture::STEP)[0].points[0].surface;
+    assert!(answer.wet, "the refused body must be over water");
+    assert_eq!(answer.sample.height.to_bits(), 0);
+    eprintln!(
+        "Metal refused body height over wet cells: {} m",
+        answer.sample.height
+    );
     for level in 0..2 {
         let [origin, _] = witness.endpoint.endpoints[1].origins[level];
         let spacing = Witness::CELL_METRES[level];
@@ -159,6 +183,9 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
             }
         }
     }
+
+    drop(witness);
+    drop(fixture);
 
     // Repeat with both wet regions admitted. No dropped solve can explain
     // the exact zero beyond the bar in this second run.
@@ -233,13 +260,55 @@ fn impact_is_applied_once_at_the_named_tick_and_scales_with_impulse() {
 }
 
 #[test]
-fn endpoint_clock_keeps_discarded_and_capture_frames_out_of_history() {
+fn admitted_impulses_survive_future_pages_and_discard() {
     let Some(mut fixture) = Fixture::new(terrain(|_| -4.0), Limits::default()) else {
         return;
     };
     fixture.draw(0);
-    fixture.mailbox.post_impulse(impact(1, 1, 0.0, 300.0));
+    for tick in 1..=33 {
+        fixture.mailbox.post_impulse(impact(tick, 8, 0.0, 400.0));
+        fixture.mailbox.post_bodies(tick, None, Vec::new());
+    }
+    fixture.discard(1);
+    assert_eq!(fixture.read().endpoint.endpoints.map(|e| e.tick), [0, 0]);
     fixture.draw(1);
+    let height = fixture.read().height([0.0; 2]);
+    let report = fixture
+        .report
+        .lock()
+        .expect("water report")
+        .interaction
+        .expect("interaction");
+    eprintln!("Metal tick-1 impulse with 32 later pages queued: {height:.6} m");
+    assert!(height < -0.005);
+    assert_eq!(report.refused_impulses, 0);
+    assert_eq!(report.dropped_ticks, 0);
+}
+
+#[test]
+fn endpoint_clock_keeps_discarded_and_capture_frames_out_of_history() {
+    let Some(mut fixture) = Fixture::new(terrain(|_| -4.0), Limits::default()) else {
+        return;
+    };
+    fixture.discard(0);
+    assert!(
+        fixture.witness().is_none(),
+        "discard published initial banks"
+    );
+    assert!(
+        fixture
+            .report
+            .lock()
+            .expect("water report")
+            .interaction
+            .is_none()
+    );
+    fixture.draw(1);
+    let initial = fixture.read();
+    assert_eq!(initial.endpoint.endpoints.map(|e| e.tick), [1, 1]);
+    assert!(initial.cells.iter().copied().all(on_rest));
+    fixture.mailbox.post_impulse(impact(2, 1, 0.0, 300.0));
+    fixture.draw(2);
     let original = fixture.read();
     fixture.discard(4);
     fixture.capture();
@@ -248,15 +317,15 @@ fn endpoint_clock_keeps_discarded_and_capture_frames_out_of_history() {
         original.cells == retained.cells,
         "discard or capture changed the wake"
     );
-    assert_eq!(retained.endpoint.endpoints.map(|e| e.tick), [0, 1]);
-    fixture.draw(15);
+    assert_eq!(retained.endpoint.endpoints.map(|e| e.tick), [1, 2]);
+    fixture.draw(16);
     let report = fixture
         .report
         .lock()
         .expect("water report")
         .interaction
         .expect("interaction");
-    assert_eq!(report.endpoints, Some([1, 15]));
+    assert_eq!(report.endpoints, Some([2, 16]));
     assert_eq!(report.dropped_ticks, 6);
     fixture.draw(7);
     let backwards = fixture.read();

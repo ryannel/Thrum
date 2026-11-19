@@ -30,7 +30,7 @@ pub(super) fn capture(directory: &Path) -> Value {
     let wake = super::wake_wind().is_some();
     let mut fleet = None;
     let (game, report) = if let Some(wind) = floating {
-        let scene = super::floating_game(wind, true);
+        let scene = super::floating_game(wind, true, true);
         fleet = Some((scene.observer(), scene.mailbox.clone()));
         (scene.game, scene.report)
     } else {

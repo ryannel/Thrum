@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 RECORDS = {'first-frame': ROOT / 'docs/evidence/WATERS/M2-cost.json',
            'island': ROOT / 'docs/evidence/WATERS/M4-cost.json',
            'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json'}
+WAKE_HISTORY = ROOT / 'examples/water/tests/fixtures/wake-cost-prior.json'
+WAKE_ROUTE = {'wind': 'trade', 'view': 'overhead', 'speed_mps': 6}
+WAKE_ARMS = {'with-wake': (True, True), 'without-wake': (True, False),
+             'water-absent': (False, False)}
 
 
 def run(command, **kwargs):
@@ -107,22 +111,121 @@ def validate(data, scene):
         assert all(n > 0 for _, n in data['body_vertices'])
 
 
+def wake_summary(frames):
+    summary = {}
+    for name, step in [('step', True), ('repeat', False)]:
+        group = [frame for frame in frames if frame['tick_frame'] == step]
+        timed = [frame for frame in group if frame['gpu_ms'] is not None]
+        assert group and all(frame['completion_upper_ms'] > 0 for frame in group)
+        assert all(frame['gpu_ms'] > 0 and frame['passes_ms'] for frame in timed)
+        passes = {}
+        for frame in timed:
+            for label, elapsed in frame['passes_ms'].items():
+                passes.setdefault(label.rsplit(': ', 1)[-1], []).append(elapsed)
+        summary[name] = {
+            'samples': len(group), 'timestamped_samples': len(timed),
+            'gpu_ms': statistics.median(frame['gpu_ms'] for frame in timed) if timed else None,
+            'completion_upper_ms': statistics.median(frame['completion_upper_ms'] for frame in group),
+            'passes_ms': {key: statistics.median(values) for key, values in sorted(passes.items())},
+        }
+    return summary
+
+
+def wake_view(record, prior):
+    summaries = {}
+    reference = [(f['tick'], f['alpha'], f['tick_frame']) for f in record['arms'][0]['frames']]
+    for (name, (water, wake)), arm in zip(WAKE_ARMS.items(), record['arms'], strict=True):
+        assert (arm['water'], arm['wake']) == (water, wake)
+        assert bool(arm['water_vertices']) == water and bool(arm['water_resources']) == water
+        assert bool(arm['water_pixels_shaded']) == water
+        assert [(f['tick'], f['alpha'], f['tick_frame']) for f in arm['frames']] == reference
+        for frame in arm['frames']:
+            assert ('interaction' in frame) == wake
+            if wake:
+                interaction = frame['interaction']
+                assert interaction['endpoints'] and interaction['labelling_cpu_ms'] >= 0
+                assert all(0 <= n <= 16 for n in interaction['solves']) and sum(interaction['solves']) > 0
+                assert all(n > 0 for n in interaction['regions'])
+            if frame['gpu_ms'] is not None:
+                names = [name.rsplit(': ', 1)[-1] for name in frame['passes_ms']]
+                assert ('water surface' in names) == water
+                assert ('sea long waves' in names) == water
+                assert ('interaction waves' in names) == (wake and frame['tick_frame'])
+        summaries[name] = wake_summary(arm['frames'])
+
+    comparisons = {}
+    investigations = []
+    for name, summary in summaries.items():
+        if name not in prior:
+            comparisons[name] = {'availability': 'No prior water-absent arm for this view. The former baseline still drew ambient water.'}
+        else:
+            comparisons[name] = {}
+        for phase, row in summary.items():
+            paired = {arm: summaries[arm][phase] for arm in WAKE_ARMS if arm != name}
+            passes = row['passes_ms']
+            largest = sorted(passes.items(), key=lambda item: item[1], reverse=True)[:3]
+            current = {'arm': name, 'phase': phase, 'current_ms': {
+                'gpu': row['gpu_ms'], 'completion_upper': row['completion_upper_ms']}}
+            if row['timestamped_samples'] != row['samples']:
+                investigations.append(dict(current, wire='missing pass timestamps',
+                    measurement={'timestamped_samples': row['timestamped_samples'], 'submitted_samples': row['samples'],
+                                 'paired_completion_upper_ms': {arm: pair['completion_upper_ms'] for arm, pair in paired.items()}},
+                    disposition='The observer records completion brackets independently. The frame host returned no pass timings for rejected batches; their pass durations are unavailable. Lake timings and CPU labelling remain independently measured.'))
+            if max(row['gpu_ms'] or 0, row['completion_upper_ms']) > 1000 / 120:
+                investigations.append(dict(current, wire='whole frame exceeds refresh interval',
+                    measurement={'largest_timed_passes_ms': dict(largest),
+                                 'wake_pass_ms': passes.get('interaction waves'),
+                                 'paired_gpu_ms': {arm: pair['gpu_ms'] for arm, pair in paired.items()},
+                                 'paired_completion_upper_ms': {arm: pair['completion_upper_ms'] for arm, pair in paired.items()}},
+                    disposition='The water-absent arm measures scene work. The water-without-wake arm isolates the incremental interaction cost. Completion includes synchronous observer polling and is a bracket under concurrent load.'))
+            if name not in prior:
+                continue
+            old = prior[name][phase]
+            common = passes.keys() & old['passes_ms'].keys()
+            comparisons[name][phase] = {
+                'previous': old,
+                'completion_upper_delta_ms': row['completion_upper_ms'] - old['completion_upper_ms'],
+                'gpu_delta_ms': row['gpu_ms'] - old['gpu_ms'] if row['gpu_ms'] is not None and old['gpu_ms'] is not None else None,
+                'common_pass_deltas_ms': {key: passes[key] - old['passes_ms'][key] for key in sorted(common)},
+            }
+            for key in sorted(common):
+                before, after = old['passes_ms'][key], passes[key]
+                if before > 0 and after >= before * 1.25:
+                    inactive = paired['without-wake'] if name == 'with-wake' else paired['with-wake']
+                    inactive_ms = inactive['passes_ms'].get(key)
+                    if inactive_ms is None:
+                        observation = 'The other water arm has no sample for this pass.'
+                    else:
+                        observation = f'The other water arm measured {inactive_ms * 1000:.1f} µs; the historical change was {(after - before) * 1000:.1f} µs.'
+                    investigations.append(dict(current, wire='pass grew by at least 25% from same-view record',
+                        measurement={'pass': key, 'prior_ms': before, 'current_ms': after,
+                                     'paired_pass_ms': {arm: pair['passes_ms'].get(key) for arm, pair in paired.items()}},
+                        disposition=f'{observation} The paired and historical samples were taken under concurrent load.'))
+    return {'arms': record['arms'], 'resources': record['resources'], 'summary': summaries,
+            'historical_comparison': comparisons, 'tripwire_investigations': investigations}
+
+
 def measure_wake():
-    """Compare the same two views, once with the producer and once without it."""
+    """Repeat the previous wake views and also measure each scene without water."""
     output = ROOT / 'tmp/waters-M6/cost'
     output.mkdir(parents=True, exist_ok=True)
     store = output / 'store'
     run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
          'cook', 'examples/water/assets', str(store)])
     env = dict(os.environ, THRUM_WATER_PROOF='cost', THRUM_ASSET_STORE=str(store),
-               THRUM_WATER_WAKE='trade', THRUM_WATER_VIEW='overhead', THRUM_WATER_SPEED='6')
+               THRUM_WATER_WAKE=WAKE_ROUTE['wind'], THRUM_WATER_VIEW=WAKE_ROUTE['view'],
+               THRUM_WATER_SPEED=str(WAKE_ROUTE['speed_mps']))
     env['THRUM_WATER_COMMIT'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
     env.pop('THRUM_WATER_ISLAND', None)
     env.pop('THRUM_WATER_STONE', None)
-    result = {'target': 'mac-metal', 'extent': [2560, 1440], 'capture': False,
+    prior = json.loads(WAKE_HISTORY.read_text())
+    assert prior['route'] == WAKE_ROUTE and prior['target'] == 'mac-metal'
+    assert prior['extent'] == [2560, 1440] and prior['capture'] is False
+    result = {'target': 'mac-metal', 'extent': [2560, 1440], 'capture': False, 'route': WAKE_ROUTE,
               'commit': env['THRUM_WATER_COMMIT'],
               'host': platform.platform(), 'load': run(['uptime'], capture_output=True, text=True).stdout.strip(),
-              'views': {}}
+              'history': {'record': str(WAKE_HISTORY.relative_to(ROOT)), 'commit': prior['commit'],
+                          'host': prior['host'], 'load': prior['load']}, 'views': {}}
     for location in ('sea', 'lake'):
         view = output / location
         env.update(THRUM_WATER_OUTPUT=str(view), THRUM_WATER_LOCATION=location)
@@ -131,38 +234,7 @@ def measure_wake():
         record = json.loads((view / 'cost.json').read_text())
         assert record['target'] == 'mac-metal' and record['extent'] == [2560, 1440]
         assert record['capture'] is False and record['commit'] == result['commit']
-        active, baseline = record['arms']
-        assert active['water'] and not baseline['water']
-        assert len(active['frames']) == len(baseline['frames'])
-        comparisons = []
-        timing_faults = 0
-        for current, old in zip(active['frames'], baseline['frames'], strict=True):
-            assert current['tick'] == old['tick'] and current['alpha'] == old['alpha']
-            assert current['interaction']['endpoints']
-            assert not any('interaction waves' in label for label in old['passes_ms'])
-            solves = current['interaction']['solves']
-            assert all(0 <= n <= 16 for n in solves) and sum(solves) > 0
-            available = current['gpu_ms'] is not None and old['gpu_ms'] is not None
-            if available and current['tick_frame']:
-                assert any('interaction waves' in label for label in current['passes_ms'])
-            if not available:
-                timing_faults += 1
-            metric = 'gpu_ms' if available else 'completion_upper_ms'
-            scene_ms, old_ms = current[metric], old[metric]
-            assert scene_ms > 0 and old_ms > 0
-            if scene_ms > 1000 / 120 or scene_ms > old_ms * 1.25:
-                wake_ms = sum(value for label, value in current['passes_ms'].items() if 'interaction waves' in label) if available else None
-                comparisons.append({
-                    'tick': current['tick'], 'metric': metric, 'candidate_ms': scene_ms, 'paired_ms': old_ms,
-                    'wake_ms': wake_ms, 'solves': solves,
-                    'other_pass_delta_ms': scene_ms - wake_ms - old_ms if available else None,
-                    'labelling_cpu_ms': current['interaction']['labelling_cpu_ms'],
-                    'investigation': ('The timestamped interaction pass isolates the transforms. The remainder includes surface sampling; compare with repeat frames, where the transforms skip.'
-                                      if available else 'The renderer rejected at least one timestamp batch. The paired completion bracket includes observer waits and CPU submission, so the transform contribution cannot be isolated from it. The CPU labelling measurement is independent.'),
-                })
-        result['views'][location] = {'arms': record['arms'], 'resources': record['resources'],
-                                    'timestamp_fault_pairs': timing_faults,
-                                    'tripwire_investigations': comparisons}
+        result['views'][location] = wake_view(record, prior['views'][location])
     path = RECORDS['wake']
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, indent=2) + '\n')

@@ -1,5 +1,5 @@
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, MutexGuard, PoisonError},
     time::Duration,
 };
 use thrum_core::{
@@ -28,6 +28,9 @@ const SURFACE: SurfaceProfile = SurfaceProfile {
     format: OUTPUT_FORMAT,
     extent: EXTENT,
 };
+// Each case uses a separate Metal device and owns several full-grid buffers.
+// Keep one live fixture per test process under the shared machine GPU lock.
+static INTERACTION_DEVICE: Mutex<()> = Mutex::new(());
 
 pub(super) fn terrain(height: impl Fn(f64) -> f64) -> Map {
     strip(16, height, BodyKind::Sea)
@@ -205,12 +208,16 @@ pub(super) struct Fixture {
     pub mailbox: Mailbox,
     pub query: QueryMailbox,
     pub report: Arc<Mutex<WaterReport>>,
+    _device_slot: MutexGuard<'static, ()>,
 }
 
 impl Fixture {
     pub(super) const STEP: Duration = Duration::from_nanos(16_666_667);
 
     pub(super) fn new(map: Map, limits: Limits) -> Option<Self> {
+        let device_slot = INTERACTION_DEVICE
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         let gpu = thrum_test_support::gpu("interaction waves", Some(wgpu::Backend::Metal))?;
         let (device, queue) = gpu.device(
             thrum_test_support::Profile::Portable,
@@ -248,6 +255,7 @@ impl Fixture {
             1.0,
         ))
         .expect("Metal host");
+        host.set_timing_requested(false);
         let spectrum = Spectrum {
             long: Vec::new(),
             cascades: [160.0, 37.0, 9.0]
@@ -288,6 +296,7 @@ impl Fixture {
             mailbox,
             query,
             report,
+            _device_slot: device_slot,
         })
     }
 
@@ -394,6 +403,10 @@ impl Fixture {
         )
         .to_vec();
         Field { endpoint, cells }
+    }
+
+    pub(super) fn witness(&self) -> Option<Witness> {
+        self.tap.latest()
     }
 }
 

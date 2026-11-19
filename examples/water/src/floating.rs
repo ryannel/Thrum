@@ -3,7 +3,9 @@ mod draw;
 mod scene;
 
 use glam::{DQuat, DVec3};
-pub use scene::{FloatingScene, WakeDemo, WakeView, build, build_paired, build_wake};
+pub use scene::{
+    FloatingScene, WakeDemo, WakeView, build, build_paired, build_wake, build_wake_paired,
+};
 use std::time::Duration;
 use thrum_sea_model::{LongWaves, Spectrum};
 use thrum_water::query::{BodyAnswers, BodyQuery, QueryMailbox, QueryPoint};

@@ -24,8 +24,25 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
             .expect("calm scene");
         let bodies = scene.observer();
         let report = Arc::clone(&scene.report);
+        let trace = Arc::new(Mutex::new([[[f64::INFINITY, f64::NEG_INFINITY]; 2]; 8]));
+        if !disabled {
+            let write = Arc::clone(&trace);
+            scene.observe_steps(move |body| {
+                let interval = match body.tick {
+                    1..=300 => 0,
+                    1501..=1800 => 1,
+                    _ => return,
+                };
+                if body.id != 0 && body.gpu_points == 6 {
+                    let mut ranges = write.lock().expect("moored waterlines");
+                    let [low, high] = &mut ranges[body.id as usize - 1][interval];
+                    *low = low.min(body.waterline);
+                    *high = high.max(body.waterline);
+                }
+            });
+        }
         let mut host = support::Fixture::from_game([96, 64], scene.game, scene.report);
-        for tick in 0..=720 {
+        for tick in 0..=if disabled { 720 } else { 1800 } {
             host.frame_without_timings(f64::from(tick) * 0.016_666_667);
         }
         let craft = bodies()[0];
@@ -42,7 +59,30 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
                 .interaction
                 .expect("interaction");
             assert!(wake.refused_bodies > 5_000);
-            assert_eq!(wake.endpoints.expect("submitted endpoints")[1], 720);
+            assert_eq!(wake.endpoints.expect("submitted endpoints")[1], 1800);
+            // The other eight bodies exert no pressure at this capacity.
+            // Their GPU waterlines observe the craft's surroundings, outside
+            // its hull. Measure variation around the local settled height.
+            for (index, ranges) in trace.lock().expect("moored waterlines").iter().enumerate() {
+                assert!(ranges.iter().flatten().all(|value| value.is_finite()));
+                let [early, late] = ranges.map(|[low, high]| high - low);
+                eprintln!(
+                    "Metal moored waterline at float {}: early {:.3} mm, settled {:.3} mm",
+                    index + 1,
+                    early * 1000.0,
+                    late * 1000.0
+                );
+                assert!(
+                    early > 0.005,
+                    "start-up wave must reach float {}",
+                    index + 1
+                );
+                assert!(
+                    late < 0.002 && late < early * 0.1,
+                    "persistent wave at float {}",
+                    index + 1
+                );
+            }
         }
     }
     assert!(

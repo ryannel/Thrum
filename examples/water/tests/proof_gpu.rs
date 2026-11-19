@@ -18,7 +18,7 @@ fn island_wind() -> Option<Wind> {
 
 fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedReport) {
     if let Some(wind) = floating_wind() {
-        let scene = floating_game(wind, water);
+        let scene = floating_game(wind, water, water);
         return (scene.game, scene.report);
     }
     if let Some(wind) = island_wind() {
@@ -33,7 +33,7 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
     }
 }
 
-fn floating_game(wind: Wind, water: bool) -> water_scene::floating::FloatingScene {
+fn floating_game(wind: Wind, water: bool, wake: bool) -> water_scene::floating::FloatingScene {
     let speed = std::env::var("THRUM_WATER_SPEED")
         .expect("craft speed")
         .parse()
@@ -42,7 +42,7 @@ fn floating_game(wind: Wind, water: bool) -> water_scene::floating::FloatingScen
     let chase = view == "chase";
     if wake_wind().is_some() {
         let lake = std::env::var("THRUM_WATER_LOCATION").is_ok_and(|v| v == "lake");
-        return water_scene::floating::build_wake(
+        return water_scene::floating::build_wake_paired(
             wind,
             lake,
             speed,
@@ -50,9 +50,10 @@ fn floating_game(wind: Wind, water: bool) -> water_scene::floating::FloatingScen
             water_scene::floating::WakeDemo {
                 view: water_scene::floating::WakeView::named(&view),
                 stone: std::env::var_os("THRUM_WATER_STONE").is_some(),
-                disabled: !water,
+                disabled: !wake,
                 body_capacity: None,
             },
+            water,
         )
         .expect("wake scene");
     }
@@ -101,7 +102,7 @@ fn driver() {
         return;
     }
     let mut fixture = if let Some(wind) = floating_wind() {
-        let scene = floating_game(wind, true);
+        let scene = floating_game(wind, true, true);
         support::Fixture::from_game([2560, 1440], scene.game, scene.report)
     } else if island_wind().is_some() {
         let (game, report) = proof_game(true);
@@ -132,9 +133,15 @@ fn driver() {
     match mode.as_str() {
         "cost" => {
             let mut arms = Vec::new();
-            for present in [true, false] {
+            let wake = wake_wind().is_some();
+            let variants: &[(bool, bool)] = if wake {
+                &[(true, true), (true, false), (false, false)]
+            } else {
+                &[(true, false), (false, false)]
+            };
+            for &(present, interaction) in variants {
                 let mut fixture = if let Some(wind) = floating_wind() {
-                    let scene = floating_game(wind, present);
+                    let scene = floating_game(wind, present, interaction);
                     support::Fixture::from_game([2560, 1440], scene.game, scene.report)
                 } else if island_wind().is_some() {
                     let (game, report) = proof_game(present);
@@ -177,6 +184,12 @@ fn driver() {
                     0
                 };
                 let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating_wind().is_none(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
+                if wake {
+                    arm["wake"] = json!(interaction);
+                    let report = fixture.report.lock().expect("water report");
+                    arm["water_vertices"] = json!(report.vertices);
+                    arm["water_resources"] = json!(report.resources);
+                }
                 if present && island_wind().is_some() {
                     let counts = island_pixels(&fixture);
                     assert_eq!(counts.iter().sum::<usize>(), pixels);

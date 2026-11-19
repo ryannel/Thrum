@@ -1,6 +1,6 @@
 use super::{
-    CELL_METRES, CELLS, DENSITY, GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox, Report, SIDE,
-    Witness,
+    BodyPressure, CELL_METRES, CELLS, DENSITY, GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox,
+    Report, SIDE, Witness,
     regions::{Cell, DEPTHS, DRY, REST, Window},
 };
 use bytemuck::{Pod, Zeroable};
@@ -78,6 +78,19 @@ struct Dispatch {
     load: bool,
 }
 
+struct Source {
+    patch: Patch,
+    region: u32,
+    tick: u64,
+    body: Option<usize>,
+}
+
+struct Pressure {
+    tick: u64,
+    body: BodyPressure,
+    levels: u32,
+}
+
 pub(crate) struct Interaction {
     pub(super) mailbox: Mailbox,
     pub(crate) endpoints: wgpu::Buffer,
@@ -95,8 +108,10 @@ pub(crate) struct Interaction {
     dispatches: Vec<Dispatch>,
     step_bytes: Vec<u8>,
     patch_rows: Vec<Patch>,
-    candidates: Vec<(Patch, u32, u64)>,
+    candidates: Vec<Source>,
     regions: Vec<(u32, u64, usize)>,
+    committed_pressures: [Vec<Pressure>; 2],
+    recorded_pressures: Vec<Pressure>,
 }
 
 fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages) -> wgpu::Buffer {
@@ -338,6 +353,8 @@ impl Interaction {
             patch_rows: Vec::new(),
             candidates: Vec::new(),
             regions: Vec::new(),
+            committed_pressures: Default::default(),
+            recorded_pressures: Vec::new(),
         }
     }
 
@@ -358,6 +375,7 @@ impl Interaction {
     ) {
         self.recorded = None;
         self.dispatches.clear();
+        self.recorded_pressures.clear();
         let time = frame.time;
         if time.capture {
             if let Some(committed) = self.committed {
@@ -378,7 +396,7 @@ impl Interaction {
         }
         let mailbox = self.mailbox.clone();
         let pages = mailbox.pages.lock().expect("water interaction mailbox");
-        let page = pages.get(&time.tick);
+        let page = pages.bodies.get(&time.tick);
         let previous = self.committed.map(|old| old.endpoint[1]);
         let first = if reset {
             time.tick
@@ -390,6 +408,7 @@ impl Interaction {
                 .max(time.tick.saturating_sub(MAX_TICKS - 1))
         };
         let impact = pages
+            .impulses
             .range(first..=time.tick)
             .rev()
             .find_map(|(_, page)| page.impulses.first());
@@ -446,10 +465,12 @@ impl Interaction {
             let ticks = elapsed.min(MAX_TICKS);
             report.dropped_ticks += elapsed - ticks;
             report.refused_bodies += pages
+                .bodies
                 .range(first..=time.tick)
                 .map(|(_, p)| p.refused_bodies)
                 .sum::<u64>();
             report.refused_impulses += pages
+                .impulses
                 .range(first..=time.tick)
                 .map(|(_, p)| p.refused_impulses)
                 .sum::<u64>();
@@ -461,6 +482,14 @@ impl Interaction {
             );
             self.step_bytes.clear();
             self.patch_rows.clear();
+            for (&tick, page) in pages.bodies.range(first..=time.tick) {
+                self.recorded_pressures
+                    .extend(page.bodies.iter().map(|&body| Pressure {
+                        tick,
+                        body,
+                        levels: 0,
+                    }));
+            }
             for level in 0..2 {
                 let start = Instant::now();
                 let window = &mut self.windows[level];
@@ -480,35 +509,46 @@ impl Interaction {
                 };
                 let dt = time.tick_duration.as_secs_f32();
                 self.candidates.clear();
-                for (&tick, page) in pages.range(first..=time.tick) {
-                    for body in &page.bodies {
+                let mut pressures = self.recorded_pressures.iter().enumerate().peekable();
+                for tick in first..=time.tick {
+                    while let Some((index, pressure)) =
+                        pressures.next_if(|(_, pressure)| pressure.tick == tick)
+                    {
+                        let body = pressure.body;
                         let place = local(body.place);
                         let (sin, cos) = body.heading.sin_cos();
-                        self.candidates.push((
-                            Patch {
+                        self.candidates.push(Source {
+                            patch: Patch {
                                 place,
                                 axis: [cos as f32, sin as f32],
                                 footprint: body.footprint.map(|v| v as f32),
                                 impulse: body.force as f32 * dt,
                                 padding: 0.0,
                             },
-                            window.region(place),
+                            region: window.region(place),
                             tick,
-                        ));
+                            body: Some(index),
+                        });
                     }
-                    for impulse in &page.impulses {
+                    for impulse in pages
+                        .impulses
+                        .get(&tick)
+                        .into_iter()
+                        .flat_map(|page| &page.impulses)
+                    {
                         let place = local(impulse.place);
-                        self.candidates.push((
-                            Patch {
+                        self.candidates.push(Source {
+                            patch: Patch {
                                 place,
                                 axis: [1.0, 0.0],
                                 footprint: [impulse.radius as f32; 2],
                                 impulse: impulse.vertical as f32,
                                 padding: 0.0,
                             },
-                            window.region(place),
+                            region: window.region(place),
                             tick,
-                        ));
+                            body: None,
+                        });
                     }
                 }
                 let priority = window.region(local(origin));
@@ -520,9 +560,9 @@ impl Interaction {
                         .enumerate()
                         .map(|(region, _)| (region as u32, 0, 0)),
                 );
-                for (_, region, tick) in &self.candidates {
-                    if let Some((_, newest, count)) = self.regions.get_mut(*region as usize) {
-                        *newest = (*newest).max(*tick);
+                for source in &self.candidates {
+                    if let Some((_, newest, count)) = self.regions.get_mut(source.region as usize) {
+                        *newest = (*newest).max(source.tick);
                         *count += 1;
                     }
                 }
@@ -538,11 +578,16 @@ impl Interaction {
                     }
                     remaining -= depths.count_ones();
                     let source_first = self.patch_rows.len() as u32;
-                    self.patch_rows.extend(
-                        self.candidates
-                            .iter()
-                            .filter_map(|(patch, owner, _)| (*owner == region).then_some(*patch)),
-                    );
+                    for source in self
+                        .candidates
+                        .iter()
+                        .filter(|source| source.region == region)
+                    {
+                        self.patch_rows.push(source.patch);
+                        if let Some(body) = source.body {
+                            self.recorded_pressures[body].levels |= 1 << level;
+                        }
+                    }
                     let mut load = true;
                     for (index, depth) in DEPTHS[level].iter().copied().enumerate() {
                         if depths & (1 << index) == 0 {
@@ -614,25 +659,32 @@ impl Interaction {
         reason = "query dent uses the GPU's float format"
     )]
     pub(crate) fn dent(&self, tick: u64, body: u32, point: [f32; 2]) -> [f32; 4] {
-        if self
-            .recorded
-            .or(self.committed)
-            .is_none_or(|frame| frame.endpoint[0].tick == frame.endpoint[1].tick)
-        {
-            return [0.0; 4];
-        }
-        let pages = self
-            .mailbox
-            .pages
-            .lock()
-            .expect("water interaction mailbox");
-        let source = pages
-            .range(..=tick)
-            .next_back()
-            .and_then(|(_, page)| page.bodies.iter().find(|patch| patch.id == body));
-        let Some(source) = source else {
+        let Some(frame) = self.recorded.or(self.committed) else {
             return [0.0; 4];
         };
+        let [previous, current] = frame.endpoint;
+        if previous.tick == current.tick {
+            return [0.0; 4];
+        }
+        let tick = tick.clamp(previous.tick, current.tick);
+        let pressures = if tick == previous.tick {
+            &self.committed_pressures[previous.bank as usize]
+        } else if self.recorded.is_some() {
+            &self.recorded_pressures
+        } else {
+            &self.committed_pressures[current.bank as usize]
+        };
+        let Ok(index) = pressures.binary_search_by_key(&(tick, body), |p| (p.tick, p.body.id))
+        else {
+            return [0.0; 4];
+        };
+        // The full static dent represents both complementary bands. Do not
+        // add it back for a source the regional solve wholly or partly refused.
+        let pressure = &pressures[index];
+        if pressure.levels != (1 << LEVELS) - 1 {
+            return [0.0; 4];
+        }
+        let source = pressure.body;
         let [x, z] = std::array::from_fn(|i| f64::from(point[i]) - source.place[i]);
         let (sin, cos) = source.heading.sin_cos();
         let [along, across] = source.footprint;
@@ -665,19 +717,32 @@ impl Interaction {
     }
 
     pub(crate) fn submit(&mut self) -> Option<Report> {
-        if let Some((old, new)) = self.committed.zip(self.recorded)
-            && (old.time.epoch != new.time.epoch
-                || old.time.timeline != new.time.timeline
-                || old.time.tick > new.time.tick)
-        {
+        if let Some(new) = self.recorded.take() {
+            let reseek = self.committed.is_some_and(|old| {
+                old.time.epoch != new.time.epoch
+                    || old.time.timeline != new.time.timeline
+                    || old.time.tick > new.time.tick
+            });
             let mut pages = self
                 .mailbox
                 .pages
                 .lock()
                 .expect("water interaction mailbox");
-            pages.retain(|tick, _| *tick == new.time.tick);
+            if reseek {
+                pages.bodies.retain(|tick, _| *tick == new.time.tick);
+            }
+            pages.retire_impulses(new.time.tick, reseek);
+            if new.endpoint[0].tick == new.endpoint[1].tick {
+                for pressures in &mut self.committed_pressures {
+                    pressures.clear();
+                }
+            }
+            std::mem::swap(
+                &mut self.recorded_pressures,
+                &mut self.committed_pressures[new.endpoint[1].bank as usize],
+            );
+            self.committed = Some(new);
         }
-        self.committed = self.recorded.take().or(self.committed);
         self.committed.map(|frame| frame.report)
     }
 
