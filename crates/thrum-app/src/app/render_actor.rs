@@ -147,6 +147,7 @@ struct Actor<G: Game> {
     gpu: PlatformGpu,
     recipe: WindowDevice,
     surface_generation: Arc<AtomicU64>,
+    surface_epoch: u64,
     stopped: Arc<AtomicBool>,
     needs_reconfigure: bool,
     current_extent: ExtentRequest,
@@ -207,6 +208,7 @@ pub(super) fn start<G: Game + 'static>(
         host,
         gpu,
         recipe,
+        surface_epoch: surface_generation.load(Ordering::Acquire),
         surface_generation,
         stopped,
         needs_reconfigure: false,
@@ -337,8 +339,11 @@ impl<G: Game> Actor<G> {
         let current = self.surface_generation.load(Ordering::Acquire) == request.surface_generation;
         if !current {
             self.needs_reconfigure = true;
-        }
-        if current {
+        } else {
+            if request.surface_generation != self.surface_epoch {
+                self.surface_epoch = request.surface_generation;
+                self.needs_reconfigure = true;
+            }
             self.advance_extent(request, reply)?;
         }
         let ready = current
@@ -673,6 +678,7 @@ impl<G: Game> Actor<G> {
             device: generation,
             ..self.current_extent
         };
+        self.surface_epoch = surface_generation;
         self.transition
             .recovered(self.current_extent, !self.needs_reconfigure);
         ensure_device(&self.gpu.watch).map_err(RecoveryFailure::frame)?;
@@ -738,9 +744,17 @@ fn configure_once(
     device: &wgpu::Device,
     config: &wgpu::SurfaceConfiguration,
 ) -> Result<(), wgpu::Error> {
-    let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+    let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
+    let allocation = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+    let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
     surface.configure(device, config);
-    pollster::block_on(scope.pop()).map_or(Ok(()), Err)
+    let validation_error = pollster::block_on(validation.pop());
+    let allocation_error = pollster::block_on(allocation.pop());
+    let internal_error = pollster::block_on(internal.pop());
+    validation_error
+        .or(allocation_error)
+        .or(internal_error)
+        .map_or(Ok(()), Err)
 }
 
 fn drain_wait(
