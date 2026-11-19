@@ -83,8 +83,8 @@ with game_log.open("wb") as game_output, (output / "recorder.log").open("wb") as
     game = subprocess.Popen(
         [str(args.binary)], env=dict(os.environ, THRUM_SCENE="valley",
                                 THRUM_ASSET_STORE=str(store), THRUM_PARAMS=str(args.preset),
-                                THRUM_V1_FRAMES="10000", THRUM_M1_WITNESS=str(evidence),
-                                THRUM_M1_DESTROY=str(int(destroy))),
+                                THRUM_V1_FRAMES="10000", THRUM_LIVE_WITNESS=str(evidence),
+                                THRUM_LIVE_DESTROY=str(int(destroy))),
         stdout=game_output, stderr=subprocess.STDOUT)
     print(f"{args.row}: pid {game.pid}", flush=True)
     try:

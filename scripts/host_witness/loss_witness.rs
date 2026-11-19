@@ -14,11 +14,11 @@ pub(super) struct Witness {
 
 impl Witness {
     pub(super) fn from_env() -> Result<Self, String> {
-        let output = std::env::var_os("THRUM_M1_WITNESS").map(PathBuf::from);
-        let destroy = match std::env::var("THRUM_M1_DESTROY").as_deref() {
+        let output = std::env::var_os("THRUM_LIVE_WITNESS").map(PathBuf::from);
+        let destroy = match std::env::var("THRUM_LIVE_DESTROY").as_deref() {
             Ok("1") => true,
             Ok("0") | Err(std::env::VarError::NotPresent) => false,
-            _ => return Err("THRUM_M1_DESTROY must be 0 or 1".into()),
+            _ => return Err("THRUM_LIVE_DESTROY must be 0 or 1".into()),
         };
         if destroy && output.is_none() {
             return Err("loss witness needs an output directory".into());

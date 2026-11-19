@@ -37,7 +37,7 @@ def check_mac_overload(folder, preset):
     log = output / 'game.log'
     env = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(folder / 'store'),
                THRUM_PARAMS=str(preset), THRUM_V1_FRAMES='10000', THRUM_REPORT='1',
-               THRUM_M1_WITNESS=str(markers), THRUM_M1_DESTROY='0')
+               THRUM_LIVE_WITNESS=str(markers), THRUM_LIVE_DESTROY='0')
     with log.open('wb') as stream, subprocess.Popen(
         [str(binary)], env=env, stdout=stream, stderr=subprocess.STDOUT
     ) as game:

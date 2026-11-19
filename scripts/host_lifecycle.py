@@ -51,8 +51,8 @@ def prepare_mac(folder, revision, env):
         if source.wait():
             raise RuntimeError('could not archive the source revision')
     shutil.copytree(wgpu, backend)
-    shutil.copyfile(MAC_WITNESS / 'm1_loss_witness.rs',
-                    archive / 'crates/thrum-app/src/app/m1_loss_witness.rs')
+    shutil.copyfile(MAC_WITNESS / 'loss_witness.rs',
+                    archive / 'crates/thrum-app/src/app/loss_witness.rs')
     run(sys.executable, MAC_WITNESS / 'prepare_live_loss.py', archive, backend)
     run('cargo', 'build', '--offline', '--release', '-p', 'v1-game', '--bin', 'v1-game',
         '--target-dir', folder / 'target', cwd=archive, env=env)
