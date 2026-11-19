@@ -266,7 +266,7 @@
       }
     },
     "M3": {
-      "definitions": "eff32c7c07d695534c5e5f2bdd6573434e6edeae5c6656181993e370c96509cd",
+      "definitions": "8d3b77f09920efe1a145abd076dbb8a1dfe441710b83126927e352d859bdb0c7",
       "reviews": [
         {
           "verdict": "fail",
@@ -371,46 +371,17 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
-        "at": "2026-11-18T06:24:55Z"
-      },
-      "ready_for_review": {
-        "commit": "adf8b71650654b4d334f1cc824d1491a063d7b6a",
-        "checked": "2efb1b29068b9edd6b05d5349f9d66a8d25b9159",
-        "at": "2026-11-19T14:54:52Z",
-        "reused": [
-          "Test command"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.0-alpha.11.1",
-        "path": "headless",
-        "usage": {
-          "input": 587392,
-          "cached": 104329728,
-          "output": 119014,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 587392,
-          "cached": 104329728,
-          "output": 119014,
-          "turns": 2
-        }
+        "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Mu",
+        "at": "2026-11-19T19:19:10Z"
       }
     },
     "M4": {
-      "definitions": "36f2158d68ff50c13bfdaa199285138b8dbfd6591cb5defa060da211199e005b",
+      "definitions": "220b441853fc20a06fd8d0745bf7f80cf2f2556762ef66d9a29e2503bcbbc474",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
-        "at": "2026-11-18T06:24:55Z"
+        "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Mu",
+        "at": "2026-11-19T19:19:10Z"
       }
     },
     "M5": {
@@ -423,12 +394,12 @@
       }
     },
     "M6": {
-      "definitions": "018d9e0efc4d689431bf98a7dac936ab2f56f7c75e027555b250639a9e71152d",
+      "definitions": "56344f2cf69e371899af5b9a94821eb8152464532179f44dc609b0a4c7297791",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix",
-        "at": "2026-11-18T06:24:55Z"
+        "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Mu",
+        "at": "2026-11-19T19:19:10Z"
       }
     }
   },
@@ -452,11 +423,15 @@
     {
       "task": "The design review of RAY-TRACING at docs/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. Keep the owner's 17 Nov bar: plausible at shipped-game quality, proof proportional to risk; the opt-in path should be simple.",
       "at": "2026-11-18T06:24:55Z"
+    },
+    {
+      "task": "The design review of RAY-TRACING at .orchestrate/evidence/RAY-TRACING/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-19T19:19:10Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-18T06:24:55Z"
+    "at": "2026-11-19T19:19:10Z"
   },
   "design_history": [
     {
