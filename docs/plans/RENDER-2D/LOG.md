@@ -79,3 +79,9 @@
 - 2026-11-19 M1's native sprite launch refuses enabled native witness selections by name. Release checkpoints
   rejected all eight selections before submission on both Metal recipes, and the launch regression and Metal
   scene checks passed. [Evidence](../../../.orchestrate/evidence/RENDER-2D/M1/launch-refusals.md)
+- 2026-11-19 M2 maps V1 tick publications to slot-indexed sprite poses and keeps overlap order across ticks.
+  The sprite pass uses eight sheet slots and one draw, with frame rows, tint, flash and additive blending.
+  Metal readback checks passed for pose and animation, exact and retained order, changed-row uploads and the
+  CPU blend oracle. The V1 field drew 10,000 world rows and two frame rows with one draw and no drops on
+  Metal and Chrome. See the [M2 evidence](../../../.orchestrate/evidence/RENDER-2D/M2/README.md) for submitted
+  realtime sequences, the two release cost takes per target, and tripwires observed under load.

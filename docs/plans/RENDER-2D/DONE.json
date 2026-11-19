@@ -153,10 +153,10 @@
           "ask": "Read the test. Does it cover a slot reused by a new entity within one tick, a rewind onto a new timeline, and a rotation that crosses the wrap from one side of a turn to the other?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
@@ -165,10 +165,10 @@
           "ask": "Does the test read pixels back at the overlaps, and not the order list? Are there rows with equal sort values whose order only identity decides, and does it run for many ticks while other rows change?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.3",
@@ -177,10 +177,10 @@
           "ask": "Is the CPU blend written from the design's rules for tint, flash and additive, without the renderer's shader? Does a case put an additive sprite between two normal ones?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
@@ -189,10 +189,10 @@
           "ask": "Is the draw count taken from the recorded pass, with rows from all eight sheets interleaved in order? Are uploaded bytes counted where they are written, and compared with the rows that changed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.5",
@@ -200,10 +200,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_rows",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.6",
@@ -212,10 +212,10 @@
           "ask": "Do the rows come from the tick page through the game's scene source, on the game's own world lane, and not from a list built for the test?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-field.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.7",
@@ -223,20 +223,20 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-field",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-field.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.8",
           "statement": "In real time on the Mac the movers glide: no sprite steps at the tick rate, jumps, or slides in from elsewhere. Where sprites overlap the same one stays in front. A flashed sprite turns the flash colour inside its own outline, and an additive one glows without hiding what is behind it.",
           "inspect": "Capture the sprite scene's field at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least twenty seconds, with movers crossing each other and with flashed, tinted and additive sprites among them. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-realtime/inspection-summary.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.9",
@@ -255,10 +255,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Does every row's pose really change every tick in these runs, so that every row is uploaded?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-costs.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.11",
@@ -266,20 +266,20 @@
           "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-costs.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.13",
@@ -288,10 +288,10 @@
           "ask": "Read the test. Does it replay the design's travelling pair and its chain of three, and read the pair's overlap back as pixels? Does a long randomized run, with three or more rows overlapping at once, spawns, despawns and reused slots, check every change of relative order between rows with history against the rule, with code that does not share the order's own update? Does the same run fail an order made by sorting a held value for each row?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
