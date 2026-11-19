@@ -114,6 +114,7 @@ try {
     manifest.cooked = head;
   }
   manifest.flags = [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'];
+  if (spriteField) manifest.flags.splice(-1, 0, '--disable-renderer-backgrounding', '--disable-background-timer-throttling');
   child = spawn('/usr/bin/open', ['-n', '-W', bundle, '--args', output, args.chrome, ...manifest.flags], { stdio: 'ignore' });
   let startupError;
   child.once('error', error => { startupError = error; ended = true; });
