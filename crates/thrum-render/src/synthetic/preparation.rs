@@ -19,6 +19,27 @@ use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BINDING, ENVIRONMENT_BYTES};
 use std::sync::Arc;
 
 impl PreparedSynthetic {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) async fn prepare_ray_fallback(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+        exposure: f32,
+    ) -> Result<Self, RenderError> {
+        Self::prepare_candidate(
+            capabilities,
+            queue,
+            scene,
+            lighting,
+            exposure,
+            None,
+            None,
+            RayStructureSelection::PreparationFailed,
+        )
+        .await
+    }
+
     pub(super) async fn prepare_with_meshes(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,

@@ -203,7 +203,17 @@ impl FrameWorld for World {
         false
     }
     fn advance(&mut self, _: Duration) -> Result<WorldAdvance, String> {
-        unreachable!("fixed capture")
+        Ok(WorldAdvance {
+            tick: TICK.tick,
+            overload: None,
+            completed_ticks: 0,
+            queued_ticks: 0,
+            projected_changes: 0,
+            projection_lost_ticks: 0,
+            skipped_publications: 0,
+            recovered_publication: false,
+            tick_cpu: Duration::ZERO,
+        })
     }
     fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
         Ok(WorldPublication {

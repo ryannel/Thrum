@@ -62,7 +62,7 @@ fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) 
         source.replace_range(start..end, wgsl!("synthetic/raytrace/sun.wgsl"));
         source = source.replace(
             "dpdx(input.world_position),\n        dpdy(input.world_position),normalize(input.normal)",
-            "vec3(0.0),vec3(0.0),normalize(input.normal)",
+            "dpdx(input.shadow_surface.xyz),\n        dpdy(input.shadow_surface.xyz),normalize(input.normal)",
         );
         source = source.replace(
             "@location(6) current_clip: vec4<f32>,",

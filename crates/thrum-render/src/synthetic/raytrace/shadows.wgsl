@@ -7,9 +7,13 @@ fn shadow_ray_origin(point: vec3<f32>, normal: vec3<f32>) -> vec3<f32> {
 }
 
 fn shadow_ray_blocked(origin: vec3<f32>, direction: vec3<f32>, distance: f32) -> bool {
+    return shadow_ray_blocked_from(origin, direction, 0.0, distance);
+}
+
+fn shadow_ray_blocked_from(origin: vec3<f32>, direction: vec3<f32>, start: f32, distance: f32) -> bool {
     var query: ray_query;
     let flags = RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-    rayQueryInitialize(&query, scene_structure, RayDesc(flags, 1u, 0.0, distance, origin, direction));
+    rayQueryInitialize(&query, scene_structure, RayDesc(flags, 1u, start, distance, origin, direction));
     while rayQueryProceed(&query) {}
     return rayQueryGetCommittedIntersection(&query).kind != RAY_QUERY_INTERSECTION_NONE;
 }

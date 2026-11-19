@@ -754,51 +754,27 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             return;
         }
-        let had_views = self.prepared.secondary_view_count() != 0;
-        let previous_views = self.prepared.take_secondary();
-        let rebuilt = self.contribution.as_mut().map(|contribution| {
-            self.prepared
-                .prepare_secondary_views(
-                    &self.queue,
-                    &contribution.secondary_view_slots(),
-                    self.render_extent,
-                    &self.scene.local_lights,
-                )
-                .map_err(|error| error.to_string())?;
-            contribution.rebuild(
-                &self
-                    .prepared
-                    .scene_surface_with_views(&self.queue, contribution.secondary_views_enabled()),
-            )?;
-            let graph = contribution.effect_graph();
-            graph.validate()?;
-            let mut passes = contribution.passes();
-            passes.upload |= self.prepared.secondary_view_count() != 0;
-            Ok::<_, String>((graph, passes))
-        });
-        let Some(rebuilt) = rebuilt else {
-            self.prepared.restore_secondary(previous_views);
+        let Some(contribution) = self.contribution.as_deref_mut() else {
             return;
         };
-        let result = rebuilt.and_then(|(graph, passes)| {
-            if graph == *self.prepared.effect_graph()
-                && passes == self.prepared.contribution_passes()
-                && !had_views
-                && self.prepared.secondary_view_count() == 0
-            {
-                return Ok(());
+        match preparation::rebuild_3d_contribution(
+            &mut self.prepared,
+            contribution,
+            &self.queue,
+            &self.scene,
+            self.render_extent,
+            self.presenter.as_ref(),
+        ) {
+            Ok(Some(slots)) => {
+                self.slots = slots;
+                self.visual_owner = Arc::new(());
+                self.reset_replacement_history();
             }
-            let previous = self.prepared.effect_graph().clone();
-            self.prepared.set_effect_graph(graph);
-            self.declare_contribution_passes(passes).map_err(|error| {
-                self.prepared.set_effect_graph(previous);
-                format!("rebuilt contribution graph: {error}")
-            })
-        });
-        if let Err(error) = result {
-            self.prepared.restore_secondary(previous_views);
-            self.contribution = None;
-            self.contribution_error = Some(error);
+            Ok(None) => {}
+            Err(error) => {
+                self.contribution = None;
+                self.contribution_error = Some(error);
+            }
         }
     }
 

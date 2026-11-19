@@ -16,6 +16,8 @@ use thrum_render::{
     },
 };
 
+mod replacement;
+
 pub(crate) fn prove_contributions() {
     let metal = Metal::new(1);
     let mut fixture = Fixture::new("cooked-shadows");
@@ -179,6 +181,7 @@ pub(crate) fn prove_contributions() {
             "secondary_scene_linear_digest":secondary_digest, "sun_shadows":sun,"lamp_shadows":lamps}),
         );
     }
+    replacement::prove(&metal, &fixture);
 }
 
 fn copy_colour(metal: &Metal, texture: &wgpu::Texture) -> Vec<u8> {

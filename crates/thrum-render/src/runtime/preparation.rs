@@ -19,6 +19,65 @@ pub(super) struct PreparedScene {
     pub(super) slots: Vec<FrameSlot>,
 }
 
+/// Rebuild the contribution against the supplied scene and its exact layouts.
+/// A new slot set is needed only when the graph or secondary views changed.
+pub(super) fn rebuild_3d_contribution(
+    prepared: &mut PreparedRenderer,
+    contribution: &mut dyn crate::contribution::SceneContribution,
+    queue: &wgpu::Queue,
+    scene: &SyntheticScene,
+    extent: [u32; 2],
+    presenter: Option<&SurfacePresenter>,
+) -> Result<Option<Vec<FrameSlot>>, String> {
+    let had_views = prepared.secondary_view_count() != 0;
+    let previous_views = prepared.take_secondary();
+    let result = (|| {
+        let declarations = contribution.secondary_view_slots();
+        prepared
+            .prepare_secondary_views(queue, &declarations, extent, &scene.local_lights)
+            .map_err(|error| error.to_string())?;
+        contribution.rebuild(
+            &prepared.scene_surface_with_views(queue, contribution.secondary_views_enabled()),
+        )?;
+        let graph = contribution.effect_graph();
+        graph.validate()?;
+        let mut passes = contribution.passes();
+        passes.upload |= prepared.secondary_view_count() != 0;
+        if graph == *prepared.effect_graph()
+            && passes == prepared.contribution_passes()
+            && !had_views
+            && prepared.secondary_view_count() == 0
+        {
+            return Ok(None);
+        }
+        let previous_graph = prepared.effect_graph().clone();
+        let previous_passes = prepared.contribution_passes();
+        prepared.set_effect_graph(graph);
+        prepared.set_contribution_passes(passes);
+        let slots = prepare_slots(
+            prepared,
+            queue,
+            extent,
+            presenter.map(SurfacePresenter::profile),
+        )
+        .and_then(|mut slots| {
+            bind_presenter(prepared, &mut slots, presenter)?;
+            Ok(slots)
+        });
+        if slots.is_err() {
+            prepared.set_effect_graph(previous_graph);
+            prepared.set_contribution_passes(previous_passes);
+        }
+        slots
+            .map(Some)
+            .map_err(|error| format!("rebuilt contribution graph: {error}"))
+    })();
+    if result.is_err() {
+        prepared.restore_secondary(previous_views);
+    }
+    result
+}
+
 pub(super) enum PreparedRenderer {
     ThreeD(Box<PreparedSynthetic>),
     TwoD(Box<PreparedSprites>),
