@@ -209,18 +209,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the populated valley, nothing pops at a screen edge or at a ridge or boulder silhouette, with the movers moving.",
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "The preceding merge batch must clear so SHOWCASE can land and refresh its motion evidence on the merged renderer.",
-        "work": {
-          "commit": "2c8b08857f2220d25e81866804721fc78d369293",
-          "branch": "build/showcase",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/SHOWCASE/M6-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the populated valley, nothing pops at a screen edge or at a ridge or boulder silhouette, with the movers moving."
     },
     {
       "id": "M9",
