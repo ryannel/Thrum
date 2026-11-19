@@ -215,7 +215,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/automated-checks.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -224,8 +224,8 @@
           "statement": "In the populated valley, traced Sun shadows show no acne on a lit surface, no dark facets where a rounded body turns from the Sun, no gap and no leak where a prop or a balloon's basket meets what it stands on, and no shadow missing or out of place: at noon, at a low Sun and at dusk, near the camera and at the far ridge.",
           "inspect": "`fixed` stills at the route's stops at those three times with the method `Traced`, whole and as native-size crops of contact points, grazing slopes, balloons where they turn from the Sun and the far ridge, with the same stops under `Maps` beside them to show what differs.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fixes.md#sun-stills",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -235,7 +235,7 @@
           "inspect": "A `realtime` sequence of the route with the method `Traced`, as consecutive frames at native size around three movers.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/README.md#realtime-route",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fixes.md#realtime-route",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -246,8 +246,8 @@
           "ask": "Is the wall of the off-screen case outside both Sun pass volumes and the camera's view in the test as written, and is the room of the other case prepared with Sun shadows off, so that an instance list or a mask taken from any pass's draws would fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -256,8 +256,8 @@
           "statement": "At the valley's local-light stop at night, each lamp's shadows fall away from it and meet their casters at contact, and nothing behind a wall or a prop is lit by a lamp on its other side.",
           "inspect": "`fixed` stills at that stop with lamp shadows on and off, whole and as native-size crops around each lamp.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fixes.md#night-lamp-stop",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -268,8 +268,8 @@
           "ask": "Is each request resolved from the registry's facts before anything is allocated, is the report the resolved value with its reason and not an echo of the request, and is the preparation failure injected by the test and not assumed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -280,7 +280,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/automated-checks.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -291,7 +291,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/contributions.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-contributions.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -303,7 +303,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/sun-out.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-sun-out.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -314,7 +314,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/README.md#contended-timing",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fixes.md#contended-timing",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -335,7 +335,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/automated-checks.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         }

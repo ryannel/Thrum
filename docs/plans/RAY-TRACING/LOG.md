@@ -81,3 +81,8 @@
   day, night and capture preparation on two device generations. Inspected the fixed route and three movers
   at elapsed speed, and kept the night lamp contact crops. The contended repeat showed higher traced frame
   CPU time and timed-pass span, with both cascade passes absent. [M3 evidence](../../../.orchestrate/evidence/RAY-TRACING/M3/README.md).
+- 2026-11-19 Corrected broad self-shadow facets on coarse rounded receivers, the mirrored lamp receiver
+  and native traced-pipeline fallback. Metal hit IDs identified the three angular balloon patches as shadows
+  from other balloons beyond 600 m. Recaptured the fixed Sun route, four-lamp stop and realtime movers on
+  Metal. The lamp fixture excludes its wall from the camera and all three Sun volumes at both poses.
+  [Review fix evidence](../../../.orchestrate/evidence/RAY-TRACING/M3/review-fixes.md).

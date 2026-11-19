@@ -106,17 +106,17 @@
       ]
     },
     "RAY_TRACING_M3": {
-      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile, with a height-map producer for air, map-only secondary views, and whole-scene fallback during preparation.",
-      "functional_validation": "Mac Metal checks verified receiver visibility through 20 km coordinates, off-camera and cooked lamp casters, prepared fallback, matching secondary and air-shadow products, night parity, and two generations without late pipeline creation.",
-      "experienced_quality": "Builder inspected fixed T2 Maps and Traced pairs on the exit route at noon, low Sun and dusk, an elapsed-speed run around three balloon casters, and a four-lamp night stop.",
+      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile, with a correction for grazing hits against the receiving mesh, a height-map producer for air, map-only secondary views, and whole-scene fallback during preparation.",
+      "functional_validation": "Mac Metal checks verified receiver visibility through 20 km coordinates, a lamp wall outside the camera and all Sun volumes, cooked lamp casters, mirrored lamp receivers, injected validation and native-link fallback, matching secondary and air-shadow products, night parity, and two generations without late pipeline creation.",
+      "experienced_quality": "Builder inspected refreshed T2 Maps and Traced pairs on the exit route at noon, low Sun and dusk, an elapsed-speed run around three balloon casters, and a four-lamp night stop. Metal readbacks identified distant balloon casters and distinguished their shadows from the foreground rock's self-hits.",
       "platform_performance": {
-        "mac_apple_tile": "Contended repeat medians were 2.859, 3.854 and 4.245 ms timed-pass span for Maps and Traced with lamps off and on, respectively. Frame CPU medians were 0.936, 2.143 and 2.203 ms. No performance qualification.",
+        "mac_apple_tile": "Contended review-fix medians were 2.96, 4.47 and 5.23 ms timed-pass span for Maps and Traced with lamps off and on, respectively. Frame CPU medians were 1.40, 2.93 and 3.72 ms. The evidence breaks down the paired increases and the span outlier.",
         "browser": "Ordinary output is covered by the shared exact-images check. No traced browser qualification.",
         "ios": "No traced iPhone qualification."
       },
       "evidence": [
-        "../evidence/RAY-TRACING/M3/README.md",
-        "../evidence/RAY-TRACING/M3/cost-repeat.json"
+        "../../.orchestrate/evidence/RAY-TRACING/M3/review-fixes.md",
+        "../../.orchestrate/evidence/RAY-TRACING/M3/review-fix-cost.json"
       ]
     },
     "SCENE_VIEWS": {

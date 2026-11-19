@@ -281,10 +281,10 @@ shader text.
   large. The ray starts at distance 0.
 - **The count is 8.** The probe needed 2. A builder may raise it to 16 by eye if acne shows, and says so in
   the evidence. It is one constant for every ray.
-- **The normal is not taken from derivatives of world position.** Close to the camera and far from the origin
-  a pixel's footprint is smaller than a float step, and that derivative is noise. A fragment uses its
-  interpolated normal, turned to the side it faces. The visibility pass uses neighbouring depths in view
-  space, where nearby positions keep their precision.
+- **The normal comes from the surface.** Close to the camera and far from the origin a pixel's footprint is
+  smaller than a float step, and world-position derivatives become noise. A fragment uses its transformed,
+  interpolated normal on the lit side. The visibility pass uses neighbouring depths in view space, where
+  nearby positions keep their precision.
 - **The supported separation.** A caster always blocks when it stands more than twice the lift's ceiling from
   its receiver: 32 float steps. That is 2 mm within 1 km of the origin, 3.2 cm at 10 km and 6.3 cm at 20 km.
   The factor of two leaves room for the caster's and the receiver's own rounding. Nearer than that, a caster
