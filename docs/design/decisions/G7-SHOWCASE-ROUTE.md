@@ -54,7 +54,7 @@ own copy of the values.
 
 | Stop | Hours | Yaw° | Pitch° | Shows |
 |---|---:|---:|---:|---|
-| `sunrise` | 6.1 | 0 | 0 | authored framing, low warm light, long ridge shadows |
+| `sunrise` | 6.32 | 0 | 0 | authored framing, low warm light and long shadows from the sphere and rock |
 | `noon` | 12 | 0 | 0 | authored framing, overhead light, short shadows |
 | `sunset-clear-sun` | 17.4 | -90 | 0 | the Sun disk still above the ridge, horizon gradient |
 | `sunset-sun` | 17.9 | -90 | 0 | the Sun just behind the ridge: in-scatter and silhouette |
@@ -131,8 +131,9 @@ The check compares pictures, not status. It runs in four steps:
    - The script requires every checker result's `actualWasmSha256` to equal the Wasm it just built, so a stale web
      root fails.
    - It runs `--case valley` for its live texture edit, the positive control.
-   - Then it runs `--case sky-reflections`, the sky phases without `?assets`, as the negative control. The checker has
-     no diagnostic phase at 17.4 h, so the clear-Sun stop has none; the other five cover the comparator.
+   - Then it runs `--case route-diagnostic` without a cooked store as the negative control. It applies the preset's
+     hour, yaw and pitch through the page controls and records both the requested and applied values. The clear-Sun
+     stop has no diagnostic control. The `sky-reflections` case keeps its original phases for its own check.
 4. **Compare.** For each stop, compare the Chrome valley frame with the native frame:
    - Box-average both frames to a 32×18 grid in 8-bit sRGB. Each pixel adds to the cells it overlaps by its exact
      area share, so both extents (1252×704 and 1280×720) average over the same regions of the view. Assigning whole
@@ -149,8 +150,8 @@ The check fails in any of these cases:
 - **Same cooked input:** the generation-1 root named by the native store's `HEAD` is absent from the checker's
   content-addressed store. The root covers every product hash, so its presence means the checker cooked the identical
   first publication.
-- **Negative control:** the diagnostic frames do not exceed ten times the threshold on at least one statistic at
-  every stop.
+- **Negative control:** at any of the five control stops, the diagnostic frame departs from its preset by more
+  than the control steps or fails to reach ten times the threshold on at least one statistic.
 - **Positive control:** the checker's own `valley-before-edit` and `valley-edited` frames, which differ only by the
   retinted texture, do not exceed the thresholds. This proves the metric sees a wrong texture, not just a wrong
   scene. These are full-page shots, so both are cropped to the canvas rectangle the checker recorded for its noon
@@ -179,7 +180,10 @@ each other under the same metric, on both targets.
   and as one compact contact sheet in the evidence page. `tmp/` is not checked in, so the per-stop 32×18 grids are
   checked in at `docs/evidence/v1-workload/g7-showcase-baseline.json`, the path root approved. Its identity is the
   comparator version, the frame-source version, the source root and the preset hashes. A run compares against it
-  only when every part matches.
+  only when every part matches. The canonical check on the checked-in source and baseline must compare all twelve
+  frames. It fails if the baseline is missing, any part of its identity differs, or any comparison exceeds a
+  threshold. Runs on another source, scratch baselines and explicit calibration or save runs may report mismatched
+  identity without failing on that alone.
 - **Diffs.** Later runs report their per-stop difference from the baseline, and a stop beyond the thresholds fails
   the check.
 - **Updates.** Changing a baseline is an explicit act, `check --save-baseline`, with a reason in the evidence. It

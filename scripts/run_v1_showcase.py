@@ -60,12 +60,8 @@ TOOLCHAIN = 'stable'
 # Route order. Each stop's frame on both targets comes from applying its preset: native capture with
 # THRUM_CAPTURE_PARAMS, Chrome through the checker's route case. Values live only in the presets.
 ROUTE = ['sunrise', 'noon', 'sunset-clear-sun', 'sunset-sun', 'twilight', 'night-upslope']
-# The negative control draws the diagnostic scene at the matching sky phase. The checker has no diagnostic phase
-# at 17.4 h, so the clear-Sun stop has no negative control; the other five cover the comparator.
-DIAGNOSTIC_PHASE = {
-    'sunrise': 'phase-scene-sunrise', 'noon': 'phase-paused-scene-noon', 'sunset-sun': 'phase-sunset',
-    'twilight': 'phase-scene-twilight', 'night-upslope': 'phase-upslope-midnight',
-}
+# The diagnostic scene is held at the presets of the five stops with a negative control.
+DIAGNOSTIC_STOPS = [stop for stop in ROUTE if stop != 'sunset-clear-sun']
 # Frame source version, part of the baseline identity: 1 took stops from the fixed captures and the checker's sky
 # phases; 2 applies each preset on both targets.
 FRAMES = 2
@@ -428,6 +424,18 @@ def close(a, b, tolerance):
     return abs(float(a) - float(b)) <= tolerance
 
 
+def verify_diagnostic_poses(phases, stops, report):
+    rows = report['diagnostic_poses'] = {}
+    for stop in DIAGNOSTIC_STOPS:
+        preset = stops[stop]
+        expected = {'hours': preset['sky.solar_time'], 'yaw': preset['camera.yaw'], 'pitch': preset['camera.pitch']}
+        applied = {key: phases[stop]['edited']['controls'][key] for key in expected}
+        rows[stop] = {'preset': expected, 'applied': applied}
+        if not all(close(applied[key], expected[key], tolerance)
+                   for key, tolerance in [('hours', 0.0051), ('yaw', 0.5001), ('pitch', 0.5001)]):
+            report['failures'].append(f'diagnostic pose drift at {stop}: {applied} vs {expected}')
+
+
 def pack(cells):
     """A grid as base64 little-endian uint16 hundredths of an 8-bit level (0.005 rounding)."""
     return base64.b64encode(b''.join(struct.pack('<H', round(v * 100)) for cell in cells for v in cell)).decode()
@@ -439,20 +447,28 @@ def unpack(text):
     return [values[i:i + 3] for i in range(0, len(values), 3)]
 
 
-def compare_baseline(baseline_path, grids, identity, thresholds):
-    """Each stop's difference from the checked-in baseline, when the baseline is for this identity."""
+def read_baseline(baseline_path, identity):
     if not baseline_path.exists():
-        return {'status': 'absent'}
+        return None, {'status': 'absent'}
     saved = json.loads(baseline_path.read_text())
-    differs = sorted(key for key in identity if saved['identity'].get(key) != identity[key])
+    saved_identity = saved['identity']
+    differs = sorted(key for key in saved_identity.keys() | identity.keys()
+                     if key not in saved_identity or key not in identity or saved_identity[key] != identity[key])
     if differs:
-        result = {'status': 'other identity', 'differs': differs, 'baseline_identity': saved['identity']}
+        return saved, {'status': 'other identity', 'differs': differs, 'baseline_identity': saved_identity}
+    return saved, None
+
+
+def compare_baseline(baseline, grids, thresholds):
+    """Each stop's difference from the saved baseline, when the baseline is for this identity."""
+    saved, unmatched = baseline
+    if unmatched:
         # Same comparator, frames and route on other content: the difference locates what the content change moved.
         # It is information only and never judged.
-        if differs == ['source_root']:
-            result['informational'] = {f'{target}/{stop}': difference(cells, unpack(saved['grids'][target][stop]))
-                                       for target, stops in grids.items() for stop, cells in stops.items()}
-        return result
+        if unmatched.get('differs') == ['source_root']:
+            unmatched['informational'] = {f'{target}/{stop}': difference(cells, unpack(saved['grids'][target][stop]))
+                                          for target, stops in grids.items() for stop, cells in stops.items()}
+        return unmatched
     result = {'status': 'compared', 'stops': {}, 'over': []}
     for target, stops in grids.items():
         for stop, cells in stops.items():
@@ -461,6 +477,11 @@ def compare_baseline(baseline_path, grids, identity, thresholds):
             if any(value > limit for value, limit in zip(values, thresholds)):
                 result['over'].append(f'{target}/{stop}')
     return result
+
+
+def baseline_identity(root):
+    return {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
+            'route': {stop: sha256(PARAMS / f'showcase-{stop}.params.json') for stop in ROUTE}}
 
 
 def save_baseline(baseline_path, grids, identity, report, run):
@@ -522,6 +543,12 @@ def check(args):
         # Recalibration is only for another source root; on the calibrated one it could only loosen the check.
         if args.recalibrate and root == CALIBRATED_ROOT:
             raise Failure(f'--recalibrate on the calibrated source root {root[:8]}: the fixed thresholds apply')
+        identity = baseline_identity(root)
+        saved_baseline = read_baseline(baseline_path, identity)
+        if origin == SOURCE and baseline_path == BASELINE and not (args.recalibrate or args.save_baseline):
+            if unmatched := saved_baseline[1]:
+                report['baseline'] = unmatched
+                raise Failure(f'canonical baseline was not compared: {unmatched["status"]} {unmatched.get("differs", "")}')
 
         # Native: THRUM_SCENE=valley makes capture require the store and refuse unless it is drawn.
         native = run / 'native'
@@ -548,9 +575,9 @@ def check(args):
                 failures.append(f'native pose drift at {stop}: {pose} vs {values}')
 
         # Chrome: the route presets on the cooked valley; the valley case for its live texture edit (the positive
-        # control); and the sky phases without ?assets as the negative control.
+        # control); and the diagnostic scene without ?assets as the negative control.
         chrome_runs = {}
-        for case, name in [('route', 'chrome-route'), ('valley', 'chrome-valley'), ('sky-reflections', 'chrome-diagnostic')]:
+        for case, name in [('route', 'chrome-route'), ('valley', 'chrome-valley'), ('route-diagnostic', 'chrome-diagnostic')]:
             started = time.monotonic()
             with open(run / f'{name}.log', 'w') as log:
                 code = bounded(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
@@ -581,6 +608,7 @@ def check(args):
                     or not (close(got['hours'], want['hours'], 0.0051) and close(got['yaw'], want['yaw'], 0.5001)
                             and close(got['pitch'], want['pitch'], 0.5001))):
                 failures.append(f'Chrome route pose drift at {stop}: {got} vs {want}, preset {stage["sha256"][:8]}')
+        verify_diagnostic_poses(chrome_runs['route-diagnostic'], stops, report)
         if failures:
             raise Failure('pose drift')
 
@@ -590,11 +618,11 @@ def check(args):
         statistics = report['statistics'] = {}
         for stop in ROUTE:
             statistics[stop] = {'valley': difference(grids['chrome'][stop], grids['native'][stop])}
-            if stop in DIAGNOSTIC_PHASE:
-                diagnostic = grid(run / 'chrome-diagnostic' / f'sky-reflections-{DIAGNOSTIC_PHASE[stop]}.png')
+            if stop in DIAGNOSTIC_STOPS:
+                diagnostic = grid(run / 'chrome-diagnostic' / f'route-diagnostic-{stop}.png')
                 statistics[stop]['diagnostic'] = difference(diagnostic, grids['native'][stop])
         # The edit frames are full-page shots; compare only the canvas, located by the checker's own clip.
-        clip = chrome_runs['valley'][DIAGNOSTIC_PHASE['noon']]['images'][0]['clip']
+        clip = chrome_runs['valley']['phase-paused-scene-noon']['images'][0]['clip']
         canvas = (round(clip['x']), round(clip['y']), round(clip['x'] + clip['width']), round(clip['y'] + clip['height']))
         report['positive_control_crop'] = canvas
         edit = difference(grid(run / 'chrome-valley/valley-before-edit-final.png', crop=canvas),
@@ -619,9 +647,7 @@ def check(args):
                 failures.append(f'negative control: the diagnostic scene at {stop} is within {CONTROL_RATIO}x of the thresholds')
         if not any(edit[i] > thresholds[i] for i in range(3)):
             failures.append('positive control: the retinted texture did not exceed any threshold')
-        identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
-                    'route': {stop: sha256(PARAMS / f'showcase-{stop}.params.json') for stop in ROUTE}}
-        baseline = report['baseline'] = compare_baseline(baseline_path, grids, identity, thresholds)
+        baseline = report['baseline'] = compare_baseline(saved_baseline, grids, thresholds)
         baseline['path'] = str(baseline_path.relative_to(REPO)) if baseline_path.is_relative_to(REPO) else str(baseline_path)
         drifted = baseline['status'] == 'compared' and baseline['over']
         # Replacing the baseline is the deliberate answer to drift, so drift alone does not block --save-baseline;
@@ -706,12 +732,17 @@ def check_exit(args):
         execute([str(GAME)], 'retinted', env=dict(env, THRUM_ASSET_STORE=str(retinted_store),
                 THRUM_CAPTURE_SCENE=str(run / 'retinted'),
                 THRUM_CAPTURE_PARAMS=str(PARAMS / 'showcase-noon.params.json')))
-        for case, name in [('exit-stops', 'chrome'), ('sky-reflections', 'diagnostic')]:
+        for case, name in [('exit-stops', 'chrome'), ('route-diagnostic', 'diagnostic')]:
             execute(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
                      '--assets-source', str(source), '--output', str(run / name)], name, seconds=900)
             results = json.loads((run / name / 'run.json').read_text())['results']
             if any(result['actualWasmSha256'] != report['builds']['wasm_sha256'] for result in results):
                 raise Failure(f'{name}: stale Wasm')
+            if case == 'route-diagnostic':
+                phases = {phase['name']: phase for phase in results[0]['sky']['phases']}
+                verify_diagnostic_poses(phases, stops, report)
+                if report['failures']:
+                    raise Failure('diagnostic pose drift')
         if root != store_root(run / 'chrome/store'):
             raise Failure('Chrome and native cooked roots differ')
         chrome = json.loads((run / 'chrome/run.json').read_text())['results']
@@ -733,20 +764,18 @@ def check_exit(args):
             row = stats[stop] = {'parity': difference(grids['chrome'][stop], native),
                                  'empty': difference(grid(run / 'empty/route' / f'showcase-{stop}.ppm'), native),
                                  'in_view': chrome[stop]['exit']['in_view']}
-            if stop in DIAGNOSTIC_PHASE:
-                diagnostic = run / 'diagnostic' / f'sky-reflections-{DIAGNOSTIC_PHASE[stop]}.png'
+            if stop in DIAGNOSTIC_STOPS:
+                diagnostic = run / 'diagnostic' / f'route-diagnostic-{stop}.png'
                 row['diagnostic'] = difference(grid(diagnostic), native)
         edit = report['positive_control'] = difference(grids['native']['noon'],
             grid(run / 'retinted/route/showcase-noon.ppm'))
         worst = [max(row['parity'][i] for row in stats.values()) for i in range(3)]
-        identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
-                    'route': {path.stem.removeprefix('showcase-').removesuffix('.params'): sha256(path)
-                              for path in presets}}
+        identity = baseline_identity(root)
         if args.save_baseline:
             thresholds = [max(1.0, 3 * value) for value in worst]
         else:
-            fixed = json.loads(EXIT_BASELINE.read_text())
-            if fixed['identity'] != identity:
+            fixed, unmatched = read_baseline(EXIT_BASELINE, identity)
+            if unmatched:
                 raise Failure('exit baseline identity changed')
             thresholds = fixed['thresholds']
         report['thresholds'] = thresholds
@@ -765,7 +794,7 @@ def check_exit(args):
         if args.save_baseline and not failures:
             save_baseline(EXIT_BASELINE, grids, identity, report, run)
         elif not args.save_baseline:
-            baseline = report['baseline'] = compare_baseline(EXIT_BASELINE, grids, identity, thresholds)
+            baseline = report['baseline'] = compare_baseline((fixed, unmatched), grids, thresholds)
             if args.refresh_baseline is not None and not failures:
                 refresh_exit_baseline(fixed, grids, report, run, args.refresh_baseline.strip())
             elif baseline['status'] != 'compared' or baseline['over']:

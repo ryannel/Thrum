@@ -1,7 +1,7 @@
 {
   "format": "thrum-v1-moving-route",
   "version": 1,
-  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_root": "f34397a181e38e76a57b8da4ebf00426deadc377976c33dd00f7d127718c1eea",
   "cooked_generation": 1,
   "tick_hz": 60,
   "phase": [1, 2],

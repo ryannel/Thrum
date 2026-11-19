@@ -24,6 +24,7 @@ cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
+cases.push('route-diagnostic');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -1115,7 +1116,7 @@ async function screenshot(cdp, sessionId, output, mode, options = {}) {
   return { file, bytes: bytes.length, sha256: sha(bytes), width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
-async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evidence) {
+async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evidence, routeFiles) {
   const deadline = Date.now() + timeout;
   const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
   await until(async () => /^Running/.test((await poll()).status ?? ''), 'continuous sky demo startup');
@@ -1145,7 +1146,7 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
     const after = await read(); assertPaused(after);
     return { ...image, clip: clip ?? null, before, after };
   };
-  const held = async (name, body, expected, fullUi) => {
+  const held = async (name, body, expected, fullUi, phases = fullUi) => {
     const edited = await game.invoke(`${body};return {snapshot:${gameState},controls:${controls}};`);
     assertPaused(edited.snapshot);
     if (![edited.controls.hours, edited.controls.yaw, edited.controls.pitch, edited.snapshot.time].every(Number.isFinite) || Math.abs(edited.controls.hours - expected.hours) > 0.0051 || Math.abs(edited.controls.yaw - expected.yaw) > 0.5001 || Math.abs(edited.controls.pitch - expected.pitch) > 0.5001 || Math.abs(edited.snapshot.time - edited.controls.hours / 24) > 1e-6) throw new Error(`Sky controls did not apply ${name}: ${JSON.stringify(edited)}`);
@@ -1158,10 +1159,27 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
     if (![clip.x, clip.y, clip.width, clip.height].every(Number.isFinite) || clip.width <= 0 || clip.height <= 0) throw new Error('Canvas screenshot clip unavailable');
     const record = { name, requested: expected, edited, settled, images: [] };
     // Retain partial metadata before I/O too, so a failed case is reviewable.
-    (fullUi ? evidence.phases : evidence.motion).push(record);
+    (phases ? evidence.phases : evidence.motion).push(record);
     record.images.push(await capture(name, `${evidence.prefix}-${name}.png`, clip));
     if (fullUi) record.images.push(await capture(name, `${evidence.prefix}-${name}-ui.png`));
   };
+  if (routeFiles) {
+    for (const [file, source] of routeFiles) {
+      const stop = routePreset.exec(file)[1];
+      if (stop === 'sunset-clear-sun') continue;
+      const preset = JSON.parse(source.bytes.toString('utf8'));
+      const expected = { hours: preset['sky.solar_time'], yaw: preset['camera.yaw'], pitch: preset['camera.pitch'] };
+      await held(stop, `
+        for (const [selector, value] of [['#solar-time', ${expected.hours}], ['#camera-yaw', ${expected.yaw}], ['#camera-pitch', ${expected.pitch}]]) {
+          const control = document.querySelector(selector);
+          control.value = String(value);
+          control.dispatchEvent(new Event('input', { bubbles: true }));
+        }`, expected, false, true);
+    }
+    evidence.final = await read(); assertPaused(evidence.final);
+    evidence.scope = 'Diagnostic scene without a cooked store, held at the route presets by the page controls.';
+    return;
+  }
   for (const [name, preset, sceneView, hours, yaw, pitch] of [
     ['phase-paused-scene-noon', 'noon', true, 12, 0, 0],
     ['phase-sunrise', 'sunrise', false, 6.1, 90, 0],
@@ -1218,13 +1236,14 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const tabCase = mode === 'tabs';
   const oracleCase = mode.startsWith('field-oracle-');
   const exitStop = mode.startsWith('exit-stop-');
-  const routeCase = mode.startsWith('route-') || exitStop;
+  const routeDiagnostic = mode === 'route-diagnostic';
+  const routeCase = (mode.startsWith('route-') && !routeDiagnostic) || exitStop;
   const exitCase = mode === 'exit-scene' || mode === 'exit-sweep';
   const sweep = mode === 'exit-sweep';
   const movingCase = mode === 'moving-route' || mode.startsWith('moving-route-');
   const movingControl = movingCase && mode !== 'moving-route' ? mode.slice('moving-route-'.length) : undefined;
   const routeFile = routeCase ? `showcase-${mode.replace(/^(route|exit-stop)-/, '')}.params.json` : undefined;
-  const skyCase = mode === 'sky-reflections' || valleyCase;
+  const skyCase = mode === 'sky-reflections' || routeDiagnostic || valleyCase;
   const faults = [], timeline = [];
   let loss, recovery, sky, material, oracle, route, exit, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
@@ -1314,7 +1333,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     if (skyCase) {
       sky = { prefix: mode, phases: [], motion: [], captureBytes: 0 };
-      await qualifySkyReflections(cdp, sessionId, poll, timeout, output, sky);
+      await qualifySkyReflections(cdp, sessionId, poll, timeout, output, sky,
+        routeDiagnostic ? files.routeExpected : undefined);
       if (valleyCase) {
         const cooked = JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
         sky.cooked = cooked;
@@ -2149,7 +2169,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && mode !== 'route-diagnostic' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode.startsWith('moving-route'))) {
@@ -2161,7 +2181,8 @@ async function main() {
       : undefined;
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
+    if (modes.includes('route-diagnostic')) await routeStops(files, directory);
+    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     for (const mode of modes) {
       if (mode === 'extent') results.push(await qualifyExtent(cdp, serving.origin, output, args['timeout-ms'], files.get('/v1_game_bg.wasm')));
       else if (mode === 'sprites-field' || mode === 'sprites-field-cost') results.push(await qualifySpriteField({

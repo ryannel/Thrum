@@ -13,7 +13,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 EVIDENCE = Path(__file__).resolve().parents[4] / 'tmp/g3s-showcase/geometry-v2'
-NX, NZ = 161, 185
+LOOKOUT_X_EDGES = (-55., 55.)
+LOOKOUT_Z_EDGES = (-45., 60.)
 # Ground albedo: one tileable texture repeated in world space around the fixed camera's foot.
 GROUND_TEXTURE_SIZE = 512
 GROUND_SYNTH_SIZE = 1024         # built at twice the shipped size, then box-filtered in linear light
@@ -84,10 +85,15 @@ def ground(x, z):
         h += hill(x,z,*landform)
     # A local, flat-topped rock lookout. Its front drops into the valley rather
     # than making a bowl around the camera. No periodic/radial displacement.
-    def smooth(t):
-        t=max(0,min(1,t))
-        return t*t*(3-2*t)
-    shelf=(1-smooth((abs(x)-55)/100))*(1-smooth((-z-45)/130))*(1-smooth((z-60)/100))
+    def face(t):
+        t = max(0, min(1, t))
+        # The face falls immediately below the sight line at the lip, then
+        # joins the valley floor with zero slope at the bottom of the ramp.
+        return t*t*(3-2*t) + .22*t*(1-t)**2
+    west, east = LOOKOUT_X_EDGES
+    north, south = LOOKOUT_Z_EDGES
+    shelf = ((1-face((west-x)/100))*(1-face((x-east)/100))
+             *(1-face((north-z)/130))*(1-face((z-south)/100)))
     local_detail=.25*noise(x,z,12)+.06*noise(x,z,2.6)
     return h*(1-shelf)+(240+local_detail)*shelf
 
@@ -102,47 +108,76 @@ def normals_from_faces(p, tris):
     return [unit(v) for v in n]
 
 
-def heightfield_normals(positions):
+def heightfield_normal(positions, k, nx, nz, x_side=0, z_side=0):
     # Differentiate the resolved height samples, independent of triangle-star
     # parity. Area weighting on this unequal grid created alternating normals
     # and visible ribs at a grazing Sun. Do not add analytic detail absent from
     # the represented mesh.
-    def derivative(k, step, axis, start, end):
-        if start:
-            return ((positions[k+step][1]-positions[k][1]) /
-                    (positions[k+step][axis]-positions[k][axis]))
-        if end:
-            return ((positions[k][1]-positions[k-step][1]) /
-                    (positions[k][axis]-positions[k-step][axis]))
+    def derivative(step, axis, side):
+        if side:
+            neighbour = positions[k + side*step]
+            return (neighbour[1]-positions[k][1])/(neighbour[axis]-positions[k][axis])
         left = positions[k][axis]-positions[k-step][axis]
         right = positions[k+step][axis]-positions[k][axis]
         before = (positions[k][1]-positions[k-step][1])/left
         after = (positions[k+step][1]-positions[k][1])/right
         return (right*before+left*after)/(left+right)
 
-    return [unit((-derivative(k, 1, 0, k%NX == 0, k%NX == NX-1),
-                  1., -derivative(k, NX, 2, k//NX == 0, k//NX == NZ-1)))
-            for k in range(len(positions))]
+    i, j = k % nx, k // nx
+    x_side = 1 if i == 0 else -1 if i == nx-1 else x_side
+    z_side = 1 if j == 0 else -1 if j == nz-1 else z_side
+    return unit((-derivative(1, 0, x_side), 1., -derivative(nx, 2, z_side)))
+
+
+def terrain_axes():
+    # Two added lines per edge resolve the lip and its first face segment
+    # without flipping the diagonals in cells outside each refined interval.
+    xs = [math.copysign(18000*(abs(i-80)/80)**2.2,i-80) for i in range(161)]
+    zs = [-math.copysign(18000*(abs(i-92)/92)**2.4,i-92) for i in range(185)]
+    west, east = LOOKOUT_X_EDGES
+    north, south = LOOKOUT_Z_EDGES
+    return (sorted(xs + [west-2, west, east, east+2]),
+            sorted(zs + [north-2, north, south, south+2], reverse=True))
 
 
 def terrain():
     # Unequal grid spacing concentrates vertices around the viewed foreground.
-    xs = [math.copysign(18000*(abs(i-80)/80)**2.2,i-80) for i in range(NX)]
-    zs = [-math.copysign(18000*(abs(i-92)/92)**2.4,i-92) for i in range(NZ)]
+    xs, zs = terrain_axes()
+    nx, nz = len(xs), len(zs)
     # Match the actual glTF positions before constructing their derivatives.
     p = [struct.unpack('<3f', struct.pack('<3f', x, ground(x,z), z))
          for z in zs for x in xs]
+    n = [heightfield_normal(p, k, nx, nz) for k in range(len(p))]
+    uv = [ground_uv(x, z) for z in zs for x in xs]
+    split = {}
+
+    def corner(column, row, cell_i, cell_j):
+        k = row*nx + column
+        x, _, z = p[k]
+        x_side = (1 if column == cell_i else -1) if x in LOOKOUT_X_EDGES else 0
+        z_side = (1 if row == cell_j else -1) if z in LOOKOUT_Z_EDGES else 0
+        if not (x_side or z_side):
+            return k
+        # Both sides share the same position and UV. Each cell gets the
+        # derivative on its own side of the crease, including at the corners.
+        key = k, x_side, z_side
+        if key not in split:
+            split[key] = len(p)
+            p.append(p[k])
+            uv.append(uv[k])
+            n.append(heightfield_normal(p, k, nx, nz, x_side, z_side))
+        return split[key]
+
     tris = []
-    for j in range(NZ-1):
-        for i in range(NX-1):
-            a = j*NX+i
+    for j in range(nz-1):
+        for i in range(nx-1):
+            a, b, c, d = (corner(i+di, j+dj, i, j) for di, dj in [(0, 0), (1, 0), (0, 1), (1, 1)])
             # Positive Y winding. Alternate diagonals without adding geometry.
             if (i+j)%2:
-                tris.extend([(a,a+1,a+NX),(a+1,a+NX+1,a+NX)])
+                tris.extend([(a,b,c),(b,d,c)])
             else:
-                tris.extend([(a,a+1,a+NX+1),(a,a+NX+1,a+NX)])
-    uv = [ground_uv(x, z) for z in zs for x in xs]
-    return p, heightfield_normals(p), uv, tris
+                tris.extend([(a,b,d),(a,d,c)])
+    return p, n, uv, tris
 
 
 def ground_uv(x, z):
@@ -155,12 +190,14 @@ def ground_uv(x, z):
 def surface_height(mesh,x,z):
     # Exact interpolation of the float32 source triangles, including diagonals.
     p=mesh[0]
-    xs=[p[i][0] for i in range(NX)]
-    depths=[-p[j*NX][2] for j in range(NZ)]
-    i=max(0,min(NX-2,bisect.bisect_right(xs,x)-1))
-    j=max(0,min(NZ-2,bisect.bisect_right(depths,-z)-1))
-    a=j*NX+i
-    tris=[(a,a+1,a+NX),(a+1,a+NX+1,a+NX)] if (i+j)%2 else [(a,a+1,a+NX+1),(a,a+NX+1,a+NX)]
+    x_axis, z_axis = terrain_axes()
+    nx, nz = len(x_axis), len(z_axis)
+    xs=[p[i][0] for i in range(nx)]
+    depths=[-p[j*nx][2] for j in range(nz)]
+    i=max(0,min(nx-2,bisect.bisect_right(xs,x)-1))
+    j=max(0,min(nz-2,bisect.bisect_right(depths,-z)-1))
+    start = 2 * (j*(nx-1) + i)
+    tris = mesh[3][start:start+2]
     for tri in tris:
         a,b,c=[p[k] for k in tri]
         denominator=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2])
@@ -295,10 +332,12 @@ def overview(scene):
         if name=='terrain':
             # 4x4 cell downsample, solely for the small overview.
             tris=[]
-            for j in range(0,NZ-1,2):
-                for i in range(0,NX-1,2):
-                    a=j*NX+i
-                    tris.extend([(a,a+2,a+2+2*NX),(a,a+2+2*NX,a+2*NX)])
+            xs, zs = terrain_axes()
+            nx, nz = len(xs), len(zs)
+            for j in range(0,nz-1,2):
+                for i in range(0,nx-1,2):
+                    a=j*nx+i
+                    tris.extend([(a,a+2,a+2+2*nx),(a,a+2+2*nx,a+2*nx)])
         p=[tuple(v[k]*item['scale'][k]+item['translation_m'][k] for k in range(3)) for v in p]
         for tri in tris:
             points=[p[i] for i in tri]
@@ -528,7 +567,8 @@ def main():
     (ROOT/'ground.png').write_bytes(png(size,size,2,albedo,up=True))
     overview(scene)
     report['total_triangles']=sum(v['triangles'] for v in report['meshes'].values())
-    assert report['total_triangles']<=64000
+    # The lookout's eight added grid lines are included in the scene budget.
+    assert report['total_triangles']<=65000
     report['recipe_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     report['source_outputs_bytes']=sum(p.stat().st_size for p in ROOT.iterdir() if p.is_file() and p.name!='validation.json')
     assert report['source_outputs_bytes']<16*1024*1024
