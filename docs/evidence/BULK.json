@@ -5787,6 +5787,38 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M6/chrome-exit-flythrough.mp4",
+      "size": 38548535,
+      "sha256": "54543c7baa8be99b6f51658b62e789904ff17e4374114216166f5132d120b099",
+      "date": "2026-11-19T00:57:01.232627+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M6/mac-exit-fast-yaw.mp4",
+      "size": 8905787,
+      "sha256": "29ba8358e82f3826be8b0a4542160bfd32147d2233fc5fa1d8fe7912a513fd54",
+      "date": "2026-11-19T00:57:01.119573+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M6/mac-exit-flythrough.mp4",
+      "size": 38342840,
+      "sha256": "c1d1538af10f0e38b70016fbea5267e08d236a58311c1030bc71375e141613e4",
+      "date": "2026-11-19T00:57:00.999360+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M6/submitted-windows.tar.gz",
+      "size": 112204249,
+      "sha256": "af4592b18464b55f9544f16efa15aaf204af64a3cf074671c16bc4e66599e3dc",
+      "date": "2026-11-19T00:57:00.801488+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/WATERS/M2-across.png",
       "size": 3495177,
       "sha256": "e447d9a9fda8905b9258180337cd569e0ad1f2c5f57b739e9627719055f26235",

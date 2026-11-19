@@ -79,3 +79,8 @@
   The recorder checks the submitted phase across the active route. The retake kept 1,351
   half-tick route frames with no deferrals, reproduced both sets of stops, and passed parity.
   Retook all six real-time arms on the same clean build. [Evidence](../../evidence/SHOWCASE/M5.md#chrome-fixed-motion)
+- 2026-11-19 Ran the existing exact comparisons on the populated exit. Both Metal recipes
+  passed 1,351 frames and Chrome passed all six checkpoints. Two 1080p runs per Metal recipe
+  favor Frustum in cover and in the open under shared load. Verified the default and inspected
+  the real-time Mac route and yaw and the Chrome route. Exact baselines use the shared main check.
+  [Evidence](../../evidence/SHOWCASE/M6.md)

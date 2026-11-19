@@ -4,6 +4,16 @@
   "as_of": "2026-11-06",
   "contract_revision": "C4",
   "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
+  "showcase_m6": {
+    "scope": "GPU culling on the populated exit flythrough",
+    "implementation": "The 10,000-entity exit uses the existing Frustum default on Metal and Chrome. Explicit Direct and Occlusion selections remain available.",
+    "functional_validation": "Builder comparisons matched bucket-ordered Direct on 1,351 submitted frames per Metal recipe with Sun caster culling, and at six submitted Chrome checkpoints. The exact-image verifier runs on main.",
+    "experienced_quality": "Builder inspected T2 elapsed engine captures of the default on both targets, including a fast yaw on Metal. Independent review remains pending.",
+    "platform_cost_baselines": {
+      "mac-metal": "Two capture-off interleaved runs per native recipe at 1920×1080 recorded paired whole-GPU scene pass time and visibility counts under shared load. Both runs on each recipe favored Frustum in cover and in open views."
+    },
+    "evidence": "docs/evidence/SHOWCASE/M6.md"
+  },
   "mesh_shading_m1": {
     "scope": "Opt-in Apple tile cooked-mesh forward path on Apple M3 Max",
     "implementation": "object_and_mesh_stages_with_shared_culling_indexed_fallback_and_paired_material_installation",
