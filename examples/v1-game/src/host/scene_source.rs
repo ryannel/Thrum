@@ -257,10 +257,10 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
     scene.local_lights[0] = ROUTE_OVERLAY_LIGHT;
     if overlay == scene::RouteOverlay::LampStop {
         scene.local_lights = [
-            ([-1.35, 240.55, -3.0], [150.0, 65.0, 28.0]),
-            ([1.35, 240.50, -3.0], [32.0, 96.0, 150.0]),
-            ([-1.65, 240.55, -7.8], [38.0, 136.0, 58.0]),
-            ([1.65, 240.55, -7.8], [146.0, 58.0, 110.0]),
+            ([-1.35, 240.55, -3.0], [0.30, 0.13, 0.06]),
+            ([1.35, 240.50, -3.0], [0.06, 0.19, 0.30]),
+            ([-1.65, 240.55, -7.8], [0.08, 0.27, 0.12]),
+            ([1.65, 240.55, -7.8], [0.29, 0.12, 0.22]),
         ]
         .map(|(position, candela)| SyntheticPointLight {
             position,
