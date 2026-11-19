@@ -404,7 +404,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As forgiving as Factorio's multiplayer, where a newcomer downloads the map and catches up while the others keep playing, a desynchronised client is detected and brought back, and a peer that cannot keep up is dropped without the others noticing. Every fault costs only the peer that has it, and the host commits every tick on schedule through all of them.",
       "findings": [
         {
