@@ -143,20 +143,32 @@ pub async fn read_texture(
 /// Returns a GPU mapping or device progress error.
 /// # Panics
 /// Panics if a private readback callback mutex is poisoned.
-pub(super) async fn read_texture_bytes(
+pub(crate) async fn read_texture_bytes(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     texture: &wgpu::Texture,
     mip: u32,
     bytes_per_pixel: u32,
 ) -> Result<Vec<u8>, String> {
-    let width = (texture.width() >> mip).max(1);
-    let height = (texture.height() >> mip).max(1);
     let depth = if texture.dimension() == wgpu::TextureDimension::D3 {
         (texture.depth_or_array_layers() >> mip).max(1)
     } else {
         texture.depth_or_array_layers()
     };
+    read_texture_layers(device, queue, texture, mip, bytes_per_pixel, 0..depth).await
+}
+
+pub(crate) async fn read_texture_layers(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    texture: &wgpu::Texture,
+    mip: u32,
+    bytes_per_pixel: u32,
+    layers: std::ops::Range<u32>,
+) -> Result<Vec<u8>, String> {
+    let width = (texture.width() >> mip).max(1);
+    let height = (texture.height() >> mip).max(1);
+    let depth = layers.end - layers.start;
     let row = (width * bytes_per_pixel).div_ceil(256) * 256;
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("effect exact readback"),
@@ -169,7 +181,11 @@ pub(super) async fn read_texture_bytes(
         wgpu::TexelCopyTextureInfo {
             texture,
             mip_level: mip,
-            origin: wgpu::Origin3d::ZERO,
+            origin: wgpu::Origin3d {
+                x: 0,
+                y: 0,
+                z: layers.start,
+            },
             aspect: wgpu::TextureAspect::All,
         },
         wgpu::TexelCopyBufferInfo {

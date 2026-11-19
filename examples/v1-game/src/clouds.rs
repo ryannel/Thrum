@@ -16,6 +16,37 @@ pub enum CloudSelection {
     Sky,
 }
 
+impl CloudSelection {
+    pub(crate) fn sky_profile(self, extent: [u32; 2]) -> Option<thrum_clouds::SkyProfile> {
+        (self == Self::Sky).then_some(thrum_clouds::SkyProfile {
+            extent,
+            step: 15.0,
+            light_samples: 3,
+            refresh_stride: 1,
+        })
+    }
+}
+
+pub(crate) fn with_shade(
+    contribution: Box<dyn thrum_render::contribution::SceneContribution>,
+    input: Option<&thrum_clouds::WeatherInput>,
+    sky: Option<thrum_clouds::SkyProfile>,
+) -> Result<Box<dyn thrum_render::contribution::SceneContribution>, String> {
+    let Some(input) = input else {
+        return Ok(contribution);
+    };
+    let shade = thrum_clouds::Shade::new(shade_config())
+        .map_err(|error| error.to_string())?
+        .with_input(input.clone());
+    let shade = match sky {
+        Some(profile) => shade.with_sky(profile).map_err(|error| error.to_string())?,
+        None => shade,
+    };
+    Ok(Box::new(
+        thrum_render::contribution::SceneContributions::new(vec![contribution, Box::new(shade)]),
+    ))
+}
+
 /// Game-authored Weather and Shade configuration, with no visible cloud layer.
 pub fn shade_config() -> ShadeConfig {
     ShadeConfig {

@@ -3,6 +3,7 @@
 //! The shell owns the canvas surface, the device, loss and replacement, and the frame step; this
 //! facade keeps the game's controls, cooked valley, material reloads, capture slot and report.
 
+mod cloud_observation;
 mod environment;
 #[cfg(feature = "draw-probe")]
 mod light_probe;
@@ -91,6 +92,8 @@ pub struct BrowserGame {
     content: crate::GameContent,
     temporal_inputs: bool,
     shell: Shell,
+    cloud_sky: Option<thrum_clouds::SkyProfile>,
+    cloud_observation: Option<Rc<RefCell<cloud_observation::PreviousSun>>>,
     cooked: Option<Arc<Mutex<CookedStats>>>,
     content_preview: Option<crate::content_preview::PreviewRecord>,
     /// Facts from the first adapter-backed record, for fixed-view qualification.
@@ -127,6 +130,7 @@ pub async fn create_browser_game(
     reconstruction: Option<bool>,
     cooked_valley: Option<bool>,
     exit: Option<bool>,
+    clouds: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
     create_game(
@@ -148,6 +152,7 @@ pub async fn create_browser_game(
                 thrum_render::synthetic::DisplayOverlay::Off
             },
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
+            clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: meshes.unwrap_or(false),
             cooked_mesh_rows: (exit || (meshes.unwrap_or(false) && cooked_valley.unwrap_or(false)))
@@ -250,6 +255,7 @@ async fn create_game(
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
     }));
     let mut initial_downlevel = String::new();
+    let cloud_sky = setup.clouds.sky_profile([canvas.width(), canvas.height()]);
     let shell = thrum_app::web::create(canvas, game::DEVICE_GENERATION, |gpu| {
         initial_downlevel = format!("{:?}", gpu.capabilities.downlevel());
         game::prepare(gpu, setup)
@@ -264,6 +270,8 @@ async fn create_game(
         temporal_inputs: setup.display_overlay
             == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
         shell,
+        cloud_sky,
+        cloud_observation: None,
         cooked: None,
         content_preview: None,
         initial_downlevel,
@@ -394,6 +402,7 @@ pub async fn create_route_game(
     meshes: Option<bool>,
     reconstruction: Option<bool>,
     exit: Option<bool>,
+    clouds: Option<String>,
 ) -> Result<BrowserGame, JsValue> {
     let exit = exit.unwrap_or(false);
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
@@ -419,6 +428,7 @@ pub async fn create_route_game(
             },
             route_overlay: overlay,
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
+            clouds: cloud_selection(clouds.as_deref(), diagnostic_clouds.unwrap_or(false))?,
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
             cooked_mesh_rows: (exit || meshes.unwrap_or(false)).into(),
@@ -426,6 +436,21 @@ pub async fn create_route_game(
         },
     )
     .await
+}
+
+fn cloud_selection(
+    request: Option<&str>,
+    diagnostic: bool,
+) -> Result<crate::CloudSelection, JsValue> {
+    match request.unwrap_or("off") {
+        "off" => Ok(crate::CloudSelection::Off),
+        "shade" if !diagnostic => Ok(crate::CloudSelection::Shade),
+        "sky" if !diagnostic => Ok(crate::CloudSelection::Sky),
+        "shade" | "sky" => Err(JsValue::from_str(
+            "clouds and diagnostic-clouds are mutually exclusive",
+        )),
+        _ => Err(JsValue::from_str("clouds must be off, shade or sky")),
+    }
 }
 
 fn valley_culling(
@@ -575,6 +600,9 @@ impl BrowserGame {
         } else {
             Box::new(assets)
         };
+        let contribution =
+            crate::clouds::with_shade(contribution, game::cloud_input(&self.shell), self.cloud_sky)
+                .map_err(js_error)?;
         self.shell
             .set_scene_contribution(contribution)
             .map_err(js_error)?;
@@ -653,6 +681,17 @@ impl BrowserGame {
         self.demo
             .observe_camera(game::camera_orientation(&self.shell));
         Ok(())
+    }
+
+    /// Set the authored camera position for a cloud capture.
+    ///
+    /// # Errors
+    /// Refuses an invalid eye, missing cooked camera or active route.
+    pub fn set_cloud_capture_eye(&mut self, x: f32, y: f32, z: f32) -> Result<(), JsValue> {
+        if game::cloud_input(&self.shell).is_none() {
+            return Err(js_error("cloud capture requires Shade or Sky"));
+        }
+        game::set_capture_eye(&mut self.shell, [x, y, z]).map_err(js_error)
     }
 
     /// Every demo control as JSON for `thrum-controls.js` to build the page's widgets:

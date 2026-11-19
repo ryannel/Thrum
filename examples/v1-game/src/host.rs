@@ -782,13 +782,7 @@ impl FrameHost {
                 .clone();
             scene.meshes = Some(rows.selection(slots));
         }
-        let cloud_sky =
-            (setup.clouds == crate::CloudSelection::Sky).then_some(thrum_clouds::SkyProfile {
-                extent: config.render_extent,
-                step: 15.0,
-                light_samples: 3,
-                refresh_stride: 1,
-            });
+        let cloud_sky = setup.clouds.sky_profile(config.render_extent);
         let world = WorldPort::Inline(Box::new(
             if setup.clouds == crate::CloudSelection::Off {
                 WorldDriver::new(setup.content, setup.route_overlay)
@@ -1010,24 +1004,11 @@ impl FrameHost {
         &mut self,
         contribution: Box<dyn thrum_render::contribution::SceneContribution>,
     ) -> Result<(), String> {
-        if let Some(input) = &self.cloud_input {
-            let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
-                .map_err(|e| e.to_string())?
-                .with_input(input.clone());
-            let shade = if let Some(profile) = self.cloud_sky {
-                shade.with_sky(profile).map_err(|e| e.to_string())?
-            } else {
-                shade
-            };
-            self.inner.set_scene_contribution(Box::new(
-                thrum_render::contribution::SceneContributions::new(vec![
-                    contribution,
-                    Box::new(shade),
-                ]),
-            ))
-        } else {
-            self.inner.set_scene_contribution(contribution)
-        }
+        self.inner.set_scene_contribution(crate::clouds::with_shade(
+            contribution,
+            self.cloud_input.as_ref(),
+            self.cloud_sky,
+        )?)
     }
     /// Drive authority and optional presentation through the engine.
     /// # Errors

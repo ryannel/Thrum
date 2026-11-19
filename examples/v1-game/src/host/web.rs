@@ -19,6 +19,19 @@ pub(crate) type Shell = thrum_app::web::WebShell<WorldPort, GameScene>;
 /// The first device's generation; replacements count up from it.
 pub(crate) const DEVICE_GENERATION: u64 = super::FrameHost::DEVICE_GENERATION;
 
+pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> {
+    shell.host().source().cloud_input.as_ref()
+}
+
+pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), String> {
+    let camera = shell
+        .host()
+        .source()
+        .authored_camera()
+        .ok_or("capture eye requires the cooked valley's authored camera")?;
+    set_scene_camera(shell, camera.at(eye)?)
+}
+
 impl thrum_app::web::WebWorld for WorldPort {
     fn pause(&mut self) -> Result<(), String> {
         WorldPort::pause(self)
@@ -146,7 +159,7 @@ pub(crate) fn install_route(
         .authored_camera()
         .ok_or("the moving route needs the cooked valley's authored camera")?;
     let tick_hz = thrum_core::ClockConfig::default().tick_hz.get();
-    let route = if shell.host().source().is_exit() {
+    let route = if shell.host().source().is_exit() || cloud_input(shell).is_some() {
         crate::CameraRoute::parse_long_capture(text, camera, tick_hz)
             .map_err(|error| error.to_string())
     } else {

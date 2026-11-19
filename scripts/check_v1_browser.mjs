@@ -8,6 +8,7 @@ import { qualifyTemporal } from './check_temporal_browser.mjs';
 import { qualifySprites } from './check_sprites_browser.mjs';
 import { installWasmReceipt, readWasmReceipt } from './wasm_receipt.mjs';
 import { qualifyEnvironment, qualifyEnvironmentParity, qualifyEnvironmentCost } from './check_environment_browser.mjs';
+import { cloudCases, cloudObserver, qualifyClouds } from './check_clouds_browser.mjs';
 import { createServer } from 'node:http';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -38,7 +39,7 @@ function options(args) {
     result[key] = args[++i];
   }
   if (result.case === 'field-mixed-oracle') result.mixedOracle = true, result.case = 'field-oracle';
-  if (result.case !== 'all' && result.case !== 'content-edits' && !cases.includes(result.case) && !Object.hasOwn(movingControls, result.case.replace(/^moving-route-/, ''))) throw new Error(`Unknown case: ${result.case}`);
+  if (result.case !== 'all' && result.case !== 'content-edits' && !cases.includes(result.case) && !cloudCases.includes(result.case) && !Object.hasOwn(movingControls, result.case.replace(/^moving-route-/, ''))) throw new Error(`Unknown case: ${result.case}`);
   result['timeout-ms'] = Number(result['timeout-ms']);
   if (!Number.isSafeInteger(result['timeout-ms']) || result['timeout-ms'] < 10000 || result['timeout-ms'] > 600000) throw new Error('--timeout-ms must be 10000..600000 per case');
   return result;
@@ -1187,7 +1188,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const valleyRecovery = mode === 'valley-recovery';
   const lateAttach = mode === 'valley-late-attach';
   const recoveryCase = mode === 'device-recovery' || retryCase || valleyRecovery;
-  const destroyCase = lossCase || recoveryCase || lateAttach;
+  const cloudCase = cloudCases.includes(mode);
+  const destroyCase = lossCase || recoveryCase || lateAttach || mode === 'clouds-state';
   // valley-late-attach holds the cooked valley's requests until the device is lost.
   const held = { ids: [], released: false };
   const valleyCase = mode === 'valley';
@@ -1233,6 +1235,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || lateAttach || materialCase || materialDisabled || routeCase || movingCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
+    if (cloudCase) await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: cloudObserver(mode) }, sessionId);
     await installWasmReceipt(cdp, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
     await cdp.call('Target.activateTarget', { targetId });
@@ -1243,7 +1246,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
-    await cdp.call('Page.navigate', { url: url + cullingQuery + (exitStop ? '&scene=exit' : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
+    await cdp.call('Page.navigate', { url: cloudCase ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=field-oracle.params.json` :
+      url + cullingQuery + (exitStop ? '&scene=exit' : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
     let last = '', pressedAt, releasedAt;
     const poll = async () => {
       if (interrupted) throw interrupted;
@@ -1254,6 +1258,18 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       if (faults.length || (/fault:/i.test(state.status ?? '') && !((destroyCase || materialCase || oracleCase) && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
       return state;
     };
+    if (cloudCase) {
+      await waitFor(async () => /^Running/.test((await poll()).status ?? ''), timeout, 'cloud game startup');
+      const game = await existingGame(cdp, sessionId);
+      const proof = await qualifyClouds({ cdp, sessionId, targetId, mode, poll, game, timeout, waitFor,
+        destroy: () => destroyActualDevice(cdp, sessionId, undefined, onDestroy) });
+      if (!response || response.response.status !== 200) throw new Error('Cloud case did not load the game Wasm');
+      const actualWasmSha256 = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
+      const record = { case: mode, ...proof, actualWasmSha256,
+        source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() };
+      await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
+      return record;
+    }
     if (skyCase) {
       sky = { prefix: mode, phases: [], motion: [], captureBytes: 0 };
       await qualifySkyReflections(cdp, sessionId, poll, timeout, output, sky);

@@ -268,6 +268,13 @@ callbacks with GPU pass timing disabled. The ordinary 720p SDR arm transfers up 
 through a dedicated upload worker. The receiver writes originals at their submission offsets in one
 bounded disk spool. It verifies and compresses each original after the page signals completion.
 
+The V1 game page accepts `?clouds=shade` for ground shade and `?clouds=sky` for the visible layer and
+shade. The capture runner accepts the same selections through `--clouds`. A fixed SDR run with
+`--cloud-view path.json` takes one held submission from a cooked valley. The file supplies the camera
+`eye` in metres, the pixel `extent` and the game's `params` for the held shot. A realtime cloud route
+uses the same browser animation-frame callbacks and upload spool as the exit capture. Its runtime
+record preserves the callback timestamps as `raf_ms`.
+
 `manifest.json` pins source files, actual served Wasm/JS/route hashes, cooked root/generation, GPU/browser, launcher,
 flags, encoding and permission/lock observations. `runtime.json` retains opportunities, world clocks, pauses,
 submission IDs, source ticks/timeline, alpha, history/device/presenter generations and omissions. Renderer

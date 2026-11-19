@@ -11,6 +11,10 @@ use thrum_render::{
 };
 
 mod graph;
+#[cfg(target_arch = "wasm32")]
+mod observation;
+#[cfg(target_arch = "wasm32")]
+pub use observation::CloudSubmission;
 #[cfg(test)]
 mod tests;
 
@@ -48,6 +52,8 @@ struct Mailbox {
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
     resources: Vec<(String, u64)>,
     sky: Option<crate::SkyProducts>,
+    #[cfg(target_arch = "wasm32")]
+    observation: observation::Observation,
 }
 
 impl WeatherInput {
@@ -96,6 +102,8 @@ struct Prepared {
     weather: WeatherMap,
     sun: SunPath,
     queue: wgpu::Queue,
+    #[cfg(target_arch = "wasm32")]
+    device: wgpu::Device,
 }
 
 impl Shade {
@@ -303,6 +311,8 @@ impl SceneContribution for Shade {
             weather,
             sun,
             queue: surface.queue.clone(),
+            #[cfg(target_arch = "wasm32")]
+            device: wgpu::Device::clone(surface.device),
         }));
         Ok(())
     }
@@ -438,9 +448,15 @@ impl SceneContribution for Shade {
             gpu.sun.submitted();
             if let Some(sky) = &mut gpu.sky {
                 sky.submitted();
-                if let Ok(mut input) = self.input.0.lock() {
+            }
+            if (cfg!(target_arch = "wasm32") || gpu.sky.is_some())
+                && let Ok(mut input) = self.input.0.lock()
+            {
+                if let Some(sky) = &gpu.sky {
                     input.sky = Some(sky.products());
                 }
+                #[cfg(target_arch = "wasm32")]
+                input.observe(gpu, self.generation);
             }
         }
     }

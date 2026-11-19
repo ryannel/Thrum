@@ -14,6 +14,8 @@ const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 args.effect = 'off';
+args.clouds = 'off';
+args['cloud-view'] = '';
 args['retain-raw'] = 'off';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
@@ -25,6 +27,8 @@ if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-li
 if (!['day', 'night', 'noon', 'exit'].includes(args.scene)) throw new Error('Unknown route scene');
 if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay option');
 if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
+if (!['off','shade','sky'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
+if (args['cloud-view'] && (args.clouds === 'off' || args.mode !== 'fixed' || args.control !== 'ordinary' || args.source !== 'sdr')) throw new Error('A cloud view requires a fixed, ordinary SDR cloud capture');
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
 if (!['off','pan','reveal','spawn','stars','scrub'].includes(args.witness) || (args.witness !== 'off' && args.mode !== 'realtime')) throw new Error('Invalid reconstruction witness/mode');
 if (!['off','slab','depth-only'].includes(args.effect)) throw new Error('Invalid effect diagnostic');
@@ -47,6 +51,8 @@ if (args['route-file']) {
   captureRoute = await fs.readFile(path.resolve(args['route-file']));
   files.set('/capture-route.json', { bytes: captureRoute, type: 'application/json', sha256: sha(captureRoute) });
 }
+const cloudView = args['cloud-view'] ? await fs.readFile(path.resolve(args['cloud-view'])) : undefined;
+if (cloudView) files.set('/capture-view.json', { bytes: cloudView, type: 'application/json', sha256: sha(cloudView) });
 for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text/javascript'], ['capture_upload.mjs', 'text/javascript']]) {
   const bytes = await fs.readFile(path.join(args['web-root'], name));
   const source = await fs.readFile(path.join('examples/v1-game/web', name));
@@ -60,20 +66,23 @@ for (const file of sourceFiles) {
   if (/^(crates|examples|scripts)\//.test(file) || ['Cargo.lock', '.config/architecture.toml'].includes(file)) sourceHashes[file] = sha(await fs.readFile(file));
 }
 const route = JSON.parse(captureRoute ?? files.movingRoute);
-const frameBytes = route.render_extent[0] * route.render_extent[1] * (args.source === 'scene-linear' ? 8 : 4);
+const extent = cloudView ? JSON.parse(cloudView).extent : route.render_extent;
+const frameBytes = extent[0] * extent[1] * (args.source === 'scene-linear' ? 8 : 4);
 const spoolRaw = args.mode === 'realtime' && args.control === 'ordinary' &&
-  (args.scene === 'exit' || args.witness !== 'off');
+  (args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off');
 const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, reconstruction: args.reconstruction, witness: args.witness, diagnostic_clouds: args['diagnostic-clouds'], overlay: args.overlay, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (args.scene === 'exit' || spoolRaw) {
-  manifest.record_limit = args.scene === 'exit' ? 1800 : 270;
+  manifest.record_limit = args.scene === 'exit' || args.clouds !== 'off' ? 1800 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
   manifest.export_slots = spoolRaw && frameBytes <= 1280 * 720 * 4 ? 64 : 24;
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
+if (args.clouds !== 'off') manifest.clouds = args.clouds;
+if (cloudView) manifest.cloud_view = JSON.parse(cloudView);
 manifest.effect = args.effect;
 manifest.console = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
 const bundle = path.join(output, 'ThrumCapture.app');
@@ -114,7 +123,7 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
-  const completionSignal = args.scene === 'exit' && args.mode === 'realtime' &&
+  const completionSignal = (args.scene === 'exit' || args.clouds !== 'off') && args.mode === 'realtime' &&
     (args.control === 'ordinary' || args.control === 'off');
   let captureDone = false;
   if (completionSignal) {
@@ -127,7 +136,7 @@ try {
     };
   }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${cloudView ? '&cloud-view' : ''}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -225,7 +234,7 @@ finally {
   manifest.complete &&= !failure;
   if (manifest.permission_preflight?.screen_recording_before !== false) manifest.complete = false;
   manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
-  manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: route.render_extent[0] * 4, extent: route.render_extent };
+  manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: extent[0] * 4, extent };
   manifest.spool_encoding = retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
   manifest.encoded_bytes = manifest.records.reduce((total, row) => total + row.bytes, 0);
   await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));

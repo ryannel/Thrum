@@ -9,11 +9,13 @@ const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
 const witness = query.get('witness') ?? 'off';
+const clouds = query.get('clouds') ?? 'off';
+const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
-const exportSlots = (scene === 'exit' || witness !== 'off') && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
+const exportSlots = (scene === 'exit' || witness !== 'off' || clouds !== 'off') && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
-  (scene === 'exit' || witness !== 'off');
-const useAnimationFrame = scene === 'exit' && mode === 'realtime' &&
+  (scene === 'exit' || witness !== 'off' || clouds !== 'off');
+const useAnimationFrame = (scene === 'exit' || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
 if (!['day', 'night', 'noon', 'exit'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
@@ -55,12 +57,18 @@ function drain() {
     record.export_peak = Math.max(record.export_peak, inflight.size);
   }
 }
-try {
+async function runCapture() {
   if (!['fixed', 'realtime'].includes(mode)) fail('mode must be fixed or realtime');
   if (hidden) fail('capture page started hidden');
   await init();
   let text = await (await fetch('/'+(query.get('route') ?? 'moving-v1.json'))).text();
   const route = JSON.parse(text);
+  const view = cloudView ? await (await fetch('/capture-view.json')).json() : undefined;
+  if (view) {
+    route.render_extent = view.extent;
+    text = JSON.stringify(route);
+    record.cloud_view = view;
+  }
   if (witness !== 'off') { route.overlay = 'reconstruction'; text = JSON.stringify(route); }
   if (scene === 'night' || scene === 'noon') {
     route.start.solar_hours = scene === 'night' ? 0 : 12;
@@ -75,7 +83,8 @@ try {
     for (let index = 0; index < exportSlots; index++) reusablePixels.push(new Uint8Array(bytes));
   }
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit');
+  if (clouds !== 'off') record.clouds = clouds;
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds);
   if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
@@ -83,6 +92,16 @@ try {
   record.effect = effect;
   game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')), effect === 'off' ? undefined : effect === 'slab');
   game.set_visible(true, 0);
+  if (view) {
+    await captureCloudView(view, route.render_extent);
+    return;
+  }
+  if (clouds !== 'off' && witness === 'off') {
+    const key = route.keys[0];
+    game.set_cloud_capture_eye(...key.eye);
+    game.set_camera_yaw(key.yaw_degrees * Math.PI / 180);
+    game.set_camera_pitch(key.pitch_degrees * Math.PI / 180);
+  }
   if (witness === 'off') {
     // Fixed-time preparation stops at the ordinary route installation barrier.
     while (game.committed_tick() < route.origin_tick - 1) {
@@ -206,11 +225,12 @@ try {
   while (witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 : performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
     if (hidden) fail('page became hidden during capture');
     const due = start + ordinal * 1000 / 60;
+    let rafMs;
     if (mode === 'fixed') {
       while (!game.route_slot_ready()) { drain(); await wait(1); }
       while (inflight.size > 0) { drain(); await wait(1); }
     } else if (useAnimationFrame) {
-      await new Promise(requestAnimationFrame);
+      rafMs = await new Promise(requestAnimationFrame);
     } else if (performance.now() < due) { drain(); await wait(Math.min(4, due - performance.now())); continue; }
     const requested = performance.now();
     if (!acted && control === 'stall' && requested - start > 1500) {
@@ -241,6 +261,7 @@ try {
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
+    if (clouds !== 'off' && useAnimationFrame) opportunity.raf_ms = rafMs;
     if (control === 'off' && scene === 'exit') opportunity.presented = Number(game.presented());
     record.opportunities.push(opportunity);
     ordinal++;
@@ -262,7 +283,52 @@ try {
   record.final_report = JSON.parse(game.route_report(0));
   if (record.renderer_omissions || record.export_omissions || exportError) fail(`incomplete capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   record.complete = true;
-} catch (error) { record.error = String(error); }
+}
+
+async function captureCloudView(view, extent) {
+  game.set_paused(true, 0);
+  const ready = async (predicate, description) => {
+    const deadline = performance.now() + 15000;
+    while (!predicate()) {
+      if (performance.now() >= deadline) fail(description);
+      await wait(2);
+    }
+  };
+  await ready(() => {
+    if (JSON.parse(game.cooked_status()).drawn === 1) return true;
+    if (game.route_slot_ready()) game.frame(0);
+    return false;
+  }, 'cloud view did not draw the cooked valley');
+  game.set_cloud_capture_eye(...view.eye);
+  const edits = JSON.parse(game.apply_parameters(JSON.stringify(view.params), 0));
+  if (edits.problems.length || game.committed_tick() !== 0 || !game.paused()) fail(`invalid held cloud view: ${JSON.stringify(edits)}`);
+  await ready(() => game.route_slot_ready(), 'cloud view has no free frame slot');
+  record.initial_report = JSON.parse(game.route_report(0));
+  record.culling = game.report();
+  record.start_before_ms = performance.now();
+  game.begin_submitted_capture(1);
+  record.start_after_ms = performance.now();
+  record.mode = mode;
+  record.pixel_source = source;
+  record.extent = extent;
+  record.base_world_ms = 0;
+  record.scheduling = 'one held T2 submission at tick zero';
+  game.frame(0);
+  record.opportunities.push({ordinal: 0, frame_ms: 0, tick: game.committed_tick()});
+  await ready(() => {
+    drain();
+    return game.submitted_capture_pending() === 0;
+  }, 'cloud view readback timed out');
+  await Promise.all(inflight);
+  record.renderer_omissions = game.submitted_capture_omissions();
+  record.end_ms = performance.now();
+  record.final_report = JSON.parse(game.route_report(0));
+  if (record.images.length !== 1 || record.renderer_omissions || record.export_omissions || exportError) fail(`incomplete cloud view: ${exportError ?? JSON.stringify(record.images)}`);
+  record.complete = true;
+}
+
+try { await runCapture(); }
+catch (error) { record.error = String(error); }
 finally {
   uploadWorker?.close();
   game?.end_submitted_capture();

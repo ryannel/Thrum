@@ -60,6 +60,10 @@
         const cooked = probe.has("assets");
         const exit = probe.get("scene") === "exit";
         const sprites = probe.get("scene") === "sprites";
+        const clouds = probe.get("clouds") ?? undefined;
+        if ((sprites || exit || probe.has("field")) && clouds !== undefined && clouds !== "off") {
+          throw new Error("Cloud selection requires the grid or cooked valley scene");
+        }
         if (sprites) {
           for (const [key, feature] of [
             ["assets", "cooked placements"], ["field", "the flythrough field"],
@@ -93,7 +97,7 @@
           ? await create_sprite_game(canvas, scale, probe.get("culling") ?? undefined, probe.get("reconstruction") ?? undefined)
           : probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
-          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit);
+          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau", cooked, exit, clouds);
         if (probe.has("diagnostic-clouds")) {
           const label = document.createElement("p");
           label.textContent = "Diagnostic cloud-shade stand-in, drifting at 160 m/s east and 40 m/s south.";
@@ -125,6 +129,8 @@
         let simulatedHidden = false;
         let rafId = 0;
         let stopped = false;
+        const cloudCheck = clouds && probe.has("cloud-check") ? globalThis.thrumCloudCheck : undefined;
+        let checkingCloudFrame = false;
         const pressed = new Set();
         // Sliders, the pause toggle and the Sun readout come from the game's typed controls.
         // Edits go through the game's checked setters at once; pause takes the same path as
@@ -272,7 +278,7 @@
           return graphicsUnavailable;
         };
         const schedule = () => {
-          if (!rafId && !stopped && !document.hidden && !simulatedHidden) {
+          if (!rafId && !checkingCloudFrame && !cloudCheck?.hold && !stopped && !document.hidden && !simulatedHidden) {
             rafId = requestAnimationFrame(draw);
           }
         };
@@ -280,6 +286,7 @@
           if (rafId) cancelAnimationFrame(rafId);
           rafId = 0;
         };
+        if (cloudCheck) cloudCheck.resume = schedule;
         restoreGraphics.addEventListener("click", () => {
           if (stopped) return;
           restoreError = null;
@@ -288,11 +295,24 @@
           updateGraphicsState();
           schedule();
         });
-        const draw = (time) => {
+        const draw = async (time) => {
           rafId = 0;
-          if (document.hidden || simulatedHidden || stopped) return;
+          if (document.hidden || simulatedHidden || stopped || cloudCheck?.hold) return;
           try {
+            const checkCloudFrame = cloudCheck?.enabled;
+            const beforeCloudFrame = checkCloudFrame ? game.presented() : 0n;
+            if (checkCloudFrame) game.observe_next_cloud_submission(cloudCheck.ground);
             game.frame(time);
+            if (checkCloudFrame && game.presented() !== beforeCloudFrame) {
+              const observation = game.inspect_cloud_submission();
+              if (!observation) throw new Error("Submitted frame did not publish cloud products");
+              checkingCloudFrame = true;
+              try {
+                cloudCheck.frames.push({presented: Number(game.presented()), callback_ms: time, ...JSON.parse(await observation)});
+              } finally {
+                checkingCloudFrame = false;
+              }
+            }
             controls.refresh();
             pollMaterial();
             if (time - lastPlayerUpdate >= 500) {
