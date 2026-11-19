@@ -10,7 +10,7 @@ mod qualification_signpost;
 mod recovery;
 mod render_actor;
 
-pub use qualification::{ExtentWindow, WindowExtentCapture};
+pub use qualification::{ExtentWindow, TransitionArm, WindowExtentCapture, WindowTransitionProof};
 
 use std::{
     sync::{
@@ -77,6 +77,7 @@ enum UserEvent {
 
 struct App<G: Game> {
     extent_capture: Option<WindowExtentCapture>,
+    transition_proof: Option<WindowTransitionProof>,
     config: Config,
     wake: EventLoopProxy<UserEvent>,
     display_link: Option<ViewDisplayLink>,
@@ -140,6 +141,7 @@ struct App<G: Game> {
     error: Option<String>,
     closed_by_user: bool,
     qualification: Option<qualification::Pan>,
+    transition_ticks: Option<qualification::TransitionTicks>,
     qualification_report: Option<Result<String, String>>,
 }
 
@@ -169,6 +171,7 @@ impl<G: Game + 'static> App<G> {
         let reserved = target_frames.unwrap_or(RETAINED_PROFILES / 8);
         Self {
             extent_capture: None,
+            transition_proof: None,
             config,
             wake,
             display_link: None,
@@ -223,6 +226,7 @@ impl<G: Game + 'static> App<G> {
             error: None,
             closed_by_user: false,
             qualification: qualification::Pan::from_environment(),
+            transition_ticks: None,
             qualification_report: None,
         }
     }
@@ -234,13 +238,6 @@ impl<G: Game + 'static> App<G> {
             })
             .map(|_| ())
             .map_err(|_| "surface generation exhausted".to_owned())
-    }
-
-    fn observe_extent(&mut self, extent: [u32; 2]) -> Result<(), String> {
-        if extent != self.observed_extent {
-            self.observed_extent = extent;
-        }
-        Ok(())
     }
 
     /// Take edits from keys, the panel or a parameter file. Presentation edits ride the next
@@ -487,13 +484,11 @@ impl<G: Game + 'static> App<G> {
         if let Some(capture) = &self.extent_capture {
             capture.prepare_window(&window)?;
         }
-        if let Some(probe) = std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE") {
+        if let Some(proof) = &self.transition_proof {
+            self.transition_ticks = Some(qualification::TransitionTicks::start(proof)?);
             let id = display_link::window_number(&window)?;
-            std::fs::write(
-                std::path::Path::new(&probe).join("window-id"),
-                id.to_string(),
-            )
-            .map_err(|error| error.to_string())?;
+            std::fs::write(proof.output.join("window-id"), id.to_string())
+                .map_err(|error| error.to_string())?;
         }
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
@@ -552,6 +547,7 @@ impl<G: Game + 'static> App<G> {
                 monitor.as_ref().map(|m| (m.name(), m.size(), m.refresh_rate_millihertz())), window.outer_position(), window.scale_factor()
             )).map_err(|e| e.to_string())?;
         }
+        let backing_scale = window.scale_factor().to_bits();
         self.window = Some(window);
         let panel_wake = wake.clone();
         let panel = MacPanel::new(
@@ -582,6 +578,8 @@ impl<G: Game + 'static> App<G> {
             self.origin,
             wake,
             self.extent_capture.take().map(|capture| capture.output),
+            backing_scale,
+            self.transition_proof.as_ref(),
         )?);
         // Baseline the watched files before the first load, so no later save is missed.
         self.watch = self.start_watch(wake);
@@ -701,6 +699,10 @@ impl<G: Game + 'static> App<G> {
                 self.refresh_title();
             }
         }
+        if let Some(error) = reply.transition_error {
+            self.surface_configuration_error = Some(error);
+            self.refresh_title();
+        }
         match reply.target_status {
             Some(TargetLeadStatus::Late) => self.late_target_evaluations += 1,
             Some(TargetLeadStatus::Invalid) => self.invalid_target_evaluations += 1,
@@ -792,16 +794,27 @@ impl<G: Game + 'static> App<G> {
         self.last_call = now;
         self.callbacks += 1;
         let window = self.window.as_ref().ok_or("window missing")?;
-        if std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE").is_some()
-            && (60..100).contains(&self.callbacks)
+        if self
+            .transition_proof
+            .as_ref()
+            .is_some_and(|proof| proof.arm.resizes())
+            && (24..48).contains(&self.callbacks)
         {
-            let step = self.callbacks as u32 - 60;
+            let step = u32::try_from(self.callbacks - 24).expect("resize sweep step fits u32");
             let _ = window
                 .request_inner_size(winit::dpi::LogicalSize::new(960 - step * 8, 540 - step * 4));
         }
         let size = window.inner_size();
         let extent = [size.width, size.height];
-        self.observe_extent(extent)?;
+        let actual_scale = window.scale_factor();
+        let backing_scale = self
+            .transition_proof
+            .as_ref()
+            .map_or(actual_scale, |proof| {
+                proof.arm.backing_scale(actual_scale, self.callbacks)
+            })
+            .to_bits();
+        self.observed_extent = extent;
         self.edits.carry(self.game.frame_edits());
         if let Some(pan) = &mut self.qualification {
             pan.request(
@@ -817,6 +830,7 @@ impl<G: Game + 'static> App<G> {
             device_generation: self.recovery.active,
             target_media_seconds: self.display_target.ok_or("display target missing")?,
             extent,
+            backing_scale,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
             edits: self.edits.pending(),
         });
@@ -1241,6 +1255,17 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 }
                 self.display_target = Some(target);
                 self.target_sequence = self.target_sequence.saturating_add(1);
+                if let Some(ticks) = &mut self.transition_ticks
+                    && let Err(error) = ticks.record(
+                        self.target_sequence,
+                        callback,
+                        self.render_in_flight.is_some(),
+                    )
+                {
+                    self.error = Some(error.to_string());
+                    event_loop.exit();
+                    return;
+                }
                 self.display_link_callbacks += 1;
                 self.pending_display_target = true;
                 self.edits.request();
@@ -1325,7 +1350,10 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 event_loop.exit();
                 result
             }
-            WindowEvent::Resized(size) => self.observe_extent([size.width, size.height]),
+            WindowEvent::Resized(size) => {
+                self.observed_extent = [size.width, size.height];
+                Ok(())
+            }
             WindowEvent::Occluded(_) => self.invalidate_surface(),
             WindowEvent::RedrawRequested => {
                 let result = self.draw();
@@ -1436,7 +1464,7 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
 pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
-    run_with(config, false, None, game);
+    run_with(config, false, None, None, game);
 }
 
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
@@ -1447,7 +1475,18 @@ pub fn run_with_extent_capture<G: Game + 'static>(
     capture: WindowExtentCapture,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, false, Some(capture), game);
+    run_with(config, false, Some(capture), None, game);
+}
+
+/// Run the ordinary window with a scripted resize and retain the frame records.
+/// # Panics
+/// If the platform refuses to create the event loop.
+pub fn run_with_transition_proof<G: Game + 'static>(
+    config: Config,
+    proof: WindowTransitionProof,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    run_with(config, false, None, Some(proof), game);
 }
 
 /// Run `game` in one window until the person closes it. Closing the window is success. Setting
@@ -1462,7 +1501,7 @@ pub fn run_until_closed<G: Game + 'static>(
     config: Config,
     game: impl FnOnce() -> Result<G, String>,
 ) {
-    run_with(config, true, None, game);
+    run_with(config, true, None, None, game);
 }
 
 /// Environment variable that asks [`run_until_closed`] for the frames report: set it to `1`.
@@ -1481,6 +1520,7 @@ fn run_with<G: Game + 'static>(
     config: Config,
     until_closed: bool,
     extent_capture: Option<WindowExtentCapture>,
+    transition_proof: Option<WindowTransitionProof>,
     game: impl FnOnce() -> Result<G, String>,
 ) {
     let target_frames = match frame_limit(
@@ -1505,6 +1545,7 @@ fn run_with<G: Game + 'static>(
         }
     };
     app.extent_capture = extent_capture;
+    app.transition_proof = transition_proof;
     app.timing_policy =
         if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
             TimingPolicy::Report

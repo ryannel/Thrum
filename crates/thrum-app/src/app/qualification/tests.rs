@@ -41,6 +41,7 @@ fn observer(host: &mut FrameHost<StillWorld, NativeScene>) -> Observer {
         .unwrap();
     Observer {
         output: PathBuf::new(),
+        extent_markers: None,
         writer: Some(
             ImageWriter::start(std::io::sink(), 4, 1024 * 1024, SpoolEncoding::ZstdDelta).unwrap(),
         ),
@@ -75,6 +76,7 @@ fn reply(report: DriveReport, lost: bool) -> RenderReply<()> {
         target_status: None,
         acquire_wall: None,
         surface_status: SurfaceStatus::Presented,
+        transition_error: None,
         surface_extent: [64, 64],
         readback: (),
     }

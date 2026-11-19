@@ -89,7 +89,16 @@ struct Slot {
     copy_ns: Option<f64>,
 }
 
+#[derive(Clone)]
+pub(super) struct TapSpec {
+    pub(super) source: CaptureSource,
+    session: u64,
+    started_at: Instant,
+    limits: CaptureLimits,
+}
+
 pub(super) struct Tap {
+    pub(super) spec: TapSpec,
     source: CaptureSource,
     owner: std::sync::Arc<()>,
     session: u64,
@@ -114,6 +123,59 @@ pub(super) fn reserve(
 }
 
 impl Tap {
+    pub(super) fn pending(&self) -> bool {
+        self.slots.iter().any(|slot| slot.reserved)
+    }
+
+    pub(super) fn prepare(
+        spec: TapSpec,
+        generation: u64,
+        extent: [u32; 2],
+        target: &super::preparation::FrameTarget,
+        capabilities: &crate::capabilities::DeviceCapabilities,
+        queue: &wgpu::Queue,
+    ) -> Result<Self, FrameError> {
+        let limits = spec.limits;
+        let source = spec.source;
+        validate_capture_budget(extent, source, limits)?;
+        let slots = (0..limits.staging_slots)
+            .map(|_| {
+                let mut readback = target.readback(capabilities.device());
+                readback
+                    .enable_copy_timing(capabilities, queue)
+                    .map_err(|error| FrameError::Gpu(format!("copy timing prepare: {error:?}")))?;
+                Ok(Slot {
+                    readback,
+                    reserved: false,
+                    sample: None,
+                    retired: false,
+                    timing_collected: false,
+                    copy_ns: None,
+                })
+            })
+            .collect::<Result<Vec<_>, FrameError>>()?;
+        Ok(Self {
+            source,
+            owner: std::sync::Arc::new(()),
+            session: spec.session,
+            generation,
+            extent,
+            started_at: spec.started_at,
+            accepting: true,
+            slots,
+            omitted: 0,
+            cpu_capacity: limits.cpu_buffers,
+            free_cpu: (0..limits.cpu_buffers)
+                .map(|_| {
+                    Vec::with_capacity(
+                        extent[0] as usize * extent[1] as usize * source.bytes_per_pixel() as usize,
+                    )
+                })
+                .collect(),
+            spec,
+        })
+    }
+
     pub(super) fn reserve(
         &mut self,
         generation: u64,
@@ -203,27 +265,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if self.submitted_capture.is_some() {
             return Err(FrameError::InvalidState("capture session already enabled"));
         }
-        let pixel_bytes = u64::from(source.bytes_per_pixel());
-        let row_bytes = (u64::from(self.render_extent[0]) * pixel_bytes).div_ceil(256) * 256;
-        let staging_bytes = row_bytes
-            .checked_mul(u64::from(self.render_extent[1]))
-            .and_then(|bytes| bytes.checked_add(32))
-            .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.staging_slots).ok()?));
-        let cpu_bytes = u64::from(self.render_extent[0])
-            .checked_mul(u64::from(self.render_extent[1]))
-            .and_then(|bytes| bytes.checked_mul(pixel_bytes))
-            .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.cpu_buffers).ok()?));
-        let bytes = staging_bytes
-            .zip(cpu_bytes)
-            .and_then(|(a, b)| a.checked_add(b));
-        if limits.staging_slots == 0
-            || limits.cpu_buffers == 0
-            || bytes.is_none_or(|bytes| bytes > limits.byte_allowance)
-        {
-            return Err(FrameError::InvalidState(
-                "capture pixel-byte allowance exhausted",
-            ));
-        }
+        validate_capture_budget(self.render_extent, source, limits)?;
         let _region = self
             .creations
             .region(super::CreationPhase::Transition, "capture-stage");
@@ -260,47 +302,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Some(slots)
         };
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
-        let slots = (0..limits.staging_slots)
-            .map(|_| {
-                let mut readback = target.readback(&self.device);
-                readback
-                    .enable_copy_timing(self.prepared.capabilities(), &self.queue)
-                    .map_err(|e| FrameError::Gpu(format!("copy timing prepare: {e:?}")))?;
-                Ok(Slot {
-                    readback,
-                    reserved: false,
-                    sample: None,
-                    retired: false,
-                    timing_collected: false,
-                    copy_ns: None,
-                })
-            })
-            .collect::<Result<Vec<_>, FrameError>>()?;
+        let tap = Tap::prepare(
+            TapSpec {
+                source,
+                session,
+                started_at: Instant::now(),
+                limits,
+            },
+            self.generation,
+            self.render_extent,
+            target,
+            self.prepared.capabilities(),
+            &self.queue,
+        )?;
         if let Some(slots) = replacement {
             self.slots = slots;
             self.presenter_generation += 1;
         }
-        self.submitted_capture = Some(Tap {
-            source,
-            owner: std::sync::Arc::new(()),
-            session,
-            generation: self.generation,
-            extent: self.render_extent,
-            started_at: Instant::now(),
-            accepting: true,
-            slots,
-            omitted: 0,
-            cpu_capacity: limits.cpu_buffers,
-            free_cpu: (0..limits.cpu_buffers)
-                .map(|_| {
-                    Vec::with_capacity(
-                        self.render_extent[0] as usize
-                            * self.render_extent[1] as usize
-                            * source.bytes_per_pixel() as usize,
-                    )
-                })
-                .collect(),
-        });
+        self.submitted_capture = Some(tap);
         Ok(())
     }
 
@@ -313,12 +332,119 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // The tap may be drained before normal frame reports. Its timestamp
         // resolution is queue work too, and must respect native failure admission.
         self.check_native_completion()?;
+        while let Some(tap) = self.retired_capture.front_mut() {
+            if let Some(image) = tap.try_image(&self.device, &self.queue, self.generation)? {
+                return Ok(Some(image));
+            }
+            if tap.pending() {
+                return Ok(None);
+            }
+            self.retired_capture.pop_front();
+        }
         let Some(tap) = self.submitted_capture.as_mut() else {
             return Err(FrameError::InvalidState("no capture session"));
         };
         if tap.generation != self.generation || tap.extent != self.render_extent {
             return Err(FrameError::InvalidState("retired capture generation"));
         }
+        tap.try_image(&self.device, &self.queue, self.generation)
+    }
+
+    /// Return a writer's CPU lease to the bounded pool that issued it.
+    pub fn recycle_submitted_image(&mut self, image: SubmittedImage) {
+        if let Some(tap) = self
+            .submitted_capture
+            .iter_mut()
+            .chain(&mut self.retired_capture)
+            .find(|tap| std::sync::Arc::ptr_eq(&tap.owner, &image.owner))
+            && tap.generation == self.generation
+            && tap.free_cpu.len() < tap.cpu_capacity
+        {
+            tap.free_cpu.push(image.rgba);
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn switch_capture_extent(&mut self, mut capture: Option<Tap>) {
+        if let (Some(next), Some(previous)) = (&mut capture, self.submitted_capture.take()) {
+            next.omitted = previous.omitted;
+            if previous.pending() {
+                self.retired_capture.push_back(previous);
+            }
+        }
+        self.submitted_capture = capture;
+    }
+
+    /// Stop admitting copies while pending mappings drain. Does not submit or wait.
+    pub fn stop_submitted_capture(&mut self) {
+        if let Some(tap) = &mut self.submitted_capture {
+            tap.accepting = false;
+        }
+    }
+
+    /// Number of samples omitted by ring exhaustion or unsubmitted abandonment.
+    /// Any nonzero count makes continuous-image evidence incomplete.
+    pub fn submitted_capture_omissions(&self) -> u64 {
+        self.submitted_capture.as_ref().map_or(0, |tap| tap.omitted)
+    }
+
+    /// Current bounded staging slots and outstanding CPU leases, or no
+    /// resources when capture is disabled.
+    pub fn submitted_capture_usage(&self) -> Option<(usize, usize)> {
+        self.submitted_capture.as_ref().map(|tap| {
+            (
+                tap.slots.iter().filter(|slot| slot.reserved).count(),
+                tap.cpu_capacity - tap.free_cpu.len(),
+            )
+        })
+    }
+
+    /// End capture without waiting for pending GPU work or mapping callbacks.
+    /// wgpu retains resources needed by already submitted commands. Late
+    /// callbacks own only the discarded readback mailboxes.
+    pub fn disable_submitted_capture(&mut self) {
+        self.submitted_capture = None;
+        self.retired_capture.clear();
+    }
+}
+
+fn validate_capture_budget(
+    extent: [u32; 2],
+    source: CaptureSource,
+    limits: CaptureLimits,
+) -> Result<(), FrameError> {
+    let pixel_bytes = u64::from(source.bytes_per_pixel());
+    let row_bytes = (u64::from(extent[0]) * pixel_bytes).div_ceil(256) * 256;
+    let staging_bytes = row_bytes
+        .checked_mul(u64::from(extent[1]))
+        .and_then(|bytes| bytes.checked_add(32))
+        .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.staging_slots).ok()?));
+    let cpu_bytes = u64::from(extent[0])
+        .checked_mul(u64::from(extent[1]))
+        .and_then(|bytes| bytes.checked_mul(pixel_bytes))
+        .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.cpu_buffers).ok()?));
+    let bytes = staging_bytes
+        .zip(cpu_bytes)
+        .and_then(|(a, b)| a.checked_add(b));
+    if limits.staging_slots == 0
+        || limits.cpu_buffers == 0
+        || bytes.is_none_or(|bytes| bytes > limits.byte_allowance)
+    {
+        return Err(FrameError::InvalidState(
+            "capture pixel-byte allowance exhausted",
+        ));
+    }
+    Ok(())
+}
+
+impl Tap {
+    fn try_image(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        generation: u64,
+    ) -> Result<Option<SubmittedImage>, FrameError> {
+        let tap = self;
         if let Some(segment) = tap
             .slots
             .iter()
@@ -343,11 +469,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .iter()
             .any(|s| s.sample.is_some() && s.readback.copy_timing_ready_to_resolve())
         {
-            let mut encoder = self
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("submitted copy timestamp resolution"),
-                });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("submitted copy timestamp resolution"),
+            });
             for slot in &mut tap.slots {
                 if slot.sample.is_some() {
                     slot.readback
@@ -357,7 +481,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         })?;
                 }
             }
-            self.queue.submit([encoder.finish()]);
+            queue.submit([encoder.finish()]);
         }
         let Some(mut rgba) = tap.free_cpu.pop() else {
             return Ok(None);
@@ -378,7 +502,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     slot.copy_ns = copy_ns;
                     slot.timing_collected = true;
                 }
-                slot.readback.try_collect_into(self.generation, &mut rgba)
+                slot.readback.try_collect_into(generation, &mut rgba)
             })();
             match collect {
                 Ok(false) => {
@@ -419,53 +543,5 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         tap.free_cpu.push(rgba);
         Ok(None)
-    }
-
-    /// Return a writer's CPU lease to the bounded pool. Retired
-    /// session buffers are discarded and never populate a new session.
-    pub fn recycle_submitted_image(&mut self, image: SubmittedImage) {
-        if let Some(tap) = self.submitted_capture.as_mut()
-            && tap.session == image.session
-            && std::sync::Arc::ptr_eq(&tap.owner, &image.owner)
-            && tap.generation == self.generation
-            && tap.free_cpu.len() < tap.cpu_capacity
-            && image.rgba.capacity()
-                <= self.render_extent[0] as usize
-                    * self.render_extent[1] as usize
-                    * tap.source.bytes_per_pixel() as usize
-        {
-            tap.free_cpu.push(image.rgba);
-        }
-    }
-
-    /// Stop admitting copies while pending mappings drain. Does not submit or wait.
-    pub fn stop_submitted_capture(&mut self) {
-        if let Some(tap) = &mut self.submitted_capture {
-            tap.accepting = false;
-        }
-    }
-
-    /// Number of samples omitted by ring exhaustion or unsubmitted abandonment.
-    /// Any nonzero count makes continuous-image evidence incomplete.
-    pub fn submitted_capture_omissions(&self) -> u64 {
-        self.submitted_capture.as_ref().map_or(0, |tap| tap.omitted)
-    }
-
-    /// Current bounded staging slots and outstanding CPU leases, or no
-    /// resources when capture is disabled.
-    pub fn submitted_capture_usage(&self) -> Option<(usize, usize)> {
-        self.submitted_capture.as_ref().map(|tap| {
-            (
-                tap.slots.iter().filter(|slot| slot.reserved).count(),
-                tap.cpu_capacity - tap.free_cpu.len(),
-            )
-        })
-    }
-
-    /// End capture without waiting for pending GPU work or mapping callbacks.
-    /// wgpu retains resources needed by already submitted commands. Late
-    /// callbacks own only the discarded readback mailboxes.
-    pub fn disable_submitted_capture(&mut self) {
-        self.submitted_capture = None;
     }
 }

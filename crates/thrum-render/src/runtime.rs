@@ -34,6 +34,8 @@ mod creation;
 mod creation;
 mod device;
 mod extent;
+#[cfg(not(target_arch = "wasm32"))]
+mod extent_transition;
 mod preparation;
 mod sprites;
 mod submitted_capture;
@@ -53,6 +55,8 @@ pub use device::{DevicePrepareInputs, PreparedDevice};
 pub use extent::FrameExtent;
 #[cfg(not(target_arch = "wasm32"))]
 pub use extent::{ExtentPrepareInputs, PreparedExtent};
+#[cfg(not(target_arch = "wasm32"))]
+pub use extent_transition::{ExtentRequest, ExtentTransition};
 pub use submitted_capture::{CaptureLimits, SubmittedImage};
 pub use surface_switch::{SurfaceSwitch, SurfaceSwitchOutcome, SurfaceSwitchRecord};
 pub use tokens::{AdvancedFrame, EncodedFrame};
@@ -515,6 +519,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     /// Stable across visual changes. Backend device IDs can repeat across instances.
     capture_owner: Arc<()>,
     submitted_capture: Option<submitted_capture::Tap>,
+    retired_capture: VecDeque<submitted_capture::Tap>,
     presentation_lead: Duration,
     observation: Duration,
     platform_target: Option<Duration>,
@@ -1096,6 +1101,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             queue: queue.clone(),
             capture_owner: Arc::new(()),
             submitted_capture: None,
+            retired_capture: VecDeque::new(),
             presentation_lead: Duration::ZERO,
             observation: Duration::ZERO,
             platform_target: None,

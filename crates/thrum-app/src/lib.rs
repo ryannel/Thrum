@@ -33,8 +33,8 @@ mod web_clock;
 
 #[cfg(target_os = "macos")]
 pub use app::{
-    ExtentWindow, REPORT_VARIABLE, WindowExtentCapture, run, run_until_closed,
-    run_with_extent_capture,
+    ExtentWindow, REPORT_VARIABLE, TransitionArm, WindowExtentCapture, WindowTransitionProof, run,
+    run_until_closed, run_with_extent_capture, run_with_transition_proof,
 };
 #[cfg(target_os = "macos")]
 pub use game::{Edits, Game, Gpu, KeyResponse, Prepared, WorldLink};

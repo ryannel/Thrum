@@ -58,6 +58,10 @@ pub struct CreationCounts {
     pub shader_modules: i64,
     /// Textures.
     pub textures: i64,
+    /// Texture views.
+    pub texture_views: i64,
+    /// Bind groups.
+    pub bind_groups: i64,
     /// Samplers.
     pub samplers: i64,
     /// Query sets (GPU timestamps).
@@ -73,6 +77,8 @@ impl CreationCounts {
             compute_pipelines: value(hal.compute_pipelines.read()),
             shader_modules: value(hal.shader_modules.read()),
             textures: value(hal.textures.read()),
+            texture_views: value(hal.texture_views.read()),
+            bind_groups: value(hal.bind_groups.read()),
             samplers: value(hal.samplers.read()),
             query_sets: value(hal.query_sets.read()),
         }
@@ -84,6 +90,8 @@ impl CreationCounts {
             compute_pipelines: self.compute_pipelines - base.compute_pipelines,
             shader_modules: self.shader_modules - base.shader_modules,
             textures: self.textures - base.textures,
+            texture_views: self.texture_views - base.texture_views,
+            bind_groups: self.bind_groups - base.bind_groups,
             samplers: self.samplers - base.samplers,
             query_sets: self.query_sets - base.query_sets,
         }
@@ -94,6 +102,8 @@ impl CreationCounts {
         self.compute_pipelines += other.compute_pipelines;
         self.shader_modules += other.shader_modules;
         self.textures += other.textures;
+        self.texture_views += other.texture_views;
+        self.bind_groups += other.bind_groups;
         self.samplers += other.samplers;
         self.query_sets += other.query_sets;
     }

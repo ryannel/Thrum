@@ -99,6 +99,11 @@ pub(super) struct TargetPreparation {
 }
 
 impl TargetPreparation {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn capabilities(&self) -> &DeviceCapabilities {
+        &self.capabilities
+    }
+
     pub(super) fn new(prepared: &PreparedRenderer) -> Self {
         let (inputs, timing) = match prepared {
             PreparedRenderer::ThreeD(scene) => (

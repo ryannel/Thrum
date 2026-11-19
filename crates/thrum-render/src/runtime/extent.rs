@@ -4,7 +4,11 @@ use super::{FrameError, FrameHost, FrameWorld, SceneSource, creation::CreationPh
 use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
 use {
-    super::{FrameSlot, SlotState, creation::Ledger},
+    super::{
+        FrameSlot, SlotState,
+        creation::Ledger,
+        submitted_capture::{Tap, TapSpec},
+    },
     crate::{
         present::{PresenterInputs, SurfacePresenter},
         synthetic::CaptureSource,
@@ -26,11 +30,13 @@ pub struct ExtentPrepareInputs {
     owner: Arc<()>,
     generation: u64,
     source: CaptureSource,
+    capture: Option<TapSpec>,
 }
 
 /// A fully bound generation that can be taken after the surface configures.
 #[cfg(not(target_arch = "wasm32"))]
 pub struct PreparedExtent {
+    capture: Option<Tap>,
     extent: [u32; 2],
     slots: Vec<FrameSlot>,
     presenter: SurfacePresenter,
@@ -70,7 +76,21 @@ impl ExtentPrepareInputs {
                 return Ok(None);
             }
             self.targets.bind_presenter(&mut slots, &presenter)?;
+            let capture = self
+                .capture
+                .map(|spec| {
+                    Tap::prepare(
+                        spec,
+                        self.generation,
+                        self.extent,
+                        &slots[0].target,
+                        self.targets.capabilities(),
+                        &self.queue,
+                    )
+                })
+                .transpose()?;
             Ok(Some(PreparedExtent {
+                capture,
                 extent: self.extent,
                 slots,
                 presenter,
@@ -138,6 +158,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             owner: Arc::clone(&self.visual_owner),
             generation: self.generation,
             source: self.slots[0].target.capture_source(),
+            capture: self.submitted_capture.as_ref().map(|tap| tap.spec.clone()),
         })
     }
 
@@ -162,6 +183,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .filter(|slot| !matches!(slot.state, SlotState::Free)),
         );
         self.presenter = Some(candidate.presenter);
+        self.switch_capture_extent(candidate.capture);
         self.render_extent = candidate.extent;
         self.presenter_generation += 1;
         self.visual_owner = Arc::new(());

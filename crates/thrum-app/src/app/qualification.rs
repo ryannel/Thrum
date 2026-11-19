@@ -1,5 +1,9 @@
 //! Opt-in Mac qualification observer; ordinary presentation remains the only producer.
 
+mod transition;
+pub use transition::{TransitionArm, WindowTransitionProof};
+pub(super) use transition::{TransitionProof, TransitionTicks};
+
 use crate::{
     Game,
     offscreen::writer::{ImageWriter, SpoolEncoding},
@@ -266,6 +270,7 @@ type ImageMarker = (u64, u128, f64, u64, u64, u64, u64, f32);
 
 pub(super) struct Observer {
     output: PathBuf,
+    extent_markers: Option<BufWriter<File>>,
     writer: Option<ImageWriter>,
     images: Vec<ImageMarker>,
     frames: Vec<(u64, u128, f64, u64, u64, bool, bool)>,
@@ -283,17 +288,35 @@ impl Observer {
     pub(super) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
         host: &mut FrameHost<W, V>,
         origin: Instant,
+        transition: Option<&WindowTransitionProof>,
     ) -> Result<Option<Self>, String> {
-        let Some(path) = std::env::var_os("THRUM_MAC_QUALIFY") else {
+        let transition = transition.filter(|options| options.tap);
+        let Some(output) = transition
+            .map(|options| options.output.clone())
+            .or_else(|| std::env::var_os("THRUM_MAC_QUALIFY").map(PathBuf::from))
+        else {
             return Ok(None);
         };
-        let output = PathBuf::from(path);
         let before = CACurrentMediaTime();
         let origin_elapsed = origin.elapsed().as_nanos();
         let unix = unix_ns()?;
         let after = CACurrentMediaTime();
         std::fs::write(output.join("clock-anchor.tsv"), format!("pid\torigin_elapsed_ns\tunix_ns\tmedia_before\tmedia_after\n{}\t{origin_elapsed}\t{unix}\t{before:.9}\t{after:.9}\n", std::process::id())).map_err(|e| e.to_string())?;
-        let writer = match std::env::var("THRUM_MAC_TAP").as_deref() {
+        let extent_markers = if transition.is_some() {
+            let mut marks = BufWriter::new(
+                File::create(output.join("extents.tsv")).map_err(|error| error.to_string())?,
+            );
+            writeln!(marks, "submission_id	width	height").map_err(|error| error.to_string())?;
+            Some(marks)
+        } else {
+            None
+        };
+        let tap = if transition.is_some() {
+            Ok("on".to_owned())
+        } else {
+            std::env::var("THRUM_MAC_TAP")
+        };
+        let writer = match tap.as_deref() {
             Ok("on") => {
                 host.enable_submitted_capture_with_limits(
                     1,
@@ -304,12 +327,17 @@ impl Observer {
                     },
                 )
                 .map_err(|e| e.to_string())?;
-                let file = File::create(output.join("frames.zst")).map_err(|e| e.to_string())?;
+                let (name, encoding) = if transition.is_some() {
+                    ("frames.rgba", SpoolEncoding::Raw)
+                } else {
+                    ("frames.zst", SpoolEncoding::ZstdDelta)
+                };
+                let file = File::create(output.join(name)).map_err(|e| e.to_string())?;
                 Some(ImageWriter::start(
                     BufWriter::with_capacity(4 * 1024 * 1024, file),
                     96,
                     8 * 1024 * 1024 * 1024,
-                    SpoolEncoding::ZstdDelta,
+                    encoding,
                 )?)
             }
             Ok("off") => None,
@@ -317,6 +345,7 @@ impl Observer {
         };
         Ok(Some(Self {
             output,
+            extent_markers,
             writer,
             images: Vec::with_capacity(RECORDS),
             frames: Vec::with_capacity(RECORDS),
@@ -449,6 +478,14 @@ impl Observer {
                     ));
                 }
             }
+            if let Some(marks) = &mut self.extent_markers {
+                writeln!(
+                    marks,
+                    "{}	{}	{}",
+                    image.sample.submission_order, image.extent[0], image.extent[1]
+                )
+                .map_err(|error| FrameError::Scene(error.to_string()))?;
+            }
             self.images.push((
                 image.sample.submission_order,
                 image
@@ -530,6 +567,9 @@ impl Observer {
                 || self.stale_recycle.is_none())
         {
             return Err("surface replacement did not retain a pending readback".to_owned());
+        }
+        if let Some(marks) = &mut self.extent_markers {
+            marks.flush().map_err(|error| error.to_string())?;
         }
         if let Some(writer) = self.writer.take() {
             let report = writer.finish(Duration::from_secs(10))?;

@@ -259,10 +259,10 @@
           "lock": "gpu",
           "ask": "Does the arm read the submitted frame through engine capture's tap at each size, and compare the extent the host resolved with the window's backing size? Do offscreen, capture and exact-baseline paths still name their own extents, so that no retained image moved?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m4/README.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D4.2",
@@ -281,10 +281,10 @@
           "check": "node scripts/check_v1_browser.mjs --case extent",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m4/README.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D4.4",
@@ -355,10 +355,10 @@
           "lock": "gpu",
           "ask": "Is the error raised by wgpu's own configure, through the host's switch, and not by a test double? Is the drawable's size read from Metal and not from wgpu's descriptor?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-fault/configure-fault.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.10",
@@ -366,10 +366,10 @@
           "check": "python3 scripts/apple_presentation.py transition --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/ios-rotations-final/transition.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [],

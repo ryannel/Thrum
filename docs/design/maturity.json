@@ -931,16 +931,16 @@
         "scope": "Native-scale portable reconstruction only. No MetalFX, dynamic scale, EDR, governor, cadence qualification or G4 closure."
       },
       "M4": {
-        "implementation": "The Mac game prepares at the starting window backing extent, and callers name offscreen extents. Chrome sizes the backing grid from CSS and device pixel ratio and rebuilds its scene grid between frames. iOS retains the oriented-grid path and its existing surface lease.",
-        "functional_validation": "D4.1 passes all six real-window still arms on Mac Metal. D4.2 passes both rotations and matches engine attachments, viewport and drawable on the iPhone 18 Pro simulator. D4.3 passes on hardware Chrome WebGPU at DPR 1 and 2, with a fresh history predecessor only at the first new-grid frame.",
-        "experienced_quality": "The simulator's settled full frames and native-size grid crops show coverage to all edges and the individual grid cells without the previous enlargement pattern. Mac submitted coordinate pixels match at all six settled sizes.",
+        "implementation": "Render extents follow native backing grids and the browser canvas. The Mac retains its current generation through a debounced resize, builds replacement targets on a preparation thread, and configures in one step before publishing the replacement. iOS preserves an epoch-scoped transition between frames.",
+        "functional_validation": "The iPhone 18 Pro simulator presents at the new size and epoch within two replies after each rotation. Mac Metal validation rejected an invalid configure, the restoring call preserved the old drawable, and omitting that call reproduced the descriptor mismatch.",
+        "experienced_quality": "Live window motion inspection requires Screen Recording access.",
         "platform_performance": {
-          "mac": "Live resize timing and presentation cadence are pending.",
-          "browser": "The page timer recorded 3 ms for resize preparation in each DPR arm under shared load. Diagnostic function evidence.",
+          "mac": "Transition timings are recorded under shared machine load and treated as tripwires.",
+          "browser": "No platform timing claim.",
           "ios": "Simulator function only."
         },
-        "evidence": "../evidence/APPLE-PRESENTATION/m4/README.md",
-        "scope": "Settled backing-size proof and explicit render extents. Native no-drain resizing, asynchronous generation lifecycle and motion review remain pending on the Metal resize operation."
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/M4/README.md",
+        "scope": "Native backing-size and transition lifecycle. Dynamic render scale and HDR belong to later milestones."
       }
     }
   },

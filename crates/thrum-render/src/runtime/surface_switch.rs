@@ -35,10 +35,19 @@ impl SurfaceSwitch {
     /// A newly configured surface may acquire immediately.
     #[must_use]
     pub fn configured() -> Self {
+        Self::with_eligibility(true)
+    }
+
+    pub(super) fn with_eligibility(usable: bool) -> Self {
         Self {
-            usable: true,
+            usable,
             record: SurfaceSwitchRecord::default(),
         }
+    }
+
+    /// The platform successfully configured this surface outside a resize switch.
+    pub fn platform_configured(&mut self) {
+        self.usable = true;
     }
 
     /// Whether an acquisition can use the current configuration.

@@ -17,8 +17,8 @@ use thrum_render::{
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{
-        DriveReport, EncodedFrame, FrameError, FrameHost, FrameSample, FrameWorld, SceneSource,
-        SurfaceOutput,
+        DriveReport, EncodedFrame, ExtentRequest, ExtentTransition, FrameError, FrameHost,
+        FrameSample, FrameWorld, SceneSource, SurfaceOutput, SurfaceSwitchOutcome,
     },
 };
 use wgpu::TextureViewDescriptor;
@@ -35,6 +35,7 @@ pub(super) struct FrameRequest<E> {
     pub(super) device_generation: u64,
     pub(super) target_media_seconds: f64,
     pub(super) extent: [u32; 2],
+    pub(super) backing_scale: u64,
     pub(super) surface_generation: u64,
     pub(super) edits: E,
 }
@@ -116,6 +117,7 @@ pub(super) struct RenderReply<R> {
     pub(super) target_status: Option<TargetLeadStatus>,
     pub(super) acquire_wall: Option<Duration>,
     pub(super) surface_status: SurfaceStatus,
+    pub(super) transition_error: Option<String>,
     pub(super) surface_extent: [u32; 2],
     /// The game's readback after this job, for its controls to show.
     pub(super) readback: R,
@@ -147,6 +149,9 @@ struct Actor<G: Game> {
     surface_generation: Arc<AtomicU64>,
     stopped: Arc<AtomicBool>,
     needs_reconfigure: bool,
+    current_extent: ExtentRequest,
+    transition: ExtentTransition,
+    transition_proof: Option<super::qualification::TransitionProof>,
     refused_surface_generation: Option<u64>,
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
@@ -171,16 +176,30 @@ pub(super) fn start<G: Game + 'static>(
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
     extent_output: Option<std::path::PathBuf>,
+    backing_scale: u64,
+    proof: Option<&super::WindowTransitionProof>,
 ) -> Result<RenderWorker<G>, String> {
     const {
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
     }
     let signal = wake.clone();
-    let observer = super::qualification::Observer::start(&mut host, origin)?;
+    let observer = super::qualification::Observer::start(&mut host, origin, proof)?;
     let extent_capture = extent_output
         .map(|output| super::qualification::ExtentCapture::start(&mut host, output))
         .transpose()?;
+    let current_extent = ExtentRequest {
+        extent: [gpu.config.width, gpu.config.height],
+        backing_scale,
+        format: gpu.config.format,
+        device: gpu.watch.generation,
+    };
+    let transition_proof = proof
+        .map(super::qualification::TransitionProof::start)
+        .transpose()?;
     let mut actor = Actor::<G> {
+        transition: ExtentTransition::new(current_extent),
+        transition_proof,
+        current_extent,
         observer,
         extent_capture,
         profile_minimum: 0,
@@ -219,12 +238,15 @@ impl<G: Game> Actor<G> {
             target_status: None,
             acquire_wall: None,
             surface_status: SurfaceStatus::NotAttempted,
+            transition_error: None,
             surface_extent: [self.gpu.config.width, self.gpu.config.height],
             readback: G::readback(&self.host),
         };
+        let mut backing = None;
         reply.outcome = match job {
             RenderJob::Frame(request) => {
                 reply.sequence = request.sequence;
+                backing = Some((request.extent, request.backing_scale));
                 match self.frame(&request, &mut reply) {
                     Ok(report) => {
                         let mut failure = None;
@@ -265,6 +287,9 @@ impl<G: Game> Actor<G> {
             RenderJob::Finish => RenderOutcome::Finish(self.finish()),
         };
         reply.collect_observer(&self.gpu.watch, &mut self.host, self.observer.as_mut());
+        if matches!(reply.outcome, RenderOutcome::DeviceLost) {
+            self.transition.cancel();
+        }
         if matches!(reply.outcome, RenderOutcome::Frame(Ok(_)))
             && let Some(capture) = &self.extent_capture
         {
@@ -282,6 +307,11 @@ impl<G: Game> Actor<G> {
         reply.counters = FrameCounters::read(&self.host);
         reply.readback = G::readback(&self.host);
         reply.worker_wall = start.elapsed();
+        if let (Some(proof), Some((extent, scale))) = (&mut self.transition_proof, backing)
+            && let Err(error) = proof.frame(&reply, extent, scale, self.host.last_submission())
+        {
+            reply.outcome = RenderOutcome::Frame(Err(error.to_string()));
+        }
         reply
     }
     fn frame(
@@ -308,37 +338,14 @@ impl<G: Game> Actor<G> {
         if !current {
             self.needs_reconfigure = true;
         }
-        let extent = [self.gpu.config.width, self.gpu.config.height];
-        let requested = if std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE").is_some() {
-            extent
-        } else {
-            request.extent
-        };
-        let mut ready = current
-            && !request.extent.contains(&0)
-            && self.refused_surface_generation != Some(request.surface_generation)
-            && (requested == extent && !self.needs_reconfigure || self.host.pending_frames() == 0);
-        if ready && (requested != extent || self.needs_reconfigure) {
-            let mut config = self.gpu.config.clone();
-            config.width = requested[0];
-            config.height = requested[1];
-            let result = configure_surface(&self.recipe.surface, &self.gpu.device, &config);
-            ensure_device(&self.gpu.watch)?;
-            if let Err(error) = result {
-                self.needs_reconfigure = true;
-                self.refused_surface_generation = Some(request.surface_generation);
-                reply.surface_status = SurfaceStatus::ConfigurationRefused(error.to_string());
-                ready = false;
-            } else {
-                if let Some(observer) = &mut self.observer {
-                    observer.replace(&mut self.host)?;
-                }
-                self.host.resize_surface(requested)?;
-                self.gpu.config = config;
-                self.needs_reconfigure = false;
-                self.refused_surface_generation = None;
-            }
+        if current {
+            self.advance_extent(request, reply)?;
         }
+        let ready = current
+            && !request.extent.contains(&0)
+            && self.transition.surface.usable()
+            && self.refused_surface_generation != Some(request.surface_generation)
+            && !self.needs_reconfigure;
         let now = self.origin.elapsed();
         let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         reply.target_status = Some(lead.status);
@@ -355,10 +362,12 @@ impl<G: Game> Actor<G> {
         }
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
+            reply.surface_status = SurfaceStatus::Unavailable;
             return advanced.submit(None);
         }
         let encoded = check_encoded_device(&self.gpu.watch, advanced.encode_scene()?)?;
         if !encoded.can_acquire_surface() {
+            reply.surface_status = SurfaceStatus::Unavailable;
             return Ok(encoded.skip());
         }
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
@@ -394,6 +403,15 @@ impl<G: Game> Actor<G> {
             self.needs_reconfigure = true;
             reply.surface_status = SurfaceStatus::NeedsReconfigure;
             return Ok(encoded.skip());
+        }
+        if let Some(proof) = &mut self.transition_proof
+            && proof
+                .drawable(&frame.texture)
+                .map_err(|error| FrameError::Scene(error.to_string()))?
+        {
+            return Err(FrameError::Scene(
+                "control acquired conflicting drawable extents".into(),
+            ));
         }
         let extent_witness = self.extent_capture.as_ref().and_then(|_| {
             encoded
@@ -436,6 +454,151 @@ impl<G: Game> Actor<G> {
         }
         Ok(report)
     }
+    fn advance_extent(
+        &mut self,
+        frame: &FrameRequest<G::Edits>,
+        reply: &mut RenderReply<G::Readback>,
+    ) -> Result<(), FrameError> {
+        let request = ExtentRequest {
+            extent: frame.extent,
+            backing_scale: frame.backing_scale,
+            format: self.gpu.config.format,
+            device: self.gpu.watch.generation,
+        };
+        if request.extent.contains(&0) {
+            self.transition
+                .observe(request, self.current_extent, self.origin.elapsed());
+            return Ok(());
+        }
+        // Fault injection runs the same configure path as an ordinary switch.
+        if self
+            .transition_proof
+            .as_ref()
+            .is_some_and(super::qualification::TransitionProof::synchronous)
+        {
+            return self.synchronous_extent(frame, request);
+        }
+        if let Err(error) =
+            self.transition
+                .advance(request, self.current_extent, self.origin.elapsed(), || {
+                    let inputs = self.host.extent_prepare_inputs(request.extent)?;
+                    Ok(move |cancel: &AtomicBool| inputs.build(cancel))
+                })
+        {
+            ensure_device(&self.gpu.watch)?;
+            reply.transition_error = Some(format!("{request:?}: {error}"));
+        }
+        if let Some(candidate) = self.transition.ready() {
+            if !self.host.admits_extent(&candidate) {
+                return Ok(());
+            }
+            let mut config = self.gpu.config.clone();
+            [config.width, config.height] = request.extent;
+            let mut calls = 0;
+            let configure_started = CACurrentMediaTime();
+            let outcome = self.transition.surface.take(
+                false,
+                self.transition.busy(),
+                &config,
+                &self.gpu.config,
+                |config| {
+                    calls += 1;
+                    let mut attempt = config.clone();
+                    if let Some(proof) = &mut self.transition_proof {
+                        if calls == 2 && proof.skip_restore() {
+                            return Ok(());
+                        }
+                        if proof.fault_configure(calls) {
+                            attempt.width = self.gpu.device.limits().max_texture_dimension_2d + 1;
+                        }
+                    }
+                    configure_once(&self.recipe.surface, &self.gpu.device, &attempt)
+                },
+            );
+            if let Some(proof) = &mut self.transition_proof {
+                proof.switch(request, self.transition.surface.record(), configure_started);
+            }
+            ensure_device(&self.gpu.watch)?;
+            match outcome {
+                SurfaceSwitchOutcome::Deferred => self.transition.defer(candidate),
+                SurfaceSwitchOutcome::Taken => {
+                    assert!(self.host.publish_extent(candidate));
+                    self.gpu.config = config;
+                    self.current_extent = request;
+                    self.needs_reconfigure = false;
+                    self.refused_surface_generation = None;
+                }
+                SurfaceSwitchOutcome::Refused => {
+                    let record = self.transition.surface.record();
+                    reply.transition_error = Some(format!(
+                        "{request:?}: {:?}; restore: {:?}",
+                        record.configure_error, record.restore_error,
+                    ));
+                    // Do not route a refused transition through an automatic
+                    // platform retry. Only a new request or a surface epoch can recover it.
+                    self.needs_reconfigure = false;
+                }
+            }
+        }
+        if self.needs_reconfigure
+            && !self.transition.busy()
+            && self.host.pending_frames() == 0
+            && self.refused_surface_generation != Some(frame.surface_generation)
+        {
+            match configure_surface(&self.recipe.surface, &self.gpu.device, &self.gpu.config) {
+                Ok(()) => {
+                    self.transition.surface.platform_configured();
+                    self.needs_reconfigure = false;
+                    if let Some(observer) = &mut self.observer {
+                        observer.replace(&mut self.host)?;
+                    }
+                }
+                Err(error) => {
+                    self.refused_surface_generation = Some(frame.surface_generation);
+                    reply.surface_status = SurfaceStatus::ConfigurationRefused(error.to_string());
+                }
+            }
+            ensure_device(&self.gpu.watch)?;
+        }
+        Ok(())
+    }
+
+    fn synchronous_extent(
+        &mut self,
+        frame: &FrameRequest<G::Edits>,
+        request: ExtentRequest,
+    ) -> Result<(), FrameError> {
+        if self.current_extent == request {
+            return Ok(());
+        }
+        let candidate = self
+            .host
+            .extent_prepare_inputs(frame.extent)?
+            .build(&AtomicBool::new(false))?
+            .ok_or(FrameError::InvalidState(
+                "synchronous extent control cancelled",
+            ))?;
+        let mut config = self.gpu.config.clone();
+        [config.width, config.height] = frame.extent;
+        self.transition.surface.begin();
+        let configure_started = CACurrentMediaTime();
+        let outcome =
+            self.transition
+                .surface
+                .take(false, false, &config, &self.gpu.config, |attempt| {
+                    configure_once(&self.recipe.surface, &self.gpu.device, attempt)
+                });
+        if let Some(proof) = &mut self.transition_proof {
+            proof.switch(request, self.transition.surface.record(), configure_started);
+        }
+        if outcome == SurfaceSwitchOutcome::Taken {
+            assert!(self.host.publish_extent(candidate));
+            self.gpu.config = config;
+            self.current_extent = request;
+        }
+        Ok(())
+    }
+
     fn recover(
         &mut self,
         from: u64,
@@ -449,6 +612,7 @@ impl<G: Game> Actor<G> {
             ));
         }
         ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
+        self.transition.cancel();
         let inputs = self
             .host
             .device_prepare_inputs()
@@ -466,6 +630,9 @@ impl<G: Game> Actor<G> {
             Some(profile),
         ))
         .map_err(RecoveryFailure::frame)?;
+        prepared
+            .resize_scene_surface(profile.extent)
+            .map_err(RecoveryFailure::frame)?;
         // The previous job has dropped its drawable, but the lost device
         // may have prevented wgpu from clearing that surface acquisition.
         let needs_reconfigure = extent.contains(&0)
@@ -500,6 +667,14 @@ impl<G: Game> Actor<G> {
         self.refused_surface_generation = None;
         self.needs_reconfigure = needs_reconfigure
             || self.surface_generation.load(Ordering::Acquire) != surface_generation;
+        self.current_extent = ExtentRequest {
+            extent: profile.extent,
+            format: profile.format,
+            device: generation,
+            ..self.current_extent
+        };
+        self.transition
+            .recovered(self.current_extent, !self.needs_reconfigure);
         ensure_device(&self.gpu.watch).map_err(RecoveryFailure::frame)?;
         Ok(RecoveryInfo {
             format: self.gpu.config.format,
@@ -507,6 +682,7 @@ impl<G: Game> Actor<G> {
         })
     }
     fn finish(&mut self) -> Result<Finished, String> {
+        self.transition.cancel();
         let mut samples = Vec::with_capacity(SAMPLE_SLOTS * 2);
         loop {
             if self.gpu.watch.is_lost() {
@@ -557,6 +733,16 @@ impl<G: Game> Actor<G> {
         }
     }
 }
+fn configure_once(
+    surface: &wgpu::Surface<'_>,
+    device: &wgpu::Device,
+    config: &wgpu::SurfaceConfiguration,
+) -> Result<(), wgpu::Error> {
+    let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+    surface.configure(device, config);
+    pollster::block_on(scope.pop()).map_or(Ok(()), Err)
+}
+
 fn drain_wait(
     result: Result<wgpu::PollStatus, wgpu::PollError>,
     lost: bool,

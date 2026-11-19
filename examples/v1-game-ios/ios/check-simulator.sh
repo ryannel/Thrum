@@ -45,6 +45,7 @@ RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
 examples/v1-game-ios/ios/build-uitest.sh >/dev/null
 thrum_target="${CARGO_TARGET_DIR:-$PWD/target}"
 thrum_app="$thrum_target/v1-game-ios-sim/ThrumV1.app"
+export THRUM_V1_XCTESTRUN="$thrum_target/v1-game-ios-sim/uitest/ThrumV1UITests.xctestrun"
 if [[ "$(plutil -extract CADisableMinimumFrameDurationOnPhone raw -expect bool "$thrum_app/Info.plist")" != true ]]; then
     echo "built iPhone app does not enable its display link's full refresh-rate range" >&2
     exit 1

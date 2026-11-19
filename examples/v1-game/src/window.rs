@@ -91,7 +91,11 @@ const KEY_DOWN: u8 = 128;
 /// Run the bounded V1 scene in a macOS window and print its frames report.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
-pub fn run_window(hardware: Vec<HardwareRequest>, capture: Option<thrum_app::WindowExtentCapture>) {
+pub fn run_window(
+    hardware: Vec<HardwareRequest>,
+    capture: Option<thrum_app::WindowExtentCapture>,
+    transition: Option<thrum_app::WindowTransitionProof>,
+) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
     // are reported when the host is prepared.
@@ -147,6 +151,8 @@ pub fn run_window(hardware: Vec<HardwareRequest>, capture: Option<thrum_app::Win
     };
     if let Some(capture) = capture {
         thrum_app::run_with_extent_capture(config, capture, game);
+    } else if let Some(proof) = transition {
+        thrum_app::run_with_transition_proof(config, proof, game);
     } else {
         thrum_app::run(config, game);
     }

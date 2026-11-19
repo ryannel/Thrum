@@ -2,14 +2,17 @@
 
 use super::{
     AirShadowPrepared, Arc, AtmospherePrepared, BucketRoute, CasterCulling, CloudPrepared,
-    ContributionPasses, CullMode, DeviceCapabilities, PipelineKey, PreparedSynthetic, SceneContribution,
-    SdrToneStage, ShadowSelection, StarPrepared, SunShadowMethod, SyntheticView, TextureClasses,
+    ContributionPasses, CullMode, DeviceCapabilities, PipelineKey, PreparedSynthetic, SdrToneStage,
+    ShadowSelection, StarPrepared, SunShadowMethod, SyntheticView, TextureClasses,
     VisibilityPrepared, mesh_arena, mesh_route, native_witness, secondary, taau, temporal,
 };
 
 /// Device resources retain their original handles. Only extent-dependent
 /// attachments, bindings and providers are allocated by a target build.
-#[expect(clippy::struct_excessive_bools, reason = "independent scene features are copied from the active renderer")]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "independent scene features are copied from the active renderer"
+)]
 pub(crate) struct SyntheticTargetInputs {
     pub(super) capabilities: DeviceCapabilities,
     pub(super) key: PipelineKey,

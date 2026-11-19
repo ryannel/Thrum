@@ -59,7 +59,9 @@ fn main() {
     }
     let window_capture =
         window_extent_capture().unwrap_or_else(|error| report_capture_failure(&error));
-    v1_game::run_window(hardware, window_capture);
+    let transition =
+        window_transition_proof().unwrap_or_else(|error| report_capture_failure(&error));
+    v1_game::run_window(hardware, window_capture, transition);
 }
 
 #[cfg(target_os = "macos")]
@@ -84,6 +86,27 @@ fn window_extent_capture() -> Result<Option<thrum_app::WindowExtentCapture>, Str
     Ok(Some(WindowExtentCapture {
         output: output.into(),
         window,
+    }))
+}
+
+#[cfg(target_os = "macos")]
+fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>, String> {
+    use thrum_app::{TransitionArm, WindowTransitionProof};
+    let Some(output) = std::env::var_os("THRUM_MAC_TRANSITION") else {
+        return Ok(None);
+    };
+    let arm = match std::env::var("THRUM_MAC_TRANSITION_ARM").as_deref() {
+        Ok("baseline") => TransitionArm::Baseline,
+        Ok("sweep") => TransitionArm::Sweep,
+        Ok("synchronous") => TransitionArm::Synchronous,
+        Ok("restore") => TransitionArm::Restore,
+        Ok("skip-restore") => TransitionArm::SkipRestore,
+        _ => return Err("unknown Mac transition proof arm".to_owned()),
+    };
+    Ok(Some(WindowTransitionProof {
+        output: output.into(),
+        arm,
+        tap: std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_some(),
     }))
 }
 

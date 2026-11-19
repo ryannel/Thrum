@@ -4,7 +4,8 @@ use super::*;
 use crate::atmosphere::AtmosphereFrame;
 use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::{
-    CaptureSource, CullMode, FrameLighting, OffscreenTarget, SyntheticScene, frame_stats,
+    CaptureSource, CullMode, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene,
+    frame_stats,
 };
 use crate::timing::GpuTimings;
 

@@ -44,7 +44,7 @@ fn identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_for
                 OffscreenTarget::with_capture_source(&device, &prepared, 65, 37, source).unwrap();
             let before = capture(&device, &queue, &prepared, &target);
             let binding = prepared
-                .sdr_tone_stage()
+                .display
                 .prepare_input(
                     &device,
                     target.ids.pre_tone.clone(),
@@ -62,7 +62,7 @@ fn identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_for
             let foreign =
                 OffscreenTarget::with_capture_source(&device, &prepared, 65, 37, source).unwrap();
             target.display = prepared
-                .sdr_tone_stage()
+                .display
                 .prepare_input(
                     &device,
                     foreign.ids.pre_tone.clone(),
@@ -115,7 +115,7 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
         capture(&device, &queue, &prepared, &linear);
         let sdr = OffscreenTarget::new(&device, &prepared, 65, 37).unwrap();
         let expected = capture(&device, &queue, &prepared, &sdr);
-        let stage = prepared.sdr_tone_stage();
+        let stage = prepared.display;
         let mut graph = FrameGraph::default();
         let descriptor = |format, usage| ResourceDescriptor::Texture {
             dimension: crate::graph::TextureKind::D2,
