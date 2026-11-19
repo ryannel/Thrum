@@ -62,6 +62,7 @@ replace(app, "    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {", 
             let path = std::path::PathBuf::from(path);
             if path.join("finish").is_file() {
                 self.target_frames = self.presented;
+                self.qualification_report = Some(self.finish());
                 event_loop.exit();
                 return;
             }
