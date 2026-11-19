@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "One device recipe: the Mac window, the browser page, the iPhone app, captures and benches ask for their device the same way and answer a GPU fault the same way",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -26,7 +26,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
         {
@@ -36,8 +36,8 @@
           "lock": "gpu",
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
@@ -88,13 +88,9 @@
       ],
       "findings": [
         {
-          "item": "M1.1",
-          "name": "Valley culling benchmark bypasses the device recipe",
-          "repeat": false
-        },
-        {
           "item": "M1.2",
-          "name": "Sky kit browser supplies a literal first device generation",
+          "name": "Native capture and iOS shell hard-code the first device generation",
+          "different": "The sky kit browser and cloud-cost sites were repaired. The Mac offscreen capture passes and tracks its own initial generation, and the iOS shell independently seeds frame dispatch and loss matching.",
           "repeat": false
         }
       ]

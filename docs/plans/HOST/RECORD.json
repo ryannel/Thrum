@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "20ac9f595935bc0d66b944d6f9fe26c02ed566b4",
-          "review": ".orchestrate/evidence/HOST/M1-review.md",
+          "review": ".orchestrate/evidence/HOST/M1-review-1.md",
           "items": {
             "M1.1": "fail",
             "M1.2": "fail",
@@ -67,6 +67,43 @@
             "turns": 1
           },
           "at": "2026-11-19T08:49:45Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "d36f636fd7faf6ba9c2bd239006007d02eabddf3",
+          "review": ".orchestrate/evidence/HOST/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "fail",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass"
+          },
+          "findings": [
+            {
+              "item": "M1.2",
+              "name": "Native capture and iOS shell hard-code the first device generation",
+              "different": "The sky kit browser and cloud-cost sites were repaired. The Mac offscreen capture passes and tracks its own initial generation, and the iOS shell independently seeds frame dispatch and loss matching.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 144814,
+            "cached": 9085952,
+            "output": 13510,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:35:30Z"
         }
       ],
       "authorised": {
