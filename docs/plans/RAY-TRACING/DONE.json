@@ -338,6 +338,18 @@
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
+        },
+        {
+          "id": "M3.13",
+          "statement": "On a coarse rounded prop with smooth normals, built so the answer is plain, the terminator band is lit under `Traced`: the points whose shading normal faces the Sun and whose triangle faces away. An opaque sheet across the ray to the Sun puts a band point behind its middle in shadow in every build of the scene: the sheet joined into the prop's own mesh or placed as a separate instance, wound to face the ray or away from it, standing beyond the passage's reach or inside it past the prop's own far face. A band point clear of the sheet stays lit in each.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_shadow_band_gpu",
+          "ask": "Is the value the operation the forward pass compiles, and does the test hold both a joined sheet facing away from the ray and a lit band point with no sheet, so that a rule which skips hits by instance and facing fails the first and a rule with no exception fails the second?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "findings": [
@@ -413,9 +425,9 @@
         },
         {
           "id": "M4.7",
-          "statement": "The history is committed only by a submitted frame, and is reset by a camera cut, a change of render extent and a device replacement: after each, no pixel reads a value from before it. A fragment with no matching history uses the centre ray in that frame, and so does a fragment whose settled history the centre ray contradicts. A texel that holds a soft edge, and whose neighbourhood this frame is wholly lit or wholly dark, is written settled by this frame's pass: a fragment there shows the old soft value for at most this one frame, and the settled value from the next. A texel in a faint shadow, whose soft value rounds to 1, is not settled: a fragment there keeps the soft value when its centre ray is blocked. A fragment drawn after opaque geometry reads no history.",
+          "statement": "The history is committed only by a submitted frame, and is reset by a camera cut, a change of render extent and a device replacement: after each, no pixel reads a value from before it. A fragment shows its centre ray's value in four cases: it has no matching history, the pass left its pixel out, its settled history contradicts the ray, or it is in a terminator band with its passage refused. A texel that holds a soft edge, and whose neighbourhood this frame is wholly lit or wholly dark, is written settled by this frame's pass: a fragment there shows the old soft value for at most this one frame, and the settled value from the next. A texel in a faint shadow, whose soft value rounds to 1, is not settled: a fragment there keeps the soft value when its centre ray is blocked. A fragment drawn after opaque geometry reads no history.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_soft_history_gpu",
-          "ask": "Does the test plant a history value that a correct reset, a correct override by the centre ray, and the pass's settling of a texel the soft edge has left must each not return, so that a stale read fails?",
+          "ask": "Does the test plant a history value that a correct reset, each of the four cases that show the centre ray, and the pass's settling of a texel the soft edge has left must each not return, so that a stale read fails?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -449,6 +461,16 @@
           "id": "M4.10",
           "statement": "No exact baseline moves: with no request, every registered image on the Mac's two recipes and in Chrome is the one on main.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.11",
+          "statement": "Where another body's shadow crosses a coarse rounded body at a low Sun, its edge is as soft across the body's terminator band as on the surfaces beside it, and with the penumbra on the body shows no dark facet where it turns from the Sun.",
+          "inspect": "`fixed` stills at a low Sun of a coarse rounded body that another body's shadow crosses through its terminator band, as a balloon in another balloon's shadow is, with the penumbra on and off: whole, and as native-size crops along the shadow's edge from the Sun-facing side through the terminator band. The evidence gives the dive limit in force.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -554,7 +576,7 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the traced path on, which names no recipe, and the design's paired timing. For each of the pair's eight runs it holds the recipe, the Sun shadow method and the cooked draw path the run resolved, both figures for every frame, the timed-pass span and frame CPU time, with their medians, each pass by name and the machine's load. For each figure at each extent it states the difference between the two methods beside the spread between a method's own two runs, and says the pair shows no difference where the spread is the larger. It calls the GPU figure the timed-pass span and says which queued transfers lie outside it for each method. It says that the setting also moves a launch with no recipe named to Apple tile, which the pair does not measure. Beside the pair are rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect together. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
+          "statement": "This Mac's opt-in record is retained from the final build: the machine as the OS reports it (chip, GPU core count, memory, OS version) with the registry's digest, the commit, the launch line that turns the traced path on, which names no recipe, and the design's paired timing. For each of the pair's eight runs it holds the recipe, the Sun shadow method and the cooked draw path the run resolved, both figures for every frame, the timed-pass span and frame CPU time, with their medians, each pass by name and the machine's load. For each figure at each extent it states the difference between the two methods beside the spread between a method's own two runs, and where the spread is the larger it says that these runs could not tell the two methods apart at that extent. It calls the GPU figure the timed-pass span and says which queued transfers lie outside it for each method. It says that the setting also moves a launch with no recipe named to Apple tile, which the pair does not measure. Beside the pair are rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect together. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item or turns anything on.",
           "check": "python3 scripts/ray_tracing_cost.py check",
           "ask": "Did every run of the pair resolve to the Apple tile recipe and to one cooked draw path, the two arms differing in the Sun's shadow method alone, with the traced arm launched by the record's launch line? Does the timed-pass span hold the structure build and the pass that consumes the frame's output? Is each sentence the record draws from the pair no stronger than its spread allows, and does none call the span the whole frame's GPU time?",
           "target": "mac-metal",

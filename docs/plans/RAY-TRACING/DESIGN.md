@@ -1,10 +1,11 @@
 # Ray tracing: traced shadows and ambient occlusion on the Mac
 
-18 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+19 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../BRIEF.md) ·
-planning probes: [the API](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) and
-[the ray's origin](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md). C04, C06, C07, C08 and C12 in
-[CONTRACTS](../../design/CONTRACTS.md),
+planning probes: [the API](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md),
+[the ray's origin](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md) and
+[a rounded mesh's terminator band](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/PATCH.md).
+C04, C06, C07, C08 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) and
 [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) govern.
 
@@ -97,9 +98,9 @@ that cast shadows, and props that sit on the ground. Everything else in the fram
 
 | Cue | Where it must read | Range | A plausible wrong substitute, and what rejects it |
 |---|---|---|---|
-| **R1 A shadow is where the geometry puts it** | Every opaque surface the Sun or a lamp lights | Contact to the far ridge; Sun from overhead to the horizon; movers; mirrored and scaled instances; an edited mesh; a caster the camera cannot see; a room lit only by lamps, in a scene with Sun shadows off | A shadow that is right in a still and a frame late in motion, cast by last frame's mesh, or lost when its caster leaves the view. Rejected by consecutive frames around movers, by the traced view, and by rays with plain answers |
+| **R1 A shadow is where the geometry puts it** | Every opaque surface the Sun or a lamp lights | Contact to the far ridge; Sun from overhead to the horizon; movers; mirrored and scaled instances; an edited mesh; a caster the camera cannot see; a caster joined into its receiver's own mesh; a room lit only by lamps, in a scene with Sun shadows off | A shadow that is right in a still and a frame late in motion, cast by last frame's mesh, or lost when its caster leaves the view. Rejected by consecutive frames around movers, by the traced view, and by rays with plain answers |
 | **R2 No acne, no gap, no leak** | Receivers at grazing light, thin casters, where a prop meets the ground | Sun elevation 1° to 90°; receivers 0.5 m to 20 km from the camera; coordinates to 20 km from the scene's origin | A bias tuned on one view, or one so large that it steps over a nearby caster. Rejected by inspection across the range and by a panel close to a wall, far from the origin |
-| **R3 A shadow softens with distance from its caster** | A balloon's shadow on the valley floor, a ridge's shadow at low Sun, a prop's own base | Caster 0.1 m to 3 km from the receiver; the Sun's disc cut by a ridge at sunset | A blur of constant width, or grain in place of softness. Rejected by frames inspected at rest and in motion |
+| **R3 A shadow softens with distance from its caster** | A balloon's shadow on the valley floor, a ridge's shadow at low Sun, a prop's own base, another body's shadow across a rounded prop | Caster 0.1 m to 3 km from the receiver; the Sun's disc cut by a ridge at sunset | A blur of constant width, or grain in place of softness. Rejected by frames inspected at rest and in motion |
 | **R4 Things are grounded** | Under and between props, in creases of terrain, in shade and under an overcast sky | Occluders from contact to the scene's declared radius | Darkening that follows the screen and not the scene: halos at silhouettes, occlusion that vanishes when the occluder leaves the view. Rejected by turning the camera so the occluder is off screen |
 | **R5 Nothing else moves** | The frame with no request; Chrome; the simulator; the portable recipe; a Mac that cannot trace | Every scene on main | A request that defaults on, a launch that fails where rays are missing, or an opt-in that draws maps on a Mac that traces because nothing chose its recipe. Rejected by the exact baselines, by counting created resources, and by launching the one setting where it can be met and where it cannot |
 
@@ -143,6 +144,12 @@ Read for this design, 17 and 18 November 2026:
   fragment's position carries far less error. [The second probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md)
   measured it on this Mac: two float steps cleared every self-hit from 64 m to 20 km and down to half a degree
   of grazing light.
+- **The shadow terminator.** A ray meets a coarse mesh's flat triangles, and shading reads its smooth
+  normals. Where the two disagree about which way the surface faces, a whole triangle is dark that its
+  shading calls lit. Hanika, "Hacking the Shadow Terminator" (Ray Tracing Gems II, chapter 4), moves the ray's
+  origin onto the curved surface the vertex normals imply. That needs the vertex normals at the receiving
+  point. A fragment has them. A pass that rebuilds its point from depth does not, which is what
+  [the passage](#a-rounded-meshs-own-facets) has to answer.
 
 **What was selected, and what else was weighed.**
 
@@ -151,6 +158,7 @@ Read for this design, 17 and 18 November 2026:
 | Where the hard Sun shadow is traced | Inline, in the fragment that is being shaded, this frame | A screen-space mask pass before shading: it needs a depth prepass, a second geometry pass on a tile GPU |
 | How a soft shadow is made | One ray a pixel toward a point on the disc, in a pass after opaque geometry, filtered over time and space and read by the next frame's shading, beside a centre ray traced inline this frame that overrides a settled history it contradicts | The history alone: a moving caster's whole shadow is then a frame late, and detaches from a fast mover. The same rays integrated by TAAU alone: at mid-penumbra one ray is right half the time, and a history of some twenty frames leaves about a tenth of the Sun's light as grain. A fourth forward target for demodulated Sun light, which would make the soft value current: it changes every forward pipeline in the engine. MetalFX's denoising upscaler: it needs albedo, normal and roughness targets and belongs to `APPLE-PRESENTATION`; it is what would change this selection |
 | Where ambient occlusion is traced | In the same pass as the soft shadow, at half the extent | Inline in shading: one ray a pixel is grain over every shaded surface |
+| How a coarse rounded mesh loses its false facets | One excused passage through the receiving surface, judged from what the ray itself reports, by the same rule inline and in the visibility pass | Moving the origin onto the implied surface, as Hanika does: right for the inline ray, but the pass has no vertex normals, so its disc rays would still strike the receiver and the penumbra would be lost there. Skipping nearby hits on the receiving instance by their facing, which M3 first built: it erased a sheet joined into the same mesh. A forward target that carries the implied surface's height or the disc ray's raw result to the pass: it changes every forward pipeline in the engine |
 | How many structures | One for the scene, rebuilt each frame | One for still geometry and one for movers: this adapter has room, but every ray would walk both. It is the named candidate if the rebuild shows as a tripwire, and M1's record of a still scene beside a moving one says what it could save |
 | What the structure holds | Every opaque thing in the scene, on screen or off | What the frame's passes draw: a lamp's ray, a Sun ray at low Sun and an occlusion ray all reach geometry that no camera or cascade volume holds |
 | What turns a ray effect on | A launch and a scene that ask, with a fallback to the map frame and a record for this Mac | A rule that makes the traced Sun shadow the default where a sitting measured it no slower and better looking, keyed to the adapter. Two design reviews found that it could promote a slower frame from a sum of pass times, credit rays with a difference between two recipes, and qualify a 40-core M3 Max from a 30-core one's sitting under one adapter name. For effects a scene chooses, that machinery guards less than it costs |
@@ -289,6 +297,15 @@ shader text.
   its receiver: 32 float steps. That is 2 mm within 1 km of the origin, 3.2 cm at 10 km and 6.3 cm at 20 km.
   The factor of two leaves room for the caster's and the receiver's own rounding. Nearer than that, a caster
   thinner than the lift may be stepped over.
+- **In the terminator band.** A ray in [the terminator band](#a-rounded-meshs-own-facets) of a rounded mesh
+  starts the same lift on the inner side of its triangle. A caster that is another instance blocks it wherever
+  it crosses the ray. A part of the receiver's own mesh is sure to block where it stands beyond the body's own
+  far face, or above the surface the vertex normals imply: further from the receiving point, along its shading
+  normal, than the implied surface's height over the flat triangle. That height is zero on flat and finely cut
+  geometry and centimetres on a coarse prop: 7 cm at most on the review's twelve-sided, one-metre prism.
+  Inside it there is one case that leaks. Where a single-sided shell ends at an open rim, a ray can pass under
+  the rim and meet no far face, and the back of a sheet of the same mesh lying that close can then be taken
+  for one.
 
 ### Traced shadows (M3)
 
@@ -305,13 +322,45 @@ scene structure. The operation's callers do not change. The traced operation:
 - traces one any-hit ray toward the Sun's centre, against instances whose mask casts shadows, with every
   triangle opaque, and returns 0 or 1.
 
-At the light boundary of a smooth-shaded coarse mesh, a triangle can intercept light that would clear the
-surface implied by the vertex normals. The vertex stage interpolates the tangent-plane data without the instance
-translation. On a grazing hit within that curvature allowance, a short reverse ray identifies the receiving
-triangle and instance. The Sun ray can then disregard recrossing that triangle or leaving that instance within
-the allowance. Other instances and entering faces elsewhere on the same mesh still block the original ray.
-This adds at most two queries in the correction case. The numeric lift and the hard edge from other casters
-still use the original receiving point.
+<a id="a-rounded-meshs-own-facets"></a>
+
+**A rounded mesh's own facets.** On a smooth-shaded coarse mesh, a fragment's shading normal can face the Sun
+while its triangle's own plane faces away. Such a fragment is in **the terminator band**. Its ray starts into
+the body, under the triangle it left, and with every triangle opaque the whole triangle is dark: a facet,
+where the surface the normals stand for would be lit. Only the terminator band has this fault. A ray that
+leaves the outer side of its triangle has a convex patch's other triangles falling away behind it, so whatever
+it hits is a caster, and it is traced as above with no exception.
+
+A ray in the terminator band is excused **one passage** through its own surface, and nothing more:
+
+1. It starts on the inner side of its triangle, by the same lift. A short query across the lift finds the
+   receiving instance and which way round its triangle is wound.
+2. The nearest thing the ray meets must be the receiving instance, crossed from the inside: wound the
+   opposite way to the receiving triangle as the ray meets it. It must lie within **the reach**, the
+   distance at which the ray rises through the surface the vertex normals imply. The vertex stage
+   interpolates tangent-plane data without the instance translation, which gives the fragment that surface's
+   height over its triangle, the **gap**. The ray rises through the implied surface's tangent plane where it
+   has climbed the gap and the lift along the shading normal, and that distance is the reach. Where the gap
+   is not positive, on flat and concave geometry, there is no reach.
+3. From that crossing it goes on as an ordinary ray. Any triangle of any instance, wound either way, blocks
+   it.
+
+If the nearest thing is the receiving instance crossed from the inside, but beyond the reach or where there
+is no reach, the passage is **refused**: the body itself is in the way, and the fragment is dark, as a plain
+ray has it. If the nearest thing is anything else, another instance or a face of the receiving instance met
+from outside, it blocks the ray as a caster does. If the ray meets nothing, the fragment is lit.
+
+So the exception removes the receiving surface's own far face, once, under the implied surface. It never
+removes a second hit, a hit on another instance, or a hit in open air above the implied surface. A sheet
+joined into a prop's mesh and the same sheet placed as a separate instance therefore shadow the terminator
+band alike, wound either way, wherever the sheet stands beyond the prop's far face or above the implied
+surface. [The terminator band's supported separation](#where-a-ray-starts) states the one case left.
+
+How a fragment learns its triangle's plane is the builder's choice. Screen derivatives of the translation-free
+position it already interpolates give it without the noise of world-position derivatives. A ray too close to
+the plane to call is best treated as in the terminator band. On a rounded patch its passage leaves by the
+next face inside the reach, and on flat geometry the light there is already at the shading's zero. A fragment
+in the terminator band costs at most two queries beyond the ordinary ray, and no other fragment costs any.
 
 Terrain is in the structure, so the ray answers at every distance and at low Sun. The traced method does not
 use the cascades, the blocker search, `horizon_visibility` or `low_sun_terrain`. It replaces the map lookup and
@@ -355,7 +404,9 @@ whether the Sun's centre is hidden now.
 1. **Trace.** For each pixel that holds opaque geometry it rebuilds the position from the frame's depth and
    view record, picks a point on the Sun's disc from a sequence that differs from pixel to pixel and frame to
    frame, and traces one any-hit ray toward it, started [as above](#where-a-ray-starts). The disc's radius is
-   the directional source's own.
+   the directional source's own. The lift's normal, rebuilt from neighbouring depths, is the triangle's own,
+   so the pass knows when a ray dips below its triangle's plane. It knows neither the shading normal nor
+   the gap. [The pass's passage](#the-passage-in-the-pass) says what such a ray does.
 2. **Over time.** It reprojects last frame's result through the frame's motion target, rejects history whose
    depth disagrees, keeps the first two moments, and clamps history to the range of this frame's rays in the
    texel's neighbourhood. Where those rays all agree, the range is one value, so the texel takes that value
@@ -371,13 +422,42 @@ the value is exactly 1 or 0. Any other texel holds a **soft edge**: a penumbra, 
 Settled is kept apart from the stored value, so that a faint shadow whose value rounds to 1 is never taken
 for full Sun and blacked out by a blocked centre ray.
 
+<a id="the-passage-in-the-pass"></a>
+
+**The passage in the pass.** A disc ray on a pixel in [the terminator band](#a-rounded-meshs-own-facets) has
+to pass its own body as the centre ray does. Otherwise every disc ray strikes the receiver, the texel settles
+dark, and an outside caster's soft edge never forms there. The pass applies the same rule from what a ray
+reports:
+
+- A ray that leaves the outer side of its triangle's plane is ordinary.
+- A ray that dips below the plane starts on the inner side, and a short query across the lift finds the
+  receiving instance and its winding. The nearest thing the ray meets must be that instance crossed from the
+  inside. From there it goes on as an ordinary ray, and reports the outside caster or none. Anything else
+  nearest blocks it.
+- The pass has no gap, so its passage has no reach. It also cannot tell a terminator-band pixel from one on a
+  body's dark side, where the passage runs the body's whole width and the Sun's light is zero whatever it
+  finds. What it stores on a pixel whose triangle faces away is the visibility of everything but the pixel's
+  own surface, and [the fragment](#what-a-fragment-uses) decides whether its own surface is in the way.
+- **The dive limit** bounds that work. It is a runtime value, an angle: a ray that dips further than it
+  below its triangle's plane is not traced, and its pixel stores no history and takes no part in its
+  neighbours' filtering. A terminator band reaches only as far below the plane as a shading normal leans
+  from its triangle, so the builder sets the limit by eye on the valley's coarsest rounded body, and the
+  report states it. Beyond it a terminator-band fragment shows the centre ray's hard edge.
+
+A pixel inside the limit whose ray dips costs two queries beyond the ordinary ray. One beyond it costs none.
+
+<a id="what-a-fragment-uses"></a>
+
 **What a fragment uses.** It already has last frame's clip position for its motion vector. It reads the
 history there and checks the stored depth against its own. Then:
 
-1. With no matching history, it uses the centre ray.
-2. With a settled history that the centre ray contradicts (settled lit and the ray is blocked, or settled
+1. With no matching history, it uses the centre ray. A pixel the pass left out has none.
+2. In the terminator band with its passage refused, it uses the centre ray, which is dark. Its own body
+   hides the Sun's centre, and the whole disc lies within 0.27° of it. The pass, whose passage has no
+   reach, holds the light beyond the body there.
+3. With a settled history that the centre ray contradicts (settled lit and the ray is blocked, or settled
    dark and the ray is clear), it uses the centre ray. Occlusion changed here after the pass ran.
-3. Otherwise it uses the soft value.
+4. Otherwise it uses the soft value.
 
 **How long old light may persist.** The centre ray says whether the Sun's centre is hidden. It cannot tell
 the dark half of a soft edge from a shadow's body, or the light half from full Sun. So a fragment whose
@@ -389,12 +469,13 @@ and no other exists.
   under it with no frame of lag, as in M3.
 - **Where a soft edge has left, for one frame.** A texel that held a soft edge, and that the edge has left
   for the shadow's body or for full Sun, shows the old soft value in the first frame after. That frame's pass
-  finds every ray in the texel's neighbourhood agreeing and writes the settled value, by step 2, so the next
-  frame is right. The remnant is a band as wide as the old edge, lying where the edge was a frame before.
+  finds every ray in the texel's neighbourhood agreeing and writes the settled value, by the pass's step 2,
+  so the next frame is right. The remnant is a band as wide as the old edge, lying where the edge was a frame
+  before.
 - **Inside the edge where it now lies, for the settle length.** That is every texel whose neighbourhood in
-  step 2 still holds rays that disagree. The filter there remembers earlier frames. Its memory is a runtime
-  value in frames, the **settle length**, which the builder sets by eye and the report states. No remnant of
-  an earlier position shows once the settle length and one more frame have passed, and until then the soft
+  the pass's step 2 still holds rays that disagree. The filter there remembers earlier frames. Its memory is
+  a runtime value in frames, the **settle length**, which the builder sets by eye and the report states. No
+  remnant of an earlier position shows once the settle length and one more frame have passed, and until then the soft
   edge is displaced by no more than the shadow moved in those frames.
 
 **What that looks like.** A wide edge moves by a small part of its width in a frame, so its one-frame
@@ -460,15 +541,15 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 - **Report.** For each request: what was asked, what it resolved to and, where the two differ, why. The
   reasons are that the device did not enable ray queries, that the recipe lists no ray effect, and that
   preparation failed. With them go the hardware names the launch gave, which were enabled, and why any was
-  not, the recipe the generation resolved to and, where a preferred recipe was not taken, why, and the
-  settle lengths. All of it is reported where the culling mode is, so
+  not, the recipe the generation resolved to and, where a preferred recipe was not taken, why, the
+  settle lengths and the dive limit. All of it is reported where the culling mode is, so
   [a run can say what it ran](../ARCHITECTURE.md#interfaces-track-5). A fallback is never silent.
 - **Everything is prepared.** Pipelines for the resolved methods are created on a device generation before
   the scene is ready on it, and none is created while that generation draws. A replacement device creates its
   own before its first ready frame. No method is switched while a scene runs.
-- **Quality values.** Penumbra, lamp-ray count, ambient occlusion and its resolution, and the two settle
-  lengths are runtime values declared through the contribution seam's quality knobs, each with the history it
-  invalidates, for the governor.
+- **Quality values.** Penumbra, lamp-ray count, ambient occlusion and its resolution, the two settle
+  lengths and the dive limit are runtime values declared through the contribution seam's quality knobs, each
+  with the history it invalidates, for the governor.
 - **The opt-in.** A person turns the traced path on for a machine by how they launch: `ray-query` as a
   [preferred](#hardware-features-at-launch) name, the Apple tile recipe, and a scene that asks for `Traced`.
   The proving ground's valley has one launch selection, off by default, that does all three: it names
@@ -513,9 +594,9 @@ lags in the same way. A darkening still visible after that is a trail, and fails
   each extent they run interleaved, twice each, which is eight runs. The record keeps
   [the two figures](#cost-account) of every frame, each run's medians, each pass by name and the machine's
   load. It states the difference between the methods beside the spread between a method's own two runs, and
-  where the spread is the larger it says the pair shows no difference. Rows for `Traced` with hard edges, for
-  lamp shadows, for ambient occlusion and for every effect together sit beside the pair. It is taken while
-  other builders work, as every timing of this module is. A traced frame about 25% above the map frame in
+  where the spread is the larger it says that these runs could not tell the two methods apart at that
+  extent. Rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect
+  together sit beside the pair. It is taken while other builders work, as every timing of this module is. A traced frame about 25% above the map frame in
   either figure, or a visible hitch, is investigated and the record says what was found. No figure fails an
   item, and none turns anything on.
 
@@ -540,6 +621,15 @@ lags in the same way. A darkening still visible after that is a trail, and fails
   receivers as the raster path does and found no self-hit at 2 float steps or more, at any distance to 20 km
   and any elevation from 0.5°. At 8 steps a panel 2 cm off a wall still blocks at 20 km. At 256 steps a panel
   10 cm off a wall at 10 km does not.
+- **The one passage.** [The third probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/PATCH.md)
+  is a CPU calculation over smooth-shaded one-metre bodies: prisms of twelve and forty-eight sides and a
+  sphere of 80 triangles, 9,500 terminator-band points in all. A plain ray lights 5% of the terminator band on
+  the coarse prism and 13% on the sphere; the passage lights all of it. The body's own far face never lies
+  beyond 0.49 of the reach, so the reach needs no margin. A sheet across the ray shadows the terminator band
+  in every one of six cases on each body: joined into the body's mesh facing the ray, joined facing away, or
+  separate, each beyond the reach and inside it past the far face. With a straight edge 5 m toward the Sun
+  across the disc's centre, the pass's rule blocks half the disc rays, as the edge alone does, where plain
+  rays block 93% to 97% on the two coarse bodies.
 - **Penumbra range.** The Sun's disc is about 0.53° across, so a penumbra is about 0.0093 of the distance to
   the caster: 2 cm at 2 m, which is under a pixel beyond a few metres and stays sharp; 0.9 m under a balloon
   100 m up; 28 m from a ridge 3 km off. A wide penumbra changes slowly across the screen, which is the case
@@ -640,11 +730,12 @@ it for each method, and no sentence drawn from it speaks of the whole frame's GP
   thing in the scene. M1 and M2 record resident bytes.
 - **Each frame, CPU.** One instance write for each entity and placement in the scene.
 - **Each frame, GPU.** The scene structure's rebuild, which M1 records for a still scene, for the
-  representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque
-  pixel that faces the Sun, plus the short receiver query and filtered retry for a nearby hit at the light boundary.
-  Soft Sun: the surface queries, and one more ray for each opaque pixel in the visibility pass.
-  Lamps: one ray for each in-range lamp a pixel faces. Ambient occlusion: one ray for each four pixels. The
-  filter's passes.
+  representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque pixel that
+  faces the Sun, and in a rounded mesh's terminator band the receiver query and the ray that goes on from the
+  far face, two more queries. Soft Sun: the same, and in the visibility pass one ray for each opaque pixel,
+  two more queries where that ray dips below its triangle inside the dive limit, and none at all beyond the
+  limit. M4's record states the limit and the share of pixels on each side of it. Lamps: one ray for each
+  in-range lamp a pixel faces. Ambient occlusion: one ray for each four pixels. The filter's passes.
 - **Saved on `Traced`.** The two cascade passes and the blocker search, while no volume reads the cascades.
 
 If the soft path's inline ray shows as a tripwire, the named candidate is to trace it only against instances
@@ -664,10 +755,15 @@ that moved, through a third mask bit.
    edge: where they all agree with the centre ray, the fragment has left the edge and uses the centre ray.
    The builder may add them in M4, as a quality value, and says so in the evidence. If the edge still cannot
    pass, M4's builder ends `BLOCKED` with the frames.
-4. **A rounded mesh shows its facets where it turns from the Sun.** A ray sees the triangles, not the
-   smoothed normal, so a coarse balloon can show dark facets at its terminator. M3 inspects it. The builder may
-   soften the terminator by eye and says how.
+4. **The terminator band is lit by a rule, not by the triangles.** [The passage](#a-rounded-meshs-own-facets)
+   lights a terminator band the mesh's own triangles shadow, and its two stated limits are a joined sheet
+   inside the gap at an open rim, and a hard edge on a terminator band beyond the dive limit. M3 inspects the
+   terminator band on the valley's rock and balloons, and M4 under another body's soft shadow. If a facet
+   survives on an irregular mesh because its far face lies beyond the reach, the builder may widen the reach
+   by eye and says by how much, because the terminator band's supported separation grows with it.
 5. **Normals rebuilt from depth are wrong at silhouettes.** The filter's edge stops bound it; M5 inspects it.
+   A terminator-band pixel the pass misreads there settles dark, and its fragment shows the centre ray's hard
+   edge.
 6. **Other builders are in the same files.** `SCENE-VIEWS`, `ATMOSPHERE`, `APPLE-PRESENTATION`, `HOST`,
    `REVIEW-RENDER` and `MESH-SHADING` all work in `thrum-render`, `thrum-app` or `thrum-asset-gpu`. This
    module's changes add to those files; a builder integrates on what has landed and rewrites nothing another

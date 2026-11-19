@@ -86,3 +86,12 @@
   from other balloons beyond 600 m. Recaptured the fixed Sun route, four-lamp stop and realtime movers on
   Metal. The lamp fixture excludes its wall from the camera and all three Sun volumes at both poses.
   [Review fix evidence](../../../.orchestrate/evidence/RAY-TRACING/M3/review-fixes.md).
+- 2026-11-19 The design review at `77453aab4883` asked for changes: two Must Fix, one Suggestion. (1) M3's
+  facet correction skipped nearby hits on the receiving instance by facing, which erased a sheet joined into
+  the same mesh. It is now one excused passage: a ray in the terminator band starts inside its triangle, may
+  cross its own instance's far face once within the reach the vertex normals give, and is then an ordinary
+  ray (new M3.13). (2) The visibility pass applies the same rule from what a ray reports, bounded by a dive
+  limit, and a fragment whose passage is refused shows its centre ray (M4.7 rewritten, new M4.11).
+- 2026-11-19 The same review. [A third probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/PATCH.md)
+  checked the rule on three bodies. The Suggestion was taken: an inconclusive pair is reported as runs that
+  could not tell the methods apart (M6.1). M1 and M2 shrank to their headings. The design review is owed.
