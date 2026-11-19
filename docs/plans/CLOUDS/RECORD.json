@@ -244,6 +244,35 @@
         "by": "plan",
         "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shap",
         "at": "2026-11-18T22:24:57Z"
+      },
+      "ready_for_review": {
+        "commit": "8067b526ebb1b51c7f648395bc1256f46c9d2ca6",
+        "checked": "906ba52b6cf0e6165566fd4ad165a728cc5bf41f",
+        "at": "2026-11-19T03:40:08Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 1816474,
+          "cached": 223056768,
+          "output": 291039,
+          "turns": 9
+        },
+        "session_usage": {
+          "input": 1816474,
+          "cached": 223056768,
+          "output": 291039,
+          "turns": 9
+        }
       }
     },
     "M4": {
