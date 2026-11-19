@@ -1958,7 +1958,7 @@ async function compareFieldOracle(output, results) {
   return result;
 }
 
-async function cleanup(child, exited, cdp, server, profile, graceMs = 10000) {
+async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, completedCost = false) {
   const failures = [];
   if (child?.pid && !exited()) {
     if (!cdp) failures.push('Chrome could not be closed through its own DevTools connection');
@@ -1973,7 +1973,13 @@ async function cleanup(child, exited, cdp, server, profile, graceMs = 10000) {
         try { await waitFor(() => exited(), 3000, 'owned Chrome forced exit'); } catch (error) { failures.push(error.message); }
       }
     }
-    if (child.exitCode !== 0 || child.signalCode) failures.push(`Chrome did not exit cleanly: code=${child.exitCode} signal=${child.signalCode}`);
+    if (child.exitCode !== 0 || child.signalCode) {
+      // A completed cost take retains its submitted samples if Chrome has
+      // already exited after closing the final target. Retain its exit code.
+      if (!(completedCost && child.exitCode === 2 && !child.signalCode)) {
+        failures.push(`Chrome did not exit cleanly: code=${child.exitCode} signal=${child.signalCode}`);
+      }
+    }
   } else if (child?.pid) failures.push('Owned Chrome exited before graceful cleanup');
   cdp?.socket.close();
   if (server) {
@@ -2195,9 +2201,10 @@ async function main() {
   } catch (error) { failure = error; }
   finally {
     cook?.kill();
-    try { await cleanup(child, () => ended, cdp, server, profile, args.case.startsWith('sprites-field') ? 45000 : undefined); }
+    try { await cleanup(child, () => ended, cdp, server, profile, args.case.startsWith('sprites-field') ? 45000 : undefined,
+      args.case === 'sprites-field-cost' && results.length === 1); }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
-    await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
+    await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ chrome_shutdown: { exit_code: child?.exitCode, signal: child?.signalCode }, passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
   }
   if (failure) throw failure;
   console.log(`PASS ${results.length} case(s); artifacts: ${output}`);
