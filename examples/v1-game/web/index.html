@@ -60,16 +60,25 @@
         const cooked = probe.has("assets");
         const exit = probe.get("scene") === "exit";
         const sprites = probe.get("scene") === "sprites";
-        if (sprites && (cooked || probe.has("field") || probe.has("meshes") || probe.has("diagnostic-clouds"))) {
-          throw new Error("2D scene refuses 3D content settings");
-        }
-        if (sprites && probe.has("backing")) {
-          const [width, height] = probe.get("backing").split("x").map(Number);
-          if (![width, height].every(side => Number.isInteger(side) && side > 0 && side <= 4096)) {
-            throw new Error("Sprite backing size must be WIDTHxHEIGHT in 1..4096");
+        if (sprites) {
+          for (const [key, feature] of [
+            ["assets", "cooked placements"], ["field", "the flythrough field"],
+            ["meshes", "valley meshes"], ["field-meshes", "field meshes"],
+            ["diagnostic-clouds", "diagnostic clouds"], ["material", "a cooked material hook"],
+          ]) {
+            if (probe.has(key)) throw new Error(`2D scene refuses ${feature} (?${key})`);
           }
-          canvas.width = width;
-          canvas.height = height;
+          if (probe.has("stars") && probe.get("stars") !== "off") {
+            throw new Error("2D scene refuses valley stars (?stars)");
+          }
+          if (probe.has("backing")) {
+            const [width, height] = probe.get("backing").split("x").map(Number);
+            if (![width, height].every(side => Number.isInteger(side) && side > 0 && side <= 4096)) {
+              throw new Error("Sprite backing size must be WIDTHxHEIGHT in 1..4096");
+            }
+            canvas.width = width;
+            canvas.height = height;
+          }
         }
         if (exit && (!cooked || probe.has("field"))) throw new Error("The exit scene requires a cooked store");
         if (exit && probe.has("measure")) {

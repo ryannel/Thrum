@@ -695,16 +695,41 @@ impl FrameHost {
                     "2D scene refuses cooked placements",
                 ));
             }
-            if setup.clouds != crate::CloudSelection::Off
-                || setup.diagnostic_clouds
-                || setup.valley_stars
-                || setup.field_meshes
-                || setup.content != GameContent::Grid
-                || setup.route_overlay != RouteOverlay::Off
-            {
-                return Err(FrameError::InvalidState(
-                    "2D scene refuses 3D content settings",
-                ));
+            match setup.clouds {
+                crate::CloudSelection::Off => {}
+                crate::CloudSelection::Shade => {
+                    return Err(FrameError::InvalidState("2D scene refuses cloud shade"));
+                }
+                crate::CloudSelection::Sky => {
+                    return Err(FrameError::InvalidState("2D scene refuses cloud sky"));
+                }
+            }
+            for (requested, message) in [
+                (
+                    setup.diagnostic_clouds,
+                    "2D scene refuses diagnostic clouds",
+                ),
+                (setup.valley_stars, "2D scene refuses valley stars"),
+                (
+                    setup.field_meshes,
+                    "2D scene refuses field or valley meshes",
+                ),
+                (
+                    setup.content == GameContent::Field,
+                    "2D scene refuses the flythrough field",
+                ),
+                (
+                    setup.content == GameContent::Exit,
+                    "2D scene refuses the exit scene",
+                ),
+                (
+                    setup.route_overlay != RouteOverlay::Off,
+                    "2D scene refuses the route overlay",
+                ),
+            ] {
+                if requested {
+                    return Err(FrameError::InvalidState(message));
+                }
             }
             let world = WorldPort::Inline(Box::new(
                 WorldDriver::new(setup.content, RouteOverlay::Off).map_err(FrameError::World)?,

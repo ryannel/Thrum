@@ -29,9 +29,53 @@ function compareCard(image, sheet, width, height, scale) {
   return null;
 }
 
+async function checkStartupRefusals(cdp, origin, timeout, waitFor) {
+  const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+  try {
+    const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
+    const rows = [];
+    for (const [query, expected] of [
+      ['assets=/cooked', 'cooked placements (?assets)'],
+      ['field', 'the flythrough field (?field)'],
+      ['meshes=on', 'valley meshes (?meshes)'],
+      ['field-meshes', 'field meshes (?field-meshes)'],
+      ['diagnostic-clouds', 'diagnostic clouds (?diagnostic-clouds)'],
+      ['material=/shader.wgsl', 'a cooked material hook (?material)'],
+      ['stars=on', 'valley stars (?stars)'],
+      ['culling=direct', 'camera culling mode direct'],
+      ['culling=frustum', 'camera culling mode frustum'],
+      ['culling=occlusion', 'camera culling mode occlusion'],
+      ['reconstruction=taau', 'reconstructor Taau'],
+      ['reconstruction=reference', 'reconstructor Reference'],
+    ]) {
+      const url = `${origin}/?scene=sprites&${query}`;
+      await cdp.call('Page.navigate', { url }, sessionId);
+      const status = await waitFor(async () => {
+        const result = await cdp.call('Runtime.evaluate', {
+          expression: `location.href === ${JSON.stringify(url)} && document.querySelector("#status")?.textContent`,
+          returnByValue: true,
+        }, sessionId).catch(error => {
+          if (/context.*destroyed|cannot find .*context/i.test(error.message)) return undefined;
+          throw error;
+        });
+        const text = result?.result.value;
+        return typeof text === 'string' && /^(Startup fault:|Running)/.test(text) && text;
+      }, timeout, `sprite launch with ${query}`);
+      if (!status.startsWith('Startup fault:') || !status.includes(`2D scene refuses ${expected}`)) {
+        throw new Error(`Sprite launch with ${query}: ${status}`);
+      }
+      rows.push({ query, status });
+    }
+    return rows;
+  } finally {
+    await cdp.call('Target.closeTarget', { targetId });
+  }
+}
+
 export async function qualifySprites({ cdp, origin, output, mode, timeout, wasm, existingGame,
   destroyActualDevice, waitFor }) {
   const cost = mode === 'sprites-2d-cost';
+  const refusals = cost ? undefined : await checkStartupRefusals(cdp, origin, timeout, waitFor);
   const cases = cost ? [[2, 1920, 1080], [2, 3456, 2234]]
     : [1, 2, 3, 4, 6].map(scale => [scale, 1280, 720]);
   const rows = [];
@@ -136,7 +180,7 @@ export async function qualifySprites({ cdp, origin, output, mode, timeout, wasm,
       await cdp.call('Target.closeTarget', { targetId });
     }
   }
-  const record = { case: mode, target: 'chrome-webgpu', rows };
+  const record = { case: mode, target: 'chrome-webgpu', refusals, rows };
   await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
   return record;
 }

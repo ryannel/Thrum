@@ -116,9 +116,7 @@ impl std::error::Error for CloudQualityError {
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = launch_value("THRUM_SCENE");
     let sprite_scale = if scene.as_deref() == Ok("sprites") {
-        if let Ok(request) = launch_value("THRUM_CULLING") {
-            return Err(format!("2D scene refuses THRUM_CULLING={request}"));
-        }
+        validate_sprite_launch()?;
         Some(match launch_value("THRUM_SPRITE_SCALE") {
             Ok(scale) => scale
                 .parse::<u16>()
@@ -230,6 +228,34 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             || (field_meshes && scene.as_deref() == Ok("valley")))
         .into(),
     })
+}
+
+fn validate_sprite_launch() -> Result<(), String> {
+    if std::env::var_os("THRUM_ASSET_STORE").is_some() {
+        return Err("2D scene refuses cooked placements through THRUM_ASSET_STORE".into());
+    }
+    for (name, enabled) in [
+        ("THRUM_FIELD_MESHES", "on"),
+        ("THRUM_VALLEY_MESHES", "on"),
+        ("THRUM_COOKED_DRAW_DIAGNOSTIC", "1"),
+    ] {
+        if launch_value(name).as_deref() == Ok(enabled) {
+            return Err(format!("2D scene refuses {name}={enabled}"));
+        }
+    }
+    for name in ["THRUM_STARS", "THRUM_ROUTE_OVERLAY"] {
+        if let Ok(request) = launch_value(name)
+            && request != "off"
+        {
+            return Err(format!("2D scene refuses {name}={request}"));
+        }
+    }
+    for name in ["THRUM_CULLING", "THRUM_EFFECT_GRAPH"] {
+        if let Ok(request) = launch_value(name) {
+            return Err(format!("2D scene refuses {name}={request}"));
+        }
+    }
+    Ok(())
 }
 
 /// Activate the selected game content from `THRUM_ASSET_STORE` and `THRUM_SCENE`.
