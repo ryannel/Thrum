@@ -198,6 +198,13 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
       await call('Page.enable');
       await call('Runtime.enable');
       await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+      // Headless macOS can throttle RAF to 30 Hz. Give the ordinary page
+      // elapsed 120 Hz callback opportunities so the 60 Hz simulation
+      // publishes adjacent endpoints and the check can observe sub-tick poses.
+      await call('Page.addScriptToEvaluateOnNewDocument', { source: `
+        window.requestAnimationFrame = callback => window.setTimeout(() => callback(performance.now()), 1000 / 120);
+        window.cancelAnimationFrame = id => window.clearTimeout(id);
+      ` });
       await installWasmReceipt(cdp, sessionId);
       await cdp.call('Target.activateTarget', { targetId });
       await call('Page.navigate', { url });
@@ -230,7 +237,8 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
       await cdp.call('Target.closeTarget', { targetId });
     }
   }
-  const record = { case: mode, target: 'chrome-webgpu', commit, rows };
+  const record = { case: mode, target: 'chrome-webgpu', commit, rows,
+    schedule: 'ordinary page callbacks at elapsed timer opportunities, 120 Hz requested' };
   await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
   return record;
 }
