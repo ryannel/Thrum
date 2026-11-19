@@ -576,7 +576,7 @@ impl<G: Game> Actor<G> {
         frame: &FrameRequest<G::Edits>,
         request: ExtentRequest,
     ) -> Result<(), FrameError> {
-        if self.current_extent == request {
+        if self.current_extent == request && !self.needs_reconfigure {
             return Ok(());
         }
         let candidate = self
@@ -603,6 +603,8 @@ impl<G: Game> Actor<G> {
             assert!(self.host.publish_extent(candidate));
             self.gpu.config = config;
             self.current_extent = request;
+            self.needs_reconfigure = false;
+            self.refused_surface_generation = None;
         }
         Ok(())
     }
