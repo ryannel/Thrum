@@ -137,7 +137,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -148,7 +148,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/memory-steady.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -158,8 +158,8 @@
           "ask": "Does the client size its lead only from the margins the host reports and the handshake's round trip, with no profile passed to it? Is each client's session given time from a clock with its own origin, with no host time or shared time passed to it, and does the client whose clock runs at another rate hold the floor too? Is the pinned run made by the same code with only the lead fixed? Does a client author at most one frame for a tick, with target ticks that only rise? Does the record count the lead's changes in each stretch, and set each client's reported lead beside the true one?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2-review-fix.md",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -170,7 +170,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -181,7 +181,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -191,8 +191,8 @@
           "ask": "Read the test. Is the rule-set mismatch made with a second real rule set, and not a hand-set number? Does the host wait for the refused client to close, up to a timeout, and not close straight after sending?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-review-fix-checks.txt",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -203,7 +203,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -213,8 +213,8 @@
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/memory-costs-review-fix.json",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -223,8 +223,8 @@
           "ask": "Can any public call of the host or client session block or await? Does thrum-network read the wall clock anywhere but the headless host's pacing loop? Does it name a game's component, action or rule? Does thrum-network's own dependency on thrum-transport leave the socket adapters out, and is the new dependency registered in .config/architecture.toml? Is a set written once and sent to every client?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2-review-fix.md",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -234,7 +234,7 @@
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -245,7 +245,7 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -255,58 +255,16 @@
           "ask": "Read the test. Does it read the position at times between advances, as a frame would, and not only when a tick commits? Is the control that must fail the policy of committing every held set at once, run through the same assertions?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M2/mac-review-fix-checks.txt",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SESSION/M2-review.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As steady as Factorio's lockstep multiplayer, where every client runs the same actions in the same tick and the server waits for nobody, and as sparing of latency as GGPO's input exchange, where a lost packet is repaired by the next. Five separate worlds agree at every digest tick through loss, reordering and duplication, a player's input arrives in time on a link that changes under it, and a choice made once happens once everywhere.",
-      "findings": [
-        {
-          "name": "Expired hello renews its own deadline",
-          "item": "M2.6",
-          "repeat": false
-        },
-        {
-          "name": "Loss observer runs while holding the session link mutex",
-          "item": "M2.9",
-          "repeat": false
-        },
-        {
-          "name": "Held counts attributed to player index instead of negotiated slot",
-          "item": "M2.8",
-          "repeat": false
-        },
-        {
-          "name": "Cost command never compares the previous comparable run",
-          "item": "M2.8",
-          "repeat": false
-        },
-        {
-          "name": "Image tripwire times the image writer alone",
-          "item": "M2.8",
-          "repeat": false
-        },
-        {
-          "name": "Stall duration omits the interval ending at recovery",
-          "item": "M2.12",
-          "repeat": false
-        },
-        {
-          "name": "Playout rates cannot be set by the match",
-          "item": "M2.12",
-          "repeat": false
-        },
-        {
-          "name": "Initial authoring tick uses half the specified round trip",
-          "item": "M2.3",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "As steady as Factorio's lockstep multiplayer, where every client runs the same actions in the same tick and the server waits for nobody, and as sparing of latency as GGPO's input exchange, where a lost packet is repaired by the next. Five separate worlds agree at every digest tick through loss, reordering and duplication, a player's input arrives in time on a link that changes under it, and a choice made once happens once everywhere."
     },
     {
       "id": "M3",
