@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "One device recipe: the Mac window, the browser page, the iPhone app, captures and benches ask for their device the same way and answer a GPU fault the same way",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -24,10 +24,10 @@
           "statement": "One function in `thrum-render`'s capabilities owns the device request: adapter choice, features, limits, an optional restriction that can only lower limits and remove features, the fault watch, the SDR surface-format preference and the retrying surface configure. The Mac window, the browser page, the kit capture, the iPhone app and the game's captures and benches call it: `device-request` is at zero in their sources.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-app/src examples/v1-game/src examples/v1-game/benches examples/v1-game-ios/src",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -36,10 +36,10 @@
           "lock": "gpu",
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -50,8 +50,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/HOST/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -62,8 +62,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/HOST/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -72,8 +72,8 @@
           "target": "ios-sim",
           "builder_result": "pass",
           "evidence": "docs/evidence/HOST/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -82,8 +82,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/HOST/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "item": "M1.1",
+          "name": "Valley culling benchmark bypasses the device recipe",
+          "repeat": false
+        },
+        {
+          "item": "M1.2",
+          "name": "Sky kit browser supplies a literal first device generation",
+          "repeat": false
         }
       ]
     },

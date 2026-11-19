@@ -26,7 +26,49 @@
   "milestones": {
     "M1": {
       "definitions": "ee238b9ccd6df3e7d71b0129fcdc2c3a0f580ede4915e87f701d728c030ce74a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "72ca6c9ebb4a2ae12827cbf5d347309841491dd8",
+          "review": "docs/evidence/HOST/M1-review.md",
+          "items": {
+            "M1.1": "fail",
+            "M1.2": "fail",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass"
+          },
+          "findings": [
+            {
+              "item": "M1.1",
+              "name": "Valley culling benchmark bypasses the device recipe",
+              "repeat": false
+            },
+            {
+              "item": "M1.2",
+              "name": "Sky kit browser supplies a literal first device generation",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 152445,
+            "cached": 4619904,
+            "output": 10463,
+            "turns": 1
+          },
+          "at": "2026-11-19T08:49:45Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
