@@ -325,7 +325,65 @@
     },
     "M3": {
       "definitions": "4333b2d00eaa5b98afc3c55068da1a82f06f6b86345d3246fdb53123febf7053",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "f1037a825b3ab3047f7f1faa0da54818f82580ff",
+          "review": ".orchestrate/evidence/SESSION/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "fail",
+            "M3.6": "fail",
+            "M3.7": "fail",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "A refused set batch can publish receipts",
+              "item": "M3.6",
+              "repeat": false
+            },
+            {
+              "name": "Host image storage exceeds the match cap during serialization",
+              "item": "M3.7",
+              "repeat": false
+            },
+            {
+              "name": "Staged input overrides held-control expiry",
+              "item": "M3.5",
+              "repeat": false
+            },
+            {
+              "name": "Every-byte cuts stop at the envelope decoder",
+              "item": "M3.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 118899,
+            "cached": 1685504,
+            "output": 7743,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:18:16Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
