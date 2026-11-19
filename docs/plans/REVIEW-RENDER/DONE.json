@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
