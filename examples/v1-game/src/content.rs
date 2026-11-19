@@ -238,6 +238,7 @@ fn validate_sprite_launch() -> Result<(), String> {
         ("THRUM_FIELD_MESHES", "on"),
         ("THRUM_VALLEY_MESHES", "on"),
         ("THRUM_COOKED_DRAW_DIAGNOSTIC", "1"),
+        ("THRUM_SUN_SHADOW_METHOD", "maps"),
     ] {
         if launch_value(name).as_deref() == Ok(enabled) {
             return Err(format!("2D scene refuses {name}={enabled}"));
