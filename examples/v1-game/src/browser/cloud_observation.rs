@@ -224,10 +224,15 @@ async fn ground_error(
         });
         let actual = depth(texel, 0);
         let error = (actual - expected).abs();
-        // Ground stores the interpolated optical depth back in binary16.
+        // Storage backends can round the interpolant to either adjacent binary16
+        // value. Allow one output ULP plus the f32 interpolation's roundoff.
+        let rounded = f16::from_f64(expected);
+        let step = f16::from_bits(rounded.to_bits() + 1).to_f64() - rounded.to_f64();
+        let bound = expected * (2.0 * f64::from(f32::EPSILON)) + step;
         if !error.is_finite()
             || actual < 0.0
-            || error > expected.abs().mul_add(0.000_6, 6e-8)
+            || (expected == 0.0 && actual != 0.0)
+            || error > bound
             || texel[2..] != [0; 6]
         {
             return Err(format!(
