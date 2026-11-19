@@ -16,24 +16,30 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub(super) fn attach_sprite_contribution(
         &mut self,
         contribution: &mut dyn SceneContribution,
-    ) -> Result<(), String> {
+    ) -> Result<(), FrameError> {
         let PreparedRenderer::TwoD(prepared) = &mut self.prepared else {
             unreachable!()
         };
-        check_stages(contribution)?;
+        check_stages(contribution).map_err(FrameError::Scene)?;
         let graph = contribution.effect_graph();
         if !graph.after_opaque.is_empty() {
-            return Err("2D scene refuses contribution after-opaque stage".into());
+            return Err(FrameError::InvalidState(
+                "2D scene refuses contribution after-opaque stage",
+            ));
         }
-        graph.validate()?;
-        contribution.rebuild_2d(&SpriteContributionSurface {
-            capabilities: &prepared.capabilities,
-            queue: &self.queue,
-        })?;
-        check_stages(contribution)?;
+        graph.validate().map_err(FrameError::Scene)?;
+        contribution
+            .rebuild_2d(&SpriteContributionSurface {
+                capabilities: &prepared.capabilities,
+                queue: &self.queue,
+            })
+            .map_err(FrameError::Scene)?;
+        check_stages(contribution).map_err(FrameError::Scene)?;
         let graph = contribution.effect_graph();
         if !graph.after_opaque.is_empty() {
-            return Err("2D scene refuses contribution after-opaque stage".into());
+            return Err(FrameError::InvalidState(
+                "2D scene refuses contribution after-opaque stage",
+            ));
         }
         let previous = (
             std::mem::replace(&mut prepared.effects, graph),
@@ -62,7 +68,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     unreachable!()
                 };
                 (prepared.effects, prepared.contribution_passes) = previous;
-                Err(error.to_string())
+                Err(error)
             }
         }
     }

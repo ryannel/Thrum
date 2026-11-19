@@ -1,10 +1,47 @@
 use super::*;
 use crate::{
     present::{PresentError, SurfacePresenter},
-    runtime::{SurfaceFault, SurfaceOutput},
+    runtime::{FrameTarget, SpriteSceneRequests, SurfaceFault, SurfaceOutput},
+    sprite::{EmbeddedSheet, SpriteRect, SpriteScene},
     synthetic::RenderError,
     timing::{GpuTimings, TimingError},
 };
+
+async fn sprite_host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> Host {
+    let source = SourceTick {
+        epoch: 5,
+        tick: 0,
+        timeline: 3,
+    };
+    FrameHost::new_2d(
+        capabilities,
+        queue,
+        FrameConfig {
+            render_extent: surface().extent,
+            surface: Some(surface()),
+        },
+        StaticWorld {
+            authority: source,
+            publication: source,
+        },
+        Policy::default(),
+        SpriteScene {
+            sheet: EmbeddedSheet {
+                extent: [1, 1],
+                rgba: Arc::from([255; 4]),
+                frames: Arc::from([SpriteRect {
+                    origin: [0; 2],
+                    size: [1; 2],
+                }]),
+                texels_per_unit: 1.0,
+            },
+            row_capacity: 1,
+        },
+        SpriteSceneRequests::default(),
+    )
+    .await
+    .expect("sprite host")
+}
 
 #[test]
 fn surface_encode_faults_reach_both_routes_and_completed_samples() {
@@ -28,27 +65,34 @@ fn surface_encode_faults_reach_both_routes_and_completed_samples() {
             view_formats: &[],
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        for late in [false, true] {
+        for (sprites, late) in [(false, false), (false, true), (true, false), (true, true)] {
             for fault in [
                 SurfaceFault::StaleBinding,
                 SurfaceFault::ExtentMismatch,
                 SurfaceFault::Timing(TimingError::Capacity),
             ] {
-                let mut host = host(&capabilities, &queue, Policy::default()).await;
+                let mut host = if sprites {
+                    sprite_host(&capabilities, &queue).await
+                } else {
+                    host(&capabilities, &queue, Policy::default()).await
+                };
                 let extent = match fault {
                     SurfaceFault::StaleBinding => {
                         let old_presenter =
                             SurfacePresenter::prepare(&capabilities, profile.extent, profile)
                                 .await
                                 .unwrap();
-                        host.slots[0].presentation = Some(
-                            old_presenter
-                                .bind_target(
-                                    device,
-                                    host.slots[0].target.three_d().expect("3D target"),
-                                )
-                                .unwrap(),
-                        );
+                        let binding = match &host.slots[0].target {
+                            FrameTarget::TwoD(target) => old_presenter.bind_output(
+                                device,
+                                capabilities.generation(),
+                                target.output(),
+                            ),
+                            FrameTarget::ThreeD(target) => {
+                                old_presenter.bind_target(device, target)
+                            }
+                        };
+                        host.slots[0].presentation = Some(binding.expect("retired binding"));
                         profile.extent
                     }
                     SurfaceFault::ExtentMismatch => [profile.extent[0] / 2, profile.extent[1]],

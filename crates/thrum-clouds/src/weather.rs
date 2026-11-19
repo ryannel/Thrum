@@ -115,19 +115,20 @@ impl WeatherMap {
         profile: WeatherProfile,
     ) -> Result<Self, Error> {
         thrum_cloud_model::Field::new(seed, model, types.clone()).map_err(Error::Model)?;
-        let limits = device.limits();
         if profile.size == 0
-            || profile.size > limits.max_texture_dimension_2d
             || profile.texels.is_empty()
-            || profile.texels.len() > limits.max_texture_array_layers as usize
             || profile.texels.iter().any(|x| !x.is_finite() || *x <= 0.0)
             || !profile.maximum_age.is_finite()
             || profile.maximum_age <= 0.0
+        {
+            return Err(Error::Unsupported("weather map dimensions or cadence"));
+        }
+        let limits = device.limits();
+        if profile.size > limits.max_texture_dimension_2d
+            || profile.texels.len() > limits.max_texture_array_layers as usize
             || limits.max_storage_textures_per_shader_stage < 3
         {
-            return Err(Error::Unsupported(
-                "weather map dimensions, cadence or storage-texture limit",
-            ));
+            return Err(Error::DeviceLimit("weather map texture limits"));
         }
         let layers = u32::try_from(profile.texels.len())
             .map_err(|_| Error::Unsupported("weather levels"))?;

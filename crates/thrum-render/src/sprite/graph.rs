@@ -152,7 +152,7 @@ impl PreparedSprites {
             .transpose()?;
         let graph = target.graph(readback.is_some());
         if let Some(timings) = timings.as_deref_mut() {
-            let count = u32::try_from(graph.plan().pipeline_pass_count())
+            let count = u32::try_from(graph.plan().pipeline_pass_count_before_acquire())
                 .map_err(|_| RenderError::GraphPassMismatch)?;
             timings.check_passes(target.generation, count)?;
         }

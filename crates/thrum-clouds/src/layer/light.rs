@@ -32,7 +32,7 @@ impl Lighting {
             * u64::from(ENTRIES)
             * 4;
         if bytes > surface.limits.max_storage_buffer_binding_size {
-            return Err(Error::Unsupported("phase table storage limit"));
+            return Err(Error::DeviceLimit("phase table storage limit"));
         }
         let phase = surface.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cloud droplet phase tables"),

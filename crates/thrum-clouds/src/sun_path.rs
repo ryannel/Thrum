@@ -589,17 +589,14 @@ fn validate_profile(
     weather: &WeatherMap,
     profile: &SunProfile,
 ) -> Result<(), Error> {
-    let limits = device.limits();
     if profile.size == 0
         || profile.ground_size < 4
         || !profile.ground_size.is_multiple_of(2)
-        || profile.size.max(profile.ground_size) > limits.max_texture_dimension_2d
         || profile.levels.iter().any(|l| {
             !l.texel.is_finite()
                 || l.texel <= 0.0
                 || l.slices < 8
                 || l.slices % 4 != 0
-                || l.slices / 4 > limits.max_texture_array_layers
                 || !l.maximum_age.is_finite()
                 || l.maximum_age <= 0.0
         })
@@ -615,6 +612,15 @@ fn validate_profile(
         return Err(Error::Unsupported(
             "Sun path dimensions, cadence, border or weather levels",
         ));
+    }
+    let limits = device.limits();
+    if profile.size.max(profile.ground_size) > limits.max_texture_dimension_2d
+        || profile
+            .levels
+            .iter()
+            .any(|level| level.slices / 4 > limits.max_texture_array_layers)
+    {
+        return Err(Error::DeviceLimit("Sun path texture limits"));
     }
     Ok(())
 }

@@ -18,6 +18,22 @@ struct Policy {
 }
 
 impl SceneSource<SourceTick> for Policy {
+    fn sprites(
+        &self,
+        _: SourceTick,
+        _: f32,
+        _: [u32; 2],
+    ) -> Result<crate::sprite::SpriteFrame<'_>, String> {
+        const ROWS: [crate::sprite::SpriteRow; 1] = [crate::sprite::SpriteRow::new(0, [0.0; 2])];
+        Ok(crate::sprite::SpriteFrame {
+            view: crate::sprite::SpriteView {
+                centre: [0.0; 2],
+                pixels_per_unit: 1.0,
+            },
+            rows: &ROWS,
+        })
+    }
+
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
         if self.empty {
             into.extract(*page, [0.0; 3], |_| {})

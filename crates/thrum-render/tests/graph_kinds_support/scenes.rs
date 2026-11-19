@@ -4,6 +4,7 @@ use thrum_render::atmosphere::AtmosphereFrame;
 use thrum_render::synthetic::{
     CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene, SyntheticView,
 };
+use thrum_test_support::BeforeLightSplit;
 
 pub(crate) fn prove_scenes() {
     let (device, queue, caps) = device(11);
@@ -65,18 +66,25 @@ pub(crate) fn prove_scenes() {
                     graph.transient_slots
                 )
                 .expect("snapshot string");
-                for life in &graph.lifetimes {
+                let light = BeforeLightSplit::new(&graph);
+                let mut resources = String::new();
+                for life in light.lifetimes(&graph) {
                     writeln!(
-                        records,
+                        resources,
                         "life={:?}:{}..{}:{:?}",
                         life.resource, life.first, life.last, life.transient_slot
                     )
                     .expect("snapshot string");
                 }
                 for storage in &graph.attachment_storage {
-                    writeln!(records, "storage={:?}:{}", storage.resource, storage.reason)
-                        .expect("snapshot string");
+                    writeln!(
+                        resources,
+                        "storage={:?}:{}",
+                        storage.resource, storage.reason
+                    )
+                    .expect("snapshot string");
                 }
+                records.push_str(&light.resource_indices(&resources));
             }
         }
     }

@@ -13,7 +13,7 @@ use std::{
 #[cfg(target_arch = "wasm32")]
 pub(crate) use web_time::Instant;
 
-use crate::contribution::{ContributionPasses, SceneContribution};
+use crate::contribution::{ContributionPasses, SceneContribution, SecondaryViewError};
 use crate::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
@@ -653,14 +653,31 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// fault. The current attachment is retained.
     pub fn set_scene_contribution(
         &mut self,
-        mut contribution: Box<dyn SceneContribution>,
+        contribution: Box<dyn SceneContribution>,
     ) -> Result<(), String> {
+        self.attach_scene_contribution(contribution)
+            .map_err(|error| match error {
+                FrameError::Scene(message) | FrameError::Gpu(message) => message,
+                other => other.to_string(),
+            })
+    }
+
+    /// Attach a contribution with classified preparation failures.
+    /// # Errors
+    /// Refuses an in-flight scene, a contribution that cannot draw, or a graph preparation
+    /// fault. The current attachment is retained.
+    pub fn attach_scene_contribution(
+        &mut self,
+        mut contribution: Box<dyn SceneContribution>,
+    ) -> Result<(), FrameError> {
         if self
             .slots
             .iter()
             .any(|slot| !matches!(slot.state, SlotState::Free))
         {
-            return Err("attach a scene contribution with no frames in flight".to_owned());
+            return Err(FrameError::InvalidState(
+                "attach a scene contribution with no frames in flight",
+            ));
         }
         let _region = self
             .creations
@@ -680,9 +697,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             &self.scene.local_lights,
         ) {
             self.prepared.restore_secondary(previous_views);
-            return Err(error.to_string());
+            let message = error.to_string();
+            return Err(match error {
+                SecondaryViewError::RecordLimit
+                | SecondaryViewError::LightingLimit
+                | SecondaryViewError::ShaderLimit => FrameError::Gpu(message),
+                _ => FrameError::Scene(message),
+            });
         }
-        if let Err(error) = contribution.rebuild(
+        if let Err(error) = contribution.rebuild_for_attachment(
             &self
                 .prepared
                 .scene_surface_with_views(&self.queue, contribution.secondary_views_enabled()),
@@ -695,14 +718,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let graph = contribution.effect_graph();
         if let Err(error) = graph.validate() {
             self.prepared.restore_secondary(previous_views);
-            return Err(error);
+            return Err(FrameError::Scene(error));
         }
         let previous_graph = self.prepared.effect_graph().clone();
         self.prepared.set_effect_graph(graph);
         if let Err(error) = self.declare_contribution_passes(passes) {
             self.prepared.set_effect_graph(previous_graph);
             self.prepared.restore_secondary(previous_views);
-            return Err(format!("contribution passes: {error}"));
+            return Err(FrameError::Gpu(format!("contribution passes: {error}")));
         }
         self.contribution = Some(contribution);
         self.contribution_error = None;
@@ -721,7 +744,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             if let Some(mut contribution) = self.contribution.take() {
                 match self.attach_sprite_contribution(contribution.as_mut()) {
                     Ok(()) => self.contribution = Some(contribution),
-                    Err(error) => self.contribution_error = Some(error),
+                    Err(error) => {
+                        self.contribution_error = Some(match error {
+                            FrameError::Scene(message) => message,
+                            other => other.to_string(),
+                        });
+                    }
                 }
             }
             return;

@@ -470,6 +470,18 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     /// detaches it and leaves the scene unchanged.
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String>;
 
+    /// Prepare resources during explicit host attachment, retaining a classified failure
+    /// when the contribution can distinguish scene input from GPU preparation.
+    /// # Errors
+    /// Refuses a contribution that cannot draw into the current scene.
+    fn rebuild_for_attachment(
+        &mut self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<(), crate::runtime::FrameError> {
+        self.rebuild(surface)
+            .map_err(crate::runtime::FrameError::Scene)
+    }
+
     /// Record tentative bounded copies in the `contribution upload` pass.
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame);
 

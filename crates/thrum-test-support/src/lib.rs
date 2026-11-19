@@ -3,6 +3,11 @@ use std::io::Write as _;
 #[cfg(feature = "render")]
 use thrum_render::capabilities::{DeviceCapabilities, HardwareLaunchError, HardwareRequest};
 
+#[cfg(feature = "render")]
+mod light_graph;
+#[cfg(feature = "render")]
+pub use light_graph::BeforeLightSplit;
+
 /// Gate result retaining the instance and admitted adapter.
 pub struct Gpu {
     /// Instance owning the selected backend.

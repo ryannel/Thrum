@@ -4,6 +4,21 @@ use super::{
 };
 use crate::noise::{DETAIL_SIZE, Noise};
 
+fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
+    if profile.extent.contains(&0)
+        || !profile.step.is_finite()
+        || profile.step <= 0.0
+        || profile.light_samples > 3
+        || ![1, 2, 4].contains(&profile.refresh_stride)
+    {
+        return Err(Error::Unsupported("cloud layer extent or march controls"));
+    }
+    if profile.extent.into_iter().any(|side| side > max_extent) {
+        return Err(Error::DeviceLimit("cloud layer texture extent"));
+    }
+    Ok(())
+}
+
 impl Layer {
     pub(crate) fn new(
         surface: &SceneSurface<'_>,
@@ -11,18 +26,7 @@ impl Layer {
         sun: &crate::SunPath,
         profile: SkyProfile,
     ) -> Result<Self, Error> {
-        if profile.extent.contains(&0)
-            || profile
-                .extent
-                .iter()
-                .any(|&v| v > surface.limits.max_texture_dimension_2d)
-            || !profile.step.is_finite()
-            || profile.step <= 0.0
-            || profile.light_samples > 3
-            || ![1, 2, 4].contains(&profile.refresh_stride)
-        {
-            return Err(Error::Unsupported("cloud layer extent or march controls"));
-        }
+        validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
         let detail_noise = Noise::new(device, DETAIL_SIZE, "cloud detail noise");
         let environment = surface.environment_products().ok_or(Error::Unsupported(

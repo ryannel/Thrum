@@ -3,6 +3,7 @@
 pub mod support;
 
 use std::time::{Duration, Instant};
+use thrum_render::runtime::FrameError;
 use v1_game::{CloudSelection, FrameConfig, FrameHost, FrameSample, GameSetup};
 
 fn completed(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
@@ -15,6 +16,43 @@ fn completed(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
         device
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("Metal completion");
+    }
+}
+
+#[test]
+fn cloud_attachment_reports_the_device_limit_as_a_gpu_error() {
+    use thrum_test_support::{Profile, Restriction};
+
+    let Some(gpu) = thrum_test_support::gpu("cloud GPU limits", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let (device, queue, caps) = gpu
+        .device_with_hardware_adjusted(Profile::Portable, &Restriction::default(), 1, &[], |desc| {
+            desc.required_limits.max_storage_textures_per_shader_stage = 2;
+        })
+        .expect("restricted Metal device");
+    let config = FrameConfig {
+        render_extent: [160, 90],
+        surface: None,
+    };
+    let prepare = |clouds| {
+        pollster::block_on(FrameHost::new_with_rows(
+            &device,
+            &queue,
+            &caps,
+            config,
+            GameSetup {
+                clouds,
+                ..GameSetup::default()
+            },
+            None,
+        ))
+    };
+    assert!(prepare(CloudSelection::Off).is_ok());
+    match prepare(CloudSelection::Shade) {
+        Err(FrameError::Gpu(reason)) => assert!(reason.contains("weather map texture limits")),
+        Err(other) => panic!("expected a GPU device limit, got {other:?}"),
+        Ok(_) => panic!("Shade prepared without enough storage textures"),
     }
 }
 

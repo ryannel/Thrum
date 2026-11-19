@@ -811,9 +811,7 @@ impl FrameHost {
             visual_product: None,
         };
         if let Some(shade) = shade {
-            host.inner
-                .set_scene_contribution(Box::new(shade))
-                .map_err(FrameError::Scene)?;
+            host.inner.attach_scene_contribution(Box::new(shade))?;
         }
         Ok(host)
     }

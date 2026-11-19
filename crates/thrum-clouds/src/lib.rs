@@ -17,8 +17,10 @@ pub enum Error {
     InputUnavailable,
     /// Invalid CPU weather data.
     Model(thrum_cloud_model::Error),
-    /// A dimension, precision range or device limit is unsupported.
+    /// An authored dimension or precision range is unsupported.
     Unsupported(&'static str),
+    /// The prepared device has insufficient capacity for a cloud product.
+    DeviceLimit(&'static str),
 }
 
 impl std::fmt::Display for Error {
@@ -26,7 +28,9 @@ impl std::fmt::Display for Error {
         match self {
             Self::InputUnavailable => f.write_str("cloud presentation mailbox is unavailable"),
             Self::Model(error) => write!(f, "cloud model: {error}"),
-            Self::Unsupported(reason) => write!(f, "cloud GPU product: {reason}"),
+            Self::Unsupported(reason) | Self::DeviceLimit(reason) => {
+                write!(f, "cloud GPU product: {reason}")
+            }
         }
     }
 }
@@ -35,7 +39,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Model(error) => Some(error),
-            Self::Unsupported(_) | Self::InputUnavailable => None,
+            Self::Unsupported(_) | Self::DeviceLimit(_) | Self::InputUnavailable => None,
         }
     }
 }

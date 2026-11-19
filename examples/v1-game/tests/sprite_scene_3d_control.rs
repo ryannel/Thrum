@@ -208,7 +208,6 @@ fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                 graph.transient_slots
             )
             .expect("write snapshot");
-            writeln!(records, "storage={:?}", graph.attachment_storage).expect("write snapshot");
             let slots: Vec<_> = graph
                 .lifetimes
                 .iter()
@@ -216,7 +215,11 @@ fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                     Some((life.transient_slot?, &life.resource, life.first, life.last))
                 })
                 .collect();
-            writeln!(records, "transients={slots:?}").expect("write snapshot");
+            let light = thrum_test_support::BeforeLightSplit::new(&graph);
+            records.push_str(&light.resource_indices(&format!(
+                "storage={:?}\ntransients={slots:?}\n",
+                graph.attachment_storage
+            )));
         }
     }
     records

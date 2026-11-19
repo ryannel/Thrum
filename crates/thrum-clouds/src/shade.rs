@@ -7,11 +7,20 @@ use thrum_render::{
         ContributionFrame, ContributionPasses, EffectGraph, QualityError, QualityInvalidation,
         QualityKnob, QualitySettings, SceneContribution, SceneSurface,
     },
+    runtime::FrameError,
 };
 
 mod graph;
 #[cfg(test)]
 mod tests;
+
+fn frame_prepare_error(error: &Error) -> FrameError {
+    match error {
+        Error::DeviceLimit(_) => FrameError::Gpu(error.to_string()),
+        Error::Model(_) | Error::Unsupported(_) => FrameError::Scene(error.to_string()),
+        Error::InputUnavailable => FrameError::InvalidState("cloud mailbox unavailable"),
+    }
+}
 
 /// Immutable configuration for the Weather and Shade capabilities alone.
 #[derive(Clone, Debug)]
@@ -194,9 +203,16 @@ impl SceneContribution for Shade {
         }
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        let target = surface
-            .sun_path_target()
-            .ok_or("cloud Shade requires the scene's GPU Sun-path target")?;
+        self.rebuild_for_attachment(surface)
+            .map_err(|error| match error {
+                FrameError::Scene(message) | FrameError::Gpu(message) => message,
+                other => other.to_string(),
+            })
+    }
+    fn rebuild_for_attachment(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+        let target = surface.sun_path_target().ok_or(FrameError::InvalidState(
+            "cloud Shade requires the scene's GPU Sun-path target",
+        ))?;
         if let Some(gpu) = &self.gpu
             && self.generation == surface.generation
             && gpu.sun.ground() == &target.0
@@ -214,7 +230,7 @@ impl SceneContribution for Shade {
                     self.config.types.clone(),
                     self.config.weather.clone(),
                 )
-                .map_err(|e| e.to_string())?,
+                .map_err(|error| frame_prepare_error(&error))?,
             }
         } else {
             WeatherMap::new(
@@ -224,7 +240,7 @@ impl SceneContribution for Shade {
                 self.config.types.clone(),
                 self.config.weather.clone(),
             )
-            .map_err(|e| e.to_string())?
+            .map_err(|error| frame_prepare_error(&error))?
         };
         weather.rebuild(surface.generation, 1);
         let mut sun = SunPath::new(
@@ -233,14 +249,14 @@ impl SceneContribution for Shade {
             self.config.sun.clone(),
             Some(target),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|error| frame_prepare_error(&error))?;
         sun.rebuild(surface.generation, 1);
         sun.prepare_noise(surface.queue);
         let sky = self
             .sky
             .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
             .transpose()
-            .map_err(|e| e.to_string())?;
+            .map_err(|error| frame_prepare_error(&error))?;
         let mut resources: Vec<_> = weather
             .textures()
             .iter()
@@ -274,12 +290,12 @@ impl SceneContribution for Shade {
         self.input
             .0
             .lock()
-            .map_err(|_| "cloud mailbox unavailable")?
+            .map_err(|_| frame_prepare_error(&Error::InputUnavailable))?
             .resources = resources;
         self.input
             .0
             .lock()
-            .map_err(|_| "cloud mailbox unavailable")?
+            .map_err(|_| frame_prepare_error(&Error::InputUnavailable))?
             .ground = Some((sun.ground().clone(), sun.mapping().clone()));
         self.generation = surface.generation;
         self.gpu = Some(Box::new(Prepared {
