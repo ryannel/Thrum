@@ -194,8 +194,12 @@ def compare_costs(packet, output):
     sources = [(path.resolve(), json.loads(path.read_text()))
                for path in dict.fromkeys([output, *candidates]) if path.is_file()]
     sources.sort(key=lambda source: source[1]["utc"], reverse=True)
-    identity = ("target", "build", "machine", "one_way_ms_jitter_ms_loss_ppm", "duplicate_datagrams")
-    workload = ("profile", "seed", "ticks", "bodies", "repeats", "rule_set")
+    identity = ("scenario", "target", "build", "machine",
+                "one_way_ms_jitter_ms_loss_ppm", "duplicate_datagrams")
+    # The cost scenario always runs the reference crowd. Its wire rule identity
+    # includes the toolchain and workspace inputs, which may change between
+    # builds of this same workload. Keep both identities for diagnosis.
+    workload = ("profile", "seed", "ticks", "bodies", "repeats")
     for record in packet["runs"]:
         current = cost_rows(record)
         for path, previous in sources:
@@ -210,6 +214,7 @@ def compare_costs(packet, output):
             record["relative_regression_comparison"] = {
                 "record": str(path.relative_to(conformance.ROOT) if path.is_relative_to(conformance.ROOT) else path),
                 "commit": previous["commit"], "compared_rows": len(shared),
+                "previous_rule_set": baseline["rule_set"], "current_rule_set": record["rule_set"],
                 "previous_load_before": baseline["system_load_before"],
                 "previous_load_after": baseline["system_load_after"],
             }
