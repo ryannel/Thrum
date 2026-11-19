@@ -309,15 +309,19 @@ impl<G: Game> Actor<G> {
             self.needs_reconfigure = true;
         }
         let extent = [self.gpu.config.width, self.gpu.config.height];
+        let requested = if std::env::var_os("THRUM_MAC_HOLD_EXTENT_PROBE").is_some() {
+            extent
+        } else {
+            request.extent
+        };
         let mut ready = current
             && !request.extent.contains(&0)
             && self.refused_surface_generation != Some(request.surface_generation)
-            && (request.extent == extent && !self.needs_reconfigure
-                || self.host.pending_frames() == 0);
-        if ready && (request.extent != extent || self.needs_reconfigure) {
+            && (requested == extent && !self.needs_reconfigure || self.host.pending_frames() == 0);
+        if ready && (requested != extent || self.needs_reconfigure) {
             let mut config = self.gpu.config.clone();
-            config.width = request.extent[0];
-            config.height = request.extent[1];
+            config.width = requested[0];
+            config.height = requested[1];
             let result = configure_surface(&self.recipe.surface, &self.gpu.device, &config);
             ensure_device(&self.gpu.watch)?;
             if let Err(error) = result {
@@ -329,7 +333,7 @@ impl<G: Game> Actor<G> {
                 if let Some(observer) = &mut self.observer {
                     observer.replace(&mut self.host)?;
                 }
-                self.host.resize_surface(request.extent)?;
+                self.host.resize_surface(requested)?;
                 self.gpu.config = config;
                 self.needs_reconfigure = false;
                 self.refused_surface_generation = None;
@@ -399,7 +403,7 @@ impl<G: Game> Actor<G> {
         let view = frame.texture.create_view(&TextureViewDescriptor::default());
         let output = SurfaceOutput {
             view: &view,
-            extent: request.extent,
+            extent: [self.gpu.config.width, self.gpu.config.height],
         };
         let report = encoded.submit(Some(&output))?;
         ensure_device(&self.gpu.watch)?;

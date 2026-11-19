@@ -575,6 +575,12 @@ def rotate(name: str, test: str, base: dict[str, str], landscape: bool, retain_m
     check(num(s, "max_resize_gap_replies") <= MAX_RESIZE_GAP_REPLIES,
           f"{name} took more than {MAX_RESIZE_GAP_REPLIES} replies to present at the new extent", s)
     check(s.get("device_generation") == b.get("device_generation"), f"{name} rebuilt the device", s)
+    first_epoch, first_drawable, replies = s["resize_first_present"].split(",")
+    check(int(first_epoch) == num(s, "epoch") == num(s, "resize_epoch")
+          and first_drawable == s["presented_extent"] and 1 <= int(replies) <= MAX_RESIZE_GAP_REPLIES,
+          f"{name} first present did not use the new surface epoch and extent within the reply bound", s)
+    check(num(s, "unconfigured_acquires") == num(b, "unconfigured_acquires"),
+          f"{name} acquired before configuring the new epoch and extent", s)
     extent_proof(s)
     if b.get("cooked_qualification_held") == "true":
         check(num(s, "world_tick") == num(b, "world_tick"), f"held qualification world advanced across {name}", s)
@@ -588,6 +594,8 @@ def rotate(name: str, test: str, base: dict[str, str], landscape: bool, retain_m
         f"{num(s, 'stale_dropped') - num(b, 'stale_dropped')} (extent {num(s, 'extent_drops') - num(b, 'extent_drops')}), "
         f"raced {raced}, old-extent presents {old_extent}; ticks {b['world_tick']} -> {s['world_tick']}; "
         f"committed actor moved {distance(p0, p1):.6f} m")
+    log(f"{name}: first present {first_drawable} on epoch {first_epoch} after {replies} replies; "
+        f"unconfigured acquisitions {num(s, 'unconfigured_acquires') - num(b, 'unconfigured_acquires')}")
     return s
 
 
@@ -769,6 +777,11 @@ def main() -> None:
         s = rotate("extent-landscape", "testLandscape", s, landscape=True, retain_motion=False)
         rotate("extent-return-portrait", "testPortrait", s, landscape=False, retain_motion=False)
         log("iPhone 18 Pro portrait, landscape and return extent passed (simulator function)")
+        return
+    if rows == "transition":
+        s = rotate("transition-landscape", "testLandscape", s, landscape=True)
+        rotate("transition-portrait", "testPortrait", s, landscape=False)
+        log("iPhone 18 Pro orientation transitions passed (simulator function)")
         return
     if rows in ("rotation", "device"):
         # Development only: the named route runs every row.

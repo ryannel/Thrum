@@ -3,8 +3,10 @@ set -euo pipefail
 cd -- "$(dirname -- "$0")/../../.."
 if [[ "${1:-}" == "--extent" && "$#" -eq 1 ]]; then
     export THRUM_V1_ROWS=extent
+elif [[ "${1:-}" == "--transition" && "$#" -eq 1 ]]; then
+    export THRUM_V1_ROWS=transition
 elif [[ "$#" -ne 0 ]]; then
-    echo "usage: $0 [--extent]" >&2
+    echo "usage: $0 [--extent|--transition]" >&2
     exit 2
 fi
 

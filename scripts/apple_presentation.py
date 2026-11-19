@@ -93,9 +93,30 @@ def ios_extent(output):
                 simulator_build=json.loads((route / "identity.json").read_text()))
 
 
+def ios_transition(output):
+    route = output / "rotation"
+    build = ROOT / "examples/v1-game-ios/ios/check-simulator.sh"
+    run(str(build), "--transition", env=dict(os.environ, THRUM_V1_ROUTE_OUT=str(route)), timeout=1500)
+    rows = []
+    for name in ("transition-landscape", "transition-portrait"):
+        state = dict(line.split("=", 1) for line in (route / f"{name}.txt").read_text().splitlines()
+                     if "=" in line)
+        epoch, drawable, replies = state["resize_first_present"].split(",")
+        rows.append(dict(orientation=name.removeprefix("transition-"), epoch=int(epoch),
+                         drawable=[int(side) for side in drawable.split("x")], replies=int(replies),
+                         pid=int(state["pid"]), installs=int(state["installs"]),
+                         replacements=int(state["replacements"]),
+                         device_generation=int(state["device_generation"]),
+                         unconfigured_acquires=int(state["unconfigured_acquires"]),
+                         resize_raced_presents=int(state["resize_raced_presents"]),
+                         old_extent_presents=int(state["old_extent_presents"])))
+    return dict(target="ios-sim", scope="simulator function only", rotations=rows,
+                simulator_build=json.loads((route / "identity.json").read_text()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent"])
+    parser.add_argument("check", choices=["extent", "transition"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -106,10 +127,16 @@ def main():
     else:
         output = args.output.resolve()
         output.mkdir(parents=True)
-    report = (mac_extent if args.target == "mac-metal" else ios_extent)(output)
+    checks = {("extent", "mac-metal"): mac_extent, ("extent", "ios-sim"): ios_extent,
+              ("transition", "ios-sim"): ios_transition}
+    check = checks.get((args.check, args.target))
+    if check is None:
+        parser.error(f"{args.check} is unavailable on {args.target}")
+    report = check(output)
     report["commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    (output / "extent.json").write_text(json.dumps(report, indent=2) + "\n")
-    print(f"{args.target} extent passed: {output / 'extent.json'}")
+    report_path = output / f"{args.check}.json"
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
+    print(f"{args.target} {args.check} passed in {report_path}")
 
 
 if __name__ == "__main__":
