@@ -70,8 +70,9 @@ def path_distance(x, z, keys):
 
 
 def lookout_distance(x, z):
-    # The flat top in the valley author's shelf definition ends at these edges.
-    return math.hypot(max(abs(x) - 55, 0), max(-45 - z, z - 60, 0))
+    west, east = generate.LOOKOUT_X_EDGES
+    north, south = generate.LOOKOUT_Z_EDGES
+    return math.hypot(max(west - x, x - east, 0), max(north - z, z - south, 0))
 
 
 def clear_still_position(x, z, scale, keys):
