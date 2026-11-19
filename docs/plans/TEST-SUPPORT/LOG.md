@@ -1,5 +1,12 @@
 # TEST-SUPPORT log
 
+- 2026-11-20 Routed workspace GPU tests and benches through the gate and HOST's device recipe.
+  The three shape rules reached zero in their milestone scopes, and the 13 CPU graph cases compiled
+  for iOS Simulator and Wasm. The Mac comparison matched every baseline pass with the GPU required.
+  Five duplicate executions map to the same unchanged occlusion-oracle tests. The candidate recorded
+  1,286 passes, no failures and no GPU skips. The shared main-branch check covers exact images.
+  [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M2/README.md).
+
 - 2026-11-16 Built M1's wgpu-only GPU gate, restricted test devices and test-crate-edges rule.
   Migrated sea and asset tests and the cooker's viewer-backed test and bench; the viewer accepts an
   injected device behind its test-support feature. Preserved assertions, limits and bench timing scope.
