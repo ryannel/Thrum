@@ -96,12 +96,22 @@ const observer = `
     },0);
     wakeWitnesses.set(tick,interpolate);
     while(wakeWitnesses.size>4)wakeWitnesses.delete(wakeWitnesses.keys().next().value);
+    let radialMoment=0,nearEnergy=0;
     const peak=[2,3].map(plane=>{
       let value=0;
-      for(let i=2*bases[plane],end=i+2*256*256;i<end;i+=2)value=Math.max(value,Math.abs(cells[i]));
+      for(let cell=0;cell<256*256;cell++){
+        const height=cells[2*(bases[plane]+cell)];
+        value=Math.max(value,Math.abs(height));
+        if(plane===2&&points.length){
+          const x=rows[8]+(cell%256)*rows[10]-points[0][0];
+          const z=rows[9]+Math.floor(cell/256)*rows[10]-points[0][1];
+          radialMoment+=(x*x+z*z)*height*height;
+          nearEnergy+=height*height;
+        }
+      }
       return value;
     });
-    return {tick,peak,heights:points.map(interpolate)};
+    return {tick,peak,heights:points.map(interpolate),radius:nearEnergy>0?Math.sqrt(radialMoment/nearEnergy):0};
   };
   globalThis.__checkWakeSample=([tick,used,requested,x,z,height])=>{
     const sample=wakeWitnesses.get(tick);
@@ -362,10 +372,15 @@ try {
       await drive(index===0?0:1000/60);
       const wake=await status();
       if(index%12===0&&wake?.wakeTick)
-        rings.push(await evaluate('__readWake('+wake.wakeTick+',[[184,24],[184,28],[184,34],[104,93]])'));
+        rings.push(await evaluate('__readWake('+wake.wakeTick+',[[184,24],[184,28],[184,40],[104,93]])'));
     }
     assert(rings.some(r=>r.tick<60&&r.peak.every(value=>value===0)),'the lake was disturbed before the impact');
     assert(rings.some(r=>r.tick>60&&r.peak[0]>0.002),'the impact did not raise rings');
+    const initialRing=rings.find(r=>r.tick>60);
+    const lateRing=rings.at(-1);
+    assert(lateRing.radius>initialRing.radius+1.5,'the rings did not spread across the lake');
+    assert(lateRing.peak[0]<Math.max(...rings.map(r=>r.peak[0]))*0.25,'the ring field did not die away');
+    assert(rings.every(r=>r.heights[2]===0),'the shore carried a wave on dry ground');
     assert(rings.every(r=>r.heights[3]===0),'the pond received the lake rings');
     await capture('wake-lake',0);
     result.wake_lake=rings;
