@@ -498,3 +498,9 @@
   a late reply for the prior stage and a newly supported swash point. The launch has more freeboard.
   Twelve submitted Metal sequences and the extended gale clip show the deck clear through the reported crests.
   [Merged-build evidence](../../../.orchestrate/evidence/WATERS/M5-r2.md).
+
+- 2026-11-19 Built M6's regional dispersive solver, submitted endpoints, body reactions and impulses.
+  Metal verified isolation, current, impulses, frame lifecycle, craft draft, float response and query height.
+  The lake views centre an untracked impact using any admitted tick of a hitch. Chase and overhead clips
+  cover both speeds, a turn, a stop and restart, trade wind and the lake. The cost record includes both
+  1440p views and the sea timestamp faults. [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).

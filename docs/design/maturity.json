@@ -3005,6 +3005,16 @@
         "device": "M3 Max Metal and hardware Chrome WebGPU. The capacity of 2,048 points per tick uses 3,694,848 bytes for query buffers. Submitted-output timing was recorded under shared load. The CPU cost of a full-capacity stage change was unmeasured.",
         "evidence": "../evidence/WATERS/M5-r2.md"
       },
+      "waters_interaction": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "builder_inspected_review_owed",
+        "scope": "WATERS M6 adds the optional, two-level dispersive interaction field. Each wet region is solved at the depths it needs. Submitted wake endpoints feed the surface and the batched body query.",
+        "correctness": "Metal covers split source bands, isolated regions, depth damping, current advection, impulses and reaction capacities, the float off the track, transactional clock changes and the public query comparison against submitted GPU state.",
+        "visuals": "The elapsed-time Metal routes inspect wake shape, turn and stop continuity, the moving windows in trade wind, and the lake impact and crossing. Independent milestone review is pending.",
+        "device": "M3 Max Metal and hardware Chrome WebGPU. The paired 1440p record includes CPU labelling, active regions and depth solves under concurrent load. The open-sea pair uses completion brackets because the timestamp batches were rejected.",
+        "evidence": "../../.orchestrate/evidence/WATERS/M6/README.md"
+      },
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",
       "decision": "selected",

@@ -2,6 +2,13 @@
 mod support;
 
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use thrum_sea_model::{Cascade, Spectrum};
+use thrum_water::{
+    Profile, Water,
+    interaction::{BodyPressure, Limits},
+    query::{BodyQuery, QueryLimits, QueryPoint},
+};
 use water_scene::floating::{WakeDemo, build_wake};
 use water_scene::island::Wind;
 
@@ -93,4 +100,89 @@ fn float_twenty_metres_off_track_responds_to_the_public_query() {
     assert!(before[1] - before[0] < 0.001);
     assert!(during[0] < -0.001 && during[1] > 0.001);
     assert!(after[1] - after[0] < (during[1] - during[0]) * 0.3);
+}
+
+#[test]
+fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
+    let map = water_scene::island::map(Wind::Calm).expect("same island as the crossing");
+    let columns = [[192.0, 2.7], [104.0, 93.0], [364.0, 10.0]];
+    for (point, body) in columns.into_iter().zip([1, 2, 0]) {
+        let sample = map.sample(point).expect("authored water column");
+        assert_eq!(sample.body, body);
+        assert!(sample.depth > 0.0);
+    }
+    let spectrum = Spectrum {
+        long: Vec::new(),
+        cascades: [160.0, 37.0, 9.0].map(|length| Cascade::new(length, &[]).expect("calm cascade")),
+        tail_slope_variance: 0.0,
+    };
+    let water = Water::mapped(
+        Arc::new(Mutex::new(map)),
+        spectrum,
+        Profile {
+            interaction: Some(Limits::default()),
+            query: Some(QueryLimits {
+                points: 3,
+                max_age: 4,
+            }),
+            ..Profile::default()
+        },
+    )
+    .expect("mapped wake contribution");
+    let sources = water.interaction_mailbox().expect("wake sources");
+    let queries = water.query_mailbox().expect("water query");
+    let mut fixture = support::Fixture::new([96, 64]);
+    fixture
+        .host
+        .set_scene_contribution(Box::new(water))
+        .expect("prepare mapped water");
+    fixture.frame_without_timings(0.0);
+    let step = Duration::from_nanos(16_666_667);
+    let mut lake_peak = 0.0_f64;
+    for tick in (8..=256).step_by(8) {
+        for tick in tick - 7..=tick {
+            sources.post_bodies(
+                u64::from(tick),
+                Some(0),
+                vec![BodyPressure {
+                    id: 0,
+                    place: [204.0 - f64::from(tick) * 0.05, 0.0],
+                    heading: std::f64::consts::PI,
+                    footprint: [1.45, 0.58],
+                    force: 36_000.0,
+                }],
+            );
+        }
+        let use_tick = u64::from(tick) + 1;
+        queries.post(
+            u64::from(tick),
+            vec![BodyQuery {
+                id: 99,
+                generation: 1,
+                points: [[192.0, 2.7], [104.0, 93.0], [364.0, 10.0]]
+                    .map(|position| QueryPoint {
+                        position,
+                        radius: 0.0,
+                        use_tick,
+                    })
+                    .to_vec(),
+            }],
+        );
+        fixture.frame_without_timings((step * tick).as_secs_f64());
+        let reply = queries.drain(use_tick, step);
+        let heights: Vec<_> = reply[0]
+            .points
+            .iter()
+            .map(|p| p.surface.sample.height)
+            .collect();
+        lake_peak = lake_peak.max((heights[0] - 12.0).abs());
+        assert!(
+            (heights[1] - 10.6).abs() < 0.000_001,
+            "pond reply at tick {tick}: {}",
+            heights[1]
+        );
+        assert_eq!(heights[2].to_bits(), 0, "sea reply at tick {tick}");
+    }
+    assert!(lake_peak > 0.005, "the wake must reach the lake probe");
+    eprintln!("Metal island crossing: lake peak {lake_peak:.6} m, pond and sea unchanged");
 }
