@@ -614,8 +614,8 @@
     {
       "id": "M4",
       "name": "The same sky and the same shade draw in Chrome",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -629,8 +629,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M4/checks/first-frame.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -638,10 +638,10 @@
           "check": "node scripts/check_v1_browser.mjs --case clouds-state",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#chrome-shutdown-after-device-recovery",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -650,8 +650,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#m43-fair-sky-distance-and-light",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -660,8 +660,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#m44-valley-shade-and-cloud-motion",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -670,8 +670,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Ground-field lifecycle check accepts a constant Sun-path depth",
+          "item": "M4.2",
+          "repeat": false
         }
       ]
     },

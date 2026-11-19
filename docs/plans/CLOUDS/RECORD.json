@@ -364,7 +364,43 @@
     },
     "M4": {
       "definitions": "922d89de4226be98366e38ed3433eefd030394aeb5a8b34297bbdc323d76f9da",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "fd811ad2db3dba9e92b796c0527d25eaa1eb98ff",
+          "review": ".orchestrate/evidence/CLOUDS/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "pass",
+            "M4.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Ground-field lifecycle check accepts a constant Sun-path depth",
+              "item": "M4.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 128759,
+            "cached": 3652224,
+            "output": 10415,
+            "turns": 1
+          },
+          "at": "2026-11-19T21:57:20Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
