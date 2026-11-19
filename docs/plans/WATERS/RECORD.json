@@ -799,6 +799,40 @@
         "by": "plan",
         "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
         "at": "2026-11-18T04:32:39Z"
+      },
+      "ready_for_review": {
+        "commit": "adf8b71650654b4d334f1cc824d1491a063d7b6a",
+        "checked": "b05b9f72119178fdae0bdd38a2ee516148786fcc",
+        "at": "2026-11-19T14:54:45Z",
+        "reused": [
+          "Test command",
+          "M6.4",
+          "M6.5",
+          "M6.7",
+          "M6.15",
+          "M6.13"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 455139,
+          "cached": 84194560,
+          "output": 142682,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 455139,
+          "cached": 84194560,
+          "output": 142682,
+          "turns": 1
+        }
       }
     },
     "M7": {
