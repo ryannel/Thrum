@@ -197,8 +197,8 @@
     {
       "id": "M3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "ATMOSPHERE:M5",
@@ -226,7 +226,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fixes.md#sun-stills",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
@@ -248,7 +248,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
@@ -258,7 +258,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fixes.md#night-lamp-stop",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
@@ -268,8 +268,8 @@
           "ask": "Is each request resolved from the registry's facts before anything is allocated, is the report the resolved value with its reason and not an echo of the request, and is the preparation failure injected by the test and not assumed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/review-fix-automated.txt",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -342,23 +342,9 @@
       ],
       "findings": [
         {
-          "name": "Native traced pipeline errors bypass Maps fallback",
+          "name": "Cooked pipeline failure drops the contribution on device replacement",
           "item": "M3.6",
-          "repeat": false
-        },
-        {
-          "name": "Mirrored lamp receiver shadows its exposed faces",
-          "item": "M3.5",
-          "repeat": false
-        },
-        {
-          "name": "Dark facets interrupt low-Sun balloon terminators",
-          "item": "M3.2",
-          "repeat": false
-        },
-        {
-          "name": "Off-screen lamp wall overlaps the Sun height pass",
-          "item": "M3.4",
+          "different": "The earlier failure escaped the primary pipeline error scope. Here wgpu validation is caught by CookedAssets, but the contribution rebuild runs outside the Maps retry and publication drops the cooked content.",
           "repeat": false
         }
       ]

@@ -271,7 +271,7 @@
         {
           "verdict": "fail",
           "commit": "0b58b9efb1f39afc467aba542c683427ada50547",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -324,6 +324,49 @@
             "turns": 1
           },
           "at": "2026-11-19T07:20:06Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "d9d616781d8394289719e904e00ca01b5c09f950",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "fail",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Cooked pipeline failure drops the contribution on device replacement",
+              "item": "M3.6",
+              "different": "The earlier failure escaped the primary pipeline error scope. Here wgpu validation is caught by CookedAssets, but the contribution rebuild runs outside the Maps retry and publication drops the cooked content.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 209007,
+            "cached": 15566592,
+            "output": 23739,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:38:24Z"
         }
       ],
       "authorised": {
