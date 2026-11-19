@@ -46,7 +46,7 @@ struct FloatingFragment {
     let v = normalize(view.camera_xyz_time.xyz - p);
     let sun = sun_irradiance(p);
     let direct = direct_brdf(input.colour, 0.0, 0.44, n, l, v, sun, normalize(v + l), 0.0);
-    let indirect = indirect_radiance(input.colour, 0.0, 0.44, n, v, 1.0);
+    let indirect = indirect_radiance(input.colour, 0.0, 0.44, n, v, 1.0, p, input.position);
     let colour = aerial_colour(direct + indirect, p, input.position) * scene_storage_scale();
     var motion: VertexOutput;
     motion.current_clip = input.current_clip;
