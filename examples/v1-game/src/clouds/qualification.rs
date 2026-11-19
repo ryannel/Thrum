@@ -25,6 +25,29 @@ pub struct WeatherCheck {
     pub counts: [usize; 2],
 }
 
+/// A weather qualification could not read or validate the submitted map.
+#[derive(Debug)]
+pub enum WeatherCheckError {
+    /// The supplied model profile was refused.
+    Model(thrum_cloud_model::Error),
+    /// A texture could not be copied and mapped.
+    Readback(String),
+    /// A submitted value disagreed with the comparison.
+    Comparison(String),
+}
+
+impl std::fmt::Display for WeatherCheckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Model(reason) => write!(f, "weather model: {reason}"),
+            Self::Readback(reason) => write!(f, "weather readback: {reason}"),
+            Self::Comparison(reason) => f.write_str(reason),
+        }
+    }
+}
+
+impl std::error::Error for WeatherCheckError {}
+
 /// Compare every weather column with the authority at its own source tick.
 ///
 /// # Errors
@@ -34,12 +57,16 @@ pub async fn inspect_weather(
     queue: &wgpu::Queue,
     config: &ShadeConfig,
     frame: WeatherSnapshot<'_>,
-) -> Result<WeatherCheck, String> {
+) -> Result<WeatherCheck, WeatherCheckError> {
     let field = Field::new(config.seed, config.model, config.types.clone())
-        .map_err(|error| error.to_string())?;
+        .map_err(WeatherCheckError::Model)?;
     let mut weather = Vec::new();
     for texture in frame.textures {
-        weather.push(read_texture_bytes(device, queue, texture, 0, 16).await?);
+        weather.push(
+            read_texture_bytes(device, queue, texture, 0, 16)
+                .await
+                .map_err(WeatherCheckError::Readback)?,
+        );
     }
 
     // M2's analytic Metal fixture has a 260 m maximum thickness, 0.015 / m
@@ -61,6 +88,7 @@ pub async fn inspect_weather(
         &weather,
         scale,
     )
+    .map_err(WeatherCheckError::Comparison)
 }
 
 fn word(bytes: &[u8; 16], channel: usize) -> u32 {

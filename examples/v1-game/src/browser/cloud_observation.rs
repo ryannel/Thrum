@@ -65,7 +65,8 @@ async fn inspect(
             rows: &frame.weather_rows,
         },
     )
-    .await?;
+    .await
+    .map_err(|error| error.to_string())?;
     let ground = if let Some(previous) = previous {
         let limits = config.sun.levels.map(|level| level.maximum_age);
         let ages = row_ages(&frame, &frame.sun_rows, &limits, config.sun.size)?;
