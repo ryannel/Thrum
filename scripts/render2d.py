@@ -348,7 +348,7 @@ def native_field_run(folder, count, extent, binary, commit, sha256):
         [row for row in runtime["gpu"] if row.get("gpu_present_ns") is not None], count, "mac-metal")
     return {"count": count, "extent": extent, "load": manifest["system_load"], "adapter": runtime["adapter"],
             "recipe": runtime["recipe"], "samples": samples, "fractional_frames": fractional_frames,
-            "pass_names": PASSES}
+            "pass_names": PASSES, "world_overload_recoveries": runtime["world_overload_recoveries"]}
 
 
 def browser_field_run(folder, web, sha256):
@@ -398,6 +398,8 @@ def field_tripwires(runs, target):
                 for field in (*FIELD_COLUMNS, "gpu_pass_span_ns")
             }
             name = f"take {take}, {row['count']} rows, {key[0]}x{key[1]}"
+            if row.get("world_overload_recoveries"):
+                flagged.append(f"{name}: {len(row['world_overload_recoveries'])} world overload recoveries")
             if target == "mac-metal" and row["count"] == 10000:
                 over = sum(frame["cpu_plus_gpu_ns"] > 1e9 / 120 for frame in row["samples"])
                 if over:

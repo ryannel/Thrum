@@ -205,35 +205,36 @@ try {
       const rawSource = rawSpool ?? spriteSpool;
       const spoolFrame = rawSource && Buffer.allocUnsafe(frameBytes);
       try {
-      for (const [i, row] of manifest.records.entries()) {
-        if (row.submission_id !== record.images[i].submission_id || !row.surface_presented) throw new Error('Image join/surface mismatch');
-        if (i > 0 && row.submit_ms <= manifest.records[i - 1].submit_ms) throw new Error('Nonmonotonic submit time');
-        let raw;
-        if (rawSource) {
-          let offset = 0;
-          while (offset < frameBytes) {
-            const { bytesRead } = await rawSource.read(spoolFrame, offset, frameBytes - offset, i * frameBytes + offset);
-            if (bytesRead === 0) throw new Error('Short raw spool frame');
-            offset += bytesRead;
+        for (const [i, row] of manifest.records.entries()) {
+          if (row.submission_id !== record.images[i].submission_id || !row.surface_presented) throw new Error('Image join/surface mismatch');
+          if (i > 0 && row.submit_ms <= manifest.records[i - 1].submit_ms) throw new Error('Nonmonotonic submit time');
+          let raw;
+          if (rawSource) {
+            let offset = 0;
+            while (offset < frameBytes) {
+              const { bytesRead } = await rawSource.read(spoolFrame, offset, frameBytes - offset, i * frameBytes + offset);
+              if (bytesRead === 0) throw new Error('Short raw spool frame');
+              offset += bytesRead;
+            }
+            raw = spoolFrame;
+          } else {
+            raw = await decompress(await fs.readFile(path.join(output, row.file)));
           }
-          raw = spoolFrame;
-        } else {
-          raw = await decompress(await fs.readFile(path.join(output, row.file)));
+          const digest = sha(raw);
+          if (spriteField) row.rgba_sha256 = digest;
+          if (raw.length !== frameBytes || digest !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
+          if (retainRaw) {
+            row.file = path.basename(spoolPath);
+            row.offset = i * frameBytes;
+            row.bytes = frameBytes;
+          } else if (spoolRaw) {
+            const encoded = await compress(raw, { level: 1 });
+            const packed = path.join(output, row.file);
+            await fs.writeFile(packed, encoded, { flag: 'wx' });
+            if (sha(await decompress(await fs.readFile(packed))) !== row.rgba_sha256) throw new Error('Lossless archive verification failed');
+            row.bytes = encoded.length;
+          }
         }
-        if (spriteField) row.rgba_sha256 = sha(raw);
-        if (raw.length !== frameBytes || sha(raw) !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
-        if (retainRaw) {
-          row.file = path.basename(spoolPath);
-          row.offset = i * frameBytes;
-          row.bytes = frameBytes;
-        } else if (spoolRaw) {
-          const encoded = await compress(raw, { level: 1 });
-          const packed = path.join(output, row.file);
-          await fs.writeFile(packed, encoded, { flag: 'wx' });
-          if (sha(await decompress(await fs.readFile(packed))) !== row.rgba_sha256) throw new Error('Lossless archive verification failed');
-          row.bytes = encoded.length;
-        }
-      }
       } finally {
         await spriteSpool?.close();
       }

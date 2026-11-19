@@ -721,7 +721,7 @@ async fn record(
         };
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
-        if elapsed_observation && running && report.overload.is_some() {
+        if (elapsed_observation || sprite_cost) && running && report.overload.is_some() {
             trace.observe_overload(&driver, origin, returned)?;
         }
         if observer_only && report.submitted {
@@ -767,7 +767,7 @@ async fn record(
             }
             .is_some_and(|start| origin.elapsed() >= start + Duration::from_secs(1)));
     let complete = interval_complete
-        && trace.world_overload_recoveries.is_empty()
+        && (sprite_cost || trace.world_overload_recoveries.is_empty())
         && writer_result.is_ok()
         && (!capture
             || (trace.images.len() == submitted
@@ -983,7 +983,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         return (24.0, 20.0, 3.0);
     }
     match scenario {
-        "sprites-field-cost" => (4.5, 3.0, 3.0),
+        "sprites-field-cost" => (11.5, 10.0, 10.0),
         "clouds-drift" => (22.5, 22.0, 21.0),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
