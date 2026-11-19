@@ -288,7 +288,7 @@ FIELD_COLUMNS = (*CPU, "order_cpu_ns", "sprite_gpu_ns", "whole_gpu_ns", "cpu_plu
                  "upload_bytes", "world_upload_bytes", "order_upload_bytes", "shaded_pixels")
 
 
-def field_samples(rows, count, target):
+def field_samples(rows, count, target, *, require_fractional=True):
     """Check the scene and measure complete frames that uploaded the whole moving field."""
     expanded = []
     seen_ticks = set()
@@ -326,7 +326,7 @@ def field_samples(rows, count, target):
             raise ValueError("missing writes or shaded pixels for the field")
         expanded.append(measured)
         seen_ticks.add(sprite["tick"])
-    if len(expanded) < 32 or fractional_frames < 10:
+    if len(expanded) < 32 or (require_fractional and fractional_frames < 10):
         raise ValueError(f"incomplete advancing/interpolating workload: {len(expanded)} ticks, "
                          f"{fractional_frames} fractional frames, {target} {count} rows")
     return expanded[:90], fractional_frames
@@ -365,7 +365,12 @@ def browser_field_run(folder, web, sha256):
         report = row["measurement"]
         if tuple(report["passes"]) != PASSES:
             raise ValueError("wrong WebGPU graph")
-        samples, _ = field_samples(report["samples"], row["world_rows"], "chrome-webgpu")
+        # Browser retention selects upload samples. Fractional poses are
+        # checked against all completed display frames by the page qualifier.
+        samples, _ = field_samples(report["samples"], row["world_rows"], "chrome-webgpu",
+                                   require_fractional=False)
+        if report["fractional_frames"] < 10:
+            raise ValueError("missing Chrome interpolation observations")
         if not row["wasm"] or digest(web / "v1_game_bg.wasm") != sha256:
             raise ValueError("wrong WebGPU build receipt")
         result.append({"count": row["world_rows"], "extent": row["extent"],
