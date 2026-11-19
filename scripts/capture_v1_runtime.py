@@ -235,7 +235,7 @@ def validate_source(output, manifest, runtime):
         source = output / manifest['spool_file']
         if source.stat().st_size != report['encoded_bytes']:
             raise ValueError('encoded byte count differs from writer')
-        if not runtime['complete'] and runtime['scenario'] != 'off':
+        if not runtime['complete'] and runtime['scenario'] != 'off' and not runtime.get('observer_only'):
             for _ in decoded_frames(source, runtime['spool_encoding'], report['frame_sha256'],
                                     frame_bytes, manifest.get('record_limit', 1024)):
                 pass

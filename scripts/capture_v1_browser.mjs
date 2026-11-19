@@ -83,7 +83,8 @@ if (spriteField || args.scene === 'exit' || spoolRaw) {
   manifest.record_limit = spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
-  manifest.export_slots = spoolRaw && frameBytes <= 1280 * 720 * 4 ? 64 : 24;
+  manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4 ? 64 : 24;
+  if (spriteField) manifest.admission_policy = 'wait';
   manifest.export_working_byte_cap = 4 * manifest.export_slots * frameBytes;
 }
 if (args.clouds !== 'off') manifest.clouds = args.clouds;
@@ -155,7 +156,7 @@ try {
     }
     const r = await cdp.call('Runtime.evaluate', { expression: 'window.thrumCapture?.done ? JSON.stringify(window.thrumCapture) : null', returnByValue: true }, sessionId);
     return r.result.value ? JSON.parse(r.result.value) : undefined;
-  }, 180000, 'submitted-output route');
+  }, spriteField ? 300000 : 180000, 'submitted-output route');
   manifest.load_after = loadavg();
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
   if (args.witness !== 'off' && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');

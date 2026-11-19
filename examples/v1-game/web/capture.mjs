@@ -13,7 +13,7 @@ const witness = query.get('witness') ?? 'off';
 const clouds = query.get('clouds') ?? 'off';
 const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
-const exportSlots = (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off') && [24, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
+const exportSlots = (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off') && [24, 32, 64].includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
   (spriteField || scene === 'exit' || witness !== 'off' || clouds !== 'off');
 const useAnimationFrame = (scene === 'exit' || clouds !== 'off') && mode === 'realtime' &&
@@ -312,14 +312,16 @@ async function captureSpriteField() {
   record.mode = mode;
   record.pixel_source = source;
   record.extent = extent;
-  record.scheduling = 'elapsed timer opportunities against a 60 Hz schedule on the visible headless page';
+  record.scheduling = 'elapsed timer opportunities against a 48 Hz schedule on the visible headless page';
+  record.admission_policy = 'wait';
+  record.spool_backpressure_opportunities = 0;
   record.gpu_pass_timing = false;
   record.start_before_ms = performance.now();
   game.begin_submitted_capture(1);
   const start = performance.now();
   record.start_after_ms = start;
   game.set_paused(false, 0);
-  const period = 1000 / 60;
+  const period = 1000 / 48;
   let next = 0;
   while (performance.now() - start < 22400) {
     if (hidden) fail('sprite capture page became hidden');
@@ -331,6 +333,12 @@ async function captureSpriteField() {
     }
     const ordinal = Math.floor(elapsed / period);
     next = (ordinal + 1) * period;
+    // Leave room for the last GPU-ready readbacks before offering another frame.
+    if (inflight.size >= exportSlots - 3) {
+      record.spool_backpressure_opportunities++;
+      await wait(1);
+      continue;
+    }
     game.frame(elapsed);
     record.opportunities.push({
       ordinal, frame_ms: elapsed, returned_ms: performance.now(),
