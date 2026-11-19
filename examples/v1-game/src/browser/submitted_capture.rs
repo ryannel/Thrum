@@ -18,6 +18,23 @@ impl BrowserGame {
             .map_err(super::js_error)
     }
 
+    /// Start a held SDR capture with a single staging slot and a single CPU lease.
+    ///
+    /// # Errors
+    /// Refuses a lost device, an active session or an extent beyond the byte allowance.
+    pub fn begin_fixed_submission(&mut self, session: u32) -> Result<(), JsValue> {
+        self.shell
+            .begin_submitted_capture_with_limits(
+                u64::from(session),
+                thrum_render::runtime::CaptureLimits {
+                    staging_slots: 1,
+                    cpu_buffers: 1,
+                    ..Default::default()
+                },
+            )
+            .map_err(super::js_error)
+    }
+
     /// Capture scene-linear RGBA16Float through the same submitted-output tap.
     /// # Errors
     /// Refuses loss, an active session or preparation failure.

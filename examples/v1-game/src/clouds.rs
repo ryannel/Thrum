@@ -2,6 +2,9 @@
 use thrum_cloud_model::{Parameters, Profile, State, Type};
 use thrum_clouds::{ShadeConfig, SunLevel, SunProfile, WeatherProfile};
 
+/// Checks for the weather map produced at the game's authored scale.
+pub mod qualification;
+
 pub(crate) const GROUND_SIZE: u32 = 1024;
 
 /// Cloud capabilities selected by the V1 game.

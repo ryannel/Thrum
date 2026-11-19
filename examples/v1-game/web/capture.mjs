@@ -306,7 +306,7 @@ async function captureCloudView(view, extent) {
   record.initial_report = JSON.parse(game.route_report(0));
   record.culling = game.report();
   record.start_before_ms = performance.now();
-  game.begin_submitted_capture(1);
+  game.begin_fixed_submission(1);
   record.start_after_ms = performance.now();
   record.mode = mode;
   record.pixel_source = source;
