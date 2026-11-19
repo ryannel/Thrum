@@ -13,3 +13,5 @@
   Verified native limits and restriction refusal on Metal, loss and recovery in the Mac window and
   Chrome, and cooked ASTC engine output through rotation and foregrounding in the iPhone simulator.
   The registered image baselines are covered by the shared main-branch check. [Evidence](../../evidence/HOST/M1-proof.md)
+- 2026-11-19 Reran M1.4 from clean main at `a319249fb` with the display held awake. All three Mac window
+  rows and all eight Chrome cases passed. [Evidence](../../evidence/HOST/M1-proof.md#m14-mac-window-and-chrome-recovery)
