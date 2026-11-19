@@ -23,6 +23,7 @@ pub(super) struct Recovery<'a> {
 impl<'a> Recovery<'a> {
     pub(super) fn new(
         mode: super::super::NativeRecovery,
+        generation: u64,
         hardware: &'a [super::super::HardwareRequest],
     ) -> Self {
         let control = match mode {
@@ -33,7 +34,7 @@ impl<'a> Recovery<'a> {
         Self {
             control,
             next: 0,
-            generation: 1,
+            generation,
             hardware,
         }
     }

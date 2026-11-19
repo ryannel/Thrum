@@ -18,3 +18,6 @@
 - 2026-11-19 Addressed the M1.1 and M1.2 review findings. Verified the measurement entry points and recipe limits
   on Metal, the expanded device-request guard, and the starter and V1 WebAssembly builds.
   [Evidence](../../../.orchestrate/evidence/HOST/M1-proof.md#m11-one-request)
+- 2026-11-19 Fixed M1.2's native device-generation finding. Mac capture and UIKit use the engine's first
+  generation, and capture recovery starts from the opened device. Both Metal checks and both native
+  compile checks passed. [Evidence](../../../.orchestrate/evidence/HOST/M1-proof.md#m12-generation-review-fix)

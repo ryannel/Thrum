@@ -31,7 +31,7 @@ use thrum_app::{
     },
 };
 use thrum_render::{
-    capabilities::{DeviceCapabilities, DeviceRecipe, OpenedDevice},
+    capabilities::{DeviceCapabilities, DeviceRecipe, FIRST_DEVICE_GENERATION, OpenedDevice},
     runtime::SubmittedImage,
     synthetic::CaptureSource,
 };
@@ -591,7 +591,8 @@ async fn record(
     let (qos, encoding, disk_limit) = capture_settings()?;
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
-    let (adapter, device, queue, capabilities) = metal_device(&instance, 1, hardware).await?;
+    let (adapter, device, queue, capabilities) =
+        metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
     let (game, preview) = capture_game(output, scenario, capture_output)?;
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)?;
     let preview = preview.and_then(|record| record.lock().ok()?.clone());
@@ -630,7 +631,8 @@ async fn record(
     let mut running = false;
     let mut night_variant = false;
     let mut stalled = false;
-    let mut recovery = native_recovery::Recovery::new(recovery_mode, hardware);
+    let mut recovery =
+        native_recovery::Recovery::new(recovery_mode, capabilities.generation(), hardware);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);

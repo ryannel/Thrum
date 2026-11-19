@@ -9,6 +9,7 @@ use std::{
 };
 
 use thrum_core::sim::{WorldLaneFault, WorldLifecycle};
+use thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 use winit::{
     application::ApplicationHandler,
     event::{TouchPhase, WindowEvent},
@@ -286,7 +287,7 @@ impl Shell {
             signals: Arc::new(Signals::default()),
             origin: Instant::now(),
             state: State::Starting,
-            device_generation: 1,
+            device_generation: FIRST_DEVICE_GENERATION,
             lost_generation: None,
             recovering: false,
             stale_request: false,

@@ -36,8 +36,8 @@
           "lock": "gpu",
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
