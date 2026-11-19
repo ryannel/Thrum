@@ -277,7 +277,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- APPLE-PRESENTATION's design: Design Changes Requested · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
+- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - ATMOSPHERE's design: Design Ready for Review · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - Edits to meshes, textures and volumes appear in the running valley without a hitch, on Mac and in Chrome, and the content gate closes (CONTENT-LOOP M3): In Progress · [plan](CONTENT-LOOP/PLAN.md)
 - SHOWCASE's design: Design Ready for Review · [design](SHOWCASE/DESIGN.md) · [plan](SHOWCASE/PLAN.md)
@@ -354,7 +354,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome (EFFECT-GRAPH M2), 13 Nov · [review](../evidence/EFFECT-GRAPH/M2-review.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1), 13 Nov · [review](../evidence/CULLING/M1-review.md)
 - An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused (EFFECT-GRAPH M1), 12 Nov · [review](../evidence/EFFECT-GRAPH/M1-review.md)
-- A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main (BASELINE-GUARD M1), 12 Nov · [review](../evidence/BASELINE-GUARD/M1-review.md)
 
 ## All modules
 
@@ -366,7 +365,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Done 17 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Design Changes Requested |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | Design Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
