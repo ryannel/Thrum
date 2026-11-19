@@ -90,8 +90,8 @@
     {
       "id": "M2",
       "name": "Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -103,10 +103,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_lifecycle",
           "ask": "Are `PauseIntent`, the iPhone app's `WorldPolicy`, the web shell's `recover_overload` and the game's `overload_reported` gone, or reduced to calls into the one policy? Does the test cover both drive styles and the resume race?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m21-world-lifecycle and .orchestrate/evidence/HOST/M2/world-lifecycle.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -114,20 +114,20 @@
           "check": "cargo test --locked --offline -p thrum-app --test surface_outcomes",
           "ask": "Does the browser shell still treat a validation failure at acquire as fatal? Does any shell configure a surface outside the recipe's retrying configure?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m22-surface-acquire and .orchestrate/evidence/HOST/M2/surface-outcomes.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
         {
           "id": "M2.3",
           "statement": "Every drift the design's table marks M1 or M2 is closed: the device request, the fault watch, the surface configure and format list, the first generation, the surface outcome mapping and the pause and overload policy each have one implementation, and the Mac window, the browser page and the iPhone app call it.",
           "ask": "Take the rows of the design's drift table marked M1 and M2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked M3, M4 or Not here are not this milestone's.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m23-device-surface-and-lifecycle-ownership and .orchestrate/evidence/HOST/M2/source-audit.txt",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -138,8 +138,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M2/README.md#m24-target-checks with Mac, Chrome and iPhone simulator run records",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -148,8 +148,25 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M2-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Chrome discards a replacement device on a lost drawable",
+          "item": "M2.2",
+          "repeat": false
+        },
+        {
+          "name": "The race test passes without the pending-Resume guard",
+          "item": "M2.1",
+          "repeat": false
+        },
+        {
+          "name": "Offscreen capture still decides how to drain and resume an overload",
+          "item": "M2.3",
+          "repeat": false
         }
       ]
     },

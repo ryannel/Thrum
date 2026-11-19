@@ -186,7 +186,53 @@
     },
     "M2": {
       "definitions": "cbf4b6e904c025d65ffacdbbd80c7362a663a8756c88fb21173a6a40387ede25",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "b41065b1a5183828d3c7e0e710367c18209db505",
+          "review": ".orchestrate/evidence/HOST/M2-review.md",
+          "items": {
+            "M2.1": "fail",
+            "M2.2": "fail",
+            "M2.3": "fail",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Chrome discards a replacement device on a lost drawable",
+              "item": "M2.2",
+              "repeat": false
+            },
+            {
+              "name": "The race test passes without the pending-Resume guard",
+              "item": "M2.1",
+              "repeat": false
+            },
+            {
+              "name": "Offscreen capture still decides how to drain and resume an overload",
+              "item": "M2.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 118350,
+            "cached": 5568640,
+            "output": 10709,
+            "turns": 1
+          },
+          "at": "2026-11-19T23:50:19Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
