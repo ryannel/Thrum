@@ -182,6 +182,10 @@ fn build_scene(
     draw_water: bool,
     demo: Option<WakeDemo>,
 ) -> Result<FloatingScene, Box<dyn Error>> {
+    let demo = demo.map(|mut demo| {
+        demo.stone &= lake;
+        demo
+    });
     let map = Arc::new(Mutex::new(if lake {
         crate::island::map(wind)?
     } else {
@@ -210,7 +214,9 @@ fn build_scene(
     let report = water.report();
     let status_report = Arc::clone(&report);
     let interaction = water.interaction_mailbox();
-    let (start, level) = if lake {
+    let (start, level) = if lake && demo.is_some() {
+        ([204.0, 0.0], 12.0)
+    } else if lake {
         ([182.0, 10.0], 12.0)
     } else {
         ([150.0, 32.0], 0.0)
@@ -288,6 +294,7 @@ fn build_scene(
         .transpose()?;
     let (elevation, azimuth) = match demo.map(|demo| demo.view) {
         Some(WakeView::Overhead) => (79.0, 269.0),
+        Some(WakeView::Shore) if demo.is_some_and(|demo| demo.stone) => (15.0, 23.0),
         Some(WakeView::Shore) => (14.0, 43.0),
         Some(WakeView::Chase) => (23.0, 251.0),
         None => (35.0, 128.0),
@@ -384,8 +391,8 @@ fn build_scene(
             if number == 60 && lake && demo.is_some_and(|demo| demo.stone) {
                 interaction.post_impulse(Impulse {
                     id: 1,
-                    place: [184.0, 24.0],
-                    vertical: 850.0,
+                    place: [184.0, 28.0],
+                    vertical: 1250.0,
                     radius: 0.58,
                     tick: number,
                 });
@@ -491,6 +498,17 @@ fn camera(body: &Body, chase: bool, level: f64, demo: Option<WakeDemo>) -> Camer
     let heading = (body.rotation * DVec3::X).with_y(0.0).normalize_or_zero();
     let across = heading.cross(DVec3::Y);
     let centre = body.position.with_y(level);
+    if let Some(demo) = demo.filter(|demo| demo.stone) {
+        match demo.view {
+            WakeView::Shore => {
+                return Camera::look_at([181.0, 14.0, 35.0], [184.0, 12.0, 26.2], 62.0);
+            }
+            WakeView::Overhead => {
+                return Camera::look_at([190.0, 52.0, 27.5], [184.0, 12.0, 27.0], 65.0);
+            }
+            WakeView::Chase => {}
+        }
+    }
     if demo.is_some_and(|demo| demo.view == WakeView::Shore) {
         return crate::island::CAMERAS[1];
     }

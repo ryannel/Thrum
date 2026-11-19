@@ -70,7 +70,7 @@ const observer = `
     return b;
   };
   const wakeWitnesses=new Map();
-  globalThis.__readWake=async(tick,points=[])=>{
+  globalThis.__readWake=async(tick,points=[],hull=null)=>{
     const device=__devices.at(-1), commands=device.createCommandEncoder();
     const stages=['interaction sample settings','interaction wave endpoints'].map(name=>{
       const source=__buffers[name];
@@ -96,12 +96,17 @@ const observer = `
     },0);
     wakeWitnesses.set(tick,interpolate);
     while(wakeWitnesses.size>4)wakeWitnesses.delete(wakeWitnesses.keys().next().value);
-    let radialMoment=0,nearEnergy=0;
+    let radialMoment=0,nearEnergy=0,outsideHull=0;
     const peak=[2,3].map(plane=>{
       let value=0;
       for(let cell=0;cell<256*256;cell++){
         const height=cells[2*(bases[plane]+cell)];
         value=Math.max(value,Math.abs(height));
+        if(plane===2&&hull){
+          const x=rows[8]+(cell%256)*rows[10]-hull[0];
+          const z=rows[9]+Math.floor(cell/256)*rows[10]-hull[1];
+          if(x*x+z*z>36)outsideHull=Math.max(outsideHull,Math.abs(height));
+        }
         if(plane===2&&points.length){
           const x=rows[8]+(cell%256)*rows[10]-points[0][0];
           const z=rows[9]+Math.floor(cell/256)*rows[10]-points[0][1];
@@ -111,7 +116,7 @@ const observer = `
       }
       return value;
     });
-    return {tick,peak,heights:points.map(interpolate),radius:nearEnergy>0?Math.sqrt(radialMoment/nearEnergy):0};
+    return {tick,peak,heights:points.map(interpolate),outsideHull,radius:nearEnergy>0?Math.sqrt(radialMoment/nearEnergy):0};
   };
   globalThis.__checkWakeSample=([tick,used,requested,x,z,height])=>{
     const sample=wakeWitnesses.get(tick);
@@ -350,14 +355,17 @@ try {
         const sample=await evaluate('__checkWakeSample('+JSON.stringify(wake.wakeSample)+')');
         if(sample&&!samples.some(entry=>entry.tick===sample.tick))samples.push(sample);
       }
-      if(index>=170&&index%18===0||index>=408&&index<=410){
-        const read=await evaluate('__readWake('+wake.wakeTick+')');
-        if(index===408)continuing=read;
+      if(index===490){
+        const [x,,z]=wake.poses[0];
+        const coastSpeed=60*Math.abs(x-buoy.at(-2)[2]);
+        continuing={...await evaluate('__readWake('+wake.wakeTick+',[],'+JSON.stringify([x,z])+')'),coastSpeed};
+      }else if(index>=170&&index%18===0){
+        await evaluate('__readWake('+wake.wakeTick+')');
       }
     }
     assert(Math.max(...buoy.map(item=>item[1]))>0.001&&Math.min(...buoy.map(item=>item[1]))< -0.001,
       'the float did not rise and fall on the calm sea');
-    assert(continuing?.peak.some(value=>value>0.005),'no retained wake after the craft stopped');
+    assert(continuing?.coastSpeed<0.05&&continuing.outsideHull>0.005,'no retained wake away from the stopped craft');
     assert(samples.length>1&&samples.some(sample=>Math.abs(sample.expected)>0.001),'no resolved public wake samples');
     assert(samples.every(sample=>Math.abs(sample.height-sample.expected)<0.00002),'public query differs from submitted wake');
     await capture('wake-sea',0);
@@ -372,7 +380,7 @@ try {
       await drive(index===0?0:1000/60);
       const wake=await status();
       if(index%12===0&&wake?.wakeTick)
-        rings.push(await evaluate('__readWake('+wake.wakeTick+',[[184,24],[184,28],[184,40],[104,93]])'));
+        rings.push(await evaluate('__readWake('+wake.wakeTick+',[[184,28],[184,31],[184,40],[104,93]])'));
     }
     assert(rings.some(r=>r.tick<60&&r.peak.every(value=>value===0)),'the lake was disturbed before the impact');
     assert(rings.some(r=>r.tick>60&&r.peak[0]>0.002),'the impact did not raise rings');
