@@ -98,6 +98,7 @@ pub(super) struct TapSpec {
 }
 
 pub(super) struct Tap {
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) spec: TapSpec,
     source: CaptureSource,
     owner: std::sync::Arc<()>,
@@ -172,6 +173,7 @@ impl Tap {
                     )
                 })
                 .collect(),
+            #[cfg(not(target_arch = "wasm32"))]
             spec,
         })
     }

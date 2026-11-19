@@ -194,12 +194,17 @@ def mac_transition(output):
 
 def mac_transition_capture(output):
     binary, env = mac_binary()
-    assets = os.environ.get("THRUM_ASSET_STORE")
-    if not assets:
-        raise ValueError("transition capture needs THRUM_ASSET_STORE with the cooked valley")
-    env.update(THRUM_ASSET_STORE=str(Path(assets).resolve()), THRUM_SCENE="valley")
-    return {recipe: transition_receipt(mac_arm(output, binary, env, recipe, "sweep", capture=True))
-            for recipe in RECIPE}
+    pattern = os.environ.get("THRUM_MAC_PATTERN") == "1"
+    if pattern:
+        env["THRUM_MAC_PATTERN"] = "1"
+    else:
+        assets = os.environ.get("THRUM_ASSET_STORE")
+        if not assets:
+            raise ValueError("transition capture needs THRUM_ASSET_STORE with the cooked valley")
+        env.update(THRUM_ASSET_STORE=str(Path(assets).resolve()), THRUM_SCENE="valley")
+    return dict(target="mac-metal", mode="realtime", scene="grid" if pattern else "valley",
+                recipes={recipe: transition_receipt(mac_arm(output, binary, env, recipe, "sweep", capture=True))
+                         for recipe in RECIPE})
 
 
 def mac_configure_fault(output):

@@ -122,6 +122,7 @@ impl TargetPreparation {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn bind_presenter(
         &self,
         slots: &mut [FrameSlot],

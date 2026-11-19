@@ -259,10 +259,10 @@
           "lock": "gpu",
           "ask": "Does the arm read the submitted frame through engine capture's tap at each size, and compare the extent the host resolved with the window's backing size? Do offscreen, capture and exact-baseline paths still name their own extents, so that no retained image moved?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-extent-final/extent.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.2",
@@ -270,10 +270,10 @@
           "check": "python3 scripts/apple_presentation.py extent --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/ios-extent/extent.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.3",
@@ -293,10 +293,10 @@
           "lock": "gpu",
           "ask": "Read the test. Does it drive the host's own resize and frame calls, count creations by thread, and include a control in which the build runs on the render thread and the count sees it? Is a superseded build's result shown never to reach a frame?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/generation-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.5",
@@ -305,10 +305,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is each of the four cases driven through the host's own calls, and is the history reset shown by comparing the first new frame with an independently reset one, with a control that keeps history across the switch failing?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/generation-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.6",
@@ -317,10 +317,10 @@
           "lock": "gpu",
           "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path, which reconfigures at every step?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-sweep-final/transition.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.7",
@@ -343,10 +343,10 @@
           "lock": "gpu",
           "ask": "Read the test. Does its surface behave as released wgpu does after an error, reporting the size it was asked for while the drawable keeps the old one, so that a host which skipped the restore would fail? Is a deferral shown to make no call, and is each of the four counts asserted for a deferred switch, a failed one with a good restore and a failed one with a failed restore?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/generation-final.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.9",
@@ -355,7 +355,7 @@
           "lock": "gpu",
           "ask": "Is the error raised by wgpu's own configure, through the host's switch, and not by a test double? Is the drawable's size read from Metal and not from wgpu's descriptor?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-fault/configure-fault.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/mac-fault-final/configure-fault.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

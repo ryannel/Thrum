@@ -11,7 +11,7 @@ use thrum_render::{
     present::SurfaceProfile,
     runtime::{
         CaptureLimits, ExtentRequest, ExtentTransition, FrameConfig, FrameError, FrameSample,
-        PreparedExtent, SurfaceOutput, SurfaceSwitchOutcome,
+        PreparedExtent, SubmittedImage, SurfaceOutput, SurfaceSwitchOutcome,
     },
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
 };
@@ -102,6 +102,21 @@ fn prepare(
         .extent_prepare_inputs(extent)
         .expect("transition fixture");
     move |cancel| inputs.build(cancel)
+}
+
+fn captured(host: &mut support::Host, device: &wgpu::Device) -> SubmittedImage {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        device.poll(wgpu::PollType::Poll).expect("capture progress");
+        if let Some(image) = host.try_submitted_image().expect("capture mapping") {
+            return image;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "capture did not drain through the switch"
+        );
+        std::thread::yield_now();
+    }
 }
 
 #[test]
@@ -218,31 +233,29 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     let switched = complete(&mut host, &device);
     assert_eq!(switched.render_extent, NEW);
     let mut independent = self::host(&cap, &queue, NEW);
+    independent
+        .enable_submitted_capture_with_limits(1, CaptureLimits::default())
+        .expect("independent reset tap");
     independent.invalidate_history();
     submit(&mut independent, &new_output, NEW);
     let reset = complete(&mut independent, &device);
     assert_eq!(switched.history_identity[1], reset.history_identity[1]);
+    let reset_image = captured(&mut independent, &device);
     submit(&mut host, &new_output, NEW);
     let resumed = complete(&mut host, &device);
     assert_eq!(resumed.history_identity[1], switched.history_identity[0]);
     assert_ne!(resumed.history_identity[1], reset.history_identity[1]);
 
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let switched_submission = switched.submission_order;
     let expected = [first, held, last_old, switched, resumed];
     for expected in expected {
-        let image = loop {
-            device
-                .poll(wgpu::PollType::Poll)
-                .expect("transition fixture");
-            if let Some(image) = host.try_submitted_image().expect("transition fixture") {
-                break image;
-            }
-            assert!(
-                Instant::now() < deadline,
-                "capture did not drain through the switch"
+        let image = captured(&mut host, &device);
+        if image.sample.submission_order == switched_submission {
+            assert_eq!(
+                image.rgba, reset_image.rgba,
+                "first new image differs from the independent reset"
             );
-            std::thread::yield_now();
-        };
+        }
         assert_eq!(image.session, 7);
         assert_eq!(image.sample.submission_order, expected.submission_order);
         assert_eq!(image.extent, expected.render_extent);
@@ -253,22 +266,25 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
 
     let report = host.creation_report();
     let build_label = "prepare scene extent";
+    let target_resources = |row: &thrum_render::runtime::CreationRow| {
+        row.counts.textures > 0 && row.counts.texture_views > 0 && row.counts.bind_groups > 0
+    };
     assert!(
         report
             .rows
             .iter()
-            .any(|row| row.label == build_label && row.counts.textures > 0)
+            .any(|row| row.label == build_label && target_resources(row))
     );
     let wrong_thread = std::thread::current().name().unwrap_or_default().to_owned();
     assert!(!report.rows.iter().any(|row| row.label == build_label
         && row.thread == wrong_thread
-        && row.counts.textures > 0));
+        && target_resources(row)));
     let control = prepare(&host, STALE)(&AtomicBool::new(false)).expect("transition fixture");
     let report = host.creation_report();
     assert!(
         report.rows.iter().any(|row| row.label == build_label
             && row.thread == wrong_thread
-            && row.counts.textures > 0),
+            && target_resources(row)),
         "creation accounting failed to detect the render-thread control: {:?}",
         report.rows
     );

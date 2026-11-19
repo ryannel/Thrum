@@ -10,10 +10,7 @@ use crate::{
     },
     synthetic::{RenderError, SyntheticView},
 };
-use std::{
-    collections::BTreeSet,
-    sync::{Arc, Mutex},
-};
+use std::{collections::BTreeSet, sync::Mutex};
 
 pub(crate) const PASS: &str = "secondary view aerial perspective";
 
@@ -26,7 +23,7 @@ pub(crate) struct SecondaryAerial {
     sampler: wgpu::Sampler,
     pipeline: wgpu::ComputePipeline,
     group: wgpu::BindGroup,
-    night: Arc<Mutex<crate::atmosphere::night::NightProfile>>,
+    night: crate::SharedGpu<Mutex<crate::atmosphere::night::NightProfile>>,
 }
 
 impl AtmospherePrepared {
@@ -113,7 +110,7 @@ impl AtmospherePrepared {
             sampler: self.aerial_sampler.clone(),
             pipeline,
             group,
-            night: Arc::new(Mutex::new(night)),
+            night: crate::SharedGpu::new(Mutex::new(night)),
         }
     }
 }

@@ -35,3 +35,10 @@ pub mod synthetic;
 mod timestamp_permit;
 pub mod timing;
 mod visibility;
+
+// Mutable GPU handles can cross the native preparation thread. Browser
+// handles stay within their single WebGPU execution context.
+#[cfg(target_arch = "wasm32")]
+pub(crate) use std::rc::Rc as SharedGpu;
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) use std::sync::Arc as SharedGpu;
