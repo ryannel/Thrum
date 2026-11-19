@@ -218,10 +218,14 @@ impl Lead {
     ) -> Self {
         let period = u64::from(settings.tick_us);
         let half_rtt = rtt.div_ceil(2 * period);
-        let lead = pinned.map_or(half_rtt + 2, u64::from);
+        // The fixed control pins the lead relative to the same host estimate used
+        // when reporting lead. Adaptive authoring starts from the full round trip.
+        let (present, lead) = pinned.map_or((rtt.div_ceil(period), half_rtt + 2), |lead| {
+            (half_rtt, u64::from(lead))
+        });
         Self {
             // The first author call increments the tick before stamping the frame.
-            target: (held + rtt.div_ceil(period) + lead.min(u64::from(settings.staging))) - 1,
+            target: (held + present + lead.min(u64::from(settings.staging))) - 1,
             next: now,
             half_rtt,
             floor: i16::MAX,
@@ -285,13 +289,13 @@ mod tests {
         // 100 ms is six periods rounded up. Its 50 ms half is three periods.
         let mut adaptive = Lead::new(now, newest_set, 100_000, settings, None);
         let mut pinned = Lead::new(now, newest_set, 100_000, settings, Some(5));
-        for lead in [&mut adaptive, &mut pinned] {
+        for (lead, first) in [(&mut adaptive, 27 + 6 + 5), (&mut pinned, 27 + 3 + 5)] {
             assert_eq!(lead.half_rtt, 3);
-            assert_eq!(lead.author(now, newest_set, settings), Some(27 + 6 + 5));
+            assert_eq!(lead.author(now, newest_set, settings), Some(first));
             assert_eq!(lead.author(now, newest_set, settings), None);
             assert_eq!(
                 lead.author(now + u64::from(settings.tick_us), newest_set, settings),
-                Some(27 + 6 + 5 + 1)
+                Some(first + 1)
             );
         }
     }
