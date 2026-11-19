@@ -1,5 +1,6 @@
 //! Declaration and checked camera requests for opaque secondary views.
 
+use crate::shaders::wgsl;
 use crate::synthetic::SyntheticView;
 use glam::Vec3;
 use std::sync::{Arc, Mutex};
@@ -123,7 +124,7 @@ impl SecondaryView {
     /// WGSL declaration of the record. The consumer chooses its group and binding.
     #[must_use]
     pub fn record_wgsl() -> &'static str {
-        include_str!("views/record.wgsl")
+        wgsl!("contribution/views/record.wgsl")
     }
 
     /// Largest viewport and physical attachment extent.

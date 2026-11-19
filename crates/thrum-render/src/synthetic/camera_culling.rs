@@ -91,14 +91,6 @@ pub(super) use stats::CullingStats;
 pub(super) use stats::STATS_PASS;
 pub use stats::{CountedFrame, CullingCounts};
 
-/// Stable mesh row 0: the diagnostic cube's index range and local bounds.
-const CUBE_MESH: MeshRecord = MeshRecord {
-    first_index: 0,
-    index_count: 36,
-    base_vertex: 0,
-    bounds_min: [-1.0; 3],
-    bounds_max: [1.0; 3],
-};
 /// Forward view-group binding of the camera's visible slot list.
 pub(super) const VISIBLE_BINDING: u32 = 5;
 /// Graph and timing name of Occlusion's depth-only prepass.
@@ -132,7 +124,8 @@ pub(super) fn prepare(
     generation: u64,
     mode: CullMode,
     (capacity, active): (u32, u32),
-    route: Option<(&BucketRoute, &MeshArena)>,
+    route: Option<&BucketRoute>,
+    arena: &MeshArena,
 ) -> Result<Option<VisibilityPrepared>, RenderError> {
     if mode == CullMode::Direct {
         return Ok(None);
@@ -142,13 +135,21 @@ pub(super) fn prepare(
         revision: SYNTHETIC_REVISION,
         role: visibility::ROLE,
     };
-    let Some((route, arena)) = route else {
+    let Some(route) = route else {
+        let row = arena
+            .row(super::mesh_arena::MeshId::CUBE)
+            .ok_or(RenderError::SceneCapacity)?;
+        // The legacy forward pass binds only the selected cube row’s index slice.
+        let mesh = MeshRecord {
+            first_index: 0,
+            ..mesh_record(row)?
+        };
         return Ok(Some(VisibilityPrepared::new(
             device,
             queue,
             key,
             capacity,
-            &[CUBE_MESH],
+            &[mesh],
             active,
             mode,
         )));
@@ -169,21 +170,19 @@ pub(super) fn prepare(
 
 /// The arena's rows as the compaction's mesh table: index range and bounds.
 pub(super) fn mesh_records(arena: &MeshArena) -> Result<Vec<MeshRecord>, RenderError> {
-    arena
-        .rows()
-        .iter()
-        .map(|row| {
-            Ok(MeshRecord {
-                first_index: row.first_index,
-                index_count: row.index_count,
-                base_vertex: row
-                    .draw_base_vertex()
-                    .map_err(|_| RenderError::SceneCapacity)?,
-                bounds_min: row.bounds[0],
-                bounds_max: row.bounds[1],
-            })
-        })
-        .collect()
+    arena.rows().iter().map(mesh_record).collect()
+}
+
+fn mesh_record(row: &super::mesh_arena::MeshRow) -> Result<MeshRecord, RenderError> {
+    Ok(MeshRecord {
+        first_index: row.first_index,
+        index_count: row.index_count,
+        base_vertex: row
+            .draw_base_vertex()
+            .map_err(|_| RenderError::SceneCapacity)?,
+        bounds_min: row.bounds[0],
+        bounds_max: row.bounds[1],
+    })
 }
 
 /// Culled modes: the forward view-group entry for the compacted slot list.
@@ -398,7 +397,11 @@ impl PreparedSynthetic {
             Some(culled) if self.visibility.is_some() => {
                 pass.draw_indexed_indirect(culled.args(), 0);
             }
-            _ => pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count()),
+            _ => pass.draw_indexed(
+                0..self.cube_draw.0.end - self.cube_draw.0.start,
+                self.cube_draw.1,
+                0..self.instance_upload.active_count(),
+            ),
         }
         Ok(())
     }

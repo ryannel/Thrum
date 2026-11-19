@@ -36,8 +36,8 @@ pub struct MeshVertex {
 }
 
 /// Bytes per packed vertex in the storage buffer.
-pub(super) const VERTEX_BYTES: u64 = 48;
-const VERTEX_STRIDE: usize = 48;
+pub(super) const VERTEX_BYTES: u64 = VERTEX_STRIDE as u64;
+const VERTEX_STRIDE: usize = size_of::<crate::records::MeshVertex>();
 const INDEX_BYTES: u64 = 4;
 
 impl MeshVertex {
@@ -51,15 +51,8 @@ impl MeshVertex {
     }
 
     fn pack(&self, bytes: &mut Vec<u8>) {
-        for value in self
-            .position
-            .iter()
-            .chain(&self.normal)
-            .chain(&self.uv)
-            .chain(&self.tangent)
-        {
-            bytes.extend_from_slice(&value.to_le_bytes());
-        }
+        let record: crate::records::MeshVertex = bytemuck::cast(*self);
+        bytes.extend_from_slice(bytemuck::bytes_of(&record));
     }
 }
 

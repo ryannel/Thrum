@@ -1,19 +1,20 @@
 //! Earth atmosphere presentation on the renderer's existing device and graph.
 //! The game supplies the sole Sun/time sample; no visual clock lives here.
 
+use crate::shaders::wgsl;
 use glam::Vec3;
 
 use crate::synthetic::RenderError;
 
 mod cloud;
 mod environment;
-mod gpu;
+pub(crate) mod gpu;
 mod graph;
 mod model;
 mod night;
-mod products;
-mod reflection;
-mod spectrum;
+pub(crate) mod products;
+pub(crate) mod reflection;
+pub(crate) mod spectrum;
 
 pub(crate) use cloud::CloudPrepared;
 pub use cloud::{GpuSunMapping, SunOpticalDepth};
@@ -22,7 +23,7 @@ pub(crate) use gpu::{AtmospherePrepared, SecondaryAerial};
 pub use products::EnvironmentProducts;
 
 /// Cloud sampling source shared by the synthetic and cooked draw shader assemblies.
-pub const CLOUD_SHADER_SOURCE: &str = include_str!("atmosphere/cloud.wgsl");
+pub const CLOUD_SHADER_SOURCE: &str = wgsl!("atmosphere/cloud.wgsl");
 
 pub(crate) const STAGE_NAMES: [&str; 14] = [
     "atmosphere transmittance",

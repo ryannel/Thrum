@@ -10,6 +10,13 @@ pub(crate) struct DirectionalLight {
     pub(crate) ambient_irradiance: [f32; 4],
 }
 
+impl DirectionalLight {
+    pub(crate) fn with_local_lights(mut self, active: bool) -> Self {
+        self.direction_to_light[3] = f32::from(active);
+        self
+    }
+}
+
 #[repr(C, align(16))]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct EnvironmentLight {

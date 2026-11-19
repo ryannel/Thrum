@@ -1,13 +1,14 @@
-use super::{GpuRect, GpuRow, GpuView, SHADER};
+use super::{GpuRect, GpuRow, GpuView};
 use std::mem::{offset_of, size_of};
 use wgpu::naga::{TypeInner, front::wgsl};
 
 #[test]
 fn sprite_abi_matches_wgsl_layout() {
-    let module = wgsl::parse_str(SHADER).expect("valid sprite WGSL");
+    let module =
+        wgsl::parse_str(&crate::shaders::Shader::Sprite.source()).expect("valid sprite WGSL");
     for (name, size, offsets) in [
         (
-            "View",
+            "SpriteView",
             size_of::<GpuView>(),
             &[
                 offset_of!(GpuView, clip_per_world),
@@ -15,7 +16,7 @@ fn sprite_abi_matches_wgsl_layout() {
             ][..],
         ),
         (
-            "Row",
+            "SpriteRow",
             size_of::<GpuRow>(),
             &[
                 offset_of!(GpuRow, pivot),
@@ -27,7 +28,7 @@ fn sprite_abi_matches_wgsl_layout() {
             ][..],
         ),
         (
-            "Frame",
+            "SpriteFrameRecord",
             size_of::<GpuRect>(),
             &[offset_of!(GpuRect, origin), offset_of!(GpuRect, size)][..],
         ),

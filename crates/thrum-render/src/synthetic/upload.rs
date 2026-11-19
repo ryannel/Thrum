@@ -14,7 +14,7 @@ struct UploadRun {
 }
 
 pub(super) struct PackedInstances {
-    pub(super) bytes: Vec<u8>,
+    pub(super) rows: Vec<InstanceRecord>,
     physical_to_slot: Vec<u32>,
     slot_to_physical: Vec<u32>,
     active_count: u32,
@@ -43,11 +43,11 @@ impl PackedInstances {
         )
         .map_err(|_| RenderError::SceneCapacity)?;
         let mut slot_to_physical = vec![0; instances.len()];
-        let mut bytes = Vec::with_capacity(instances.len() * abi::INSTANCE_BYTES);
+        let mut rows = Vec::with_capacity(instances.len());
         for (physical, &slot) in physical_to_slot.iter().enumerate() {
             slot_to_physical[slot as usize] =
                 u32::try_from(physical).map_err(|_| RenderError::SceneCapacity)?;
-            bytes.extend_from_slice(&pack_synthetic_instance(
+            rows.push(validate_synthetic_instance(
                 &instances[slot as usize],
                 material_count,
                 slot,
@@ -55,7 +55,7 @@ impl PackedInstances {
         }
         debug_assert_eq!(physical_to_slot.len(), count as usize);
         Ok(Self {
-            bytes,
+            rows,
             physical_to_slot,
             slot_to_physical,
             active_count,
@@ -65,8 +65,8 @@ impl PackedInstances {
 
 pub(super) struct InstanceUpload {
     buffer: wgpu::Buffer,
-    packed: Vec<u8>,
-    staged: Vec<u8>,
+    packed: Vec<InstanceRecord>,
+    staged: Vec<InstanceRecord>,
     staged_shadow: Vec<bool>,
     staged_two_sided: Vec<bool>,
     valid_slots: Vec<u32>,
@@ -104,10 +104,10 @@ impl InstanceUpload {
         let active_two_sided = two_sided.iter().filter(|&&value| value).count();
         Self {
             buffer,
-            staged: Vec::with_capacity(initial.bytes.len()),
+            staged: Vec::with_capacity(initial.rows.len()),
             staged_shadow: Vec::with_capacity(count),
             staged_two_sided: Vec::with_capacity(count),
-            packed: initial.bytes,
+            packed: initial.rows,
             valid_slots: Vec::with_capacity(count),
             dirty_physical: Vec::with_capacity(count * 3),
             runs: Vec::with_capacity(MAX_PARTIAL_WRITES),
@@ -145,11 +145,11 @@ impl InstanceUpload {
     }
 
     /// The accepted rows and logical slots the vertex stage will actually read.
-    pub(super) fn active_rows(&self) -> impl Iterator<Item = (u32, &[u8; abi::INSTANCE_BYTES])> {
+    pub(super) fn active_rows(&self) -> impl Iterator<Item = (u32, &InstanceRecord)> {
         self.physical_to_slot[..self.active_count as usize]
             .iter()
             .copied()
-            .zip(self.packed.as_chunks::<{ abi::INSTANCE_BYTES }>().0)
+            .zip(&self.packed)
     }
 
     pub(super) fn two_sided_count(&self) -> usize {
@@ -184,15 +184,16 @@ impl InstanceUpload {
             }
             previous_slot = Some(slot);
             let index = slot as usize;
-            let Ok(bytes) = pack_synthetic_instance(&instances[index], self.material_count, slot)
+            let Ok(record) =
+                validate_synthetic_instance(&instances[index], self.material_count, slot)
             else {
                 dropped_invalid += 1;
                 continue;
             };
-            let start = self.slot_to_physical[index] as usize * abi::INSTANCE_BYTES;
-            if self.packed[start..start + abi::INSTANCE_BYTES] != bytes {
+            let physical = self.slot_to_physical[index] as usize;
+            if bytemuck::bytes_of(&self.packed[physical]) != bytemuck::bytes_of(&record) {
                 let clamped = shadow_depth_clamped(index, &instances[index]);
-                self.staged.extend_from_slice(&bytes);
+                self.staged.push(record);
                 self.staged_shadow.push(clamped);
                 self.staged_two_sided
                     .push(instances[index].ids[3] != 0 && needs_two_sided(&instances[index]));
@@ -209,9 +210,7 @@ impl InstanceUpload {
                 bytes: 0,
             });
         }
-        let (rows, remainder) = self.staged.as_chunks::<{ abi::INSTANCE_BYTES }>();
-        debug_assert_eq!(remainder, [0_u8; 0]);
-        for (&slot, row) in self.valid_slots.iter().zip(rows) {
+        for (&slot, &row) in self.valid_slots.iter().zip(&self.staged) {
             let logical = slot as usize;
             let new_active = instances[logical].ids[3] != 0;
             let old_physical = self.slot_to_physical[logical];
@@ -234,8 +233,7 @@ impl InstanceUpload {
                 );
             }
             let physical = self.slot_to_physical[logical];
-            let start = physical as usize * abi::INSTANCE_BYTES;
-            self.packed[start..start + abi::INSTANCE_BYTES].copy_from_slice(row);
+            self.packed[physical as usize] = row;
             self.active_slots[logical] = new_active;
             self.dirty_physical.push(physical);
         }
@@ -252,15 +250,15 @@ impl InstanceUpload {
         let too_many_runs = build_runs(&self.dirty_physical, &mut self.runs);
         let full = too_many_runs || self.dirty_physical.len() > instances.len() / 2;
         if full {
-            queue.write_buffer(&self.buffer, 0, &self.packed);
+            queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&self.packed));
         } else {
             for run in &self.runs {
-                let start = run.destination as usize * abi::INSTANCE_BYTES;
-                let end = start + (run.source.end - run.source.start) * abi::INSTANCE_BYTES;
+                let start = run.destination as usize;
+                let end = start + (run.source.end - run.source.start);
                 queue.write_buffer(
                     &self.buffer,
                     u64::from(run.destination) * abi::INSTANCE_BYTES as u64,
-                    &self.packed[start..end],
+                    bytemuck::cast_slice(&self.packed[start..end]),
                 );
             }
         }
@@ -282,7 +280,7 @@ impl InstanceUpload {
             clamped_shadow_casters: self.active_shadow_clamps,
             writes: if full { 1 } else { self.runs.len() },
             bytes: if full {
-                self.packed.len()
+                self.packed.len() * abi::INSTANCE_BYTES
             } else {
                 self.dirty_physical.len() * abi::INSTANCE_BYTES
             },
@@ -310,7 +308,7 @@ pub(super) fn determinant(instance: &InstanceRecord) -> f64 {
 }
 
 fn swap_physical(
-    packed: &mut [u8],
+    packed: &mut [InstanceRecord],
     physical_to_slot: &mut [u32],
     slot_to_physical: &mut [u32],
     dirty_physical: &mut Vec<u32>,
@@ -327,11 +325,7 @@ fn swap_physical(
     physical_to_slot.swap(a, b);
     slot_to_physical[slot_a as usize] = second;
     slot_to_physical[slot_b as usize] = first;
-    let start_a = a * abi::INSTANCE_BYTES;
-    let start_b = b * abi::INSTANCE_BYTES;
-    for byte in 0..abi::INSTANCE_BYTES {
-        packed.swap(start_a + byte, start_b + byte);
-    }
+    packed.swap(a, b);
     dirty_physical.extend([first, second]);
 }
 
@@ -355,11 +349,11 @@ fn build_runs(actual: &[u32], runs: &mut Vec<UploadRun>) -> bool {
     too_many
 }
 
-pub(super) fn pack_synthetic_instance(
+fn validate_synthetic_instance(
     instance: &InstanceRecord,
     material_count: u32,
     logical_slot: u32,
-) -> Result<[u8; abi::INSTANCE_BYTES], RenderError> {
+) -> Result<InstanceRecord, RenderError> {
     if instance.ids[0] != logical_slot {
         return Err(RenderError::InvalidInstanceIdentity);
     }
@@ -386,7 +380,8 @@ pub(super) fn pack_synthetic_instance(
     {
         return Err(RenderError::InvalidLighting);
     }
-    Ok(instance.pack(material_count)?)
+    instance.validate(material_count)?;
+    Ok(*instance)
 }
 
 #[cfg(test)]

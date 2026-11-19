@@ -1104,9 +1104,12 @@ fn member_pipelines(device: &wgpu::Device) -> (wgpu::BindGroupLayout, [wgpu::Com
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("test member visibility"),
         source: wgpu::ShaderSource::Wgsl(
-            [include_str!("../visibility.wgsl"), pyramid::OCCLUSION_WGSL]
-                .concat()
-                .into(),
+            [
+                crate::shaders::wgsl!("visibility.wgsl"),
+                crate::shaders::wgsl!("visibility/occlusion.wgsl"),
+            ]
+            .concat()
+            .into(),
         ),
     });
     let pipeline = |entry: &str| {

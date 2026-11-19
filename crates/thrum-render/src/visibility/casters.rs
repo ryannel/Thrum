@@ -17,7 +17,7 @@ use crate::timing::{GpuTimings, TimingError};
 /// Graph pass name of the caster compaction, which runs every Sun pass's list.
 pub(crate) const PASS: &str = "synthetic Sun caster cull";
 /// Bytes of the caster view each Sun pass draws with (`ShadowView`).
-const CASTER_VIEW_BYTES: u64 = 80;
+const CASTER_VIEW_BYTES: u64 = size_of::<crate::records::ShadowView>() as u64;
 
 /// The prepared inputs every Sun pass's list reads.
 pub(crate) struct CasterInputs<'a> {
@@ -97,18 +97,7 @@ impl CasterCulling {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Sun caster cull"),
-            source: wgpu::ShaderSource::Wgsl(
-                [
-                    include_str!("../visibility.wgsl"),
-                    super::pyramid::OCCLUSION_WGSL,
-                    include_str!("casters.wgsl"),
-                ]
-                .concat()
-                .into(),
-            ),
-        });
+        let shader = crate::shaders::Shader::Casters.compile(device, "Sun caster cull");
         let pipeline = |entry: &str| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("Sun caster cull"),

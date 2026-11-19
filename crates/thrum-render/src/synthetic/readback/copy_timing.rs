@@ -27,10 +27,8 @@ impl CopyTiming {
         }
         let device = cap.site();
         let _transition = device.transition("capture-copy-timing");
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("readback dependency marker"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("copy_marker.wgsl").into()),
-        });
+        let shader =
+            crate::shaders::Shader::CopyMarker.compile(device, "readback dependency marker");
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("readback dependency marker"),
             layout: None,

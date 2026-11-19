@@ -3,24 +3,6 @@ fn scene_storage_scale() -> f32 { return scene_exposure.x; }
 
 // ABI2 opaque clustered forward diagnostic: Lambert + GGX/Smith/Schlick.
 // Checked finite reverse-Z camera; prepared lighting selects indirect resources.
-struct ViewRecord {
-    view_proj: mat4x4<f32>,
-    previous_view_proj: mat4x4<f32>,
-    camera_xyz_time: vec4<f32>,
-    pre_exposure_inv_exposure_jitter: vec4<f32>,
-    unjittered_view_proj: mat4x4<f32>,
-    mip_bias: f32,
-    jitter_phase: u32,
-    padding: vec2<u32>,
-}
-struct ViewAuxRecord {
-    inverse_view_proj: mat4x4<f32>,
-    viewport_inv_viewport: vec4<f32>,
-    near_far: vec4<f32>,
-    time: vec4<f32>,
-    flags: vec4<u32>,
-    subrectangle: vec4<f32>,
-}
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
 @group(1) @binding(0) var<uniform> light: DirectionalLight;
@@ -29,26 +11,9 @@ struct LocalSource {
     position_radius: vec4<f32>,
     candela: vec4<f32>,
 }
-struct ClusterHead {
-    offset: u32,
-    count: u32,
-}
 @group(1) @binding(1) var<storage, read> local_lights: array<LocalSource>;
 @group(1) @binding(2) var<storage, read> cluster_heads: array<ClusterHead>;
 @group(1) @binding(3) var<storage, read> cluster_indices: array<u32>;
-struct ShadowCascades {
-    light_view_proj: array<mat4x4<f32>, 2>,
-    split_overlap: vec4<f32>,
-    bias: vec4<f32>,
-    penumbra: vec4<f32>,
-    height_support: vec4<f32>,
-    // Top-down reverse-Z caster heights in shadow layer 2.
-    height_view_proj: mat4x4<f32>,
-    // Depth = x*height + y; uv per metre; texel metres. Zero x disables it.
-    horizon: vec4<f32>,
-    // Excluded upstream range in near units; the near clip plane in far depth.
-    near_partition: vec4<f32>,
-}
 @group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
 struct MaterialRecord {
@@ -57,14 +22,6 @@ struct MaterialRecord {
     surface: vec4<f32>,
     flags: vec4<u32>,
     texture_layers: vec4<u32>,
-}
-struct InstanceRecord {
-    current: mat4x4<f32>,
-    previous: mat4x4<f32>,
-    normal0: vec4<f32>,
-    normal1: vec4<f32>,
-    normal2: vec4<f32>,
-    ids: vec4<u32>,
 }
 @group(2) @binding(0) var<storage, read> materials: array<MaterialRecord>;
 @group(2) @binding(1) var base_textures: texture_2d_array<f32>;
@@ -75,25 +32,10 @@ struct InstanceRecord {
 @group(3) @binding(0) var<storage, read> instances: array<InstanceRecord>;
 // Camera-visible physical slots, read only by `compacted_vertex`.
 @group(0) @binding(5) var<storage, read> visible: array<u32>;
-struct HistoryRecord {
-    current: mat4x4<f32>,
-    identity: vec4<u32>,
-}
-struct Serials {
-    previous_lo: u32,
-    previous_hi: u32,
-    current_lo: u32,
-    current_hi: u32,
-    presentation_alpha: f32,
-    padding0: u32,
-    padding1: u32,
-    padding2: u32,
-}
 @group(3) @binding(1) var<storage, read> history: array<HistoryRecord>;
 @group(3) @binding(2) var<uniform> serials: Serials;
 // One mesh-arena vertex (`mesh_arena::MeshVertex`, 48 bytes): position and
 // normal.x, normal.yz and uv, then tangent and bitangent sign.
-struct MeshVertex { a: vec4<f32>, b: vec4<f32>, c: vec4<f32> }
 @group(3) @binding(3) var<storage, read> mesh_vertices: array<MeshVertex>;
 struct VertexOutput {
     // Invariant, so the depth prepass rasterizes the depth the forward pass writes.
@@ -128,7 +70,7 @@ fn vertex_at(vertex_index: u32, slot: u32) -> VertexOutput {
     output.current_clip = view.unjittered_view_proj * world;
     if instance.ids.w == 0u { output.position = vec4(2.0, 2.0, 2.0, 1.0); }
     output.world_position = world.xyz;
-    output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
+    output.normal = mat3x3(instance.normal[0].xyz,instance.normal[1].xyz,instance.normal[2].xyz) * n;
     output.uv = vertex.b.zw;
     output.material = instance.ids.y;
     let prior = history[slot];
@@ -172,19 +114,19 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
                   n: vec3<f32>, v: vec3<f32>, world_position: vec3<f32>, screen_position: vec4<f32>) -> vec3<f32> {
     if light.direction_to_light.w == 0.0 { return vec3(0.0); }
     var cluster = vec3<u32>(
-        u32(clamp(floor((world_position.x+1.0)*16.0),0.0,31.0)),
-        u32(clamp(floor((world_position.y+1.0)*9.0),0.0,17.0)),
-        u32(clamp(floor(world_position.z*16.0),0.0,15.0)));
+        u32(clamp(floor((world_position.x+1.0)* (0.5 * f32(CLUSTER_X))),0.0,f32(CLUSTER_X - 1u))),
+        u32(clamp(floor((world_position.y+1.0)* (0.5 * f32(CLUSTER_Y))),0.0,f32(CLUSTER_Y - 1u))),
+        u32(clamp(floor(world_position.z*f32(CLUSTER_Z)),0.0,f32(CLUSTER_Z - 1u))));
     if view_aux.flags.x == 1u {
         let near = view_aux.near_far.x;
         let far = view_aux.near_far.y;
         let depth = near*far/(near+screen_position.z*(far-near));
         cluster = vec3<u32>(
-            u32(clamp(floor(screen_position.x*view_aux.viewport_inv_viewport.z*32.0),0.0,31.0)),
-            u32(clamp(floor((1.0-screen_position.y*view_aux.viewport_inv_viewport.w)*18.0),0.0,17.0)),
-            u32(clamp(floor(log(depth/near)/log(far/near)*16.0),0.0,15.0)));
+            u32(clamp(floor(screen_position.x*view_aux.viewport_inv_viewport.z*f32(CLUSTER_X)),0.0,f32(CLUSTER_X - 1u))),
+            u32(clamp(floor((1.0-screen_position.y*view_aux.viewport_inv_viewport.w)*f32(CLUSTER_Y)),0.0,f32(CLUSTER_Y - 1u))),
+            u32(clamp(floor(log(depth/near)/log(far/near)*f32(CLUSTER_Z)),0.0,f32(CLUSTER_Z - 1u))));
     }
-    let head = cluster_heads[(cluster.z*18u+cluster.y)*32u+cluster.x];
+    let head = cluster_heads[(cluster.z*CLUSTER_Y+cluster.y)*CLUSTER_X+cluster.x];
     var sum = vec3(0.0);
     for (var i = 0u; i < head.count; i++) {
         let source = local_lights[cluster_indices[head.offset+i]];

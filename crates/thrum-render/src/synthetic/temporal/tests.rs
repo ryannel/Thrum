@@ -318,7 +318,7 @@ pub(in crate::synthetic) fn assert_history_rescale(
         (actual_exposure - expected_exposure).abs() < expected_exposure * 0.002,
         "resolved exposure {actual_exposure} vs {expected_exposure}"
     );
-    let shader=device.create_shader_module(wgpu::ShaderModuleDescriptor { label:Some("M2 retained exposure rescale witness"),source:wgpu::ShaderSource::Wgsl(format!("{}\n@group(0) @binding(4) var<uniform> previous: ExposureSample;\n@fragment fn history_rescale() -> @location(0) f32 {{ return rescale_storage(previous.values.x * 2.0, previous.values.x, exposure.values.x); }}",include_str!("../temporal.wgsl")).into()) });
+    let shader=device.create_shader_module(wgpu::ShaderModuleDescriptor { label:Some("M2 retained exposure rescale witness"),source:wgpu::ShaderSource::Wgsl(format!("{}\n@group(0) @binding(4) var<uniform> previous: ExposureSample;\n@fragment fn history_rescale() -> @location(0) f32 {{ return rescale_storage(previous.values.x * 2.0, previous.values.x, exposure.values.x); }}",crate::shaders::wgsl!("synthetic/temporal.wgsl")).into()) });
     let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("M2 history storage conversion"),
         layout: None,
@@ -507,8 +507,9 @@ fn metal_history_key_uses_output_grid_across_render_extent_changes() {
 
 #[test]
 fn temporal_shader_validates_and_retains_exposure_sample_abi() {
-    let module = wgpu::naga::front::wgsl::parse_str(include_str!("../temporal.wgsl"))
-        .expect("temporal WGSL parses");
+    let module =
+        wgpu::naga::front::wgsl::parse_str(crate::shaders::wgsl!("synthetic/temporal.wgsl"))
+            .expect("temporal WGSL parses");
     wgpu::naga::valid::Validator::new(
         wgpu::naga::valid::ValidationFlags::all(),
         wgpu::naga::valid::Capabilities::all(),

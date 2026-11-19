@@ -84,7 +84,7 @@ impl EnvironmentState {
                 toward_sun: frame.toward_sun,
                 illuminance_lux: frame.solar_illuminance_lux,
                 colour: frame.solar_colour,
-                angular_radius_radians: 0.004_654_21,
+                angular_radius_radians: crate::shader_constants::SUN_ANGULAR_RADIUS,
             },
             surface_sun: SurfaceSun {
                 toward_sun,

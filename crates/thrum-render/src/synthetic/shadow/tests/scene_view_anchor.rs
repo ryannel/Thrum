@@ -34,7 +34,7 @@ fn height_anchor_uses_declared_position_on_a_texel_edge() {
         let fitted = inputs.fit(None).expect("scene fit");
         let layout = (
             fitted.matrices[2].to_cols_array(),
-            fitted.samples[192..272].to_vec(),
+            bytemuck::bytes_of(&fitted.samples)[192..272].to_vec(),
         );
         if let Some(expected) = &reference {
             assert_eq!(
@@ -166,7 +166,8 @@ fn a_shared_main_height_map_cannot_cover_an_unrestricted_view_camera() {
             .expect("main fit");
         let shadow = prepared.shadow.as_mut().expect("Sun shadows");
         shadow.fitted.matrices[2] = main.matrices[2];
-        shadow.fitted.samples[192..272].copy_from_slice(&main.samples[192..272]);
+        shadow.fitted.samples.height_view_proj = main.samples.height_view_proj;
+        shadow.fitted.samples.horizon = main.samples.horizon;
         let shared = render(&device, &queue, &prepared);
         let mut changed = 0;
         let mut max_steps = 0.0_f32;

@@ -34,12 +34,12 @@ fn sky_mapping_matches_planet_horizon_and_angular_spans() {
 #[test]
 fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
     let common = concat!(
-        include_str!("../storage.wgsl"),
+        crate::shaders::wgsl!("atmosphere/storage.wgsl"),
         "\n",
         concat!(
-            include_str!("../geometry.wgsl"),
+            crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
             "\n",
-            include_str!("../common.wgsl")
+            crate::shaders::wgsl!("atmosphere/common.wgsl")
         )
     );
     let spectral = concat!(
@@ -53,7 +53,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
             include_str!("../lut.wgsl"),
             include_str!("../ground.wgsl")
         )),
-        format!("{common}\n{}", include_str!("../sky.wgsl")),
+        format!("{common}\n{}", crate::shaders::wgsl!("atmosphere/sky.wgsl")),
         format!(
             "{common}\n{}\n{}",
             include_str!("../irradiance.wgsl"),
@@ -70,7 +70,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
         format!(
             "{}\n{}\n{}\n{}\n{}",
             concat!(
-                include_str!("../storage.wgsl"),
+                crate::shaders::wgsl!("atmosphere/storage.wgsl"),
                 "\n",
                 include_str!("../brdf.wgsl")
             ),
@@ -80,15 +80,15 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 "\n",
                 include_str!("../../environment_light.wgsl"),
                 "\n",
-                include_str!("../../synthetic.wgsl")
+                crate::shaders::wgsl!("synthetic.wgsl")
             ),
             concat!(
-                include_str!("../../synthetic_aerial.wgsl"),
+                crate::shaders::wgsl!("synthetic_aerial.wgsl"),
                 "\n",
                 include_str!("../../synthetic_aerial_clear.wgsl")
             ),
             concat!(
-                include_str!("../geometry.wgsl"),
+                crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
                 "\n",
                 include_str!("../../synthetic_sun.wgsl"),
                 "\n",
@@ -98,7 +98,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
         format!(
             "{}\n{}\n{}\n{}\n{}",
             concat!(
-                include_str!("../storage.wgsl"),
+                crate::shaders::wgsl!("atmosphere/storage.wgsl"),
                 "\n",
                 include_str!("../brdf.wgsl")
             ),
@@ -108,15 +108,15 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 "\n",
                 include_str!("../../environment_light.wgsl"),
                 "\n",
-                include_str!("../../synthetic.wgsl")
+                crate::shaders::wgsl!("synthetic.wgsl")
             ),
             concat!(
-                include_str!("../../synthetic_aerial.wgsl"),
+                crate::shaders::wgsl!("synthetic_aerial.wgsl"),
                 "\n",
                 include_str!("../../synthetic_aerial_shadowed.wgsl")
             ),
             concat!(
-                include_str!("../geometry.wgsl"),
+                crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
                 "\n",
                 include_str!("../../synthetic_sun.wgsl"),
                 "\n",

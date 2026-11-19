@@ -26,11 +26,12 @@ pub struct SecondaryViewRecord {
 #[cfg(test)]
 mod tests {
     use super::SecondaryViewRecord;
+    use crate::shaders::wgsl;
 
     #[test]
     fn record_matches_wgsl() {
-        let module =
-            wgpu::naga::front::wgsl::parse_str(include_str!("record.wgsl")).expect("record WGSL");
+        let module = wgpu::naga::front::wgsl::parse_str(wgsl!("contribution/views/record.wgsl"))
+            .expect("record WGSL");
         let (_, ty) = module
             .types
             .iter()

@@ -62,12 +62,12 @@ impl Output {
         let source = format!(
             "{}\n{aerial}",
             concat!(
-                include_str!("../../storage.wgsl"),
+                crate::shaders::wgsl!("atmosphere/storage.wgsl"),
                 "\n",
                 concat!(
-                    include_str!("../../geometry.wgsl"),
+                    crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
                     "\n",
-                    include_str!("../../common.wgsl"),
+                    crate::shaders::wgsl!("atmosphere/common.wgsl"),
                     "\n",
                     include_str!("../../transport.wgsl"),
                     "\n",
@@ -435,9 +435,9 @@ const view_aux=ViewAux(vec4(32.0,32.0,1.0/32.0,1.0/32.0));
 @group(0) @binding(0) var<storage,read_write> result: array<vec4<f32>>;
 ",
         concat!(
-            include_str!("../../storage.wgsl"),
+            crate::shaders::wgsl!("atmosphere/storage.wgsl"),
             "\n",
-            include_str!("../../../synthetic_aerial.wgsl"),
+            crate::shaders::wgsl!("synthetic_aerial.wgsl"),
             "\n",
             include_str!("../../../synthetic_aerial_clear.wgsl")
         ),

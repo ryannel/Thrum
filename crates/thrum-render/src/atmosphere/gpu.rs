@@ -2,6 +2,7 @@
 //! the caller's existing compiled graph; this owner never submits GPU work.
 
 use crate::graph::{CompiledPass, PipelineKey};
+use crate::shaders::wgsl;
 use crate::synthetic::{DEPTH_FORMAT, RenderError, SyntheticView};
 use crate::timing::GpuTimings;
 
@@ -19,29 +20,29 @@ pub(crate) use aerial_view::SecondaryAerial;
 #[cfg(all(test, not(target_arch = "wasm32")))]
 pub(in crate::atmosphere) mod tests;
 
-pub(super) const EXTENTS: [[u32; 2]; 4] = [[256, 64], [512, 32], [192, 108], [128, 1]];
-const LUT_PLANES: [u32; 4] = [3, 2, 1, 2];
-pub(super) const AERIAL_EXTENT: [u32; 3] = [32, 32, 33];
+use crate::shader_constants::ATMOSPHERE_PLANES as LUT_PLANES;
+pub(super) use crate::shader_constants::{AERIAL_EXTENT, ATMOSPHERE_EXTENTS as EXTENTS};
 const LUT_SHADER: &str = concat!(
     concat!(
-        include_str!("storage.wgsl"),
+        wgsl!("atmosphere/storage.wgsl"),
         "\n",
         concat!(
-            include_str!("geometry.wgsl"),
+            wgsl!("atmosphere/geometry.wgsl"),
             "\n",
-            include_str!("common.wgsl")
+            wgsl!("atmosphere/common.wgsl")
         )
     ),
     "\n",
-    include_str!("transport.wgsl"),
+    wgsl!("atmosphere/transport.wgsl"),
     "\n",
-    include_str!("night.wgsl"),
+    wgsl!("atmosphere/night.wgsl"),
     "\n",
-    include_str!("lut.wgsl"),
+    wgsl!("atmosphere/lut.wgsl"),
     "\n",
-    include_str!("ground.wgsl")
+    wgsl!("atmosphere/ground.wgsl")
 );
-const UNIFORM_LEN: usize = 128;
+const UNIFORM_LEN: usize = size_of::<AtmosphereUniform>();
+const SKY_MOTION_BYTES: u64 = size_of::<crate::records::SkyMotion>() as u64;
 pub(super) const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const TRANSPORT_VALID: u8 = 1;
 const SKY_VALID: u8 = 2;
@@ -78,7 +79,7 @@ pub(crate) struct AtmospherePrepared {
     validity: u8,
     sky_dependencies: [u32; 4],
     diffuse_dependencies: [u32; 4],
-    aerial_dependencies: [u8; 80],
+    aerial_dependencies: [[u32; 4]; 5],
 }
 
 impl AtmospherePrepared {
@@ -188,10 +189,8 @@ impl AtmospherePrepared {
             ..Default::default()
         });
         let night = NightProfile::new(device, queue, frame.nightglow_active());
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("atmosphere LUT integration"),
-            source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
-        });
+        let shader =
+            crate::shaders::Shader::AtmosphereLuts.compile(device, "atmosphere LUT integration");
         let prepared: [(wgpu::ComputePipeline, wgpu::BindGroup); 4] =
             std::array::from_fn(|index| {
                 prepare_compute(device, index, &uniform, &views, &sampler, &shader, &night)
@@ -199,7 +198,7 @@ impl AtmospherePrepared {
         let [first, second, third, ground] = prepared;
         let sky_motion = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("sky submitted motion"),
-            size: 208,
+            size: SKY_MOTION_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -243,7 +242,7 @@ impl AtmospherePrepared {
             validity: 0,
             sky_dependencies: [0; 4],
             diffuse_dependencies: [0; 4],
-            aerial_dependencies: [0; 80],
+            aerial_dependencies: [[0; 4]; 5],
         };
         result.update(queue, frame, view, [1, 1]);
         result
@@ -287,34 +286,28 @@ impl AtmospherePrepared {
         let prior = glam::Mat4::from_cols_array_2d(&previous.view_proj_columns());
         let current = glam::Mat4::from_cols_array_2d(&view.view_proj_columns());
         let rotation = solar_rotation(frame.toward_sun, sun);
-        let mut motion = [0_u8; 208];
-        for (destination, value) in motion.as_chunks_mut::<4>().0.iter_mut().zip(
-            (prior - current)
-                .to_cols_array()
-                .into_iter()
-                .chain(current.to_cols_array())
-                .chain([
-                    extent[0] as f32,
-                    extent[1] as f32,
-                    f32::from(view.history_reset()),
-                    0.0,
-                ])
-                .chain((prior * rotation - current).to_cols_array()),
-        ) {
-            destination.copy_from_slice(&value.to_le_bytes());
-        }
-        queue.write_buffer(&self.sky_motion, 0, &motion);
+        let motion = crate::records::SkyMotion {
+            camera_delta: (prior - current).to_cols_array_2d(),
+            current: current.to_cols_array_2d(),
+            extent: [
+                extent[0] as f32,
+                extent[1] as f32,
+                f32::from(view.history_reset()),
+                0.0,
+            ],
+            solar_delta: (prior * rotation - current).to_cols_array_2d(),
+        };
+        queue.write_buffer(&self.sky_motion, 0, bytemuck::bytes_of(&motion));
         self.pending_sky = Some((*view, frame.toward_sun));
         let record = AtmosphereUniform::new(frame, view, frame.camera_altitude_m);
-        let bytes = bytemuck::bytes_of(&record);
-        let mut aerial_dependencies = [0_u8; 80];
-        aerial_dependencies[..64].copy_from_slice(&bytes[..64]);
-        aerial_dependencies[64..80].copy_from_slice(&bytes[64..80]);
+        let [a, b, c, d] = record.inverse_view_projection;
+        let aerial_dependencies =
+            [a, b, c, d, record.camera_altitude].map(|lane| lane.map(f32::to_bits));
         if self.validity & SKY_VALID == 0 || aerial_dependencies != self.aerial_dependencies {
             self.validity &= !AERIAL_VALID;
             self.aerial_dependencies = aerial_dependencies;
         }
-        queue.write_buffer(&self.uniform, 0, bytes);
+        queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&record));
     }
 
     pub(crate) fn commit(&mut self) {
@@ -458,29 +451,8 @@ fn prepare_diffuse(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("atmosphere diffuse hemisphere integration"),
-        source: wgpu::ShaderSource::Wgsl(
-            concat!(
-                concat!(
-                    include_str!("storage.wgsl"),
-                    "\n",
-                    concat!(
-                        include_str!("geometry.wgsl"),
-                        "\n",
-                        include_str!("common.wgsl")
-                    )
-                ),
-                "\n",
-                include_str!("irradiance.wgsl"),
-                "\n",
-                include_str!("../environment_light.wgsl"),
-                "\n",
-                include_str!("diffuse.wgsl")
-            )
-            .into(),
-        ),
-    });
+    let shader = crate::shaders::Shader::AtmosphereDiffuse
+        .compile(device, "atmosphere diffuse hemisphere integration");
     let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some("atmosphere diffuse irradiance"),
         layout: Some(&pipeline_layout),
@@ -554,26 +526,8 @@ fn prepare_aerial(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("atmosphere aerial integration"),
-        source: wgpu::ShaderSource::Wgsl(
-            EARTH
-                .shader(concat!(
-                    include_str!("storage.wgsl"),
-                    "\n",
-                    include_str!("geometry.wgsl"),
-                    "\n",
-                    include_str!("common.wgsl"),
-                    "\n",
-                    include_str!("transport.wgsl"),
-                    "\n",
-                    include_str!("night.wgsl"),
-                    "\n",
-                    include_str!("aerial.wgsl")
-                ))
-                .into(),
-        ),
-    });
+    let shader =
+        crate::shaders::Shader::AtmosphereAerial.compile(device, "atmosphere aerial integration");
     let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some("atmosphere aerial integration"),
         layout: Some(&pipeline_layout),
@@ -796,7 +750,7 @@ fn prepare_sky(
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(16),
+                    min_binding_size: wgpu::BufferSize::new(size_of::<[f32; 4]>() as u64),
                 },
                 count: None,
             },
@@ -806,7 +760,7 @@ fn prepare_sky(
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(208),
+                    min_binding_size: wgpu::BufferSize::new(SKY_MOTION_BYTES),
                 },
                 count: None,
             },
@@ -817,25 +771,7 @@ fn prepare_sky(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("atmosphere sky"),
-        source: wgpu::ShaderSource::Wgsl(
-            concat!(
-                concat!(
-                    include_str!("storage.wgsl"),
-                    "\n",
-                    concat!(
-                        include_str!("geometry.wgsl"),
-                        "\n",
-                        include_str!("common.wgsl")
-                    )
-                ),
-                "\n",
-                include_str!("sky.wgsl")
-            )
-            .into(),
-        ),
-    });
+    let shader = crate::shaders::Shader::AtmosphereSky.compile(device, "atmosphere sky");
     let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("atmosphere background in forward pass"),
         layout: Some(&pipeline_layout),
@@ -912,4 +848,8 @@ fn prepare_sky(
         })
     });
     (pipeline, groups)
+}
+
+pub(crate) fn lut_source() -> String {
+    EARTH.shader(LUT_SHADER)
 }

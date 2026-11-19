@@ -182,10 +182,7 @@ impl Factory {
         } else {
             selection
         };
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(include_str!("native_witness.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::NativeWitness.compile(device, PASS);
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some(PASS),
             layout: None,

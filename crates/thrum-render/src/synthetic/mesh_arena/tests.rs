@@ -279,11 +279,8 @@ fn the_packed_vertex_matches_the_shader_struct() {
     assert_eq!(floats, (1..=12).map(|v| v as f32).collect::<Vec<_>>());
     // The shader reads position as a.xyz, normal as (a.w, b.xy), uv as b.zw
     // and tangent as c, so its struct must be three tightly packed vec4s.
-    let source = include_str!("../../synthetic.wgsl");
-    let declaration = source
-        .lines()
-        .find(|line| line.starts_with("struct MeshVertex"))
-        .expect("synthetic.wgsl declares MeshVertex");
+    let source = crate::shaders::wgsl!("synthetic.wgsl");
+    let declaration = include_str!("../../records/mesh_vertex.wgsl");
     let module = wgpu::naga::front::wgsl::parse_str(declaration).expect("parses");
     let (_, ty) = module
         .types

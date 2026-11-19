@@ -6,6 +6,7 @@ use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
     PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
 /// Per-view SDR tone/gamut policy, independent of fixed or incident exposure.
@@ -48,18 +49,18 @@ pub(super) fn display_selectors(tone_map: SdrToneMap, overlay: DisplayOverlay) -
     tone_map as u32 | (overlay as u32) << 8
 }
 
-pub(super) const SHADER: &str = concat!(
-    include_str!("display/srgb.wgsl"),
+pub(crate) const SHADER: &str = concat!(
+    wgsl!("synthetic/display/srgb.wgsl"),
     "\n",
-    include_str!("display/neutral_highlights.wgsl"),
+    wgsl!("synthetic/display/neutral_highlights.wgsl"),
     "\n",
-    include_str!("../synthetic_display.wgsl"),
+    wgsl!("synthetic_display.wgsl"),
 );
 
 pub(crate) const DISPLAY_REFERRED_SHADER: &str = concat!(
-    include_str!("display/srgb.wgsl"),
+    wgsl!("synthetic/display/srgb.wgsl"),
     "\n",
-    include_str!("display/display_referred.wgsl"),
+    wgsl!("synthetic/display/display_referred.wgsl"),
 );
 
 pub(crate) const DISPLAY_REFERRED_PASS: &str = "display-referred tone encode";
@@ -69,10 +70,7 @@ pub(crate) struct DisplayReferredStage(wgpu::RenderPipeline);
 
 impl DisplayReferredStage {
     pub(crate) fn new(device: &crate::runtime::DeviceSite) -> Self {
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(DISPLAY_REFERRED_PASS),
-            source: wgpu::ShaderSource::Wgsl(DISPLAY_REFERRED_SHADER.into()),
-        });
+        let shader = crate::shaders::Shader::DisplayReferred.compile(device, DISPLAY_REFERRED_PASS);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(DISPLAY_REFERRED_PASS),
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -260,15 +258,12 @@ impl SdrToneStage {
         let pattern = std::env::var("THRUM_MAC_PATTERN").as_deref() == Ok("1");
         #[cfg(not(target_os = "macos"))]
         let pattern = false;
-        let source = if pattern {
-            include_str!("display/capture_pattern.wgsl")
+        let shader = if pattern {
+            crate::shaders::Shader::DisplayPattern
         } else {
-            SHADER
-        };
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("synthetic authored SDR display"),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
-        });
+            crate::shaders::Shader::Display
+        }
+        .compile(device, "synthetic authored SDR display");
         let pipeline = display_pipeline(
             device,
             &shader,

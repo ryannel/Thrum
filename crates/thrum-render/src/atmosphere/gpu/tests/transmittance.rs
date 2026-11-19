@@ -339,6 +339,7 @@ fn near_ground_sun_lookup_and_producer_endpoints_agree_with_cpu_authority() {
 const SURFACE_LOOKUP: &str = concat!(
     // The unused aerial body still resolves against its actual view dependency.
     "struct ViewAux { viewport_inv_viewport: vec4<f32> }\n@group(2) @binding(0) var<uniform> view_aux: ViewAux;\n",
+    // LUT_SHADER already supplies the shared atmosphere observer declaration.
     include_str!("../../../synthetic_aerial.wgsl"),
     "\n",
     include_str!("../../../synthetic_sun.wgsl"),

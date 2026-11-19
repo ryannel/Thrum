@@ -4,6 +4,7 @@
 use super::{
     DEPTH_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneContext, SyntheticView,
 };
+use crate::shaders::wgsl;
 use crate::{
     contribution::{
         SecondaryView, SecondaryViewError, SecondaryViewRecord, SecondaryViewRequest,
@@ -64,7 +65,7 @@ fn shader_source(base: &str) -> String {
     format!(
         "{base}\n{}\n{}",
         SecondaryView::record_wgsl(),
-        include_str!("secondary.wgsl")
+        wgsl!("synthetic/secondary.wgsl")
     )
 }
 
@@ -311,22 +312,22 @@ impl SecondaryPrepared {
             ],
             immediate_size: 0,
         });
-        let source = super::scene_source::cloud_variant(
-            shader_source(&super::scene_source::secondary(
+        let variant = crate::shaders::SceneVariant {
+            atmosphere: crate::shaders::AtmosphereVariant::new(
                 prepared.atmosphere.is_some(),
                 prepared.air_shadow.is_some(),
-                prepared.cloud.is_some(),
-                super::scene_source::SunShadows::from(prepared.shadow.is_some()),
-            )),
-            prepared
-                .cloud
-                .as_ref()
-                .is_some_and(|cloud| cloud.gpu_target().is_some()),
-        );
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(source.as_str().into()),
-        });
+            ),
+            cloud: match prepared.cloud.as_ref() {
+                Some(field) if field.gpu_target().is_some() => crate::shaders::CloudVariant::Gpu,
+                Some(_) => crate::shaders::CloudVariant::Sampled,
+                None => crate::shaders::CloudVariant::Absent,
+            },
+            shadows: prepared.shadow.is_some().into(),
+            sun: crate::capabilities::SunShadowMethod::Maps,
+            traced_lamps: false,
+        };
+        let (source, shader) = crate::shaders::Shader::SecondaryScene(variant)
+            .compile_with_source(device, PASS, false);
         let pipelines = [
             super::buckets::PipelineClass::Ordinary,
             super::buckets::PipelineClass::Mirrored,
@@ -952,6 +953,18 @@ pub(super) fn index(key: PipelineKey, count: usize) -> Option<(usize, Stage)> {
         _ => Stage::Casters,
     };
     (index < count).then_some((index, stage))
+}
+
+pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
+    super::scene_source::cloud_variant(
+        shader_source(&super::scene_source::secondary(
+            variant.atmosphere.present(),
+            variant.atmosphere.air_shadow(),
+            variant.cloud.present(),
+            variant.shadows,
+        )),
+        variant.cloud.gpu(),
+    )
 }
 
 #[cfg(test)]

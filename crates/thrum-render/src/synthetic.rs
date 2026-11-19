@@ -30,6 +30,7 @@ use wgpu::util::DeviceExt;
 mod after_opaque;
 mod air_shadow;
 mod buckets;
+pub(crate) use buckets::MAX_BUCKETS;
 pub(crate) mod camera_culling;
 mod cluster;
 mod cluster_gpu;
@@ -55,8 +56,8 @@ pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
 pub(crate) mod readback;
 mod scene_apply;
 mod scene_graph;
-mod scene_source;
-mod secondary;
+pub(crate) mod scene_source;
+pub(crate) mod secondary;
 mod shadow;
 pub(crate) mod stars;
 mod taau;
@@ -1225,7 +1226,7 @@ impl PreparedSynthetic {
         {
             return Err(RenderError::SceneCapacity);
         }
-        let (mut light_data, background, clamps) = pack_frame_lighting(lighting)?;
+        let (light_data, background, clamps) = pack_frame_lighting(lighting)?;
         if self.cluster_compute.is_some() {
             self.clusters.repack_gpu(&scene.local_lights, &view)?;
         } else {
@@ -1241,8 +1242,7 @@ impl PreparedSynthetic {
         {
             return Err(RenderError::SceneCapacity);
         }
-        let has_local_lights: f32 = if self.clusters.active { 1.0 } else { 0.0 };
-        light_data.direction_to_light[3] = has_local_lights;
+        let light_data = light_data.with_local_lights(self.clusters.active);
         if let Some(shadow) = self.shadow.as_mut() {
             shadow.update(
                 &view,

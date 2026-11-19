@@ -77,10 +77,7 @@ impl ClusterCompute {
             bind_group_layouts: &[Some(&group_layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("synthetic cluster compute"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("cluster.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::Cluster.compile(device, "synthetic cluster compute");
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("synthetic cluster compute"),
             layout: Some(&layout),
@@ -109,7 +106,11 @@ impl ClusterCompute {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.group, &[]);
         let cells = u32::try_from(X * Y * Z).expect("bounded cluster grid fits u32");
-        pass.dispatch_workgroups(cells.div_ceil(64), 1, 1);
+        pass.dispatch_workgroups(
+            cells.div_ceil(crate::shader_constants::CLUSTER_WORKGROUP),
+            1,
+            1,
+        );
         Ok(())
     }
 }

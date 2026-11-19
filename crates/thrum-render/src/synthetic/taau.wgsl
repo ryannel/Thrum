@@ -1,10 +1,3 @@
-struct Params {
-    inverse: mat4x4<f32>,
-    previous_view: mat4x4<f32>,
-    view: mat4x4<f32>,
-    state: vec4<f32>, // valid, reserved, width, height
-    jitter: vec4<f32>,
-}
 @group(0) @binding(0) var colour: texture_2d<f32>;
 @group(0) @binding(1) var depth: texture_depth_2d;
 @group(0) @binding(2) var motion: texture_2d<f32>;
@@ -14,10 +7,9 @@ struct Params {
 @group(0) @binding(6) var output: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(7) var next_colour: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(8) var next_depth: texture_storage_2d<r32float, write>;
-@group(0) @binding(9) var<uniform> params: Params;
-struct Exposure { values: vec4<f32>, metadata: vec4<u32> }
-@group(0) @binding(10) var<uniform> exposure: Exposure;
-@group(0) @binding(11) var<uniform> previous_exposure: Exposure;
+@group(0) @binding(9) var<uniform> params: ReconstructionParams;
+@group(0) @binding(10) var<uniform> exposure: ExposureSample;
+@group(0) @binding(11) var<uniform> previous_exposure: ExposureSample;
 
 fn ycocg(c: vec3<f32>) -> vec3<f32> {
     return vec3(dot(c,vec3(0.25,0.5,0.25)),(c.r-c.b)*0.5,(-c.r+2.0*c.g-c.b)*0.25);

@@ -9,12 +9,13 @@ use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
     PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
 /// Timed name of the Sun air shadow heights compute pass.
 pub(crate) const AIR_SHADOW_PASS: &str = "synthetic Sun air shadow heights";
 /// Output columns per side: two caster height texels each, the same footprint.
-pub(super) const SIZE: u32 = 512;
+pub(super) use crate::shader_constants::AIR_SHADOW_SIZE as SIZE;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg32Float;
 
 /// The forward pass's binding of the heights (view group, binding 4).
@@ -36,17 +37,17 @@ pub(super) fn aerial_source(atmosphere: bool, shadowed: bool) -> &'static str {
     // the atmosphere's existing tests. These live pieces assemble identical bytes.
     match (atmosphere, shadowed) {
         (true, true) => concat!(
-            include_str!("../synthetic_aerial.wgsl"),
+            wgsl!("synthetic_aerial.wgsl"),
             "\n",
-            include_str!("../synthetic_aerial_visibility.wgsl"),
-            include_str!("../synthetic_aerial_camera_shadowed.wgsl")
+            wgsl!("synthetic_aerial_visibility.wgsl"),
+            wgsl!("synthetic_aerial_camera_shadowed.wgsl")
         ),
         (true, false) => concat!(
-            include_str!("../synthetic_aerial.wgsl"),
+            wgsl!("synthetic_aerial.wgsl"),
             "\n",
-            include_str!("../synthetic_aerial_clear.wgsl")
+            wgsl!("synthetic_aerial_clear.wgsl")
         ),
-        _ => include_str!("../synthetic_plain.wgsl"),
+        _ => wgsl!("synthetic_plain.wgsl"),
     }
 }
 
@@ -174,17 +175,8 @@ impl AirShadowPrepared {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("synthetic Sun air shadow heights"),
-            source: wgpu::ShaderSource::Wgsl(
-                concat!(
-                    include_str!("../directional_light.wgsl"),
-                    "\n",
-                    include_str!("air_shadow.wgsl")
-                )
-                .into(),
-            ),
-        });
+        let shader =
+            crate::shaders::Shader::AirShadow.compile(device, "synthetic Sun air shadow heights");
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("synthetic Sun air shadow heights"),
             layout: Some(&pipeline_layout),

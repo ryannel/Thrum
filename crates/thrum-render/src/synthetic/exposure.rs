@@ -10,16 +10,17 @@ use crate::graph::{
     ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BYTES};
+use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
-pub(super) const SAMPLE_BYTES: u64 = 32;
-const POLICY_BYTES: u64 = 32;
-const SHADER: &str = concat!(
-    include_str!("../directional_light.wgsl"),
+pub(super) const SAMPLE_BYTES: u64 = size_of::<crate::records::ExposureSample>() as u64;
+const POLICY_BYTES: u64 = size_of::<crate::records::Policy>() as u64;
+pub(crate) const SHADER: &str = concat!(
+    wgsl!("directional_light.wgsl"),
     "\n",
-    include_str!("../environment_light.wgsl"),
+    wgsl!("environment_light.wgsl"),
     "\n",
-    include_str!("exposure.wgsl"),
+    wgsl!("synthetic/exposure.wgsl"),
 );
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -82,17 +83,13 @@ impl ExposurePolicy {
                 1 + u32::from(low_light_key),
             ),
         };
-        let words = [
-            inverse.to_bits(),
-            compensation.to_bits(),
-            min.to_bits(),
-            max.to_bits(),
+        bytemuck::cast(crate::records::Policy {
+            inverse_compensation_min_max: [inverse, compensation, min, max],
             mode,
-            PRE_EXPOSURE.to_bits(),
-            u32::from(atmosphere),
-            display_selectors(tone_map, overlay),
-        ];
-        std::array::from_fn(|byte| words[byte / 4].to_le_bytes()[byte % 4])
+            pre_exposure: PRE_EXPOSURE,
+            atmosphere: u32::from(atmosphere),
+            display_selectors: display_selectors(tone_map, overlay),
+        })
     }
 }
 
@@ -179,10 +176,7 @@ impl ExposureResolve {
                 ],
             })
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("incident camera exposure"),
-            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
-        });
+        let shader = crate::shaders::Shader::Exposure.compile(device, "incident camera exposure");
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("camera exposure resolve"),
             bind_group_layouts: &[Some(&layout)],

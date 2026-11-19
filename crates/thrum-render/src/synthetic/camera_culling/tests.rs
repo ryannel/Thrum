@@ -465,7 +465,7 @@ fn an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone() {
             base.instances[entering].current[3] = [40.0, 0.0, 0.5, 1.0];
             base.instances[entering].previous = base.instances[entering].current;
             let mut tie = base.clone();
-            let mut moved = tie.instances[staying].clone();
+            let mut moved = tie.instances[staying];
             moved.ids = tie.instances[entering].ids;
             tie.instances[entering] = moved;
             cases.push((

@@ -2,7 +2,7 @@ use crate::synthetic::SyntheticVertex;
 
 #[test]
 fn packed_row_vertices_match_the_shader_storage_abi() {
-    let shader = include_str!("../../synthetic.wgsl");
+    let shader = crate::shaders::wgsl!("synthetic.wgsl");
     let start = shader
         .find("struct MeshVertex ")
         .expect("arena vertex declaration");

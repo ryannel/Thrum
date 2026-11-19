@@ -1,26 +1,41 @@
-//! CPU/WGSL revision 2: explicit little-endian scalar packing, column-major
-//! matrices, storage-buffer material/instance tables and four typed D2 arrays.
-//! No native Rust layout or unsafe cast is part of the GPU ABI.
+//! CPU/WGSL revision 2: column-major matrices, typed storage-buffer records and D2 arrays.
 
 /// Shared material/instance ABI revision.
 pub const ABI_REVISION: u32 = 2;
 /// Packed material-table stride.
-pub const MATERIAL_BYTES: usize = 80;
+pub const MATERIAL_BYTES: usize = size_of::<MaterialRecord>();
 /// Packed instance-table stride.
-pub const INSTANCE_BYTES: usize = 192;
+pub const INSTANCE_BYTES: usize = size_of::<InstanceRecord>();
 /// Base colour, emissive, surface factors, semantic flags, texture-layer indices.
-pub const MATERIAL_OFFSETS: [usize; 5] = [0, 16, 32, 48, 64];
+pub const MATERIAL_OFFSETS: [usize; 5] = [
+    std::mem::offset_of!(MaterialRecord, base_rgba),
+    std::mem::offset_of!(MaterialRecord, emissive_cutoff),
+    std::mem::offset_of!(MaterialRecord, surface),
+    std::mem::offset_of!(MaterialRecord, flags),
+    std::mem::offset_of!(MaterialRecord, texture_layers),
+];
 
 /// The scene's actual material declaration, for consumers that reflect their upload ABI.
 /// Returns `None` if the renderer no longer declares this public material record.
 pub fn material_wgsl_declaration() -> Option<&'static str> {
-    let source = include_str!("synthetic.wgsl");
+    let source = crate::shaders::wgsl!("synthetic.wgsl");
     let start = source.find("struct MaterialRecord {")?;
     let end = start + source[start..].find('}')? + 1;
     source.get(start..end)
 }
 /// Current/previous model, padded normal columns and instance/material/skin/source IDs.
-pub const INSTANCE_OFFSETS: [usize; 6] = [0, 64, 128, 144, 160, 176];
+pub const INSTANCE_OFFSETS: [usize; 6] = {
+    let normal = std::mem::offset_of!(InstanceRecord, normal);
+    let column = size_of::<[f32; 4]>();
+    [
+        std::mem::offset_of!(InstanceRecord, current),
+        std::mem::offset_of!(InstanceRecord, previous),
+        normal,
+        normal + column,
+        normal + 2 * column,
+        std::mem::offset_of!(InstanceRecord, ids),
+    ]
+};
 
 /// The four fixed, separately typed sampled texture arrays. Array layers share
 /// dimensions/format/mips within one class; this requires no binding-array feature.
@@ -151,7 +166,8 @@ impl TextureClasses {
 
 /// Native metallic-roughness factors. Values remain linear; display conversion
 /// belongs to V4. Factor validation does not certify a BRDF implementation.
-#[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable, Copy)]
 pub struct MaterialRecord {
     /// RGBA factors, finite in [0,1].
     pub base_rgba: [f32; 4],
@@ -196,19 +212,14 @@ impl MaterialRecord {
         if !textures.contains(self.texture_layers) {
             return Err(AbiError::TextureLayer);
         }
-        let mut bytes = [0; MATERIAL_BYTES];
-        floats(&mut bytes, 0, &self.base_rgba);
-        floats(&mut bytes, 16, &self.emissive_cutoff);
-        floats(&mut bytes, 32, &self.surface);
-        uints(&mut bytes, 48, &self.flags);
-        uints(&mut bytes, 64, &self.texture_layers);
-        Ok(bytes)
+        Ok(bytemuck::cast(*self))
     }
 }
 
 /// Static/instanced geometry record. Prior transforms are supplied by the actual
 /// history sample owner; copying the current matrix does not certify history.
-#[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable, Copy)]
 pub struct InstanceRecord {
     /// Column-major current object-to-view-origin-relative-world matrix.
     pub current: [[f32; 4]; 4],
@@ -248,6 +259,11 @@ impl InstanceRecord {
     ///
     /// Returns an ABI error for a nonfinite transform or invalid material index.
     pub fn pack(&self, materials: u32) -> Result<[u8; INSTANCE_BYTES], AbiError> {
+        self.validate(materials)?;
+        Ok(bytemuck::cast(*self))
+    }
+
+    pub(crate) fn validate(&self, materials: u32) -> Result<(), AbiError> {
         if self.ids[1] >= materials {
             return Err(AbiError::MaterialIndex);
         }
@@ -261,18 +277,7 @@ impl InstanceRecord {
         {
             return Err(AbiError::InvalidTransform);
         }
-        let mut bytes = [0; INSTANCE_BYTES];
-        for (column, values) in self.current.iter().enumerate() {
-            floats(&mut bytes, column * 16, values);
-        }
-        for (column, values) in self.previous.iter().enumerate() {
-            floats(&mut bytes, 64 + column * 16, values);
-        }
-        for (column, values) in self.normal.iter().enumerate() {
-            floats(&mut bytes, 128 + column * 16, values);
-        }
-        uints(&mut bytes, 176, &self.ids);
-        Ok(bytes)
+        Ok(())
     }
 }
 
@@ -328,14 +333,4 @@ pub fn table_bytes(
 }
 fn unit(value: f32) -> bool {
     value.is_finite() && (0.0..=1.0).contains(&value)
-}
-fn floats(bytes: &mut [u8], offset: usize, values: &[f32]) {
-    for (i, value) in values.iter().enumerate() {
-        bytes[offset + i * 4..offset + i * 4 + 4].copy_from_slice(&value.to_le_bytes());
-    }
-}
-fn uints(bytes: &mut [u8], offset: usize, values: &[u32]) {
-    for (i, value) in values.iter().enumerate() {
-        bytes[offset + i * 4..offset + i * 4 + 4].copy_from_slice(&value.to_le_bytes());
-    }
 }

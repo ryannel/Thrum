@@ -74,10 +74,7 @@ impl PreparedSynthetic {
 impl RayBuildProbe {
     pub(super) fn new(device: &DeviceSite) -> Self {
         let _transition = device.transition("ray-mesh-build-probe");
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("ray mesh timestamp marker"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("build_probe.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::RayBuild.compile(device, "ray mesh timestamp marker");
         let sink_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ray mesh timestamp sink layout"),
             entries: &[wgpu::BindGroupLayoutEntry {

@@ -66,7 +66,7 @@ pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePi
     let source = format!(
         "{}\n{}",
         concat!(
-            include_str!("../../../atmosphere/storage.wgsl"),
+            crate::shaders::wgsl!("atmosphere/storage.wgsl"),
             "\n",
             include_str!("../../../atmosphere/brdf.wgsl"),
             "\n",
@@ -76,7 +76,7 @@ pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePi
             "\n",
             include_str!("../../../environment_light.wgsl"),
             "\n",
-            include_str!("../../../synthetic.wgsl"),
+            crate::shaders::wgsl!("synthetic.wgsl"),
             "\n",
             include_str!("../../../synthetic_plain.wgsl")
         ),

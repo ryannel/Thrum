@@ -16,22 +16,23 @@ use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::shader_constants::{
+    PHASE_FINAL, PHASE_FRUSTUM, PHASE_PREPASS, VISIBILITY_WORKGROUP as WORKGROUP,
+};
 use crate::timing::{GpuTimings, TimingError};
 
-/// Invocations per workgroup; must match `visibility.wgsl`.
-const WORKGROUP: u32 = 256;
 /// `DrawIndexedIndirectArgs` bytes.
 pub(crate) const ARGS_BYTES: u64 = 20;
-const MESH_LEN: usize = 48;
-const PARAMS_LEN: usize = 16;
+const MESH_LEN: usize = size_of::<crate::records::MeshRecord>();
+const PARAMS_LEN: usize = size_of::<crate::records::VisibilityParams>();
 /// One parameter record per phase, at the portable uniform offset alignment.
 const PARAMS_STRIDE: u32 = 256;
-const PHASES: u32 = 3;
+const PHASES: u32 = PHASE_FINAL + 1;
 /// Last-visible bits per workgroup of slots.
 const WORDS: u32 = WORKGROUP / 32;
 /// Graph owner of the last-visible history pair.
 const HISTORY_OWNER: u64 = 0x5649_4849;
-const VIEW_BYTES: u64 = 160;
+const VIEW_BYTES: u64 = size_of::<crate::records::ViewRecord>() as u64;
 /// Pipeline role inside the synthetic closure.
 pub(crate) const ROLE: u32 = 0x5649;
 /// Pipeline role of the final occlusion cull.
@@ -61,15 +62,15 @@ pub(crate) struct MeshRecord {
 
 impl MeshRecord {
     fn pack(self) -> [u8; MESH_LEN] {
-        let mut bytes = [0; MESH_LEN];
-        bytes[0..4].copy_from_slice(&self.first_index.to_le_bytes());
-        bytes[4..8].copy_from_slice(&self.index_count.to_le_bytes());
-        bytes[8..12].copy_from_slice(&self.base_vertex.to_le_bytes());
-        for (axis, (low, high)) in self.bounds_min.iter().zip(self.bounds_max).enumerate() {
-            bytes[16 + axis * 4..20 + axis * 4].copy_from_slice(&low.to_le_bytes());
-            bytes[32 + axis * 4..36 + axis * 4].copy_from_slice(&high.to_le_bytes());
-        }
-        bytes
+        let pad = |[x, y, z]: [f32; 3]| [x, y, z, 0.0];
+        bytemuck::cast(crate::records::MeshRecord {
+            first_index: self.first_index,
+            index_count: self.index_count,
+            base_vertex: self.base_vertex,
+            padding: 0,
+            bounds_min: pad(self.bounds_min),
+            bounds_max: pad(self.bounds_max),
+        })
     }
 }
 
@@ -89,13 +90,14 @@ pub enum CullMode {
 
 /// Which slots one target's compaction lists; selects its parameter record.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(u32)]
 pub(crate) enum Phase {
     /// Every slot in view.
-    Frustum = 0,
+    Frustum = PHASE_FRUSTUM,
     /// Slots in view that were visible last frame: the depth prepass.
-    Prepass = 1,
+    Prepass = PHASE_PREPASS,
     /// Slots in view that this frame's pyramid does not hide.
-    Final = 2,
+    Final = PHASE_FINAL,
 }
 
 /// Device-local pipelines and the mesh table.
@@ -286,14 +288,7 @@ impl VisibilityPrepared {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("camera visibility"),
-            source: wgpu::ShaderSource::Wgsl(
-                [include_str!("visibility.wgsl"), pyramid::OCCLUSION_WGSL]
-                    .concat()
-                    .into(),
-            ),
-        });
+        let shader = crate::shaders::Shader::Visibility.compile(device, "camera visibility");
         let pipeline = |entry: &str| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("camera visibility"),
@@ -426,15 +421,23 @@ impl VisibilityPrepared {
     }
 
     fn write_params(&self, queue: &wgpu::Queue) {
-        let stride = PARAMS_STRIDE as usize;
-        let mut bytes = vec![0_u8; stride * PHASES as usize];
-        for phase in 0..PHASES {
-            let record = &mut bytes[phase as usize * stride..][..PARAMS_LEN];
-            record[..4].copy_from_slice(&self.active.to_le_bytes());
-            record[4..8].copy_from_slice(&self.groups().to_le_bytes());
-            record[12..16].copy_from_slice(&phase.to_le_bytes());
+        #[repr(C)]
+        #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+        struct Slot {
+            record: crate::records::VisibilityParams,
+            padding: [[u32; 4]; (PARAMS_STRIDE as usize - PARAMS_LEN) / 16],
         }
-        queue.write_buffer(&self.params, 0, &bytes);
+
+        let slots: [Slot; PHASES as usize] = std::array::from_fn(|phase| Slot {
+            record: crate::records::VisibilityParams {
+                active_count: self.active,
+                groups: self.groups(),
+                mesh: 0,
+                phase: u32::try_from(phase).expect("visibility phase fits u32"),
+            },
+            padding: [[0; 4]; (PARAMS_STRIDE as usize - PARAMS_LEN) / 16],
+        });
+        queue.write_buffer(&self.params, 0, bytemuck::cast_slice(&slots));
     }
 
     /// Record a new active prefix. Writes only when it changes; queue order

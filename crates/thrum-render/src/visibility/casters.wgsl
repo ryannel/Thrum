@@ -9,11 +9,7 @@
 // clamps z above w to w (still drawn) unless the pass clips upstream
 // geometry, when z = w is a real clip plane too.
 // `CasterView` is `ShadowView` in `shadow.wgsl`: the bytes the pass draws with.
-struct CasterView {
-    light_view_proj: mat4x4<f32>,
-    clip_upstream: vec4<u32>,
-}
-@group(0) @binding(14) var<uniform> caster_view: CasterView;
+@group(0) @binding(14) var<uniform> caster_view: ShadowView;
 
 fn caster_row(row: u32) -> vec4<f32> {
     let m = caster_view.light_view_proj;
@@ -47,7 +43,7 @@ fn casts(slot: u32, mesh: MeshRecord) -> bool {
         || caster_outside(r2, center, extent) || upstream);
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn count_casters(@builtin(global_invocation_id) global: vec3<u32>,
                  @builtin(local_invocation_id) local: vec3<u32>,
                  @builtin(workgroup_id) group: vec3<u32>) {

@@ -2,38 +2,11 @@
 // fetch as the forward pass: the draw's index range and base vertex select the
 // mesh. Legacy scenes draw the arena cube over physical rows; scenes that
 // select meshes fetch each bucket's members from the bucket route's list.
-struct ShadowView {
-    light_view_proj: mat4x4<f32>,
-    clip_upstream: vec4<u32>,
-}
-struct InstanceRecord {
-    current: mat4x4<f32>,
-    previous: mat4x4<f32>,
-    normal0: vec4<f32>,
-    normal1: vec4<f32>,
-    normal2: vec4<f32>,
-    ids: vec4<u32>,
-}
 @group(0) @binding(0) var<uniform> shadow_view: ShadowView;
 @group(1) @binding(0) var<storage, read> instances: array<InstanceRecord>;
-struct Serials {
-    previous_lo: u32,
-    previous_hi: u32,
-    current_lo: u32,
-    current_hi: u32,
-    presentation_alpha: f32,
-    padding0: u32,
-    padding1: u32,
-    padding2: u32,
-}
 @group(1) @binding(2) var<uniform> serials: Serials;
 // `MeshVertex` in `mesh_arena.rs`: position and normal x, normal yz and uv,
 // tangent. The caster reads only the position.
-struct MeshVertex {
-    a: vec4<f32>,
-    b: vec4<f32>,
-    c: vec4<f32>,
-}
 @group(1) @binding(3) var<storage, read> mesh_vertices: array<MeshVertex>;
 @group(2) @binding(0) var<storage, read> members: array<u32>;
 

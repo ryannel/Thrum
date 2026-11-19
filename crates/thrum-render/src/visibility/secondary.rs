@@ -2,7 +2,7 @@
 //! and outputs. It never executes either occlusion phase or writes history.
 use super::{
     Access, AccessKind, CompiledPass, FrameGraph, GpuTimings, GraphError, Pass, PassScope,
-    PipelineKey, TimingError, VisibilityPrepared, VisibilityTarget, pyramid,
+    PipelineKey, TimingError, VisibilityPrepared, VisibilityTarget,
 };
 
 pub(crate) const PASS: &str = "secondary view visibility";
@@ -37,20 +37,7 @@ impl SecondaryVisibility {
             bind_group_layouts: &[Some(&world.layout), Some(&record_layout)],
             immediate_size: 0,
         });
-        let base = include_str!("../visibility.wgsl").replace(
-            "let bounds = world_bounds(slot, mesh);\n    let center = bounds.center;",
-            "let bounds = world_bounds(slot, mesh);\n    if !secondary_in_view(bounds) { return false; }\n    let center = bounds.center;",
-        );
-        let source = format!(
-            "{base}\n{}\n{}\n{}",
-            pyramid::OCCLUSION_WGSL,
-            crate::contribution::SecondaryView::record_wgsl(),
-            include_str!("secondary.wgsl")
-        );
-        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
-        });
+        let module = crate::shaders::Shader::SecondaryVisibility.compile(device, PASS);
         let suffix = if world.members.is_some() {
             "_members"
         } else {

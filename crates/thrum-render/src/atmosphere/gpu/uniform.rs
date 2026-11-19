@@ -3,15 +3,7 @@
 
 use super::{AtmosphereFrame, SyntheticView};
 
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub(super) struct AtmosphereUniform {
-    inverse_view_projection: [[f32; 4]; 4],
-    camera_altitude: [f32; 4],
-    sun_lux: [f32; 4],
-    colour_pre_exposure: [f32; 4],
-    sky_mapping: [f32; 4],
-}
+pub(super) use crate::records::Atmosphere as AtmosphereUniform;
 
 impl AtmosphereUniform {
     pub(super) fn new(frame: AtmosphereFrame, view: &SyntheticView, altitude: f32) -> Self {
@@ -19,13 +11,13 @@ impl AtmosphereUniform {
         let [sx, sy, sz] = frame.toward_sun;
         let [r, g, b] = frame.solar_colour;
         Self {
-            inverse_view_projection: glam::Mat4::from_cols_array_2d(&view.view_proj_columns())
-                .inverse()
-                .to_cols_array_2d(),
+            inverse_view_projection: view.inverse_view_proj_columns(),
             camera_altitude: [x, y, z, altitude],
             sun_lux: [sx, sy, sz, frame.solar_illuminance_lux],
             colour_pre_exposure: [r, g, b, crate::synthetic::PRE_EXPOSURE],
-            sky_mapping: crate::atmosphere::model::sky_mapping(altitude.clamp(0.0, 100_000.0)),
+            sky_mapping: crate::atmosphere::model::sky_mapping(
+                altitude.clamp(0.0, crate::shader_constants::ATMOSPHERE_TOP),
+            ),
         }
     }
 }
@@ -69,8 +61,14 @@ mod tests {
             10000.0,
         )
         .expect("view");
-        let frame =
-            AtmosphereFrame::new([0.4, 0.8, -0.2], 100_000.0, [1.0; 3], 48.0, 1).expect("frame");
+        let frame = AtmosphereFrame::new(
+            [0.4, 0.8, -0.2],
+            crate::shader_constants::ATMOSPHERE_TOP,
+            [1.0; 3],
+            48.0,
+            1,
+        )
+        .expect("frame");
         let mut previous = [0_u8; 128];
         previous[..64].copy_from_slice(&view.pack_aux(96, 64)[..64]);
         previous[64..76].copy_from_slice(&view.pack_view(&view, 1.0)[128..140]);

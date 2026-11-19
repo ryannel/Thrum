@@ -15,7 +15,9 @@ fn half(bits: u16) -> f64 {
 fn legacy_pipeline(device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("70cc9d3 exact-pixel oracle"),
-        source: wgpu::ShaderSource::Wgsl(include_str!("../legacy_display.wgsl").into()),
+        source: wgpu::ShaderSource::Wgsl(
+            crate::shaders::wgsl!("synthetic/display/legacy_display.wgsl").into(),
+        ),
     });
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,

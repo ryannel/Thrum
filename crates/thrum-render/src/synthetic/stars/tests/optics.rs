@@ -107,7 +107,7 @@ impl Probe {
             },
             transmission.size(),
         );
-        let mut observer = [0.0; 20];
+        let mut observer = [0.0; size_of::<crate::records::Atmosphere>() / size_of::<f32>()];
         // A one-kilometre observer keeps the few subpixel rays below horizontal
         // above the planet's tangent. The fixture has no extinction.
         observer[19] = 1000.0;

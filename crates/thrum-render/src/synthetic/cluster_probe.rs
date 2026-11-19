@@ -46,10 +46,7 @@ impl LightListProbe {
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
-        let shader = site.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("light list probe"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("cluster_probe.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::ClusterProbe.compile(site, "light list probe");
         let pipeline = site.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("light list probe"),
             layout: None,

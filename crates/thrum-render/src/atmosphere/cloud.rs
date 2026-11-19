@@ -1,7 +1,10 @@
 //! Optional Sun-path optical depth. The provider owns its immutable contents.
 use std::sync::Arc;
 
+use crate::records::CloudField;
 use crate::synthetic::RenderError;
+
+const CLOUD_FIELD_BYTES: usize = size_of::<CloudField>();
 
 /// GPU provider mapping. Plain fields use `far[1] = 0`. An atlas uses
 /// `far[1] = 1`, with near, middle and outer windows in the top-left,
@@ -219,37 +222,23 @@ impl SunOpticalDepth {
         clippy::cast_possible_truncation,
         reason = "finite f64 simulation displacement rounds once into the GPU mapping, overflow disables this sample"
     )]
-    fn pack(&self, seconds: f64) -> [u8; 48] {
+    fn pack(&self, seconds: f64) -> [u8; CLOUD_FIELD_BYTES] {
         let drift: [f32; 2] = std::array::from_fn(|i| {
             (f64::from(self.displacement_m[i])
                 + f64::from(self.drift_metres_per_second[i]) * seconds) as f32
         });
         let supported = drift.iter().all(|x| x.is_finite());
         let drift = if supported { drift } else { [0.0; 2] };
-        let words = [
-            self.region[0],
-            self.region[1],
-            self.region[2],
-            self.region[3],
-            self.plane_m,
-            drift[0],
-            drift[1],
-            self.minimum_sun_sine,
-            f32::from(u8::from(self.valid && supported)),
-            0.0,
-            0.0,
-            0.0,
-        ];
-        let mut bytes = [0; 48];
-        for (destination, value) in bytes.as_chunks_mut::<4>().0.iter_mut().zip(words) {
-            *destination = value.to_le_bytes();
-        }
-        bytes
+        bytemuck::cast(CloudField {
+            region: self.region,
+            plane_drift: [self.plane_m, drift[0], drift[1], self.minimum_sun_sine],
+            validity: [f32::from(self.valid && supported), 0.0, 0.0, 0.0],
+        })
     }
 }
 
 pub(crate) struct CloudPrepared {
-    packed: [u8; 48],
+    packed: [u8; CLOUD_FIELD_BYTES],
     field: SunOpticalDepth,
     texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
@@ -343,7 +332,7 @@ impl CloudPrepared {
                 mapped_at_creation: false,
             });
             return Ok(Self {
-                packed: [0; 48],
+                packed: [0; CLOUD_FIELD_BYTES],
                 field: field.clone(),
                 view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
                 texture,
@@ -352,7 +341,7 @@ impl CloudPrepared {
         }
         if let Some((texture, uniform)) = &field.gpu {
             return Ok(Self {
-                packed: [0; 48],
+                packed: [0; CLOUD_FIELD_BYTES],
                 field: field.clone(),
                 texture: texture.clone(),
                 view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
@@ -379,7 +368,7 @@ impl CloudPrepared {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Sun-path optical depth support"),
-            size: 48,
+            size: CLOUD_FIELD_BYTES as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });

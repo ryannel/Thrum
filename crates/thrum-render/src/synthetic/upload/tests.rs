@@ -1,12 +1,12 @@
 use super::{
-    MAX_PARTIAL_WRITES, PackedInstances, build_runs, needs_two_sided, pack_synthetic_instance,
+    MAX_PARTIAL_WRITES, PackedInstances, build_runs, needs_two_sided, validate_synthetic_instance,
 };
 use crate::{abi, synthetic::RenderError};
 
 impl super::InstanceUpload {
     /// Physical row order and its packed rows, for layout witnesses.
     pub(in crate::synthetic) fn physical_rows(&self) -> (&[u32], &[u8]) {
-        (&self.physical_to_slot, &self.packed)
+        (&self.physical_to_slot, bytemuck::cast_slice(&self.packed))
     }
 }
 
@@ -39,12 +39,10 @@ fn packed_rows_put_active_slots_first_without_changing_logical_identity() {
     assert_eq!(packed.active_count, 2);
     assert_eq!(packed.physical_to_slot, [0, 2, 1, 3]);
     assert_eq!(packed.slot_to_physical, [0, 2, 1, 3]);
-    let (rows, remainder) = packed.bytes.as_chunks::<{ abi::INSTANCE_BYTES }>();
-    assert_eq!(remainder, [0_u8; 0]);
-    for (row, &logical) in rows.iter().zip(&packed.physical_to_slot) {
+    for (row, &logical) in packed.rows.iter().zip(&packed.physical_to_slot) {
         assert_eq!(
             *row,
-            pack_synthetic_instance(&instances[logical as usize], 1, logical).unwrap()
+            validate_synthetic_instance(&instances[logical as usize], 1, logical).unwrap()
         );
     }
 }
@@ -62,16 +60,16 @@ fn reflected_or_degenerate_rows_need_the_two_sided_fallback() {
 #[test]
 fn shared_pack_validation_refuses_invalid_updates() {
     let mut instance = abi::InstanceRecord::identity(0, 0);
-    assert!(pack_synthetic_instance(&instance, 1, 0).is_ok());
+    assert!(validate_synthetic_instance(&instance, 1, 0).is_ok());
     instance.current[3][0] = f32::NAN;
     assert!(matches!(
-        pack_synthetic_instance(&instance, 1, 0),
+        validate_synthetic_instance(&instance, 1, 0),
         Err(RenderError::InvalidLighting)
     ));
     instance.current[3][0] = 0.0;
     instance.ids[1] = 1;
     assert!(matches!(
-        pack_synthetic_instance(&instance, 1, 0),
+        validate_synthetic_instance(&instance, 1, 0),
         Err(RenderError::Abi(abi::AbiError::MaterialIndex))
     ));
     let mut duplicate = [

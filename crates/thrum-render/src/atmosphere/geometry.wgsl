@@ -1,7 +1,5 @@
 // Shared fixed-Earth geometry and transmittance chart. Distances are metres.
 const PI: f32 = 3.14159265359;
-const R: f32 = 6371000.0;
-const H: f32 = 100000.0;
 fn altitude(p: vec3<f32>) -> f32 {
     let n = dot(p,p)+2.0*R*p.y;
     return max(0.0,n/(sqrt(max(0.0,R*R+n))+R));
@@ -40,8 +38,6 @@ fn trans_params(uv: vec2<f32>) -> vec2<f32> {
 
 // Vertical LUT planes share one binding. Clamp within each plane before
 // offsetting so filtering never mixes two wavelength groups.
-const TRANS_PLANES: u32 = 3u;
-const SPECTRAL_PLANES: u32 = 2u;
 fn plane_size(size: vec2<u32>, planes: u32) -> vec2<u32> {
     return vec2(size.x,size.y/planes);
 }

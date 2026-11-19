@@ -57,9 +57,9 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     // Alpha holds the cumulative luminance of the Sun's single scattering alone.
     textureStore(scatter_out, vec2<i32>(id.xy), 0, vec4(radiance * SKY_LUT_GAIN, 0.0));
     textureStore(trans_out, vec2<i32>(id.xy), 0, vec4(throughput, night));
-    for (var layer = 1u; layer <= 32u; layer++) {
-        let start = 32000.0 * pow(f32(layer - 1u) / 32.0, 2.0);
-        let end = 32000.0 * pow(f32(layer) / 32.0, 2.0);
+    for (var layer = 1u; layer <= AERIAL_INTERVALS; layer++) {
+        let start = 32000.0 * pow(f32(layer - 1u) / f32(AERIAL_INTERVALS), 2.0);
+        let end = 32000.0 * pow(f32(layer) / f32(AERIAL_INTERVALS), 2.0);
         let segment_start = min(start, limit);
         let segment_end = min(end, limit);
         if segment_end > segment_start {

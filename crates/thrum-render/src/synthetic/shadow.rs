@@ -13,11 +13,13 @@ use crate::contribution::{
     SceneContribution, SceneShadowSurface, SecondaryShadowCascade, ShadowBounds,
 };
 use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
+use crate::records::{ShadowCascades, ShadowView};
+use crate::shader_constants::SUN_ANGULAR_RADIUS;
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-pub(super) const SAMPLE_BYTES: usize = 288;
-const CASTER_VIEW_BYTES: usize = 80;
+pub(super) const SAMPLE_BYTES: usize = size_of::<ShadowCascades>();
+const CASTER_VIEW_BYTES: usize = size_of::<ShadowView>();
 /// The caster view uniform's bytes, for graph ranges.
 pub(super) const CASTER_VIEW_RANGE: u64 = CASTER_VIEW_BYTES as u64;
 /// Two Sun cascades, then the top-down caster height map.
@@ -33,7 +35,6 @@ const RECEIVER_REACH: f32 = 512.0;
 const BIAS_MIN_WORLD: f32 = 0.006;
 const BIAS_MAX_WORLD: f32 = 0.15;
 const BIAS_SLOPE_WORLD: f32 = 0.06;
-const SUN_ANGULAR_RADIUS: f32 = 0.004_654_21;
 // Bound the near-only blocker range by an eight-texel solar penumbra.
 // The last cascade represents more distant blockers and their broader support.
 const LOCAL_PENUMBRA_TEXELS: f32 = 8.0;
@@ -125,7 +126,7 @@ pub(super) enum CasterContribution<'a> {
 
 struct FittedShadow {
     matrices: [Mat4; MAPS],
-    samples: [u8; SAMPLE_BYTES],
+    samples: ShadowCascades,
     partitioned: bool,
 }
 
@@ -136,11 +137,11 @@ impl FittedShadow {
         })
     }
 
-    fn caster_view(&self, index: usize) -> [u8; CASTER_VIEW_BYTES] {
-        let mut bytes = [0; CASTER_VIEW_BYTES];
-        bytes[..64].copy_from_slice(&matrix_bytes(self.matrices[index]));
-        bytes[64..68].copy_from_slice(&u32::from(index == 0 && self.partitioned).to_le_bytes());
-        bytes
+    fn caster_view(&self, index: usize) -> ShadowView {
+        ShadowView {
+            light_view_proj: self.matrices[index].to_cols_array_2d(),
+            clip_upstream: [u32::from(index == 0 && self.partitioned), 0, 0, 0],
+        }
     }
 }
 
@@ -218,7 +219,7 @@ impl ShadowPrepared {
         let cascades = std::array::from_fn(|index| {
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("synthetic Sun cascade matrix"),
-                contents: &fitted.caster_view(index),
+                contents: bytemuck::bytes_of(&fitted.caster_view(index)),
                 usage: wgpu::BufferUsages::UNIFORM
                     | wgpu::BufferUsages::COPY_DST
                     | super::draw_witness_usage(),
@@ -238,10 +239,7 @@ impl ShadowPrepared {
             bind_group_layouts: &[Some(&view_layout), Some(instance_layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("synthetic Sun caster"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::Shadow.compile(device, "synthetic Sun caster");
         let create = |cull_mode, layout: &wgpu::PipelineLayout, entry_point| {
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("synthetic Sun caster"),
@@ -300,7 +298,7 @@ impl ShadowPrepared {
         });
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),
-            contents: &fitted.samples,
+            contents: bytemuck::bytes_of(&fitted.samples),
             usage: wgpu::BufferUsages::UNIFORM
                 | wgpu::BufferUsages::COPY_DST
                 | super::draw_witness_usage(),
@@ -360,11 +358,14 @@ impl ShadowPrepared {
         let fitted = cooked.as_ref().unwrap_or(&self.fitted);
         let first = if cascades { 0 } else { HEIGHT_LAYER };
         for (index, cascade) in self.cascades.iter().enumerate().skip(first) {
-            self.queue
-                .write_buffer(&cascade.buffer, 0, &fitted.caster_view(index));
+            self.queue.write_buffer(
+                &cascade.buffer,
+                0,
+                bytemuck::bytes_of(&fitted.caster_view(index)),
+            );
         }
         self.queue
-            .write_buffer(&self.sample_buffer, 0, &fitted.samples);
+            .write_buffer(&self.sample_buffer, 0, bytemuck::bytes_of(&fitted.samples));
         cooked.is_some()
     }
 
@@ -475,14 +476,6 @@ impl<const MAP_COUNT: usize> ShadowTarget<MAP_COUNT> {
     }
 }
 
-fn matrix_bytes(matrix: Mat4) -> [u8; 64] {
-    let mut bytes = [0_u8; 64];
-    for (index, value) in matrix.to_cols_array().into_iter().enumerate() {
-        bytes[index * 4..index * 4 + 4].copy_from_slice(&value.to_le_bytes());
-    }
-    bytes
-}
-
 struct FitInputs {
     projection: Projection,
     camera: Vec3,
@@ -585,31 +578,35 @@ impl FitInputs {
         )?;
         let matrices = [local.matrix, distant.matrix, heights];
         let partitioned = local.excluded_depth > 0.0;
-        let mut samples = [0_u8; SAMPLE_BYTES];
-        samples[272..276].copy_from_slice(&(local.excluded_depth / local.span).to_le_bytes());
-        let last_depth_at_near_clip =
-            1.0 - (local.upstream_depth - distant.upstream_depth) / distant.span;
-        samples[276..280].copy_from_slice(&last_depth_at_near_clip.to_le_bytes());
+        let mut samples = ShadowCascades {
+            light_view_proj: [
+                local.matrix.to_cols_array_2d(),
+                distant.matrix.to_cols_array_2d(),
+            ],
+            split_overlap: [split, overlap, 0.0, 0.0],
+            height_view_proj: heights.to_cols_array_2d(),
+            near_partition: [
+                local.excluded_depth / local.span,
+                1.0 - (local.upstream_depth - distant.upstream_depth) / distant.span,
+                0.0,
+                0.0,
+            ],
+            ..bytemuck::Zeroable::zeroed()
+        };
         if let Some((_, max_y)) = caster_height {
             let sun_y = rotation.row(2).y;
             let minimum_sun_y = sun_y * SUN_ANGULAR_RADIUS.cos()
                 - (1.0 - sun_y * sun_y).max(0.0).sqrt() * SUN_ANGULAR_RADIUS.sin();
-            samples[176..180].copy_from_slice(&max_y.to_le_bytes());
-            samples[180..184].copy_from_slice(&minimum_sun_y.to_le_bytes());
-        }
-        samples[192..256].copy_from_slice(&matrix_bytes(heights));
-        if caster_height.is_some() {
+            samples.height_support[0] = max_y;
+            samples.height_support[1] = minimum_sun_y;
             // Reverse-Z top-down depth is affine in world height: d = a*y + b.
             let a = heights.row(2).y;
             let b = heights.row(2).w;
             let uv_per_metre = heights.row(0).truncate().length() * 0.5;
             let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
-            for (offset, value) in [a, b, uv_per_metre, texel].into_iter().enumerate() {
-                samples[256 + offset * 4..260 + offset * 4].copy_from_slice(&value.to_le_bytes());
-            }
+            samples.horizon = [a, b, uv_per_metre, texel];
         }
         for (index, CascadeFit { matrix, span, .. }) in [local, distant].into_iter().enumerate() {
-            samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(matrix));
             let scale = 1.0 / span;
             // The plane correction is exact only within one triangle. Allow half a
             // texel in metres where filtering spans neighboring receiver triangles.
@@ -617,31 +614,26 @@ impl FitInputs {
             let base = half_texel.clamp(BIAS_MIN_WORLD, BIAS_MAX_WORLD);
             let uv_per_metre = matrix.row(0).truncate().length() * 0.5;
             let penumbra = SUN_ANGULAR_RADIUS.tan() * span * uv_per_metre;
-            samples[160 + index * 4..164 + index * 4].copy_from_slice(&penumbra.to_le_bytes());
-            samples[168 + index * 4..172 + index * 4]
-                .copy_from_slice(&(BIAS_MIN_WORLD * scale).to_le_bytes());
-            samples[184 + index * 4..188 + index * 4].copy_from_slice(&scale.to_le_bytes());
-            samples[144 + index * 4..148 + index * 4]
-                .copy_from_slice(&(base * scale).to_le_bytes());
-            samples[152 + index * 4..156 + index * 4]
-                .copy_from_slice(&(BIAS_SLOPE_WORLD * scale).to_le_bytes());
+            samples.penumbra[index] = penumbra;
+            samples.penumbra[2 + index] = BIAS_MIN_WORLD * scale;
+            samples.height_support[2 + index] = scale;
+            samples.bias[index] = base * scale;
+            samples.bias[2 + index] = BIAS_SLOPE_WORLD * scale;
         }
-        samples[128..132].copy_from_slice(&split.to_le_bytes());
-        samples[132..136].copy_from_slice(&overlap.to_le_bytes());
         if self.profile.is_some_and(|(count, _)| count < 2) {
             // With one map every positive receiver selects the far layer,
             // which already fits the whole receiver interval. With none,
             // the reach sentinel below selects the shared height map.
-            samples[128..136].fill(0);
+            samples.split_overlap[..2].fill(0.0);
         }
         if receiver_far < far {
             let fade_start = receiver_far - (receiver_far - near) * 0.1;
-            samples[136..140].copy_from_slice(&receiver_far.to_le_bytes());
-            samples[140..144].copy_from_slice(&fade_start.to_le_bytes());
+            samples.split_overlap[2] = receiver_far;
+            samples.split_overlap[3] = fade_start;
         }
         if self.profile.is_some_and(|(count, _)| count == 0) {
-            samples[136..140].copy_from_slice(&f32::MIN_POSITIVE.to_le_bytes());
-            samples[140..144].fill(0);
+            samples.split_overlap[2] = f32::MIN_POSITIVE;
+            samples.split_overlap[3] = 0.0;
         }
         Ok(FittedShadow {
             matrices,
@@ -889,8 +881,13 @@ mod tests {
         let inputs = FitInputs::new(&view, (&[], None), direction).expect("no casters");
         let bounds = ShadowBounds::new([-100.0; 3], [100.0, 2000.0, 100.0]).expect("finite caster");
         let fitted = inputs.fit(Some(bounds)).expect("finite fit");
-        let value =
-            |offset| f32::from_le_bytes(fitted.samples[offset..offset + 4].try_into().unwrap());
+        let value = |offset| {
+            f32::from_le_bytes(
+                bytemuck::bytes_of(&fitted.samples)[offset..offset + 4]
+                    .try_into()
+                    .unwrap(),
+            )
+        };
         assert!((value(176) - 2000.0).abs() < 1e-5);
         let minimum_y = value(180);
         assert!(minimum_y < direction.y && minimum_y > 0.0);
@@ -944,7 +941,7 @@ mod tests {
         assert!(last_volume.overlaps(bounds));
         let far_receiver = last.project_point3(receiver);
         let far_caster = last.project_point3(caster);
-        let clip_depth = f32::from_le_bytes(fitted.samples[276..280].try_into().unwrap());
+        let clip_depth = fitted.samples.near_partition[1];
         assert!(far_receiver.truncate().abs().max_element() < 1.0);
         assert!((0.0..clip_depth).contains(&far_receiver.z));
         assert!((clip_depth..=1.0).contains(&far_caster.z));
@@ -1019,8 +1016,7 @@ mod tests {
         instance.current[2] = [0.1, -0.3, 1.1, 0.0];
         instance.current[3] = [2.0, -1.0, 4.0, 1.0];
         let rotation = light_rotation(Vec3::new(0.3, -0.8, 0.6).normalize());
-        let (low, high) =
-            caster_depth_bounds(rotation, (&[instance.clone()], None)).expect("one caster");
+        let (low, high) = caster_depth_bounds(rotation, (&[instance], None)).expect("one caster");
         for bits in 0..8 {
             let local = Vec3::new(
                 if bits & 1 == 0 { -1.0 } else { 1.0 },
@@ -1042,8 +1038,7 @@ mod tests {
         instance.previous[0][0] = 0.1;
         instance.previous[3][0] = 8.0;
         let rotation = light_rotation(Vec3::new(0.3, -0.8, 0.6).normalize());
-        let (low, high) =
-            caster_depth_bounds(rotation, (&[instance.clone()], None)).expect("one caster");
+        let (low, high) = caster_depth_bounds(rotation, (&[instance], None)).expect("one caster");
         for center in [instance.previous[3], instance.current[3]] {
             let mut model = instance.current;
             model[3] = center;

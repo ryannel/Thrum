@@ -8,9 +8,6 @@ pub(crate) const PYRAMID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R32F
 pub(crate) const PASS: &str = "camera depth pyramid";
 const GROUP: u32 = 8;
 
-/// The occlusion test function, included by the late cull shader.
-pub(crate) const OCCLUSION_WGSL: &str = include_str!("occlusion.wgsl");
-
 /// Compute pipelines and layouts; independent of target size.
 pub(crate) struct PyramidPrepared {
     first: wgpu::ComputePipeline,
@@ -63,10 +60,7 @@ impl PyramidPrepared {
             "depth pyramid down",
             wgpu::TextureSampleType::Float { filterable: false },
         );
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(include_str!("pyramid.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::Pyramid.compile(device, PASS);
         let pipeline = |layout: &wgpu::BindGroupLayout, entry: &str| {
             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some(PASS),

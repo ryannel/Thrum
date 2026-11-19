@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 fn depth_probe_source() -> String {
     format!(
         "{}\n{}",
-        include_str!("../taau.wgsl"),
+        crate::shaders::wgsl!("synthetic/taau.wgsl"),
         include_str!("depth_probe.wgsl")
     )
 }
@@ -12,8 +12,8 @@ fn depth_probe_source() -> String {
 #[test]
 fn taau_shaders_validate() {
     for source in [
-        include_str!("../taau.wgsl").to_owned(),
-        include_str!("../reference.wgsl").to_owned(),
+        crate::shaders::wgsl!("synthetic/taau.wgsl").to_owned(),
+        crate::shaders::wgsl!("synthetic/reference.wgsl").to_owned(),
         depth_probe_source(),
     ] {
         let module = wgpu::naga::front::wgsl::parse_str(&source).expect("WGSL");

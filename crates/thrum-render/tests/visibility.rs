@@ -447,7 +447,7 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
                 // Recycled rows: other objects in previously visible slots,
                 // and newly hidden and shown rows.
                 for slot in (0..frame.instances.len()).step_by(5) {
-                    let other = frame.instances[(slot + 2_500) % frame.instances.len()].clone();
+                    let other = frame.instances[(slot + 2_500) % frame.instances.len()];
                     frame.instances[slot] = other;
                 }
                 let slots: Vec<u32> = (0..frame.instances.len())
@@ -532,7 +532,7 @@ async fn equal_depth_case(entering: usize) -> (Vec<u8>, Vec<u8>) {
     }
     // The entering slot takes the staying slot's exact pose.
     let mut frame = base.clone();
-    let mut moved = frame.instances[staying].clone();
+    let mut moved = frame.instances[staying];
     moved.ids = frame.instances[entering].ids;
     frame.instances[entering] = moved;
     let slot = u32::try_from(entering).expect("slot");

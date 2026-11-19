@@ -1,13 +1,15 @@
 //! Two GPU-retained transform samples. Physical instance slots are the index;
 //! identity, generation and submitted serial reject history after compaction.
 
+use crate::records::{HistoryRecord, Serials};
+
 use crate::graph::CompiledPass;
 use crate::timing::GpuTimings;
 
 use super::{RenderError, abi, storage_layout, uniform_layout};
 
-pub(super) const ENTRY_BYTES: u64 = 80;
-pub(super) const SERIAL_BYTES: u64 = 32;
+pub(super) const ENTRY_BYTES: u64 = size_of::<HistoryRecord>() as u64;
+pub(super) const SERIAL_BYTES: u64 = size_of::<Serials>() as u64;
 pub(super) const PASS_NAME: &str = "synthetic transform history";
 const WORKGROUP: u32 = 64;
 
@@ -95,10 +97,7 @@ impl TransformHistory {
                 ],
             })
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("synthetic history publisher"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("history_gpu.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::History.compile(device, "synthetic history publisher");
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("synthetic history publisher"),
             bind_group_layouts: &[Some(&writer_layout)],
@@ -206,18 +205,19 @@ impl TransformHistory {
         } else {
             self.submitted_serial
         };
-        let words = [
-            u32::try_from(read_serial & u64::from(u32::MAX)).expect("masked serial fits u32"),
-            u32::try_from(read_serial >> 32).expect("high serial word fits u32"),
-            u32::try_from(self.next_serial & u64::from(u32::MAX)).expect("masked serial fits u32"),
-            u32::try_from(self.next_serial >> 32).expect("high serial word fits u32"),
-            self.presentation_alpha.to_bits(),
-            0,
-            0,
-            0,
-        ];
-        let bytes: [u8; 32] = std::array::from_fn(|byte| words[byte / 4].to_le_bytes()[byte % 4]);
-        queue.write_buffer(&self.serial_buffer, 0, &bytes);
+        let serial = Serials {
+            previous_lo: u32::try_from(read_serial & u64::from(u32::MAX))
+                .expect("masked serial fits u32"),
+            previous_hi: u32::try_from(read_serial >> 32).expect("high serial word fits u32"),
+            current_lo: u32::try_from(self.next_serial & u64::from(u32::MAX))
+                .expect("masked serial fits u32"),
+            current_hi: u32::try_from(self.next_serial >> 32).expect("high serial word fits u32"),
+            presentation_alpha: self.presentation_alpha,
+            padding0: 0,
+            padding1: 0,
+            padding2: 0,
+        };
+        queue.write_buffer(&self.serial_buffer, 0, bytemuck::bytes_of(&serial));
     }
 
     pub(super) fn encode(

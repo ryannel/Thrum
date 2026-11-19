@@ -1,5 +1,6 @@
 //! Missing declarations add nothing; idle slots and changed requests allocate
 //! nothing in ordinary submitted frames, and their timings report actual work.
+mod pre_record_source;
 mod support;
 
 // Reverse only REVIEW-RENDER M1's WGSL edits before checking SCENE-VIEWS'
@@ -154,7 +155,8 @@ fn every_main_shader_variant_retains_its_pre_view_bytes() {
             host.set_scene_contribution(Box::new(observer))
                 .expect("no-view observer");
             let control = control.lock().expect("control");
-            let source = before_light_split(&pre_view_source(&control.main_shader));
+            let m1 = pre_record_source::before_record_composition(&control.main_shader);
+            let source = before_light_split(&pre_view_source(&m1));
             assert_eq!(source.len(), length, "air={air} shadow={shadow}");
             assert_eq!(
                 source_fingerprint(&source),

@@ -83,8 +83,7 @@ impl PreparedSynthetic {
         let meshes = selection.as_ref();
         let generation = capabilities.generation();
         checked_display_gain(exposure)?;
-        let (mut light_data, background, presentation_light_clamps) =
-            pack_frame_lighting(lighting)?;
+        let (light_data, background, presentation_light_clamps) = pack_frame_lighting(lighting)?;
         // Prepare the declared shadow recipe even while the Sun is dark, so a
         // later live light change can use the same pipelines and target maps.
         let shadow_enabled = scene.sun_shadows;
@@ -101,8 +100,7 @@ impl PreparedSynthetic {
         } else {
             ClusterTable::build(&scene.local_lights, &scene.view)?
         };
-        let has_local_lights: f32 = if clusters.active { 1.0 } else { 0.0 };
-        light_data.direction_to_light[3] = has_local_lights;
+        let light_data = light_data.with_local_lights(clusters.active);
         let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
         let dropped_light_references = clusters.dropped_references;
         let limits = capabilities.limits();
@@ -202,7 +200,7 @@ impl PreparedSynthetic {
             device,
             queue,
             "synthetic forward opaque",
-            &packed_instances.bytes,
+            bytemuck::cast_slice(&packed_instances.rows),
             instance_bytes,
         );
         let mut instance_upload = InstanceUpload::new(
@@ -695,7 +693,8 @@ impl PreparedSynthetic {
             generation,
             camera_mode,
             (instance_count, instance_upload.active_count()),
-            bucket_route.as_ref().map(|route| (route, &mesh_arena)),
+            bucket_route.as_ref(),
+            &mesh_arena,
         )?;
         let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
         let pipeline_two_sided = create_pipeline(None, false);

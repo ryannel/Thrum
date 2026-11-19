@@ -1,4 +1,5 @@
 use crate::contribution::{QualityInvalidation, QualityKnob, QualitySettings};
+use crate::records::LampShadowQuality;
 
 pub(in crate::synthetic) fn structure_layout_entry() -> wgpu::BindGroupLayoutEntry {
     wgpu::BindGroupLayoutEntry {
@@ -33,7 +34,7 @@ impl LampShadows {
         .expect("valid lamp shadow control");
         let quality = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("lamp shadow quality"),
-            size: 4,
+            size: size_of::<LampShadowQuality>() as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -45,7 +46,13 @@ impl LampShadows {
                 | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        queue.write_buffer(&quality, 0, &capacity.to_le_bytes());
+        queue.write_buffer(
+            &quality,
+            0,
+            bytemuck::bytes_of(&LampShadowQuality {
+                ray_limit: capacity,
+            }),
+        );
         Self {
             settings,
             quality,
@@ -59,7 +66,9 @@ impl LampShadows {
             queue.write_buffer(
                 &self.quality,
                 0,
-                &self.settings.knobs()[0].value.to_le_bytes(),
+                bytemuck::bytes_of(&LampShadowQuality {
+                    ray_limit: self.settings.knobs()[0].value,
+                }),
             );
         }
         invalidation
@@ -71,7 +80,11 @@ impl LampShadows {
 
     pub(in crate::synthetic) fn layout_entries() -> [wgpu::BindGroupLayoutEntry; 2] {
         [
-            crate::synthetic::uniform_layout(16, 4, wgpu::ShaderStages::FRAGMENT),
+            crate::synthetic::uniform_layout(
+                16,
+                size_of::<LampShadowQuality>() as u64,
+                wgpu::ShaderStages::FRAGMENT,
+            ),
             wgpu::BindGroupLayoutEntry {
                 binding: 17,
                 visibility: wgpu::ShaderStages::FRAGMENT,

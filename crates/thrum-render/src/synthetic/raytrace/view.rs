@@ -27,10 +27,7 @@ impl TracedView {
             bind_group_layouts: &[Some(view), Some(&layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("traced geometry"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("view.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::RayView.compile(device, "traced geometry");
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("traced geometry"),
             layout: Some(&pipeline_layout),

@@ -1,6 +1,7 @@
 //! Disk-free sky reflection products. All passes record into the existing
 //! frame graph; generation/profile validity is owned by AtmospherePrepared.
 
+use crate::shaders::wgsl;
 use crate::synthetic::RenderError;
 
 pub(super) const CUBE_SIZE: u32 = 64;
@@ -69,25 +70,11 @@ impl ReflectionPrepared {
             lod_max_clamp: (MIP_COUNT - 1) as f32,
             ..Default::default()
         });
-        let constants = shader_constants();
         let cube_pipeline = pipeline(
             device,
             "atmosphere sky specular prefilter",
             "reflection_main",
-            format!(
-                "{constants}\n{}\n{}\n{}",
-                concat!(
-                    include_str!("storage.wgsl"),
-                    "\n",
-                    concat!(
-                        include_str!("geometry.wgsl"),
-                        "\n",
-                        include_str!("common.wgsl")
-                    )
-                ),
-                include_str!("brdf.wgsl"),
-                include_str!("reflection.wgsl")
-            ),
+            crate::shaders::Shader::AtmosphereReflection,
         );
         let cube_layout = cube_pipeline.get_bind_group_layout(0);
         let cube_groups = std::array::from_fn(|mip| {
@@ -128,11 +115,7 @@ impl ReflectionPrepared {
             device,
             "atmosphere DFG integration",
             "dfg_main",
-            format!(
-                "{constants}\n{}\n{}",
-                include_str!("brdf.wgsl"),
-                include_str!("dfg.wgsl")
-            ),
+            crate::shaders::Shader::AtmosphereDfg,
         );
         let dfg_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("atmosphere DFG output"),
@@ -146,11 +129,7 @@ impl ReflectionPrepared {
             device,
             "atmosphere GGX sample preparation",
             "prefilter_samples_main",
-            format!(
-                "{constants}\n{}\n{}",
-                include_str!("brdf.wgsl"),
-                include_str!("dfg.wgsl")
-            ),
+            crate::shaders::Shader::AtmosphereDfg,
         );
         let samples_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("atmosphere GGX sample output"),
@@ -245,12 +224,9 @@ fn pipeline(
     device: &crate::runtime::DeviceSite,
     label: &str,
     entry: &str,
-    source: String,
+    source: crate::shaders::Shader,
 ) -> wgpu::ComputePipeline {
-    let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some(label),
-        source: wgpu::ShaderSource::Wgsl(source.into()),
-    });
+    let module = source.compile(device, label);
     device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some(label),
         layout: None,
@@ -259,6 +235,35 @@ fn pipeline(
         compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     })
+}
+
+pub(crate) fn cube_source() -> String {
+    let constants = shader_constants();
+    format!(
+        "{constants}\n{}\n{}\n{}",
+        concat!(
+            wgsl!("atmosphere/storage.wgsl"),
+            "\n",
+            concat!(
+                wgsl!("atmosphere/geometry.wgsl"),
+                "\n",
+                wgsl!("atmosphere/common.wgsl")
+            )
+        ),
+        wgsl!("atmosphere/brdf.wgsl"),
+        wgsl!("atmosphere/reflection.wgsl")
+    )
+}
+
+pub(crate) fn dfg_source() -> String {
+    format!(
+        "{}
+{}
+{}",
+        shader_constants(),
+        wgsl!("atmosphere/brdf.wgsl"),
+        wgsl!("atmosphere/dfg.wgsl")
+    )
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]

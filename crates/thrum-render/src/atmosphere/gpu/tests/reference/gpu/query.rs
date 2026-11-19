@@ -4,12 +4,12 @@ use wgpu::util::DeviceExt;
 
 const SHADER: &str = concat!(
     concat!(
-        include_str!("../../../../storage.wgsl"),
+        crate::shaders::wgsl!("atmosphere/storage.wgsl"),
         "\n",
         concat!(
-            include_str!("../../../../geometry.wgsl"),
+            crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
             "\n",
-            include_str!("../../../../common.wgsl")
+            crate::shaders::wgsl!("atmosphere/common.wgsl")
         )
     ),
     r"

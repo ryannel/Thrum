@@ -3,12 +3,11 @@
 
 use super::RenderError;
 use super::view::{Projection, SyntheticView};
+use crate::records::{Bounds, ClusterHead, LocalSource};
 use glam::Vec3;
 use std::cmp::Ordering;
 
-pub(super) const X: usize = 32;
-pub(super) const Y: usize = 18;
-pub(super) const Z: usize = 16;
+pub(super) use crate::shader_constants::{CLUSTER_X as X, CLUSTER_Y as Y, CLUSTER_Z as Z};
 const COUNT: usize = X * Y * Z;
 pub(super) const CAPACITY: usize = 32;
 pub(super) const GPU_MAX_SOURCES: usize = 4;
@@ -115,8 +114,8 @@ pub(super) struct ClusterTable {
 impl ClusterTable {
     fn empty() -> Self {
         Self {
-            lights: vec![0; 32],
-            heads: vec![0; 8],
+            lights: vec![0; size_of::<LocalSource>()],
+            heads: vec![0; size_of::<ClusterHead>()],
             indices: vec![0; 4],
             bounds: Vec::new(),
             dropped_references: 0,
@@ -226,7 +225,7 @@ impl ClusterTable {
             // The shader's uniform off-state returns before reading clusters.
             // Keep valid minimal bindings without preparing a dead 3D grid.
             self.lights.clear();
-            self.lights.resize(32, 0);
+            self.lights.resize(size_of::<LocalSource>(), 0);
             self.heads.clear();
             self.heads.resize(8, 0);
             self.indices.clear();
@@ -300,19 +299,21 @@ impl ClusterTable {
             }
         }
         if self.lights.is_empty() {
-            self.lights.resize(32, 0);
+            self.lights.resize(size_of::<LocalSource>(), 0);
         }
         for slot in &mut self.slots {
             let len = usize::from(slot.len);
             slot.candidates[..len].sort_unstable_by_key(|candidate| candidate.index);
             let offset =
                 u32::try_from(self.indices.len() / 4).map_err(|_| RenderError::SceneCapacity)?;
-            self.heads.extend_from_slice(&offset.to_le_bytes());
             self.heads
-                .extend_from_slice(&u32::from(slot.len).to_le_bytes());
+                .extend_from_slice(bytemuck::bytes_of(&ClusterHead {
+                    offset,
+                    count: u32::from(slot.len),
+                }));
             for candidate in &slot.candidates[..len] {
                 self.indices
-                    .extend_from_slice(&candidate.index.to_le_bytes());
+                    .extend_from_slice(bytemuck::bytes_of(&candidate.index));
             }
         }
         if self.indices.is_empty() {
@@ -342,28 +343,25 @@ fn validate(light: SyntheticPointLight) -> Result<(), RenderError> {
 }
 
 fn pack_light(light: SyntheticPointLight, out: &mut Vec<u8>) {
-    for value in light.position.into_iter().chain([light.radius]) {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
-    for value in light.candela.into_iter().chain([0.0]) {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
+    let record = LocalSource {
+        position_radius: Vec3::from_array(light.position)
+            .extend(light.radius)
+            .to_array(),
+        candela: Vec3::from_array(light.candela).extend(0.0).to_array(),
+    };
+    out.extend_from_slice(bytemuck::bytes_of(&record));
 }
 
 fn pack_bounds(bounds: Option<([usize; 3], [usize; 3])>, out: &mut Vec<u8>) {
     let (lo, hi) = bounds.unwrap_or(([usize::MAX; 3], [0; 3]));
-    for value in lo
-        .into_iter()
-        .map(|value| u32::try_from(value).unwrap_or(u32::MAX))
-        .chain([0])
-        .chain(
-            hi.into_iter()
-                .map(|value| u32::try_from(value).unwrap_or(u32::MAX)),
-        )
-        .chain([0])
-    {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
+    let pad = |v: [usize; 3]| {
+        let [x, y, z] = v.map(|value| u32::try_from(value).unwrap_or(u32::MAX));
+        [x, y, z, 0]
+    };
+    out.extend_from_slice(bytemuck::bytes_of(&Bounds {
+        lo: pad(lo),
+        hi: pad(hi),
+    }));
 }
 
 // All float-to-index casts are preceded by finite source validation and

@@ -25,10 +25,7 @@ pub(super) struct TemporalResources {
 
 impl TemporalInputs {
     pub(super) fn new(device: &crate::runtime::DeviceSite) -> Self {
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("temporal inputs"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("temporal.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::Temporal.compile(device, "temporal inputs");
         let pipelines = std::array::from_fn(|i| {
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("temporal inputs"),

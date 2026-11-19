@@ -11,30 +11,6 @@
 // The visible list preserves instance order, so draw order and depth ties
 // match the direct draw. The test uses the same jittered view_proj and the
 // same interpolated translation as the forward vertex shader.
-struct ViewRecord {
-    view_proj: mat4x4<f32>,
-    previous_view_proj: mat4x4<f32>,
-    camera_xyz_time: vec4<f32>,
-    pre_exposure_inv_exposure_jitter: vec4<f32>,
-}
-struct InstanceRecord {
-    current: mat4x4<f32>,
-    previous: mat4x4<f32>,
-    normal0: vec4<f32>,
-    normal1: vec4<f32>,
-    normal2: vec4<f32>,
-    ids: vec4<u32>,
-}
-struct Serials {
-    previous_lo: u32,
-    previous_hi: u32,
-    current_lo: u32,
-    current_hi: u32,
-    presentation_alpha: f32,
-    padding0: u32,
-    padding1: u32,
-    padding2: u32,
-}
 struct MeshRecord {
     first_index: u32,
     index_count: u32,
@@ -43,25 +19,21 @@ struct MeshRecord {
     bounds_min: vec4<f32>,
     bounds_max: vec4<f32>,
 }
-struct Params {
+struct VisibilityParams {
     active_count: u32,
     groups: u32,
     mesh: u32,
     phase: u32,
 }
 
-const PHASE_FRUSTUM: u32 = 0u;
-const PHASE_PREPASS: u32 = 1u;
-const PHASE_FINAL: u32 = 2u;
 
-const WORKGROUP: u32 = 256u;
 const WORDS: u32 = WORKGROUP / 32u;
 
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<storage, read> instances: array<InstanceRecord>;
 @group(0) @binding(2) var<uniform> serials: Serials;
 @group(0) @binding(3) var<storage, read> meshes: array<MeshRecord>;
-@group(0) @binding(4) var<uniform> params: Params;
+@group(0) @binding(4) var<uniform> params: VisibilityParams;
 @group(0) @binding(5) var<storage, read_write> group_offsets: array<u32>;
 @group(0) @binding(6) var<storage, read_write> visible: array<u32>;
 @group(0) @binding(7) var<storage, read_write> args: array<u32>;
@@ -86,7 +58,6 @@ struct Segment {
     mesh: u32,
     padding: u32,
 }
-const MAX_BUCKETS: u32 = 64u;
 struct Buckets {
     count: u32,
     mask_base: u32,
@@ -94,7 +65,6 @@ struct Buckets {
     padding1: u32,
     segments: array<Segment, MAX_BUCKETS>,
 }
-const MEMBER_PADDING: u32 = 0xffffffffu;
 @group(0) @binding(12) var<storage, read> members: array<u32>;
 @group(0) @binding(13) var<uniform> buckets: Buckets;
 var<workgroup> group_mesh: u32;
@@ -206,7 +176,7 @@ fn scan_workgroup(local: u32) {
     workgroupBarrier();
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn count(@builtin(global_invocation_id) global: vec3<u32>,
          @builtin(local_invocation_id) local: vec3<u32>,
          @builtin(workgroup_id) group: vec3<u32>) {
@@ -219,7 +189,7 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
     }
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn count_members(@builtin(global_invocation_id) global: vec3<u32>,
                  @builtin(local_invocation_id) local: vec3<u32>,
                  @builtin(workgroup_id) group: vec3<u32>) {
@@ -282,7 +252,7 @@ fn count_word(draw: bool, local: u32, group: u32) -> u32 {
 
 // One workgroup turns per-group counts into exclusive offsets and writes the
 // bucket's indirect arguments, including the GPU-written instance count.
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn offsets(@builtin(local_invocation_id) local: vec3<u32>) {
     let total = scan_offsets(local.x, 0u, params.groups, 0u);
     if local.x == WORKGROUP - 1u {
@@ -292,7 +262,7 @@ fn offsets(@builtin(local_invocation_id) local: vec3<u32>) {
 
 // One workgroup per bucket: offsets restart at the bucket's segment start,
 // and each bucket writes its own indirect arguments.
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn offsets_members(@builtin(local_invocation_id) local: vec3<u32>,
                    @builtin(workgroup_id) bucket: vec3<u32>) {
     let segment = buckets.segments[bucket.x];
@@ -333,7 +303,7 @@ fn write_args(record: u32, mesh: MeshRecord, instances: u32) {
     args[at + 4u] = 0u;
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn scatter(@builtin(global_invocation_id) global: vec3<u32>,
            @builtin(local_invocation_id) local: vec3<u32>,
            @builtin(workgroup_id) group: vec3<u32>) {
@@ -350,7 +320,7 @@ fn scatter(@builtin(global_invocation_id) global: vec3<u32>,
     visible[group_offsets[group.x] + before] = global.x;
 }
 
-@compute @workgroup_size(256)
+@compute @workgroup_size(WORKGROUP)
 fn scatter_members(@builtin(global_invocation_id) global: vec3<u32>,
                    @builtin(local_invocation_id) local: vec3<u32>,
                    @builtin(workgroup_id) group: vec3<u32>) {

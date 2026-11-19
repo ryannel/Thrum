@@ -1,10 +1,6 @@
 // Frozen test oracle from Thrum commit 70cc9d3; not a production shader.
 // The target is Rgba8Unorm: this shader performs the sole sRGB encoding.
 // This pre-AA diagnostic loads one exact fp16 texel, with no filtering/sampler.
-struct ExposureSample {
-    values: vec4<f32>, // Storage p, inverse camera gain, EV100, actual lux.
-    metadata: vec4<u32>,
-}
 @group(0) @binding(0) var scene: texture_2d<f32>;
 @group(0) @binding(1) var<uniform> exposure: ExposureSample;
 @vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4<f32> {

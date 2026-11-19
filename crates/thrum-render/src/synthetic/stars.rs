@@ -1,6 +1,7 @@
 //! Prepared star catalogue and its post-opaque HDR composite.
 use std::collections::BTreeSet;
 
+use crate::shaders::wgsl;
 use glam::{Mat4, Vec3};
 use wgpu::util::DeviceExt;
 
@@ -18,12 +19,12 @@ use super::{
 mod daylight;
 
 pub(crate) const PASS_NAME: &str = "atmosphere stars";
-const UNIFORM_LEN: usize = 176;
+const UNIFORM_LEN: usize = size_of::<crate::records::StarView>();
 const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const SHADER: &str = concat!(
-    include_str!("../atmosphere/geometry.wgsl"),
+    wgsl!("atmosphere/geometry.wgsl"),
     "\n",
-    include_str!("stars.wgsl")
+    wgsl!("synthetic/stars.wgsl")
 );
 
 pub(super) struct StarPrepared {
@@ -52,34 +53,19 @@ impl StarPrepared {
         if count == 0 || bytes > max_storage_bytes {
             return Err(RenderError::SceneCapacity);
         }
-        let mut packed = Vec::with_capacity(records.len() * 16);
         for &[x, y, z, lux] in records {
             let norm = Vec3::new(x, y, z).length_squared();
             if !norm.is_finite() || (norm - 1.0).abs() > 1e-4 || !(0.0..=0.001).contains(&lux) {
                 return Err(RenderError::InvalidLighting);
             }
-            packed.extend([x, y, z, lux].into_iter().flat_map(f32::to_le_bytes));
         }
         let catalogue = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("equatorial star catalogue"),
-            contents: &packed,
+            contents: bytemuck::cast_slice(records),
             usage: wgpu::BufferUsages::STORAGE,
         });
         // The same footprint constants drive rasterization and the daylight bound.
-        let shader = format!(
-            "const ANGULAR_SIGMA_DEGREES: f32 = {:.12};\nconst PIXEL_SIGMA: f32 = {:.12};\n\
-             const MAX_CENTRE_NDC: f32 = {:.1};\nconst RADIUS_SIGMAS: f32 = {:.1};\n\
-             const PIXEL_HALF_WIDTH: f32 = {:.1};\n{SHADER}",
-            daylight::ANGULAR_SIGMA_DEGREES,
-            daylight::PIXEL_SIGMA,
-            daylight::MAX_CENTRE_NDC,
-            daylight::RADIUS_SIGMAS,
-            daylight::PIXEL_HALF_WIDTH,
-        );
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(PASS_NAME),
-            source: wgpu::ShaderSource::Wgsl(shader.into()),
-        });
+        let shader = crate::shaders::Shader::Stars.compile(device, PASS_NAME);
         let blend = wgpu::BlendComponent {
             src_factor: wgpu::BlendFactor::One,
             dst_factor: wgpu::BlendFactor::One,
@@ -232,29 +218,29 @@ impl StarPrepared {
             Mat4::from_cols_array_2d(&view.view_proj_columns()) * Mat4::from_mat3(rotation);
         let prior = Mat4::from_cols_array_2d(&previous.view_proj_columns())
             * Mat4::from_mat3(previous.celestial_basis().unwrap_or(rotation));
-        let jitter = view.pack_view(previous, 1.0);
+        let [jx, jy] = if view.raster_jitter_enabled() {
+            let [_, _, jx, jy] = view
+                .view_record(previous, 1.0)
+                .pre_exposure_inv_exposure_jitter;
+            [jx, jy]
+        } else {
+            [0.0; 2]
+        };
         let up = rotation.row(1);
-        let mut bytes = [0; UNIFORM_LEN];
-        for (destination, value) in bytes.as_chunks_mut::<4>().0.iter_mut().zip(
-            transform
-                .to_cols_array()
-                .into_iter()
-                .chain([extent[0] as f32, extent[1] as f32, fx.recip(), fy.recip()])
-                .chain([up.x, up.y, up.z, strength])
-                .chain((prior - transform).to_cols_array()),
-        ) {
-            destination.copy_from_slice(&value.to_le_bytes());
-        }
-        if view.raster_jitter_enabled() {
-            bytes[160..168].copy_from_slice(&jitter[152..160]);
-        }
-        bytes[168..172].copy_from_slice(
-            &f32::from(
-                view.history_reset() || view.celestial_epoch() != previous.celestial_epoch(),
-            )
-            .to_le_bytes(),
-        );
-        Some(bytes)
+        Some(bytemuck::cast(crate::records::StarView {
+            clip_from_catalogue: transform.to_cols_array_2d(),
+            extent_and_tan_half_fov: [extent[0] as f32, extent[1] as f32, fx.recip(), fy.recip()],
+            catalogue_zenith_and_strength: [up.x, up.y, up.z, strength],
+            delta_clip_from_catalogue: (prior - transform).to_cols_array_2d(),
+            jitter: [
+                jx,
+                jy,
+                f32::from(
+                    view.history_reset() || view.celestial_epoch() != previous.celestial_epoch(),
+                ),
+                0.0,
+            ],
+        }))
     }
 }
 
@@ -391,6 +377,19 @@ impl SceneContext<'_> {
         pass.draw(0..6, 0..stars.count);
         Ok(())
     }
+}
+
+pub(crate) fn shader_source() -> String {
+    format!(
+        "const ANGULAR_SIGMA_DEGREES: f32 = {:.12};\nconst PIXEL_SIGMA: f32 = {:.12};\n\
+             const MAX_CENTRE_NDC: f32 = {:.1};\nconst RADIUS_SIGMAS: f32 = {:.1};\n\
+             const PIXEL_HALF_WIDTH: f32 = {:.1};\n{SHADER}",
+        daylight::ANGULAR_SIGMA_DEGREES,
+        daylight::PIXEL_SIGMA,
+        daylight::MAX_CENTRE_NDC,
+        daylight::RADIUS_SIGMAS,
+        daylight::PIXEL_HALF_WIDTH,
+    )
 }
 
 #[cfg(all(test, target_os = "macos"))]

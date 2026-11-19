@@ -34,7 +34,7 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let uv=sky_uv(direction,sun);
     let size=vec2<f32>(textureDimensions(sky));
     let encoded=textureSampleLevel(sky,lut_sampler,clamp(uv,0.5/size,1.0-0.5/size),0.0);
-    let angular_radius=0.00465421;
+    let angular_radius=SUN_ANGULAR_RADIUS;
     let cosine=dot(direction,sun);
     // Approximate coverage in angular space. A cosine derivative expands the
     // filter far from the Sun and can paint a false disk on the horizon.

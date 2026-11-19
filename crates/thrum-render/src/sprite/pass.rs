@@ -7,40 +7,15 @@ use crate::{
     synthetic::{RenderError, SCENE_FORMAT},
     timing::GpuTimings,
 };
-use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
 
 pub(crate) const PASS: &str = "sprites";
 pub(super) const SHEET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
-const SHADER: &str = include_str!("pass.wgsl");
 
 #[cfg(test)]
 mod tests;
 
-#[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
-struct GpuView {
-    clip_per_world: [f32; 2],
-    padding: [f32; 2],
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
-struct GpuRow {
-    pivot: [f32; 2],
-    right: [f32; 2],
-    down: [f32; 2],
-    frame: u32,
-    padding: u32,
-    tint: [f32; 4],
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
-struct GpuRect {
-    origin: [u32; 2],
-    size: [u32; 2],
-}
+use crate::records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView};
 
 pub(super) struct SpritePass {
     pub(super) key: PipelineKey,
@@ -117,10 +92,7 @@ impl SpritePass {
             usage: wgpu::BufferUsages::STORAGE,
         });
         let (sheet, sheet_view) = upload_sheet(device, queue, sheet);
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("sprites"),
-            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
-        });
+        let shader = crate::shaders::Shader::Sprite.compile(device, "sprites");
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some(PASS),
             layout: None,

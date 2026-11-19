@@ -3,22 +3,11 @@
 // the Sun's azimuth: air at x below H is hidden from the Sun's centre. G holds
 // the maximising caster's distance for the penumbra. Steps grow geometrically
 // from two height texels to the map edge, as the receiver horizon march does.
-struct ShadowCascades {
-    light_view_proj: array<mat4x4<f32>, 2>,
-    split_overlap: vec4<f32>,
-    bias: vec4<f32>,
-    penumbra: vec4<f32>,
-    height_support: vec4<f32>,
-    height_view_proj: mat4x4<f32>,
-    horizon: vec4<f32>,
-    near_partition: vec4<f32>,
-}
 @group(0) @binding(0) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(1) var shadow_maps: texture_depth_2d_array;
 @group(0) @binding(2) var<uniform> light: DirectionalLight;
 
-// Must match `air_shadow::SIZE`; the pass draws one fullscreen triangle into it.
-const SIZE: f32 = 512.0;
+// The pass draws one fullscreen triangle into the Rust-sized height map.
 
 const STEPS: u32 = 96u;
 const NONE: f32 = -1e30;
@@ -39,7 +28,7 @@ const NONE: f32 = -1e30;
     }
     // Invert the affine top-down mapping clip.xy = A·(x,z) + c for this texel centre.
     let m = shadows.height_view_proj;
-    let uv = position.xy / SIZE;
+    let uv = position.xy / f32(AIR_SHADOW_SIZE);
     let clip = vec2(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0) - vec2(m[3][0], m[3][1]);
     let a = vec2(m[0][0], m[0][1]);
     let b = vec2(m[2][0], m[2][1]);

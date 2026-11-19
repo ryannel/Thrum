@@ -18,7 +18,7 @@ fn gpu_mapping_layout_matches_both_plain_and_atlas_shader() {
     let (_, ty) = module
         .types
         .iter()
-        .find(|(_, ty)| ty.name.as_deref() == Some("CloudField"))
+        .find(|(_, ty)| ty.name.as_deref() == Some(stringify!(GpuSunMapping)))
         .expect("mapping");
     let naga::TypeInner::Struct { members, span } = &ty.inner else {
         panic!("mapping struct")

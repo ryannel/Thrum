@@ -8,17 +8,6 @@ struct Policy {
     // SDR tone map in bits 0-7, display overlay in bits 8-15.
     display_selectors: u32,
 }
-struct Serials {
-    previous: vec2<u32>,
-    current: vec2<u32>,
-    alpha_padding: vec4<f32>,
-}
-struct ExposureSample {
-    // Storage p, inverse camera gain, resolved camera EV100, actual incident lux.
-    values: vec4<f32>,
-    // Flags, current submitted-candidate serial lo/hi, display selectors.
-    metadata: vec4<u32>,
-}
 @group(0) @binding(0) var<uniform> policy: Policy;
 @group(0) @binding(1) var<uniform> directional: DirectionalLight;
 @group(0) @binding(4) var<uniform> environment_light: EnvironmentLight;
@@ -83,5 +72,5 @@ fn resolve() {
     }
     if policy.atmosphere!=0u && environment_light.horizontal_irradiance.w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
     result.values = vec4(storage_scale, inverse, ev, lux);
-    result.metadata = vec4(flags, serials.current, policy.display_selectors);
+    result.metadata = vec4(flags, serials.current_lo, serials.current_hi, policy.display_selectors);
 }

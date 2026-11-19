@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt as _;
 
 use crate::graph::{Access, AccessKind, FrameGraph, GraphError, ResourceDescriptor, ResourceScope};
 
-pub(super) const CONTROL_BYTES: u64 = 16;
+pub(super) const CONTROL_BYTES: u64 = size_of::<[u32; 4]>() as u64;
 const WIDTH: u32 = 96;
 const HEIGHT: u32 = 64;
 const PROFILE: &[u8; (WIDTH * HEIGHT * 4) as usize] = include_bytes!("night/earth.rg16f");
@@ -70,7 +70,7 @@ impl NightProfile {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let control = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Earth night profile selection"),
-            contents: [u32::from(enabled).to_le_bytes(), [0; 4], [0; 4], [0; 4]].as_flattened(),
+            contents: bytemuck::bytes_of(&night_control(enabled)),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         Self {
@@ -86,7 +86,11 @@ impl NightProfile {
             return false;
         }
         self.enabled = enabled;
-        queue.write_buffer(&self.control, 0, &u32::from(enabled).to_le_bytes());
+        queue.write_buffer(
+            &self.control,
+            0,
+            bytemuck::bytes_of(&night_control(enabled)),
+        );
         true
     }
 
@@ -157,4 +161,8 @@ pub(super) fn layout_entries() -> [wgpu::BindGroupLayoutEntry; 2] {
             count: None,
         },
     ]
+}
+
+fn night_control(enabled: bool) -> [u32; 4] {
+    [u32::from(enabled), 0, 0, 0]
 }

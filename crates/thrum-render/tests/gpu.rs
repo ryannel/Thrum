@@ -424,7 +424,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             let mut overlap = scene.clone();
             overlap.materials[0].emissive_cutoff = [0.2, 0.1, 0.0, 0.0];
             overlap.materials[1].emissive_cutoff = [0.0, 0.1, 0.4, 0.0];
-            let mut far = overlap.instances[0].clone();
+            let mut far = overlap.instances[0];
             far.ids = [1, 1, 0, 1];
             far.current[3][2] = 0.8;
             far.previous = far.current;

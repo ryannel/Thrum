@@ -1,12 +1,8 @@
 enable wgpu_ray_query;
 
 // Prefix of the forward view's auxiliary record.
-struct ViewAux {
-    inverse_view_proj: mat4x4<f32>,
-    viewport_inv_viewport: vec4<f32>,
-}
 
-@group(0) @binding(1) var<uniform> view_aux: ViewAux;
+@group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
 @group(1) @binding(0) var structure: acceleration_structure;
 
 @vertex

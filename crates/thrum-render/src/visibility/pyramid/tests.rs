@@ -343,6 +343,7 @@ fn gpu_occluded(
     boxes: &[[[f32; 4]; 8]],
     magnitudes: &[[f32; 4]],
 ) -> Vec<bool> {
+    let occlusion = crate::shaders::wgsl!("visibility/occlusion.wgsl");
     let source = format!(
         "@group(0) @binding(0) var pyramid: texture_2d<f32>;
         @group(0) @binding(1) var<storage, read> boxes: array<array<vec4<f32>, 8>>;
@@ -352,7 +353,7 @@ fn gpu_occluded(
             if id.x >= arrayLength(&results) {{ return; }}
             results[id.x] = u32(occluded_by_pyramid(boxes[id.x], magnitudes[id.x]));
         }}
-        {OCCLUSION_WGSL}"
+        {occlusion}"
     );
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("occlusion probe"),

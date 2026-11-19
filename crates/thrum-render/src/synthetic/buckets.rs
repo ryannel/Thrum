@@ -19,10 +19,10 @@ use super::mesh_arena::MeshId;
 use super::upload::{DEGENERATE_DETERMINANT, determinant};
 use crate::abi::InstanceRecord;
 
-/// Slots per alignment step; each segment starts at a multiple of this.
-pub(super) const SEGMENT_ALIGN: u32 = 256;
 /// A member-list entry that names no instance.
-pub(super) const PADDING: u32 = u32::MAX;
+pub(super) use crate::shader_constants::MEMBER_PADDING as PADDING;
+/// Slots per alignment step; each segment starts at a multiple of this.
+pub(super) use crate::shader_constants::VISIBILITY_WORKGROUP as SEGMENT_ALIGN;
 
 /// How a bucket rasterizes.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -81,7 +81,7 @@ pub(super) enum BucketError {
 }
 
 /// The shader's bucket-table length (`MAX_BUCKETS` in `visibility.wgsl`).
-pub(super) const MAX_BUCKETS: usize = 64;
+pub(crate) use crate::shader_constants::MAX_BUCKETS;
 /// Mask words per workgroup, stored after the counts in the scratch buffer.
 const WORDS: u64 = SEGMENT_ALIGN as u64 / 32;
 

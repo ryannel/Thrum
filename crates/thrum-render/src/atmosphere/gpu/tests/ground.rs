@@ -19,12 +19,12 @@ fn read(@builtin(global_invocation_id) id: vec3<u32>) {
 
 const MATH: &str = concat!(
     concat!(
-        include_str!("../../storage.wgsl"),
+        crate::shaders::wgsl!("atmosphere/storage.wgsl"),
         "\n",
         concat!(
-            include_str!("../../geometry.wgsl"),
+            crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
             "\n",
-            include_str!("../../common.wgsl")
+            crate::shaders::wgsl!("atmosphere/common.wgsl")
         )
     ),
     r"

@@ -207,10 +207,7 @@ impl SurfacePresenter {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("V1 surface present"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("present.wgsl").into()),
-        });
+        let shader = crate::shaders::Shader::Present.compile(device, "V1 surface present");
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("V1 surface present"),
             layout: Some(&pipeline_layout),

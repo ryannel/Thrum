@@ -7,7 +7,7 @@ use crate::graph::{
 };
 use std::collections::BTreeSet;
 
-const PARAM_BYTES: u64 = 224;
+const PARAM_BYTES: u64 = size_of::<crate::records::ReconstructionParams>() as u64;
 
 pub(super) struct Taau {
     pipeline: wgpu::ComputePipeline,
@@ -85,17 +85,12 @@ impl Taau {
             bind_group_layouts: &[Some(&bindings)],
             immediate_size: 0,
         });
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("portable TAAU"),
-            source: wgpu::ShaderSource::Wgsl(
-                if reference {
-                    include_str!("reference.wgsl")
-                } else {
-                    include_str!("taau.wgsl")
-                }
-                .into(),
-            ),
-        });
+        let shader = if reference {
+            crate::shaders::Shader::Reference
+        } else {
+            crate::shaders::Shader::Reconstruction
+        }
+        .compile(device, "portable TAAU");
         Self {
             pipeline: device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("portable TAAU"),
@@ -368,43 +363,31 @@ impl TaauTarget {
         valid: bool,
         extent: [u32; 2],
     ) {
-        let mut words = [0.0_f32; 56];
-        let inverse = glam::Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
-        words[..16].copy_from_slice(&inverse.to_cols_array());
         let matrix = |v: &SyntheticView| match v.projection {
             super::view::Projection::Perspective { view, .. } => view,
             super::view::Projection::OrthographicFixture => glam::Mat4::IDENTITY,
         };
-        words[16..32].copy_from_slice(&matrix(previous).to_cols_array());
-        words[32..48].copy_from_slice(&matrix(view).to_cols_array());
-        words[48..52].copy_from_slice(&[
-            f32::from(u8::from(valid)),
-            0.0,
-            extent[0] as f32,
-            extent[1] as f32,
-        ]);
-        let packed = view.pack_view(previous, 1.0);
-        let previous_packed = previous.pack_view(previous, 1.0);
-        words[52..56].copy_from_slice(&[
-            f32::from_le_bytes(packed[152..156].try_into().expect("jitter x")),
-            f32::from_le_bytes(packed[156..160].try_into().expect("jitter y")),
-            if view.reconstruction_reference() {
-                u32::from_le_bytes(packed[228..232].try_into().expect("jitter phase")) as f32
-            } else {
-                f32::from_le_bytes(
-                    previous_packed[152..156]
-                        .try_into()
-                        .expect("previous jitter x"),
-                )
-            },
-            f32::from_le_bytes(
-                previous_packed[156..160]
-                    .try_into()
-                    .expect("previous jitter y"),
-            ),
-        ]);
-        let bytes: [u8; 224] = std::array::from_fn(|i| words[i / 4].to_le_bytes()[i % 4]);
-        queue.write_buffer(&self.params, 0, &bytes);
+        let current = view.view_record(previous, 1.0);
+        let prior = previous.view_record(previous, 1.0);
+        let [_, _, jx, jy] = current.pre_exposure_inv_exposure_jitter;
+        let [_, _, px, py] = prior.pre_exposure_inv_exposure_jitter;
+        let record = crate::records::ReconstructionParams {
+            inverse: view.inverse_view_proj_columns(),
+            previous_view: matrix(previous).to_cols_array_2d(),
+            view: matrix(view).to_cols_array_2d(),
+            state: [f32::from(valid), 0.0, extent[0] as f32, extent[1] as f32],
+            jitter: [
+                jx,
+                jy,
+                if view.reconstruction_reference() {
+                    current.jitter_phase as f32
+                } else {
+                    px
+                },
+                py,
+            ],
+        };
+        queue.write_buffer(&self.params, 0, bytemuck::bytes_of(&record));
     }
 }
 

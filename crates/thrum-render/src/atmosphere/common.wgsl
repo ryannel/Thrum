@@ -1,11 +1,8 @@
+const SKY_ROWS: f32 = 2.0 * f32(SKY_HALF_ROWS);
+const SKY_HALF_INTERVALS: f32 = f32(SKY_HALF_ROWS - 1u);
+const SKY_GROUND_EDGE: f32 = f32(SKY_HALF_ROWS) - 0.5;
+const SKY_UPPER_EDGE: f32 = f32(SKY_HALF_ROWS) + 0.5;
 // Fixed Earth profile, distances in metres, local +Y up at the camera.
-struct Atmosphere {
-    inverse_view_projection: mat4x4<f32>,
-    camera_altitude: vec4<f32>,
-    sun_lux: vec4<f32>,
-    colour_pre_exposure: vec4<f32>,
-    sky_mapping: vec4<f32>, // Horizon mu/elevation, sky/ground angular spans.
-}
 @group(0) @binding(0) var<uniform> atmosphere: Atmosphere;
 // LUT RGB is encoded only at storage boundaries; transport stays per unit Sun.
 // For this unchanged M<0.05 closure, upward L<=3.582+0.05, so GroundE<=pi*3.632
@@ -13,9 +10,6 @@ struct Atmosphere {
 // and full Sky<4125 fit fp16. These fixed-profile envelopes do not certify the
 // isotropic multiple-scattering/ground-feedback approximation; recheck on change.
 // Aerial RGB uses the same Sky gain: L<3.632 encodes below 3720. T stays unscaled.
-const MULTIPLE_LUT_GAIN: f32 = 65536.0;
-const GROUND_IRRADIANCE_GAIN: f32 = 1024.0;
-const GROUND_SUN_ENTRIES: u32 = 128u;
 const GROUND_MU_SAMPLES: u32 = 16u;
 const GROUND_AZIMUTH_SAMPLES: u32 = 16u;
 fn ground_sun_mu(entry: u32) -> f32 {
@@ -58,9 +52,6 @@ fn ground_distance(h: f32, mu: f32) -> f32 {
 // and 54.5/108. Lookups choose the sky side at exact tangency; neither half's
 // filtering footprint crosses the discontinuity. Keep this fixed profile in
 // step with gpu::EXTENTS[2].
-const SKY_HALF_ROWS: u32 = 54u;
-const SKY_ROWS: f32 = 108.0;
-const SKY_HALF_INTERVALS: f32 = 53.0;
 fn sun_azimuth(sun: vec3<f32>) -> f32 {
     if dot(sun.xz,sun.xz)<=1e-10 { return 0.0; }
     return atan2(sun.z,sun.x);
@@ -69,10 +60,10 @@ fn sky_angles(uv: vec2<f32>) -> vec2<f32> {
     let mapping=atmosphere.sky_mapping;
     var elevation: f32;
     if uv.y<0.5 {
-        let q=clamp((53.5-uv.y*SKY_ROWS)/SKY_HALF_INTERVALS,0.0,1.0);
+        let q=clamp((SKY_GROUND_EDGE-uv.y*SKY_ROWS)/SKY_HALF_INTERVALS,0.0,1.0);
         elevation=mapping.y-mapping.w*q*q;
     } else {
-        let q=clamp((uv.y*SKY_ROWS-54.5)/SKY_HALF_INTERVALS,0.0,1.0);
+        let q=clamp((uv.y*SKY_ROWS-SKY_UPPER_EDGE)/SKY_HALF_INTERVALS,0.0,1.0);
         elevation=mapping.y+mapping.z*q*q;
     }
     return vec2((uv.x*2.0-1.0)*PI,elevation);
@@ -87,17 +78,17 @@ fn sky_uv(direction: vec3<f32>, sun: vec3<f32>) -> vec2<f32> {
     let elevation=asin(clamp(direction.y,-1.0,1.0));
     var vertical: f32;
     if direction.y>=mapping.x {
-        if direction.y==mapping.x { vertical=54.5/SKY_ROWS; }
-        else if direction.y>=1.0 { vertical=107.5/SKY_ROWS; }
+        if direction.y==mapping.x { vertical=SKY_UPPER_EDGE/SKY_ROWS; }
+        else if direction.y>=1.0 { vertical=(SKY_ROWS-0.5)/SKY_ROWS; }
         else {
             let q=sqrt(clamp((elevation-mapping.y)/mapping.z,0.0,1.0));
-            vertical=(54.5+SKY_HALF_INTERVALS*q)/SKY_ROWS;
+            vertical=(SKY_UPPER_EDGE+SKY_HALF_INTERVALS*q)/SKY_ROWS;
         }
     } else {
         if direction.y<=-1.0 { vertical=0.5/SKY_ROWS; }
         else {
             let q=sqrt(clamp((mapping.y-elevation)/mapping.w,0.0,1.0));
-            vertical=(53.5-SKY_HALF_INTERVALS*q)/SKY_ROWS;
+            vertical=(SKY_GROUND_EDGE-SKY_HALF_INTERVALS*q)/SKY_ROWS;
         }
     }
     return vec2(azimuth/(2.0*PI)+0.5,vertical);

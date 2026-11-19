@@ -62,13 +62,17 @@ impl ShadowPrepared {
         let mut fitted = inputs.fit(bounds)?;
         let world_fit = world.inputs.fit(bounds)?;
         fitted.matrices[2] = world_fit.matrices[2];
-        fitted.samples[192..272].copy_from_slice(&world_fit.samples[192..272]);
+        fitted.samples.height_view_proj = world_fit.samples.height_view_proj;
+        fitted.samples.horizon = world_fit.samples.horizon;
         for (index, cascade) in self.cascades.iter().enumerate() {
-            self.queue
-                .write_buffer(&cascade.buffer, 0, &fitted.caster_view(index));
+            self.queue.write_buffer(
+                &cascade.buffer,
+                0,
+                bytemuck::bytes_of(&fitted.caster_view(index)),
+            );
         }
         self.queue
-            .write_buffer(&self.sample_buffer, 0, &fitted.samples);
+            .write_buffer(&self.sample_buffer, 0, bytemuck::bytes_of(&fitted.samples));
         Ok(fitted.matrices)
     }
 }

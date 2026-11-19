@@ -1,8 +1,8 @@
-struct View {
+struct SpriteView {
     clip_per_world: vec2<f32>,
     padding: vec2<f32>,
 }
-struct Row {
+struct SpriteRow {
     pivot: vec2<f32>,
     right: vec2<f32>,
     down: vec2<f32>,
@@ -10,7 +10,7 @@ struct Row {
     padding: u32,
     tint: vec4<f32>,
 }
-struct Frame {
+struct SpriteFrameRecord {
     origin: vec2<u32>,
     size: vec2<u32>,
 }
@@ -20,9 +20,9 @@ struct Vertex {
     @location(1) @interpolate(flat) frame: u32,
     @location(2) @interpolate(flat) tint: vec4<f32>,
 }
-@group(0) @binding(0) var<uniform> view: View;
-@group(0) @binding(1) var<storage, read> rows: array<Row>;
-@group(0) @binding(2) var<storage, read> frames: array<Frame>;
+@group(0) @binding(0) var<uniform> view: SpriteView;
+@group(0) @binding(1) var<storage, read> rows: array<SpriteRow>;
+@group(0) @binding(2) var<storage, read> frames: array<SpriteFrameRecord>;
 @group(0) @binding(3) var sheet: texture_2d_array<f32>;
 
 @vertex fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) instance: u32) -> Vertex {

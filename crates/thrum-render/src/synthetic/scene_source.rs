@@ -3,9 +3,10 @@
 
 use super::air_shadow;
 use crate::capabilities::{ShadowSelection, SunShadowMethod};
+use crate::shaders::wgsl;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum SunShadows {
+pub(crate) enum SunShadows {
     Disabled,
     Enabled,
 }
@@ -30,21 +31,15 @@ pub(super) fn prepare(
     selection: ShadowSelection,
     fail_pipeline: bool,
 ) -> (String, wgpu::ShaderModule, &'static str) {
-    let source = compose_with_cloud(atmosphere, air_shadow, cloud.is_some(), shadowed);
-    let source = cloud_variant(
-        source,
-        cloud.is_some_and(crate::atmosphere::SunOpticalDepth::gpu_written),
-    );
-    let source = traced(source, shadowed, selection);
-    let wgsl = if fail_pipeline {
-        "intentionally invalid WGSL"
-    } else {
-        source.as_str()
-    };
-    let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("prepared synthetic shader ABI2"),
-        source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+    let shader = crate::shaders::Shader::Scene(crate::shaders::SceneVariant {
+        atmosphere: crate::shaders::AtmosphereVariant::new(atmosphere, air_shadow),
+        cloud: crate::shaders::CloudVariant::from_provider(cloud),
+        shadows: shadowed,
+        sun: selection.sun,
+        traced_lamps: selection.lamps,
     });
+    let (source, module) =
+        shader.compile_with_source(device, "prepared synthetic shader ABI2", fail_pipeline);
     let entry = if shadowed == SunShadows::Enabled {
         "shadowed_fragment"
     } else {
@@ -64,7 +59,7 @@ fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) 
             + source[start..]
                 .find("// Within a few degrees")
                 .expect("end of Sun operation");
-        source.replace_range(start..end, include_str!("raytrace/sun.wgsl"));
+        source.replace_range(start..end, wgsl!("synthetic/raytrace/sun.wgsl"));
         source = source.replace(
             "dpdx(input.world_position),\n        dpdy(input.world_position),normalize(input.normal)",
             "vec3(0.0),vec3(0.0),normalize(input.normal)",
@@ -101,11 +96,11 @@ fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) 
                 "n,v,input.world_position,input.position)",
                 "n,v,input.world_position,input.position,normalize(input.normal))",
             );
-        source.push_str(include_str!("raytrace/lamps.wgsl"));
+        source.push_str(wgsl!("synthetic/raytrace/lamps.wgsl"));
     }
     format!(
         "enable wgpu_ray_query;\n{source}\n{}",
-        include_str!("raytrace/shadows.wgsl"),
+        wgsl!("synthetic/raytrace/shadows.wgsl"),
     )
 }
 
@@ -114,7 +109,7 @@ pub(super) fn cloud_variant(source: String, gpu_written: bool) -> String {
     if gpu_written {
         source.replace(
             crate::atmosphere::CLOUD_SHADER_SOURCE,
-            include_str!("../atmosphere/cloud_gpu.wgsl"),
+            wgsl!("atmosphere/cloud_gpu.wgsl"),
         )
     } else {
         source
@@ -160,26 +155,26 @@ fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
     format!(
         "{}\n{}\n{}",
         concat!(
-            include_str!("../atmosphere/storage.wgsl"),
+            wgsl!("atmosphere/storage.wgsl"),
             "\n",
-            include_str!("../atmosphere/brdf.wgsl"),
+            wgsl!("atmosphere/brdf.wgsl"),
             "\n",
-            include_str!("../atmosphere/irradiance.wgsl"),
+            wgsl!("atmosphere/irradiance.wgsl"),
             "\n",
-            include_str!("../directional_light.wgsl"),
+            wgsl!("directional_light.wgsl"),
             "\n",
-            include_str!("../environment_light.wgsl"),
+            wgsl!("environment_light.wgsl"),
             "\n",
-            include_str!("../synthetic.wgsl")
+            wgsl!("synthetic.wgsl")
         ),
         aerial,
         if atmosphere {
             concat!(
-                include_str!("../atmosphere/geometry.wgsl"),
+                wgsl!("atmosphere/geometry.wgsl"),
                 "\n",
-                include_str!("../synthetic_sun.wgsl"),
+                wgsl!("synthetic_sun.wgsl"),
                 "\n",
-                include_str!("../synthetic_environment.wgsl")
+                wgsl!("synthetic_environment.wgsl")
             )
         } else {
             ""
@@ -197,22 +192,22 @@ pub(super) fn secondary(
 ) -> String {
     let aerial = match (atmosphere, shadowed_air) {
         (true, true) => concat!(
-            include_str!("../synthetic_aerial.wgsl"),
+            wgsl!("synthetic_aerial.wgsl"),
             "\n",
-            include_str!("../synthetic_aerial_visibility.wgsl"),
+            wgsl!("synthetic_aerial_visibility.wgsl"),
             "\n",
-            include_str!("secondary/aerial_ray.wgsl"),
+            wgsl!("synthetic/secondary/aerial_ray.wgsl"),
             "\n",
-            include_str!("secondary/aerial_shadowed.wgsl")
+            wgsl!("synthetic/secondary/aerial_shadowed.wgsl")
         ),
         (true, false) => concat!(
-            include_str!("../synthetic_aerial.wgsl"),
+            wgsl!("synthetic_aerial.wgsl"),
             "\n",
-            include_str!("secondary/aerial_ray.wgsl"),
+            wgsl!("synthetic/secondary/aerial_ray.wgsl"),
             "\n",
-            include_str!("secondary/aerial_clear.wgsl")
+            wgsl!("synthetic/secondary/aerial_clear.wgsl")
         ),
-        _ => include_str!("../synthetic_plain.wgsl"),
+        _ => wgsl!("synthetic_plain.wgsl"),
     };
     let source = apply_providers(compose_aerial(atmosphere, aerial), cloud, shadows);
     if shadows == SunShadows::Enabled {
@@ -228,6 +223,25 @@ pub(super) fn secondary(
     } else {
         source
     }
+}
+
+pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
+    let source = compose_with_cloud(
+        variant.atmosphere.present(),
+        variant.atmosphere.air_shadow(),
+        variant.cloud.present(),
+        variant.shadows,
+    );
+    let source = cloud_variant(source, variant.cloud.gpu());
+    traced(
+        source,
+        variant.shadows,
+        ShadowSelection {
+            sun: variant.sun,
+            lamps: variant.traced_lamps,
+            ..ShadowSelection::default()
+        },
+    )
 }
 
 #[cfg(test)]

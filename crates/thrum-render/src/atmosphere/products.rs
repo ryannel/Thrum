@@ -1,6 +1,7 @@
 //! On-demand read-only bindings for independent scene contributions.
 
 use super::gpu::AtmospherePrepared;
+use crate::shaders::wgsl;
 
 /// Read-only atmosphere products, created on the contribution's request.
 ///
@@ -67,9 +68,9 @@ pub(super) fn create(
         count: None,
     };
     let mut entries = vec![
-        buffer(0, 128),
+        buffer(0, super::gpu::UNIFORM_BYTES),
         buffer(3, crate::light::ENVIRONMENT_BYTES),
-        buffer(10, 16),
+        buffer(10, size_of::<[f32; 4]>() as u64),
         buffer(11, crate::light::DIRECTIONAL_BYTES),
     ];
     for (binding, view_dimension) in [
@@ -156,32 +157,38 @@ pub(super) fn create(
     });
     EnvironmentProducts {
         layout,
-        shader_source: library(far_aerial),
+        shader_source: if far_aerial {
+            crate::shaders::Shader::EnvironmentProductsFar
+        } else {
+            crate::shaders::Shader::EnvironmentProducts
+        }
+        .source()
+        .into_owned(),
         groups,
     }
 }
 
-fn library(far_aerial: bool) -> String {
+pub(crate) fn library(far_aerial: bool) -> String {
     let products = format!(
         "{}\n{}\n{}{}{}",
-        include_str!("../directional_light.wgsl"),
-        include_str!("../environment_light.wgsl"),
-        include_str!("products.wgsl"),
+        wgsl!("directional_light.wgsl"),
+        wgsl!("environment_light.wgsl"),
+        wgsl!("atmosphere/products.wgsl"),
         if far_aerial {
-            include_str!("products_aerial_far.wgsl")
+            wgsl!("atmosphere/products_aerial_far.wgsl")
         } else {
-            include_str!("products_aerial.wgsl")
+            wgsl!("atmosphere/products_aerial.wgsl")
         },
-        include_str!("products_reflection.wgsl")
+        wgsl!("atmosphere/products_reflection.wgsl")
     );
     // Reuse the receiver Sun and cumulative aerial arithmetic verbatim. Only
     // the resource declarations and active-frame name differ in this group.
-    let sun = include_str!("../synthetic_sun.wgsl")
+    let sun = wgsl!("synthetic_sun.wgsl")
         .split_once("\n\n")
         .expect("Sun declarations followed by function")
         .1
         .replace("aerial_frame", "atmosphere");
-    let aerial = include_str!("../synthetic_aerial.wgsl");
+    let aerial = wgsl!("synthetic_aerial.wgsl");
     let sample = aerial
         .split_once("// Cumulative")
         .expect("aerial sample marker")
@@ -195,10 +202,10 @@ fn library(far_aerial: bool) -> String {
         .1;
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n// Cumulative{}\n// Decode{}\n{}",
-        include_str!("storage.wgsl"),
-        include_str!("geometry.wgsl"),
-        include_str!("common.wgsl"),
-        include_str!("irradiance.wgsl"),
+        wgsl!("atmosphere/storage.wgsl"),
+        wgsl!("atmosphere/geometry.wgsl"),
+        wgsl!("atmosphere/common.wgsl"),
+        wgsl!("atmosphere/irradiance.wgsl"),
         products,
         sun,
         sample,

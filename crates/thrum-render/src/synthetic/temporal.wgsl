@@ -1,4 +1,3 @@
-struct ExposureSample { values: vec4<f32>, metadata: vec4<u32> }
 @group(0) @binding(0) var<uniform> exposure: ExposureSample;
 @vertex fn vertex(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
     let p = array<vec2<f32>,3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));

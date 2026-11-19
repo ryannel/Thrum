@@ -27,8 +27,7 @@ use crate::abi::InstanceRecord;
 use crate::visibility::{MemberInputs, MemberShape};
 
 /// `Buckets` in `visibility.wgsl`: four words, then 64 four-word segments.
-const TABLE_WORDS: usize = 4 + super::buckets::MAX_BUCKETS * 4;
-const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
+const TABLE_BYTES: u64 = size_of::<crate::records::Buckets>() as u64;
 
 /// Each logical slot's admitted mesh row. Every slot names a row the arena
 /// holds.
@@ -342,7 +341,7 @@ impl BucketRoute {
                 .buckets
                 .members()
                 .iter()
-                .flat_map(|member| member.to_le_bytes())
+                .flat_map(|member| bytemuck::cast::<u32, [u8; 4]>(*member))
                 .collect();
             queue.write_buffer(&self.members, 0, &bytes);
             queue.write_buffer(&self.table, 0, &self.table_bytes());
@@ -383,15 +382,20 @@ impl BucketRoute {
     /// The uniform table `visibility.wgsl`'s `Buckets` declares.
     fn table_bytes(&self) -> Vec<u8> {
         let segments = self.segments();
-        let mut words = [0_u32; TABLE_WORDS];
-        words[0] = u32::try_from(segments.len()).unwrap_or(u32::MAX);
-        words[1] = self.groups();
-        for (record, segment) in words[4..].as_chunks_mut::<4>().0.iter_mut().zip(segments) {
-            record[0] = segment.start / SEGMENT_ALIGN;
-            record[1] = segment.capacity / SEGMENT_ALIGN;
-            record[2] = segment.key.mesh.row();
+        let mut table = crate::records::Buckets {
+            count: u32::try_from(segments.len()).unwrap_or(u32::MAX),
+            mask_base: self.groups(),
+            ..bytemuck::Zeroable::zeroed()
+        };
+        for (record, segment) in table.segments.iter_mut().zip(segments) {
+            *record = crate::records::Segment {
+                first_group: segment.start / SEGMENT_ALIGN,
+                groups: segment.capacity / SEGMENT_ALIGN,
+                mesh: segment.key.mesh.row(),
+                padding: 0,
+            };
         }
-        words.iter().flat_map(|word| word.to_le_bytes()).collect()
+        bytemuck::bytes_of(&table).to_vec()
     }
 
     /// Workgroups in the current member list.

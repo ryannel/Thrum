@@ -21,8 +21,15 @@ mod graph_record;
 pub mod history;
 mod light;
 pub mod present;
+mod records;
 pub mod runtime;
+mod shader_constants;
+mod shaders;
 pub mod sprite;
+#[doc(hidden)]
+pub use records::{RecordLayout, RecordMember, RecordScalar, layouts as record_layouts};
+#[doc(hidden)]
+pub use shaders::composed_sources;
 pub mod synthetic;
 #[cfg(test)]
 mod timestamp_permit;

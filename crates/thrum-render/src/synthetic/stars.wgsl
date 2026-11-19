@@ -6,21 +6,13 @@ struct StarView {
     delta_clip_from_catalogue: mat4x4<f32>,
     jitter: vec4<f32>,
 }
-struct ExposureSample {
-    values: vec4<f32>,
-    metadata: vec4<u32>,
-}
 @group(0) @binding(0) var<storage, read> catalogue: array<vec4<f32>>;
 @group(0) @binding(1) var<uniform> view: StarView;
 @group(0) @binding(2) var depth: texture_depth_2d;
 @group(0) @binding(3) var<uniform> exposure: ExposureSample;
 @group(0) @binding(4) var transmittance: texture_2d<f32>;
 @group(0) @binding(5) var lut_sampler: sampler;
-struct Observer {
-    inverse_view_proj: mat4x4<f32>,
-    world_position_and_altitude: vec4<f32>,
-}
-@group(0) @binding(6) var<uniform> observer: Observer;
+@group(0) @binding(6) var<uniform> observer: Atmosphere;
 
 struct VertexOut {
     @builtin(position) position: vec4<f32>,
@@ -42,7 +34,7 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let centre_ndc = clip.xy / clip.w;
     if any(abs(centre_ndc) > vec2(MAX_CENTRE_NDC)) { return rejected(); }
     let mu = dot(source.xyz, view.catalogue_zenith_and_strength.xyz);
-    let altitude_m = observer.world_position_and_altitude.w;
+    let altitude_m = observer.camera_altitude.w;
     if blocked(altitude_m, mu) { return rejected(); }
     let extent = view.extent_and_tan_half_fov.xy;
     let tan_half_fov = view.extent_and_tan_half_fov.zw;

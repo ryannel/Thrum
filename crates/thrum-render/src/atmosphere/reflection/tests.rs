@@ -30,18 +30,12 @@ fn sample_cube(@builtin(global_invocation_id) id: vec3<u32>) {
 ";
 
 const CONSUMER: &str = concat!(
-    include_str!("../storage.wgsl"),
+    crate::shaders::wgsl!("atmosphere/storage.wgsl"),
     "\n",
     include_str!("../brdf.wgsl"),
+    crate::shaders::wgsl!("records/observer.wgsl"),
     r"
-struct AerialFrame {
-    inverse_view_projection: mat4x4<f32>,
-    camera_altitude: vec4<f32>,
-    sun_lux: vec4<f32>,
-    colour_pre_exposure: vec4<f32>,
-    sky_mapping: vec4<f32>,
-}
-@group(1) @binding(7) var<uniform> aerial_frame: AerialFrame;
+@group(1) @binding(7) var<uniform> aerial_frame: Atmosphere;
 fn ambient_irradiance(n: vec3<f32>, world_position: vec3<f32>, pixel_position: vec4<f32>) -> vec3<f32> {
     return 3.14159265359*vec3(1.0,0.5,0.25)
         *aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb;

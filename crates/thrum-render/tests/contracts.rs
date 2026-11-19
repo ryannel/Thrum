@@ -402,10 +402,10 @@ fn abi_encodes_semantic_offsets_and_rejects_wrong_references() {
         assert_eq!(&bytes[offset..offset + 4], &expected.to_le_bytes());
     }
     assert_eq!(&bytes[60..64], &44_u32.to_le_bytes());
-    let mut bad = material.clone();
+    let mut bad = material;
     bad.texture_layers[2] = 1;
     assert_eq!(bad.pack(&textures), Err(AbiError::TextureLayer));
-    let mut bad = material.clone();
+    let mut bad = material;
     bad.base_rgba[0] = f32::NAN;
     assert_eq!(bad.pack(&textures), Err(AbiError::InvalidFactor));
     let mut instance = InstanceRecord::identity(17, 1);

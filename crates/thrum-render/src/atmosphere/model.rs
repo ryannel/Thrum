@@ -5,8 +5,7 @@ use glam::Vec3;
 
 use super::spectrum::EARTH;
 
-const RADIUS: f32 = 6_371_000.0;
-const TOP: f32 = 100_000.0;
+use crate::shader_constants::{ATMOSPHERE_TOP as TOP, PLANET_RADIUS as RADIUS};
 
 pub(super) fn sun_transmittance(height: f32, mu: f32) -> [f32; 3] {
     let r = RADIUS + height;

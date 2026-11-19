@@ -327,15 +327,13 @@ fn create_tlas(device: &wgpu::Device, capacity: u32) -> wgpu::Tlas {
     })
 }
 
-fn transform(row: &[u8; crate::abi::INSTANCE_BYTES], alpha: f32) -> [f32; 12] {
-    let words = row.as_chunks::<4>().0;
-    let read = |index: usize| f32::from_le_bytes(words[index]);
+fn transform(row: &crate::abi::InstanceRecord, alpha: f32) -> [f32; 12] {
     std::array::from_fn(|component| {
         let axis = component / 4;
         let column = component % 4;
-        let current = read(column * 4 + axis);
+        let current = row.current[column][axis];
         if column == 3 {
-            let previous = read(28 + axis);
+            let previous = row.previous[column][axis];
             previous * (1.0 - alpha) + current * alpha
         } else {
             current

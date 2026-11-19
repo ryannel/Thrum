@@ -1,4 +1,4 @@
-struct CloudField {
+struct GpuSunMapping {
     region: vec4<f32>,
     plane_drift: vec4<f32>,
     path_border: vec4<f32>,
@@ -7,7 +7,7 @@ struct CloudField {
     middle: vec4<f32>,
 };
 @group(1) @binding(13) var cloud_optical_depth: texture_2d<f32>;
-@group(1) @binding(14) var<uniform> cloud_field: CloudField;
+@group(1) @binding(14) var<uniform> cloud_field: GpuSunMapping;
 
 fn atlas_tau(point:vec2<f32>,region:vec4<f32>,tile:vec2<f32>)->f32 {
     let size=vec2<f32>(textureDimensions(cloud_optical_depth));

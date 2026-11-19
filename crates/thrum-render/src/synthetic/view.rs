@@ -1,14 +1,15 @@
 //! Checked view input for the synthetic scene. The game/V2 side creates this
 //! packet; V1 only packs and consumes it. Matrices stay column-major.
 
+use crate::records::{ViewAuxRecord, ViewRecord};
 use glam::{Mat3, Mat4, Vec3, Vec4};
 
 use super::{
     DisplayOverlay, RenderError, SdrToneMap, checked_display_gain, exposure::ExposurePolicy,
 };
 
-pub(super) const VIEW_BYTES: usize = 240;
-pub(super) const AUX_BYTES: usize = 144;
+pub(super) const VIEW_BYTES: usize = size_of::<ViewRecord>();
+pub(super) const AUX_BYTES: usize = size_of::<ViewAuxRecord>();
 
 /// Reconstruction selection fixed at generation preparation.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -511,75 +512,49 @@ impl SyntheticView {
     }
 
     pub(crate) fn pack_view(&self, previous: &Self, exposure: f32) -> [u8; VIEW_BYTES] {
-        let mut bytes = [0; VIEW_BYTES];
-        for (offset, value) in self
-            .raster_projection()
-            .to_cols_array()
-            .into_iter()
-            .enumerate()
-        {
-            bytes[offset * 4..offset * 4 + 4].copy_from_slice(&value.to_le_bytes());
-        }
-        for (offset, value) in previous.view_proj.to_cols_array().into_iter().enumerate() {
-            bytes[64 + offset * 4..68 + offset * 4].copy_from_slice(&value.to_le_bytes());
-        }
-        for (axis, value) in self.camera.to_array().into_iter().enumerate() {
-            bytes[128 + axis * 4..132 + axis * 4].copy_from_slice(&value.to_le_bytes());
-        }
-        bytes[144..148].copy_from_slice(&super::PRE_EXPOSURE.to_le_bytes());
-        // This legacy field describes only a CPU-known fixed request. Metered
-        // exposure is GPU-authoritative in the separately bound sample record.
+        bytemuck::cast(self.view_record(previous, exposure))
+    }
+
+    pub(super) fn view_record(&self, previous: &Self, exposure: f32) -> ViewRecord {
+        // The separately bound exposure sample is authoritative for metered exposure.
         let inverse = match self.exposure {
             Some(ExposurePolicy::Fixed { inverse }) => inverse,
             Some(ExposurePolicy::IncidentHorizontal { .. }) => 0.0,
             None => 1.0 / exposure,
         };
-        bytes[148..152].copy_from_slice(&inverse.to_le_bytes());
-        for (offset, value) in self.view_proj.to_cols_array().into_iter().enumerate() {
-            bytes[160 + offset * 4..164 + offset * 4].copy_from_slice(&value.to_le_bytes());
-        }
-        let (phase, jitter) = self
+        let (phase, [jx, jy]) = self
             .jitter_sample
             .map_or((0, [0.0; 2]), |(phase, _)| (phase, halton_jitter(phase)));
-        bytes[152..156].copy_from_slice(&jitter[0].to_le_bytes());
-        bytes[156..160].copy_from_slice(&jitter[1].to_le_bytes());
-        bytes[224..228].copy_from_slice(&(-1.0_f32).to_le_bytes());
-        bytes[228..232].copy_from_slice(&phase.to_le_bytes());
-        bytes
+        ViewRecord {
+            view_proj: self.raster_projection().to_cols_array_2d(),
+            previous_view_proj: previous.view_proj.to_cols_array_2d(),
+            camera_xyz_time: self.camera.extend(0.0).to_array(),
+            pre_exposure_inv_exposure_jitter: [super::PRE_EXPOSURE, inverse, jx, jy],
+            unjittered_view_proj: self.view_proj.to_cols_array_2d(),
+            mip_bias: -1.0,
+            jitter_phase: phase,
+            padding: [0; 2],
+        }
+    }
+
+    pub(crate) fn inverse_view_proj_columns(&self) -> [[f32; 4]; 4] {
+        self.view_proj.inverse().to_cols_array_2d()
     }
 
     pub(crate) fn pack_aux(&self, width: u32, height: u32) -> [u8; AUX_BYTES] {
-        let mut bytes = [0; AUX_BYTES];
-        for (offset, value) in self
-            .view_proj
-            .inverse()
-            .to_cols_array()
-            .into_iter()
-            .enumerate()
-        {
-            bytes[offset * 4..offset * 4 + 4].copy_from_slice(&value.to_le_bytes());
-        }
-        for (axis, value) in [
-            width as f32,
-            height as f32,
-            1.0 / width as f32,
-            1.0 / height as f32,
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            bytes[64 + axis * 4..68 + axis * 4].copy_from_slice(&value.to_le_bytes());
-        }
+        let (width, height) = (width as f32, height as f32);
         let (near, far, flag) = match self.projection {
             Projection::OrthographicFixture => (0.0, 1.0, 0_u32),
             Projection::Perspective { near, far, .. } => (near, far, 1_u32),
         };
-        bytes[80..84].copy_from_slice(&near.to_le_bytes());
-        bytes[84..88].copy_from_slice(&far.to_le_bytes());
-        bytes[112..116].copy_from_slice(&flag.to_le_bytes());
-        bytes[136..140].copy_from_slice(&(width as f32).to_le_bytes());
-        bytes[140..144].copy_from_slice(&(height as f32).to_le_bytes());
-        bytes
+        bytemuck::cast(ViewAuxRecord {
+            inverse_view_proj: self.inverse_view_proj_columns(),
+            viewport_inv_viewport: [width, height, 1.0 / width, 1.0 / height],
+            near_far: [near, far, 0.0, 0.0],
+            time: [0.0; 4],
+            flags: [flag, 0, 0, 0],
+            subrectangle: [0.0, 0.0, width, height],
+        })
     }
 }
 
