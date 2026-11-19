@@ -84,8 +84,8 @@ export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game
   await game.invoke('thrumCloudCheck.hold = true;');
   await until(value => value.frames.length === value.presented, 'readbacks drained before device destruction');
   await destroy();
-  await game.invoke('thrumCloudCheck.hold = false; thrumCloudCheck.resume();');
   const lost = await until(value => /^Destroyed:/.test(value.fault ?? '') && value.frames.length === value.presented, 'device lost after checked submissions');
+  await game.invoke('thrumCloudCheck.hold = false; thrumCloudCheck.resume();');
   await until(value => value.tick > lost.tick && value.presented === lost.presented, 'world ticks with no lost-device submissions');
   await game.invoke('document.querySelector("#restore-graphics").click();');
   await until(value => !value.fault && value.frames.filter(row => row.generation === 2).length >= 3, 'three checked replacement-device frames');
