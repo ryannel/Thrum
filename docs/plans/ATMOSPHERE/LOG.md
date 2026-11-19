@@ -634,3 +634,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   culling modes. The fixed exit replay removes the tick-234 strip and retains moving near shadows
   and far ridge shade. The shared main-branch check verifies the registered Mac and Chrome baselines.
   [Builder evidence](../../evidence/ATMOSPHERE/M10/README.md)
+- 2026-11-19 M6 ended blocked on "Assign the shipped valley fix and authorize the affected APPLE-TILE exact-reference refresh."
+  The band on the lookout's rim at 17.4 h and the missing shadows at the 6.1 h stop are faults of the valley's content, so
+  [the module list's ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) gives them to `SHOWCASE` M9. M6 now waits for it and
+  gains M6.9, the verifier, with leave to refresh `APPLE-TILE`'s sets once for a change to the look. The design says what a
+  brightness step and a warm ridge mean, so that a depth edge and a sunlit crest pass. M6.1 to M6.8 are unchanged. M10's
+  note in the plan shrank to its review link. The design has not been reviewed since this change.

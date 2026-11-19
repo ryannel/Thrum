@@ -223,6 +223,78 @@
       }
     },
     {
+      "id": "M9",
+      "name": "From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows",
+      "items": [
+        {
+          "id": "M9.1",
+          "statement": "On the Mac, from the lookout at the sunset-clear-sun stop, in views 20 degrees either side of it, and with that view held from 17.2 to 17.8 h, no band of brighter ground lies along the rim of the lookout's ground. Where the ground ends, the valley beyond reads as distant ground past the lookout's edge.",
+          "inspect": "Capture with the Mac's fixed engine capture, TAAU on: the stop's preset, the same hour at yaw -70 and -110, and the stop's view at 17.2, 17.3, 17.5, 17.6, 17.7 and 17.8 h. Judge each frame whole and in a native-size crop of the rim, beside the same crop taken from the commit this milestone started from. Two things in these frames are not the band: a lit lookout in front of a valley floor already in shadow, which is a depth edge, and the edge of the west ridge's shadow where it lies across the lookout after 17.4 h, whose quality `ATMOSPHERE` owns and this item does not judge.",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.2",
+          "statement": "On the Mac, at the sunrise stop, the sphere and the rock stand in sunlight and each casts a shadow on the ground several times as long as it is tall. The stop's preset holds the hour, which is later than 6.1 h, and the route decision's table gives the same hour.",
+          "inspect": "Capture the sunrise preset with the Mac's fixed engine capture, TAAU on. Judge the frame whole and in a native-size crop of the two props and their shadows.",
+          "ask": "Does the route decision's table give the hour that `examples/v1-game/params/showcase-sunrise.params.json` holds, and is that the only stop preset whose values changed since the commit this milestone started from?",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.3",
+          "statement": "The layout, regenerated on the changed terrain, holds exactly 10,000 entities, between 1,000 and 2,000 of them movers. Every still prop rests on the shipped terrain's surface, and none stands inside the lookout or the camera's swept path on the exit flythrough. Every mover's whole loop stays inside the valley and clear of the ground. The generator reproduces the layout byte for byte.",
+          "check": "python3 scripts/run_v1_showcase.py layout",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.4",
+          "statement": "At the six stops the bare valley drawn natively and in Chrome agree under the route check's metric and with its baseline. The thresholds and the baseline were calibrated once for the new cooked root by the route decision's fixed rule, and the controls fail as they must.",
+          "check": "python3 scripts/run_v1_showcase.py check",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.5",
+          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric and with the exit baseline. The thresholds and the baseline were calibrated once for the new exit root by the route decision's fixed rule, and the three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities.",
+          "check": "python3 scripts/run_v1_showcase.py check --exit",
+          "lock": "gpu",
+          "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the log give each baseline file's old and new SHA-256 and the cause?",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.6",
+          "statement": "The registered exact baselines are refreshed in the landing that changes the terrain, as the module list's ruling on the valley's lookout rim allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` the landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`, and nothing else. In another module's files it changed only the cooked root, and the generation where it moved, that a file pins. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "ask": "Read this milestone's diff yourself with `git diff`. In `.config/exact-baselines.json`, does it change only the `pin` and the `refresh` of baselines whose references moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`? In `examples/v1-game/routes/` and in any other file of another module, does it change only a pinned cooked root or generation? Are the comparison scripts and their sampling as they were? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move?",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome."
+    },
+    {
       "id": "M7",
       "name": "One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran",
       "depends_on": [

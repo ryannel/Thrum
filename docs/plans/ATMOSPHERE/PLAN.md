@@ -19,7 +19,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.
 - Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. The check of 17 November (`docs/evidence/ATMOSPHERE/haze-kind-check.md`) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
 - Assumption: with its false strip gone (M10), a balloon casts no shadow on ground beyond the Sun's shadow maps, about 512 m from the camera in the exit scene. The other choices are a longer reach for that scene, which `SHOWCASE` may set and its M8 judges, or a new far-shadow method for things in the air, which is a re-plan with its own cost.
-- Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out.
+- Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out. `SHOWCASE` M9 fixes the lip and the sunrise stop in the valley's content, and M6 waits for it.
 
 ## M1 The valley remains legible at moonless midnight: done
 [record and reviews](../../evidence/ATMOSPHERE/M1-M4-records.md#m1-the-valley-remains-legible-at-moonless-midnight-done)
@@ -49,13 +49,7 @@ holds its criteria, the finished work and the work left.
 [review](../../evidence/ATMOSPHERE/M9-review.md)
 
 ## M10 A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow
-
-Read [What the caster height map holds](DESIGN.md#what-the-caster-height-map-holds) first, and confirm the
-cause before building anything, as it says. `scripts/capture_v1_runtime.py --case exit-route --mode fixed`
-replays the exit camera tick by tick. A scene's mesh table is `SyntheticMeshes`. The bucket route's caster draws are in `synthetic/mesh_route.rs`, which is `CULLING`'s, and
-the balloon row is marked in `examples/v1-game/src/exit_scene.rs`, which is `SHOWCASE`'s:
-[the ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-m10) says what may change in each. M10.1's test is
-in the library and its name contains `aloft_casters`, which the check filters on.
+[review](../../evidence/ATMOSPHERE/M10-review.md)
 
 ## M6 The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes
 
@@ -71,6 +65,12 @@ usage: `reflection/tests.rs` reads the table back on Metal with its own reader, 
 texel load, and a pass the test owns stores the probe.
 `products/tests/filtered.rs` has the filtered-decode bound. The Metal tests' names contain
 `split_sum_reads_stored` and `reflection_reads_stored_cube`, which the checks filter on.
+
+The branch `build/atmosphere` holds those tests, the capture drivers and the first captures;
+[the handoff](../../evidence/ATMOSPHERE/M6-handoff.md) says what they showed. `SHOWCASE` M9 has since changed
+the valley's terrain and sunrise hour, so take the stops, the motion and the cost pair again on main's valley.
+[The ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) covers a look change that moves `APPLE-TILE`'s
+references.
 
 ## M7 Haze thickens from crisp air to murk and takes the colour of its kind under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
 

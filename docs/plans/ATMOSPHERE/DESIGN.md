@@ -18,6 +18,8 @@ shared sky, Sun, light-transmittance and environment-reflection products."
 corrects the aerial product where the view meets the ground, which every scene at sea level shows.
 [What the caster height map holds](#what-the-caster-height-map-holds) governs M10, added on 18 November for a
 defect `SHOWCASE` M5 found on the populated valley. M10 is built before M6 and waits on nothing.
+[Closing G3s](#closing-g3s) was revised on 19 November, after M6's builder traced two of its list's entries to
+the authored valley: `SHOWCASE` M9 fixes them, and M6 waits for it.
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
 plausible result as fast as possible, not physical accuracy. For the milestones not yet Done (M10, M6, M7 and M8) the
@@ -800,6 +802,24 @@ judged here and by no number: sky light reflected off a surface in blotches, sep
 The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
+**The valley is `SHOWCASE`'s.** M6's builder found two entries whose cause is the authored valley and not the
+sky or the Sun ([its handoff](../../evidence/ATMOSPHERE/M6-handoff.md)). The bright band along the lookout's rim
+at the held 17.4 h stop comes from a terrain mesh too coarse there for the normals it stores. At the 6.1 h
+sunrise stop the east ridge still hides the Sun from the lookout, so no prop can cast a shadow. By
+[the module list's ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) `SHOWCASE` M9 resolves the rim in the
+mesh and moves the sunrise stop to the first hour the Sun reaches the props
+([its design](../SHOWCASE/DESIGN.md#the-lookouts-rim-and-the-sunrise-stop)). M6 waits for M9 and judges the
+whole list on the changed valley, on both targets and in motion. It does not change the valley's source: a
+defect it traces to the terrain is a proposal in the log.
+
+Two entries need their meaning said, so that a correct picture passes. A brightness step is a band on ground
+that is one piece. Where the lookout's ground ends and the valley floor lies 2 km beyond, a difference is a
+depth edge, and it passes when it reads as the lookout's edge. A ridge lit warm with the Sun behind it is
+direct sunlight on a face the terrain hides from the Sun. A crest that still sees the Sun is lit, and the
+glow of the air between the camera and a ridge that stands toward the Sun is the aerial product at work.
+Neither is the defect. For the crest that stays warm at the held 17.9 h stop, the builder's rays through the
+terrain say which it is, and the evidence records it.
+
 **What guards the products.** The referees P1–P11 and the handoff rows H1–H5 of
 [the numerical acceptance](#numerical-acceptance) run in the workspace check on Metal, as they have since M5,
 and M6.4 runs the handoff in Chrome. M6.7 adds the stored-table rule and M6.8 the stored-cube probe, on both
@@ -844,17 +864,20 @@ gives each such guard new expected values and keeps its cases, its bound and its
 - where the change departs from the model, such as a tuned curve or a tint, from the changed product on the
   producer's side: its stored values on the Mac, read back and decoded by the test's own evaluation.
 
-An expected value never comes from the lent library's output, so a guard made through the library keeps
-failing a consumer that reads the wrong resource or applies the exposure scale, as it does today. The Metal
-test and the Chrome referee take the same new values. A guard made through the library in Chrome may therefore
-rest on a value the Mac's producer stored: that is a guard at the row's bound and no claim that the two targets
-match, and every contract comparison in Chrome still reads Chrome's own product. The log names each guard that
-changed, the change to the look that moved it, and its old and new values. No review asks for a model that
-justifies the new values. So a twilight adjustment that moves P11's blue channel by 4% lands with P11's three
-recorded values replaced on both targets, and H2's live arm passes untouched because it reads the new chart.
-In the same way, a split-sum table or a cube filter made with fewer samples lands with the producer's own
-guard, P8 or P7 on Metal, given expected values from the product the Mac stores. H5 needs no edit: the
-stored-table rule and the probe read what is stored, and its differences from the model are only recorded.
+An expected value never comes from the lent library's output, so a guard made through the library keeps failing
+a consumer that reads the wrong resource or applies the exposure scale, as it does today. The Metal test and the
+Chrome referee take the same new values. A guard made through the library in Chrome may therefore rest on a
+value the Mac's producer stored: that is a guard at the row's bound and no claim that the two targets match, and
+every contract comparison in Chrome still reads Chrome's own product. The log names each guard that changed, the
+change to the look that moved it, and its old and new values. No review asks for a model that justifies the new
+values. A change that moves a product also moves `APPLE-TILE`'s registered exact sets.
+[The ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) lets M6's builder refresh the sets that moved, in the
+landing that makes the change, and M6.9 holds the verifier and the refresh's record. So a twilight adjustment
+that moves P11's blue channel by 4% lands with P11's three recorded values replaced on both targets, and H2's
+live arm passes untouched because it reads the new chart. In the same way, a split-sum table or a cube filter
+made with fewer samples lands with the producer's own guard, P8 or P7 on Metal, given expected values from the
+product the Mac stores. H5 needs no edit: the stored-table rule and the probe read what is stored, and its
+differences from the model are only recorded.
 
 The solar sky and solar aerial transport are not qualified against an all-orders reference, and under the
 owner's bar no such campaign is planned.
@@ -874,8 +897,8 @@ numbers are taken.
 stays deferred; both are named in the review as known and are not judged. The exclusion is narrow: it covers the
 moving shadow edge on the authored spur between 17.40 and 17.80 h. The held `sunset-clear-sun` stop at 17.4 h is
 judged like every other stop, and the terrain lip recorded on the shipped Ground E pan is a separate finding,
-judged under the brightness-step entry. Moon, weather and calibrated night colour stay outside the profile, as
-the first section says.
+judged under the brightness-step entry once `SHOWCASE` M9 has fixed its mesh. Moon, weather and calibrated night
+colour stay outside the profile, as the first section says.
 
 **Risk.** Shadow defects have consumed days here before. If the review fails on one item twice, the builder stops
 and reports it instead of opening a new shadow method; a new method is a re-plan with its own cost account.

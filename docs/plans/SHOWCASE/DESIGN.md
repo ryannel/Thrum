@@ -9,7 +9,9 @@ by C04, C05, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), and by
 day for [the design review](../../evidence/SHOWCASE/design-review.md) of that revision: how each target produces
 a tick-by-tick sequence, what build a timing record is of, how the exit baseline is replaced, and what M7 does
 with a late frame it cannot explain. Revised a third time for that review's second round: a timing record's
-digest also covers the scripts that launch, drive and observe its arms.
+digest also covers the scripts that launch, drive and observe its arms. Revised on 19 November 2026 for
+[the ruling on the valley's lookout rim and sunrise stop](../ARCHITECTURE.md#ruling-on-the-valley-fix), which
+adds M9: [The lookout's rim and the sunrise stop](#the-lookouts-rim-and-the-sunrise-stop).
 
 ## The request
 
@@ -60,6 +62,8 @@ a picture.
    `CULLING`'s rule.
 3. M7: one command runs the exit scene on each row, and each run reports what it resolved, with frame records.
 4. M8: the visual review, the records taken on the built-in display, and the V1 exit record.
+5. M9, built after M6 and before M7: the lookout's ground runs to its rim without a bright band at sunset, and
+   the sphere and the rock cast long shadows at the sunrise stop.
 
 **Not built here:** level of detail for entities; entities that turn or animate; textures on entities
 (`CONTENT-LOOP` keeps them on the scene's material table); the iPhone simulator as a row; a live culling switch;
@@ -109,11 +113,12 @@ root. So:
 
 - The exit scene is a third game content beside `Grid` and `Field`, chosen by name. With it unselected, every
   existing configuration prepares, steps and draws as before.
-- The valley's source folder and its cooked root do not change. The exit's props are separate sources, and the
+- The valley's source folder and its cooked root do not change, except once, in
+  [M9](#the-lookouts-rim-and-the-sunrise-stop). The exit's props are separate sources, and the
   exit's cook source is the valley's files plus the props. The launcher already cooks a copy of the source; the
   copy step can assemble it. The builder may assemble it another way that keeps the valley's root.
-- The six stop presets are reused as they are. The exit gets its own flythrough route file, pinned to the exit
-  store's root.
+- The six stop presets are reused as they are; M9 changes the hour of one. The exit gets its own flythrough
+  route file, pinned to the exit store's root.
 
 ### One generator authors the terrain, the props and the paths
 
@@ -175,6 +180,74 @@ default so that exact baselines hold. No one place says which of them the showca
 The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record, so
 M7 depends on that module's last milestone, M11, and M7.1 checks the five milestones M7 builds on in the record
 files.
+
+### The lookout's rim and the sunrise stop
+
+M9, added on 19 November 2026. `ATMOSPHERE` M6 judges the valley's sky and sunlight against a list of defects
+earlier reviews recorded, and its builder stopped on two whose cause is the authored valley. The module list's
+[ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) gives the valley's source and stop presets to this
+module and the fix to M9. The numbers below are in
+[the design proof](../../evidence/SHOWCASE/design-proof/lookout-rim.md), which is arithmetic on the generator
+and not a GPU run.
+
+**The band along the rim.** At the `sunset-clear-sun` stop, and through a pan there, a bright band lies along
+the far edge of the lookout's ground, on the Mac and in Chrome. The lookout's top is flat to 55 m west of
+the camera and then rolls over into a face that drops 160 m. The mesh has a column of vertices at 40 m and the next
+at 60 m. So one strip of triangles covers 20 m of ground that the camera sees and that slopes 4°, while its far
+vertices store a normal turned 33° toward the west, taken from the fall beyond them. Shading interpolates
+between the two, and at the 17.4 h Sun the strip climbs from an N·L of 0.13 to 0.63. The ground itself, sampled
+from the height function, keeps N·L between 0.07 and 0.15 everywhere the camera can see, and the part that
+turns to the Sun is hidden behind the edge. Beyond 500 m the stored normals agree with the triangles to 0.13 or
+better, so the fault is the rim's alone.
+
+**The mechanism.** The mesh resolves the rim: wherever the lookout's camera can see the top's edge, at any yaw,
+each triangle it sees carries the normals of the ground that triangle covers, and none carries a normal that
+belongs to the face beyond. Two forms give that. A crease puts a row where the top ends, with the top's normal
+on it, and gives the face rows of its own; it leaves no band. More rows across a smooth roll-over shrink the
+band to the last metre or two and leave a rise of about a half there, which may still read as a rim. The
+builder chooses from stills, and may reshape the rim so that it reads as a rock edge, where a straight
+featureless edge reads as a stripe. The height function stays the generator's only one. Two things were tried
+before and are not the fix: tapering the shelf to the west halved the step and moved it, and shading with face
+normals in the shader cut the step and added a second contour
+([the record](../../evidence/v1-workload/G3S-HANDOFF.md)). The renderer does not change here.
+
+**What is and is not the defect.** The defect is a band of brighter ground on a surface that is one piece.
+Where the lookout's ground ends, the valley floor beyond is nearly 2 km farther off, lit at another angle and
+later in shadow while the lookout is still lit. A difference there is a depth edge, as in any view from a
+ledge, and passes when it reads as the lookout's edge. Between 17.4 and 17.8 h the west ridge's shadow
+crosses the lookout, and its edge on the ground is a shadow and not the band. How that edge moves is
+`ATMOSPHERE`'s parked crossing, which no milestone here judges.
+
+**The sunrise stop.** At 6.1 h the Sun is about 1° up and the east ridge, 7 km away, hides its whole disk from
+the lookout. The far ridges are lit and the lookout is in shade, so the sphere and the rock can cast no shadow,
+and the list's entry "missing object shadows at sunrise" can never pass there. The stop moves later, to the
+first hour at which both props stand in full sunlight with the ridge's penumbra past them, found by stepping
+the preset's hour on the controls' 0.01 h grid. The Sun is then still low and the shadows several times as long
+as the props are tall. The preset file is the stop's one authority, and
+[the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md)'s table takes the new hour in the same
+landing. The ridge is not lowered: that would reshape distant land other stops see, to keep one hour.
+
+**What moves with the terrain.** The valley's cooked root and the exit store's root change. So, in the one
+landing:
+
+- The layout is regenerated on the new terrain and passes the layout check. A prop keeps its place where the
+  ground under it did not change.
+- Each file that pins an old root takes the new one, as the ruling lists, and nothing else in another
+  module's file changes.
+- `APPLE-TILE`'s registered sets that moved are regenerated and the registry's pins and refreshes updated, as
+  the ruling says.
+- This module's two thresholded baselines are calibrated again, each once, for its new root, by the route
+  decision's fixed rule, with every control failing as it must. That is a first calibration for a new root and
+  not [the refresh](#the-route-check-sees-a-missing-prop), which keeps a root. No threshold is tuned.
+
+**How it is proved.** By eye on the Mac, in fixed captures with TAAU on, which is how the gate that asked for
+the fix will judge it: the sunset stop, views 20° either side of it, and that view held from 17.2 to 17.8 h,
+where the earlier sweep found the step largest; and the sunrise stop. The route checks compare the Mac with
+Chrome at all six stops, so Chrome gets no inspection of its own here; `ATMOSPHERE` M6 judges it there, with
+motion. While the terrain is open the builder looks at the six stops for any other entry of
+[`ATMOSPHERE`'s list](../ATMOSPHERE/DESIGN.md#closing-g3s) whose cause is the terrain's mesh, fixes it in the
+same regeneration, and records in the log the ones whose cause is not, for M6. The bar is that module's: time
+of day as in Red Dead Redemption 2 or Horizon Forbidden West.
 
 ### The route check sees a missing prop
 
@@ -363,20 +436,24 @@ before it trusts any frame.
 
 ## Exact baselines
 
-- No registered exact baseline moves. The valley's source root, the grid and field contents and the default
-  output stay as they are.
+- No registered exact baseline moves, except in M9. There the terrain changes, so all five registered sets are
+  expected to move, and M9 refreshes them in its own landing under
+  [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix). In every other milestone the valley's source
+  root, the grid and field contents and the default output stay as they are.
 - Every landing here changes covered paths, so every milestone carries a verifier item. It passes from the
   main-branch check `exact-images`, which runs on main after the merge
   ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). No builder runs the verifier before a merge.
 - This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in M5 and
   extended to one per row in M7. `ATMOSPHERE` M10 takes a balloon's false strip off the far ground, so the
   exit's may be replaced once in M5 for that cause, by
-  [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds.
+  [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds. M9 calibrates
+  both again for the new roots.
 
 ## Limits for every milestone
 
 - **Nothing that exists changes.** With the exit scene unselected, every existing configuration prepares, steps
-  and draws exactly as before, because exact baselines pin them. If one does not, stop and fix that first.
+  and draws exactly as before, because exact baselines pin them. If one does not, stop and fix that first. M9
+  is the one exception, for the terrain and the sunrise hour alone.
 - **Another module's comparison is not edited.** If a change fails an exact test, a baseline or a witness
   another module owns, write the proposal in the log and end `BLOCKED`
   ([rule 1](../ARCHITECTURE.md#exact-baselines)).

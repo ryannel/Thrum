@@ -1,7 +1,7 @@
 # SHOWCASE plan
 
 Closes gate G7 and the V1 exit: the exit scene on the Mac's two recipes and in Chrome, reviewed, with its closing
-record. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
+record. Milestones run in the order M5, M6, M9, M7, M8. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
 The launch, the six stops and the route check were built before the loop as milestones M1 to M4
@@ -21,6 +21,8 @@ The launch, the six stops and the route check were built before the loop as mile
 - Assumption: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing.
 - Assumption: before M8 the movers' motion is judged tick by tick, from captures of every tick, and real-time takes are a tripwire record labelled with the machine's load (the lead's reading of the owner's bar of 17 November). Stutter at 1x is judged in M8, with the other builders paused. A late frame in M7's records that the load makes impossible to explain is listed as unresolved and answered in that M8 sitting. The other choice judges real-time takes in M5 and wants a cause for every late frame in M7, and each waits for a quiet machine.
 - Assumption: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it.
+- Assumption: the valley's terrain changes once, in M9, to take a bright band off the lookout's rim at sunset, which `ATMOSPHERE` M6 could not pass with. Every registered exact image set is refreshed in that landing, and the two route baselines are calibrated again. The other choice closes gate G3s with the band named as a known defect and leaves it for M8's review to find.
+- Assumption: the sunrise stop moves later than 6.1 h, to the first hour the Sun reaches the lookout, because until then the props stand in the east ridge's shade and cast no shadow. The other choice lowers the east ridge and keeps the hour.
 
 ## M5 The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome
 
@@ -47,6 +49,19 @@ only, and refuses a baseline that exists.
 
 `CULLING` owns the equality command, its comparisons and the rule that sets the default. This milestone runs
 them on the exit scene and changes none of them. If equality fails, stop and diagnose.
+
+## M9 From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows
+
+Read [The lookout's rim and the sunrise stop](DESIGN.md#the-lookouts-rim-and-the-sunrise-stop) and
+[the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) first: the ruling says which files of other modules
+take the new root and how `APPLE-TILE`'s references are refreshed. `ATMOSPHERE` M6's builder found both
+defects, and its evidence, with the held frames to compare against, is `docs/evidence/ATMOSPHERE/M6/README.md`
+on the branch `build/atmosphere` until that milestone merges. A held frame at a preset comes from
+`scripts/capture_v1_runtime.py --mode fixed --case checkpoint --params <preset> --reconstruction taau`. The
+bare valley's thresholds and calibrated root are constants in the launcher, and `check --source DIR
+--recalibrate` judges another root by the rule. Before changing anything, note the main-branch check's pass
+that covers the starting commit. Everything lands together: terrain, layout, preset, root pins, references,
+registry and both baselines.
 
 ## M7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 

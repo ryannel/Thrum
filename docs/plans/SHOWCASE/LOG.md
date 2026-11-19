@@ -79,3 +79,10 @@
   The recorder checks the submitted phase across the active route. The retake kept 1,351
   half-tick route frames with no deferrals, reproduced both sets of stops, and passed parity.
   Retook all six real-time arms on the same clean build. [Evidence](../../evidence/SHOWCASE/M5.md#chrome-fixed-motion)
+- 2026-11-19 Added M9, between M6 and M7, for `ATMOSPHERE` M6's block: "Assign the shipped valley fix and authorize the
+  affected APPLE-TILE exact-reference refresh." Read from the generator, not from a run: the mesh has one 20 m strip across
+  the lookout's rim whose far normals turn 33 degrees to the west, which is the bright band at sunset; and at 6.1 h the east
+  ridge hides the Sun from the props ([proof](../../evidence/SHOWCASE/design-proof/lookout-rim.md)). M9 resolves the rim in
+  the mesh, moves the sunrise stop's hour, and refreshes every baseline the terrain moves, under
+  [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix). No item of M5 to M8 changed. The design has not been reviewed
+  since this change.

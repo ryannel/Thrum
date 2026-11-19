@@ -449,3 +449,7 @@
   graph output of a thin depth prepass, never a fourth forward target
   ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md), C07, C08). Nothing is built and no item changes.
   The 11 November M3 entry above was re-wrapped to pass the log check; no word of it changed.
+- 2026-11-19 [The ruling on the valley's lookout rim and sunrise stop](../ARCHITECTURE.md#ruling-on-the-valley-fix) lets
+  `SHOWCASE` M9 change the valley's terrain, regenerate the five registered sets with this module's scripts and write the
+  new cooked root into `moving-v1.json`. `ATMOSPHERE` M6 may refresh them once more for a change to the look. Each landing
+  records its old and new hashes here. No item, comparison or script of this module changes.

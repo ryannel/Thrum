@@ -9,7 +9,7 @@
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
@@ -114,7 +114,7 @@ is the game and starts when the exit is reached. None gates the exit. They are l
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
-| `SHOWCASE` | G7 | The exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
+| `SHOWCASE` | G7 | The valley's source in `examples/v1-game/assets/showcase` and the six stop presets, by [ruling](#ruling-on-the-valley-fix); the exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds | [Design](EFFECT-GRAPH/DESIGN.md) |
 | `SEA` | track 2 | The wave model and its f64 oracle (`thrum-sea-model`); the wave field on the GPU: long-wave phases, spectral cascades and the field cache, evaluated each frame (`thrum-sea`). After its last milestone both crates are `WATERS`' to extend | [Design](SEA/DESIGN.md); [brief](SEA/BRIEF.md) |
 | `WATERS` | track 2 | The water map and its one sampling function, gains, the shore transform and the breaker section, the f64 surface model, the interaction, foam and caustic references and the light factor at a camera (`thrum-water-model`); the map on the GPU, the surface from both sides and its frame contract, optics and the gather, the mirror lookup, the view from under water, the caustic field and its Sun-path factor, shafts, interaction waves, foam stocks, the body-query ring (`thrum-water`); the water example scene (`examples/water`) | [Design](WATERS/DESIGN.md) |
@@ -925,6 +925,51 @@ and in every exact test of the default.
 - **Everyone else.** Nothing is owed: the run on main after the landing compares with the new references. Exact
   tests that compare a run with itself need no change, and stop
   varying under load once they are built on it.
+
+<a id="ruling-on-the-valley-fix"></a>
+
+**Ruling on the valley's lookout rim and sunrise stop (with `SHOWCASE`, `APPLE-TILE`, `CULLING`, `EFFECT-GRAPH`
+and `ATMOSPHERE`), 19 November 2026.** `ATMOSPHERE` M6's builder stopped under rule 1. At the held sunset stop a
+bright band lies along the rim of the lookout, on the Mac and in Chrome, and `APPLE-TILE`'s sunset references
+hold the same band. At the sunrise stop the sphere and the rock cast no shadow. Both causes are in the authored
+valley and neither is in the sky or the Sun: the terrain mesh is too coarse at the rim for the normals it
+stores, and at 6.1 h the lookout is still in the east ridge's shade
+([SHOWCASE's design](SHOWCASE/DESIGN.md#the-lookouts-rim-and-the-sunrise-stop) has the measurements). The fix
+changes the valley's terrain, so it moves every registered set, and no plan said who builds it or who refreshes.
+
+- **Who owns the valley.** `SHOWCASE`. One generator authors the terrain and the exit scene's layout, the six
+  stop presets came from its route slice, and its M8 judges the picture. The valley's source folder and the
+  presets join what that module owns.
+- **Who builds the fix.** `SHOWCASE` M9, a new milestone after its M6. `ATMOSPHERE` M6 waits for it and then
+  judges the whole route on the changed valley. No milestone is added to `APPLE-TILE`, whose milestones are
+  all Done.
+- **What may change.** The terrain's mesh and normals, the layout regenerated on it, and the hour of the sunrise
+  preset. The valley's cooked root and the exit store's root change with them. The renderer, the other five
+  presets, every route's checkpoints and every comparison stay as they are.
+- **Root pins.** A route file names the cooked root it was made for. M9's builder writes the new root, and the
+  generation if it moved, into each file that names an old one: `moving-v1.json` (`APPLE-TILE`'s),
+  `culling-fast-yaw.json` (`CULLING`'s), `effect-state.json` and `effect-after-opaque.json` (`EFFECT-GRAPH`'s),
+  its own exit routes and launcher, and any other pin of those roots that `./dev check` reads. It changes
+  nothing else in another module's file. Those modules' items do not change, and their tests keep passing.
+- **Which baselines move.** All five registered sets are expected to, since each draws the valley's
+  terrain. M9's builder records which did. `SHOWCASE`'s own two thresholded baselines are calibrated again for
+  the new roots, by the route decision's fixed rule.
+- **Who refreshes them.** As for [`ATMOSPHERE` M9](#ruling-on-atmosphere-m9), the change and the references land
+  together as rule 2's planned refresh. M9's builder regenerates each reference that moved, from the changed
+  commit, with `APPLE-TILE`'s own scripts. In the registry it changes the `pin` and the `refresh` of each
+  baseline whose reference moved, and the refresh names `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`. Every
+  other field of the registry, the comparisons, their sampling and every script stay as they are. Both
+  modules' logs record the cause and each moved reference's old and new SHA-256. `SHOWCASE` M9.6 holds this.
+- **A change to the look in `ATMOSPHERE` M6.** After the valley is fixed, M6's list may still need a change to
+  the sky or the sunlight, which [its design](ATMOSPHERE/DESIGN.md#closing-g3s) allows. Such a change also
+  moves these sets. M6's builder then refreshes each set that moved in the same way, in the landing that makes
+  the change, and the refresh names `ruling-on-the-valley-fix`, `ATMOSPHERE` and `M6`. `ATMOSPHERE` M6.9 holds
+  it. M6 does not change the valley's source; a defect it traces to the terrain goes to `SHOWCASE` as a
+  proposal in its log.
+- **Records on the old valley.** A record another module took on the old root stands as history for what it
+  measured, and none is taken again for this. A milestone not yet claimed when M9 lands integrates on top, as
+  after any merge.
+- **Everyone else.** Nothing is owed: the run on main after M9's landing compares with the new references.
 
 <a id="a-frame-that-varies-under-load"></a>
 
@@ -2745,3 +2790,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   half and nothing else in an accepted test changes. `SESSION`'s design also has a rule set's settings in its
   identity, so the crowd's Crowd and Mixed rules state two. No item of `SIM-2D`, contract or exact baseline
   changed.
+- 2026-11-19 `ATMOSPHERE` M6 ended blocked on "Assign the shipped valley fix and authorize the affected
+  APPLE-TILE exact-reference refresh." [The ruling on the valley's lookout rim and sunrise stop](#ruling-on-the-valley-fix)
+  gives the valley's source and stop presets to `SHOWCASE`, adds `SHOWCASE` M9 to fix the rim's mesh and move
+  the sunrise stop's hour, lets that milestone refresh `APPLE-TILE`'s five sets and write the new cooked root
+  into the route files of `APPLE-TILE`, `CULLING` and `EFFECT-GRAPH`, and lets `ATMOSPHERE` M6 refresh the sets
+  once more if its list needs a change to the look. `ATMOSPHERE` M6 now waits for `SHOWCASE` M9 and carries the
+  verifier as M6.9. No item of `APPLE-TILE`, `CULLING` or `EFFECT-GRAPH`, comparison or contract changed.
