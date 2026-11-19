@@ -379,6 +379,20 @@ impl Interaction {
         let mailbox = self.mailbox.clone();
         let pages = mailbox.pages.lock().expect("water interaction mailbox");
         let page = pages.get(&time.tick);
+        let previous = self.committed.map(|old| old.endpoint[1]);
+        let first = if reset {
+            time.tick
+        } else {
+            previous
+                .expect("previous wake")
+                .tick
+                .saturating_add(1)
+                .max(time.tick.saturating_sub(MAX_TICKS - 1))
+        };
+        let impact = pages
+            .range(first..=time.tick)
+            .rev()
+            .find_map(|(_, page)| page.impulses.first());
         let named =
             page.and_then(|page| page.bodies.iter().find(|body| Some(body.id) == page.follow));
         let mut origin = self.committed.map_or([0.0; 2], |old| old.follow);
@@ -396,7 +410,7 @@ impl Interaction {
                 }
             }
             origin = body.place;
-        } else if let Some(impulse) = page.and_then(|page| page.impulses.first()) {
+        } else if let Some(impulse) = impact {
             origin = impulse.place;
             direction = [0.0; 2];
         }
@@ -408,7 +422,6 @@ impl Interaction {
             })
         });
         let mut report = self.committed.map_or(self.initial_report, |old| old.report);
-        let previous = self.committed.map(|old| old.endpoint[1]);
         let next = Endpoint {
             origins,
             tick: time.tick,
@@ -431,7 +444,6 @@ impl Interaction {
             let previous = previous.expect("previous wake");
             let elapsed = time.tick - previous.tick;
             let ticks = elapsed.min(MAX_TICKS);
-            let first = time.tick - ticks + 1;
             report.dropped_ticks += elapsed - ticks;
             report.refused_bodies += pages
                 .range(first..=time.tick)

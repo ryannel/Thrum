@@ -222,6 +222,14 @@ fn impact_is_applied_once_at_the_named_tick_and_scales_with_impulse() {
     assert!((fixture.read().height([0.0; 2]) - 2.0 * small.height([0.0; 2])).abs() < 0.000_001);
     fixture.draw(7);
     assert!((fixture.read().height([1.0, 0.0]) - 2.0 * evolved).abs() < 0.000_001);
+
+    // A drop can name a tick caught up between presentations. Its near
+    // window follows the drop, even away from the scene's original origin.
+    fixture.mailbox.post_impulse(impact(10, 9, 120.0, 400.0));
+    fixture.draw(12);
+    let witness = fixture.read();
+    assert!(witness.height([120.0, 0.0]) < -0.005);
+    assert!(witness.endpoint.endpoints[1].origins[0][0] > 80.0);
 }
 
 #[test]
