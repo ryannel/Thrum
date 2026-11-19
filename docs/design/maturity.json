@@ -697,6 +697,20 @@
       ],
       "scope": "Shared device creation and reporting in the Mac window, browser page, iPhone app, captures and benches. Each platform drives replacement through its host lifecycle."
     },
+    "host_lifecycle": {
+      "implementation": "The Mac window, browser page and iPhone app use the core world lifecycle policy and the app crate's surface acquire mapping.",
+      "functional_validation": "Inline and resident world tests cover drain ordering, overload accounting and the unconsumed Resume race. The Mac window, Chrome and iPhone simulator passed overload and device recovery checks. The original iPhone simulator route passed background, foreground, rotation and device loss.",
+      "experienced_quality": "The builder inspected Mac window and Chrome recovery captures and the iPhone simulator's landscape captures.",
+      "platform_performance": {
+        "mac": "Metal lifecycle function",
+        "browser": "Chrome WebGPU lifecycle function on Apple M3 Max",
+        "ios": "iPhone 18 Pro simulator function only"
+      },
+      "evidence": [
+        ".orchestrate/evidence/HOST/M2/README.md"
+      ],
+      "scope": "Local world lifecycle and drawable acquisition. Exact image verification runs through the shared main-branch check."
+    },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
       "functional_validation": "Mac_live_held_drawable_Metal_recovery_preserves_authority_with_zero_old_queue_calls;_Mac_overload_drain_resume_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",

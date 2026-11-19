@@ -21,3 +21,7 @@
 - 2026-11-19 Fixed M1.2's native device-generation finding. Mac capture and UIKit use the engine's first
   generation, and capture recovery starts from the opened device. Both Metal checks and both native
   compile checks passed. [Evidence](../../../.orchestrate/evidence/HOST/M1-proof.md#m12-generation-review-fix)
+- 2026-11-19 Built M2's shared world lifecycle and surface acquire policies. Verified the resume race,
+  overload recovery and device replacement on the named targets. The original iPhone route passed through
+  background, foreground, rotation and device loss. The simulator evidence covers function.
+  [Evidence](../../../.orchestrate/evidence/HOST/M2/README.md)
