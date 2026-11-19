@@ -294,7 +294,7 @@ impl Pipelines {
         fallback: &mut Option<String>,
     ) -> Self {
         let device = surface.device;
-        let cooked = cooked_source(surface.sun_optical_depth);
+        let cooked = cooked_source(surface.shader_source, surface.sun_optical_depth);
         let source = format!("{}\n{cooked}", surface.shader_source);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cooked scene entries"),
@@ -309,10 +309,10 @@ impl Pipelines {
                 bias: wgpu::DepthBiasState::default(),
             })
         };
-        let secondary_source = target
-            .secondary_source
-            .as_ref()
-            .map(|source| format!("{source}\n{cooked}"));
+        let secondary_source = target.secondary_source.as_ref().map(|source| {
+            let cooked = cooked_source(source, surface.sun_optical_depth);
+            format!("{source}\n{cooked}")
+        });
         let mut mesh = target.meshes(&module, secondary_source.as_deref());
         let mut stage_shadow = None;
         if config.draw_path == CookedDrawPath::MeshStages && fallback.is_none() {
@@ -1092,14 +1092,26 @@ pub(crate) fn caster_depth(surface: &SceneShadowSurface<'_>) -> wgpu::DepthStenc
     }
 }
 
-fn cooked_source(cloud: bool) -> String {
+pub(crate) fn cooked_vertex_source(scene: &str) -> String {
+    let source = include_str!("cooked.wgsl");
+    if scene.contains("fn shadow_tangent_surface(") {
+        return source.replace(
+            "    output.uv = uv;",
+            "    output.shadow_surface = shadow_tangent_surface(model, position, output.normal);\n    output.uv = uv;",
+        );
+    }
+    source.into()
+}
+
+fn cooked_source(scene: &str, cloud: bool) -> String {
+    let source = cooked_vertex_source(scene);
     if cloud {
-        include_str!("cooked.wgsl").replace(
+        source.replace(
                 "light.irradiance.rgb * exp(-optical)",
                 "light.irradiance.rgb * cloud_factor((cooked_volume.model * vec4(p, 1.0)).xyz) * exp(-optical)",
             )
     } else {
-        include_str!("cooked.wgsl").into()
+        source
     }
 }
 

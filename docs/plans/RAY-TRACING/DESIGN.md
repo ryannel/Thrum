@@ -305,7 +305,15 @@ scene structure. The operation's callers do not change. The traced operation:
 - traces one any-hit ray toward the Sun's centre, against instances whose mask casts shadows, with every
   triangle opaque, and returns 0 or 1.
 
-Terrain is in the structure, so one ray answers at every distance and at low Sun. The traced method does not
+At the light boundary of a smooth-shaded coarse mesh, a triangle can intercept light that would clear the
+surface implied by the vertex normals. The vertex stage interpolates the tangent-plane data without the instance
+translation. On a grazing hit within that curvature allowance, a short reverse ray identifies the receiving
+triangle and instance. The Sun ray can then disregard recrossing that triangle or leaving that instance within
+the allowance. Other instances and entering faces elsewhere on the same mesh still block the original ray.
+This adds at most two queries in the correction case. The numeric lift and the hard edge from other casters
+still use the original receiving point.
+
+Terrain is in the structure, so the ray answers at every distance and at low Sun. The traced method does not
 use the cascades, the blocker search, `horizon_visibility` or `low_sun_terrain`. It replaces the map lookup and
 nothing else: with the Sun's direct light out, a `Traced` frame equals the `Maps` frame, to the rounding a
 test states for two compilations of the same arithmetic.
@@ -323,6 +331,9 @@ list that is in range and that the surface faces traces one any-hit ray to the l
 of it. A lamp has no size in the engine, so its shadow is hard. The count of rays a fragment may trace for
 lamps is a runtime quality value whose default is the cluster list's capacity; a lamp beyond it is unshadowed
 at that fragment, and counted.
+
+The lamp origin lift uses the transformed authored normal oriented toward the lamp. Mirrored transforms
+reverse raster winding while leaving the transformed normal pointed out of the lit face.
 
 A lamp's ray tests the cast bit of [the mask](#the-structure-m1-m2) and nothing else. It needs no Sun shadow,
 no cascade and no shadow pipeline, so a room lit only by lamps, in a scene with Sun shadows off, is shadowed
@@ -629,8 +640,9 @@ it for each method, and no sentence drawn from it speaks of the whole frame's GP
   thing in the scene. M1 and M2 record resident bytes.
 - **Each frame, CPU.** One instance write for each entity and placement in the scene.
 - **Each frame, GPU.** The scene structure's rebuild, which M1 records for a still scene, for the
-  representative movers and with every instance moving. Hard Sun: at most one ray for each shaded opaque
-  pixel that faces the Sun. Soft Sun: that ray, and one more for each opaque pixel in the visibility pass.
+  representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque
+  pixel that faces the Sun, plus the short receiver query and filtered retry for a nearby hit at the light boundary.
+  Soft Sun: the surface queries, and one more ray for each opaque pixel in the visibility pass.
   Lamps: one ray for each in-range lamp a pixel faces. Ambient occlusion: one ray for each four pixels. The
   filter's passes.
 - **Saved on `Traced`.** The two cascade passes and the blocker search, while no volume reads the cascades.

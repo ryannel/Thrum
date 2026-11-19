@@ -19,21 +19,37 @@ fn shadow_fallback_keeps_the_map_frame() {
         .with_recipe_override("portable")
         .expect("portable");
     let injected = ray_caps.clone().with_traced_pipeline_failure();
+    let internal = ray_caps.clone().with_traced_pipeline_internal_failure();
     let mut scene = SyntheticScene::grid(9).expect("scene");
     scene.view = ray_shadow_support::view(glam::Vec3::ZERO, 3.2);
     scene.sun_shadows = true;
-    for (device, queue, caps, reason) in [
-        (&device, &queue, &caps, Reason::MissingRayQuery),
+    for (case, device, queue, caps, reason) in [
         (
+            "feature absent",
+            &device,
+            &queue,
+            &caps,
+            Reason::MissingRayQuery,
+        ),
+        (
+            "portable recipe",
             &ray_device,
             &ray_queue,
             &portable,
             Reason::UnsupportedRecipe,
         ),
         (
+            "shader validation",
             &ray_device,
             &ray_queue,
             &injected,
+            Reason::PreparationFailed,
+        ),
+        (
+            "native linkage error at scope result",
+            &ray_device,
+            &ray_queue,
+            &internal,
             Reason::PreparationFailed,
         ),
     ] {
@@ -55,7 +71,9 @@ fn shadow_fallback_keeps_the_map_frame() {
                 fallback: Some(reason),
             }
         );
+        assert_eq!(fallback.ray_structure_selection(), reason);
         assert_eq!(fallback.ray_mesh_structure_count(), 0);
+        assert!(fallback.ray_structure_instances().is_none());
         assert_eq!(
             fallback.ray_structure_input_usages(),
             maps.ray_structure_input_usages()
@@ -63,6 +81,10 @@ fn shadow_fallback_keeps_the_map_frame() {
         assert_eq!(
             support::submit_bytes(device, queue, &fallback, &target),
             baseline
+        );
+        println!(
+            "{case}: {reason:?}, no retained scene structure, {} baseline bytes",
+            baseline.len()
         );
     }
     scene.sun_shadow_method = SunShadowMethod::Traced;

@@ -183,7 +183,14 @@ impl PreparedSynthetic {
         } else {
             None
         };
-        let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        // Separate locals keep the scopes in stack order even on an early return.
+        let internal_scope = ray_structure
+            .is_some()
+            .then(|| device.push_error_scope(wgpu::ErrorFilter::Internal));
+        let memory_scope = ray_structure
+            .is_some()
+            .then(|| device.push_error_scope(wgpu::ErrorFilter::OutOfMemory));
+        let validation_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let material_buffer = storage_buffer(
             device,
             queue,
@@ -794,8 +801,28 @@ impl PreparedSynthetic {
             });
         let traced_view = (scene.view.traced_geometry() && ray_structure.is_some())
             .then(|| Box::new(raytrace::TracedView::new(device, &view_layout)));
-        if let Some(error) = scope.pop().await {
-            return Err(RenderError::Validation(error.to_string()));
+        let mut pipeline_error = None;
+        for scope in [Some(validation_scope), memory_scope, internal_scope]
+            .into_iter()
+            .flatten()
+        {
+            pipeline_error = scope.pop().await.or(pipeline_error);
+        }
+        #[cfg(feature = "creation-counters")]
+        if trace_lights && capabilities.fail_traced_pipeline_internal {
+            let description = String::from("injected native traced pipeline linkage failure");
+            pipeline_error = Some(wgpu::Error::Internal {
+                source: Box::new(std::io::Error::other(description.clone())),
+                description,
+            });
+        }
+        if let Some(error) = pipeline_error {
+            return Err(match error {
+                wgpu::Error::Validation { .. } => RenderError::Validation(error.to_string()),
+                wgpu::Error::Internal { .. } | wgpu::Error::OutOfMemory { .. } => {
+                    RenderError::RayPreparation
+                }
+            });
         }
         Ok(Self {
             native: if scene.view.native_witness() == NativeWitness::Off {

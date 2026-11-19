@@ -7,7 +7,7 @@ pub mod ray_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 mod metal {
     use super::{ray_shadow_support as fixture, ray_support::support};
-    use glam::{Mat4, Vec3};
+    use glam::Vec3;
     use thrum_render::{
         contribution::ShadowBounds,
         synthetic::{PreparedSynthetic, SyntheticPointLight, SyntheticView},
@@ -98,47 +98,105 @@ mod metal {
         }
     }
 
-    fn outside_camera(view: &SyntheticView, centre: Vec3, half: Vec3) -> bool {
-        let matrix = Mat4::from_cols_array_2d(&view.view_proj_columns());
-        let corners = (0..8).map(|corner| {
-            let point = Vec3::from_array(std::array::from_fn(|axis| {
-                centre[axis] + half[axis] * if corner & (1 << axis) == 0 { -1.0 } else { 1.0 }
-            }));
-            matrix * point.extend(1.0)
-        });
-        corners.clone().all(|clip| clip.x < -clip.w)
-            || corners.into_iter().all(|clip| clip.x > clip.w)
-    }
-
     #[test]
     fn wall_outside_camera_and_sun_volumes_still_casts() {
         let gpu = support::gate("off-screen lamp caster");
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
-        let wall = Vec3::new(-8.0, 3.7, 0.0);
-        let half = Vec3::new(0.1, 1.0, 2.0);
+        // See the receiver at the edge of the camera-centred height map.
+        // The wall and the lamp are just past that edge, within a local light's reach.
+        let receiver = Vec3::new(16_378.0, 0.0, 0.0);
+        let wall = receiver + Vec3::new(16.0, 8.0, 0.0);
+        let half = Vec3::new(0.15, 2.0, 2.0);
         let bounds = ShadowBounds::new((wall - half).to_array(), (wall + half).to_array()).unwrap();
-        let mut scene = fixture::scene(Vec3::ZERO, &[fixture::box_at(1, wall, half)]);
+        let mut scene = fixture::scene(receiver, &[fixture::box_at(1, wall, half)]);
         scene.lamp_shadows = true;
         scene.sun_shadows = true;
-        scene.local_lights = vec![lamp(Vec3::new(-16.0, 7.4, 0.0), 40.0, [10_000.0; 3])];
-        for side in [-0.2, 0.5] {
-            scene.view = fixture::view(Vec3::ZERO, side)
-                .with_sun_shadow_profile(2, 4.0)
-                .unwrap();
-            assert!(outside_camera(&scene.view, wall, half));
+        scene.local_lights = vec![lamp(
+            receiver + Vec3::new(26.0, 13.0, 0.0),
+            40.0,
+            [10_000.0; 3],
+        )];
+        for side in [-600.0, 800.0] {
+            let eye = Vec3::new(0.0, 2300.0, side);
+            let forward = (receiver - eye).normalize();
+            let far = eye.distance(receiver) + 6.0;
+            let nearest_wall = (wall - eye).dot(forward) - half.dot(forward.abs());
+            assert!(
+                nearest_wall > far,
+                "wall near depth {nearest_wall}, camera far {far}"
+            );
+            scene.view = SyntheticView::perspective(
+                eye.to_array(),
+                receiver.to_array(),
+                Vec3::Y.to_array(),
+                0.0006,
+                1.0,
+                5.0,
+                far,
+            )
+            .expect("camera stopping before the wall")
+            .with_sun_shadow_profile(2, 12.0)
+            .unwrap();
             let lighting = fixture::sun(Vec3::Y, 0.0);
             let (prepared, target) = fixture::prepare(&device, &caps, &queue, &scene, lighting);
-            let volumes = prepared.ray_inspection_shadow_volumes(None);
-            assert!(
-                volumes.len() >= 2 && volumes[..2].iter().all(|volume| !volume.overlaps(bounds))
+            let graph = prepared
+                .graph(&target, true)
+                .expect("off-screen fixture graph");
+            let passes: Vec<_> = graph.pass_names().collect();
+            assert_eq!(
+                passes
+                    .iter()
+                    .filter(|name| name.starts_with("synthetic Sun shadow "))
+                    .count(),
+                2
             );
+            assert!(passes.contains(&"synthetic Sun horizon heights"));
+            let volumes = prepared.ray_inspection_shadow_volumes(None);
+            let overlaps: Vec<_> = volumes
+                .iter()
+                .map(|volume| volume.overlaps(bounds))
+                .collect();
+            assert_eq!(overlaps, [false, false, false], "camera at {eye:?}");
             let blocked = support::submit_bytes(&device, &queue, &prepared, &target);
-            assert!(fixture::sample(&scene.view, &blocked, Vec3::ZERO)[0] <= 2);
+            let blocked = fixture::sample(&scene.view, &blocked, receiver);
+            assert!(blocked[0] <= 2, "blocked receiver: {blocked:?}");
             let mut control = scene.clone();
             control.instances[1].ids[3] = 0;
             let (prepared, target) = fixture::prepare(&device, &caps, &queue, &control, lighting);
             let clear = support::submit_bytes(&device, &queue, &prepared, &target);
-            assert!(fixture::sample(&scene.view, &clear, Vec3::ZERO)[0] > 12);
+            let clear = fixture::sample(&scene.view, &clear, receiver);
+            assert!(clear[0] > 12, "clear receiver: {clear:?}");
+            println!(
+                "camera at {eye:?}, Sun overlap {overlaps:?}: wall {blocked:?}, removed {clear:?}"
+            );
         }
+    }
+
+    #[test]
+    fn mirrored_receiver_keeps_its_exposed_lamp_light() {
+        let gpu = support::gate("mirrored lamp receiver");
+        let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
+        let mut scene = fixture::scene(Vec3::ZERO, &[]);
+        scene.local_lights = vec![lamp(Vec3::new(0.4, 1.0, -0.3), 4.0, [500.0; 3])];
+        let mut samples = Vec::new();
+        for mirrored in [false, true] {
+            if mirrored {
+                let row = &mut scene.instances[0];
+                row.current[0][0] *= -1.0;
+                row.previous = row.current;
+                row.normal[0][0] *= -1.0;
+            }
+            for lamps in [false, true] {
+                scene.lamp_shadows = lamps;
+                let (prepared, target) =
+                    fixture::prepare(&device, &caps, &queue, &scene, fixture::sun(Vec3::Y, 0.0));
+                let pixels = support::submit_bytes(&device, &queue, &prepared, &target);
+                let rgb = fixture::sample(&scene.view, &pixels, Vec3::ZERO);
+                println!("mirrored={mirrored}, traced lamps={lamps}: top {rgb:?}");
+                assert!(rgb.into_iter().all(|component| component > 0));
+                samples.push(rgb);
+            }
+        }
+        assert!(samples.iter().all(|rgb| *rgb == samples[0]));
     }
 }

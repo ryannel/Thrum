@@ -67,7 +67,15 @@ fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) 
         source.replace_range(start..end, include_str!("raytrace/sun.wgsl"));
         source = source.replace(
             "dpdx(input.world_position),\n        dpdy(input.world_position),normalize(input.normal)",
-            "vec3(0.0),vec3(0.0),select(-normalize(input.normal),normalize(input.normal),front_facing)",
+            "vec3(0.0),vec3(0.0),normalize(input.normal)",
+        );
+        source = source.replace(
+            "@location(6) current_clip: vec4<f32>,",
+            "@location(6) current_clip: vec4<f32>,\n    @location(7) shadow_surface: vec4<f32>,",
+        );
+        source = source.replace(
+            "output.uv = vertex.b.zw;",
+            "output.shadow_surface = shadow_tangent_surface(model, local, output.normal);\n    output.uv = vertex.b.zw;",
         );
     }
     if selection.lamps {
@@ -91,7 +99,7 @@ fn traced(mut source: String, shadowed: SunShadows, selection: ShadowSelection) 
             )
             .replace(
                 "n,v,input.world_position,input.position)",
-                "n,v,input.world_position,input.position,select(-normalize(input.normal),normalize(input.normal),front_facing))",
+                "n,v,input.world_position,input.position,normalize(input.normal))",
             );
         source.push_str(include_str!("raytrace/lamps.wgsl"));
     }

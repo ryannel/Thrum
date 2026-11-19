@@ -98,6 +98,8 @@ pub struct DeviceCapabilities {
     pub(crate) observe_ray_preparation: bool,
     #[cfg(feature = "creation-counters")]
     pub(crate) fail_traced_pipeline: bool,
+    #[cfg(feature = "creation-counters")]
+    pub(crate) fail_traced_pipeline_internal: bool,
 }
 
 impl DeviceCapabilities {
@@ -189,6 +191,8 @@ impl DeviceCapabilities {
             observe_ray_preparation: false,
             #[cfg(feature = "creation-counters")]
             fail_traced_pipeline: false,
+            #[cfg(feature = "creation-counters")]
+            fail_traced_pipeline_internal: false,
         }
     }
 
@@ -253,6 +257,14 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn with_traced_pipeline_failure(mut self) -> Self {
         self.fail_traced_pipeline = true;
+        self
+    }
+
+    /// Supply a native-link Internal error at the traced pipeline scope boundary.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn with_traced_pipeline_internal_failure(mut self) -> Self {
+        self.fail_traced_pipeline_internal = true;
         self
     }
 

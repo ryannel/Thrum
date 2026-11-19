@@ -402,7 +402,7 @@ fn combine(
         &scene_source[point.end..]
     );
     text.push('\n');
-    text.push_str(include_str!("cooked.wgsl"));
+    text.push_str(&crate::draw::cooked_vertex_source(scene_source));
     text.push('\n');
     text.push_str(include_str!("material.wgsl"));
     let hook_offset = text.len();
