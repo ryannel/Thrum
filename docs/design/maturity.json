@@ -106,17 +106,17 @@
       ]
     },
     "RAY_TRACING_M3": {
-      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile, with a correction for grazing hits against the receiving mesh, a height-map producer for air, map-only secondary views, and whole-scene fallback during preparation.",
-      "functional_validation": "Mac Metal checks verified receiver visibility through 20 km coordinates, a lamp wall outside the camera and all Sun volumes, cooked lamp casters, mirrored lamp receivers, injected validation and native-link fallback, matching secondary and air-shadow products, night parity, and two generations without late pipeline creation.",
-      "experienced_quality": "Builder inspected refreshed T2 Maps and Traced pairs on the exit route at noon, low Sun and dusk, an elapsed-speed run around three balloon casters, and a four-lamp night stop. Metal readbacks identified distant balloon casters and distinguished their shadows from the foreground rock's self-hits.",
+      "implementation": "Hard centre-ray Sun visibility and clustered lamp shadows on opt-in Apple tile. The ray can pass through one crossing of the receiving mesh within the terminator reach. The air keeps its height map, secondary views keep Maps, and a failed traced contribution rebuild on device replacement retries the scene with Maps.",
+      "functional_validation": "Mac Metal builder checks verified receivers through 20 km, a lamp wall outside the camera and Sun volumes, cooked and mirrored casters, and both windings of a joined or separate sheet within and beyond the terminator reach. Injected primary and cooked pipeline failures restored the Maps bytes. The checks also covered secondary and air-shadow parity, a dark Sun, and readiness on two device generations.",
+      "experienced_quality": "Inspected Apple M3 Max Metal T2 fixed Maps and Traced pairs on the exit route at noon, low Sun and dusk, consecutive elapsed-time frames around three balloon casters, and the four-lamp night stop.",
       "platform_performance": {
-        "mac_apple_tile": "Contended review-fix medians were 2.96, 4.47 and 5.23 ms timed-pass span for Maps and Traced with lamps off and on, respectively. Frame CPU medians were 1.40, 2.93 and 3.72 ms. The evidence breaks down the paired increases and the span outlier.",
+        "mac_apple_tile": "Under load, median timed-pass spans were 4.27, 6.49 and 5.41 ms for Maps and Traced with lamps off and on, respectively. Median frame CPU times were 1.75, 3.53 and 1.91 ms. The evidence records the forward-pass and encoding costs and the observed timing variation.",
         "browser": "Ordinary output is covered by the shared exact-images check. No traced browser qualification.",
         "ios": "No traced iPhone qualification."
       },
       "evidence": [
-        "../../.orchestrate/evidence/RAY-TRACING/M3/review-fixes.md",
-        "../../.orchestrate/evidence/RAY-TRACING/M3/review-fix-cost.json"
+        "../../.orchestrate/evidence/RAY-TRACING/M3/passage.md",
+        "../../.orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.10.json"
       ]
     },
     "SCENE_VIEWS": {

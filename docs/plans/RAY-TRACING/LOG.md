@@ -107,3 +107,8 @@
   ran the review's case: 540 and 480 of 1,024 disc rays blocked in all four arrangements, where the
   reviewed rule blocked none at the open rim under the joined panel. This was the second design review in
   a row to ask for changes, so the script approves this revision without another.
+- 2026-11-19 Replaced the Sun's terminator filter with one bounded crossing. Metal forward shading kept
+  the band lit beside a sheet and shadowed it behind a joined or separate sheet of either winding.
+  A real cooked pipeline fault on device replacement retried with Maps and retained the cooked scene.
+  Inspected the fixed valley route, four night lamps and three movers. Recorded the timing under load.
+  [M3 Metal evidence](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md).
