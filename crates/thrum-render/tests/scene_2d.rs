@@ -77,15 +77,16 @@ fn generation_prepares_only_the_sprite_and_output_resources() {
         settle_uploads(&device, &queue);
         let counts = allocations(&device);
         // Cross-check the named inventory against every live HAL buffer/texture/query.
-        // One sheet and frame table. Two slots, each with colour, SDR, view and rows,
-        // plus the host's timestamp query, resolve and readback.
+        // The sheet, shared transparent placeholder, and shared frame, row and
+        // order buffers. Two slots each bind colour, SDR and a view, plus the
+        // host's timestamp query, resolve and readback.
         assert_eq!(
             (
                 counts.0 - before.0,
                 counts.1 - before.1,
                 counts.2 - before.2
             ),
-            (9, 5, 2)
+            (9, 6, 2)
         );
         assert_eq!(host.scene_kind(), SceneKind::TwoD);
         assert_eq!(host.resolved_reconstructor(), None);
