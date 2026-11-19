@@ -214,21 +214,21 @@
       }
     },
     "M8": {
-      "definitions": "62a4c8eeb517e8c74f1c2ca245d9e159b9bbe0e3d6cae92922a817221ed7de9a",
+      "definitions": "72f16f6ce9754beb84460cc82a4472411ecd68e1b638c4eaed5d6fbbdb2dfc36",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its 4 Must Fix findi",
-        "at": "2026-11-18T10:38:55Z"
+        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix finding",
+        "at": "2026-11-19T08:48:43Z"
       }
     },
     "M9": {
-      "definitions": "5b9caa5b3e480c65b0b207af19f77859bafd4db878b9a07b19a52c3f6408bb68",
+      "definitions": "e3be11b27659e44f73689f8ad39ccd84d99acc30c9014cca19c709a399daa709",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "ATMOSPHERE M6 needs something no plan provides yet. The builder wrote: Assign the shipped valley fix and authorize the a",
-        "at": "2026-11-19T03:54:15Z"
+        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix finding",
+        "at": "2026-11-19T08:48:43Z"
       }
     }
   },
@@ -264,11 +264,15 @@
     {
       "task": "ATMOSPHERE M6 needs something no plan provides yet. The builder wrote: Assign the shipped valley fix and authorize the affected APPLE-TILE exact-reference refresh. The builder's handoff, docs/evidence/ATMOSPHERE/M6-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/atmosphere at b65cab08fd6c, which isn't merged; read it with `git show`. If the plan already provides it, change no file and end with `KEEP ATMOSPHERE M6: builder: <where the plan provides it>`, and the script lifts the block.",
       "at": "2026-11-19T03:54:15Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-19T08:48:43Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-19T03:54:15Z"
+    "at": "2026-11-19T08:48:43Z"
   },
   "design_history": [
     {

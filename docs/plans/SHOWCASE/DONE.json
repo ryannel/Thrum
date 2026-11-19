@@ -243,7 +243,9 @@
           "check": "python3 scripts/run_v1_showcase.py layout",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.4",
@@ -309,7 +311,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
