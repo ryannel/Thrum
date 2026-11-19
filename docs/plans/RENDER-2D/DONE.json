@@ -139,7 +139,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A 2D path as separate from 3D as Bevy's `core_2d`, Godot's canvas renderer or Unity's 2D Renderer: a 2D game prepares and runs nothing 3D, and a request it cannot meet is refused by name. As exact as a pixel-art game shown at a whole-number scale, such as Celeste: every texel is a clean block of its authored colour.",
       "findings": [
         {
