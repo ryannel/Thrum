@@ -118,11 +118,12 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
 
 #[test]
 fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
-    let bar = terrain(|x| if (0.0..2.0).contains(&x) { 12.0 } else { -4.0 });
+    // With one-metre bed spacing the two zero crossings are -0.5 m and 1.5 m.
+    let bar = terrain(|x| if (0.0..2.0).contains(&x) { 4.0 } else { -4.0 });
     let Some(mut fixture) = Fixture::new(
         bar,
         Limits {
-            solves: 2,
+            solves: 3,
             impulses: 2,
             bodies: 1,
         },
@@ -143,7 +144,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
     assert_eq!(report.refused_impulses, 1);
     assert_eq!(report.refused_regions, [1, 1]);
     assert_eq!(report.regions, [2, 2]);
-    assert_eq!(report.solves, [2, 2]);
+    assert_eq!(report.solves, [3, 2]);
     let witness = fixture.read();
     for level in 0..2 {
         let [origin, _] = witness.endpoint.endpoints[1].origins[level];
@@ -162,7 +163,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
     // Repeat with both wet regions admitted. No dropped solve can explain
     // the exact zero beyond the bar in this second run.
     let Some(mut fixture) = Fixture::new(
-        terrain(|x| if (0.0..2.0).contains(&x) { 12.0 } else { -4.0 }),
+        terrain(|x| if (0.0..2.0).contains(&x) { 4.0 } else { -4.0 }),
         Limits::default(),
     ) else {
         return;
