@@ -341,18 +341,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function.",
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "The planner needs to select a Metal resize operation that preserves drawable ownership while GPU submissions remain in flight.",
-        "work": {
-          "commit": "71577cd6b2397dec1333c52b736b257a972b6c6f",
-          "branch": "build/apple-presentation",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/APPLE-PRESENTATION/M4-handoff.md"
-      }
+      "status": "not_started",
+      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
     },
     {
       "id": "M5",
