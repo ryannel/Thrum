@@ -4,9 +4,16 @@
 pub mod support;
 #[test]
 fn submitted_slab_depth_refraction_motion_and_resets() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_slab_depth_refraction_motion_and_resets",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         for recipe in ["portable", "apple-tile"] {
-            let (instance, device, queue, caps) = support::device(recipe, false).await;
+            let (instance, device, queue, caps) =
+                support::device(&test_gpu.fresh_adapter(), recipe, false);
             let record = Box::pin(v1_game::effect::after_opaque::run(
                 &device, &queue, &caps, &instance,
             ))

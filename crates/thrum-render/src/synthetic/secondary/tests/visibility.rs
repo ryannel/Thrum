@@ -29,9 +29,14 @@ fn count(device: &wgpu::Device, queue: &wgpu::Queue, args: &wgpu::Buffer) -> u32
 #[cfg(target_os = "macos")]
 #[test]
 fn secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (adapter, device, queue) =
-            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let (adapter, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let capabilities = crate::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
         let camera = |height: f32| {
             SyntheticView::perspective(

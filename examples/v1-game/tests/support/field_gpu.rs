@@ -8,15 +8,22 @@
 //! Run it with `--release` to reach the cut; debug builds cover the first turn.
 #![cfg(not(target_arch = "wasm32"))]
 
-#[path = "support/field_fly.rs"]
 mod field_fly;
 
 #[test]
 fn field_culling_matches_direct_along_the_flythrough() {
-    field_fly::fly(false, true);
+    field_fly::fly(
+        "field_culling_matches_direct_along_the_flythrough",
+        false,
+        true,
+    );
 }
 
 #[test]
 fn mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough() {
-    field_fly::fly(true, false);
+    field_fly::fly(
+        "mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough",
+        true,
+        false,
+    );
 }

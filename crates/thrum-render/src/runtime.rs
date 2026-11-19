@@ -30,8 +30,9 @@ use thrum_core::sim::{WorldAdvance, WorldPublication};
 #[cfg(feature = "creation-counters")]
 mod creation;
 #[cfg(not(feature = "creation-counters"))]
-#[path = "runtime/creation_off.rs"]
-mod creation;
+mod creation_off;
+#[cfg(not(feature = "creation-counters"))]
+use creation_off as creation;
 mod device;
 mod extent;
 #[cfg(not(target_arch = "wasm32"))]

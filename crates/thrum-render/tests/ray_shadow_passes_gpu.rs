@@ -15,7 +15,9 @@ fn traced_skips_surface_cascades_but_keeps_air_and_sun_off() {
         synthetic::{FrameLighting, SunShadowMethod},
     };
 
-    let gpu = support::gate("traced Sun pass selection");
+    let Some(gpu) = support::gate("traced Sun pass selection") else {
+        return;
+    };
     let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
     let caps = caps.with_ray_preparation_observation();
     let mut scene = fixture::scene(

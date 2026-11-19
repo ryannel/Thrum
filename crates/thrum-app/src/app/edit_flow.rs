@@ -80,5 +80,4 @@ impl<E: Edits> EditFlow<E> {
 }
 
 #[cfg(test)]
-#[path = "edit_flow_tests.rs"]
 mod tests;

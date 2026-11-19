@@ -6,8 +6,8 @@
     reason = "test-only counting allocator delegates to System"
 )]
 
-#[path = "support/v1_workload.rs"]
-mod support;
+mod v1_workload;
+use v1_workload as support;
 
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;

@@ -16,6 +16,12 @@ use water_scene::{
 
 #[test]
 fn lake_remains_sheltered_in_the_gale_and_settles_in_calm() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "lake_remains_sheltered_in_the_gale_and_settles_in_calm",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     support::island::with_cooked_island(
         "lake_remains_sheltered_in_the_gale_and_settles_in_calm",
         || {
@@ -24,7 +30,8 @@ fn lake_remains_sheltered_in_the_gale_and_settles_in_calm() {
                     water_scene::floating::build(wind, true, 0.0, 0.0, false).expect("lake");
                 let bodies = scene.observer();
                 let mailbox = scene.mailbox.clone();
-                let mut host = support::Fixture::from_game([120, 80], scene.game, scene.report);
+                let mut host =
+                    support::Fixture::from_game(&test_gpu, [120, 80], scene.game, scene.report);
                 host.warm_cooked();
                 let mut largest = 0.0_f64;
                 for frame in 121..=225 {
@@ -83,7 +90,13 @@ fn channel() -> Map {
 
 #[test]
 fn query_current_carries_a_float_and_the_dry_bank_stops_it() {
-    let mut fixture = support::Fixture::paired([96, 64], false);
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "query_current_carries_a_float_and_the_dry_bank_stops_it",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    let mut fixture = support::Fixture::paired(&test_gpu, [96, 64], false);
     let map = Arc::new(Mutex::new(channel()));
     let spectrum = Spectrum::build(&Wind::Calm.forcing()).expect("calm");
     let profile = thrum_water::Profile {

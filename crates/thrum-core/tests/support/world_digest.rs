@@ -1,6 +1,6 @@
 //! Public authority digest equality across epochs and corrected replay.
-#[path = "support/profile_game.rs"]
-mod support;
+mod profile_game;
+use profile_game as support;
 use thrum_core::profile::Number;
 
 #[test]

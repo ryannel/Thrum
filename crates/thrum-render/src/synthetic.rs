@@ -2269,5 +2269,4 @@ mod tests {
 }
 
 #[cfg(all(test, target_os = "macos"))]
-#[path = "synthetic/motion/tests.rs"]
 mod motion_tests;

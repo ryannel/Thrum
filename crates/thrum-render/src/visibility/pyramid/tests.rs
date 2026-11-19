@@ -18,19 +18,12 @@ impl Lcg {
     }
 }
 
-fn device() -> (wgpu::Device, wgpu::Queue) {
+fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for the pyramid regression");
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("pyramid device")
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
     })
 }
 
@@ -288,7 +281,10 @@ fn depth_field(extent: [u32; 2], random: &mut Lcg) -> Vec<f32> {
 
 #[test]
 fn every_gpu_mip_equals_the_reference() {
-    let (device, queue) = device();
+    let Some(test_gpu) = thrum_test_support::gpu("every_gpu_mip_equals_the_reference", None) else {
+        return;
+    };
+    let (device, queue) = device(&test_gpu);
     for extent in [[1, 1], [3, 5], [7, 1], [64, 48], [1281, 719], [1280, 720]] {
         let mut random = Lcg(u64::from(extent[0]) * 977 + u64::from(extent[1]));
         let depth = depth_field(extent, &mut random);
@@ -439,7 +435,11 @@ fn gpu_occluded(
 
 #[test]
 fn gpu_test_decisions_equal_the_reference() {
-    let (device, queue) = device();
+    let Some(test_gpu) = thrum_test_support::gpu("gpu_test_decisions_equal_the_reference", None)
+    else {
+        return;
+    };
+    let (device, queue) = device(&test_gpu);
     for extent in [[7, 1], [64, 48], [1281, 719]] {
         let mut random = Lcg(u64::from(extent[0]) << 16 | u64::from(extent[1]));
         let depth = depth_field(extent, &mut random);
@@ -499,7 +499,12 @@ fn gpu_test_decisions_equal_the_reference() {
 /// required to agree; the flip itself may differ by the divides' rounding.
 #[test]
 fn gpu_slack_matches_the_reference_at_its_boundary() {
-    let (device, queue) = device();
+    let Some(test_gpu) =
+        thrum_test_support::gpu("gpu_slack_matches_the_reference_at_its_boundary", None)
+    else {
+        return;
+    };
+    let (device, queue) = device(&test_gpu);
     let extent = [64, 48];
     let farthest = 0.25_f32;
     let depth = vec![farthest; 64 * 48];
@@ -558,7 +563,12 @@ fn gpu_slack_matches_the_reference_at_its_boundary() {
 /// the second. With no clip term both are hidden.
 #[test]
 fn gpu_footprint_widening_matches_the_reference() {
-    let (device, queue) = device();
+    let Some(test_gpu) =
+        thrum_test_support::gpu("gpu_footprint_widening_matches_the_reference", None)
+    else {
+        return;
+    };
+    let (device, queue) = device(&test_gpu);
     let extent = [64, 48];
     let depth: Vec<f32> = (0..64 * 48)
         .map(|index| if index % 64 < 32 { 0.9 } else { 0.0 })

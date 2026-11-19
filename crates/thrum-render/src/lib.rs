@@ -32,6 +32,8 @@ pub use records::{RecordLayout, RecordMember, RecordScalar, layouts as record_la
 pub use shaders::composed_sources;
 pub mod synthetic;
 #[cfg(test)]
+mod test_device;
+#[cfg(test)]
 mod timestamp_permit;
 pub mod timing;
 mod visibility;

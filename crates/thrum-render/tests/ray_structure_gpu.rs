@@ -12,7 +12,9 @@ mod metal {
 
     #[test]
     fn each_active_mesh_hits_and_holes_miss() {
-        let gpu = support::gate("ray structure membership");
+        let Some(gpu) = support::gate("ray structure membership") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let mut scene = SyntheticScene::grid(5).expect("scene");
         scene.ray_structure = true;

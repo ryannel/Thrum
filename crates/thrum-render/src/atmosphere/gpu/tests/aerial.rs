@@ -303,17 +303,17 @@ fn report(degrees: f32, reference: &[f32], raw: &[f32], encoded: &[f32]) -> Stri
 #[test]
 fn aerial_storage_matches_float32_transport_and_consumer_units() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("aerial adapter");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "aerial_storage_matches_float32_transport_and_consumer_units",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("aerial device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
@@ -506,17 +506,16 @@ fn finite_night() {
 #[test]
 fn finite_night_radiance_survives_the_aerial_composite() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for finite night transport");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("finite_night_radiance_survives_the_aerial_composite", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("finite night device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,

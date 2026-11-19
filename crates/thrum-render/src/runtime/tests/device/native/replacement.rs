@@ -6,7 +6,13 @@ use crate::synthetic::NativeOutcome;
 fn metal_native_surface_and_rejection_reset_without_fixture_cuts() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_surface_and_rejection_reset_without_fixture_cuts",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(
             &capabilities,
             &queue,
@@ -90,7 +96,13 @@ fn metal_native_surface_and_rejection_reset_without_fixture_cuts() {
 fn metal_native_detached_extent_preparation_admission_and_overlap() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_detached_extent_preparation_admission_and_overlap",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(
             &capabilities,
             &queue,
@@ -169,7 +181,13 @@ fn metal_native_detached_extent_preparation_admission_and_overlap() {
 fn metal_native_timing_is_completion_gated_and_submission_identified() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_timing_is_completion_gated_and_submission_identified",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         for (selection, timing) in [
             (NativeWitness::Metal, true),
             (NativeWitness::Metal, false),
@@ -228,7 +246,13 @@ fn metal_native_timing_is_completion_gated_and_submission_identified() {
 fn metal_native_rejection_is_exact_twin_and_completion_error_requires_rebuild() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_rejection_is_exact_twin_and_completion_error_requires_rebuild",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         for source in [
             CaptureSource::Sdr,
             CaptureSource::SceneLinear,
@@ -309,7 +333,7 @@ fn metal_native_rejection_is_exact_twin_and_completion_error_requires_rebuild() 
             Err(FrameError::NativeCommandBuffer { generation: 7 })
         ));
         assert_eq!(host.native_witness_report().unwrap().submitted, submits);
-        let (second, queue2) = gpu(&instance, 8).await;
+        let (second, queue2) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&second, &queue2, Some(surface()))
             .await

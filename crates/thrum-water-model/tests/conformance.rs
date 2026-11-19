@@ -1,16 +1,11 @@
 //! Provider fault injection: values and support disagreements remain observable.
-#[expect(
-    dead_code,
-    reason = "shared saddle fixture is used by map and stage tests"
-)]
-#[path = "support/fixtures.rs"]
 mod support;
-use support::{close, field};
+use support::fixtures::{close, field};
 use thrum_water_model::{MapSample, compare};
 
 #[test]
 fn model_conforms_and_centimetre_shift_exposes_crossed_shoreline() {
-    let map = support::basin();
+    let map = support::fixtures::basin();
     let field = field(0.0);
     let reference = |p, t| map.surface(&field, p, t as f64 / 60.0);
     let shifted = |p, t| {

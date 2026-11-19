@@ -43,8 +43,14 @@ fn fill(device: &wgpu::Device, queue: &wgpu::Queue, target: &wgpu::Texture, dept
 #[test]
 #[cfg(target_os = "macos")]
 fn game_receives_gpu_shade_and_keeps_ambient_light() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "game_receives_gpu_shade_and_keeps_ambient_light",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", true).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let mut game = FrameHost::new_with_setup(
             &device,
             &queue,

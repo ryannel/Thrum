@@ -9,6 +9,12 @@ use thrum_sea_model::{Forcing, Spectrum, Swell};
     reason = "the same significant heights are sent as f32 GPU inputs"
 )]
 fn gale_gains_preserve_the_exposed_sea_and_limit_each_layer_into_shallows() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "gale_gains_preserve_the_exposed_sea_and_limit_each_layer_into_shallows",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let forcing = Forcing {
         wind_speed: 18.0,
         wind_direction: 0.0,
@@ -50,7 +56,7 @@ fn gale_gains_preserve_the_exposed_sea_and_limit_each_layer_into_shallows() {
             })
         })
         .collect::<Vec<_>>();
-    let probe = support::probe(&map, &inputs);
+    let probe = support::probe(&test_gpu, &map, &inputs);
     let mut failures_with_sea_gains = 0;
     for (i, point) in points.into_iter().enumerate() {
         let row = map.sample(point.map(f64::from)).expect("water or margin");

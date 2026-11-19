@@ -20,7 +20,9 @@ fn shadow_pipelines_are_closed_when_each_generation_is_ready() {
         synthetic::{FrameLighting, SunShadowMethod, SyntheticPointLight},
     };
 
-    let gpu = metal::gate("traced preparation across generations");
+    let Some(gpu) = metal::gate("traced preparation across generations") else {
+        return;
+    };
     let (first, queue, first_caps) = metal::device(&gpu, "ray-query", 1);
     let (second, second_queue, second_caps) = metal::device(&gpu, "ray-query", 2);
     let mut scene = fixture::scene(Vec3::ZERO, &[]);

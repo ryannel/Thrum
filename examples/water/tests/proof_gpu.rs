@@ -86,14 +86,17 @@ fn proof_driver() {
     if std::env::var_os("THRUM_WATER_PROOF").is_none() {
         return;
     }
-    driver();
+    let Some(gpu) = thrum_test_support::gpu("proof_driver", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    driver(&gpu);
 }
-fn driver() {
+fn driver(gpu: &thrum_test_support::Gpu) {
     let mode = std::env::var("THRUM_WATER_PROOF").expect("mode");
     let directory = PathBuf::from(std::env::var("THRUM_WATER_OUTPUT").expect("output"));
     std::fs::create_dir_all(&directory).expect("output folder");
     if mode == "realtime" {
-        let result = realtime::capture(&directory);
+        let result = realtime::capture(gpu, &directory);
         std::fs::write(
             directory.join("realtime.json"),
             serde_json::to_vec_pretty(&result).expect("json"),
@@ -103,16 +106,16 @@ fn driver() {
     }
     let mut fixture = if let Some(wind) = floating_wind() {
         let scene = floating_game(wind, true, true);
-        support::Fixture::from_game([2560, 1440], scene.game, scene.report)
+        support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
     } else if island_wind().is_some() {
         let (game, report) = proof_game(true);
-        let mut fixture = support::Fixture::from_game([2560, 1440], game, report);
+        let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
         fixture.warm_cooked();
         fixture
     } else if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
-        support::Fixture::antialiased([2560, 1440])
+        support::Fixture::antialiased(gpu, [2560, 1440])
     } else {
-        support::Fixture::new([2560, 1440])
+        support::Fixture::new(gpu, [2560, 1440])
     };
     for index in 0..8 {
         fixture.frame(f64::from(index) / 120.0);
@@ -142,14 +145,14 @@ fn driver() {
             for &(present, interaction) in variants {
                 let mut fixture = if let Some(wind) = floating_wind() {
                     let scene = floating_game(wind, present, interaction);
-                    support::Fixture::from_game([2560, 1440], scene.game, scene.report)
+                    support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
                 } else if island_wind().is_some() {
                     let (game, report) = proof_game(present);
-                    let mut fixture = support::Fixture::from_game([2560, 1440], game, report);
+                    let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
                     fixture.warm_cooked();
                     fixture
                 } else {
-                    support::Fixture::paired([2560, 1440], present)
+                    support::Fixture::paired(gpu, [2560, 1440], present)
                 };
                 for index in 0..8 {
                     fixture.frame(f64::from(index) / 120.0);

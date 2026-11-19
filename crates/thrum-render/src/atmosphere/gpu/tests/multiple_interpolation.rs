@@ -272,17 +272,17 @@ fn append_rows(report: &mut String, height: f32, sun: f32, rows: &[[f64; 3]]) {
 #[test]
 fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for M interpolation diagnostic");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "multiple_sun_columns_report_same_model_transport_and_irradiance_error",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("M interpolation device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("M diagnostic atmosphere fixture"),

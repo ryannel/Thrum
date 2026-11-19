@@ -4,18 +4,11 @@ use wgpu::util::DeviceExt;
 
 pub(super) const SAMPLE_FLOATS: usize = super::super::SAMPLE_BYTES / 4;
 
-pub(super) async fn device() -> (wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real adapter required for the Sun visibility tests");
+pub(super) async fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
+    let adapter = test_gpu.adapter.clone();
     #[cfg(target_os = "macos")]
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("Sun visibility device")
+    crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
 }
 
 pub(super) fn constant_depth_maps(

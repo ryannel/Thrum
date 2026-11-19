@@ -342,6 +342,12 @@ async fn checkpoint(
 #[test]
 #[ignore = "explicit cooked-valley reconstruction oracle; run run_v1_showcase.py reconstruction"]
 fn reconstruction_reference_on_submitted_game_frames() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "reconstruction_reference_on_submitted_game_frames",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let output =
             std::path::PathBuf::from(std::env::var("THRUM_RECONSTRUCTION_OUTPUT").unwrap());
@@ -353,13 +359,7 @@ fn reconstruction_reference_on_submitted_game_frames() {
             capabilities: caps,
             ..
         } = thrum_render::capabilities::DeviceRecipe::default()
-            .open(
-                &wgpu::Instance::new(wgpu::InstanceDescriptor {
-                    backends: wgpu::Backends::METAL,
-                    ..wgpu::InstanceDescriptor::new_without_display_handle()
-                }),
-                None,
-            )
+            .open_admitted(&gpu.instance, &gpu.adapter)
             .await
             .unwrap();
         std::fs::write(

@@ -50,23 +50,26 @@ struct Decoder {
 
 impl Decoder {
     fn new() -> Option<Self> {
+        use thrum_render::capabilities::{DeviceRecipe, DeviceRestriction, OpenedDevice};
+        let gpu = thrum_test_support::gpu(
+            "every_compressed_product_level_clears_the_quality_floor_and_substitutes_do_not",
+            None,
+        )?;
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let adapter = instance
-                .request_adapter(&wgpu::RequestAdapterOptions::default())
-                .await
-                .ok()?;
-            let features = adapter.features()
+            let features = gpu.adapter.features()
                 & (wgpu::Features::TEXTURE_COMPRESSION_BC
                     | wgpu::Features::TEXTURE_COMPRESSION_ASTC);
-            let (device, queue) = adapter
-                .request_device(&wgpu::DeviceDescriptor {
-                    required_features: features,
+            let OpenedDevice { device, queue, .. } = DeviceRecipe {
+                restriction: Some(&DeviceRestriction {
+                    limits: Some(wgpu::Limits::default()),
+                    features: Some(features),
                     ..Default::default()
-                })
-                .await
-                .ok()?;
+                }),
+                ..Default::default()
+            }
+            .open_admitted(&gpu.instance, &gpu.adapter)
+            .await
+            .expect("admitted texture decoder device");
             let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("decode"),
                 source: wgpu::ShaderSource::Wgsl(

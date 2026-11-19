@@ -1,5 +1,4 @@
 //! CONTENT-LOOP leases exercised through the game's ordinary frame host.
-#![cfg(target_os = "macos")]
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -61,26 +60,31 @@ fn config(cook: &CookConfig) -> CookedConfig {
 }
 
 async fn gpu(
-    instance: &wgpu::Instance,
+    test_gpu: &thrum_test_support::Gpu,
     generation: u64,
     compressed: bool,
 ) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("Metal adapter");
+    let adapter = test_gpu.adapter.clone();
     let features = if compressed {
         DeviceCapabilities::requested_content_features(&adapter)
     } else {
         wgpu::Features::empty()
     };
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: features,
+    let (device, queue) = {
+        let restriction = thrum_render::capabilities::DeviceRestriction {
+            limits: Some(wgpu::Limits::default()),
+            features: Some(features),
             ..Default::default()
-        })
+        };
+        let opened = thrum_render::capabilities::DeviceRecipe {
+            restriction: Some(&restriction),
+            ..Default::default()
+        }
+        .open_admitted(&test_gpu.instance, &test_gpu.adapter)
         .await
-        .expect("device");
+        .expect("admitted GPU test device");
+        (opened.device, opened.queue)
+    };
     let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
     (device, queue, capabilities)
 }
@@ -327,6 +331,11 @@ fn overlapping_edits_reuse_the_ready_publication() {
 }
 
 fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("overlapping_edits_case", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
     let root = std::env::temp_dir().join(format!(
         "thrum-lent-overlap-{}-{compressed}-{remote}-{consumer_first}",
         std::process::id()
@@ -351,8 +360,7 @@ fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) 
         if remote {
             configured.source = thrum_asset_gpu::CookedSource::Remote(feed.clone());
         }
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, caps) = gpu(&instance, 1, compressed).await;
+        let (device, queue, caps) = gpu(&test_gpu, 1, compressed).await;
         let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
             .await
             .expect("host");
@@ -444,6 +452,12 @@ fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) 
 
 #[test]
 fn leased_texels_commit_edit_capture_discard_and_recovery() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "leased_texels_commit_edit_capture_discard_and_recovery",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     for compressed in [false, true] {
         for consumer_first in [false, true] {
             let root = std::env::temp_dir().join(format!(
@@ -455,9 +469,7 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
             let mut cooker = Cooker::open(cook.clone()).expect("cooker");
             assert_eq!(cooker.cook_all().expect("cook").failed, []);
             pollster::block_on(async {
-                let instance =
-                    wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-                let (device, queue, capabilities) = gpu(&instance, 1, compressed).await;
+                let (device, queue, capabilities) = gpu(&test_gpu, 1, compressed).await;
                 let mut host =
                     FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
                         .await
@@ -604,7 +616,8 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                     assert!(stats.max_frame_copy_bytes <= COPY_UNIT);
                     assert!(stats.staging_peak_bytes <= COPY_UNIT * STAGING_CHUNKS);
                 }
-                let (new_device, new_queue, new_capabilities) = gpu(&instance, 2, compressed).await;
+                let (new_device, new_queue, new_capabilities) =
+                    gpu(&test_gpu.fresh_adapter(), 2, compressed).await;
                 let mut candidate = host
                     .device_prepare_inputs()
                     .expect("inputs")
@@ -636,6 +649,12 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
 
 #[test]
 fn placement_and_lease_switch_together_in_both_contribution_orders() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "placement_and_lease_switch_together_in_both_contribution_orders",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     for consumer_first in [false, true] {
         let root = std::env::temp_dir().join(format!(
             "thrum-lent-coupled-{}-{consumer_first}",
@@ -673,9 +692,7 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
             config
         };
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (device, queue, caps) = gpu(&instance, 1, false).await;
+            let (device, queue, caps) = gpu(&test_gpu, 1, false).await;
             let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
                 .await
                 .expect("host");

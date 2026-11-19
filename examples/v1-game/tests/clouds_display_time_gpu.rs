@@ -50,8 +50,14 @@ fn mapping(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Buffer) ->
 #[test]
 #[cfg(target_os = "macos")]
 fn submitted_mapping_moves_at_display_time_without_product_writes() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_mapping_moves_at_display_time_without_product_writes",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", true).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
         let surface = v1_game::SurfaceOutput {
             view: &view,

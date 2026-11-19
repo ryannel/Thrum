@@ -161,8 +161,14 @@ fn assert_dim_card(sample: &Sample, hdr: [f32; 4], display: [u8; 4]) {
 
 #[test]
 fn dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue) = device().await;
+        let (device, queue) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let capabilities = DeviceCapabilities::capture_device(&device, GENERATION);
         let light = FrameLighting::Atmosphere(
@@ -234,8 +240,14 @@ fn dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse() {
 
 #[test]
 fn falling_twilight_radiance_does_not_brighten_the_metered_sky() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "falling_twilight_radiance_does_not_brighten_the_metered_sky",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue) = device().await;
+        let (device, queue) = device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture_device(&device, GENERATION);
         let mut scene = SyntheticScene::grid(1).unwrap();
         // Approximate the fixed valley upper-sky witness at sea-level-relative

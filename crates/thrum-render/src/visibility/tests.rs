@@ -159,19 +159,12 @@ fn serial_bytes(alpha: f32) -> Vec<u8> {
     bytes
 }
 
-fn device() -> (wgpu::Device, wgpu::Queue) {
+fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for visibility regression");
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("visibility device")
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
     })
 }
 
@@ -222,8 +215,8 @@ const KEY: PipelineKey = PipelineKey {
 };
 
 impl Fixture {
-    fn new(capacity: u32) -> Self {
-        let (device, queue) = device();
+    fn new(test_gpu: &thrum_test_support::Gpu, capacity: u32) -> Self {
+        let (device, queue) = device(test_gpu);
         let uniform = |label, size| {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(label),
@@ -387,7 +380,12 @@ fn perspective(eye: Vec3, target: Vec3, fov: f32) -> Mat4 {
 
 #[test]
 fn compaction_matches_reference_across_changed_cameras() {
-    let mut fixture = Fixture::new(10_000);
+    let Some(test_gpu) =
+        thrum_test_support::gpu("compaction_matches_reference_across_changed_cameras", None)
+    else {
+        return;
+    };
+    let mut fixture = Fixture::new(&test_gpu, 10_000);
     let mut random = Lcg(17);
     let instances = scatter(&mut random, 10_000, 120.0);
     let cameras = [
@@ -415,7 +413,12 @@ fn compaction_matches_reference_across_changed_cameras() {
 
 #[test]
 fn partial_workgroups_and_shrinking_active_prefix() {
-    let mut fixture = Fixture::new(1_000);
+    let Some(test_gpu) =
+        thrum_test_support::gpu("partial_workgroups_and_shrinking_active_prefix", None)
+    else {
+        return;
+    };
+    let mut fixture = Fixture::new(&test_gpu, 1_000);
     let mut random = Lcg(3);
     let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
     // Zero active rows still runs the offsets dispatch and writes zero instances.
@@ -450,8 +453,8 @@ struct Occlusion {
 }
 
 impl Occlusion {
-    fn new(capacity: u32, depth: &[f32]) -> Self {
-        let fixture = Fixture::new(capacity);
+    fn new(test_gpu: &thrum_test_support::Gpu, capacity: u32, depth: &[f32]) -> Self {
+        let fixture = Fixture::new(test_gpu, capacity);
         let view =
             pyramid::tests::depth_target(&fixture.device, &fixture.queue, depth, DEPTH_EXTENT);
         let pyramid = pyramid::tests::build(&fixture.device, &fixture.queue, &view, DEPTH_EXTENT);
@@ -602,6 +605,11 @@ impl Occlusion {
 /// z row for w, hides the first box; one that inflates it keeps the second.
 #[test]
 fn the_final_cull_uses_the_full_clip_magnitude() {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("the_final_cull_uses_the_full_clip_magnitude", None)
+    else {
+        return;
+    };
     let origin = Vec3::new(-400.37, 1.13, 400.71);
     let instance = Instance {
         current: Mat4::from_scale_rotation_translation(
@@ -635,7 +643,7 @@ fn the_final_cull_uses_the_full_clip_magnitude() {
     for (scale, kept) in [(0.5, true), (2.0, false)] {
         let wall = nearest + scale * full;
         let depth = vec![wall; (DEPTH_EXTENT[0] * DEPTH_EXTENT[1]) as usize];
-        let mut occlusion = Occlusion::new(1, &depth);
+        let mut occlusion = Occlusion::new(&test_gpu, 1, &depth);
         occlusion.frame(view_proj, &[instance], 1.0);
         assert_eq!(
             occlusion.history().contains(&0),
@@ -654,6 +662,12 @@ fn the_final_cull_uses_the_full_clip_magnitude() {
 /// the widening keeps the second.
 #[test]
 fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "the_final_cull_widens_the_footprint_by_the_clip_bound",
+        None,
+    ) else {
+        return;
+    };
     let origin = Vec3::new(-400.37, 1.13, 400.71);
     let instance = Instance {
         current: Mat4::from_scale_rotation_translation(
@@ -728,7 +742,7 @@ fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
         let depth: Vec<f32> = (0..height)
             .flat_map(|_| (0..width).map(move |x| if x < open { 1.0 } else { 0.0 }))
             .collect();
-        let mut occlusion = Occlusion::new(1, &depth);
+        let mut occlusion = Occlusion::new(&test_gpu, 1, &depth);
         occlusion.frame(view_proj, &[instance], 1.0);
         assert_eq!(
             occlusion.history().contains(&0),
@@ -740,8 +754,13 @@ fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
 
 #[test]
 fn occlusion_phases_never_lose_a_slot_in_view() {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("occlusion_phases_never_lose_a_slot_in_view", None)
+    else {
+        return;
+    };
     let depth = wall_depth();
-    let mut occlusion = Occlusion::new(4_000, &depth);
+    let mut occlusion = Occlusion::new(&test_gpu, 4_000, &depth);
     let mut random = Lcg(29);
     let mut instances = scatter(&mut random, 4_000, 40.0);
     let near = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
@@ -782,8 +801,14 @@ fn occlusion_phases_never_lose_a_slot_in_view() {
 
 #[test]
 fn a_capture_between_displays_keeps_the_displayed_history() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_capture_between_displays_keeps_the_displayed_history",
+        None,
+    ) else {
+        return;
+    };
     let depth = wall_depth();
-    let mut occlusion = Occlusion::new(3_000, &depth);
+    let mut occlusion = Occlusion::new(&test_gpu, 3_000, &depth);
     let mut random = Lcg(23);
     let instances = scatter(&mut random, 3_000, 40.0);
     let display = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
@@ -837,8 +862,13 @@ fn past(occlusion: &Occlusion, bound: u32) -> Vec<u32> {
 
 #[test]
 fn history_words_never_outlive_a_shrink_or_capture() {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("history_words_never_outlive_a_shrink_or_capture", None)
+    else {
+        return;
+    };
     let depth = wall_depth();
-    let mut occlusion = Occlusion::new(600, &depth);
+    let mut occlusion = Occlusion::new(&test_gpu, 600, &depth);
     let mut random = Lcg(41);
     let instances = scatter(&mut random, 600, 40.0);
     let short = &instances[..200];
@@ -875,9 +905,12 @@ fn history_words_never_outlive_a_shrink_or_capture() {
 
 #[test]
 fn unready_depth_hides_nothing() {
+    let Some(test_gpu) = thrum_test_support::gpu("unready_depth_hides_nothing", None) else {
+        return;
+    };
     // A cleared reverse-Z target (all far) is the pyramid of an empty prepass.
     let depth = vec![0.0; (DEPTH_EXTENT[0] * DEPTH_EXTENT[1]) as usize];
-    let mut occlusion = Occlusion::new(2_000, &depth);
+    let mut occlusion = Occlusion::new(&test_gpu, 2_000, &depth);
     let mut random = Lcg(5);
     let instances = scatter(&mut random, 2_000, 40.0);
     let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
@@ -890,8 +923,13 @@ fn unready_depth_hides_nothing() {
 /// holds for its members, in the same order.
 #[test]
 fn member_indexed_buckets_match_the_flat_list() {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("member_indexed_buckets_match_the_flat_list", None)
+    else {
+        return;
+    };
     let count = 3_000_u32;
-    let mut fixture = Fixture::new(count);
+    let mut fixture = Fixture::new(&test_gpu, count);
     let mut random = Lcg(29);
     let instances = scatter(&mut random, count as usize, 60.0);
     let camera = perspective(Vec3::new(0.0, 10.0, 90.0), Vec3::ZERO, 1.0);
@@ -1124,4 +1162,122 @@ fn member_pipelines(device: &wgpu::Device) -> (wgpu::BindGroupLayout, [wgpu::Com
     };
     let pipelines = ["count_members", "offsets_members", "scatter_members"].map(pipeline);
     (layout, pipelines)
+}
+
+/// Search real projected bounds/vertices for a vertex beyond the unwidened
+/// texel rectangle's coverage margin. This does not prove the widening
+/// unnecessary; an absence is the explicitly permitted M1 search outcome.
+#[test]
+fn reference_search_for_a_footprint_widening_witness() {
+    use crate::synthetic::SyntheticView;
+    use glam::Mat3;
+    let mut poses = 0_u32;
+    let mut widened = 0_u32;
+    let mut outside = 0_u32;
+    for origin in [
+        Vec3::ZERO,
+        Vec3::new(-400.37, 1.13, 400.71),
+        Vec3::new(4000.37, 1.13, -4000.71),
+    ] {
+        for yaw_index in 0..32 {
+            let yaw = yaw_index as f32 * 0.196_349_55;
+            let basis = Mat3::from_rotation_y(yaw);
+            for distance in [0.2, 0.5, 1.5, 10.0, 100.0] {
+                for size in [0.001, 0.01, 0.1, 1.0] {
+                    for offset in [-0.499, -0.25, 0.0, 0.25, 0.499] {
+                        let eye = origin + Vec3::new(0.0, 0.0, -distance);
+                        let view = SyntheticView::perspective(
+                            eye.to_array(),
+                            origin.to_array(),
+                            [0.0, 1.0, 0.0],
+                            0.9,
+                            16.0 / 9.0,
+                            0.05,
+                            30000.0,
+                        )
+                        .expect("search view");
+                        let vp = Mat4::from_cols_array_2d(&view.view_proj_columns());
+                        let center = origin + Vec3::new(offset * distance, 0.0, 0.0);
+                        let extent =
+                            (basis.x_axis.abs() + basis.y_axis.abs() + basis.z_axis.abs()) * size;
+                        let mut low = [u32::MAX; 2];
+                        let mut high = [0_u32; 2];
+                        let mut vertices = Vec::new();
+                        let mut safe = true;
+                        let mut has_widening = false;
+                        let rows = vp.transpose();
+                        // Absolute row dot (world magnitude,1), as in WGSL.
+                        let world = center.abs() * 2.0 + Vec3::splat(size * 3.0);
+                        let magnitude = [
+                            rows.x_axis.abs().dot(world.extend(1.0)),
+                            rows.y_axis.abs().dot(world.extend(1.0)),
+                            rows.z_axis.abs().dot(world.extend(1.0)),
+                            rows.w_axis.abs().dot(world.extend(1.0)),
+                        ];
+                        for corner in 0..8 {
+                            let sign = Vec3::new(
+                                if corner & 1 == 0 { -1.0 } else { 1.0 },
+                                if corner & 2 == 0 { -1.0 } else { 1.0 },
+                                if corner & 4 == 0 { -1.0 } else { 1.0 },
+                            );
+                            let clip = vp * (center + sign * extent).extend(1.0);
+                            let vertex = vp * (basis * (sign * size) + center).extend(1.0);
+                            if clip.w <= 0.05 || clip.z >= clip.w || vertex.w <= 0.05 {
+                                safe = false;
+                                break;
+                            }
+                            let uv = [0.5 + 0.5 * clip.x / clip.w, 0.5 - 0.5 * clip.y / clip.w];
+                            vertices.push([
+                                0.5 + 0.5 * vertex.x / vertex.w,
+                                0.5 - 0.5 * vertex.y / vertex.w,
+                            ]);
+                            for axis in 0..2 {
+                                let n = [256.0, 128.0][axis];
+                                #[expect(
+                                    clippy::cast_possible_truncation,
+                                    clippy::cast_sign_loss,
+                                    reason = "floored texel clamped to the nonnegative small texture extent"
+                                )]
+                                let texel = (uv[axis] * n).floor().clamp(0.0, n - 1.0) as u32;
+                                low[axis] = low[axis].min(texel);
+                                high[axis] = high[axis].max(texel);
+                                has_widening |= occlusion_reference::footprint_widening(
+                                    clip[axis] / clip.w,
+                                    clip.w - 2.0 * occlusion_reference::CLIP_GAMMA * magnitude[3],
+                                    magnitude[axis],
+                                    magnitude[3],
+                                    n,
+                                ) > 0.0;
+                            }
+                        }
+                        if !safe {
+                            continue;
+                        }
+                        poses += 1;
+                        widened += u32::from(has_widening);
+                        outside += u32::from(vertices.iter().any(|uv| {
+                            (0..2).any(|axis| {
+                                let n = [256.0, 128.0][axis];
+                                let coordinate = uv[axis] * n;
+                                // A vertex must reach a sample centre beyond the
+                                // texel's half-pixel coverage margin to matter.
+                                coordinate >= 0.0
+                                    && coordinate < n
+                                    && (coordinate < low[axis] as f32 - 0.25
+                                        || coordinate > high[axis] as f32 + 1.25)
+                            })
+                        }));
+                    }
+                }
+            }
+        }
+    }
+    eprintln!(
+        "footprint reference search: {poses} valid poses; {widened} request widening; {outside} vertex coverage candidates beyond the unwidened rectangle"
+    );
+    assert!(poses > 5000 && widened > 0);
+    assert_eq!(
+        outside, 0,
+        "a candidate needs a GPU no-widening mutant before claiming this item"
+    );
 }

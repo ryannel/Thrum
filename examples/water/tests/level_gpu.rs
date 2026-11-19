@@ -2,7 +2,13 @@
 mod support;
 #[test]
 fn stage_raises_the_surface_by_two_metres() {
-    let mut fixture = support::Fixture::new([384, 216]);
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "stage_raises_the_surface_by_two_metres",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    let mut fixture = support::Fixture::new(&test_gpu, [384, 216]);
     fixture.parameters(r#"{"camera.height":10}"#);
     let matrix = support::matrix(fixture.extent, 10.0);
     for amplitude in [0.0, 0.45] {

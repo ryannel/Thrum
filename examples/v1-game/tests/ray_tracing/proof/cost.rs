@@ -9,7 +9,9 @@ pub(crate) fn measure_valley() {
     let cook = editable_valley(&root);
     let mut cooker = Cooker::open(cook.clone()).expect("cook real valley");
     assert_eq!(cooker.cook_all().expect("initial valley").failed, []);
-    let metal = Metal::new(1);
+    let Some(metal) = Metal::new(1) else {
+        return;
+    };
     let generation = generation(&cook.store);
     let resident = resident_delta(&metal, &cook.store, generation);
     report(&resident);

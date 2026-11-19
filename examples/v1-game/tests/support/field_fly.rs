@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-#[path = "field_oracle_failure.rs"]
 mod failure;
 
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
@@ -30,10 +29,13 @@ fn write_ppm(path: &std::path::Path, rgba: &[u8], extent: [u32; 2]) {
     std::fs::write(path, ppm).expect("write field frame");
 }
 
-pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
+pub(super) fn fly(test: &str, field_meshes: bool, with_occlusion: bool) {
+    let Some(gpu) = thrum_test_support::gpu(test, None) else {
+        return;
+    };
     let tick = std::cell::Cell::new(0);
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        fly_inner(field_meshes, with_occlusion, &tick);
+        fly_inner(&gpu, field_meshes, with_occlusion, &tick);
     }));
     if let Err(payload) = result {
         failure::panic_record(field_meshes, with_occlusion, tick.get(), &*payload);
@@ -45,7 +47,12 @@ pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
     clippy::print_stderr,
     reason = "the flythrough reports its culling counts"
 )]
-fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cell<u64>) {
+fn fly_inner(
+    gpu: &thrum_test_support::Gpu,
+    field_meshes: bool,
+    with_occlusion: bool,
+    progress: &std::cell::Cell<u64>,
+) {
     let full = std::env::var_os("THRUM_FIELD_FULL_PATH").is_some();
     let sequence = std::env::var_os("THRUM_FIELD_SEQUENCE").map(std::path::PathBuf::from);
     let culled: &[(CullMode, &str)] = if field_meshes {
@@ -70,20 +77,9 @@ fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cel
         }
     }
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter required for the field comparison");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("device");
+        let (device, queue) = gpu.portable(None);
         let capabilities =
-            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+            DeviceCapabilities::capture(&gpu.adapter, &device, FrameHost::DEVICE_GENERATION);
         let mut hosts = Vec::new();
         let modes = std::iter::once(CullMode::Direct).chain(culled.iter().map(|(mode, _)| *mode));
         for camera_culling in modes {

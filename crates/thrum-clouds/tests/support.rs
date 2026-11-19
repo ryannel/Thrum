@@ -41,9 +41,12 @@ fn data() -> (Profile, Vec<Type>) {
     clippy::cast_sign_loss,
     reason = "test compares the hash's deliberate low-word integer addressing and bounded floor coordinates"
 )]
-pub(super) fn conformance(portable: bool, sun_checks: bool) {
+pub(super) fn conformance(test: &str, portable: bool, sun_checks: bool) {
+    let Some(gpu) = thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     pollster::block_on(async {
-        let (adapter, device, queue) = device(portable);
+        let (adapter, device, queue) = device(&gpu, portable);
         let site = DeviceSite::untracked(device.clone());
         let (profile, types) = data();
         let field = Field::new(7, profile, types.clone()).expect("fixture");
@@ -217,7 +220,14 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
             map.submitted();
             assert_eq!(outputs, read(&device, &queue, map.textures()));
         }
-        replacement(&device, &queue, &mut map, &state, portable);
+        replacement(
+            &gpu.fresh_adapter(),
+            &device,
+            &queue,
+            &mut map,
+            &state,
+            portable,
+        );
         let record = format!(
             "adapter={:?}; portable={portable}; coarsest clear/cloudy centres={first_counts:?}; weather maximum errors [base,top,coverage,type,age,tau]={largest:?}",
             adapter.get_info()
@@ -295,6 +305,7 @@ fn filled(
 }
 
 fn replacement(
+    gpu: &thrum_test_support::Gpu,
     old_device: &wgpu::Device,
     old_queue: &wgpu::Queue,
     map: &mut WeatherMap,
@@ -302,7 +313,7 @@ fn replacement(
     portable: bool,
 ) {
     let expected = filled(old_device, old_queue, map, state);
-    let (_, device, queue) = device(portable);
+    let (_, device, queue) = device(gpu, portable);
     let (profile, types) = data();
     let mut fresh = WeatherMap::new(
         &DeviceSite::untracked(device.clone()),
@@ -319,16 +330,17 @@ fn replacement(
     );
 }
 
-fn device(portable: bool) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
-    let gpu = thrum_test_support::gpu("cloud products", Some(wgpu::Backend::Metal))
-        .expect("mac-metal target");
+fn device(
+    gpu: &thrum_test_support::Gpu,
+    portable: bool,
+) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
     let profile = if portable {
         thrum_test_support::Profile::Portable
     } else {
         thrum_test_support::Profile::Native
     };
     let (device, queue) = gpu.device(profile, &thrum_test_support::Restriction::default());
-    (gpu.adapter, device, queue)
+    (gpu.adapter.clone(), device, queue)
 }
 
 fn hash(i: u32, j: u32, g: u32, stream: u32, seed: u32) -> u32 {

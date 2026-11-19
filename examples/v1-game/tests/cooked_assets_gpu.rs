@@ -11,7 +11,9 @@ use thrum_asset_gpu::{
     COPY_UNIT, CookedAssets, CookedConfig, CookedDrawPath, CookedStats, STAGING_CHUNKS,
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-use thrum_render::capabilities::DeviceCapabilities;
+use thrum_render::capabilities::{
+    DeviceCapabilities, DeviceRecipe, DeviceRestriction, OpenedDevice,
+};
 use thrum_render::present::SurfaceProfile;
 use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
@@ -106,31 +108,25 @@ fn wait_for(
     }
 }
 
-async fn game_device(path: CookedDrawPath) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real adapter required for the in-game G5 proof");
-    device_for(&adapter, path).await
-}
-
 async fn device_for(
-    adapter: &wgpu::Adapter,
+    gpu: &thrum_test_support::Gpu,
+    generation: u64,
     path: CookedDrawPath,
 ) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     // Ask for every compressed family the adapter offers, as the game's platform layer does.
     // Timestamps too, so contributed frames exercise the renderer's timing collector.
-    let features = DeviceCapabilities::requested_content_features(adapter)
-        | DeviceCapabilities::requested_timing_features(adapter);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: features,
+    let OpenedDevice { device, queue, .. } = DeviceRecipe {
+        generation,
+        restriction: Some(&DeviceRestriction {
+            limits: Some(wgpu::Limits::default()),
             ..Default::default()
-        })
-        .await
-        .expect("device");
-    let caps = selected_capabilities(adapter, &device, 1, path);
+        }),
+        ..Default::default()
+    }
+    .open_admitted(&gpu.instance, &gpu.adapter)
+    .await
+    .expect("admitted cooked asset test device");
+    let caps = selected_capabilities(&gpu.adapter, &device, generation, path);
     (device, queue, caps)
 }
 
@@ -157,13 +153,22 @@ fn save(name: &str, pixels: &[u8]) {
 
 #[test]
 fn cooked_edits_become_visible_in_the_game_with_its_lighting() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "cooked_edits_become_visible_in_the_game_with_its_lighting",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        cooked_edits_become_visible_in_the_game_with_its_lighting_case(path);
+        cooked_edits_become_visible_in_the_game_with_its_lighting_case(&gpu, path);
     }
 }
 
-fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(path: CookedDrawPath) {
+fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-game-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 96);
@@ -172,7 +177,7 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(path: CookedDr
     assert!(report.failed.is_empty(), "{:?}", report.failed);
 
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -283,13 +288,22 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(path: CookedDr
 
 #[test]
 fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path);
+        off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(&gpu, path);
     }
 }
 
-fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path: CookedDrawPath) {
+fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-cull-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 32);
@@ -298,7 +312,7 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path: Co
         .cook_all()
         .expect("cook");
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let bc = device
             .features()
             .contains(wgpu::Features::TEXTURE_COMPRESSION_BC);
@@ -421,20 +435,28 @@ fn settle(host: &mut FrameHost, device: &wgpu::Device) {
 /// rendering. Both must then swap on the same submitted frame and draw identical pixels.
 #[test]
 fn discarded_frames_leave_no_trace_on_cooked_uploads() {
+    let Some(gpu) =
+        thrum_test_support::gpu("discarded_frames_leave_no_trace_on_cooked_uploads", None)
+    else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        discarded_frames_leave_no_trace_on_cooked_uploads_case(path);
+        discarded_frames_leave_no_trace_on_cooked_uploads_case(&gpu, path);
     }
 }
 
-fn discarded_frames_leave_no_trace_on_cooked_uploads_case(path: CookedDrawPath) {
+fn discarded_frames_leave_no_trace_on_cooked_uploads_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-discard-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 160);
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         // Discarding happens when a drawable is not acquired, so these hosts present.
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("discard test drawable"),
@@ -701,13 +723,22 @@ fn timed(sample: &FrameSample, device: &wgpu::Device, drawing: bool) {
 
 #[test]
 fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_case(path);
+        contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_case(
+            &gpu, path,
+        );
     }
 }
 
 fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_case(
+    gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
     let root = std::env::temp_dir().join(format!("thrum-g5-timing-{}", std::process::id()));
@@ -716,7 +747,7 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let view = drawable(&device);
         let mut host =
             FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
@@ -766,19 +797,25 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
 
 #[test]
 fn a_replaced_device_restages_and_draws_the_current_set() {
+    let Some(gpu) =
+        thrum_test_support::gpu("a_replaced_device_restages_and_draws_the_current_set", None)
+    else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_replaced_device_restages_and_draws_the_current_set_case(path, path);
+        a_replaced_device_restages_and_draws_the_current_set_case(&gpu, path, path);
         let other = if path == CookedDrawPath::Direct {
             CookedDrawPath::Indirect
         } else {
             CookedDrawPath::Direct
         };
-        a_replaced_device_restages_and_draws_the_current_set_case(path, other);
+        a_replaced_device_restages_and_draws_the_current_set_case(&gpu, path, other);
     }
 }
 
 fn a_replaced_device_restages_and_draws_the_current_set_case(
+    gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
     replacement_path: CookedDrawPath,
 ) {
@@ -788,27 +825,7 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let gpu = |generation, path| {
-            let instance = &instance;
-            async move {
-                let adapter = instance
-                    .request_adapter(&wgpu::RequestAdapterOptions::default())
-                    .await
-                    .expect("real adapter");
-                let (device, queue) = adapter
-                    .request_device(&wgpu::DeviceDescriptor {
-                        required_features: DeviceCapabilities::requested_content_features(&adapter)
-                            | DeviceCapabilities::requested_timing_features(&adapter),
-                        ..Default::default()
-                    })
-                    .await
-                    .expect("device");
-                let capabilities = selected_capabilities(&adapter, &device, generation, path);
-                (device, queue, capabilities)
-            }
-        };
-        let (old_device, old_queue, old_capabilities) = gpu(1, path).await;
+        let (old_device, old_queue, old_capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &old_device,
             &old_queue,
@@ -825,7 +842,8 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
         let mut clock = Duration::ZERO;
         let old_view = drawable(&old_device);
         until_swap(&mut host, &old_device, &old_view, &stats, &mut clock);
-        let (device, queue, capabilities) = gpu(2, replacement_path).await;
+        let (device, queue, capabilities) =
+            device_for(&gpu.fresh_adapter(), 2, replacement_path).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")
@@ -873,20 +891,29 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
 /// the set it counted.
 #[test]
 fn captures_never_establish_history_and_cull_counts_follow_their_set() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "captures_never_establish_history_and_cull_counts_follow_their_set",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        captures_never_establish_history_and_cull_counts_follow_their_set_case(path);
+        captures_never_establish_history_and_cull_counts_follow_their_set_case(&gpu, path);
     }
 }
 
-fn captures_never_establish_history_and_cull_counts_follow_their_set_case(path: CookedDrawPath) {
+fn captures_never_establish_history_and_cull_counts_follow_their_set_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-capture-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 32);
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let view = drawable(&device);
         let mut host =
             FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
@@ -969,13 +996,22 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set_case(path: 
 
 #[test]
 fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "cooked_mesh_outside_camera_casts_onto_visible_terrain",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path);
+        cooked_mesh_outside_camera_casts_onto_visible_terrain_case(&gpu, path);
     }
 }
 
-fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path: CookedDrawPath) {
+fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-off-camera-sun-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 16);
@@ -989,7 +1025,7 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path: CookedDrawPa
         .expect("cook");
 
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -1106,13 +1142,21 @@ impl thrum_asset::Fetch for LoopbackFetch {
 /// sample compressed variants listed in the manifest.
 #[test]
 fn a_fetched_generation_draws_like_the_mapped_store() {
+    let Some(gpu) =
+        thrum_test_support::gpu("a_fetched_generation_draws_like_the_mapped_store", None)
+    else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_fetched_generation_draws_like_the_mapped_store_case(path);
+        a_fetched_generation_draws_like_the_mapped_store_case(&gpu, path);
     }
 }
 
-fn a_fetched_generation_draws_like_the_mapped_store_case(path: CookedDrawPath) {
+fn a_fetched_generation_draws_like_the_mapped_store_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-remote-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
@@ -1139,7 +1183,7 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(path: CookedDrawPath) {
             thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
                 .expect("client");
         let fetched = client.poll().await.expect("fetch").expect("a publication");
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let compressed = fetched
             .manifest()
             .resolve("textures/checker", &[Profile::DesktopBc])
@@ -1195,13 +1239,22 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(path: CookedDrawPath) {
 /// the edited product; the unchanged mesh is reused from the drawn set.
 #[test]
 fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "a_fetched_edit_swaps_in_and_reuses_unchanged_products",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path);
+        a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(&gpu, path);
     }
 }
 
-fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path: CookedDrawPath) {
+fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-remote-edit-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
@@ -1221,7 +1274,7 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path: CookedDrawPa
         let feed = thrum_asset_gpu::RemoteFeed::new(
             client.poll().await.expect("fetch").expect("generation 1"),
         );
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -1302,7 +1355,7 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
             .expect("dev server");
     let origin = format!("http://{}", server.address());
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(&gpu.adapter, CookedDrawPath::Direct).await;
+        let (device, queue, capabilities) = device_for(&gpu, 1, CookedDrawPath::Direct).await;
         let view = drawable(&device);
         let mut client = thrum_asset::DevClient::new(LoopbackFetch, &origin).expect("client");
         let feed = thrum_asset_gpu::RemoteFeed::new(
@@ -1519,13 +1572,22 @@ fn install_bad_source(fault: &str, source: &Path, original: &[u8], device: &wgpu
 /// the scene's back-face culling and lighting the two captures match.
 #[test]
 fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(path);
+        a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(&gpu, path);
     }
 }
 
-fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(path: CookedDrawPath) {
+fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-mirrored-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let plain = source_tree(&root.join("plain"), 16);
@@ -1540,7 +1602,7 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(pat
     }
 
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -1602,13 +1664,22 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(pat
 /// volume does the same again.
 #[test]
 fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "a_publication_larger_than_staging_streams_through_the_bounded_ring",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path);
+        a_publication_larger_than_staging_streams_through_the_bounded_ring_case(&gpu, path);
     }
 }
 
-fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path: CookedDrawPath) {
+fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-ring-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 256);
@@ -1616,7 +1687,7 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path:
     let report = cooker.cook_all().expect("cook");
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -1667,13 +1738,22 @@ fn wait_posted(stats: &Mutex<CookedStats>, generation: u64) {
 /// and drawn and generation 2 never is.
 #[test]
 fn a_newer_publication_supersedes_an_upload_still_being_filled() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "a_newer_publication_supersedes_an_upload_still_being_filled",
+        None,
+    ) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_newer_publication_supersedes_an_upload_still_being_filled_case(path);
+        a_newer_publication_supersedes_an_upload_still_being_filled_case(&gpu, path);
     }
 }
 
-fn a_newer_publication_supersedes_an_upload_still_being_filled_case(path: CookedDrawPath) {
+fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
+    gpu: &thrum_test_support::Gpu,
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-supersede-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 256);
@@ -1681,7 +1761,7 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(path: Cooked
     let report = cooker.cook_all().expect("cook");
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
-        let (device, queue, capabilities) = game_device(path).await;
+        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -1740,6 +1820,9 @@ fn selected_capabilities(
 
 #[test]
 fn adapter_less_public_host_selects_direct() {
+    let Some(gpu) = thrum_test_support::gpu("adapter_less_public_host_selects_direct", None) else {
+        return;
+    };
     let _fixture = gpu_fixture();
     let root = std::env::temp_dir().join(format!("thrum-g5-unknown-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
@@ -1749,7 +1832,7 @@ fn adapter_less_public_host_selects_direct() {
         .cook_all()
         .expect("cook");
     pollster::block_on(async {
-        let (device, queue, _) = game_device(CookedDrawPath::Indirect).await;
+        let (device, queue, _) = device_for(&gpu, 1, CookedDrawPath::Indirect).await;
         let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("public host");

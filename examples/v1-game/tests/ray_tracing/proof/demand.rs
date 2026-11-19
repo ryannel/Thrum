@@ -4,7 +4,9 @@ use super::*;
 use thrum_render::synthetic::RayBuildProbe;
 
 pub(crate) fn prove_demand() {
-    let metal = Metal::new(1);
+    let Some(metal) = Metal::new(1) else {
+        return;
+    };
     let store = valley_store("demand-valley");
     let (mut plain, plain_stats, _) = valley(&store, &metal, false, false);
     let (mut traced, traced_stats, _) = valley(&store, &metal, true, false);

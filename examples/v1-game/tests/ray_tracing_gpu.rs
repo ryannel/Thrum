@@ -27,7 +27,9 @@ mod ray_tracing {
 
     #[test]
     fn edit() {
-        let metal = Metal::new(1);
+        let Some(metal) = Metal::new(1) else {
+            return;
+        };
         let mut fixture = Fixture::new("edit");
         let (mut game, stats, _) = fixture.host(&metal, false);
         drop(proof::settle(&mut game, &stats, fixture.generation()));
@@ -105,7 +107,9 @@ mod ray_tracing {
 
     #[test]
     fn lifecycle() {
-        let metal = Metal::new(1);
+        let Some(metal) = Metal::new(1) else {
+            return;
+        };
         let mut fixture = Fixture::new("lifecycle");
         let (mut game, stats, probe) = fixture.host(&metal, true);
         let probe = probe.expect("mesh build observer");

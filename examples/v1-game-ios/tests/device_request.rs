@@ -1,16 +1,16 @@
 //! Exercise the same request the iPhone shell calls, on this Mac's Metal GPU.
 
-#[cfg(target_os = "macos")]
 use v1_game_ios::device::request_device;
 
 #[test]
-#[cfg(target_os = "macos")]
 fn iphone_request_enables_native_content_and_limits() {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let (adapter, device, _) = request_device(&instance).expect("iPhone request");
+    let Some(gpu) = thrum_test_support::gpu(
+        "iphone_request_enables_native_content_and_limits",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    let (adapter, device, _) = request_device(&gpu.instance).expect("iPhone request");
     assert!(adapter.get_info().name.contains("Apple"));
     let content =
         thrum_render::capabilities::DeviceCapabilities::requested_content_features(&adapter);

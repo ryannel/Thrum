@@ -5,11 +5,7 @@ use std::time::{Duration, Instant};
 use thrum_core::sim::{WorldLifecycle, WorldLifecycleReply};
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
 
-pub(super) async fn device(backends: wgpu::Backends, timing: bool) -> OpenedDevice {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
+pub(super) async fn device(gpu: &thrum_test_support::Gpu, timing: bool) -> OpenedDevice {
     let restriction = DeviceRestriction {
         features: Some(wgpu::Features::empty()),
         ..Default::default()
@@ -19,7 +15,7 @@ pub(super) async fn device(backends: wgpu::Backends, timing: bool) -> OpenedDevi
         restriction: (!timing).then_some(&restriction),
         ..Default::default()
     }
-    .open(&instance, None)
+    .open_admitted(&gpu.instance, &gpu.adapter)
     .await
     .expect("test GPU device")
 }

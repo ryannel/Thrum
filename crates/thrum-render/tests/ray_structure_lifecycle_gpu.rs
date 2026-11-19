@@ -14,7 +14,9 @@ mod metal {
 
     #[test]
     fn discarded_first_scene_build_replays_and_replacement_uses_its_prepared_meshes() {
-        let gpu = support::gate("ray structure lifecycle");
+        let Some(gpu) = support::gate("ray structure lifecycle") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.ray_structure = true;

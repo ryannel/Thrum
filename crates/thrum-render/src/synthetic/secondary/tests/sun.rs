@@ -55,9 +55,14 @@ async fn ordinary(
 #[cfg(target_os = "macos")]
 #[test]
 fn view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "view_sun_profiles_match_ordinary_main_without_borrowing_its_cascades",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue) =
-            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let camera = |forward| {
             SyntheticView::perspective(
                 [0.0, 6.0, 0.0],

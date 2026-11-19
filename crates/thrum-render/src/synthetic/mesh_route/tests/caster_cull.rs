@@ -329,7 +329,13 @@ fn compare(
 
 #[test]
 fn per_pass_caster_lists_draw_the_unculled_depth_and_image() {
-    let gpu = gpu();
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "per_pass_caster_lists_draw_the_unculled_depth_and_image",
+        None,
+    ) else {
+        return;
+    };
+    let gpu = gpu(&test_gpu);
     let (scene, slots) = field();
     let total = u32::try_from(scene.instances.len()).expect("small");
     let rows = compare(&gpu, &scene, &slots);

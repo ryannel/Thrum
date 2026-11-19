@@ -12,9 +12,15 @@ mod recovery_gpu;
 #[test]
 #[cfg(not(target_arch = "wasm32"))]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "capture_refreshes_the_latest_committed_world_after_an_unsent_view",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
-            gpu_support::device(wgpu::Backends::all(), false).await;
+            gpu_support::device(&test_gpu, false).await;
         let mut host =
             super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
                 .await
@@ -41,9 +47,15 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
 
 #[test]
 fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
-            gpu_support::device(wgpu::Backends::all(), false).await;
+            gpu_support::device(&test_gpu, false).await;
         let mut host =
             super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
                 .await
@@ -147,9 +159,15 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
 
 #[test]
 fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
-            gpu_support::device(wgpu::Backends::all(), false).await;
+            gpu_support::device(&test_gpu, false).await;
         let mut host =
             super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
                 .await
@@ -171,9 +189,15 @@ fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
 
 #[test]
 fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "abandoned_encoded_scene_reuses_slot_and_timestamp_batch",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
-            gpu_support::device(wgpu::Backends::all(), true).await;
+            gpu_support::device(&test_gpu, true).await;
         let extent = [640, 360];
         let mut host = super::FrameHost::new(
             &device,
@@ -246,9 +270,15 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
 
 #[test]
 fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "capture_after_abandoned_fractional_view_uses_last_submitted_sample",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
-            gpu_support::device(wgpu::Backends::all(), false).await;
+            gpu_support::device(&test_gpu, false).await;
         let extent = [640, 360];
         let mut host = super::FrameHost::new(
             &device,
@@ -304,9 +334,15 @@ fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
 
 #[test]
 fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "abandoned_overload_frame_counts_its_completed_queued_ticks",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
-            gpu_support::device(wgpu::Backends::all(), false).await;
+            gpu_support::device(&test_gpu, false).await;
         let mut host =
             super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
                 .await

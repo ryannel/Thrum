@@ -299,17 +299,17 @@ fn check_producer(queries: &[[f32; 4]], records: &[[f32; 12]]) {
 #[test]
 fn near_ground_sun_lookup_and_producer_endpoints_agree_with_cpu_authority() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("transmittance adapter");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "near_ground_sun_lookup_and_producer_endpoints_agree_with_cpu_authority",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("transmittance device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("production transmittance and test-only observer"),
@@ -446,17 +446,17 @@ fn check_receiver_case(
 #[test]
 fn surface_sun_uses_receiver_height_and_local_horizon_not_camera_transmission() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("surface Sun adapter");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "surface_sun_uses_receiver_height_and_local_horizon_not_camera_transmission",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("surface Sun device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("production surface Sun and isolated observer"),

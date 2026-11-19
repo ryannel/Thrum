@@ -1,11 +1,6 @@
 //! Stage connectivity and clamping.
-#[expect(
-    dead_code,
-    reason = "shared basin and wave fixtures are used by other tests"
-)]
-#[path = "support/fixtures.rs"]
 mod support;
-use support::{body, close, grid, profile};
+use support::fixtures::{body, close, grid, profile};
 use thrum_water_model::{BodyKind, Map, Stage};
 
 #[test]
@@ -15,14 +10,19 @@ fn bilinear_saddle_opens_with_stage_and_drains_back_for_both_seeds() {
         b.stage.max = 1.5;
         let mut p = profile();
         p.margin_height = 0.0;
-        let mut map = Map::prepare(support::saddle_bed([0.0; 2], 1.0, false), vec![b], p).unwrap();
+        let mut map = Map::prepare(
+            support::fixtures::saddle_bed([0.0; 2], 1.0, false),
+            vec![b],
+            p,
+        )
+        .unwrap();
         let other = if seed[0] < 1.5 {
             [2.0, 2.0]
         } else {
             [1.0, 1.0]
         };
         let original = map.sample(seed);
-        let calm = support::field(0.0);
+        let calm = support::fixtures::field(0.0);
         for level in [-1.0, 0.0, 0.01, 0.5, 0.0, -1.0] {
             map.set_stage(0, level + 1.0).unwrap();
             let answer = map.surface(&calm, other, 7.0).unwrap();
@@ -46,7 +46,7 @@ fn bilinear_saddle_opens_with_stage_and_drains_back_for_both_seeds() {
 fn maximum_stage_refuses_a_diagonal_neck_to_the_bed_edge() {
     let mut b = body("neck-spill", BodyKind::Basin { seed: [1.0, 1.0] }, -1.0);
     b.stage.max = 1.5;
-    let error = Map::prepare(support::saddle_chain(4), vec![b], profile())
+    let error = Map::prepare(support::fixtures::saddle_chain(4), vec![b], profile())
         .err()
         .unwrap();
     assert_eq!(error.name, "neck-spill");

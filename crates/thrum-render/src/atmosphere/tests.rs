@@ -37,15 +37,15 @@ fn portable_lut_graph_renders_live_sun_and_rejects_mode_changes() {
     };
 
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for atmosphere regression");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("atmosphere device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "portable_lut_graph_renders_live_sun_and_rejects_mode_changes",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 51);
         let mut scene = SyntheticScene::grid(1).expect("one geometry consumer");
         // The visible +Z face points away from the Sun and has no emission or
@@ -181,17 +181,17 @@ fn aerial_transport_changes_a_distant_surface_in_the_live_forward_pass() {
     };
 
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for aerial transport");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "aerial_transport_changes_a_distant_surface_in_the_live_forward_pass",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("aerial device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 52);
         // A 2 km observer can see the 10 km target over the curved ground;
         // a ground-level observer cannot, so its aerial integral stops early.
@@ -294,17 +294,16 @@ fn orthographic_sky_keeps_a_finite_solar_disk() {
     use crate::synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene};
 
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for orthographic sky");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("orthographic_sky_keeps_a_finite_solar_disk", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("orthographic device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
         let mut scene = SyntheticScene::grid(1).expect("orthographic fixture");
         scene.instances[0].current[3][0] = 10.0;

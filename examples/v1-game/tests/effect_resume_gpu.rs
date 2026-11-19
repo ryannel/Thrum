@@ -69,8 +69,14 @@ fn display(sample: &FrameSample) -> f64 {
 #[test]
 #[cfg(target_os = "macos")]
 fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_frames_exclude_stopped_time_and_discarded_fraction",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, _) = support::device("portable", false).await;
+        let (_, device, queue, _) = support::device(&test_gpu, "portable", false);
         let (view, profile) = support::presentation(&device, [96, 54]);
         let surface = v1_game::SurfaceOutput {
             view: &view,

@@ -18,8 +18,8 @@ struct Fixture {
 }
 
 impl Fixture {
-    async fn new() -> Self {
-        let (device, queue, info) = super::device().await;
+    async fn new(test_gpu: &thrum_test_support::Gpu) -> Self {
+        let (device, queue, info) = super::device(test_gpu).await;
         assert_eq!(info.backend, wgpu::Backend::Metal);
         writeln!(std::io::stdout(), "M9 device {info:?}").expect("report device");
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
@@ -220,8 +220,11 @@ impl Volume {
 #[test]
 #[ignore = "one-time recording on the unchanged pass before M9; retained bytes are checked below"]
 fn above_ground_bytes_record() {
+    let Some(test_gpu) = thrum_test_support::gpu("above_ground_bytes_record", None) else {
+        return;
+    };
     pollster::block_on(async {
-        let fixture = Fixture::new().await;
+        let fixture = Fixture::new(&test_gpu).await;
         let output = std::env::var_os("THRUM_AERIAL_GROUND_RECORD_DIR")
             .map_or_else(|| Path::new(ROOT).to_path_buf(), std::path::PathBuf::from);
         std::fs::create_dir_all(&output).expect("M9 fixture directory");
@@ -242,8 +245,11 @@ fn above_ground_bytes_record() {
 
 #[test]
 fn above_ground_bytes_preserved() {
+    let Some(test_gpu) = thrum_test_support::gpu("above_ground_bytes_preserved", None) else {
+        return;
+    };
     pollster::block_on(async {
-        let fixture = Fixture::new().await;
+        let fixture = Fixture::new(&test_gpu).await;
         for h in [3, 245] {
             for pitch in [0, -30] {
                 let v = fixture.volume(
@@ -336,8 +342,12 @@ fn cases() -> Vec<(f64, f64, f64, bool)> {
 
 #[test]
 fn near_ground_reads_match_their_own_column() {
+    let Some(test_gpu) = thrum_test_support::gpu("near_ground_reads_match_their_own_column", None)
+    else {
+        return;
+    };
     pollster::block_on(async {
-        let fixture = Fixture::new().await;
+        let fixture = Fixture::new(&test_gpu).await;
         let mut failed = Vec::new();
         for fov in [60.0_f64, 90.0] {
             let t = (fov.to_radians() * 0.5).tan();

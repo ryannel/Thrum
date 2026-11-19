@@ -157,7 +157,13 @@ async fn sequence(
 fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_coordinator_native_history_reset_discard_and_exact_twin",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         for source in [
             CaptureSource::Sdr,
             CaptureSource::SceneLinear,
@@ -211,7 +217,13 @@ fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
 fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_submission_failure_loss_and_extent_replacement_reset_history",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(
             &first,
             &queue,
@@ -271,7 +283,7 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
             flushes
         );
         assert_eq!(owner.native_witness_report().unwrap().discarded, 2);
-        let (second, queue2) = gpu(&instance, 8).await;
+        let (second, queue2) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&second, &queue2, Some(super::surface()))
             .await
@@ -335,7 +347,13 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
 fn metal_native_generation_resources_survive_until_completion_delivery() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_generation_resources_survive_until_completion_delivery",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(
             &first,
             &queue,
@@ -345,7 +363,7 @@ fn metal_native_generation_resources_survive_until_completion_delivery() {
             },
         )
         .await;
-        let (second, queue2) = gpu(&instance, 8).await;
+        let (second, queue2) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = host
             .device_prepare_inputs()
             .unwrap()
@@ -399,7 +417,13 @@ fn metal_native_generation_resources_survive_until_completion_delivery() {
 fn metal_native_two_slots_select_submitted_history_before_completion() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_native_two_slots_select_submitted_history_before_completion",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let view = output(capabilities.device(), [64, 64]);
         let surface = SurfaceOutput {
             view: &view,

@@ -8,13 +8,15 @@ mod metal {
 
     use std::cell::Cell;
     use thrum_render::capabilities::{
-        DeviceCapabilities, HardwareFeature, HardwareLaunchError, HardwareRequest,
+        DeviceCapabilities, DeviceRecipe, HardwareFeature, HardwareLaunchError, HardwareRequest,
     };
     use thrum_test_support::{Profile, Restriction};
 
     #[test]
     fn mac_launch_admits_rays_and_keeps_the_original_recipe_on_fallback() {
-        let gate = support::gate("ray query admission");
+        let Some(gate) = support::gate("ray query admission") else {
+            return;
+        };
         let ray = wgpu::Features::EXPERIMENTAL_RAY_QUERY;
         let mask = wgpu::Features::all() - ray;
         let required = HardwareRequest::parse("ray-query").expect("required");
@@ -34,7 +36,12 @@ mod metal {
         };
         let (ordinary, _, ordinary_caps) =
             open(&[], wgpu::Features::all()).expect("ordinary device");
-        let base = Profile::Portable.descriptor(&gate.adapter, &Restriction::default());
+        let base = DeviceRecipe {
+            profile: Profile::Portable,
+            ..Default::default()
+        }
+        .descriptor(&gate.adapter)
+        .expect("portable recipe");
         let (gate_default, _) = gate.device(Profile::Portable, &Restriction::default());
         assert_eq!(ordinary_caps.hardware(), []);
         assert_eq!(ordinary.features(), base.required_features);
@@ -84,10 +91,17 @@ mod metal {
 
     #[test]
     fn failed_preference_retries_once_and_retains_every_required_name() {
-        let gate = support::gate("ray query device retry");
+        let Some(gate) = support::gate("ray query device retry") else {
+            return;
+        };
         let options = wgpu::RequestAdapterOptions::default();
         let base = |adapter: &wgpu::Adapter| {
-            Profile::Portable.descriptor(adapter, &Restriction::default())
+            DeviceRecipe {
+                profile: Profile::Portable,
+                ..Default::default()
+            }
+            .descriptor(adapter)
+            .expect("portable recipe")
         };
         let unsupported = wgpu::Features::EXPERIMENTAL_RAY_HIT_VERTEX_RETURN;
         assert!(!gate.adapter.features().contains(unsupported));

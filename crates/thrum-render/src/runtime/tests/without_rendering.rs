@@ -142,9 +142,8 @@ impl FrameWorld for World {
     }
 }
 
-async fn host(cap: u32) -> FrameHost<World, StaticScene> {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let (capabilities, queue) = device::gpu(&instance, 7).await;
+async fn host(test_gpu: &thrum_test_support::Gpu, cap: u32) -> FrameHost<World, StaticScene> {
+    let (capabilities, queue) = device::gpu(test_gpu, 7).await;
     FrameHost::new(
         &capabilities,
         &queue,
@@ -175,8 +174,14 @@ async fn host(cap: u32) -> FrameHost<World, StaticScene> {
 
 #[test]
 fn destroyed_device_with_pending_work_does_not_block_authority_or_touch_presentation() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "destroyed_device_with_pending_work_does_not_block_authority_or_touch_presentation",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let mut host = host(1).await;
+        let mut host = host(&test_gpu, 1).await;
         let SurfaceProfile { format, extent } = device::surface();
         let target = host.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("pre-loss real presentation"),
@@ -301,8 +306,14 @@ fn destroyed_device_with_pending_work_does_not_block_authority_or_touch_presenta
 
 #[test]
 fn authority_only_pause_drains_backlog_and_preserves_resume_refusal_and_overload() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "authority_only_pause_drains_backlog_and_preserves_resume_refusal_and_overload",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let mut host = host(1).await;
+        let mut host = host(&test_gpu, 1).await;
         let admitted = host
             .advance(Duration::from_millis(300))
             .expect("normal admission");
@@ -355,8 +366,14 @@ fn authority_only_pause_drains_backlog_and_preserves_resume_refusal_and_overload
 
 #[test]
 fn invalid_time_and_partial_world_failure_do_not_repeat_committed_ticks() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "invalid_time_and_partial_world_failure_do_not_repeat_committed_ticks",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let mut host = host(2).await;
+        let mut host = host(&test_gpu, 2).await;
         host.world.clock.set_controls(2).expect("held input");
         host.advance_without_rendering(Duration::from_millis(100))
             .expect("first tick");

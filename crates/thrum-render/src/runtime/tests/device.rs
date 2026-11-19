@@ -85,7 +85,13 @@ type Host = FrameHost<StaticWorld, Policy>;
 fn timing_demand_switches_with_both_slots_in_flight_and_survives_replacement() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "timing_demand_switches_with_both_slots_in_flight_and_survives_replacement",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         assert!(host.timing_requested());
         pending_slots(&mut host);
@@ -110,7 +116,7 @@ fn timing_demand_switches_with_both_slots_in_flight_and_survives_replacement() {
         }
         host.set_timing_requested(false);
         let inputs = host.device_prepare_inputs().expect("replacement inputs");
-        let (replacement, new_queue) = gpu(&instance, 8).await;
+        let (replacement, new_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&replacement, &new_queue, Some(surface()))
             .await
@@ -131,23 +137,14 @@ fn timing_demand_switches_with_both_slots_in_flight_and_survives_replacement() {
 }
 
 pub(super) async fn gpu(
-    instance: &wgpu::Instance,
+    test_gpu: &thrum_test_support::Gpu,
     generation: u64,
 ) -> (DeviceCapabilities, wgpu::Queue) {
     crate::timestamp_permit::hold();
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("recovery adapter");
+    let adapter = test_gpu.adapter.clone();
     #[cfg(target_os = "macos")]
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .expect("recovery device");
+    let (device, queue) = crate::test_device::portable(test_gpu, None).await;
     (
         DeviceCapabilities::capture(&adapter, &device, generation),
         queue,
@@ -205,7 +202,13 @@ pub(super) fn surface() -> SurfaceProfile {
 fn a_missing_surface_binding_has_one_drop_and_one_scene_commit_on_both_routes() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "a_missing_surface_binding_has_one_drop_and_one_scene_commit_on_both_routes",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let profile = surface();
         let texture = capabilities
             .device()
@@ -261,7 +264,13 @@ fn lost_encoded_frame_abandons_staging_without_a_queue_submit() {
 
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 1).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "lost_encoded_frame_abandons_staging_without_a_queue_submit",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 1).await;
         let device = capabilities.device();
         let lost = Arc::new(AtomicBool::new(false));
         let signal = Arc::clone(&lost);
@@ -373,7 +382,13 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (capabilities, queue) = gpu(&instance, 7).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "metal_frustum_timestamps_drain_populated_then_empty_prefixes",
+                &instance,
+            ) else {
+                return;
+            };
+            let (capabilities, queue) = gpu(&test_gpu, 7).await;
             let mut host = culled_host(
                 &capabilities,
                 &queue,
@@ -512,8 +527,14 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (first, queue) = gpu(&instance, 7).await;
-            let (second, new_queue) = gpu(&instance, 8).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "culled_modes_survive_surface_resize_and_device_replacement",
+                &instance,
+            ) else {
+                return;
+            };
+            let (first, queue) = gpu(&test_gpu, 7).await;
+            let (second, new_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
             let mut direct = culled_host(
                 &second,
                 &new_queue,
@@ -579,7 +600,13 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (capabilities, queue) = gpu(&instance, 7).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "metal_occlusion_timestamps_count_the_prepass_with_and_without_a_contribution",
+                &instance,
+            ) else {
+                return;
+            };
+            let (capabilities, queue) = gpu(&test_gpu, 7).await;
             let mut direct = culled_host(
                 &capabilities,
                 &queue,
@@ -648,7 +675,13 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (capabilities, queue) = gpu(&instance, 7).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "occlusion_keeps_a_blended_contribution_on_top",
+                &instance,
+            ) else {
+                return;
+            };
+            let (capabilities, queue) = gpu(&test_gpu, 7).await;
             let mut hosts = Vec::new();
             for mode in [CullMode::Direct, CullMode::Occlusion] {
                 hosts
@@ -686,8 +719,14 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (first, queue) = gpu(&instance, 7).await;
-            let (second, new_queue) = gpu(&instance, 8).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "culling_counts_never_hold_render_slots_or_cross_a_replacement",
+                &instance,
+            ) else {
+                return;
+            };
+            let (first, queue) = gpu(&test_gpu, 7).await;
+            let (second, new_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
             let mut host =
                 culled_host(&first, &queue, Policy::default(), CullMode::Frustum, false).await;
             // A mapping callback that never arrives leaves frames retiring
@@ -770,7 +809,13 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (capabilities, queue) = gpu(&instance, 7).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot",
+                &instance,
+            ) else {
+                return;
+            };
+            let (capabilities, queue) = gpu(&test_gpu, 7).await;
             let mut host = culled_host(
                 &capabilities,
                 &queue,
@@ -865,7 +910,13 @@ mod metal {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let (capabilities, queue) = gpu(&instance, 7).await;
+            let Some(test_gpu) = thrum_test_support::gpu_on(
+                "metal_frame_timestamps_survive_an_empty_instance_set",
+                &instance,
+            ) else {
+                return;
+            };
+            let (capabilities, queue) = gpu(&test_gpu, 7).await;
             let mut host = host(
                 &capabilities,
                 &queue,
@@ -954,7 +1005,13 @@ fn packed_pixels(
 fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbacks() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbacks",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&first, &queue, Policy::default()).await;
         let mut cooked = host
             .visual_prepare_inputs()
@@ -991,7 +1048,7 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
             .apply_render_columns(host.extractor.frame(), &mut host.changed_slots);
         let world = host.world.source();
         first.device().destroy();
-        let (replacement, new_queue) = gpu(&instance, 8).await;
+        let (replacement, new_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&replacement, &new_queue, Some(surface()))
             .await
@@ -1125,10 +1182,16 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
 fn gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losing_inputs() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 11).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losing_inputs",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 11).await;
         let mut a = host(&first, &queue, Policy::default()).await;
         let mut b = host(&first, &queue, Policy::default()).await;
-        let (second, next_queue) = gpu(&instance, 12).await;
+        let (second, next_queue) = gpu(&test_gpu.fresh_adapter(), 12).await;
         assert!(
             a.device_prepare_inputs()
                 .expect("inputs")
@@ -1197,7 +1260,7 @@ fn gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losin
             .await
             .expect("selected visual");
         assert!(a.publish_visual(&mut selected).expect("select cooked view"));
-        let (third, last_queue) = gpu(&instance, 13).await;
+        let (third, last_queue) = gpu(&test_gpu.fresh_adapter(), 13).await;
         let mut rebuilt = a
             .device_prepare_inputs()
             .expect("selected inputs")
@@ -1213,7 +1276,7 @@ fn gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losin
             0.0625_f32.to_bits()
         );
         assert!(a.source.last_override.get());
-        let (fourth, final_queue) = gpu(&instance, 14).await;
+        let (fourth, final_queue) = gpu(&test_gpu.fresh_adapter(), 14).await;
         let mut obsolete = a
             .device_prepare_inputs()
             .expect("old selected inputs")
@@ -1259,7 +1322,13 @@ fn finish_capture<W: FrameWorld, V: SceneSource<W::Page>>(
 fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "gpu_pending_capture_is_caller_owned_and_retired_with_its_generation",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&first, &queue, Policy::default()).await;
         let mut early = host.begin_capture().expect("first capture");
         let mut late = host.begin_capture().expect("second capture");
@@ -1296,7 +1365,7 @@ fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
         let mut stale = host.begin_capture().expect("old generation capture");
         let inputs = host.device_prepare_inputs().expect("detached inputs");
         first.device().destroy();
-        let (replacement, new_queue) = gpu(&instance, 8).await;
+        let (replacement, new_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&replacement, &new_queue, Some(surface()))
             .await
@@ -1322,8 +1391,20 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let other_instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, first_queue) = gpu(&recorder_instance, 7).await;
-        let (second, second_queue) = gpu(&other_instance, 7).await;
+        let Some(recorder_gpu) = thrum_test_support::gpu_on(
+            "gpu_pending_capture_is_refused_by_another_device_with_the_same_generation",
+            &recorder_instance,
+        ) else {
+            return;
+        };
+        let (first, first_queue) = gpu(&recorder_gpu, 7).await;
+        let Some(other_gpu) = thrum_test_support::gpu_on(
+            "gpu_pending_capture_is_refused_by_another_device_with_the_same_generation",
+            &other_instance,
+        ) else {
+            return;
+        };
+        let (second, second_queue) = gpu(&other_gpu, 7).await;
         let mut recorder = host(&first, &first_queue, Policy::default()).await;
         let mut other = host(&second, &second_queue, Policy::default()).await;
         let mut pending = recorder.begin_capture().expect("capture");
@@ -1401,7 +1482,13 @@ impl crate::contribution::SceneContribution for RecoveryContribution {
 fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "a_refused_contribution_keeps_the_prepared_replacement_usable",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host =
             culled_host(&first, &queue, Policy::default(), CullMode::Direct, false).await;
         let passes = crate::contribution::ContributionPasses {
@@ -1416,7 +1503,7 @@ fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
         let before = host.capture_pixels().expect("initial pixels");
         let inputs = host.device_prepare_inputs().expect("retained inputs");
         first.device().destroy();
-        let (second, next_queue) = gpu(&instance, 8).await;
+        let (second, next_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&second, &next_queue, Some(surface()))
             .await

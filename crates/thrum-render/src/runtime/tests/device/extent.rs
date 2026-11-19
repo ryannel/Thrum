@@ -44,7 +44,13 @@ fn verify(host: &mut Host, extent: [u32; 2]) {
 fn coupled_extent_changes_real_targets_projection_and_history_atomically() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "coupled_extent_changes_real_targets_projection_and_history_atomically",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let device = host.device.clone();
         let world = host.world.source();
@@ -122,9 +128,15 @@ fn coupled_extent_changes_real_targets_projection_and_history_atomically() {
 fn detached_device_refits_scene_and_presenter_and_refreshes_current_camera() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "detached_device_refits_scene_and_presenter_and_refreshes_current_camera",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&first, &queue, Policy::default()).await;
-        let (second, queue) = gpu(&instance, 8).await;
+        let (second, queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")

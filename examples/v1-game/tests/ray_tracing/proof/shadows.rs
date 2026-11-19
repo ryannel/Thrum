@@ -91,7 +91,9 @@ fn frame(
 }
 
 pub(crate) fn prove_sun_out() {
-    let metal = Metal::new(1);
+    let Some(metal) = Metal::new(1) else {
+        return;
+    };
     let store = valley_store("sun-out");
     let drawable = surface(&metal.device, EXTENT);
     let surface = SurfaceOutput {
@@ -150,7 +152,9 @@ pub(crate) fn prove_sun_out() {
 }
 
 pub(crate) fn measure_shadows() {
-    let metal = Metal::new(1);
+    let Some(metal) = Metal::new(1) else {
+        return;
+    };
     let store = valley_store("shadows-cost");
     let extent = [1280, 720];
     let drawable = surface(&metal.device, extent);

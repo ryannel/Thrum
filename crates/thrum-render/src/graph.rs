@@ -2162,5 +2162,4 @@ mod tests {
 }
 
 #[cfg(test)]
-#[path = "graph/storage_tests.rs"]
 mod storage_tests;

@@ -15,7 +15,9 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
         SunShadowMethod, SyntheticMesh, SyntheticMeshChoice, SyntheticMeshes, SyntheticVertex,
     };
 
-    let gpu = support::gate("direct Sun ray answers");
+    let Some(gpu) = support::gate("direct Sun ray answers") else {
+        return;
+    };
     let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
     for (degrees, x, distance) in [
         (1.0_f32, 0.0, 8.0),

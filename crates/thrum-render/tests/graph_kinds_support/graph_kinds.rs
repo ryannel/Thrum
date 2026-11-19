@@ -1,9 +1,7 @@
-//! EFFECT-GRAPH M1: real Metal texture-kind and preparation validation witnesses.
-#![cfg(target_os = "macos")]
-#[path = "graph_kinds_support/support.rs"]
-mod graph_kinds_support;
-use graph_kinds_support::{access, descriptor, device, pass};
+//! Graph texture validation and Metal texture roundtrips.
+mod support;
 use std::collections::BTreeSet;
+use support::{access, descriptor, pass};
 use thrum_render::graph::{
     AccessKind as A, FrameGraph, GraphError as E, ResourceDescriptor, ResourceScope as S,
     TextureKind as K,
@@ -127,7 +125,6 @@ fn refuses_storage_binding_spanning_mips() {
 
 #[test]
 fn successive_mip_views_share_one_storage_binding_slot() {
-    let (_, _, caps) = device(3);
     let mut graph = FrameGraph::default();
     let resource = graph
         .resource(descriptor(K::D2, 4), S::Transient)
@@ -140,8 +137,11 @@ fn successive_mip_views_share_one_storage_binding_slot() {
         "read complete array",
         vec![access(&resource, 0..9, A::SampledRead)],
     ));
+    graph
+        .validate_texture_support(&wgpu::Limits::default(), wgpu::Features::empty())
+        .expect("portable storage support");
     let compiled = graph
-        .compile_with_capabilities(&caps, &BTreeSet::new())
+        .compile(3, &BTreeSet::new())
         .expect("one storage binding reused across successive mip dispatches");
     assert_eq!(compiled.pass_order, [0, 1]);
     assert_eq!(compiled.transient_slots, 1);
@@ -189,7 +189,8 @@ fn transient_reuse_requires_identical_dimension() {
 
 #[test]
 fn capability_record_refuses_storage_access_counts_and_extents() {
-    let (_, _, caps) = device(1);
+    let limits = wgpu::Limits::default();
+    let features = wgpu::Features::empty();
     for (format, kind) in [
         (wgpu::TextureFormat::Rgba8UnormSrgb, A::StorageWrite),
         (wgpu::TextureFormat::Rgba32Float, A::StorageReadWrite),
@@ -208,14 +209,14 @@ fn capability_record_refuses_storage_access_counts_and_extents() {
         ));
         assert_eq!(
             graph
-                .compile_with_capabilities(&caps, &BTreeSet::new())
+                .validate_texture_support(&limits, features)
                 .expect_err("invalid declaration must be refused"),
             E::StorageFormat { pass: 0 }
         );
     }
     let mut graph = FrameGraph::default();
     let mut accesses = Vec::new();
-    for _ in 0..=caps.limits().max_storage_textures_per_shader_stage {
+    for _ in 0..=limits.max_storage_textures_per_shader_stage {
         let resource = graph
             .resource(descriptor(K::D3 { depth: 4 }, 4), S::Transient)
             .expect("valid graph-kind fixture");
@@ -224,23 +225,23 @@ fn capability_record_refuses_storage_access_counts_and_extents() {
     graph.pass(pass("too many bindings", accesses));
     assert_eq!(
         graph
-            .compile_with_capabilities(&caps, &BTreeSet::new())
+            .validate_texture_support(&limits, features)
             .expect_err("invalid declaration must be refused"),
         E::StorageTextureLimit { pass: 0 }
     );
     for kind in [K::D2, K::Cube, K::D3 { depth: 4 }] {
         let mut graph = FrameGraph::default();
         let limit = if matches!(kind, K::D3 { .. }) {
-            caps.limits().max_texture_dimension_3d
+            limits.max_texture_dimension_3d
         } else {
-            caps.limits().max_texture_dimension_2d
+            limits.max_texture_dimension_2d
         };
         graph
             .resource(descriptor(kind, limit + 1), S::Transient)
             .expect("valid graph-kind fixture");
         assert_eq!(
             graph
-                .compile_with_capabilities(&caps, &BTreeSet::new())
+                .validate_texture_support(&limits, features)
                 .expect_err("invalid declaration must be refused"),
             E::TextureExtentLimit
         );
@@ -250,7 +251,7 @@ fn capability_record_refuses_storage_access_counts_and_extents() {
         .resource(
             descriptor(
                 K::D3 {
-                    depth: caps.limits().max_texture_dimension_3d + 1,
+                    depth: limits.max_texture_dimension_3d + 1,
                 },
                 4,
             ),
@@ -259,7 +260,7 @@ fn capability_record_refuses_storage_access_counts_and_extents() {
         .expect("valid graph-kind fixture");
     assert_eq!(
         graph
-            .compile_with_capabilities(&caps, &BTreeSet::new())
+            .validate_texture_support(&limits, features)
             .expect_err("invalid declaration must be refused"),
         E::TextureExtentLimit
     );
@@ -267,10 +268,22 @@ fn capability_record_refuses_storage_access_counts_and_extents() {
 
 #[test]
 fn metal_every_texel_every_mip_all_scopes_resize_and_replacement() {
-    graph_kinds_support::prove_kinds();
+    let Some(gpu) = thrum_test_support::gpu(
+        "metal_every_texel_every_mip_all_scopes_resize_and_replacement",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    support::prove_kinds(&gpu);
 }
 
 #[test]
 fn existing_scene_variants_keep_compiled_order_storage_and_slots() {
-    graph_kinds_support::prove_scenes();
+    let Some(gpu) = thrum_test_support::gpu(
+        "existing_scene_variants_keep_compiled_order_storage_and_slots",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    support::prove_scenes(&gpu);
 }

@@ -50,6 +50,12 @@ unsafe impl GlobalAlloc for AllocationObserver {
 
 #[test]
 fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass",
+        None,
+    ) else {
+        return;
+    };
     let mut disabled = None;
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
@@ -67,7 +73,7 @@ fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass(
     COUNTING.with(|active| active.set(false));
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
     pollster::block_on(async {
-        let (host, _, _) = Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (host, _) = Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         let off = host.prepared.graph(&host.slots[0].target, false).unwrap();
         let on = host.prepared.graph(&host.slots[0].target, true).unwrap();
         assert!(
@@ -83,14 +89,10 @@ fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass(
 }
 
 async fn host_and_output(
+    test_gpu: &thrum_test_support::Gpu,
     format: wgpu::TextureFormat,
-) -> (
-    FrameHost<StaticWorld, StaticScene>,
-    wgpu::Texture,
-    wgpu::Instance,
-) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let (capabilities, queue) = device::gpu(&instance, 7).await;
+) -> (FrameHost<StaticWorld, StaticScene>, wgpu::Texture) {
+    let (capabilities, queue) = device::gpu(test_gpu, 7).await;
     let extent = [65, 37];
     let source = SourceTick {
         epoch: 2,
@@ -128,7 +130,7 @@ async fn host_and_output(
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
         view_formats: &[],
     });
-    (host, output, instance)
+    (host, output)
 }
 
 fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture) -> FrameSample {
@@ -170,12 +172,18 @@ fn image(host: &mut FrameHost<StaticWorld, StaticScene>) -> super::super::Submit
 
 #[test]
 fn submitted_tap_matches_the_actual_odd_width_surface_and_preserves_history() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_tap_matches_the_actual_odd_width_surface_and_preserves_history",
+        None,
+    ) else {
+        return;
+    };
     for format in [
         wgpu::TextureFormat::Rgba8Unorm,
         wgpu::TextureFormat::Bgra8Unorm,
     ] {
         pollster::block_on(async {
-            let (mut host, output, _instance) = Box::pin(host_and_output(format)).await;
+            let (mut host, output) = Box::pin(host_and_output(&test_gpu, format)).await;
             host.enable_submitted_capture(42).unwrap();
             #[cfg(feature = "creation-counters")]
             {
@@ -273,9 +281,15 @@ fn submitted_tap_matches_the_actual_odd_width_surface_and_preserves_history() {
 
 #[test]
 fn saturated_cpu_and_gpu_leases_do_not_stop_ordinary_submissions() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "saturated_cpu_and_gpu_leases_do_not_stop_ordinary_submissions",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (mut host, output, _instance) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         host.enable_submitted_capture(1).unwrap();
         let mut held = Vec::new();
         for _ in 0..8 {
@@ -315,9 +329,15 @@ fn saturated_cpu_and_gpu_leases_do_not_stop_ordinary_submissions() {
 
 #[test]
 fn pending_capture_device_loss_is_rejected_without_polling_the_lost_queue() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "pending_capture_device_loss_is_rejected_without_polling_the_lost_queue",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (mut host, output, instance) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         host.enable_submitted_capture(1).unwrap();
         let view = output.create_view(&wgpu::TextureViewDescriptor::default());
         assert!(
@@ -333,7 +353,7 @@ fn pending_capture_device_loss_is_rejected_without_polling_the_lost_queue() {
         );
         host.device.destroy();
         let inputs = host.device_prepare_inputs().unwrap();
-        let (capabilities, queue) = device::gpu(&instance, 8).await;
+        let (capabilities, queue) = device::gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut replacement = inputs
             .prepare(
                 &capabilities,
@@ -382,9 +402,15 @@ fn pending_capture_device_loss_is_rejected_without_polling_the_lost_queue() {
 
 #[test]
 fn abandoned_unsubmitted_capture_releases_its_slot_without_lost_queue_work() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "abandoned_unsubmitted_capture_releases_its_slot_without_lost_queue_work",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (mut host, output, _) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         host.enable_submitted_capture(1).unwrap();
         let before = super::super::tokens::staging_flush::attempts();
         let encoded = host
@@ -403,9 +429,15 @@ fn abandoned_unsubmitted_capture_releases_its_slot_without_lost_queue_work() {
 
 #[test]
 fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (mut host, output, _) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         assert!(
             host.enable_submitted_capture_with_limits(
                 1,
@@ -455,9 +487,15 @@ fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize(
 
 #[test]
 fn stopping_admission_drains_in_submission_order_while_rendering_continues() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "stopping_admission_drains_in_submission_order_while_rendering_continues",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (mut host, output, _instance) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         host.enable_submitted_capture(71).unwrap();
         let first = submit(&mut host, &output).submission_order;
         submit(&mut host, &output);
@@ -481,10 +519,16 @@ fn stopping_admission_drains_in_submission_order_while_rendering_continues() {
 
 #[test]
 fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr",
+        None,
+    ) else {
+        return;
+    };
     use crate::synthetic::CaptureSource;
     pollster::block_on(async {
-        let (mut host, output, _instance) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         host.enable_submitted_capture(1).unwrap();
         submit(&mut host, &output);
         let baseline = image(&mut host);
@@ -531,10 +575,16 @@ fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
 
 #[test]
 fn linear_capture_allowance_is_validated_before_target_replacement() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "linear_capture_allowance_is_validated_before_target_replacement",
+        None,
+    ) else {
+        return;
+    };
     use crate::synthetic::CaptureSource;
     pollster::block_on(async {
-        let (mut host, _output, _instance) =
-            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let (mut host, _output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         let limits = crate::runtime::CaptureLimits {
             staging_slots: 1,
             cpu_buffers: 1,

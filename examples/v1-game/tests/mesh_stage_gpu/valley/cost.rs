@@ -99,6 +99,9 @@ fn matrix(bytes: &[u8]) -> Mat4 {
 #[test]
 #[ignore = "measure via scripts/mesh_stage_cost.py"]
 fn route_cost() {
+    let Some(test_gpu) = thrum_test_support::gpu("route_cost", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let width = std::env::var("THRUM_MESH_COST_WIDTH")
         .expect("width")
         .parse()
@@ -111,7 +114,7 @@ fn route_cost() {
         MeshStages
     };
     // Keep both timing arms on the same hardware generation profile.
-    let gpu = Gpu::new(true, "apple-tile", |_| {});
+    let gpu = Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let extent = [width, width * 9 / 16];
     let mut valley = Valley::new(&gpu, path, true, extent, 12.0, SunProbe::None);
     let route = valley.install_route(12.0);

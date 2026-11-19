@@ -54,10 +54,10 @@ pub(crate) fn with_cooked_island(name: &str, test: impl FnOnce()) {
     assert!(status.success(), "{name}: {status}");
 }
 
-pub(crate) fn fixture(draw_water: bool) -> (Fixture, SharedMap) {
+pub(crate) fn fixture(gpu: &thrum_test_support::Gpu, draw_water: bool) -> (Fixture, SharedMap) {
     let (game, report, map) =
         water_scene::island::build(Wind::Calm, draw_water).expect("island game");
-    let mut fixture = Fixture::from_game(EXTENT, game, report);
+    let mut fixture = Fixture::from_game(gpu, EXTENT, game, report);
     fixture.parameters(r#"{"camera.island":4}"#);
     fixture.warm_cooked();
     (fixture, map)

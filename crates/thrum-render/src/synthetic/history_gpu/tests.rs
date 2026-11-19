@@ -114,15 +114,14 @@ fn submitted_motion_x_at_alpha(
 #[test]
 fn metal_motion_history_uses_interpolated_display_samples() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter required for interpolation regression");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("Metal device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_motion_history_uses_interpolated_display_samples",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let mut scene = SyntheticScene::grid(1).expect("one instance");
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await
@@ -164,15 +163,14 @@ fn metal_motion_history_uses_interpolated_display_samples() {
 #[test]
 fn metal_motion_history_follows_submitted_frames_and_resets() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter required for motion history regression");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("Metal device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_motion_history_follows_submitted_frames_and_resets",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let mut scene = SyntheticScene::grid(1).expect("one instance");
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await

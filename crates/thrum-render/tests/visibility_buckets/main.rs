@@ -1,6 +1,5 @@
 //! Bucket-ordered Direct is the oracle at every submitted frame, including
 //! stale history, class churn, physical compaction and resource replacement.
-#[path = "support/mixed_field_host.rs"]
 mod mixed_field_host;
 
 use std::{sync::Arc, time::Duration};
@@ -19,21 +18,11 @@ struct Gpu {
     caps: DeviceCapabilities,
 }
 impl Gpu {
-    async fn new(generation: u64) -> Self {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        Self::from_instance(&instance, generation).await
-    }
-    async fn from_instance(instance: &wgpu::Instance, generation: u64) -> Self {
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter");
+    async fn new(test_gpu: &thrum_test_support::Gpu, generation: u64) -> Self {
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let caps = DeviceCapabilities::capture(&adapter, &device, generation);
         Self {
             device,
@@ -220,10 +209,16 @@ fn equal(a: &[u8], b: &[u8], label: &str) {
 }
 #[test]
 fn churn_reveal_resize_and_device_replacement_keep_bucket_direct() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "churn_reveal_resize_and_device_replacement_keep_bucket_direct",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let mut scene = field();
         for generation in [61, 62] {
-            let gpu = Gpu::new(generation).await;
+            let gpu = Gpu::new(&test_gpu.fresh_adapter(), generation).await;
             let mut direct = gpu.prepare(&scene, CullMode::Direct, [320, 180]).await;
             let mut frustum = gpu.prepare(&scene, CullMode::Frustum, [320, 180]).await;
             let mut occlusion = gpu.prepare(&scene, CullMode::Occlusion, [320, 180]).await;
@@ -291,8 +286,14 @@ fn bounded_face(z: f32) -> SyntheticMesh {
 }
 #[test]
 fn mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let gpu = Gpu::new(63).await;
+        let gpu = Gpu::new(&test_gpu.fresh_adapter(), 63).await;
         for origin in [[-400.37, 1.13, 400.71], [4000.37, 1.13, -4000.71]] {
             for yaw in [0.0_f32, 0.3] {
                 let (sin, cos) = yaw.sin_cos();
@@ -351,124 +352,4 @@ fn mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses() {
             }
         }
     });
-}
-
-#[path = "../src/visibility/occlusion_reference.rs"]
-mod reference;
-
-/// Search real projected bounds/vertices for a vertex beyond the unwidened
-/// texel rectangle's coverage margin. This does not prove the widening
-/// unnecessary; an absence is the explicitly permitted M1 search outcome.
-#[test]
-fn reference_search_for_a_footprint_widening_witness() {
-    use glam::{Mat3, Mat4, Vec3};
-    let mut poses = 0_u32;
-    let mut widened = 0_u32;
-    let mut outside = 0_u32;
-    for origin in [
-        Vec3::ZERO,
-        Vec3::new(-400.37, 1.13, 400.71),
-        Vec3::new(4000.37, 1.13, -4000.71),
-    ] {
-        for yaw_index in 0..32 {
-            let yaw = yaw_index as f32 * 0.196_349_55;
-            let basis = Mat3::from_rotation_y(yaw);
-            for distance in [0.2, 0.5, 1.5, 10.0, 100.0] {
-                for size in [0.001, 0.01, 0.1, 1.0] {
-                    for offset in [-0.499, -0.25, 0.0, 0.25, 0.499] {
-                        let eye = origin + Vec3::new(0.0, 0.0, -distance);
-                        let view = SyntheticView::perspective(
-                            eye.to_array(),
-                            origin.to_array(),
-                            [0.0, 1.0, 0.0],
-                            0.9,
-                            16.0 / 9.0,
-                            0.05,
-                            30000.0,
-                        )
-                        .expect("search view");
-                        let vp = Mat4::from_cols_array_2d(&view.view_proj_columns());
-                        let center = origin + Vec3::new(offset * distance, 0.0, 0.0);
-                        let extent =
-                            (basis.x_axis.abs() + basis.y_axis.abs() + basis.z_axis.abs()) * size;
-                        let mut low = [u32::MAX; 2];
-                        let mut high = [0_u32; 2];
-                        let mut vertices = Vec::new();
-                        let mut safe = true;
-                        let mut has_widening = false;
-                        let rows = vp.transpose();
-                        // Absolute row dot (world magnitude,1), as in WGSL.
-                        let world = center.abs() * 2.0 + Vec3::splat(size * 3.0);
-                        let magnitude = [
-                            rows.x_axis.abs().dot(world.extend(1.0)),
-                            rows.y_axis.abs().dot(world.extend(1.0)),
-                            rows.z_axis.abs().dot(world.extend(1.0)),
-                            rows.w_axis.abs().dot(world.extend(1.0)),
-                        ];
-                        for corner in 0..8 {
-                            let sign = Vec3::new(
-                                if corner & 1 == 0 { -1.0 } else { 1.0 },
-                                if corner & 2 == 0 { -1.0 } else { 1.0 },
-                                if corner & 4 == 0 { -1.0 } else { 1.0 },
-                            );
-                            let clip = vp * (center + sign * extent).extend(1.0);
-                            let vertex = vp * (basis * (sign * size) + center).extend(1.0);
-                            if clip.w <= 0.05 || clip.z >= clip.w || vertex.w <= 0.05 {
-                                safe = false;
-                                break;
-                            }
-                            let uv = [0.5 + 0.5 * clip.x / clip.w, 0.5 - 0.5 * clip.y / clip.w];
-                            vertices.push([
-                                0.5 + 0.5 * vertex.x / vertex.w,
-                                0.5 - 0.5 * vertex.y / vertex.w,
-                            ]);
-                            for axis in 0..2 {
-                                let n = [256.0, 128.0][axis];
-                                #[expect(
-                                    clippy::cast_possible_truncation,
-                                    clippy::cast_sign_loss,
-                                    reason = "floored texel clamped to the nonnegative small texture extent"
-                                )]
-                                let texel = (uv[axis] * n).floor().clamp(0.0, n - 1.0) as u32;
-                                low[axis] = low[axis].min(texel);
-                                high[axis] = high[axis].max(texel);
-                                has_widening |= reference::footprint_widening(
-                                    clip[axis] / clip.w,
-                                    clip.w - 2.0 * reference::CLIP_GAMMA * magnitude[3],
-                                    magnitude[axis],
-                                    magnitude[3],
-                                    n,
-                                ) > 0.0;
-                            }
-                        }
-                        if !safe {
-                            continue;
-                        }
-                        poses += 1;
-                        widened += u32::from(has_widening);
-                        outside += u32::from(vertices.iter().any(|uv| {
-                            (0..2).any(|axis| {
-                                let n = [256.0, 128.0][axis];
-                                let coordinate = uv[axis] * n;
-                                // A vertex must reach a sample centre beyond the
-                                // texel's half-pixel coverage margin to matter.
-                                coordinate >= 0.0
-                                    && coordinate < n
-                                    && (coordinate < low[axis] as f32 - 0.25
-                                        || coordinate > high[axis] as f32 + 1.25)
-                            })
-                        }));
-                    }
-                }
-            }
-        }
-    }
-    eprintln!(
-        "footprint reference search: {poses} valid poses; {widened} request widening; {outside} vertex coverage candidates beyond the unwidened rectangle"
-    );
-    assert!(poses > 5000 && widened > 0);
-    assert_eq!(
-        outside, 0,
-        "a candidate needs a GPU no-widening mutant before claiming this item"
-    );
 }

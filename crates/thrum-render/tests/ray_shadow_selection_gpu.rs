@@ -11,7 +11,9 @@ fn shadow_fallback_keeps_the_map_frame() {
     use thrum_render::capabilities::RayStructureSelection as Reason;
     use thrum_render::synthetic::{ShadowSelection, SunShadowMethod, SyntheticScene};
 
-    let gpu = support::gate("shadow selection");
+    let Some(gpu) = support::gate("shadow selection") else {
+        return;
+    };
     let (device, queue, caps) = support::device(&gpu, "", 1);
     let (ray_device, ray_queue, ray_caps) = support::device(&gpu, "ray-query", 2);
     let portable = ray_caps

@@ -15,6 +15,12 @@ use water_scene::island::Wind;
 
 #[test]
 fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let demo = WakeDemo {
         body_capacity: Some(1),
         ..WakeDemo::default()
@@ -42,7 +48,7 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
                 }
             });
         }
-        let mut host = support::Fixture::from_game([96, 64], scene.game, scene.report);
+        let mut host = support::Fixture::from_game(&test_gpu, [96, 64], scene.game, scene.report);
         for tick in 0..=if disabled { 720 } else { 1800 } {
             host.frame_without_timings(f64::from(tick) * 0.016_666_667);
         }
@@ -249,6 +255,12 @@ fn calm_spectrum() -> Spectrum {
 
 #[test]
 fn float_twenty_metres_off_track_responds_to_the_public_query() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "float_twenty_metres_off_track_responds_to_the_public_query",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let scene = build_wake(
         Wind::Calm,
         false,
@@ -272,7 +284,7 @@ fn float_twenty_metres_off_track_responds_to_the_public_query() {
             ));
         }
     });
-    let mut host = support::Fixture::from_game([96, 64], scene.game, scene.report);
+    let mut host = support::Fixture::from_game(&test_gpu, [96, 64], scene.game, scene.report);
     for tick in 0..=1_800 {
         if tick == 450 {
             host.parameters(r#"{"craft.speed":0}"#);
@@ -300,6 +312,12 @@ fn float_twenty_metres_off_track_responds_to_the_public_query() {
 
 #[test]
 fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "the_island_lake_wake_leaves_the_pond_and_sea_at_rest",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let map = water_scene::island::map(Wind::Calm).expect("same island as the crossing");
     let columns = [[192.0, 2.7], [104.0, 93.0], [364.0, 10.0]];
     for (point, body) in columns.into_iter().zip([1, 2, 0]) {
@@ -322,7 +340,7 @@ fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
     .expect("mapped wake contribution");
     let sources = water.interaction_mailbox().expect("wake sources");
     let queries = water.query_mailbox().expect("water query");
-    let mut fixture = support::Fixture::new([96, 64]);
+    let mut fixture = support::Fixture::new(&test_gpu, [96, 64]);
     fixture
         .host
         .set_scene_contribution(Box::new(water))

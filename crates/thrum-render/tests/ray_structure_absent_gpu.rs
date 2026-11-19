@@ -31,7 +31,9 @@ mod metal {
 
     #[test]
     fn no_demand_has_no_structure_and_does_not_change_pixels_or_usages() {
-        let gpu = support::gate("ray structure absence");
+        let Some(gpu) = support::gate("ray structure absence") else {
+            return;
+        };
         let (ordinary, ordinary_queue, ordinary_caps) = support::device(&gpu, "", 1);
         let (device, queue, caps) = support::device(&gpu, "ray-query", 2);
         let mut scene = SyntheticScene::grid(81).expect("scene");
@@ -147,7 +149,9 @@ mod metal {
 
     #[test]
     fn portable_request_falls_back_before_allocation_even_when_device_enabled_rays() {
-        let gpu = support::gate("portable ray structure fallback");
+        let Some(gpu) = support::gate("portable ray structure fallback") else {
+            return;
+        };
         let (ordinary, ordinary_queue, ordinary_caps) = support::device(&gpu, "", 1);
         let (device, queue, caps) = support::device(&gpu, "ray-query", 2);
         let ordinary_caps = ordinary_caps

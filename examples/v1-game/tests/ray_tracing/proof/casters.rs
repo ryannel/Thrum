@@ -20,7 +20,9 @@ const ENTITIES: [(usize, [f32; 3]); 2] = [(0, [0.0, 0.0, -3.0]), (2, [50_000.0, 
 const PLACEMENTS: [[f32; 3]; 3] = [[-1.0, 1.0, -4.0], [-50_000.0, 0.0, -3.0], [2.0, 0.0, -2.0]];
 
 pub(crate) fn prove_casters() {
-    let metal = Metal::new(1);
+    let Some(metal) = Metal::new(1) else {
+        return;
+    };
     let fixture = Fixture::new("caster-membership");
     let mut baseline = None;
     for sun_shadows in [false, true] {

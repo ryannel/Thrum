@@ -1,6 +1,5 @@
 //! Device request profiles and restrictions on Apple's Metal adapter.
 
-#[cfg(target_os = "macos")]
 #[test]
 fn native_portable_and_restricted_devices_on_metal() {
     use thrum_render::capabilities::{
@@ -8,12 +7,16 @@ fn native_portable_and_restricted_devices_on_metal() {
         FIRST_DEVICE_GENERATION, HardwareLaunchError,
     };
 
+    let Some(gpu) = thrum_test_support::gpu(
+        "native_portable_and_restricted_devices_on_metal",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let native = DeviceRecipe::default().open(&instance, None).await.unwrap();
+        // Exercise the shell entry point after the gate has admitted the target backend.
+        let instance = &gpu.instance;
+        let native = DeviceRecipe::default().open(instance, None).await.unwrap();
         let content = DeviceCapabilities::requested_content_features(&native.adapter);
         assert_eq!(native.capabilities.adapter().backend, wgpu::Backend::Metal);
         assert!(native.capabilities.features().contains(content));
@@ -36,7 +39,7 @@ fn native_portable_and_restricted_devices_on_metal() {
             profile: DeviceProfile::Portable,
             ..Default::default()
         };
-        let browser_request = portable.open(&instance, None).await.unwrap();
+        let browser_request = portable.open(instance, None).await.unwrap();
         assert_eq!(
             browser_request.capabilities.limits(),
             &wgpu::Limits::default()
@@ -58,7 +61,7 @@ fn native_portable_and_restricted_devices_on_metal() {
             }),
             ..portable
         }
-        .open(&instance, None)
+        .open(instance, None)
         .await
         .unwrap();
         assert_eq!(restricted.capabilities.limits(), &limits);
@@ -83,7 +86,7 @@ fn native_portable_and_restricted_devices_on_metal() {
                 restriction: Some(&restriction),
                 ..portable
             }
-            .open(&instance, None)
+            .open(instance, None)
             .await;
             assert!(matches!(
                 result,

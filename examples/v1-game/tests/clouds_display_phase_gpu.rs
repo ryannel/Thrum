@@ -23,11 +23,17 @@ fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 #[test]
 #[cfg(target_os = "macos")]
 fn ramp_mapping_uses_predicted_ticks_and_repeated_ticks_write_no_products() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "ramp_mapping_uses_predicted_ticks_and_repeated_ticks_write_no_products",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     use thrum_cloud_model::{Parameters, State};
     use thrum_clouds::{SunPath, WeatherMap};
     use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
     pollster::block_on(async {
-        let (_, device, queue, _) = support::device("portable", false).await;
+        let (_, device, queue, _) = support::device(&test_gpu, "portable", false);
         let site = DeviceSite::untracked(device.clone());
         let config = v1_game::clouds::shade_config();
         let mut weather = WeatherMap::new(
@@ -215,8 +221,14 @@ fn mapping(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Buffer) ->
 #[test]
 #[cfg(target_os = "macos")]
 fn submitted_mapping_moves_at_display_time_without_product_writes() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_mapping_moves_at_display_time_without_product_writes",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", true).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
         let surface = v1_game::SurfaceOutput {
             view: &view,

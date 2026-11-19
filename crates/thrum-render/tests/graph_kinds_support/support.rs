@@ -1,11 +1,15 @@
+#![allow(
+    dead_code,
+    reason = "graph kinds and effect state use different parts of this fixture"
+)]
+
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::graph::{
     Access, AccessKind, Pass, PassScope, ResourceDescriptor, ResourceId, TextureKind,
 };
-#[path = "gpu.rs"]
 mod gpu;
-#[path = "scenes.rs"]
 mod scenes;
+#[allow(unused_imports, reason = "only graph_kinds runs the texture roundtrip")]
 pub(crate) use gpu::prove_kinds;
 pub(crate) use scenes::prove_scenes;
 
@@ -49,21 +53,18 @@ pub(crate) fn pass(name: &str, accesses: Vec<Access>) -> Pass {
         external_side_effect: true,
     }
 }
-pub(crate) fn device(generation: u64) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("M1 requires Metal");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("Metal device");
-        let caps = DeviceCapabilities::capture(&adapter, &device, generation);
-        (device, queue, caps)
-    })
+pub(crate) fn device(
+    gpu: &thrum_test_support::Gpu,
+    generation: u64,
+) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
+    gpu.device_with_hardware(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        },
+        generation,
+        &[],
+    )
+    .expect("admitted graph test device")
 }

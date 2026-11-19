@@ -10,17 +10,15 @@ use thrum_render::{
 #[test]
 fn capability_record_selects_the_prepared_path() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("capability_record_selects_the_prepared_path", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let known = DeviceCapabilities::capture(&adapter, &device, 1);
         let masked = known.clone().without_indirect_execution();
         let unknown = DeviceCapabilities::capture_device(&device, 1);

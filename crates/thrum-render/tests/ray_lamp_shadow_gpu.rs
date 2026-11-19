@@ -46,7 +46,9 @@ mod metal {
 
     #[test]
     fn direct_lamps_obey_distance_overlap_and_quality() {
-        let gpu = support::gate("lamp visibility");
+        let Some(gpu) = support::gate("lamp visibility") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let source = Vec3::new(0.0, 1.0, 2.0);
         let half = Vec3::new(0.65, 0.65, 0.09);
@@ -100,7 +102,9 @@ mod metal {
 
     #[test]
     fn wall_outside_camera_and_sun_volumes_still_casts() {
-        let gpu = support::gate("off-screen lamp caster");
+        let Some(gpu) = support::gate("off-screen lamp caster") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         // See the receiver at the edge of the camera-centred height map.
         // The wall and the lamp are just past that edge, within a local light's reach.
@@ -174,7 +178,9 @@ mod metal {
 
     #[test]
     fn mirrored_receiver_keeps_its_exposed_lamp_light() {
-        let gpu = support::gate("mirrored lamp receiver");
+        let Some(gpu) = support::gate("mirrored lamp receiver") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let mut scene = fixture::scene(Vec3::ZERO, &[]);
         scene.local_lights = vec![lamp(Vec3::new(0.4, 1.0, -0.3), 4.0, [500.0; 3])];

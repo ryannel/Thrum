@@ -8,8 +8,8 @@ use wgpu::util::DeviceExt;
 /// Admit the Metal adapter used by the proof.
 /// # Panics
 /// The proof cannot run without its target adapter.
-pub fn gate(test: &str) -> Gpu {
-    thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)).expect("proof requires Metal")
+pub fn gate(test: &str) -> Option<Gpu> {
+    thrum_test_support::gpu(test, Some(wgpu::Backend::Metal))
 }
 
 /// Open a named Metal device and select the Apple tile recipe.

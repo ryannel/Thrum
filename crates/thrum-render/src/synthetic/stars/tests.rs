@@ -11,8 +11,14 @@ use crate::timing::GpuTimings;
 
 #[test]
 fn opaque_depth_store_and_star_pass_follow_the_current_target_view() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "opaque_depth_store_and_star_pass_follow_the_current_target_view",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, capabilities) = metal().await;
+        let (device, queue, capabilities) = metal(&test_gpu).await;
         let lighting = FrameLighting::Atmosphere(
             AtmosphereFrame::new([0.0, -1.0, 0.0], 127_500.0, [1.0; 3], 2.0, 1)
                 .expect("Earth atmosphere"),
@@ -137,8 +143,14 @@ fn opaque_depth_store_and_star_pass_follow_the_current_target_view() {
 
 #[test]
 fn bright_incident_view_drops_the_star_pass_until_exposure_or_light_changes() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "bright_incident_view_drops_the_star_pass_until_exposure_or_light_changes",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, capabilities) = metal().await;
+        let (device, queue, capabilities) = metal(&test_gpu).await;
         let atmosphere = |direction, lux| {
             FrameLighting::Atmosphere(
                 AtmosphereFrame::new(direction, lux, [1.0; 3], 245.0, 1).expect("Earth atmosphere"),
@@ -222,23 +234,12 @@ fn wait(device: &wgpu::Device, submission: wgpu::SubmissionIndex) {
         .expect("submitted graph completes");
 }
 
-async fn metal() -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
+async fn metal(
+    test_gpu: &thrum_test_support::Gpu,
+) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     crate::timestamp_permit::hold();
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("Metal adapter required for the star graph regression");
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter),
-            ..wgpu::DeviceDescriptor::default()
-        })
-        .await
-        .expect("Metal device");
+    let adapter = test_gpu.adapter.clone();
+    let (device, queue) = crate::test_device::portable(test_gpu, None).await;
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
     (device, queue, capabilities)
 }
@@ -287,8 +288,14 @@ fn assert_variant(target: &OffscreenTarget, stars: bool) {
 
 #[test]
 fn above_horizon_control_separates_daylight_from_night() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "above_horizon_control_separates_daylight_from_night",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, capabilities) = metal().await;
+        let (device, queue, capabilities) = metal(&test_gpu).await;
         let mut scene = SyntheticScene::grid(1).expect("scene");
         // Brightness exceeds Sirius by a factor of two. The ray is well above
         // the horizon and its projection is centred on an unobstructed sky.

@@ -57,7 +57,7 @@ fn default_webgpu_limits_and_named_profile_refusals() {
             }),
             ..Default::default()
         }
-        .open(&gpu.instance, None),
+        .open_admitted(&gpu.instance, &gpu.adapter),
     )
     .expect("restricted Metal recipe");
     let error = thrum_sea::Ambient::new(opened.capabilities.site(), thrum_sea::Profile::default())

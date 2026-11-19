@@ -14,16 +14,16 @@ use std::fmt::Write as _;
 )]
 fn metal_h5_lent_reflection_direction_roughness_source_night_and_exposure() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_h5_lent_reflection_direction_roughness_source_night_and_exposure",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         let scene = SyntheticScene::grid(1).unwrap();
         let frame = AtmosphereFrame::new([1.0, 0.0, 0.0], 1.0, [1.0; 3], 2.0, 1).unwrap();

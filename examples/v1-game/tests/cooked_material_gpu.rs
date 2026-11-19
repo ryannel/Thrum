@@ -107,22 +107,26 @@ fn cooked(name: &str) -> (PathBuf, CookConfig) {
 }
 
 async fn gpu(
-    instance: &wgpu::Instance,
+    test_gpu: &thrum_test_support::Gpu,
     generation: u64,
     path: CookedDrawPath,
 ) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real adapter required for the in-game G6 proof");
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_content_features(&adapter)
-                | DeviceCapabilities::requested_timing_features(&adapter),
+    let adapter = test_gpu.adapter.clone();
+    let (device, queue) = {
+        let restriction = thrum_render::capabilities::DeviceRestriction {
+            limits: Some(wgpu::Limits::default()),
+            features: None,
             ..Default::default()
-        })
+        };
+        let opened = thrum_render::capabilities::DeviceRecipe {
+            restriction: Some(&restriction),
+            ..Default::default()
+        }
+        .open_admitted(&test_gpu.instance, &test_gpu.adapter)
         .await
-        .expect("device");
+        .expect("admitted GPU test device");
+        (opened.device, opened.queue)
+    };
     let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
     let capabilities = if path == CookedDrawPath::Direct {
         capabilities.without_indirect_execution()
@@ -254,11 +258,16 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels() {
 }
 
 fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(path: CookedDrawPath) {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case",
+        None,
+    ) else {
+        return;
+    };
     let (root, cook) = cooked("material");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -395,11 +404,15 @@ fn the_identity_hook_draws_the_built_in_material() {
 }
 
 fn the_identity_hook_draws_the_built_in_material_case(path: CookedDrawPath) {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("the_identity_hook_draws_the_built_in_material_case", None)
+    else {
+        return;
+    };
     let (root, cook) = cooked("identity");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -447,11 +460,16 @@ fn a_hook_that_writes_non_finite_factors_draws_the_placement_material() {
 }
 
 fn a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path: CookedDrawPath) {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_hook_that_writes_non_finite_factors_draws_the_placement_material_case",
+        None,
+    ) else {
+        return;
+    };
     let (root, cook) = cooked("non-finite");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -501,11 +519,16 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws() {
 fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
     path: CookedDrawPath,
 ) {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case",
+        None,
+    ) else {
+        return;
+    };
     let (root, cook) = cooked("material-early");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -556,11 +579,16 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
 fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request_case(
     path: CookedDrawPath,
 ) {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request_case",
+        None,
+    ) else {
+        return;
+    };
     let (root, cook) = cooked("material-burst");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -632,10 +660,15 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
 fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case(
     path: CookedDrawPath,
 ) {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case",
+        None,
+    ) else {
+        return;
+    };
     let (root, cook) = cooked("material-device");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (old_device, old_queue, old_capabilities) = gpu(&instance, 1, path).await;
+        let (old_device, old_queue, old_capabilities) = gpu(&test_gpu, 1, path).await;
         let config = FrameConfig {
             render_extent: EXTENT,
             surface: None,
@@ -666,7 +699,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
 
         // Request a reload, then replace the device before any frame could draw it.
         let outstanding = material.request(hook("hooks/green.wgsl", GREEN));
-        let (device, queue, capabilities) = gpu(&instance, 2, path).await;
+        let (device, queue, capabilities) = gpu(&test_gpu.fresh_adapter(), 2, path).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")
@@ -743,13 +776,18 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh() {
 }
 
 fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: CookedDrawPath) {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case",
+        None,
+    ) else {
+        return;
+    };
     let root = std::env::temp_dir().join(format!("thrum-g6-material-ready-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root);
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -836,11 +874,15 @@ fn a_skipped_frame_never_promotes_a_ready_material() {
 }
 
 fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("a_skipped_frame_never_promotes_a_ready_material_case", None)
+    else {
+        return;
+    };
     let (root, cook) = cooked("material-skip");
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (device, queue, capabilities) =
-            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
+            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,

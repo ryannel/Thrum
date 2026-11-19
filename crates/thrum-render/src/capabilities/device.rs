@@ -24,6 +24,17 @@ pub enum DeviceProfile {
     Portable,
 }
 
+impl DeviceProfile {
+    /// Limits requested by this profile before any restriction or hardware opt-in.
+    #[must_use]
+    pub fn limits(self, adapter: &wgpu::Adapter) -> wgpu::Limits {
+        match self {
+            Self::Native => adapter.limits(),
+            Self::Portable => wgpu::Limits::default(),
+        }
+    }
+}
+
 /// Replace specific parts of the selected request with lower capabilities.
 #[derive(Default)]
 pub struct DeviceRestriction {
@@ -100,48 +111,55 @@ impl DeviceRecipe<'_> {
             power_preference: wgpu::PowerPreference::HighPerformance,
             ..Default::default()
         };
-        let (adapter, device, queue, capabilities) = DeviceCapabilities::open_planned_generation(
+        self.open_from(
             async || instance.request_adapter(&options).await,
+            wake,
+            |_| {},
+        )
+        .await
+    }
+
+    /// Open on an adapter already admitted by the caller, retaining the same instance for retries.
+    ///
+    /// # Errors
+    /// Reports an invalid restriction or a hardware, adapter or device failure.
+    pub async fn open_admitted(
+        &self,
+        instance: &wgpu::Instance,
+        adapter: &wgpu::Adapter,
+    ) -> Result<OpenedDevice, HardwareLaunchError> {
+        let mut first = Some(adapter.clone());
+        let options = wgpu::RequestAdapterOptions::default();
+        self.open_from(
+            async || match first.take() {
+                Some(adapter) => Ok(adapter),
+                None => instance.request_adapter(&options).await,
+            },
+            |_| {},
+            |_| {},
+        )
+        .await
+    }
+
+    /// Open from a caller-supplied adapter source. A diagnostic can inject a descriptor
+    /// fault to exercise the registry's preference retry using a fresh adapter.
+    ///
+    /// # Errors
+    /// Reports an invalid restriction or a hardware, adapter or device failure.
+    pub async fn open_from(
+        &self,
+        acquire_adapter: impl AsyncFnMut() -> Result<wgpu::Adapter, wgpu::RequestAdapterError>,
+        wake: impl Fn(u64) + Send + 'static,
+        adjust: impl Fn(&mut wgpu::DeviceDescriptor<'static>),
+    ) -> Result<OpenedDevice, HardwareLaunchError> {
+        let (adapter, device, queue, capabilities) = DeviceCapabilities::open_planned_generation(
+            acquire_adapter,
             self.generation,
             self.hardware,
             |adapter| {
-                let mut features = DeviceCapabilities::requested_timing_features(adapter);
-                let adapter_limits = adapter.limits();
-                let adapter_features = adapter.features();
-                let profile_limits = match self.profile {
-                    DeviceProfile::Native => {
-                        features |= DeviceCapabilities::requested_content_features(adapter);
-                        adapter_limits.clone()
-                    }
-                    DeviceProfile::Portable => wgpu::Limits::default(),
-                };
-                let (limits, hardware_offer) = if let Some(restriction) = self.restriction {
-                    let limits = restriction
-                        .limits
-                        .clone()
-                        .unwrap_or_else(|| profile_limits.clone());
-                    let subset = restriction.features.unwrap_or(features);
-                    if !features.contains(subset) || !limits.check_limits(&profile_limits) {
-                        return Err(HardwareLaunchError::InvalidRestriction);
-                    }
-                    features = subset - restriction.remove_features;
-                    // Named hardware still goes through the registry. An exact
-                    // feature subset or lowered limits also constrain that offer.
-                    let available = restriction.features.map_or(adapter_features, |_| subset)
-                        - restriction.remove_features;
-                    let available_limits = restriction.limits.clone().unwrap_or(adapter_limits);
-                    (limits, (available, available_limits))
-                } else {
-                    (profile_limits, (adapter_features, adapter_limits))
-                };
-                Ok((
-                    wgpu::DeviceDescriptor {
-                        required_features: features,
-                        required_limits: limits,
-                        ..Default::default()
-                    },
-                    hardware_offer,
-                ))
+                let (mut descriptor, offer) = self.plan(adapter)?;
+                adjust(&mut descriptor);
+                Ok((descriptor, offer))
             },
         )
         .await?;
@@ -153,6 +171,62 @@ impl DeviceRecipe<'_> {
             capabilities,
             watch,
         })
+    }
+
+    /// Preview the base request before the registry adds named hardware.
+    ///
+    /// # Errors
+    /// Reports a restriction that would expand the profile.
+    pub fn descriptor(
+        &self,
+        adapter: &wgpu::Adapter,
+    ) -> Result<wgpu::DeviceDescriptor<'static>, HardwareLaunchError> {
+        self.plan(adapter).map(|(descriptor, _)| descriptor)
+    }
+
+    fn plan(
+        &self,
+        adapter: &wgpu::Adapter,
+    ) -> Result<
+        (
+            wgpu::DeviceDescriptor<'static>,
+            (wgpu::Features, wgpu::Limits),
+        ),
+        HardwareLaunchError,
+    > {
+        let mut features = DeviceCapabilities::requested_timing_features(adapter);
+        if matches!(self.profile, DeviceProfile::Native) {
+            features |= DeviceCapabilities::requested_content_features(adapter);
+        }
+        let profile_limits = self.profile.limits(adapter);
+        let adapter_limits = adapter.limits();
+        let adapter_features = adapter.features();
+        let (limits, hardware_offer) = if let Some(restriction) = self.restriction {
+            let limits = restriction
+                .limits
+                .clone()
+                .unwrap_or_else(|| profile_limits.clone());
+            let subset = restriction.features.unwrap_or(features);
+            if !features.contains(subset) || !limits.check_limits(&profile_limits) {
+                return Err(HardwareLaunchError::InvalidRestriction);
+            }
+            features = subset - restriction.remove_features;
+            // An exact feature subset or lowered limits also constrain named hardware.
+            let available = restriction.features.map_or(adapter_features, |_| subset)
+                - restriction.remove_features;
+            let available_limits = restriction.limits.clone().unwrap_or(adapter_limits);
+            (limits, (available, available_limits))
+        } else {
+            (profile_limits, (adapter_features, adapter_limits))
+        };
+        Ok((
+            wgpu::DeviceDescriptor {
+                required_features: features,
+                required_limits: limits,
+                ..Default::default()
+            },
+            hardware_offer,
+        ))
     }
 }
 

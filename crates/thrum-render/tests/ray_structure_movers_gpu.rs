@@ -17,7 +17,9 @@ mod metal {
 
     #[test]
     fn every_record_matches_the_submitted_interpolated_pose() {
-        let gpu = support::gate("ray structure movers");
+        let Some(gpu) = support::gate("ray structure movers") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let mut scene = SyntheticScene::grid(SLOTS).expect("scene");
         scene.ray_structure = true;

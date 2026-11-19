@@ -166,8 +166,19 @@ impl FrameGraph {
         &self,
         capabilities: &DeviceCapabilities,
     ) -> Result<(), GraphError> {
+        self.validate_texture_support(capabilities.limits(), capabilities.features())
+    }
+
+    /// Validate texture declarations against target limits and enabled WebGPU features.
+    ///
+    /// # Errors
+    /// Refuses invalid declarations and unsupported texture extents or storage access.
+    pub fn validate_texture_support(
+        &self,
+        limits: &wgpu::Limits,
+        features: wgpu::Features,
+    ) -> Result<(), GraphError> {
         self.validate_declarations()?;
-        let limits = capabilities.limits();
         for resource in &self.resources {
             if let ResourceDescriptor::Texture {
                 dimension,
@@ -201,7 +212,7 @@ impl FrameGraph {
                     self.resources[access.resource.index].descriptor
                 {
                     count += 1;
-                    let facts = capabilities.texture_format(format);
+                    let facts = format.guaranteed_format_features(features);
                     let flag = match access.kind {
                         AccessKind::StorageRead => {
                             wgpu::TextureFormatFeatureFlags::STORAGE_READ_ONLY

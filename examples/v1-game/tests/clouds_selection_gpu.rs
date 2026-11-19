@@ -59,8 +59,14 @@ fn cloud_attachment_reports_the_device_limit_as_a_gpu_error() {
 #[test]
 #[cfg(target_os = "macos")]
 fn selection_is_off_by_default_and_on_uses_only_weather_and_shade() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "selection_is_off_by_default_and_on_uses_only_weather_and_shade",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_instance, device, queue, caps) = support::device("portable", true).await;
+        let (_instance, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
         let surface = v1_game::SurfaceOutput {
             view: &view,

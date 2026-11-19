@@ -156,7 +156,9 @@ mod metal {
     #[test]
     #[ignore = "contended cost record is run by scripts/ray_tracing_cost.py"]
     fn report_structure_cost() {
-        let gpu = support::gate("ray structure costs");
+        let Some(gpu) = support::gate("ray structure costs") else {
+            return;
+        };
         let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
         let mut measurement = Measurement::new(&device, &queue, &caps);
         {

@@ -154,9 +154,14 @@ fn empty_never_crossing(volume: &[u16], distance: f32) -> [f32; 3] {
 #[cfg(target_os = "macos")]
 #[test]
 fn plane_panels_match_the_ordinary_camera_at_each_crossing() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "plane_panels_match_the_ordinary_camera_at_each_crossing",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue) =
-            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture_device(&device, 1);
         for (below, distance, degrees) in [
             (2.0, 20.0, 10.0_f32),

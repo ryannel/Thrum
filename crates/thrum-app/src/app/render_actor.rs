@@ -793,5 +793,4 @@ fn frame_failure(error: FrameError, lost: bool) -> RenderOutcome {
 }
 
 #[cfg(test)]
-#[path = "render_actor_tests.rs"]
 mod tests;

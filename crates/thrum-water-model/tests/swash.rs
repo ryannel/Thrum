@@ -1,8 +1,6 @@
 //! Plane beach waterline from the independent regular-wave closed form.
-#[expect(dead_code, reason = "shared basin constructor is used by map tests")]
-#[path = "support/fixtures.rs"]
 mod support;
-use support::{body, close, field, grid, profile};
+use support::fixtures::{body, close, field, grid, profile};
 use thrum_water_model::{BodyKind, Map};
 
 #[test]

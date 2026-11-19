@@ -7,19 +7,15 @@ mod multiple_interpolation;
 mod reference;
 mod transmittance;
 
-async fn device() -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real adapter required for atmosphere tests");
+async fn device(
+    test_gpu: &thrum_test_support::Gpu,
+) -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
+    let adapter = test_gpu.adapter.clone();
     let info = adapter.get_info();
     #[cfg(target_os = "macos")]
     assert_eq!(info.backend, wgpu::Backend::Metal);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("atmosphere test device");
+    let (device, queue) =
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
     (device, queue, info)
 }
 
@@ -35,8 +31,14 @@ fn sky_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
 
 #[test]
 fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "encoded_constant_sky_integrates_in_physical_illuminance_units",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, _) = device().await;
+        let (device, queue, _) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky frame"),

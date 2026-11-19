@@ -201,15 +201,14 @@ fn observe(
 #[test]
 fn gpu_horizon_rows_roundtrip_endpoints_azimuth_and_never_cross_filter_halves() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter for sky mapping");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("mapping device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "gpu_horizon_rows_roundtrip_endpoints_azimuth_and_never_cross_filter_halves",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("shipping sky mapping falsifier"),

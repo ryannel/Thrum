@@ -138,18 +138,11 @@ fn in_view(scene: &SyntheticScene) -> f64 {
 )]
 fn main() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real native adapter required");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("timestamp-capable device");
+        let Some(test_gpu) = thrum_test_support::gpu("main", None) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) = test_gpu.portable(None);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, GENERATION);
         println!(
             "adapter={}; {}x{}; shadows on; ABBA {BLOCKS} blocks (A=Direct, B=Frustum); \

@@ -53,8 +53,14 @@ fn identity(sample: &FrameSample) {
 #[test]
 #[cfg(target_os = "macos")]
 fn delayed_observation_still_describes_the_consumed_target() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "delayed_observation_still_describes_the_consumed_target",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, _) = support::device("portable", false).await;
+        let (_, device, queue, _) = support::device(&test_gpu, "portable", false);
         let (view, profile) = support::presentation(&device, [96, 54]);
         let mut host = FrameHost::new(
             &device,
@@ -122,8 +128,14 @@ fn delayed_observation_still_describes_the_consumed_target() {
 #[test]
 #[cfg(target_os = "macos")]
 fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_effects_consume_unclamped_clock_phase_inline_and_threaded",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (instance, device, queue, caps) = support::device("portable", false).await;
+        let (instance, device, queue, caps) = support::device(&test_gpu, "portable", false);
         let (view, profile) = support::presentation(&device, [96, 54]);
         let surface = v1_game::SurfaceOutput {
             view: &view,

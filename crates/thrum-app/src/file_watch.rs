@@ -212,5 +212,4 @@ impl Drop for FileWatch {
 }
 
 #[cfg(test)]
-#[path = "file_watch_tests.rs"]
 mod tests;

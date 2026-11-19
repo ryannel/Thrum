@@ -672,17 +672,17 @@ fn independent_hemisphere_integral_has_analytic_smith_limits() {
 #[test]
 fn gpu_reflection_constant_all_faces_mips_and_independent_dfg() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("reflection correctness requires a GPU");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "gpu_reflection_constant_all_faces_mips_and_independent_dfg",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("reflection correctness device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let mut frame = [0.0_f32; 32];
         frame[19] = 2.0;
         frame[21] = 1.0;

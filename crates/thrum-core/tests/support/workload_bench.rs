@@ -3,8 +3,8 @@
     dead_code,
     reason = "shared workload fixture has consumers across test and benchmark targets"
 )]
-#[path = "../tests/support/v1_workload.rs"]
-mod support;
+mod v1_workload;
+use v1_workload as support;
 
 #[global_allocator]
 static ALLOC: divan::AllocProfiler = divan::AllocProfiler::system();

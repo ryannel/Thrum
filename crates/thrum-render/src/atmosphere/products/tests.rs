@@ -32,16 +32,16 @@ fn query() {
 #[test]
 fn metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 120);
         let scene = SyntheticScene::grid(1).unwrap();
         let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1)
@@ -190,10 +190,9 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
             .unwrap();
         let profile = prepared.contribution_frame().environment.unwrap();
         assert_ne!(profile.epoch, first.epoch);
-        let (replacement_device, replacement_queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (replacement_device, replacement_queue) =
+            crate::test_device::portable(&test_gpu.fresh_adapter(), Some(wgpu::Features::empty()))
+                .await;
         let replacement_capabilities =
             DeviceCapabilities::capture(&adapter, &replacement_device, 121);
         let replacement = PreparedSynthetic::prepare_with_capabilities(

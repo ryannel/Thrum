@@ -292,17 +292,17 @@ impl Fixture {
 #[test]
 fn gpu_ground_quadrature_boundary_zero_units_and_profile_cache() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("ground transport adapter");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "gpu_ground_quadrature_boundary_zero_units_and_profile_cache",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("ground transport device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let fixture = Fixture::new(device, queue);
         let moments = math(&fixture.device, &fixture.queue, "moments", 3, 3);

@@ -138,7 +138,9 @@ mod metal {
 
     #[test]
     fn a_contribution_offers_scene_membership_after_upload_without_any_draw() {
-        let gpu = ray_support::support::gate("ray instances contribution seam");
+        let Some(gpu) = ray_support::support::gate("ray instances contribution seam") else {
+            return;
+        };
         let (device, queue, caps) = ray_support::support::device(&gpu, "ray-query", 1);
         pollster::block_on(async {
             let mut scene = SyntheticScene::grid(1).expect("scene");
@@ -201,7 +203,9 @@ mod metal {
 
     #[test]
     fn traced_view_distinguishes_adjoining_coplanar_placements() {
-        let gpu = ray_support::support::gate("traced view instance identity");
+        let Some(gpu) = ray_support::support::gate("traced view instance identity") else {
+            return;
+        };
         let (device, queue, caps) = ray_support::support::device(&gpu, "ray-query", 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.ray_structure = true;
@@ -301,7 +305,9 @@ mod metal {
 
     #[test]
     fn visual_replacement_on_the_same_device_reuses_prepared_meshes() {
-        let gpu = ray_support::support::gate("ray mesh visual replacement");
+        let Some(gpu) = ray_support::support::gate("ray mesh visual replacement") else {
+            return;
+        };
         let (_, queue, caps) = ray_support::support::device(&gpu, "ray-query", 1);
         let caps = caps.with_ray_preparation_observation();
         let mut scene = SyntheticScene::grid(1).expect("scene");

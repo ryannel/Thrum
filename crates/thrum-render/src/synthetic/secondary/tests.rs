@@ -77,9 +77,14 @@ impl SceneContribution for Asker {
 #[cfg(target_os = "macos")]
 #[test]
 fn slot_asks_draw_a_camera_and_clip_without_touching_the_main_view() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "slot_asks_draw_a_camera_and_clip_without_touching_the_main_view",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue) =
-            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, -2.0],
@@ -259,9 +264,14 @@ fn render(
 #[cfg(target_os = "macos")]
 #[test]
 fn slot_local_lights_match_the_ordinary_view_with_the_main_camera_away() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "slot_local_lights_match_the_ordinary_view_with_the_main_camera_away",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue) =
-            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let camera = |x| {
             SyntheticView::perspective(
                 [0.0, x, -2.0],

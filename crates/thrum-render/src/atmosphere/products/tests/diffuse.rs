@@ -9,16 +9,16 @@ use crate::{
 #[test]
 fn metal_h3_lent_diffuse_meets_independent_hemisphere_integral() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_h3_lent_diffuse_meets_independent_hemisphere_integral",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         let scene = SyntheticScene::grid(1).unwrap();
         let initial = AtmosphereFrame::new([0.0, 1.0, 0.0], 1.0, [1.0; 3], 2.0, 1).unwrap();

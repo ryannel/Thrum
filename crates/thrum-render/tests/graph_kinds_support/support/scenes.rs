@@ -6,8 +6,8 @@ use thrum_render::synthetic::{
 };
 use thrum_test_support::BeforeLightSplit;
 
-pub(crate) fn prove_scenes() {
-    let (device, queue, caps) = device(11);
+pub(crate) fn prove_scenes(gpu: &thrum_test_support::Gpu) {
+    let (device, queue, caps) = device(gpu, 11);
     let mut records = String::new();
     for stars in [false, true] {
         let mut scene = SyntheticScene::grid(1).expect("valid graph-kind fixture");

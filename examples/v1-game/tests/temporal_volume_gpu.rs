@@ -1,5 +1,4 @@
 //! W3 through CookedAssets, the production forward pass and its actual reactive reader.
-#![cfg(target_os = "macos")]
 
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -110,19 +109,15 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
     );
 
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_cooked_volume_w3_uses_production_forward_reactive_attachment",
+            Some(wgpu::Backend::Metal),
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("Metal device");
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
         for recipe in ["portable", "apple-tile"] {
             let caps = capabilities

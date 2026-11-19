@@ -13,21 +13,14 @@ fn decode_half(bits: u16) -> f32 {
     f32::from_bits(sign | ((exponent + 112) << 23) | (fraction << 13))
 }
 
-async fn metal() -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("checked Metal motion witness");
+async fn metal(
+    test_gpu: &thrum_test_support::Gpu,
+) -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
+    let adapter = test_gpu.adapter.clone();
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
     let info = adapter.get_info();
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("checked Metal motion witness");
+    let (device, queue) =
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
     (device, queue, info)
 }
 
@@ -113,8 +106,14 @@ fn frame(
 
 #[test]
 fn metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, info) = metal().await;
+        let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("checked Metal motion witness");
         scene.view = scene.view.with_jitter_phase(0, [64, 64]);
@@ -238,8 +237,14 @@ fn solar_pixel_motion(angle: f64) -> [f64; 2] {
 
 #[test]
 fn metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, info) = metal().await;
+        let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 static infinity target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("one foreground object");
         scene.instances[0].current[3] = [0.0, 2.0, -3.0, 1.0];
@@ -287,8 +292,14 @@ fn metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter() {
     reason = "the projected fixture star is inside the 64-pixel target"
 )]
 fn metal_sky_pan_and_solar_sidereal_phase_match_independent_projection() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "metal_sky_pan_and_solar_sidereal_phase_match_independent_projection",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, info) = metal().await;
+        let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("checked Metal motion witness");
         scene.instances[0].ids[3] = 0; // unobstructed infinity witness

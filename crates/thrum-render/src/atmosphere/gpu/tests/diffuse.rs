@@ -55,18 +55,12 @@ struct Gpu {
     queue: wgpu::Queue,
 }
 impl Gpu {
-    async fn new() -> Self {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for directional diffuse verification");
+    async fn new(test_gpu: &thrum_test_support::Gpu) -> Self {
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("directional diffuse device");
+        let (device, queue) =
+            crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
         Self { device, queue }
     }
 
@@ -562,8 +556,14 @@ fn compare(
 
 #[test]
 fn analytic_fields_preserve_direction_colour_and_physical_units() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "analytic_fields_preserve_direction_colour_and_physical_units",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let gpu = Gpu::new().await;
+        let gpu = Gpu::new(&test_gpu).await;
         let scope = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
         for (kind, lux, colour) in [
             (0, 1.0, [1.0; 3]),
@@ -627,8 +627,14 @@ fn analytic_fields_preserve_direction_colour_and_physical_units() {
 
 #[test]
 fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "shipping_sky_projection_separates_sampling_from_sh_truncation",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let gpu = Gpu::new().await;
+        let gpu = Gpu::new(&test_gpu).await;
         let scope = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let light = gpu.light();
         let frame = |degrees: i16, azimuth: i16| {

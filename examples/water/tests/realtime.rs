@@ -23,8 +23,8 @@ const _: () = assert!(MAX_SUBMISSIONS < WRITER_QUEUE);
 const _: () = assert!(MAX_SUBMISSIONS < CPU_LEASES);
 const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE);
 
-pub(super) fn capture(directory: &Path) -> Value {
-    let (device, queue, caps) = super::support::device();
+pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value {
+    let (device, queue, caps) = super::support::device(gpu);
     let island = super::island_wind();
     let floating = super::floating_wind();
     let wake = super::wake_wind().is_some();

@@ -126,7 +126,13 @@ fn rows(mask: &[bool]) -> usize {
 
 #[test]
 fn an_off_screen_pyramid_casts_its_own_shape_in_the_cascades() {
-    let gpu = gpu();
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "an_off_screen_pyramid_casts_its_own_shape_in_the_cascades",
+        None,
+    ) else {
+        return;
+    };
+    let gpu = gpu(&test_gpu);
     let light = SyntheticLight {
         direction_to_light: [1.0, 0.0, 1.0],
         irradiance: [4.0; 3],
@@ -209,7 +215,13 @@ fn an_off_screen_pyramid_casts_its_own_shape_in_the_cascades() {
 
 #[test]
 fn a_distant_off_screen_pyramid_shades_through_the_height_layer() {
-    let gpu = gpu();
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_distant_off_screen_pyramid_shades_through_the_height_layer",
+        None,
+    ) else {
+        return;
+    };
+    let gpu = gpu(&test_gpu);
     // A low Sun from +x: receivers beyond the cascades' reach march the
     // height layer toward it.
     let light = SyntheticLight {

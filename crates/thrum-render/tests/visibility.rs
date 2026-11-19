@@ -11,18 +11,11 @@ use thrum_render::timing::GpuTimings;
 
 const EXTENT: [u32; 2] = [320, 180];
 
-async fn device() -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real adapter required for visibility image equivalence");
+async fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
+    let adapter = test_gpu.adapter.clone();
     #[cfg(target_os = "macos")]
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("visibility device");
+    let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
     (adapter, device, queue)
 }
 
@@ -110,9 +103,9 @@ fn differing(a: &[u8], b: &[u8]) -> usize {
         .count()
 }
 
-fn equivalent(view: &SyntheticView, shadows: bool) -> usize {
+fn equivalent(test_gpu: &thrum_test_support::Gpu, view: &SyntheticView, shadows: bool) -> usize {
     pollster::block_on(async {
-        let (adapter, device, queue) = device().await;
+        let (adapter, device, queue) = device(test_gpu).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let direct = render(
             &capabilities,
@@ -199,26 +192,53 @@ fn view(camera: [f32; 3], target: [f32; 3]) -> SyntheticView {
 
 #[test]
 fn partial_visibility_matches_direct_draw() {
+    let Some(test_gpu) = thrum_test_support::gpu("partial_visibility_matches_direct_draw", None)
+    else {
+        return;
+    };
     let (outside, inside) = split(&view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]));
     assert!(
         outside > 1_000 && inside > 100,
         "culls {outside}, keeps {inside}"
     );
-    let covered = equivalent(&view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), false);
+    let covered = equivalent(
+        &test_gpu.fresh_adapter(),
+        &view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]),
+        false,
+    );
     assert!(covered > 1_000, "scene draws: {covered} pixels");
 }
 
 #[test]
 fn full_and_empty_visibility_match_direct_draw() {
-    assert!(equivalent(&view([0.0, 0.0, 3.0], [0.0, 0.0, 0.5]), false) > 1_000);
+    let Some(test_gpu) =
+        thrum_test_support::gpu("full_and_empty_visibility_match_direct_draw", None)
+    else {
+        return;
+    };
+    assert!(
+        equivalent(
+            &test_gpu.fresh_adapter(),
+            &view([0.0, 0.0, 3.0], [0.0, 0.0, 0.5]),
+            false
+        ) > 1_000
+    );
     assert_eq!(
-        equivalent(&view([0.0, 0.0, 3.0], [0.0, 0.0, 6.0]), false),
+        equivalent(
+            &test_gpu.fresh_adapter(),
+            &view([0.0, 0.0, 3.0], [0.0, 0.0, 6.0]),
+            false
+        ),
         0
     );
 }
 
 #[test]
 fn near_plane_crossings_match_direct_draw() {
+    let Some(test_gpu) = thrum_test_support::gpu("near_plane_crossings_match_direct_draw", None)
+    else {
+        return;
+    };
     // The camera sits inside the cube layer, so the near plane cuts through
     // instances beside it while the grid recedes at a grazing angle.
     let (outside, inside) = split(&view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]));
@@ -226,31 +246,39 @@ fn near_plane_crossings_match_direct_draw() {
         outside > 1_000 && inside > 100,
         "culls {outside}, keeps {inside}"
     );
-    let covered = equivalent(&view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]), false);
+    let covered = equivalent(
+        &test_gpu.fresh_adapter(),
+        &view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]),
+        false,
+    );
     assert!(covered > 1_000, "scene draws: {covered} pixels");
 }
 
 #[test]
 fn offscreen_sun_casters_still_shadow_visible_receivers() {
-    let covered = equivalent(&view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), true);
+    let Some(test_gpu) =
+        thrum_test_support::gpu("offscreen_sun_casters_still_shadow_visible_receivers", None)
+    else {
+        return;
+    };
+    let covered = equivalent(
+        &test_gpu.fresh_adapter(),
+        &view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]),
+        true,
+    );
     assert!(covered > 1_000, "scene draws: {covered} pixels");
 }
 
 #[test]
 fn frustum_pass_is_timed_within_the_scene_pass_budget() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("timestamp device");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("frustum_pass_is_timed_within_the_scene_pass_budget", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) = test_gpu.portable(None);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let view = view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]);
         let mut counts = Vec::new();
@@ -270,6 +298,10 @@ fn frustum_pass_is_timed_within_the_scene_pass_budget() {
             #[cfg(target_os = "macos")]
             assert!(timings.is_enabled(), "Metal timestamps required");
             if !timings.is_enabled() {
+                thrum_test_support::skip(
+                    "frustum_pass_is_timed_within_the_scene_pass_budget",
+                    "the admitted device does not support timestamp queries",
+                );
                 return;
             }
             let mut encoder =
@@ -414,8 +446,14 @@ fn walled(mut scene: SyntheticScene) -> SyntheticScene {
 
 #[test]
 fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (adapter, device, queue) = device().await;
+        let (adapter, device, queue) = device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         // Grazing views along the grid occlude most of it; one sits inside
         // the cube layer (near-plane crossings), one looks away (empty).
@@ -507,8 +545,11 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
 /// test, so the lower slot wins every tie. `entering` is the slot that starts
 /// outside the view and moves onto the other's pose, so only the staying slot
 /// is in Occlusion's prepass.
-async fn equal_depth_case(entering: usize) -> (Vec<u8>, Vec<u8>) {
-    let (adapter, device, queue) = device().await;
+async fn equal_depth_case(
+    test_gpu: &thrum_test_support::Gpu,
+    entering: usize,
+) -> (Vec<u8>, Vec<u8>) {
+    let (adapter, device, queue) = device(test_gpu).await;
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 43);
     let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
     let mut base = SyntheticScene::grid(2).expect("grid");
@@ -559,10 +600,17 @@ async fn equal_depth_case(entering: usize) -> (Vec<u8>, Vec<u8>) {
 /// prepass, so both orders keep Direct's winner.
 #[test]
 fn equal_depth_ties_keep_direct_order_whichever_slot_enters() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "equal_depth_ties_keep_direct_order_whichever_slot_enters",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let mut changed = Vec::new();
         for entering in [0, 1] {
-            let (reference, culled) = Box::pin(equal_depth_case(entering)).await;
+            let (reference, culled) =
+                Box::pin(equal_depth_case(&test_gpu.fresh_adapter(), entering)).await;
             changed.push(differing(&reference, &culled));
         }
         eprintln!("pixels changed against Direct with slot 0, then slot 1, entering: {changed:?}");
@@ -602,8 +650,12 @@ fn place(
 /// against the wall's rasterized depth. Direct draws the box first, so it
 /// wins whatever ties the rasterizer makes; Occlusion must keep it. Returns
 /// (pixels the box wins in Direct, pixels Occlusion changes).
-async fn flush_tie(origin: [f32; 3], yaw: f32) -> (usize, usize) {
-    let (adapter, device, queue) = device().await;
+async fn flush_tie(
+    test_gpu: &thrum_test_support::Gpu,
+    origin: [f32; 3],
+    yaw: f32,
+) -> (usize, usize) {
+    let (adapter, device, queue) = device(test_gpu).await;
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 47);
     let (sin, cos) = yaw.sin_cos();
     let at = |offset: [f32; 3]| {
@@ -686,11 +738,21 @@ async fn flush_tie(origin: [f32; 3], yaw: f32) -> (usize, usize) {
 /// too. The bound matters where geometry touches its AABB at a rounded pose.
 #[test]
 fn a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let mut results = Vec::new();
         for origin in [[0.0, 1.0, 0.0], [-400.37, 1.13, 400.71]] {
             for yaw in [0.0, 0.3] {
-                results.push((origin, yaw, Box::pin(flush_tie(origin, yaw)).await));
+                results.push((
+                    origin,
+                    yaw,
+                    Box::pin(flush_tie(&test_gpu.fresh_adapter(), origin, yaw)).await,
+                ));
             }
         }
         eprintln!("(origin, yaw, (box pixels in Direct, pixels Occlusion changed)): {results:?}");
@@ -715,8 +777,14 @@ fn a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far() {
 /// - a cut to a view from the other side.
 #[test]
 fn stale_bits_after_a_swap_or_a_reveal_keep_direct_images() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "stale_bits_after_a_swap_or_a_reveal_keep_direct_images",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (adapter, device, queue) = device().await;
+        let (adapter, device, queue) = device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
         let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
         let mut hidden = SyntheticScene::grid(2).expect("grid");

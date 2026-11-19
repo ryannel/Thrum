@@ -3,8 +3,12 @@ use super::*;
 
 #[test]
 fn compute_reads_the_forward_material_table() {
+    let Some(test_gpu) = thrum_test_support::gpu("compute_reads_the_forward_material_table", None)
+    else {
+        return;
+    };
     pollster::block_on(async {
-        let (adapter, device, queue) = support::device(wgpu::Backends::all()).await;
+        let (adapter, device, queue) = support::device(&test_gpu).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.materials[0].base_rgba = [0.125, 0.25, 0.5, 1.0];

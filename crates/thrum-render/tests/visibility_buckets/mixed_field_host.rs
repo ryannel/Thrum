@@ -459,10 +459,15 @@ fn phase(
 
 #[test]
 fn mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let first = Gpu::from_instance(&instance, 71).await;
-        let second = Gpu::from_instance(&instance, 72).await;
+        let first = Gpu::new(&gpu, 71).await;
+        let second = Gpu::new(&gpu.fresh_adapter(), 72).await;
         assert!(
             !second.caps.matches(&first.device),
             "distinct replacement device"

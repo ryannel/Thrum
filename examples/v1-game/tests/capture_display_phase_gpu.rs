@@ -32,13 +32,19 @@ fn check_status(
 #[test]
 #[cfg(target_os = "macos")]
 fn realtime_records_consumed_targets_including_expired_opportunity() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "realtime_records_consumed_targets_including_expired_opportunity",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     use std::sync::{Arc, Mutex};
     use thrum_app::offscreen::{
         Offscreen,
         clock::{OpportunityClock, Timebase},
     };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", false).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", false);
         let mut driver = Offscreen::new(
             v1_game::capture_game().expect("ordinary V1 game"),
             &device,

@@ -20,7 +20,7 @@ struct Gpu {
 }
 
 impl Gpu {
-    async fn new(instance: &wgpu::Instance, generation: u64) -> Self {
+    async fn new(gpu: &thrum_test_support::Gpu, generation: u64) -> Self {
         // A replacement requests a fresh Adapter, as required by wgpu's API.
         use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, OpenedDevice};
         let OpenedDevice {
@@ -34,7 +34,7 @@ impl Gpu {
             profile: DeviceProfile::Portable,
             ..Default::default()
         }
-        .open(instance, None)
+        .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("real GPU required for recovery");
         if cfg!(target_os = "macos") {
@@ -95,9 +95,11 @@ fn destroyed_gpu_replacement_keeps_the_exposure_zones_overlay() {
 }
 
 fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
+    let Some(test_gpu) = thrum_test_support::gpu("prove_paused_recovery", None) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let old = Gpu::new(&instance, 1).await;
+        let old = Gpu::new(&test_gpu, 1).await;
         let mut host = FrameHost::new_with_capabilities(
             &old.device,
             &old.queue,
@@ -126,7 +128,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
         let paused = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
         let (before, _) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         let inputs = host.device_prepare_inputs().expect("retained CPU inputs");
-        let replacement = Gpu::new(&instance, 2).await;
+        let replacement = Gpu::new(&test_gpu.fresh_adapter(), 2).await;
         let mut candidate = inputs
             .prepare(
                 &replacement.capabilities,
@@ -302,9 +304,14 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
 
 #[test]
 fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "running_world_advances_while_its_destroyed_gpu_is_replaced",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let old = Gpu::new(&instance, 11).await;
+        let old = Gpu::new(&test_gpu, 11).await;
         let host = FrameHost::new_with_capabilities(
             &old.device,
             &old.queue,
@@ -330,7 +337,7 @@ fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
             assert!(Instant::now() < deadline, "GPU loss blocked the world");
             std::thread::sleep(Duration::from_millis(1));
         }
-        let replacement = Gpu::new(&instance, 12).await;
+        let replacement = Gpu::new(&test_gpu.fresh_adapter(), 12).await;
         let mut candidate = inputs
             .prepare(
                 &replacement.capabilities,
@@ -371,9 +378,14 @@ fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
 /// and redraws the paused frame unchanged, then the world resumes on it.
 #[test]
 fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "mixed_mesh_field_keeps_its_meshes_through_gpu_replacement",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let old = Gpu::new(&instance, 21).await;
+        let old = Gpu::new(&test_gpu, 21).await;
         let mut host = FrameHost::new_with_setup(
             &old.device,
             &old.queue,
@@ -424,7 +436,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
         let (before, _) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         let inputs = host.device_prepare_inputs().expect("retained CPU inputs");
         old.device.destroy();
-        let replacement = Gpu::new(&instance, 22).await;
+        let replacement = Gpu::new(&test_gpu.fresh_adapter(), 22).await;
         let mut candidate = inputs
             .prepare(
                 &replacement.capabilities,

@@ -7,18 +7,15 @@ use crate::{
 #[test]
 fn metal_recipe_replacement_retains_old_target_and_exact_channels() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_recipe_replacement_retains_old_target_and_exact_channels",
+            Some(wgpu::Backend::Metal),
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         assert_eq!(capabilities.unified_memory(), Some(true));
         assert_eq!(

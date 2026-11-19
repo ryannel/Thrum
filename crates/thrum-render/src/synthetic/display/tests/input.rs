@@ -26,15 +26,14 @@ fn capture(
 #[test]
 fn identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_foreign_reads() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_foreign_reads",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scene = SyntheticScene::grid(4).unwrap();
         let prepared = PreparedSynthetic::prepare(&device, &queue, 1, &scene)
             .await
@@ -91,15 +90,14 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
     };
     use std::collections::BTreeSet;
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sdr_pixels",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let prepared =
             PreparedSynthetic::prepare(&device, &queue, 1, &SyntheticScene::grid(4).unwrap())
                 .await

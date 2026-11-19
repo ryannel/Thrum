@@ -5,9 +5,9 @@ use thrum_render::graph::{
     TextureKind as K,
 };
 
-pub(crate) fn prove_kinds() {
+pub(crate) fn prove_kinds(gpu: &thrum_test_support::Gpu) {
     for generation in [41, 42] {
-        let (device, queue, caps) = device(generation);
+        let (device, queue, caps) = device(&gpu.fresh_adapter(), generation);
         for size in [4, 8] {
             for scope in [
                 S::Transient,

@@ -1,6 +1,5 @@
 //! Validation and loss callbacks from a real Metal device.
 
-#[cfg(target_os = "macos")]
 #[test]
 fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
     use std::{
@@ -9,15 +8,17 @@ fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
     };
     use thrum_render::capabilities::{DeviceRecipe, FIRST_DEVICE_GENERATION};
 
+    let Some(gpu) = thrum_test_support::gpu(
+        "metal_watch_records_validation_and_loss_and_a_fresh_generation_submits",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
         let (send, receive) = mpsc::channel();
         let recipe = DeviceRecipe::default();
         let opened = recipe
-            .open_with_wake(&instance, None, move |generation| {
+            .open_with_wake(&gpu.instance, None, move |generation| {
                 let _ = send.send(generation);
             })
             .await
@@ -68,7 +69,7 @@ fn metal_watch_records_validation_and_loss_and_a_fresh_generation_submits() {
             generation: FIRST_DEVICE_GENERATION + 1,
             ..recipe
         }
-        .open(&instance, None)
+        .open(&gpu.instance, None)
         .await
         .unwrap();
         assert!(!replacement.watch.is_lost());

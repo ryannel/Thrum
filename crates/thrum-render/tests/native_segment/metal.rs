@@ -1,5 +1,4 @@
-//! M10's first boundary experiment. This must pass before route integration.
-#![cfg(target_os = "macos")]
+//! Metal implementation of the native encoder boundary tests.
 
 use objc2::{rc::Retained, runtime::ProtocolObject};
 use objc2_foundation::NSString;
@@ -355,9 +354,10 @@ fn bytes(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
         .to_vec()
 }
 
-#[test]
-fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
-    let (actual, pattern) = fixture(Fault::None);
+pub(super) fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit(
+    gpu: &thrum_test_support::Gpu,
+) {
+    let (actual, pattern) = fixture(gpu, Fault::None);
     assert_eq!(actual[0], actual[2], "exact output");
     assert_eq!(actual[1], actual[3], "exact history");
     assert_eq!(
@@ -377,7 +377,7 @@ fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
         Fault::StaleSource,
         Fault::StaleHistory,
     ] {
-        let (broken, _) = fixture(fault);
+        let (broken, _) = fixture(&gpu.fresh_adapter(), fault);
         assert_ne!(broken[0], broken[2], "{fault:?} must fail exact output");
         assert_ne!(broken[1], broken[3], "{fault:?} must fail exact history");
     }
@@ -394,21 +394,6 @@ enum Fault {
     NoReset,
     StaleSource,
     StaleHistory,
-}
-
-async fn metal_device() -> (wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("Metal adapter");
-    adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("Metal device")
 }
 
 #[expect(
@@ -436,33 +421,43 @@ fn wgpu_copy(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
     encoder.copy_buffer_to_buffer(&buffer(), 0, &buffer(), 0, 8);
 }
 
-#[test]
-#[should_panic(
-    expected = "Mixing the wgpu encoding API with the raw encoding API is not permitted"
-)]
-fn locked_wgpu_refuses_raw_then_wgpu_even_for_noop_raw_callback() {
-    let (device, _queue) = pollster::block_on(metal_device());
+pub(super) fn locked_wgpu_refuses_raw_then_wgpu_even_for_noop_raw_callback(
+    gpu: &thrum_test_support::Gpu,
+) {
+    let (device, _queue) = gpu.portable(Some(wgpu::Features::empty()));
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     raw_noop(&mut encoder);
-    wgpu_copy(&device, &mut encoder);
+    assert_mixed_encoding_panics(|| wgpu_copy(&device, &mut encoder));
 }
 
-#[test]
-#[should_panic(
-    expected = "Mixing the wgpu encoding API with the raw encoding API is not permitted"
-)]
-fn locked_wgpu_refuses_wgpu_then_raw_even_for_noop_raw_callback() {
-    let (device, _queue) = pollster::block_on(metal_device());
+pub(super) fn locked_wgpu_refuses_wgpu_then_raw_even_for_noop_raw_callback(
+    gpu: &thrum_test_support::Gpu,
+) {
+    let (device, _queue) = gpu.portable(Some(wgpu::Features::empty()));
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     wgpu_copy(&device, &mut encoder);
-    raw_noop(&mut encoder);
+    assert_mixed_encoding_panics(|| raw_noop(&mut encoder));
+}
+
+fn assert_mixed_encoding_panics(mix: impl FnOnce()) {
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(mix))
+        .expect_err("mixing encoder APIs must panic");
+    let message = panic
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        .or_else(|| panic.downcast_ref::<&str>().copied())
+        .expect("wgpu panic message");
+    assert!(
+        message.contains("Mixing the wgpu encoding API with the raw encoding API is not permitted"),
+        "{message}"
+    );
 }
 
 #[expect(
     clippy::print_stdout,
     reason = "The device fixture records its actual Metal adapter in the retained test log"
 )]
-fn fixture(fault: Fault) -> (Vec<Vec<u8>>, Vec<u8>) {
+fn fixture(gpu: &thrum_test_support::Gpu, fault: Fault) -> (Vec<Vec<u8>>, Vec<u8>) {
     pollster::block_on(async {
         let graph = fixture_graph();
         assert_eq!(
@@ -473,19 +468,8 @@ fn fixture(fault: Fault) -> (Vec<Vec<u8>>, Vec<u8>) {
                 "wgpu readback consumer"
             ]
         );
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter");
-        println!("M10 Metal adapter: {:?}", adapter.get_info());
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        println!("M10 Metal adapter: {:?}", gpu.adapter.get_info());
+        let (device, queue) = gpu.portable(Some(wgpu::Features::empty()));
         let mut native = Textures::new(&device);
         let mut twin = Textures::new(&device);
         native.initialize(&queue);

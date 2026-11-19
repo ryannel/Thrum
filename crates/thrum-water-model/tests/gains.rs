@@ -1,12 +1,7 @@
 //! Independent fetch spectrum quadrature and saturation checks.
-#[expect(
-    dead_code,
-    reason = "shared fixtures include map and wave constructors used by other tests"
-)]
-#[path = "support/fixtures.rs"]
 mod support;
 use std::f64::consts::{PI, TAU};
-use support::{close, profile};
+use support::fixtures::{body, close, grid, profile};
 use thrum_sea_model::{Forcing, GRAVITY, Swell};
 use thrum_water_model::{BodyKind, Map, Row, limit, shelter};
 
@@ -155,10 +150,10 @@ fn depth_limit_reports_removed_power_and_row_derived_swash() {
 
 #[test]
 fn body_fetch_drives_its_row_and_forcing_changes_are_transactional() {
-    let sea = support::body("exposed", BodyKind::Sea, 0.0);
-    let mut basin = support::body("sheltered", BodyKind::Basin { seed: [10.0, 10.0] }, 5.0);
+    let sea = body("exposed", BodyKind::Sea, 0.0);
+    let mut basin = body("sheltered", BodyKind::Basin { seed: [10.0, 10.0] }, 5.0);
     basin.fetch = 5000.0;
-    let bed = support::grid([21, 21], |x, z| 2.0 + (x - 10.0).hypot(z - 10.0));
+    let bed = grid([21, 21], |x, z| 2.0 + (x - 10.0).hypot(z - 10.0));
     let mut map = Map::prepare(bed, vec![sea, basin], profile()).unwrap();
     let wind = Forcing {
         wind_speed: 10.0,

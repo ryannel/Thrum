@@ -4,7 +4,13 @@ use super::*;
 fn metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         for recipe in ["portable", "apple-tile"] {
             let selected = capabilities.clone().with_recipe_override(recipe).unwrap();
             let mut host = host(&selected, &queue, Policy::default()).await;

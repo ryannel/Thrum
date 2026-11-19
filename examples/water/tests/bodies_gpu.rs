@@ -7,14 +7,20 @@ mod support;
 
 #[test]
 fn submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     island::with_cooked_island(
         "submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge",
         || {
-            let (mut dry, _) = island::fixture(false);
+            let (mut dry, _) = island::fixture(&test_gpu, false);
             dry.frame(0.5);
             let opaque = dry.witness();
             drop(dry);
-            let (mut scene, map) = island::fixture(true);
+            let (mut scene, map) = island::fixture(&test_gpu, true);
             scene.frame(0.5);
             let drawn = scene.witness();
             let map = map.lock().expect("map");
@@ -99,6 +105,12 @@ fn submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge() {
 
 #[test]
 fn no_lower_sea_sheet_is_hidden_under_the_lake() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "no_lower_sea_sheet_is_hidden_under_the_lake",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     island::with_cooked_island("no_lower_sea_sheet_is_hidden_under_the_lake", || {
         let dry = water_scene::island::map(water_scene::island::Wind::Calm).expect("island map");
         let mut bodies = (0..3)
@@ -131,7 +143,7 @@ fn no_lower_sea_sheet_is_hidden_under_the_lake() {
         .with_meshes(vec![MeshPlacement::new("meshes/island", "textures/white")])
         .expect("opaque island")
         .with_contribution(Box::new(water), || ContentStatus::Drawn(1));
-        let mut fixture = support::Fixture::from_game([160, 96], game, report);
+        let mut fixture = support::Fixture::from_game(&test_gpu, [160, 96], game, report);
         fixture.warm_cooked();
         fixture.frame(0.2);
         let depth = fixture.witness()[48 * 160 + 80][1];

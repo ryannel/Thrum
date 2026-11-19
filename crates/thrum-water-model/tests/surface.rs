@@ -1,11 +1,6 @@
 //! Surface values and time/spatial derivatives against analytic waves and SEA.
-#[expect(
-    dead_code,
-    reason = "shared saddle fixture is used by map and stage tests"
-)]
-#[path = "support/fixtures.rs"]
 mod support;
-use support::{body, close, field, grid, profile};
+use support::fixtures::{basin, body, close, field, grid, profile};
 use thrum_water_model::{BodyKind, Chart, Map};
 
 #[test]
@@ -60,7 +55,7 @@ fn open_water_is_the_sea_evaluator_and_calm_basin_is_its_level() {
             assert!(a.wet);
         }
     }
-    let basin = support::basin();
+    let basin = basin();
     let s = basin.surface(&field, [10.0, 10.0], 12.0).unwrap();
     close(s.sample.height, 3.0);
     assert_eq!(s.sample.slope, [0.0; 2]);

@@ -5,6 +5,12 @@ mod support;
 
 #[test]
 fn lake_stage_floods_and_drains_the_hollow_without_resetting_history() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "lake_stage_floods_and_drains_the_hollow_without_resetting_history",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     island::with_cooked_island(
         "lake_stage_floods_and_drains_the_hollow_without_resetting_history",
         || {
@@ -13,8 +19,9 @@ fn lake_stage_floods_and_drains_the_hollow_without_resetting_history() {
             let centre = island::project(matrix, [183.0, 12.0, 5.0]);
             let hollow = island::project(matrix, [235.0, 10.7, 5.0]);
             let bank = island::project(matrix, [183.0, 12.35, 35.0]);
-            let [centre_bed, hollow_bed, bank_bed] = opaque_depths(camera, [centre, hollow, bank]);
-            let (mut scene, map) = island::fixture(true);
+            let [centre_bed, hollow_bed, bank_bed] =
+                opaque_depths(&test_gpu, camera, [centre, hollow, bank]);
+            let (mut scene, map) = island::fixture(&test_gpu, true);
             let mut cpu = water_scene::island::map(water_scene::island::Wind::Calm)
                 .expect("CPU stage oracle");
             scene.parameters(camera);
@@ -119,8 +126,12 @@ fn check_motion(matrix: glam::Mat4, position: glam::Vec3, delta: f64, witness: [
     );
 }
 
-fn opaque_depths(camera: &str, landmarks: [usize; 3]) -> [f32; 3] {
-    let (mut dry, _) = island::fixture(false);
+fn opaque_depths(
+    test_gpu: &thrum_test_support::Gpu,
+    camera: &str,
+    landmarks: [usize; 3],
+) -> [f32; 3] {
+    let (mut dry, _) = island::fixture(test_gpu, false);
     dry.parameters(camera);
     dry.host.invalidate_history();
     dry.frame(1.0);

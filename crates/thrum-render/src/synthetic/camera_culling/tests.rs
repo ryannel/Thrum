@@ -58,15 +58,15 @@ fn wall(scene: &mut SyntheticScene) {
 #[test]
 fn the_grazing_view_hides_slots_and_replays_its_visible_set() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "the_grazing_view_hides_slots_and_replays_its_visible_set",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let view = grazing();
         let mut counts = Vec::new();
@@ -334,15 +334,15 @@ fn list_depth(
 #[test]
 fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "the_depth_prepass_writes_the_forward_depth_of_the_same_list",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         for (origin, two_sided) in [[0.0; 3], FAR_ORIGIN]
             .into_iter()
@@ -435,15 +435,15 @@ fn place(instance: &mut crate::abi::InstanceRecord, half: [f32; 3], center: [f32
 #[test]
 fn an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
         let mut cases = Vec::new();
@@ -759,15 +759,15 @@ async fn veiled_frames(
 #[test]
 fn a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let gpu = (&capabilities, &device, &queue);
         let mut scene = SyntheticScene::grid(2).expect("grid");

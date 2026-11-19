@@ -15,18 +15,12 @@ use thrum_render::timing::{GpuTimings, TimingError};
 #[cfg(target_os = "macos")]
 fn scene_depth_uses_32_bit_float() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter required for depth format regression");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("Metal device");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("scene_depth_uses_32_bit_float", Some(wgpu::Backend::Metal))
+        else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let depth = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("production scene depth format regression"),
             size: wgpu::Extent3d {
@@ -119,20 +113,15 @@ fn scene_depth_uses_32_bit_float() {
 )]
 fn prepared_scene_pixels_timestamps_and_disabled_path() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter required for explicit GPU test");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("prepared_scene_pixels_timestamps_and_disabled_path", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         let info = adapter.get_info();
         let features = DeviceCapabilities::requested_timing_features(&adapter);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: features,
-                ..Default::default()
-            })
-            .await
-            .unwrap();
+        let (device, queue) = test_gpu.portable(Some(features));
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         assert_eq!(capabilities.adapter().name, info.name);
         assert_eq!(capabilities.features(), device.features());
@@ -623,10 +612,9 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         }
         // Feature not enabled on a device means successful unsupported behavior,
         // even when the physical adapter does support timestamps.
-        let (plain_device, plain_queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (plain_device, plain_queue) = test_gpu
+            .fresh_adapter()
+            .portable(Some(wgpu::Features::empty()));
         let plain_capabilities = DeviceCapabilities::capture(&adapter, &plain_device, 42);
         let mut disabled = GpuTimings::new(&plain_capabilities, &plain_queue, 1).unwrap();
         assert!(!disabled.is_enabled());
@@ -651,15 +639,13 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
 #[test]
 fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "live_frame_matches_fresh_preparation_without_recreating_the_target",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let view = |eye| {
             SyntheticView::perspective(eye, [0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
                 .expect("finite camera")
@@ -739,15 +725,13 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
 #[test]
 fn two_submitted_views_keep_their_own_camera_and_exposure_pixels() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "two_submitted_views_keep_their_own_camera_and_exposure_pixels",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let view = |eye| {
             SyntheticView::perspective(eye, [0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, 0.1, 20.0)
                 .expect("finite camera")
@@ -844,15 +828,13 @@ fn two_submitted_views_keep_their_own_camera_and_exposure_pixels() {
 #[test]
 fn clustered_local_light_changes_only_its_receiver_region() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "clustered_local_light_changes_only_its_receiver_region",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(1).expect("fixture");
         scene.instances[0].current = [
             [0.6, 0.0, 0.0, 0.0],
@@ -919,15 +901,13 @@ fn clustered_local_light_changes_only_its_receiver_region() {
 #[test]
 fn perspective_cluster_and_target_aux_light_visible_pixels() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "perspective_cluster_and_target_aux_light_visible_pixels",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(1).expect("fixture");
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, 2.0],
@@ -1038,18 +1018,13 @@ fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
 #[cfg(target_os = "macos")]
 fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal adapter required for moving shadow caster regression");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters",
+            Some(wgpu::Backend::Metal),
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let light = SyntheticLight {
             direction_to_light: [1.0, 0.0, 1.0],
             irradiance: [4.0; 3],
@@ -1207,15 +1182,12 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
 #[test]
 fn cascade_overlap_keeps_caster_occlusion_across_split() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("cascade_overlap_keeps_caster_occlusion_across_split", None)
+        else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let light = SyntheticLight {
             direction_to_light: [1.0, 0.0, 1.0],
             irradiance: [4.0; 3],

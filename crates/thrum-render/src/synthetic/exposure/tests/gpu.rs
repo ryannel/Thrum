@@ -49,18 +49,11 @@ fn read_sample(
     }
 }
 
-async fn device() -> (wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real adapter for exposure correctness");
+async fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
+    let adapter = test_gpu.adapter.clone();
     #[cfg(target_os = "macos")]
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .unwrap()
+    crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
 }
 
 fn resolve(
@@ -130,8 +123,14 @@ fn assert_night_policy(
 
 #[test]
 fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue) = device().await;
+        let (device, queue) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let light_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
@@ -350,8 +349,14 @@ fn encode_sample(
 
 #[test]
 fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue) = device().await;
+        let (device, queue) = device(&test_gpu).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = scene.view.with_incident_exposure(0.0, 0.0, 18.0).unwrap();

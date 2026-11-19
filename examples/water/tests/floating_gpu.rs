@@ -11,12 +11,18 @@ use water_scene::{
 
 #[test]
 fn running_scene_drains_metal_answers_and_draws_the_fleet() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "running_scene_drains_metal_answers_and_draws_the_fleet",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     for wind in [Wind::Calm, Wind::Gale] {
         let scene = water_scene::floating::build(wind, false, 0.0, 0.0, false).expect("scene");
         let bodies = scene.observer();
         let mailbox = scene.mailbox.clone();
         let initial = bodies();
-        let mut host = support::Fixture::from_game([128, 96], scene.game, scene.report);
+        let mut host = support::Fixture::from_game(&test_gpu, [128, 96], scene.game, scene.report);
         for frame in 0..80 {
             host.frame(f64::from(frame) / 120.0);
         }
@@ -56,6 +62,12 @@ struct BodyRecord {
 
 #[test]
 fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "actual_gale_keeps_the_fleet_in_contact_on_metal",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let seconds = 600_u32;
     let final_tick = seconds * 60;
     // Cover the old detachment interval at a frame per tick. Then use the
@@ -115,7 +127,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
             }
             body.input += step.work.water + step.work.motor;
         });
-        let mut host = support::Fixture::from_game([96, 64], scene.game, scene.report);
+        let mut host = support::Fixture::from_game(&test_gpu, [96, 64], scene.game, scene.report);
         let begin = std::time::Instant::now();
         let baseline = observe_pose()[0].position.x;
         for tick in (0..=dense_ticks).chain(((dense_ticks + 2)..=final_tick).step_by(2)) {

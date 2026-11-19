@@ -276,10 +276,13 @@ pub(super) struct Gpu {
 }
 
 impl Gpu {
-    pub(super) fn new(stages: bool, recipe: &str, restrict: impl Fn(&mut wgpu::Limits)) -> Self {
-        let gate = thrum_test_support::gpu("mesh-stage proof", Some(wgpu::Backend::Metal))
-            .expect("Metal required for MESH-SHADING");
-        Self::generation(gate, stages, recipe, 1, restrict)
+    pub(super) fn new(
+        gpu: &thrum_test_support::Gpu,
+        stages: bool,
+        recipe: &str,
+        restrict: impl Fn(&mut wgpu::Limits),
+    ) -> Self {
+        Self::generation(gpu.fresh_adapter(), stages, recipe, 1, restrict)
     }
 
     pub(super) fn replacement(&self, restrict: impl Fn(&mut wgpu::Limits)) -> Self {

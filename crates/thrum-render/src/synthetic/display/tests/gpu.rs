@@ -128,15 +128,14 @@ fn render(
 #[test]
 fn gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         // Exact half input: black/subnormal, knee±one half ULP, neutral and
         // saturated ramps, dominant-channel ties, and the finite fp16 maximum.
@@ -264,15 +263,14 @@ const ZONE_CODES: [[u8; 3]; 13] = [
 #[test]
 fn gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let reference = 0.18 / (std::f64::consts::PI * 1.2 * 0.4);
         // Exposed luminance in stops from the reference, each 0.3 stop inside a band, plus

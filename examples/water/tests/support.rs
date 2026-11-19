@@ -17,9 +17,9 @@ use thrum_render::{
 
 pub(crate) type Host = FrameHost<StillWorld, SkyScene>;
 
-pub(crate) fn device() -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    let gpu = thrum_test_support::gpu("water surface", Some(wgpu::Backend::Metal))
-        .expect("Mac Metal target");
+pub(crate) fn device(
+    gpu: &thrum_test_support::Gpu,
+) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let profile = if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
         thrum_test_support::Profile::Portable
     } else {
@@ -66,19 +66,20 @@ impl Fixture {
             .expect("signal surface");
         map
     }
-    pub(crate) fn new(extent: [u32; 2]) -> Self {
-        Self::paired(extent, true)
+    pub(crate) fn new(gpu: &thrum_test_support::Gpu, extent: [u32; 2]) -> Self {
+        Self::paired(gpu, extent, true)
     }
-    pub(crate) fn paired(extent: [u32; 2], water: bool) -> Self {
-        Self::with_sampling(extent, water, false, false)
+    pub(crate) fn paired(gpu: &thrum_test_support::Gpu, extent: [u32; 2], water: bool) -> Self {
+        Self::with_sampling(gpu, extent, water, false, false)
     }
-    pub(crate) fn temporal(extent: [u32; 2]) -> Self {
-        Self::with_sampling(extent, true, true, true)
+    pub(crate) fn temporal(gpu: &thrum_test_support::Gpu, extent: [u32; 2]) -> Self {
+        Self::with_sampling(gpu, extent, true, true, true)
     }
-    pub(crate) fn antialiased(extent: [u32; 2]) -> Self {
-        Self::with_sampling(extent, true, true, false)
+    pub(crate) fn antialiased(gpu: &thrum_test_support::Gpu, extent: [u32; 2]) -> Self {
+        Self::with_sampling(gpu, extent, true, true, false)
     }
     fn with_sampling(
+        gpu: &thrum_test_support::Gpu,
         extent: [u32; 2],
         water: bool,
         temporal_sampling: bool,
@@ -94,14 +95,15 @@ impl Fixture {
             game =
                 game.with_display_overlay(thrum_render::synthetic::DisplayOverlay::TemporalInputs);
         }
-        Self::from_game(extent, game, report)
+        Self::from_game(gpu, extent, game, report)
     }
     pub(crate) fn from_game(
+        gpu: &thrum_test_support::Gpu,
         extent: [u32; 2],
         mut game: SkyGame,
         report: water_scene::SharedReport,
     ) -> Self {
-        let (device, queue, caps) = device();
+        let (device, queue, caps) = device(&gpu.fresh_adapter());
         let host = game
             .prepare(
                 Gpu {

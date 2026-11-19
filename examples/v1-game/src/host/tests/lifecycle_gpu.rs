@@ -10,13 +10,19 @@ use thrum_render::present::SurfaceProfile;
 
 #[test]
 fn threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_world() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_world",
+        None,
+    ) else {
+        return;
+    };
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice {
             adapter,
             device,
             queue,
             ..
-        } = super::gpu_support::device(wgpu::Backends::all(), false).await;
+        } = super::gpu_support::device(&gpu, false).await;
         if cfg!(target_os = "macos") {
             assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
         }

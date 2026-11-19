@@ -303,7 +303,11 @@ fn drawable(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
 #[test]
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn valley_cull_equal() {
-    let gpu = Gpu::new(true, "apple-tile", |_| {});
+    let Some(test_gpu) = thrum_test_support::gpu("valley_cull_equal", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let gpu = Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let root = output();
     for cull in [false, true] {
         let mut valley = Valley::new(
@@ -406,7 +410,10 @@ fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, probe: Su
 #[test]
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn shadow_equal() {
-    let gpu = Gpu::new(true, "apple-tile", |_| {});
+    let Some(test_gpu) = thrum_test_support::gpu("shadow_equal", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let gpu = Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     for hour in [12.0, 17.3] {
         let all = shadow_maps(
             &gpu,
@@ -435,7 +442,11 @@ fn shadow_equal() {
 #[test]
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn shadow_parity() {
-    let gpu = Gpu::new(true, "apple-tile", |_| {});
+    let Some(test_gpu) = thrum_test_support::gpu("shadow_parity", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let gpu = Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     for hour in [12.0, 17.3, GRAZING_SUN_HOUR] {
         let indexed = shadow_maps(&gpu, CookedDrawPath::Indirect, false, hour, SunProbe::None);
         let stages = shadow_maps(
@@ -471,8 +482,11 @@ fn save_shadow_maps(hour: f32, arm: &str, maps: &[u8]) {
 #[test]
 #[ignore = "capture via scripts/mesh_stage_capture.py"]
 fn fixed_stops() {
+    let Some(test_gpu) = thrum_test_support::gpu("fixed_stops", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let extent = [1920, 1080];
-    let gpu = Gpu::new(true, "apple-tile", |_| {});
+    let gpu = Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let folder = output();
     let mut frames = Vec::new();
     for path in [CookedDrawPath::Indirect, CookedDrawPath::MeshStages] {

@@ -34,15 +34,12 @@ fn write_ppm(path: impl AsRef<std::path::Path>, rgba: &[[u8; 4]], extent: [u32; 
 #[test]
 fn game_atmosphere_capture_has_visible_finite_pixels() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real Metal adapter required for game atmosphere capture");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("game_atmosphere_capture_has_visible_finite_pixels", None)
+        else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared game scene");
@@ -195,15 +192,14 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
 #[test]
 fn repeated_display_target_reuses_world_columns_but_advances_interpolation() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real Metal adapter required");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "repeated_display_target_reuses_world_columns_but_advances_interpolation",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let extent = [320, 180];
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("repeat display target"),
@@ -262,15 +258,12 @@ fn repeated_display_target_reuses_world_columns_but_advances_interpolation() {
 #[test]
 fn autonomous_world_page_drives_the_existing_gpu_scene() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real native adapter required");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("autonomous_world_page_drives_the_existing_gpu_scene", None)
+        else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
@@ -334,18 +327,13 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
 #[test]
 fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter required for explicit GPU test");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("device request succeeds");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(None);
         let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared 10k scene");
@@ -433,10 +421,9 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
         assert_eq!(host.tick(), 3, "overload cannot skip or repeat a tick");
         assert!(host.next_due_in().is_none());
 
-        let (plain_device, plain_queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device without timestamp queries");
+        let (plain_device, plain_queue) = test_gpu
+            .fresh_adapter()
+            .portable(Some(wgpu::Features::empty()));
         let mut plain = FrameHost::new(
             &plain_device,
             &plain_queue,
@@ -473,15 +460,13 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
 #[test]
 fn local_controls_use_validated_input_and_hold_until_replaced() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("native device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "local_controls_use_validated_input_and_hold_until_replaced",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared game host");

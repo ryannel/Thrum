@@ -212,39 +212,17 @@ fn history_refuses_partial_updates_duplicate_producers_and_early_result() {
     );
 }
 
-#[cfg(target_os = "macos")]
-#[path = "graph_kinds_support/scenes.rs"]
-mod scenes;
-#[cfg(target_os = "macos")]
-fn device(
-    generation: u64,
-) -> (
-    wgpu::Device,
-    wgpu::Queue,
-    thrum_render::capabilities::DeviceCapabilities,
-) {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real Metal");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("Metal device");
-        let caps =
-            thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, generation);
-        (device, queue, caps)
-    })
-}
+mod support;
+
 #[test]
-#[cfg(target_os = "macos")]
 fn absent_effect_preserves_day_night_capture_graphs_exactly() {
-    scenes::prove_scenes();
+    let Some(gpu) = thrum_test_support::gpu(
+        "absent_effect_preserves_day_night_capture_graphs_exactly",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    support::prove_scenes(&gpu);
 }
 
 #[test]

@@ -1,8 +1,6 @@
 //! Map oracles and named refusal cases.
-#[expect(dead_code, reason = "shared wave fixture is used by surface tests")]
-#[path = "support/fixtures.rs"]
 mod support;
-use support::{body, close, grid, profile};
+use support::fixtures::{body, close, grid, profile};
 use thrum_water_model::{BodyKind, Chart, Map};
 
 #[test]
@@ -29,7 +27,7 @@ fn basin_seed_selects_only_its_bilinear_component() {
                 let mut p = profile();
                 p.margin_height = 0.0;
                 let map = Map::prepare(
-                    support::saddle_bed(origin, spacing, flipped),
+                    support::fixtures::saddle_bed(origin, spacing, flipped),
                     vec![body(
                         "seeded",
                         BodyKind::Basin {
@@ -71,7 +69,7 @@ fn diagonal_necks_propagate_beyond_the_seed_cell_only_when_open() {
         let mut p = profile();
         p.margin_height = 0.0;
         let map = Map::prepare(
-            support::saddle_chain(7),
+            support::fixtures::saddle_chain(7),
             vec![body("chain", BodyKind::Basin { seed: [1.0, 1.0] }, level)],
             p,
         )
@@ -91,7 +89,7 @@ fn basin_refuses_a_diagonal_connection_to_exterior_sea() {
     // The boundary well (3,3) connects to (1,1) through two h=0 saddles
     // at sea level 0.5, although all intervening orthogonal vertices are h=2.
     let error = Map::prepare(
-        support::saddle_chain(4),
+        support::fixtures::saddle_chain(4),
         vec![
             body("sea", BodyKind::Sea, 0.5),
             body("open-hollow", BodyKind::Basin { seed: [1.0, 1.0] }, -1.0),
@@ -135,7 +133,7 @@ fn a_shoreline_corner_cannot_flood_the_downhill_hollow() {
 
 #[test]
 fn cone_radius_and_disconnected_hollow_are_independent_oracles() {
-    let map = support::basin();
+    let map = support::fixtures::basin();
     for x in [10.0, 10.3, 11.7, 12.999] {
         let s = map.sample([x, 10.0]).unwrap();
         assert_eq!(s.body, 0);

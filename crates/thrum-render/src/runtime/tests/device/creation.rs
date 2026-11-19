@@ -103,7 +103,13 @@ fn flush(host: &Host) {
 fn play_builds_nothing_and_transitions_are_charged_to_their_thread() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "play_builds_nothing_and_transitions_are_charged_to_their_thread",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let report = host.creation_report();
         assert_eq!(report.generation, 7);
@@ -190,7 +196,13 @@ fn play_builds_nothing_and_transitions_are_charged_to_their_thread() {
 fn retained_and_created_then_dropped_play_pipelines_both_fail_the_guard() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "retained_and_created_then_dropped_play_pipelines_both_fail_the_guard",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let site = site(&host);
         let texture = drawable(&host, [64, 64]);
@@ -246,7 +258,13 @@ fn retained_and_created_then_dropped_play_pipelines_both_fail_the_guard() {
 fn a_cloned_record_shares_the_site_and_a_recaptured_handle_reaches_nothing() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "a_cloned_record_shares_the_site_and_a_recaptured_handle_reaches_nothing",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let texture = drawable(&host, [64, 64]);
         play(&mut host, &texture, 1);
@@ -275,6 +293,13 @@ fn a_same_id_device_of_another_instance_never_reaches_the_ledger() {
     pollster::block_on(async {
         let first = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let second = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let test = "a_same_id_device_of_another_instance_never_reaches_the_ledger";
+        let Some(first) = thrum_test_support::gpu_on(test, &first) else {
+            return;
+        };
+        let Some(second) = thrum_test_support::gpu_on(test, &second) else {
+            return;
+        };
         let (capabilities, queue) = gpu(&first, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let texture = drawable(&host, [64, 64]);
@@ -310,6 +335,13 @@ fn two_registered_same_id_devices_on_one_thread_keep_their_own_events() {
     pollster::block_on(async {
         let first = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let second = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let test = "two_registered_same_id_devices_on_one_thread_keep_their_own_events";
+        let Some(first) = thrum_test_support::gpu_on(test, &first) else {
+            return;
+        };
+        let Some(second) = thrum_test_support::gpu_on(test, &second) else {
+            return;
+        };
         let (a_capabilities, a_queue) = gpu(&first, 7).await;
         let (b_capabilities, b_queue) = gpu(&second, 7).await;
         let mut a = host(&a_capabilities, &a_queue, Policy::default()).await;
@@ -368,7 +400,13 @@ fn two_registered_same_id_devices_on_one_thread_keep_their_own_events() {
 fn a_detached_preparation_overlapping_play_separates_its_build_from_an_unscoped_create() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "a_detached_preparation_overlapping_play_separates_its_build_from_an_unscoped_create",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let texture = drawable(&host, [64, 64]);
         let detached = host.creations.detach();
@@ -434,13 +472,19 @@ fn a_detached_preparation_overlapping_play_separates_its_build_from_an_unscoped_
 fn a_replacement_device_starts_its_own_ledger_and_retires_the_old_one() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "a_replacement_device_starts_its_own_ledger_and_retires_the_old_one",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&first, &queue, Policy::default()).await;
         let texture = drawable(&host, [64, 64]);
         play(&mut host, &texture, 2);
         let old_events = host.creation_report().pipelines;
         let inputs = host.device_prepare_inputs().expect("inputs");
-        let (second, second_queue) = gpu(&instance, 8).await;
+        let (second, second_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&second, &second_queue, Some(surface()))
             .await
@@ -483,7 +527,12 @@ fn a_replacement_device_starts_its_own_ledger_and_retires_the_old_one() {
 fn measure_the_per_frame_ledger_cost() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) =
+            thrum_test_support::gpu_on("measure_the_per_frame_ledger_cost", &instance)
+        else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let host = host(&capabilities, &queue, Policy::default()).await;
         let mut runs = Vec::new();
         for _ in 0..9 {
@@ -575,7 +624,13 @@ fn join(compiles: &Compiles) -> Vec<wgpu::ComputePipeline> {
 fn contribution_rebuilds_and_compile_thread_reloads_and_restores_are_declared() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "contribution_rebuilds_and_compile_thread_reloads_and_restores_are_declared",
+            &instance,
+        ) else {
+            return;
+        };
+        let (first, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&first, &queue, Policy::default()).await;
         let compiles = Compiles::default();
         host.set_scene_contribution(Box::new(Compiling {
@@ -611,9 +666,9 @@ fn contribution_rebuilds_and_compile_thread_reloads_and_restores_are_declared() 
         assert_eq!(report.first_violations[0].thread, "thrum-cooked-material");
 
         // A failed replacement attempt's ledger never receives the host's events.
-        let (failed, _failed_queue) = gpu(&instance, 9).await;
+        let (failed, _failed_queue) = gpu(&test_gpu.fresh_adapter(), 9).await;
         let inputs = host.device_prepare_inputs().expect("inputs");
-        let (second, second_queue) = gpu(&instance, 8).await;
+        let (second, second_queue) = gpu(&test_gpu.fresh_adapter(), 8).await;
         let mut candidate = inputs
             .prepare(&second, &second_queue, Some(surface()))
             .await

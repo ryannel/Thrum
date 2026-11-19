@@ -27,6 +27,18 @@ required-features = ["thrum-asset-gpu/fault-probe"]
 name = "ray_tracing_gpu"
 required-features = ["draw-probe"]
 
+[[test]]
+name = "field_gpu"
+path = "tests/support/field_gpu.rs"
+
+[[test]]
+name = "field_occlusion_gpu"
+path = "tests/support/field_occlusion_gpu.rs"
+
+[[test]]
+name = "valley_culling_gpu"
+path = "tests/support/valley_culling_gpu.rs"
+
 [dependencies]
 thrum-fixtures = { path = "../../crates/thrum-fixtures" }
 pollster = "=1.0.1"
@@ -90,6 +102,7 @@ harness = false
 
 [[bench]]
 name = "valley_culling"
+path = "tests/support/valley_culling_bench.rs"
 harness = false
 
 [[bench]]

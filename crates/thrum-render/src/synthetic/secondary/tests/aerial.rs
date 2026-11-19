@@ -29,9 +29,14 @@ fn lighting(height: f32) -> FrameLighting {
 #[cfg(target_os = "macos")]
 #[test]
 fn plane_volume_matches_every_channel_of_the_ordinary_observer() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "plane_volume_matches_every_channel_of_the_ordinary_observer",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue) =
-            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let (_, device, queue) = crate::synthetic::tests::support::device(&test_gpu).await;
         let capabilities = DeviceCapabilities::capture_device(&device, 1);
         for height in [0.0, 50.0] {
             for below in [2.0, 40.0] {

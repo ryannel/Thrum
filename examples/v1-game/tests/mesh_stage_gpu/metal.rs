@@ -14,6 +14,9 @@ use thrum_render::{
 
 #[test]
 fn selection() {
+    let Some(test_gpu) = thrum_test_support::gpu("selection", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let mut fixture = support::Fixture::new("selection", false);
     for (enabled, recipe, expected_path, reason) in [
         (true, "apple-tile", MeshStages, None),
@@ -31,7 +34,7 @@ fn selection() {
             Some("device did not enable mesh-stages"),
         ),
     ] {
-        let gpu = support::Gpu::new(enabled, recipe, |_| {});
+        let gpu = support::Gpu::new(&test_gpu, enabled, recipe, |_| {});
         let expected_recipe = if recipe == "apple-tile" {
             Recipe::AppleTile
         } else {
@@ -67,7 +70,7 @@ fn selection() {
     }
     let request = Arc::new(Mutex::new(None));
     fixture.secondary_request = Some(Arc::clone(&request));
-    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let mut scene = gpu.scene(&fixture, MeshStages, true, false);
     let view = support::camera([0.0, 3.1, 4.6], [0.0, 0.0, 0.0]);
     let active = SecondaryViewRequest::new(&view, [support::SIDE; 2], None, ViewAir::Camera)
@@ -111,7 +114,10 @@ fn selection() {
 
 #[test]
 fn prepared() {
-    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let Some(test_gpu) = thrum_test_support::gpu("prepared", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let fixture = support::Fixture::new("prepared", false);
     let mut scene = gpu.scene(&fixture, MeshStages, true, false);
     let ready = scene.host.creation_report();
@@ -159,12 +165,15 @@ fn prepared() {
 
 #[test]
 fn eligibility() {
+    let Some(test_gpu) = thrum_test_support::gpu("eligibility", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let fixture = support::Fixture::new("eligibility", true);
     for reason in [
         "max_storage_buffer_binding_size",
         "max_task_workgroup_total_count",
     ] {
-        let gpu = support::Gpu::new(true, "apple-tile", |limits| {
+        let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |limits| {
             if reason == "max_storage_buffer_binding_size" {
                 limits.max_storage_buffer_binding_size = 160 << 10;
             } else {
@@ -192,9 +201,12 @@ fn eligibility() {
 
 #[test]
 fn residency() {
+    let Some(test_gpu) = thrum_test_support::gpu("residency", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let fixture = support::Fixture::new("residency", true);
-    let ordinary = support::Gpu::new(false, "apple-tile", |_| {});
-    let enabled = support::Gpu::new(true, "apple-tile", |_| {});
+    let ordinary = support::Gpu::new(&test_gpu, false, "apple-tile", |_| {});
+    let enabled = support::Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     for path in [Auto, Direct, Indirect] {
         let reference = ordinary.scene(&fixture, path, true, false);
         let candidate = enabled.scene(&fixture, path, true, false);
@@ -242,8 +254,11 @@ fn residency() {
 
 #[test]
 fn parity() {
+    let Some(test_gpu) = thrum_test_support::gpu("parity", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let fixture = support::Fixture::new("parity", false);
-    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let mut mesh = gpu.scene(&fixture, MeshStages, false, false);
     let mut indexed = gpu.scene(&fixture, Indirect, false, false);
     for (label, eye, cut) in [
@@ -275,8 +290,11 @@ fn parity() {
 
 #[test]
 fn cull_equal() {
+    let Some(test_gpu) = thrum_test_support::gpu("cull_equal", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let fixture = support::Fixture::new("cull-equal", false);
-    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let geometry = fixture.mesh("meshes/small");
     let mut culled = gpu.scene(&fixture, MeshStages, true, false);
     let mut unculled = gpu.scene(&fixture, MeshStages, false, false);
@@ -437,8 +455,11 @@ fn assert_promoted(scene: &support::Scene<'_>, serial: u64) {
 
 #[test]
 fn material() {
+    let Some(test_gpu) = thrum_test_support::gpu("material", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let fixture = support::Fixture::new("material", true);
-    let gpu = support::Gpu::new(true, "apple-tile", |limits| {
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |limits| {
         limits.max_task_workgroup_total_count = 1;
     });
     let mut scene = gpu.scene(&fixture, MeshStages, false, false);
@@ -489,9 +510,12 @@ fn material() {
 
 #[test]
 fn shadows_off() {
+    let Some(test_gpu) = thrum_test_support::gpu("shadows_off", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let mut fixture = support::Fixture::new("shadows-off", false);
     fixture.shadows = false;
-    let gpu = support::Gpu::new(true, "apple-tile", |_| {});
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |_| {});
     let mut culled = gpu.scene(&fixture, MeshStages, true, false);
     let mut unculled = gpu.scene(&fixture, MeshStages, false, false);
     let frame = culled.frame();
@@ -512,12 +536,16 @@ fn shadows_off() {
 
 #[test]
 fn publication_edit() {
+    let Some(test_gpu) = thrum_test_support::gpu("publication_edit", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
     let mut fixture = support::Fixture::new("edit", true);
     let mut second = fixture.placements[1].clone();
     second.transform[3][0] = 0.8;
     second.transform[3][2] = -1.8;
     fixture.placements.push(second);
-    let gpu = support::Gpu::new(true, "apple-tile", |limits| {
+    let gpu = support::Gpu::new(&test_gpu, true, "apple-tile", |limits| {
         limits.max_task_workgroup_total_count = 1;
     });
     let mut live = gpu.scene(&fixture, MeshStages, false, false);
@@ -587,9 +615,12 @@ fn publication_edit() {
 
 #[test]
 fn lifecycle() {
+    let Some(test_gpu) = thrum_test_support::gpu("lifecycle", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
     let fixture = support::Fixture::new("lifecycle", true);
     let restrict = |limits: &mut wgpu::Limits| limits.max_task_workgroup_total_count = 1;
-    let old = support::Gpu::new(true, "apple-tile", restrict);
+    let old = support::Gpu::new(&test_gpu, true, "apple-tile", restrict);
     let replacement = old.replacement(restrict);
     let mut scene = old.scene(&fixture, MeshStages, true, false);
     let baseline = scene.frame().colour;

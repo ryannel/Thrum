@@ -74,22 +74,12 @@ fn percentiles(values: &mut [f64]) -> (f64, f64) {
 )]
 fn main() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real native adapter required");
+        let Some(test_gpu) = thrum_test_support::gpu("main", None) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         let adapter_name = adapter.get_info().name;
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features:
-                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
-                        &adapter,
-                    ),
-                ..Default::default()
-            })
-            .await
-            .expect("timestamp-capable device");
+        let (device, queue) = test_gpu.portable(None);
         let mut full_scene = SyntheticScene::grid(10_000).expect("10k fixture scene");
         full_scene.view = SyntheticView::perspective(
             [0.0, 0.0, 3.0],

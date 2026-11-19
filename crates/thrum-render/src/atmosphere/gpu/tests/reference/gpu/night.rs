@@ -63,17 +63,17 @@ fn error(actual: f64, expected: f64) -> f64 {
 #[test]
 fn night_profile_survives_sky_sampling_and_the_incident_reduction() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for night-profile reference");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "night_profile_survives_sky_sampling_and_the_incident_reduction",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("night-profile GPU device");
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let directions = ELEVATIONS.map(|degrees| {
             let (sin, cos) = degrees.to_radians().sin_cos();

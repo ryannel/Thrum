@@ -2,18 +2,31 @@
 #[cfg(target_os = "macos")]
 use std::{cell::Cell, io::Write as _};
 #[cfg(target_os = "macos")]
-use thrum_render::capabilities::{HardwareFeature, HardwareLaunchError, HardwareRequest};
+use thrum_render::capabilities::{
+    DeviceRecipe, HardwareFeature, HardwareLaunchError, HardwareRequest,
+};
 #[cfg(target_os = "macos")]
 use thrum_test_support::{Profile, Restriction};
 
 #[cfg(target_os = "macos")]
 #[test]
 fn metal_launch_and_preference_retry() {
-    let gate = thrum_test_support::gpu("mesh-stage launch", Some(wgpu::Backend::Metal))
-        .expect("MESH-SHADING requires this Mac");
+    let Some(gate) = thrum_test_support::gpu("mesh-stage launch", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
     let profile = Profile::Portable;
     let unrestricted = Restriction::default();
-    let base = profile.descriptor(&gate.adapter, &unrestricted);
+    let descriptor = |restriction: &Restriction| {
+        DeviceRecipe {
+            profile,
+            restriction: Some(&restriction.for_profile(profile, &gate.adapter)),
+            ..Default::default()
+        }
+        .descriptor(&gate.adapter)
+        .expect("valid base recipe")
+    };
+    let base = descriptor(&unrestricted);
     let open = |requests: &[HardwareRequest]| {
         gate.fresh_adapter()
             .device_with_hardware(profile, &unrestricted, 1, requests)
@@ -70,7 +83,7 @@ fn metal_launch_and_preference_retry() {
             if reason.contains(expected)
         ));
         let (fallback, _, registry) = open_restricted(&preferred).expect("restricted fallback");
-        let base = profile.descriptor(&gate.adapter, &restriction);
+        let base = descriptor(&restriction);
         assert_eq!(fallback.features(), base.required_features);
         assert_eq!(fallback.limits(), base.required_limits);
         let decline = registry.hardware()[0].declined.as_deref().expect("decline");

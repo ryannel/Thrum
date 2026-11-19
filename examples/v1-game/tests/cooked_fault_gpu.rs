@@ -1,5 +1,4 @@
 //! Real staging failure, whole-publication refusal, and recovery with bounded slots.
-#![cfg(target_os = "macos")]
 
 use std::time::{Duration, Instant};
 use thrum_asset::Profile;
@@ -28,6 +27,15 @@ fn drive(
 
 #[test]
 fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
+    use thrum_render::capabilities::{
+        DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
+    };
+    let Some(gpu) = thrum_test_support::gpu(
+        "staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let root = std::env::temp_dir().join(format!("thrum-lent-fault-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let source = root.join("source");
@@ -56,21 +64,21 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         .expect("placement texture")
         .product;
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("Metal");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_limits: wgpu::Limits {
+        let OpenedDevice { device, queue, .. } = DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            restriction: Some(&DeviceRestriction {
+                limits: Some(wgpu::Limits {
                     max_texture_dimension_3d: 128,
                     ..wgpu::Limits::default()
-                },
-                ..wgpu::DeviceDescriptor::default()
-            })
-            .await
-            .expect("device");
+                }),
+                features: Some(wgpu::Features::empty()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+        .open_admitted(&gpu.instance, &gpu.adapter)
+        .await
+        .expect("restricted Metal device");
         let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("host");

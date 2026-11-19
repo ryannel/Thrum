@@ -6,9 +6,11 @@ use wgpu::util::DeviceExt;
 pub(crate) const EPS_METRES: f64 = 0.00004;
 pub(crate) const EPS_CURRENT: f64 = 0.000_004;
 
-pub(crate) fn probe(map: &Map, inputs: &[[f32; 8]]) -> Vec<[[f32; 4]; 3]> {
-    let gpu = thrum_test_support::gpu("water map probe", Some(wgpu::Backend::Metal))
-        .expect("required mac-metal target");
+pub(crate) fn probe(
+    gpu: &thrum_test_support::Gpu,
+    map: &Map,
+    inputs: &[[f32; 8]],
+) -> Vec<[[f32; 4]; 3]> {
     let (device, queue) = gpu.device(
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),

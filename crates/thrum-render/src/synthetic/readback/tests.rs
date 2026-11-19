@@ -6,15 +6,14 @@ fn metal_readback_preserves_sdr_and_linear_channels_and_removes_row_padding() {
     pollster::block_on(async {
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
-        let instance = wgpu::Instance::new(descriptor);
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real Metal adapter required");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_readback_preserves_sdr_and_linear_channels_and_removes_row_padding",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scene = SyntheticScene::grid(1).unwrap();
         let prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await

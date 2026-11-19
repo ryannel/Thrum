@@ -118,17 +118,14 @@ fn unknown_keys_are_refused_and_leave_the_slot() {
 
 #[test]
 fn members_follow_upload_activity_churn() {
-    let (device, queue) = pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device")
-    });
+    let Some(test_gpu) = thrum_test_support::gpu("members_follow_upload_activity_churn", None)
+    else {
+        return;
+    };
+    let (device, queue) = pollster::block_on(crate::test_device::portable(
+        &test_gpu,
+        Some(wgpu::Features::empty()),
+    ));
     let count = 96_u32;
     let mesh_of = |slot: u32| {
         if slot.is_multiple_of(3) {

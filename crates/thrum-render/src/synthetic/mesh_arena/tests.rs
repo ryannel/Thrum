@@ -34,17 +34,9 @@ fn fan(triangles: u32, scale: f32) -> (Vec<MeshVertex>, Vec<u32>) {
     (vertices, indices)
 }
 
-fn device() -> (wgpu::Device, wgpu::Queue) {
+fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Device, wgpu::Queue) {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter");
-        adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device")
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await
     })
 }
 
@@ -223,7 +215,11 @@ fn bounds_come_from_the_referenced_vertices() {
 
 #[test]
 fn growth_keeps_every_row_and_its_offsets() {
-    let (device, queue) = device();
+    let Some(test_gpu) = thrum_test_support::gpu("growth_keeps_every_row_and_its_offsets", None)
+    else {
+        return;
+    };
+    let (device, queue) = device(&test_gpu);
     let mut arena = MeshArena::new(ROOMY).expect("arena");
     let first = arena.upload(&device, &queue);
     assert!(first.reallocated);

@@ -19,7 +19,9 @@ use thrum_render::{
 mod replacement;
 
 pub(crate) fn prove_contributions() {
-    let metal = Metal::new(1);
+    let Some(metal) = Metal::new(1) else {
+        return;
+    };
     let mut fixture = Fixture::new("cooked-shadows");
     demo::write_grid_gltf(&fixture.cook.source, "receiver", 3, 0.0).expect("write cooked floor");
     fixture.publish();

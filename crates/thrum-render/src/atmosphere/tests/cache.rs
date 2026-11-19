@@ -67,19 +67,15 @@ fn has_dfg(names: &[String]) -> bool {
 fn metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work() {
     pollster::block_on(async {
         crate::timestamp_permit::hold();
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real cache adapter");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
-                ..Default::default()
-            })
-            .await
-            .expect("cache device");
+        let (device, queue) = crate::test_device::portable(&test_gpu, None).await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 54);
         let mut scene = SyntheticScene::grid(1).unwrap();
         let initial = AtmosphereFrame::new([0.0, 1.0, 0.0], 1.0, [1.0; 3], 2.0, 1).unwrap();

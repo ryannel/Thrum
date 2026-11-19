@@ -444,8 +444,14 @@ fn spherical_pixel(extent: [u32; 2], [x, y]: [u32; 2], tan_fov: [f64; 2]) -> f64
 
 #[test]
 fn production_star_pipeline_conserves_flux_and_masks_depth_edges() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "production_star_pipeline_conserves_flux_and_masks_depth_edges",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (device, queue, _) = metal().await;
+        let (device, queue, _) = metal(&test_gpu).await;
         let probe = Probe::new(&device, &queue);
         let mut max_error = 0.0_f64;
         let mut min_ratio = f64::INFINITY;
@@ -536,6 +542,12 @@ fn production_star_pipeline_conserves_flux_and_masks_depth_edges() {
 
 #[test]
 fn resolved_night_footprints_keep_the_magnitude_order() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "resolved_night_footprints_keep_the_magnitude_order",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     use super::{OffscreenTarget, PreparedSynthetic, SyntheticScene, atmosphere, capture};
 
     pollster::block_on(async {
@@ -545,7 +557,7 @@ fn resolved_night_footprints_keep_the_magnitude_order() {
             [-0.039_968, 0.799_361, -0.599_521, 1.602_631_7e-7],
             [0.039_968, 0.799_361, -0.599_521, 1.011_592_2e-8],
         ];
-        let (device, queue, capabilities) = metal().await;
+        let (device, queue, capabilities) = metal(&test_gpu).await;
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.star_catalogue = Some(&RECORDS);
         let lighting = atmosphere([0.0, -1.0, 0.0]);

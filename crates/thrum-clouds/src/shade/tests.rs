@@ -140,8 +140,10 @@ fn config() -> ShadeConfig {
     reason = "fixed fixture coordinates narrow to the production shader precision"
 )]
 fn lighting_stage_snapshots() {
-    let gpu = thrum_test_support::gpu("cloud lighting diagnosis", Some(wgpu::Backend::Metal))
-        .expect("Metal target");
+    let Some(gpu) = thrum_test_support::gpu("cloud lighting diagnosis", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
     let (device, queue) = gpu.device(
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction::default(),

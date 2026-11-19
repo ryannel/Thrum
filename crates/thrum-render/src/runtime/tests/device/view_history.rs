@@ -26,7 +26,13 @@ fn retire_scene(host: &mut Host) {
 fn a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(
             &capabilities,
             &queue,
@@ -85,7 +91,13 @@ fn a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch() {
 fn m2_history_commits_in_submission_order_with_two_in_flight_and_cancelled_acquisition() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "m2_history_commits_in_submission_order_with_two_in_flight_and_cancelled_acquisition",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         let encoded_a = host
             .advance(Duration::ZERO)
@@ -184,7 +196,13 @@ fn m2_history_commits_in_submission_order_with_two_in_flight_and_cancelled_acqui
 fn m2_forced_submission_refusal_resets_without_publishing_the_candidate() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "m2_forced_submission_refusal_resets_without_publishing_the_candidate",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         host.advance(Duration::ZERO)
             .unwrap()
@@ -227,7 +245,13 @@ fn m2_forced_submission_refusal_resets_without_publishing_the_candidate() {
 fn m2_temporal_passes_preserve_named_timing_layout() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "m2_temporal_passes_preserve_named_timing_layout",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let mut host = host(&capabilities, &queue, Policy::default()).await;
         host.advance(Duration::ZERO)
             .unwrap()

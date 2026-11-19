@@ -30,7 +30,8 @@ pub fn presentation(
 /// Prepare a real diagnostic device using the existing state-test request policy.
 /// # Panics
 /// Panics when the target adapter, device or selected recipe is unavailable.
-pub async fn device(
+pub fn device(
+    gpu: &thrum_test_support::Gpu,
     recipe: &str,
     timing: bool,
 ) -> (
@@ -39,32 +40,28 @@ pub async fn device(
     wgpu::Queue,
     thrum_render::capabilities::DeviceCapabilities,
 ) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("real target adapter");
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: if timing {
-                thrum_render::capabilities::DeviceCapabilities::requested_timing_features(&adapter)
-            } else {
-                wgpu::Features::empty()
+    let (device, queue, caps) = gpu
+        .device_with_hardware(
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction {
+                features: (!timing).then_some(wgpu::Features::empty()),
+                ..Default::default()
             },
-            ..Default::default()
-        })
-        .await
-        .expect("real target device");
-    let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1)
-        .with_recipe_override(recipe)
-        .expect("target recipe");
-    (instance, device, queue, caps)
+            1,
+            &[],
+        )
+        .expect("admitted effect test device");
+    let caps = caps.with_recipe_override(recipe).expect("target recipe");
+    (gpu.instance.clone(), device, queue, caps)
 }
 
 /// Run the state, cadence and recovery script on every native recipe.
 /// # Panics
 /// Panics if target setup, a submitted result or evidence storage fails.
 pub fn run(record_name: &str) {
+    let Some(gpu) = thrum_test_support::gpu(record_name, None) else {
+        return;
+    };
     pollster::block_on(async {
         let recipes: &[&str] = if cfg!(target_os = "macos") {
             &["portable", "apple-tile"]
@@ -75,7 +72,7 @@ pub fn run(record_name: &str) {
         std::fs::create_dir_all(&output).expect("evidence directory");
         let mut records = Vec::new();
         for recipe in recipes {
-            let (instance, device, queue, caps) = device(recipe, true).await;
+            let (instance, device, queue, caps) = device(&gpu.fresh_adapter(), recipe, true);
             let record = Box::pin(v1_game::effect::qualification::run(
                 &device, &queue, &caps, &instance,
             ))

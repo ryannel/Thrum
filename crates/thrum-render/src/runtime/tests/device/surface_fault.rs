@@ -47,7 +47,13 @@ async fn sprite_host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> 
 fn surface_encode_faults_reach_both_routes_and_completed_samples() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
+        let Some(test_gpu) = thrum_test_support::gpu_on(
+            "surface_encode_faults_reach_both_routes_and_completed_samples",
+            &instance,
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
         let device = capabilities.device();
         let profile = surface();
         let texture = device.create_texture(&wgpu::TextureDescriptor {

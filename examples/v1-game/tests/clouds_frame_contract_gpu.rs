@@ -9,8 +9,14 @@ const EXTENT: [u32; 2] = [320, 180];
 #[test]
 #[cfg(target_os = "macos")]
 fn absent_cloud_selection_keeps_the_compiled_graph_storage_and_pixels() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "absent_cloud_selection_keeps_the_compiled_graph_storage_and_pixels",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", false).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", false);
         let config = FrameConfig {
             render_extent: [160, 90],
             surface: None,
@@ -221,8 +227,14 @@ fn assert_motion(
 #[test]
 #[cfg(target_os = "macos")]
 fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_depth_writes() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_depth_writes",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", true).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, EXTENT);
         let surface = v1_game::SurfaceOutput {
             view: &view,
@@ -346,8 +358,14 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
 #[test]
 #[cfg(target_os = "macos")]
 fn visible_layer_prepares_physical_light_and_submits_late_transport() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "visible_layer_prepares_physical_light_and_submits_late_transport",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", true).await;
+        let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
         let surface = v1_game::SurfaceOutput {
             view: &view,

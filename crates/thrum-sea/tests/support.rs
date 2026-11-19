@@ -56,7 +56,7 @@ impl Harness {
                 }),
                 ..Default::default()
             }
-            .open(&gpu.instance, None),
+            .open_admitted(&gpu.instance, &gpu.adapter),
         )
         .expect("Metal device with pass timings");
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);

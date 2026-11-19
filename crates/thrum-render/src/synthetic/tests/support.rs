@@ -1,19 +1,10 @@
 //! Device setup shared by scene-renderer unit tests.
 
 pub(in crate::synthetic) async fn device(
-    backends: wgpu::Backends,
+    test_gpu: &thrum_test_support::Gpu,
 ) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("test GPU adapter");
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("test GPU device");
+    let adapter = test_gpu.adapter.clone();
+    let (device, queue) =
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
     (adapter, device, queue)
 }

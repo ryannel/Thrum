@@ -71,3 +71,11 @@ harness = false
 [[bench]]
 name = "occlusion_passes"
 harness = false
+
+[[test]]
+name = "graph_kinds"
+path = "tests/graph_kinds_support/graph_kinds.rs"
+
+[[test]]
+name = "effect_state"
+path = "tests/graph_kinds_support/effect_state.rs"

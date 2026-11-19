@@ -4,6 +4,12 @@ use probe_support as support;
 
 #[test]
 fn continuous_map_matches_the_cpu_at_scattered_points_and_shores() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "continuous_map_matches_the_cpu_at_scattered_points_and_shores",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let map = support::fixture();
     let mut state = 0x1234_5678u32;
     let mut uniform = || {
@@ -53,7 +59,10 @@ fn continuous_map_matches_the_cpu_at_scattered_points_and_shores() {
         .map(|&[x, z]| [x, z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         .collect();
     let mut seen = [0; 5];
-    for (p, [answer, detail, _]) in points.into_iter().zip(support::probe(&map, &input)) {
+    for (p, [answer, detail, _]) in points
+        .into_iter()
+        .zip(support::probe(&test_gpu, &map, &input))
+    {
         let world = p.map(f64::from);
         let expected = map.sample(world);
         let body = expected.map_or(-1.0, |a| a.body as f32);

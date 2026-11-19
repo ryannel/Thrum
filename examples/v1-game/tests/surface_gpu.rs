@@ -16,21 +16,13 @@ const ROW_BYTES: u32 = SIZE * 4;
 #[test]
 fn surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features:
-                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
-                        &adapter,
-                    ),
-                ..Default::default()
-            })
-            .await
-            .expect("device with optional timestamps");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(None);
         let (raw, source) = render_surface(&device, &queue, wgpu::TextureFormat::Bgra8Unorm).await;
         let (srgb, _) = render_surface(&device, &queue, wgpu::TextureFormat::Bgra8UnormSrgb).await;
         let mut occupied = 0;
@@ -212,15 +204,13 @@ async fn render_surface(
 #[test]
 fn unavailable_surface_drops_only_views_and_resize_reuses_preparation() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "unavailable_surface_drops_only_views_and_resize_reuses_preparation",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut host = FrameHost::new(
             &device,
             &queue,

@@ -1,7 +1,11 @@
 //! GPU admission for tests. This package is a dev-dependency only.
 use std::io::Write as _;
 #[cfg(feature = "render")]
-use thrum_render::capabilities::{DeviceCapabilities, HardwareLaunchError, HardwareRequest};
+pub use thrum_render::capabilities::DeviceProfile as Profile;
+#[cfg(feature = "render")]
+use thrum_render::capabilities::{
+    DeviceCapabilities, DeviceRecipe, DeviceRestriction, HardwareLaunchError, HardwareRequest,
+};
 
 #[cfg(feature = "render")]
 mod light_graph;
@@ -20,29 +24,41 @@ pub struct Gpu {
 ///
 /// # Errors
 /// Reports unavailable WebGPU or a failed portable device request.
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub async fn browser_gpu() -> Result<(Gpu, wgpu::Device, wgpu::Queue), Box<dyn std::error::Error>> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::BROWSER_WEBGPU,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
     });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await?;
+    let thrum_render::capabilities::OpenedDevice {
+        adapter,
+        device,
+        queue,
+        ..
+    } = DeviceRecipe {
+        profile: Profile::Portable,
+        restriction: Some(&DeviceRestriction {
+            features: Some(wgpu::Features::empty()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+    .open(&instance, None)
+    .await?;
     Ok((Gpu { instance, adapter }, device, queue))
 }
 
-fn absent(test: &str, reason: &str) -> Option<Gpu> {
+/// Report that a test's GPU prerequisite could not be met.
+///
+/// # Panics
+/// Fails with the same reason when `THRUM_REQUIRE_GPU=1`.
+pub fn skip(test: &str, reason: &str) {
     let message = format!("thrum-gpu-skip: {test}: {reason}");
     assert!(
         std::env::var_os("THRUM_REQUIRE_GPU").as_deref() != Some(std::ffi::OsStr::new("1")),
         "{message}"
     );
     writeln!(std::io::stderr().lock(), "{message}").expect("write visible GPU skip reason");
-    None
 }
 
 /// Admit a GPU, optionally requiring a particular backend. None means a reported skip.
@@ -61,20 +77,24 @@ fn admit(test: &str, backends: wgpu::Backends) -> Option<Gpu> {
         backends,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
     });
-    match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())) {
-        Ok(adapter) => Some(Gpu { instance, adapter }),
-        Err(error) => absent(test, &format!("{backends:?} adapter unavailable: {error}")),
-    }
+    gpu_on(test, &instance)
 }
 
-/// Test-device profile, to be supplied by HOST's recipe in M2.
-#[cfg(feature = "render")]
-#[derive(Clone, Copy)]
-pub enum Profile {
-    /// WebGPU default limits.
-    Portable,
-    /// Adapter limits.
-    Native,
+/// Admit an adapter on a test-owned instance whose backend selection is already fixed.
+///
+/// # Panics
+/// Fails with the skip reason when `THRUM_REQUIRE_GPU=1` and no adapter is available.
+pub fn gpu_on(test: &str, instance: &wgpu::Instance) -> Option<Gpu> {
+    match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())) {
+        Ok(adapter) => Some(Gpu {
+            instance: instance.clone(),
+            adapter,
+        }),
+        Err(error) => {
+            skip(test, &format!("adapter unavailable: {error}"));
+            None
+        }
+    }
 }
 
 /// A restriction can only remove capabilities from the selected profile.
@@ -106,34 +126,19 @@ impl Restriction {
 }
 
 #[cfg(feature = "render")]
-impl Profile {
-    /// The gate's base recipe, for tests that opt into hardware through the renderer registry.
+impl Restriction {
+    /// Translate the gate's storage cap and feature mask to the engine recipe's restriction.
     #[must_use]
-    pub fn descriptor(
-        self,
-        adapter: &wgpu::Adapter,
-        restriction: &Restriction,
-    ) -> wgpu::DeviceDescriptor<'static> {
-        let limits = match self {
-            Self::Portable => wgpu::Limits::default(),
-            Self::Native => adapter.limits(),
-        };
-        let features = adapter.features()
-            & (wgpu::Features::TIMESTAMP_QUERY
-                | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS
-                | wgpu::Features::TEXTURE_COMPRESSION_ASTC
-                | wgpu::Features::TEXTURE_COMPRESSION_BC
-                | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D);
-        let (limits, features) = restriction.apply(limits, features);
-        wgpu::DeviceDescriptor {
-            required_limits: limits,
-            required_features: features,
+    pub fn for_profile(&self, profile: Profile, adapter: &wgpu::Adapter) -> DeviceRestriction {
+        let (limits, features) = self.apply(profile.limits(adapter), wgpu::Features::all());
+        DeviceRestriction {
+            limits: self.storage_buffers.map(|_| limits),
+            remove_features: wgpu::Features::all() - features,
             ..Default::default()
         }
     }
 }
 
-#[cfg(feature = "render")]
 impl Gpu {
     /// Fresh adapter for device-replacement tests, retaining the same instance.
     /// Backend device identities are only comparable within that instance.
@@ -150,6 +155,23 @@ impl Gpu {
             instance: self.instance.clone(),
             adapter,
         }
+    }
+}
+
+#[cfg(feature = "render")]
+impl Gpu {
+    /// Open a portable device with the profile's timing features or a subset.
+    ///
+    /// # Panics
+    /// Fails if the admitted adapter cannot create the requested device.
+    pub fn portable(&self, features: Option<wgpu::Features>) -> (wgpu::Device, wgpu::Queue) {
+        self.device(
+            Profile::Portable,
+            &Restriction {
+                features,
+                ..Default::default()
+            },
+        )
     }
 
     /// Open the ordinary device for this profile. Restrictions never add capabilities.
@@ -193,30 +215,31 @@ impl Gpu {
         requests: &[HardwareRequest],
         adjust: impl Fn(&mut wgpu::DeviceDescriptor<'static>),
     ) -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), HardwareLaunchError> {
+        let restriction = restriction.for_profile(profile, &self.adapter);
+        let recipe = DeviceRecipe {
+            profile,
+            generation,
+            restriction: Some(&restriction),
+            hardware: requests,
+        };
         let mut admitted = Some(self.adapter.clone());
-        let (_, device, queue, capabilities) =
-            pollster::block_on(DeviceCapabilities::open_generation_from(
-                async || {
-                    if let Some(adapter) = admitted.take() {
-                        return Ok(adapter);
-                    }
-                    self.instance
-                        .request_adapter(&wgpu::RequestAdapterOptions::default())
-                        .await
-                },
-                generation,
-                requests,
-                |adapter| {
-                    let mut descriptor = profile.descriptor(adapter, restriction);
-                    adjust(&mut descriptor);
-                    descriptor
-                },
-                |adapter| {
-                    let (limits, features) =
-                        restriction.apply(adapter.limits(), adapter.features());
-                    (features, limits)
-                },
-            ))?;
+        let thrum_render::capabilities::OpenedDevice {
+            device,
+            queue,
+            capabilities,
+            ..
+        } = pollster::block_on(recipe.open_from(
+            async || {
+                if let Some(adapter) = admitted.take() {
+                    return Ok(adapter);
+                }
+                self.instance
+                    .request_adapter(&wgpu::RequestAdapterOptions::default())
+                    .await
+            },
+            |_| {},
+            adjust,
+        ))?;
         Ok((device, queue, capabilities))
     }
 }

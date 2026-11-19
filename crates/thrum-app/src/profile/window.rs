@@ -340,5 +340,4 @@ fn format_ms(value: Option<f64>, step: Option<f64>) -> String {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
 mod tests;

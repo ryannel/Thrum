@@ -26,4 +26,17 @@ divan = "=0.1.21"
 
 [[bench]]
 name = "v1_workload"
+path = "tests/support/workload_bench.rs"
 harness = false
+
+[[test]]
+name = "v1_workload"
+path = "tests/support/workload_test.rs"
+
+[[test]]
+name = "profile_refusal"
+path = "tests/support/profile_refusal.rs"
+
+[[test]]
+name = "world_digest"
+path = "tests/support/world_digest.rs"

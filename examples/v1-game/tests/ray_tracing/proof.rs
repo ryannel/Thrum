@@ -41,10 +41,9 @@ pub(super) struct Metal {
 }
 
 impl Metal {
-    pub(super) fn new(generation: u64) -> Self {
-        let gpu = thrum_test_support::gpu("cooked ray geometry", Some(wgpu::Backend::Metal))
-            .expect("real Metal required");
-        Self::open(gpu, generation)
+    pub(super) fn new(generation: u64) -> Option<Self> {
+        let gpu = thrum_test_support::gpu("cooked ray geometry", Some(wgpu::Backend::Metal))?;
+        Some(Self::open(gpu, generation))
     }
 
     pub(super) fn replacement(&self) -> Self {

@@ -1,22 +1,23 @@
 //! Sea preparation on native, portable and restricted Metal devices.
 
-#[cfg(target_os = "macos")]
 #[test]
 fn sea_accepts_native_and_portable_limits_and_refuses_seven_storage_buffers() {
     use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction};
     use thrum_sea::{Ambient, AmbientError, Profile};
 
+    let Some(gate) = thrum_test_support::gpu(
+        "sea_accepts_native_and_portable_limits_and_refuses_seven_storage_buffers",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
         for profile in [DeviceProfile::Native, DeviceProfile::Portable] {
             let gpu = DeviceRecipe {
                 profile,
                 ..Default::default()
             }
-            .open(&instance, None)
+            .open_admitted(&gate.instance, &gate.fresh_adapter().adapter)
             .await
             .unwrap();
             Ambient::new(gpu.capabilities.site(), Profile::default()).expect("sea preparation");
@@ -42,7 +43,7 @@ fn sea_accepts_native_and_portable_limits_and_refuses_seven_storage_buffers() {
             }),
             ..Default::default()
         }
-        .open(&instance, None)
+        .open_admitted(&gate.instance, &gate.fresh_adapter().adapter)
         .await
         .unwrap();
         assert_eq!(

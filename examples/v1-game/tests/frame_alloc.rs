@@ -73,21 +73,13 @@ fn late_surface_submit_reports_main_thread_allocation_cost() {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native Metal adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features:
-                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
-                        &adapter,
-                    ),
-                ..Default::default()
-            })
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "late_surface_submit_reports_main_thread_allocation_cost",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(None);
         let extent = [640, 360];
         let mut host = FrameHost::new(
             &device,
@@ -182,21 +174,13 @@ fn autonomous_world_and_render_callback_report_warm_allocations() {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native Metal adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features:
-                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
-                        &adapter,
-                    ),
-                ..Default::default()
-            })
-            .await
-            .expect("device");
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "autonomous_world_and_render_callback_report_warm_allocations",
+            None,
+        ) else {
+            return;
+        };
+        let (device, queue) = test_gpu.portable(None);
         let extent = [640, 360];
         let host = FrameHost::new(
             &device,

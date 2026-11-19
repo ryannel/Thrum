@@ -236,16 +236,16 @@ fn solar_grid_directions() -> Vec<[f32; 4]> {
 #[test]
 fn metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = SyntheticView::perspective(
@@ -434,16 +434,16 @@ fn aerial_fields(
 #[test]
 fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query",
+            None,
+        ) else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = SyntheticView::perspective(
@@ -625,17 +625,15 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
 #[test]
 fn metal_h2_sampler_precision_report() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+        let Some(test_gpu) = thrum_test_support::gpu("metal_h2_sampler_precision_report", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
         let info = adapter.get_info();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let caps = DeviceCapabilities::capture(&adapter, &device, 140);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = SyntheticView::perspective(

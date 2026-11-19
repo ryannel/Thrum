@@ -3,7 +3,13 @@ mod support;
 use thrum_render::runtime::FrameWorld;
 #[test]
 fn scene_ticks_and_declares_one_water_contribution() {
-    let mut fixture = support::Fixture::new([384, 216]);
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "scene_ticks_and_declares_one_water_contribution",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    let mut fixture = support::Fixture::new(&test_gpu, [384, 216]);
     let sample = fixture.frame(0.1);
     assert_eq!(fixture.host.world().source().tick, 5);
     assert_eq!(sample.tick, 5);

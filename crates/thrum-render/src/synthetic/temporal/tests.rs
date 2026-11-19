@@ -5,20 +5,11 @@ fn fixture() -> serde_json::Value {
     serde_json::from_str(TEMPORAL_WITNESS_JSON).expect("shared witness definition")
 }
 
-async fn metal() -> (DeviceCapabilities, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("M2 Metal adapter");
+async fn metal(test_gpu: &thrum_test_support::Gpu) -> (DeviceCapabilities, wgpu::Queue) {
+    let adapter = test_gpu.adapter.clone();
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .expect("M2 Metal device");
+    let (device, queue) =
+        crate::test_device::portable(test_gpu, Some(wgpu::Features::empty())).await;
     (DeviceCapabilities::capture(&adapter, &device, 41), queue)
 }
 
@@ -90,8 +81,14 @@ fn submit(
 
 #[test]
 fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "metal_temporal_reader_storage_and_invalid_geometry_w1_w2",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (capabilities, queue) = metal().await;
+        let (capabilities, queue) = metal(&test_gpu).await;
         let device = capabilities.device();
         let expected = fixture();
         let mut baseline = None;
@@ -198,8 +195,14 @@ fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
 
 #[test]
 fn metal_sky_and_star_reactive_edit_then_steady_w4_w5() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "metal_sky_and_star_reactive_edit_then_steady_w4_w5",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (capabilities, queue) = metal().await;
+        let (capabilities, queue) = metal(&test_gpu).await;
         let device = capabilities.device();
         let expected = fixture();
         for night in [false, true] {
@@ -415,8 +418,14 @@ pub(in crate::synthetic) fn assert_history_rescale(
 
 #[test]
 fn metal_history_key_uses_output_grid_across_render_extent_changes() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "metal_history_key_uses_output_grid_across_render_extent_changes",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (capabilities, queue) = metal().await;
+        let (capabilities, queue) = metal(&test_gpu).await;
         let device = capabilities.device();
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = scene.view.with_output_extent([128, 72]);

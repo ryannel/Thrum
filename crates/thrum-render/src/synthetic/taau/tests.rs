@@ -98,8 +98,14 @@ fn depth_probe_texture(device: &wgpu::Device, format: wgpu::TextureFormat) -> wg
 
 #[test]
 fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "taau_depth_reprojection_rejects_mixed_surfaces_on_metal",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (adapter, device, queue) = tests::support::device(wgpu::Backends::METAL).await;
+        let (adapter, device, queue) = tests::support::device(&test_gpu).await;
         let pipeline = depth_probe_pipeline(&device);
         // Independent scene model: reciprocal view depth is the affine plane
         // 0.031*x + 0.019*y + 0.12. Evaluate the requested ray directly.
@@ -258,8 +264,14 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
 
 #[test]
 fn taau_prepares_and_resets_on_real_metal() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "taau_prepares_and_resets_on_real_metal",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     pollster::block_on(async {
-        let (_adapter, device, queue) = tests::support::device(wgpu::Backends::METAL).await;
+        let (_adapter, device, queue) = tests::support::device(&test_gpu).await;
         let mut scene = SyntheticScene::grid(4).unwrap();
         scene.view = scene
             .view

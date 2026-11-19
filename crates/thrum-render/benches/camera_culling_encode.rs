@@ -22,17 +22,15 @@ fn main() {
     clippy::print_stdout,
     reason = "the benchmark reports actual mode selection before measuring"
 )]
-fn encode(bencher: divan::Bencher<'_, '_>, count: u32, culling: CullMode) {
+fn encode(
+    test_gpu: &thrum_test_support::Gpu,
+    bencher: divan::Bencher<'_, '_>,
+    count: u32,
+    culling: CullMode,
+) {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real native adapter required");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let adapter = test_gpu.adapter.clone();
+        let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
         let mut scene = SyntheticScene::grid(count).expect("grid");
         scene.view = SyntheticView::perspective(
             [0.0, 0.0, 1.374],
@@ -74,10 +72,16 @@ fn encode(bencher: divan::Bencher<'_, '_>, count: u32, culling: CullMode) {
 
 #[divan::bench(args = [10_000, 100_000])]
 fn direct(bencher: divan::Bencher<'_, '_>, count: u32) {
-    encode(bencher, count, CullMode::Direct);
+    let Some(test_gpu) = thrum_test_support::gpu("direct", None) else {
+        return;
+    };
+    encode(&test_gpu, bencher, count, CullMode::Direct);
 }
 
 #[divan::bench(args = [10_000, 100_000])]
 fn frustum(bencher: divan::Bencher<'_, '_>, count: u32) {
-    encode(bencher, count, CullMode::Frustum);
+    let Some(test_gpu) = thrum_test_support::gpu("frustum", None) else {
+        return;
+    };
+    encode(&test_gpu, bencher, count, CullMode::Frustum);
 }

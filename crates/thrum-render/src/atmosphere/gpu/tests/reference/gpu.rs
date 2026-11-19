@@ -126,17 +126,16 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
                 .expect("integer reference path count")
         });
         assert!(paths > 0 && paths.is_multiple_of(8));
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real GPU required for atmosphere reference comparison");
+        let Some(test_gpu) =
+            thrum_test_support::gpu("gpu_transport_reference_reports_every_prescribed_row", None)
+        else {
+            return;
+        };
+        let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) =
+            crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         #[expect(
             clippy::cast_possible_truncation,

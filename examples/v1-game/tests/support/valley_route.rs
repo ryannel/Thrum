@@ -45,8 +45,11 @@ fn submitted_image(host: &mut FrameHost, device: &wgpu::Device) -> SubmittedImag
     }
 }
 
-pub(crate) fn run() {
-    pollster::block_on(prove());
+pub(crate) fn run(test: &str) {
+    let Some(gpu) = thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    pollster::block_on(prove(&gpu));
 }
 
 // Failure-only diagnosis. The first comparison and its bytes remain unchanged.
@@ -144,17 +147,6 @@ fn record_campaign_comparison(
         }
     }
     differs
-}
-
-async fn open_metal_device() -> OpenedDevice {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    DeviceRecipe::default()
-        .open(&instance, None)
-        .await
-        .expect("Metal device for valley culling")
 }
 
 fn surface_texture(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::Texture {
@@ -315,7 +307,7 @@ async fn prepare_hosts(
     (modes, hosts)
 }
 
-async fn prove() {
+async fn prove(gpu: &thrum_test_support::Gpu) {
     let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
         .expect("route file");
     let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
@@ -331,7 +323,10 @@ async fn prove() {
     } else {
         CaptureSource::Sdr
     };
-    let opened = open_metal_device().await;
+    let opened = DeviceRecipe::default()
+        .open_admitted(&gpu.instance, &gpu.adapter)
+        .await
+        .expect("Metal device for valley culling");
     let (modes, mut hosts) =
         prepare_hosts(&opened, extent, overlay, timing, exit_arm.as_ref()).await;
     let (device, caps) = (opened.device, opened.capabilities);
