@@ -522,3 +522,5 @@
 - 2026-11-19 M3.1 passes the revised whole-sky inspection on the retained 0.61 Metal matrix.
   [The six views and lossless translation pair](../../evidence/CLOUDS/M3-type-plane/README.md#m31-form)
   show separate clouds with open gaps and relative motion between near crests and distant clusters.
+  Integrating with RENDER-2D updates four V1 graph snapshot entries for M3's imported noise textures.
+  Shade adds the shared shape texture, and Sky also adds detail. Pass order, transient lifetimes and the other 18 entries match.
