@@ -2986,10 +2986,10 @@
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS M5: capacity-bounded tick query, asynchronous GPU readback, public mailbox and example-owned craft and buoy dynamics. Wake and surf query inputs belong to M6 and M13.",
-        "correctness": "Metal wave and chart conformance, successive catch-up replies, age recovery, calm draft and ten minutes of the scene gale per speed, lake shelter and current carriage. Hardware Chrome reconciles individual reply ages and counters across a hitch.",
-        "visuals": "Submitted 1440p Metal candidate motion covers side and chase views in trade wind and gale at 0, 5 and 15 m/s. The wider beam-sea buoy course clears the launch. Formal milestone review is pending.",
-        "device": "M3 Max Metal and hardware Chrome WebGPU. The capacity of 2,048 points per tick uses 1,859,840 bytes for query buffers. Submitted-output timing was recorded under shared load.",
-        "evidence": "../evidence/WATERS/M5-r1.md"
+        "correctness": "Metal wave and chart conformance includes stage edits between dispatch and use, historical chart samples, and new wave support across the shore. The merge gate passed the gale endurance, lake shelter and current tests. Hardware Chrome reconciled individual reply ages and counters across a hitch.",
+        "visuals": "Submitted 1440p Metal motion from the merged build covers side and chase views in trade wind and gale at 0, 5 and 15 m/s. The revised 15 m/s head-sea view keeps the deck above both previously reported crests. Formal milestone review is pending.",
+        "device": "M3 Max Metal and hardware Chrome WebGPU. The capacity of 2,048 points per tick uses 3,694,848 bytes for query buffers. Submitted-output timing was recorded under shared load. The CPU cost of a full-capacity stage change was unmeasured.",
+        "evidence": "../evidence/WATERS/M5-r2.md"
       },
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

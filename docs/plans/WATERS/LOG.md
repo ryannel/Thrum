@@ -493,3 +493,8 @@
   The craft follows the encountered waterline rate. Metal passed ten minutes of the scene gale at each commanded speed.
   Chrome reconciled individual reply ages through the hitch. The Metal candidate records the wider beam-sea buoy course.
   [Review fixes and target evidence](../../evidence/WATERS/M5-r1.md).
+
+- 2026-11-19 Recompose in-flight replies when a stage edit changes the use-tick map. Metal covered an edited chart,
+  a late reply for the prior stage and a newly supported swash point. The launch has more freeboard.
+  Twelve submitted Metal sequences and the extended gale clip show the deck clear through the reported crests.
+  [Merged-build evidence](../../evidence/WATERS/M5-r2.md).
