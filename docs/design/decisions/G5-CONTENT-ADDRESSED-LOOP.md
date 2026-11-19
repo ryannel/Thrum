@@ -1,19 +1,26 @@
 # G5 decision: content-addressed development loop
 
-6 November 2026, revised the same night for the in-game seam. **Selected and implemented; runs in the V1 game on
-this Mac through public engine APIs; browser and iPhone clients unqualified.** This is the governing design for build-plan item G5. Disclosure: implementation began before this record
-was saved. An independent reviewer agent derived the requirements from the brief and contracts before reading this
-record or the code; its findings and their dispositions are in the evidence report. The design was held in the working session and written down at the first checkpoint, so this is not a blind
-design study. It sits under [C05](../CONTRACTS.md#c05-assets-streaming-and-retirement--f4-with-w2-v1-and-p7) and the
+**Selected and implemented.** CONTENT-LOOP M3 exercised live mesh, texture and volume edits in the V1 valley with
+TAAU on this Mac (Metal) and hardware Chrome (WebGPU), both on the portable recipe. The Metal tests used offscreen
+submissions. Chrome timings cover page callbacks at the tested product sizes. Earlier COOKED-DRAW evidence covers
+indexed-path parity and simulator cooked drawing, rotation and lifecycle as function only. Physical iPhone
+measurements remain open. [CONTENT-LOOP M3](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md) ·
+[COOKED-DRAW M1](../../plans/COOKED-DRAW/DONE.json)
+
+The original decision was recorded on 6 November 2026 and revised that night for the in-game seam. Implementation
+began before the first written checkpoint. An independent reviewer derived requirements from the brief and
+contracts before reading the record or code. The [original G5 report](../../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)
+records the findings and their dispositions. This decision governs G5 under
+[C05](../CONTRACTS.md#c05-assets-streaming-and-retirement--f4-with-w2-v1-and-p7) and the
 [hardware-native decision](HARDWARE-NATIVE-ENGINE.md), and covers the cooked-product half of
-[TOOLS-DELIVERY](../modules/TOOLS-DELIVERY.md). Evidence: [G5 report](../../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md).
+[TOOLS-DELIVERY](../modules/TOOLS-DELIVERY.md).
 
 ## Commission and boundary
 
 A creator edits a source file, and the running game shows the new product without stalling its frame. Shipping builds
-map the same products, and they never link the cooker. The work splits into three packages:
+map the same products, and they never link the cooker. Three engine packages own the content loop.
 
-- **`thrum-asset`** is the runtime, and the only package a game links. It provides the CAS layout, `HEAD`, the manifest,
+- **`thrum-asset`** is the runtime product reader. It provides the CAS layout, `HEAD`, the manifest,
   mesh and KTX2 views, validation, `mmap` and `HeadWatcher`. It needs only blake3, bytemuck and memmap2 (no memmap2 on
   Wasm), and it has no workspace dependencies.
 - **`thrum-cook`** is authoring-only. It provides the stat cache, CAS writer, action cache, mesh, texture and volume
@@ -65,16 +72,24 @@ the GPU has read it. A set becomes drawable in the submitted frame that records 
 precede forward in the same command buffer. The newest publication wins; a superseded pending set returns its chunks.
 Resources are reused by content hash and recycled only after the render thread reports the set resident.
 
-**Meshlets.** The loader expands meshlet triangles into global `u32` indices and per-meshlet ranges. A compute pass
-tests each meshlet's bounds against the frustum planes and its normal cone against the camera, and writes
-`DrawIndexedIndirect` arguments; forward draws them with `multi_draw_indexed_indirect`. Rejected meshlets get
-zero-instance arguments.
+**Meshlets.** The cooker stores global `u32` indices in meshlet order alongside meshlet-local vertex and triangle
+tables. The loader stages the product's existing index slice. For the indirect path it derives draw ranges from
+meshlet triangle counts. A compute pass tests each meshlet's bounds against the frustum planes and its normal cone
+against the camera, then writes `DrawIndexedIndirect` arguments that forward consumes with
+`multi_draw_indexed_indirect`. Rejected meshlets get zero-instance arguments.
 
-The capability record selects this path only with known adapter-read `INDIRECT_EXECUTION`. Otherwise each placed
-mesh uses one full-range indexed draw without cull/range/bounds/count/readback resources. Shared history and
-submission state serve both paths. The explicitly enabled `draw-probe` feature qualifies direct against independent
-full-range indirect arguments, with missing-mesh controls. Ordinary builds compile without that probe.
+Automatic selection uses the indirect path only with known adapter-read `INDIRECT_EXECUTION`. When the fact is
+absent or unknown, each placed mesh uses one full-range indexed draw without cull/range/bounds/count/readback
+resources. Shared history and submission state serve both paths. The opt-in `draw-probe` feature checks direct
+against independent full-range indirect arguments, with missing-mesh controls.
 [COOKED-DRAW evidence](../../../.orchestrate/evidence/render/cooked-draw/README.md).
+
+An explicit `MeshStages` request can prepare the Metal object and mesh pipelines on the Apple tile recipe when
+the device has enabled the stages. Eligible cooked placements use those pipelines in forward and in the Sun's
+maps when shadows are enabled. The loader stages their meshlet tables within the upload budget. An unsupported
+request or failed preparation falls back to the selected indexed path. A mesh that exceeds a stage limit falls
+back individually. The separate [MESH-SHADING M1](../../../.orchestrate/evidence/MESH-SHADING/M1.md) and
+[M2](../../../.orchestrate/evidence/MESH-SHADING/M2.md) records cover this opt-in path on this Mac.
 
 **Motion history.** Each placement's instance record carries a history flag. It is zero for the first submitted frame
 of a new or replaced product, after a rebuild (device or visual republication) and on a scene history reset
@@ -96,7 +111,7 @@ not occluded by scene depth inside its box.
 | Incremental cook | C05 "dependency-hashed" | Action key = BLAKE3(cooker version, encoder versions and meshlet limits, kind, profile, quality, colour space, each input path and hash). A hit skips the cook. The cook reads exactly the hashed bytes (meshes re-verify every input afterwards), so a save during a cook cannot poison the persistent cache. A reused product is verified once per process. One writer per store (OS file lock). | Tested: edit during cook, damaged action product, second writer |
 | Atomic publication | C05, G5 | A manifest product, then the 64-byte `HEAD` (magic, generation, manifest hash, check), replaced by rename. Earlier generations stay readable. | Tested |
 | Aligned mmap products | G5 | 64-byte-aligned sections with Pod little-endian elements; zero-copy typed slices; owned 64-aligned fallback on Wasm. | Tested; `mapped` asserted in the GPU test |
-| glTF meshlets | G5 | gltf import, then meshopt weld, cache/overdraw/fetch optimisation, and 64-vertex/124-triangle meshlets with cone bounds. Meshlet-ordered indices let the portable indexed path and a future mesh-shader path share one product. | Tested; drawn through the GPU cull |
+| glTF meshlets | G5 | glTF import, then meshopt weld, cache/overdraw/fetch optimisation and 64-vertex/124-triangle meshlets with cone bounds. One cooked product supplies global indices to the indexed paths and meshlet-local tables to the opt-in Metal stages. | Runtime layout tested. Indexed draws covered by COOKED-DRAW and stage draws by MESH-SHADING. |
 | KTX2 ASTC/BC7 | G5, hardware-native | Own KTX2 writer and validated reader. BC7 via intel_tex_2 ISPC; ASTC 4×4 via the Arm astc-encoder (astcenc-rs); RGBA8 portable. Mips are built in linear light. | Tested. This Mac draws ASTC by default and BC7 when preferred (asserted in the game); BC4 volumes drawn |
 | Baked volumes | Brief, cloud port | `.tvol` source cooks to 3D KTX2: BC4 sliced-3D for desktop, R8 for portable. EAC R11 for iPhone is not built. | Tested; drawn in the game as a diagnostic raymarch; 512³ R8 uploaded in-game |
 | Profile selection | Hardware-native, C06 | The consumer orders profiles from one `DeviceCapabilities` record (ASTC → AppleAstc, BC → DesktopBc, else Portable). No private probes. The cooker always adds Portable. The runtime rejects partial compressed blocks; the loader rejects extents over device limits and unenabled formats, and records GPU validation errors instead of aborting. | Tested |
@@ -104,7 +119,8 @@ not occluded by scene depth inside its box.
 | Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`; `Host` checked; a loopback `Origin` or one listed with `--allow-origin` (exact `http(s)://host[:port]`, none by default) is echoed, any other is refused with 403. Client: `thrum-asset::DevClient`, target-independent protocol over a `Fetch` transport (`BrowserFetch`, the global `fetch`, on Wasm). It decodes `HEAD` with the native parser, never goes back a generation within an epoch, fetches the manifest and only the unheld products its per-kind profile preferences resolve, issues them together, and checks length and BLAKE3 before parsing. Products are 64-aligned owned bytes shared by reference count. | Server tested; client protocol unit-tested natively; Wasm client run end to end in Node and a Chrome page against `thrum-cook watch --serve`; allow-list near misses refused in tests |
 | No-stall swap | G5 | Bounded staging ring and graph copies on the frame host. Placements, mesh rows and leases switch on one submission after the copies and row writes are ready. | In-game GPU tests, discard test and `cooked_edit` bench. [CONTENT-LOOP M1](../../../.orchestrate/evidence/CONTENT-LOOP/M1.md) and [M2](../../../.orchestrate/evidence/CONTENT-LOOP/M2.md) retain the lease and row proofs. |
 | Drawn in the game | G5 gate | `SceneContribution` in the scene graph, with the scene fragment shader for placements, cooked entity rows and read-only texture and volume views for other passes. | Metal and Chrome T2 realtime submitted images show the three whole switches in the moving valley under TAAU. [CONTENT-LOOP M3](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md) |
-| Meshlet draw path | G5 | Registry-selected GPU frustum/cone cull with indirect multi-draw, or one full-range indexed draw when indirect facts are absent/unknown. | Mac D/R exact in five views with negative controls. Mac/Chrome indirect BASE output and repeats exact. Simulator direct function/lifecycle/rotation and held/sampled visuals pass with oriented M7 sizing. |
+| Indexed cooked draws | G5 | Automatic selection uses GPU frustum/cone culling and indirect multi-draw when the adapter record confirms indirect execution. Otherwise it issues one full-range indexed draw per placement. | COOKED-DRAW M1 recorded exact Mac direct/reference parity in five views with negative controls, and exact Mac/Chrome indirect output and repeats. Simulator direct drawing, lifecycle and rotation passed as function, with held and sampled visual evidence. |
+| Metal object and mesh stages | Hardware-native | Explicit `MeshStages` request, enabled device stages and the Apple tile recipe. Eligible cooked placements draw through the stages in forward and the Sun's maps. Indexed fallback covers unavailable pipelines and ineligible meshes. | MESH-SHADING M1 and M2 independently verified the opt-in path on this Mac, including culling, frame outputs and casters. Automatic selection remains indexed. |
 | Shipping excludes authoring | G5 | Workspace dependency boundaries, normal package dependency graphs and a symbol scan of the release starter with the release cooker as the positive control. | `python3 scripts/g5_shipping_links.py` |
 
 ## Cost account
@@ -125,9 +141,10 @@ Ordinary work is designed around the frequent operations:
   reused (asserted in the GPU test).
 - **The render thread pays almost nothing.** Per swap it does one `try_recv` and drops an `Arc`; it never runs
   `poll(Wait)`.
-- **In-game frames.** A steady frame with cooked content records one cull dispatch per mesh (one thread per meshlet)
-  and a draw; the render thread writes one 160-byte uniform per mesh. An upload frame adds at most `upload_budget`
-  bytes of GPU copies and no CPU copy. Measured costs are in the evidence (`cooked_edit` bench).
+- **In-game frames.** On the indirect path, each placement records a compute cull dispatch (one thread per meshlet)
+  and an indirect draw. A direct placement issues one indexed draw without the cull dispatch. Eligible mesh-stage
+  placements cull in the object stage. An upload frame records at most `upload_budget` bytes of GPU copies through
+  the residency belt. The `cooked_edit` bench records the upload costs.
 - **Staging peak.** At most `STAGING_CHUNKS` × `upload_budget` (32 MiB in the game) whatever the publication's size,
   measured at 32 MiB for a 149 MiB 512³ R8 replacement that previously needed one 149 MiB staging buffer. Chunks are
   created on first need and reused, so steady uploads allocate nothing. The cost is that filling is paced by the GPU
@@ -212,32 +229,11 @@ Alternatives were rejected for these reasons:
 
 ## Open items
 
-Closed 8 November (evidence in the record's "Open items closed" section): mirrored-transform winding and normal sign,
-refusal of partial-block compressed products, per-format texture quality floors and a Chrome page run of the Wasm
-dev-server client.
-
-
 - EAC R11 iPhone volume products. A layered (2D-array) draft is parked on branch `claude/g5-parked-eac-layered`;
   review found that ETC2 alone selects it and a volume deeper than `max_texture_array_layers` is then refused instead
   of falling back to the R8 3D product. Portable R8 already serves the native consumer.
-- Cooked meshes cast into the Sun cascades through the graph seam (`49dbcba5`; two-sided terrain casters
-  `6dfd4157`), with caster bounds rebuilt for each resident set. In Chrome, a fetched mesh edit lengthens the
-  shadow with the geometry (evidence, 8 November).
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
-- Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
-- COOKED-DRAW M1 is claimed with all twelve items passing; independent lead review is owed. Known adapter-read indirect support
-  selects meshlet indirect on Mac and Chrome; unknown/missing facts select one full-range indexed draw, including
-  the simulator. Mac direct/reference parity is exact in five views with repeats and negative controls. Production
-  indirect BASE/current output and counts are exact on Mac and Chrome. Simulator views fill both current oriented
-  extents through accepted PLATFORM-RUNTIME-IOS M7; fresh ordinary lifecycle/recovery/rotation with attributed denied permission preflights and held
-  still/sampled-pan inspection pass. The sixteen pan samples have a 1.118-second largest gap; unsampled frames
-  remain unqualified. [Evidence](../../../.orchestrate/evidence/render/cooked-draw/README.md). T2 M2 may use ordinary cooked attach
-  after M1 acceptance, but still owns submitted-output/time identity and every-frame proof.
-- Paired release Mac valley measurements (1920×1080, quiet load, four alternating I/D pairs, 128 samples per arm)
-  record per-run median forward time 1.240–1.244 ms indirect / 1.283–1.330 ms direct, contribution compute
-  0.01025–0.01048 ms indirect / absent direct, and encode CPU 0.270–0.289 ms indirect / 0.149–0.188 ms direct.
-  Forward already includes contribution compute; do not add it again. These descriptive figures promote no path,
-  establish no cadence/budget, and imply no simulator or physical-device speed result.
+- CAS garbage collection remains parked. The retention note above records the outstanding reader-lease issues.
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, sustained runs and physical residency measurements remain open. The iPhone simulator proves function.
 - Parameter files as a cooked product and source admission remain parked. External saves have no admitted source boundary.
@@ -252,3 +248,20 @@ dev-server client.
   local networks only.
 - Texture levels below 16 texels a side are measured (21–36 dB) but not floored; only the portable product is a
   reference, so the quality check measures encoding loss, not source fidelity.
+
+## Historical draw observations
+
+The 8 November G5 follow-up closed mirrored-transform winding and normal sign, refusal of partial-block
+compressed products, per-format texture quality floors and the Chrome page exercise of the Wasm dev-server client.
+[Original G5 report](../../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)
+
+On 8 November a fetched Chrome mesh edit lengthened the shadow as the geometry changed. Cooked caster bounds
+are rebuilt with each resident set. Later COOKED-DRAW M1 simulator views filled both PLATFORM-RUNTIME-IOS M7
+oriented extents. The sixteen sampled pan images had a largest gap of 1.118 seconds.
+[COOKED-DRAW evidence](../../../.orchestrate/evidence/render/cooked-draw/README.md)
+
+The COOKED-DRAW paired release Mac runs used the valley at 1920×1080 under quiet load, with four alternating
+indirect/direct pairs and 128 samples per arm. Per-run median forward time was 1.240–1.244 ms indirect and
+1.283–1.330 ms direct. Forward already includes the indirect compute contribution of 0.01025–0.01048 ms.
+Encode CPU was 0.270–0.289 ms indirect and 0.149–0.188 ms direct. These measurements describe the indexed
+paths in that run. They confer no promotion or cadence qualification.

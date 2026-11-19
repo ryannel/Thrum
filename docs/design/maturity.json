@@ -754,7 +754,7 @@
       "scope": "The watcher and dev server publish working-file previews used by presentation only. A valid intermediate preview can persist until an external save finishes. CAS collection, an iPhone-specific volume encoding, parameter files as a cooked product, and source admission with its external save boundary remain parked. Physical iPhone, sustained runs and physical GPU residency remain unmeasured.",
       "evidence": [
         "../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md",
-        "../evidence/CONTENT-LOOP/M3.md",
+        "../../.orchestrate/evidence/CONTENT-LOOP/M3.md",
         "decisions/G5-CONTENT-ADDRESSED-LOOP.md",
         "../evidence/render/cooked-draw/README.md",
         "../evidence/REVIEW-ENGINE/M5/README.md#m52-cooked-addresses"

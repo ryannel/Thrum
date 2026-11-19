@@ -173,3 +173,7 @@
   The initial cook and periodic sweep keep publishing while registration is pending. A regression test holds
   registration open through startup, a saved edit and shutdown, and compares the edit with a fresh cook.
   [Diagnosis and verification](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md#watcher-startup-repair)
+- 2026-11-19 M3.8 review repair. Reconciled the G5 decision with the cooked index upload, automatic indexed
+  selection and the opt-in Apple tile mesh stages. The decision now distinguishes the portable Metal and Chrome
+  edit proof from earlier simulator function and mesh-stage proof. Fixed the maturity ledger's M3 evidence link.
+  [Source audit and target coverage](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md#g5-decision-repair)
