@@ -95,3 +95,15 @@
 - 2026-11-19 The same review. [A third probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/PATCH.md)
   checked the rule on three bodies. The Suggestion was taken: an inconclusive pair is reported as runs that
   could not tell the methods apart (M6.1). M1 and M2 shrank to their headings. The design review is owed.
+- 2026-11-19 The design review at `cb6efe8a9c80` asked for changes: one Must Fix, no Suggestion. The
+  visibility pass excused a dipped ray's first crossing of its own instance at any distance, so past an
+  open rim it excused the back of a panel joined into the same mesh metres away, and the panel's soft edge
+  went hard. The pass now records such a ray both ways, `passed` and `stopped`, and the fragment reads the
+  one its own centre ray's passage bears out: a refused passage reads `stopped` and no longer discards the
+  history. A fragment whose plane the disc straddles takes the passage too. A fourth forward target that
+  would hand the pass the reach was weighed again and left out: `SceneSurface` gives every contribution
+  three colour formats. M4.7 and M4.11 are rewritten, and M4.9 records the history's bytes.
+- 2026-11-19 The same review. [A fourth probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/SOFT.md)
+  ran the review's case: 540 and 480 of 1,024 disc rays blocked in all four arrangements, where the
+  reviewed rule blocked none at the open rim under the joined panel. This was the second design review in
+  a row to ask for changes, so the script approves this revision without another.

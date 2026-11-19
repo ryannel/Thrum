@@ -425,9 +425,9 @@
         },
         {
           "id": "M4.7",
-          "statement": "The history is committed only by a submitted frame, and is reset by a camera cut, a change of render extent and a device replacement: after each, no pixel reads a value from before it. A fragment shows its centre ray's value in four cases: it has no matching history, the pass left its pixel out, its settled history contradicts the ray, or it is in a terminator band with its passage refused. A texel that holds a soft edge, and whose neighbourhood this frame is wholly lit or wholly dark, is written settled by this frame's pass: a fragment there shows the old soft value for at most this one frame, and the settled value from the next. A texel in a faint shadow, whose soft value rounds to 1, is not settled: a fragment there keeps the soft value when its centre ray is blocked. A fragment drawn after opaque geometry reads no history.",
+          "statement": "The history is committed only by a submitted frame, and is reset by a camera cut, a change of render extent and a device replacement: after each, no pixel reads a value from before it. A fragment with no matching history, or on a pixel the pass left out, shows its centre ray. The history holds two soft values, which differ where a disc ray's nearest crossing is the receiving instance met from the inside: `passed` holds what the ray finds beyond that crossing, and `stopped` holds it as blocked. A fragment in a terminator band reads `passed` where its centre ray's passage was granted and `stopped` where it was not, a refused passage included; any other fragment reads `passed`. Where the value it reads is settled and its centre ray contradicts it, it shows the centre ray. A texel that holds a soft edge, and whose neighbourhood this frame is wholly lit or wholly dark, is written settled by this frame's pass: a fragment there shows the old soft value for at most this one frame, and the settled value from the next. A texel in a faint shadow, whose soft value rounds to 1, is not settled: a fragment there keeps the soft value when its centre ray is blocked. A fragment drawn after opaque geometry reads no history.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_soft_history_gpu",
-          "ask": "Does the test plant a history value that a correct reset, each of the four cases that show the centre ray, and the pass's settling of a texel the soft edge has left must each not return, so that a stale read fails?",
+          "ask": "Does the test plant a history value that a correct reset, each case that shows the centre ray, the choice between `passed` and `stopped`, and the pass's settling of a texel the soft edge has left must each not return, so that a stale or wrongly chosen read fails?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -448,7 +448,7 @@
         },
         {
           "id": "M4.9",
-          "statement": "Paired rows on the valley's route are on record with the machine's load, with the penumbra on and off: the design's two figures, the timed-pass span and frame CPU time, the forward pass with its inline centre rays, and the visibility pass's trace and filter by name. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "Paired rows on the valley's route are on record with the machine's load, with the penumbra on and off: the design's two figures, the timed-pass span and frame CPU time, the forward pass with its inline centre rays, the visibility pass's trace and filter by name, and the soft history's bytes. Each tripwire of the design's cost account that the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/ray_tracing_cost.py soft",
           "lock": "gpu",
           "target": "mac-metal",
@@ -469,8 +469,8 @@
         },
         {
           "id": "M4.11",
-          "statement": "Where another body's shadow crosses a coarse rounded body at a low Sun, its edge is as soft across the body's terminator band as on the surfaces beside it, and with the penumbra on the body shows no dark facet where it turns from the Sun.",
-          "inspect": "`fixed` stills at a low Sun of a coarse rounded body that another body's shadow crosses through its terminator band, as a balloon in another balloon's shadow is, with the penumbra on and off: whole, and as native-size crops along the shadow's edge from the Sun-facing side through the terminator band. The evidence gives the dive limit in force.",
+          "statement": "Where another body's shadow crosses a coarse rounded body at a low Sun, its edge is as soft across the body's terminator band as on the surfaces beside it, and with the penumbra on the body shows no dark facet where it turns from the Sun. The same holds on a coarse curved shell with an open rim, under an opaque panel that stands metres toward the Sun with its back to the shell: the panel's edge is as soft across the shell's terminator band beside the rim when the panel is part of the shell's mesh as when it is a separate instance.",
+          "inspect": "`fixed` stills at a low Sun, with the penumbra on and off, whole and as native-size crops along the shadow's edge from the Sun-facing side through the terminator band. One set is of a coarse rounded body that another body's shadow crosses through its terminator band, as a balloon in another balloon's shadow is. One is of the open shell and its panel from one camera, twice: with the panel joined into the shell's mesh, and with the same panel as a separate instance. In each of those two the panel's edge crosses the terminator band on the shell's last face before the rim, and the two sets of crops are laid side by side. The evidence gives the dive limit in force and says which capture is which arrangement.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

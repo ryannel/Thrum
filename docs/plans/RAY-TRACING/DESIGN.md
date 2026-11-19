@@ -158,7 +158,7 @@ Read for this design, 17 and 18 November 2026:
 | Where the hard Sun shadow is traced | Inline, in the fragment that is being shaded, this frame | A screen-space mask pass before shading: it needs a depth prepass, a second geometry pass on a tile GPU |
 | How a soft shadow is made | One ray a pixel toward a point on the disc, in a pass after opaque geometry, filtered over time and space and read by the next frame's shading, beside a centre ray traced inline this frame that overrides a settled history it contradicts | The history alone: a moving caster's whole shadow is then a frame late, and detaches from a fast mover. The same rays integrated by TAAU alone: at mid-penumbra one ray is right half the time, and a history of some twenty frames leaves about a tenth of the Sun's light as grain. A fourth forward target for demodulated Sun light, which would make the soft value current: it changes every forward pipeline in the engine. MetalFX's denoising upscaler: it needs albedo, normal and roughness targets and belongs to `APPLE-PRESENTATION`; it is what would change this selection |
 | Where ambient occlusion is traced | In the same pass as the soft shadow, at half the extent | Inline in shading: one ray a pixel is grain over every shaded surface |
-| How a coarse rounded mesh loses its false facets | One excused passage through the receiving surface, judged from what the ray itself reports, by the same rule inline and in the visibility pass | Moving the origin onto the implied surface, as Hanika does: right for the inline ray, but the pass has no vertex normals, so its disc rays would still strike the receiver and the penumbra would be lost there. Skipping nearby hits on the receiving instance by their facing, which M3 first built: it erased a sheet joined into the same mesh. A forward target that carries the implied surface's height or the disc ray's raw result to the pass: it changes every forward pipeline in the engine |
+| How a coarse rounded mesh loses its false facets | One excused passage through the receiving surface, judged from what the ray itself reports. Inline, the fragment's reach decides it. The visibility pass has no reach, so it records a dipped ray both ways and the fragment picks the value its own passage bears out | Moving the origin onto the implied surface, as Hanika does: right for the inline ray, but the pass has no vertex normals, so its disc rays would still strike the receiver and the penumbra would be lost there. Skipping nearby hits on the receiving instance by their facing, which M3 first built: it erased a sheet joined into the same mesh. One soft value with the passage excused at any distance: past an open rim it excused a joined panel metres away, and the panel's soft edge went hard. A forward target that carries the implied surface's height or the disc ray's raw result to the pass: it changes every forward pipeline in the engine |
 | How many structures | One for the scene, rebuilt each frame | One for still geometry and one for movers: this adapter has room, but every ray would walk both. It is the named candidate if the rebuild shows as a tripwire, and M1's record of a still scene beside a moving one says what it could save |
 | What the structure holds | Every opaque thing in the scene, on screen or off | What the frame's passes draw: a lamp's ray, a Sun ray at low Sun and an occlusion ray all reach geometry that no camera or cascade volume holds |
 | What turns a ray effect on | A launch and a scene that ask, with a fallback to the map frame and a record for this Mac | A rule that makes the traced Sun shadow the default where a sitting measured it no slower and better looking, keyed to the adapter. Two design reviews found that it could promote a slower frame from a sum of pass times, credit rays with a difference between two recipes, and qualify a 40-core M3 Max from a 30-core one's sitting under one adapter name. For effects a scene chooses, that machinery guards less than it costs |
@@ -422,22 +422,32 @@ the value is exactly 1 or 0. Any other texel holds a **soft edge**: a penumbra, 
 Settled is kept apart from the stored value, so that a faint shadow whose value rounds to 1 is never taken
 for full Sun and blacked out by a blocked centre ray.
 
+The soft visibility is two values, **passed** and **stopped**, which differ only where
+[a ray dipped under its own triangle](#the-passage-in-the-pass). Steps 2 and 3 treat the two alike, each has
+its own settled mark, and everything this design says of a soft value holds for each.
+
 <a id="the-passage-in-the-pass"></a>
 
 **The passage in the pass.** A disc ray on a pixel in [the terminator band](#a-rounded-meshs-own-facets) has
 to pass its own body as the centre ray does. Otherwise every disc ray strikes the receiver, the texel settles
-dark, and an outside caster's soft edge never forms there. The pass applies the same rule from what a ray
-reports:
+dark, and an outside caster's soft edge never forms there. But the pass has no gap, so it has no reach, and
+without one it cannot tell the body's own far face from a part of the same mesh that stands metres away:
+past an open rim, the back of a panel joined into an awning's mesh is the nearest thing a ray meets, and it
+is the receiving instance crossed from the inside. So the pass does not decide. It records such a ray both
+ways, and [the fragment](#what-a-fragment-uses), which has the reach, chooses.
 
-- A ray that leaves the outer side of its triangle's plane is ordinary.
+- A ray that leaves the outer side of its triangle's plane is ordinary. Both values take its answer.
 - A ray that dips below the plane starts on the inner side, and a short query across the lift finds the
-  receiving instance and its winding. The nearest thing the ray meets must be that instance crossed from the
-  inside. From there it goes on as an ordinary ray, and reports the outside caster or none. Anything else
-  nearest blocks it.
-- The pass has no gap, so its passage has no reach. It also cannot tell a terminator-band pixel from one on a
-  body's dark side, where the passage runs the body's whole width and the Sun's light is zero whatever it
-  finds. What it stores on a pixel whose triangle faces away is the visibility of everything but the pixel's
-  own surface, and [the fragment](#what-a-fragment-uses) decides whether its own surface is in the way.
+  receiving instance and its winding. If it meets nothing, both values are lit. If the nearest thing is
+  another instance, or the receiving instance met from outside, both are dark.
+- If the nearest thing is the receiving instance crossed from the inside, the crossing is **a candidate**
+  for the body's far face. The ray goes on from it as an ordinary ray. **Passed** takes what it then finds:
+  the candidate is excused, as a far face is. **Stopped** is dark: the candidate blocks, as a joined sheet
+  does.
+- The pass cannot tell a terminator-band pixel from one on a body's dark side, where the candidate lies the
+  body's whole width away and the Sun's light is zero whatever the ray finds. On a pixel whose triangle
+  faces away, passed is the visibility of everything but the pixel's own surface, and stopped is the
+  visibility of everything, the rest of its own mesh included.
 - **The dive limit** bounds that work. It is a runtime value, an angle: a ray that dips further than it
   below its triangle's plane is not traced, and its pixel stores no history and takes no part in its
   neighbours' filtering. A terminator band reaches only as far below the plane as a shading normal leans
@@ -445,6 +455,8 @@ reports:
   report states it. Beyond it a terminator-band fragment shows the centre ray's hard edge.
 
 A pixel inside the limit whose ray dips costs two queries beyond the ordinary ray. One beyond it costs none.
+The second value costs no query: it is one more channel of the history, accumulated and filtered with the
+first.
 
 <a id="what-a-fragment-uses"></a>
 
@@ -452,12 +464,32 @@ A pixel inside the limit whose ray dips costs two queries beyond the ordinary ra
 history there and checks the stored depth against its own. Then:
 
 1. With no matching history, it uses the centre ray. A pixel the pass left out has none.
-2. In the terminator band with its passage refused, it uses the centre ray, which is dark. Its own body
-   hides the Sun's centre, and the whole disc lies within 0.27° of it. The pass, whose passage has no
-   reach, holds the light beyond the body there.
-3. With a settled history that the centre ray contradicts (settled lit and the ray is blocked, or settled
-   dark and the ray is clear), it uses the centre ray. Occlusion changed here after the pass ran.
-4. Otherwise it uses the soft value.
+2. It picks the soft value its own centre ray's passage bears out. Where that passage was **granted**, the
+   body's far face lies inside the reach, the disc's rays crossed the same face, and the value is
+   **passed**. Where the fragment is in the terminator band and no passage was granted, because it was
+   refused or because the ray's first meeting was not a candidate at all, a candidate the disc's rays met
+   is not this body's far face, and the value is **stopped**. Outside the terminator band the value is
+   passed.
+3. Where that value is settled and the centre ray contradicts it (settled lit and the ray is blocked, or
+   settled dark and the ray is clear), it uses the centre ray. Occlusion changed here after the pass ran.
+4. Otherwise it uses the value it picked.
+
+So a refused passage no longer discards the history. Where the body itself is in the way, every disc ray
+met a candidate, stopped is settled dark, and the fragment is dark as the centre ray has it. Where a joined
+panel's edge crosses the disc, the rays that cleared the panel are lit in stopped, and the fragment shows
+that share of the Sun: the same share a separate panel gives, on a closed body or at an open rim.
+
+**The disc straddles the plane.** A fragment whose triangle faces the Sun's centre by less than the disc's
+radius reads a history in which some rays dipped, so it needs a verdict too. With the penumbra on, such a
+fragment is in the terminator band: its centre ray starts on the inner side and takes the passage. On a
+rounded patch the passage is granted, as it is just below the plane. On flat geometry it is refused and
+the fragment is dark, where the Sun's light on it was within half a percent of zero. On concave geometry it
+is refused where the faces around the fragment already hide a Sun that low.
+
+**What is left at an open rim.** One verdict stands for all of a fragment's disc rays. Where some of them
+cross the body's last face and others pass under its rim, the fragment's value is right for one group and
+not the other. The strip is as narrow as the disc is across the passage, under one percent of its length,
+and lies beside the leak [the supported separation](#where-a-ray-starts) already states.
 
 **How long old light may persist.** The centre ray says whether the Sun's centre is hidden. It cannot tell
 the dark half of a soft edge from a shadow's body, or the light half from full Sun. So a fragment whose
@@ -630,6 +662,15 @@ lags in the same way. A darkening still visible after that is a trail, and fails
   separate, each beyond the reach and inside it past the far face. With a straight edge 5 m toward the Sun
   across the disc's centre, the pass's rule blocks half the disc rays, as the edge alone does, where plain
   rays block 93% to 97% on the two coarse bodies.
+- **The two soft values.** [The fourth probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/SOFT.md)
+  is the design review's own case: the twelve-sided prism, whole and cut to an open rim at the receiving
+  panel's edge, with a panel 5 m down the light, separate and joined into the mesh with its back to the ray.
+  With the panel's edge 1 mm to either side of the disc's centre, a single value with no reach blocks none of
+  1,024 disc rays at the open rim under the joined panel. The fragment's pick blocks 540 and 480 in all four
+  arrangements. As the Sun crosses the receiving panel's plane with the joined panel over half the disc,
+  the pick holds 513 of 1,024 from half a degree above the plane to four below, where it would thin to 281
+  just above the plane without the straddle rule. On the whole prism with no panel, 2,323 fragments from
+  0.27° above the plane to 5° below all had their passage granted, and no disc ray was blocked.
 - **Penumbra range.** The Sun's disc is about 0.53° across, so a penumbra is about 0.0093 of the distance to
   the caster: 2 cm at 2 m, which is under a pixel beyond a few metres and stays sharp; 0.9 m under a balloon
   100 m up; 28 m from a ridge 3 km off. A wide penumbra changes slowly across the screen, which is the case
@@ -675,7 +716,7 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 3. **Each frame.** Uploads are reconciled. The structure pass sets one instance for each active entity and
    each placement a contribution offers, and rebuilds the scene structure. The caster height map is drawn;
    cascades only if something reads them. The forward pass shades: each Sun-facing fragment traces the centre
-   ray, and with the penumbra on uses the soft history where the rules allow. After opaque geometry, the
+   ray, and with the penumbra on uses the soft history's passed or stopped value where the rules allow. After opaque geometry, the
    traced visibility pass traces, filters and writes the history the next frame reads.
 4. **Submit.** Only a submitted frame commits the history.
 5. **Loss or replacement.** The new generation rebuilds every structure, creates its pipelines and resets the
@@ -732,9 +773,12 @@ it for each method, and no sentence drawn from it speaks of the whole frame's GP
 - **Each frame, GPU.** The scene structure's rebuild, which M1 records for a still scene, for the
   representative movers and with every instance moving. Hard Sun: one ray for each shaded opaque pixel that
   faces the Sun, and in a rounded mesh's terminator band the receiver query and the ray that goes on from the
-  far face, two more queries. Soft Sun: the same, and in the visibility pass one ray for each opaque pixel,
+  far face, two more queries. Soft Sun: the same, with the terminator band's two queries also paid by a
+  fragment whose plane the disc straddles; and in the visibility pass one ray for each opaque pixel,
   two more queries where that ray dips below its triangle inside the dive limit, and none at all beyond the
-  limit. M4's record states the limit and the share of pixels on each side of it. Lamps: one ray for each
+  limit. The history holds two soft values and their moments where one would do without the terminator
+  band, and the filter's passes carry both. M4's record states the limit, the share of pixels on each side
+  of it, and the history's bytes. Lamps: one ray for each
   in-range lamp a pixel faces. Ambient occlusion: one ray for each four pixels. The filter's passes.
 - **Saved on `Traced`.** The two cascade passes and the blocker search, while no volume reads the cascades.
 
@@ -756,9 +800,11 @@ that moved, through a third mask bit.
    The builder may add them in M4, as a quality value, and says so in the evidence. If the edge still cannot
    pass, M4's builder ends `BLOCKED` with the frames.
 4. **The terminator band is lit by a rule, not by the triangles.** [The passage](#a-rounded-meshs-own-facets)
-   lights a terminator band the mesh's own triangles shadow, and its two stated limits are a joined sheet
-   inside the gap at an open rim, and a hard edge on a terminator band beyond the dive limit. M3 inspects the
-   terminator band on the valley's rock and balloons, and M4 under another body's soft shadow. If a facet
+   lights a terminator band the mesh's own triangles shadow, and its stated limits are a joined sheet
+   inside the gap at an open rim, [the strip beside it](#what-a-fragment-uses) under soft shadows, and a
+   hard edge on a terminator band beyond the dive limit. M3 inspects the
+   terminator band on the valley's rock and balloons, and M4 under another body's soft shadow and on an
+   open shell under a panel of its own mesh. If a facet
    survives on an irregular mesh because its far face lies beyond the reach, the builder may widen the reach
    by eye and says by how much, because the terminator band's supported separation grows with it.
 5. **Normals rebuilt from depth are wrong at silhouettes.** The filter's edge stops bound it; M5 inspects it.
