@@ -11,7 +11,7 @@ use crate::{
     Config,
     web::{self, WebShell, WebWorld},
 };
-use thrum_render::runtime::FrameHost;
+use thrum_render::{capabilities::FIRST_DEVICE_GENERATION, runtime::FrameHost};
 
 type Builder = Box<dyn FnOnce() -> Result<SkyGame, Box<dyn Error>>>;
 thread_local! {
@@ -85,7 +85,7 @@ pub async fn create_scene(
     let ground = ground_scene(game.ground, &game.local_lights).map_err(js)?;
     let contribution = game.contribution.take();
     let world = game.take_world();
-    let shell = web::create(canvas, 1, |gpu| async move {
+    let shell = web::create(canvas, FIRST_DEVICE_GENERATION, |gpu| async move {
         let mut host = FrameHost::new(
             &gpu.capabilities,
             &gpu.queue,

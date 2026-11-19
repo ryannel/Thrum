@@ -128,6 +128,14 @@ def public_returns(code):
             index += 1
 
 
+def path_attributes(comments, code):
+    """Yield real Rust path attributes and their literal targets."""
+    literal = r'(?:r(\#*)"(.*?)"\1|"((?:\\.|[^"\\])*)")'
+    for match in re.finditer(r'#\s*\[\s*path\s*=\s*' + literal + r'\s*\]', comments, re.S):
+        if code[match.start()] == "#":
+            yield match.start(), match.group(2) if match.group(2) is not None else match.group(3)
+
+
 def rust_sites(root, relative, text, package, manifest, registry):
     """Yield (rule, byte offset) for each source site, once per rule."""
     comments = mask(text)
@@ -152,15 +160,10 @@ def rust_sites(root, relative, text, package, manifest, registry):
                     if re.fullmatch(r'\s*(?:::)?\s*(?:(?:std|alloc)\s*::\s*string\s*::\s*)?String\s*,?\s*', error):
                         yield "string-errors", offset
                     break
-    literal = r'(?:r(\#*)"(.*?)"\1|"((?:\\.|[^"\\])*)")'
-    for match in re.finditer(r'#\s*\[\s*path\s*=\s*' + literal + r'\s*\]', comments, re.S):
-        # Require an actual attribute, not text inside a literal.
-        if code[match.start()] != "#":
-            continue
-        yield "path-attribute", match.start()
-        target = match.group(2) if match.group(2) is not None else match.group(3)
+    for offset, target in path_attributes(comments, code):
+        yield "path-attribute", offset
         if package and not (root / Path(relative).parent / target).resolve().is_relative_to((root / package).resolve()):
-            yield "package-reach", match.start()
+            yield "package-reach", offset
     for match in re.finditer(r'\binclude(?:_str|_bytes)?\s*!\s*\(\s*(?:r(\#*)"(.*?)"\1|"((?:\\.|[^"\\])*)")', comments, re.S):
         if code[match.start():match.start() + 7] != "include":
             continue

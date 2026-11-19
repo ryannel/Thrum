@@ -131,6 +131,18 @@ test_role="fixtures"
         self.write("crates/thrum-render/src/capabilities/recipe.rs", 'fn device() { instance.request_device(&options); }')
         self.assertEqual(self.sites("device-request"), [])
 
+    def test_device_request_checks_explicit_benchmark_modules(self):
+        bench = "crates/engine/benches"
+        self.write(f"{bench}/route.rs", '#[path = "../tests/support/route.rs"] mod route;')
+        self.write("crates/engine/tests/support/route.rs", '#[path = "device.rs"] mod device;')
+        self.write("crates/engine/tests/support/device.rs", 'fn open() { adapter.request_device(&options); }')
+        self.write("crates/engine/tests/unrelated.rs", 'fn test() { adapter.request_device(&options); }')
+        errors = shapes.check(self.root, "device-request", [bench])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("crates/engine/tests/support/device.rs:1: device-request:", errors[0])
+        self.write("crates/engine/tests/support/device.rs", 'fn open() { recipe.open(&instance, None); }')
+        self.assertEqual(shapes.check(self.root, "device-request", [bench]), [])
+
     def test_whole_file_gate(self):
         self.pair("whole-file-gpu-gate", '#![cfg(target_os = "macos")]\n#[test] fn cpu() {}',
                   '#[cfg(target_os = "macos")]\n#[test] fn gpu() {}\n#[test] fn cpu() {}',

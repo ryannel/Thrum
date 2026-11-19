@@ -3,6 +3,7 @@ use std::{
     collections::BTreeMap,
     time::{Duration, Instant},
 };
+use thrum_render::capabilities::{DeviceRecipe, OpenedDevice};
 use v1_game::{FrameConfig, FrameHost};
 
 fn main() -> Result<(), String> {
@@ -14,14 +15,20 @@ fn main() -> Result<(), String> {
     reason = "measurement executable emits its one machine-readable record"
 )]
 async fn measure() -> Result<(), String> {
-    let gpu = thrum_test_support::gpu("cloud cost", Some(wgpu::Backend::Metal))
-        .ok_or("Metal unavailable")?;
-    let (device, queue) = gpu.device(
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    );
-    let adapter = gpu.adapter;
-    let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    let OpenedDevice {
+        adapter,
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    } = DeviceRecipe::default()
+        .open(&instance, None)
+        .await
+        .map_err(|error| error.to_string())?;
     let mut host = FrameHost::new_with_setup(
         &device,
         &queue,

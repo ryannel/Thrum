@@ -14,7 +14,7 @@ import sys
 import tomllib
 import evidence_store
 
-from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, rust_sites, test_edge_sites
+from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, path_attributes, rust_sites, test_edge_sites
 
 BASELINE = ".config/shape-baseline.json"
 PATTERNS = ".agents/skills/thrum-engineering/references/patterns.md"
@@ -235,6 +235,22 @@ def save_baseline(path, value):
     path.write_text("\n".join(lines) + "\n")
 
 
+def explicit_rust_sources(root, paths):
+    """Follow explicit Rust module paths that leave the supplied check roots."""
+    indexed = {root / relative for relative in files_in(root) if relative.endswith(".rs")}
+    sources = {source for source in indexed if any(source.is_relative_to(path) for path in paths)}
+    pending = list(sources)
+    while pending:
+        source = pending.pop()
+        text = source.read_text()
+        for _, reference in path_attributes(mask(text), mask(text, strings=True)):
+            target = (source.parent / reference).resolve()
+            if target in indexed and target not in sources:
+                sources.add(target)
+                pending.append(target)
+    return sources
+
+
 def check(root, rule=None, zero=None, tighten=False):
     current, sites, pins = inventory(root, honor_pins=zero is not None)
     if zero is not None:
@@ -242,15 +258,18 @@ def check(root, rule=None, zero=None, tighten=False):
         for name, sources in sorted(pins.items()):
             if rule == "history-names":
                 print(f"pinned {name}: {', '.join(sorted(sources))}")
+        paths = []
         for value in zero:
             path = (root / value).resolve()
             if not path.exists() or not path.is_relative_to(root):
                 errors.append(f"{value}:1: {rule}: --zero path missing or outside repository")
                 continue
-            for relative, line in sites[rule]:
-                candidate = root / relative
-                if candidate == path or candidate.is_relative_to(path):
-                    errors.append(f"{relative}:{line}: {rule}: {guidance(rule)}")
+            paths.append(path)
+        sources = explicit_rust_sources(root, paths) if rule == "device-request" else set()
+        for relative, line in sites[rule]:
+            candidate = root / relative
+            if candidate in sources or any(candidate.is_relative_to(path) for path in paths):
+                errors.append(f"{relative}:{line}: {rule}: {guidance(rule)}")
         return errors
     path = root / BASELINE
     if not path.exists() and not tighten:

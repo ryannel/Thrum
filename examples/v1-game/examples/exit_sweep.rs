@@ -2,10 +2,11 @@
 use std::{io::Write, time::Duration};
 
 use thrum_render::{
-    capabilities::DeviceCapabilities, present::SurfaceProfile, synthetic::CullMode,
+    capabilities::{DeviceRecipe, OpenedDevice},
+    present::SurfaceProfile,
+    synthetic::CullMode,
     timing::SceneGpuTimings,
 };
-use thrum_test_support::{Profile, Restriction, gpu};
 use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, SurfaceOutput};
 
 const EXTENT: [u32; 2] = [1920, 1080];
@@ -44,9 +45,20 @@ async fn run() {
     let recipe = std::env::args()
         .nth(1)
         .expect("pass the recipe as the first argument");
-    let gpu = gpu("exit sizing sweep", Some(wgpu::Backend::Metal)).expect("real Metal adapter");
-    let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
-    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, FrameHost::DEVICE_GENERATION)
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities,
+        ..
+    } = DeviceRecipe::default()
+        .open(&instance, None)
+        .await
+        .expect("Metal device for exit sizing sweep");
+    let caps = capabilities
         .with_recipe_override(&recipe)
         .expect("resolve recipe");
     let format = wgpu::TextureFormat::Bgra8Unorm;

@@ -65,7 +65,6 @@
         "examples/v1-game/tests/lent_products_gpu.rs": 2,
         "examples/v1-game/tests/support.rs": 2,
         "examples/v1-game/tests/support/field_fly.rs": 2,
-        "examples/v1-game/tests/support/valley_route.rs": 2,
         "examples/v1-game/tests/surface_gpu.rs": 4,
         "examples/v1-game/tests/temporal_volume_gpu.rs": 2,
         "scripts/creator_profile_probe.rs": 2

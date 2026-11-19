@@ -2,7 +2,7 @@
 
 use std::{io::Write, time::Duration};
 use thrum_render::{
-    capabilities::DeviceCapabilities,
+    capabilities::{DeviceRecipe, OpenedDevice},
     present::SurfaceProfile,
     synthetic::{CaptureSource, CullMode},
 };
@@ -136,22 +136,15 @@ fn record_campaign_comparison(
     differs
 }
 
-async fn metal() -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
+async fn open_metal_device() -> OpenedDevice {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    DeviceRecipe::default()
+        .open(&instance, None)
         .await
-        .expect("Metal");
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter)
-                | DeviceCapabilities::requested_content_features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .expect("device");
-    (adapter, device, queue)
+        .expect("Metal device for valley culling")
 }
 
 fn surface_texture(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::Texture {
@@ -203,8 +196,8 @@ async fn prove() {
     } else {
         CaptureSource::Sdr
     };
-    let (adapter, device, queue) = metal().await;
-    let caps = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+    let opened = open_metal_device().await;
+    let (device, queue, caps) = (opened.device, opened.queue, opened.capabilities);
     let texture = surface_texture(&device, extent);
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
     let surface = SurfaceOutput {
@@ -250,7 +243,7 @@ async fn prove() {
     let output = std::path::PathBuf::from(std::env::var("THRUM_CULLING_OUTPUT").expect("output"));
     std::fs::create_dir_all(&output).expect("output directory");
     let mut log = std::fs::File::create(output.join("rows.jsonl")).expect("rows");
-    writeln!(log, "{}", serde_json::json!({"adapter":adapter.get_info().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"mode":"fixed","capture_source":format!("{capture_source:?}"),"timing_only":timing,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
+    writeln!(log, "{}", serde_json::json!({"adapter":caps.adapter().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"mode":"fixed","capture_source":format!("{capture_source:?}"),"timing_only":timing,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
     let mut hidden = [0_u64; 2];
     let mut differing_ticks = 0_u64;
     let mut last_times = vec![Duration::ZERO; modes.len()];
