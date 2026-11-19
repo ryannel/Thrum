@@ -121,17 +121,3 @@ test('persistent transport loss fails after three attempts', async t => {
   await assert.rejects(uploadCapture(7, { metadata: '{}', pixels: new Uint8Array(4) }), /connection reset/);
   assert.equal(attempts, 3);
 });
-
-test('lossless sprite transport handles runs, literals and raw fallback', async () => {
-  const { packRgbaRuns } = await import('../examples/v1-game/web/capture_upload.mjs');
-  const { unpackRgbaRuns } = await import('./browser_capture_receiver.mjs');
-  const source = Uint32Array.from({ length: 512 }, (_, i) =>
-    i % 23 < 17 ? 0xff000000 : (i * 0x1020304) >>> 0);
-  const pixels = new Uint8Array(source.buffer);
-  const packed = packRgbaRuns(pixels);
-  assert.ok(packed.length < pixels.length);
-  assert.deepEqual(unpackRgbaRuns(Buffer.from(packed), pixels.length), Buffer.from(pixels));
-  assert.throws(() => unpackRgbaRuns(Buffer.from(packed.subarray(0, packed.length - 4)), pixels.length));
-  const noise = new Uint8Array(Uint32Array.from({ length: 512 }, (_, i) => i).buffer);
-  assert.equal(packRgbaRuns(noise), noise);
-});

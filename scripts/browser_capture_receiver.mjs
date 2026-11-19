@@ -7,33 +7,9 @@ import { gzip } from 'node:zlib';
 const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
-export function unpackRgbaRuns(encoded, frameBytes) {
-  if (encoded.length % 4 !== 0 || frameBytes % 4 !== 0) throw new Error('Unaligned RGBA run packet');
-  const raw = Buffer.allocUnsafe(frameBytes);
-  const words = new Uint32Array(raw.buffer, raw.byteOffset, frameBytes / 4);
-  let cursor = 0, output = 0;
-  while (cursor < encoded.length && output < words.length) {
-    const count = encoded.readInt32LE(cursor);
-    cursor += 4;
-    if (count === 0 || output + Math.abs(count) > words.length) throw new Error('Invalid RGBA run length');
-    if (count < 0) {
-      if (cursor + 4 > encoded.length) throw new Error('Truncated RGBA run');
-      words.fill(encoded.readUInt32LE(cursor), output, output - count);
-      cursor += 4;
-    } else {
-      if (cursor + count * 4 > encoded.length) throw new Error('Truncated RGBA literals');
-      encoded.copy(raw, output * 4, cursor, cursor + count * 4);
-      cursor += count * 4;
-    }
-    output += Math.abs(count);
-  }
-  if (cursor !== encoded.length || output !== words.length) throw new Error('Invalid RGBA run packet extent');
-  return raw;
-}
-
 // An acknowledgement may be lost after storage. Replays must match both the
 // original submitted bytes and metadata, and never create a second frame.
-export function captureReceiver(output, frameBytes, manifest, failed, { slow = false, rawSpool, acceptRuns = false } = {}) {
+export function captureReceiver(output, frameBytes, manifest, failed, { slow = false, rawSpool } = {}) {
   const recordLimit = manifest.record_limit ?? 1024;
   const exportSlots = manifest.export_slots ?? 8;
   let active = 0, outputBytes = 0;
@@ -55,28 +31,19 @@ export function captureReceiver(output, frameBytes, manifest, failed, { slow = f
           if (length > frameBytes) throw new Error('Oversized frame');
           chunks.push(chunk);
         }
-        const packet = Buffer.concat(chunks);
-        const encoding = request.headers['x-pixel-encoding'];
-        if (encoding !== undefined && (!acceptRuns || encoding !== 'rgba-runs')) throw new Error('Undeclared pixel transport');
-        if (encoding === undefined && length !== frameBytes) throw new Error('Truncated frame');
-        if (acceptRuns && !/^[0-9a-f]{64}$/.test(request.headers['x-pixel-sha256'] ?? '')) {
-          throw new Error('Sprite source lacks its original pixel hash');
-        }
-        const raw = acceptRuns ? null : encoding === 'rgba-runs' ? unpackRgbaRuns(packet, frameBytes) : packet;
-        const digest = acceptRuns ? request.headers['x-pixel-sha256'] : sha(raw);
-        const packetDigest = acceptRuns ? sha(packet) : null;
-        if (acceptRuns) manifest.transport_bytes = (manifest.transport_bytes ?? 0) + length;
+        if (length !== frameBytes) throw new Error('Truncated frame');
+        const raw = Buffer.concat(chunks), digest = sha(raw);
         while (writing.has(ordinal)) await writing.get(ordinal);
         if (manifest.records[ordinal]) {
-          if (manifest.records[ordinal].rgba_sha256 !== digest || manifest.records[ordinal].transport_sha256 !== (packetDigest ?? undefined) || headers.get(ordinal) !== header) throw new Error('Conflicting record replay');
+          if (manifest.records[ordinal].rgba_sha256 !== digest || headers.get(ordinal) !== header) throw new Error('Conflicting record replay');
           manifest.export_replays = (manifest.export_replays ?? 0) + 1;
         } else {
           const stored = (async () => {
             if (slow) await new Promise(resolve => setTimeout(resolve, 500));
-            const encoded = acceptRuns ? packet : rawSpool ? raw : await compress(raw, { level: 1 });
+            const encoded = rawSpool ? raw : await compress(raw, { level: 1 });
             outputBytes += encoded.length;
             if (outputBytes > manifest.output_allowance) throw new Error('Output allowance exhausted');
-            const file = `frames/${String(ordinal).padStart(6, '0')}.${acceptRuns ? 'packet' : 'rgba.gz'}`;
+            const file = `frames/${String(ordinal).padStart(6, '0')}.rgba.gz`;
             if (rawSpool) {
               let written = 0;
               while (written < frameBytes) {
@@ -88,8 +55,7 @@ export function captureReceiver(output, frameBytes, manifest, failed, { slow = f
               await fs.writeFile(path.join(output, file), encoded, { flag: 'wx' });
             }
             headers.set(ordinal, header);
-            const transport = acceptRuns ? { transport_encoding: encoding ?? 'raw', transport_sha256: packetDigest } : {};
-            manifest.records[ordinal] = { ...metadata, ...transport, ordinal, file, rgba_sha256: digest, bytes: encoded.length };
+            manifest.records[ordinal] = { ...metadata, ordinal, file, rgba_sha256: digest, bytes: encoded.length };
           })();
           writing.set(ordinal, stored);
           try { await stored; } finally { writing.delete(ordinal); }

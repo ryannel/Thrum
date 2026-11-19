@@ -1,18 +1,11 @@
 // Retry transport loss only. A replay keeps the exact submitted bytes and ordinal.
-export async function uploadCapture(ordinal, image, retried = () => {}, pack = false) {
-  const body = pack ? packRgbaRuns(image.pixels) : image.pixels;
-  const headers = { 'X-Frame': image.metadata };
-  if (body !== image.pixels) headers['X-Pixel-Encoding'] = 'rgba-runs';
-  if (pack) {
-    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', image.pixels));
-    headers['X-Pixel-Sha256'] = Array.from(digest, byte => byte.toString(16).padStart(2, '0')).join('');
-  }
+export async function uploadCapture(ordinal, image, retried = () => {}) {
   for (let attempt = 0; attempt < 3; attempt++) {
     let response;
     try {
       response = await fetch(`/capture?ordinal=${ordinal}`, {
         signal: AbortSignal.timeout(10000), method: 'POST',
-        headers, body,
+        headers: { 'X-Frame': image.metadata }, body: image.pixels,
       });
     } catch (error) {
       if (attempt === 2) throw error;
@@ -25,39 +18,11 @@ export async function uploadCapture(ordinal, image, retried = () => {}, pack = f
   }
 }
 
-// Each packet holds a signed word count followed by literal RGBA words
-// (positive count) or one repeated word (negative count). Incompressible
-// frames retain the normal raw transport.
-export function packRgbaRuns(pixels) {
-  const input = new Uint32Array(pixels.buffer, pixels.byteOffset, pixels.byteLength / 4);
-  const encoded = new Int32Array(input.length);
-  let cursor = 0, end = 0;
-  const beginsRun = at => at + 2 < input.length && input[at] === input[at + 1] && input[at] === input[at + 2];
-  while (cursor < input.length) {
-    const start = cursor;
-    if (beginsRun(cursor)) {
-      cursor += 3;
-      while (cursor < input.length && input[cursor] === input[start]) cursor++;
-      if (end + 2 >= encoded.length) return pixels;
-      encoded[end++] = start - cursor;
-      encoded[end++] = input[start];
-    } else {
-      do { cursor++; } while (cursor < input.length && !beginsRun(cursor));
-      const count = cursor - start;
-      if (end + 1 + count >= encoded.length) return pixels;
-      encoded[end++] = count;
-      encoded.set(input.subarray(start, cursor), end);
-      end += count;
-    }
-  }
-  return new Uint8Array(encoded.buffer, 0, end * 4);
-}
-
 export async function startCaptureUploadWorker({ spool = false } = {}) {
   const worker = new Worker(new URL('./capture_upload.mjs', import.meta.url), { type: 'module' });
   const pending = new Map();
   let failure;
-  let finished;
+  let sealed;
   try {
     await new Promise((resolve, reject) => {
       worker.onmessage = ({ data }) => { if (data.ready) resolve(); };
@@ -68,9 +33,9 @@ export async function startCaptureUploadWorker({ spool = false } = {}) {
     throw error;
   }
   worker.onmessage = ({ data }) => {
-    if (data.finished) {
-      if (data.error) finished?.reject(new Error(data.error));
-      else finished?.resolve(data);
+    if (data.sealed) {
+      if (data.error) sealed?.reject(new Error(data.error));
+      else sealed?.resolve(data.spool_bytes);
       return;
     }
     const task = pending.get(data.ordinal);
@@ -82,7 +47,7 @@ export async function startCaptureUploadWorker({ spool = false } = {}) {
     failure = new Error(event.message);
     for (const task of pending.values()) task.reject(failure);
     pending.clear();
-    finished?.reject(failure);
+    sealed?.reject(failure);
   };
   return {
     upload(ordinal, image) {
@@ -92,12 +57,11 @@ export async function startCaptureUploadWorker({ spool = false } = {}) {
         pending.set(ordinal, { resolve, reject });
       });
     },
-    finish() {
-      if (!spool) return Promise.resolve();
+    seal() {
       if (failure) return Promise.reject(failure);
       return new Promise((resolve, reject) => {
-        finished = { resolve, reject };
-        worker.postMessage({ finish: true });
+        sealed = { resolve, reject };
+        worker.postMessage({ seal: true });
       });
     },
     close() { worker.terminate(); },
@@ -109,47 +73,31 @@ export async function startCaptureUploadWorker({ spool = false } = {}) {
 if (typeof DedicatedWorkerGlobalScope !== 'undefined' && self instanceof DedicatedWorkerGlobalScope) {
   let opened;
   let ownedBytes = 0;
-  const ledger = [];
-  self.onmessage = async ({ data: { ordinal, image, spool, finish } }) => {
+  self.onmessage = async ({ data: { ordinal, image, spool, seal } }) => {
     const retries = [];
     let error;
     try {
-      if (finish) {
-        const { directory, file } = await opened;
+      if (seal) {
+        const file = await opened;
         file.flush();
-        // Replay from the tail and release each range after its ack. The local
-        // spool and the receiver's packets together fit the one output allowance.
-        let left = ledger.length;
-        while (left > 0) {
-          const end = left;
-          const start = Math.max(0, end - 6);
-          await Promise.all(ledger.slice(start, end).map(async ({ ordinal, offset, length, metadata }) => {
-            const pixels = new Uint8Array(length);
-            if (file.read(pixels, { at: offset }) !== length) throw new Error('Short browser spool read');
-            await uploadCapture(ordinal, { pixels, metadata }, retry => retries.push(retry), true);
-          }));
-          file.truncate(ledger[start].offset);
-          left = start;
-        }
         file.close();
-        await directory.removeEntry('sprite-capture.rgba');
       } else if (spool) {
         opened ??= (async () => {
           const directory = await navigator.storage.getDirectory();
           const entry = await directory.getFileHandle('sprite-capture.rgba', { create: true });
-          return { directory, file: await entry.createSyncAccessHandle() };
+          return entry.createSyncAccessHandle();
         })();
-        const { file } = await opened;
+        const file = await opened;
         const length = image.pixels.byteLength;
-        if (ownedBytes + length > 16 * 1024 ** 3 - 64 * 1024 ** 2) throw new Error('Browser spool allowance exhausted');
+        // Half the output allowance is reserved for the browser's exported copy.
+        if (ownedBytes + length > 8 * 1024 ** 3 - 64 * 1024 ** 2) throw new Error('Browser spool allowance exhausted');
         if (file.write(image.pixels, { at: ownedBytes }) !== length) throw new Error('Short browser spool write');
-        ledger.push({ ordinal, offset: ownedBytes, length, metadata: image.metadata });
         ownedBytes += length;
       } else {
         await uploadCapture(ordinal, image, retry => retries.push(retry));
       }
     } catch (failure) { error = String(failure); }
-    if (finish) self.postMessage({ finished: true, retries, error, spool_bytes: ownedBytes });
+    if (seal) self.postMessage({ sealed: true, error, spool_bytes: ownedBytes });
     else self.postMessage({ ordinal, pixels: image.pixels, retries, error }, [image.pixels.buffer]);
   };
   self.postMessage({ ready: true });

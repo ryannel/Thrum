@@ -7,7 +7,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
-import { captureReceiver, unpackRgbaRuns } from './browser_capture_receiver.mjs';
+import { captureReceiver } from './browser_capture_receiver.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
 const decompress = promisify(gunzip);
 const compress = promisify(gzip);
@@ -102,7 +102,7 @@ let child, cdp, server, cook, ended = false, failure;
 const retainRaw = args['retain-raw'] === 'on';
 const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
-const { receive, pending } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, { slow: args.control === 'slow', rawSpool, acceptRuns: spriteField });
+const { receive, pending } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, { slow: args.control === 'slow', rawSpool });
 try {
   ({ server, origin: manifest.origin } = await serve(files, receive));
   let cookedOrigin;
@@ -133,6 +133,7 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
+  if (spriteField) await cdp.call('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: output });
   const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off') && args.mode === 'realtime' &&
     (args.control === 'ordinary' || args.control === 'off');
   let captureDone = false;
@@ -156,11 +157,21 @@ try {
     }
     const r = await cdp.call('Runtime.evaluate', { expression: 'window.thrumCapture?.done ? JSON.stringify(window.thrumCapture) : null', returnByValue: true }, sessionId);
     return r.result.value ? JSON.parse(r.result.value) : undefined;
-  }, spriteField ? 300000 : 180000, 'submitted-output route');
+  }, 180000, 'submitted-output route');
   manifest.load_after = loadavg();
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
   if (args.witness !== 'off' && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
   await Promise.all(pending);
+  if (spriteField && record.complete) {
+    const file = path.join(output, 'sprites-field.rgba');
+    await waitFor(async () => (await fs.stat(file).catch(error => {
+      if (error.code !== 'ENOENT') throw error;
+    }))?.size === record.spool_bytes, 600000, 'sealed sprite download');
+    await fs.rename(file, spoolPath);
+    manifest.records = record.images.map((row, ordinal) => ({
+      ...row, ordinal, file: path.basename(spoolPath), offset: ordinal * frameBytes, bytes: frameBytes,
+    }));
+  }
   if (!record.complete) {
     if (args.control === 'loss' && record.control_pass) {
       manifest.negative_control_pass = true;
@@ -190,26 +201,26 @@ try {
       }
       if (record.final_report.timestamp_clamps || (record.final_report.overload_events && args.control !== 'stall')) throw new Error('Runtime clamped/overloaded');
       if (args.control === 'resize' && new Set(manifest.records.map(row => row.presenter_generation)).size < 2) throw new Error('Resize did not change presenter generation');
-      const spoolFrame = rawSpool && Buffer.allocUnsafe(frameBytes);
+      const spriteSpool = spriteField ? await fs.open(spoolPath, 'r') : undefined;
+      const rawSource = rawSpool ?? spriteSpool;
+      const spoolFrame = rawSource && Buffer.allocUnsafe(frameBytes);
+      try {
       for (const [i, row] of manifest.records.entries()) {
         if (row.submission_id !== record.images[i].submission_id || !row.surface_presented) throw new Error('Image join/surface mismatch');
         if (i > 0 && row.submit_ms <= manifest.records[i - 1].submit_ms) throw new Error('Nonmonotonic submit time');
         let raw;
-        if (rawSpool) {
+        if (rawSource) {
           let offset = 0;
           while (offset < frameBytes) {
-            const { bytesRead } = await rawSpool.read(spoolFrame, offset, frameBytes - offset, i * frameBytes + offset);
+            const { bytesRead } = await rawSource.read(spoolFrame, offset, frameBytes - offset, i * frameBytes + offset);
             if (bytesRead === 0) throw new Error('Short raw spool frame');
             offset += bytesRead;
           }
           raw = spoolFrame;
-        } else if (spriteField) {
-          const packet = await fs.readFile(path.join(output, row.file));
-          if (sha(packet) !== row.transport_sha256) throw new Error('Transport packet changed in storage');
-          raw = row.transport_encoding === 'rgba-runs' ? unpackRgbaRuns(packet, frameBytes) : packet;
         } else {
           raw = await decompress(await fs.readFile(path.join(output, row.file)));
         }
+        if (spriteField) row.rgba_sha256 = sha(raw);
         if (raw.length !== frameBytes || sha(raw) !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
         if (retainRaw) {
           row.file = path.basename(spoolPath);
@@ -223,8 +234,14 @@ try {
           row.bytes = encoded.length;
         }
       }
+      } finally {
+        await spriteSpool?.close();
+      }
       const syncStart = performance.now();
-      if (retainRaw) await rawSpool.sync();
+      if (spriteField) {
+        const file = await fs.open(spoolPath, 'r+');
+        try { await file.sync(); } finally { await file.close(); }
+      } else if (retainRaw) await rawSpool.sync();
       else for (const row of manifest.records) {
         const file = await fs.open(path.join(output, row.file), 'r+');
         try { await file.sync(); } finally { await file.close(); }
@@ -239,7 +256,7 @@ finally {
   await Promise.all(pending);
   await rawSpool?.close();
   cook?.kill();
-  try { await cleanup(child, () => ended, cdp, server, profile); } catch (error) { failure ??= error; }
+  try { await cleanup(child, () => ended, cdp, server, profile, spriteField ? 45000 : undefined); } catch (error) { failure ??= error; }
   try {
     manifest.permission_preflight = JSON.parse(await fs.readFile(path.join(output, 'launcher.json'), 'utf8'));
     if (manifest.permission_preflight.screen_recording_after !== false || manifest.permission_preflight.chrome_exit_code !== 0) failure ??= new Error('Launcher final preflight/Chrome exit failed');
@@ -249,7 +266,7 @@ finally {
   if (manifest.permission_preflight?.screen_recording_before !== false) manifest.complete = false;
   manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: extent[0] * 4, extent };
-  manifest.spool_encoding = spriteField ? 'lossless RGBA runs or raw packets' : retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
+  manifest.spool_encoding = spriteField ? 'browser File download, raw RGBA8' : retainRaw ? 'raw' : spoolRaw ? 'raw with deferred gzip' : 'live gzip';
   manifest.encoded_bytes = manifest.records.reduce((total, row) => total + row.bytes, 0);
   await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
 }

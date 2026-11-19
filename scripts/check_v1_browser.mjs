@@ -1958,12 +1958,12 @@ async function compareFieldOracle(output, results) {
   return result;
 }
 
-async function cleanup(child, exited, cdp, server, profile) {
+async function cleanup(child, exited, cdp, server, profile, graceMs = 10000) {
   const failures = [];
   if (child?.pid && !exited()) {
     if (!cdp) failures.push('Chrome could not be closed through its own DevTools connection');
     try { if (cdp) await cdp.call('Browser.close'); else child.kill('SIGTERM'); } catch { /* Browser.close may close its own CDP connection first. */ }
-    try { await waitFor(() => exited(), 10000, 'owned Chrome graceful exit'); }
+    try { await waitFor(() => exited(), graceMs, 'owned Chrome graceful exit'); }
     catch (error) {
       failures.push(error.message);
       child.kill('SIGTERM');
@@ -2195,7 +2195,7 @@ async function main() {
   } catch (error) { failure = error; }
   finally {
     cook?.kill();
-    try { await cleanup(child, () => ended, cdp, server, profile); }
+    try { await cleanup(child, () => ended, cdp, server, profile, args.case.startsWith('sprites-field') ? 45000 : undefined); }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
     await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
   }

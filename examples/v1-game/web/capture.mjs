@@ -312,7 +312,7 @@ async function captureSpriteField() {
   record.mode = mode;
   record.pixel_source = source;
   record.extent = extent;
-  record.scheduling = 'elapsed timer opportunities against a 48 Hz schedule on the visible headless page';
+  record.scheduling = 'elapsed timer opportunities against a 45 Hz schedule on the visible headless page';
   record.admission_policy = 'wait';
   record.spool_backpressure_opportunities = 0;
   record.gpu_pass_timing = false;
@@ -321,7 +321,7 @@ async function captureSpriteField() {
   const start = performance.now();
   record.start_after_ms = start;
   game.set_paused(false, 0);
-  const period = 1000 / 48;
+  const period = 1000 / 45;
   let next = 0;
   while (performance.now() - start < 22400) {
     if (hidden) fail('sprite capture page became hidden');
@@ -361,9 +361,19 @@ async function captureSpriteField() {
     fail(`incomplete sprite capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   }
   if (record.images.at(-1).submit_ms - record.images[0].submit_ms < 20000) fail('sprite capture spans less than twenty seconds');
-  const replay = await uploadWorker.finish();
-  record.spool_bytes = replay.spool_bytes;
-  record.export_retries = replay.retries;
+  record.spool_bytes = await uploadWorker.seal();
+  const directory = await navigator.storage.getDirectory();
+  const entry = await directory.getFileHandle('sprite-capture.rgba');
+  const file = await entry.getFile();
+  if (file.size !== record.spool_bytes || file.size !== record.images.length * extent[0] * extent[1] * 4) {
+    fail('sealed browser spool size differs from submitted images');
+  }
+  // The public browser download streams the File without a page-sized array
+  // or an HTTP request per frame. The runner owns the download directory.
+  const download = document.createElement('a');
+  download.href = URL.createObjectURL(file);
+  download.download = 'sprites-field.rgba';
+  download.click();
   record.complete = true;
 }
 
