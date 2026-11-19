@@ -76,10 +76,11 @@ COMPARATOR = 2
 # Comparator 2, source root 59f0484f (authored ground, 80e519ec): worst valley 0.027, 0.062, 0.161 -> the 1.0 floor.
 # Recalibrated for source root 70d2baf8 (G7 M4 continuous ground, 512² tile): worst valley 0.027, 0.052, 0.148 ->
 # the same 1.0 floor, thresholds unchanged (approved by Thrum Core, G7 NOTES "Root verdict on ground variant E").
+# SHOWCASE M9 lookout rim and 6.32 h sunrise, root f34397a1: worst valley 0.027, 0.050, 0.125 -> the 1.0 floor.
 THRESHOLDS = [1.0, 1.0, 1.0]
 # The source root the thresholds were calibrated on. Another root needs a reviewed recalibration, so a parity
 # regression that arrives with a content change is not absorbed.
-CALIBRATED_ROOT = '70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d'
+CALIBRATED_ROOT = 'f34397a181e38e76a57b8da4ebf00426deadc377976c33dd00f7d127718c1eea'
 CONTROL_RATIO = 10.0
 
 # The moving proof route (seam 8). The route file is the only source of its keys, phase and checkpoints.
