@@ -397,7 +397,7 @@ fn quiet(count: u32, nonreader: bool) -> Value {
     let settings = Settings {
         response_ms: 500,
         join_ms: 1_800,
-        held_expiry: 22,
+        held_expiry: if nonreader { 22 } else { 2 },
         absence: 220,
         ..Settings::default()
     };
@@ -413,6 +413,7 @@ fn quiet(count: u32, nonreader: bool) -> Value {
     game.advance_to(80.max(game.tick() + 12));
     let slot = game.players[player].slot();
     let quiet_at = game.tick();
+    let mut expiry_with_staged_frame = None;
     if nonreader {
         // A real replica first requests a repair. Leave its link open as a
         // receiver that no longer drains the bounded reliable lane.
@@ -426,9 +427,16 @@ fn quiet(count: u32, nonreader: bool) -> Value {
         game.until(160, |game| !game.players[player].links[1].is_open());
     } else {
         game.players[player].send = false;
-        game.until(u64::from(settings.absence) + 30, |game| {
-            !game.players[player].links[1].is_open()
-        });
+        let deadline = quiet_at + u64::from(settings.absence) + 30;
+        while game.players[player].links[1].is_open() {
+            game.advance();
+            let tick = game.tick();
+            let staged = game.players[player].last_staged;
+            if tick == staged + u64::from(settings.held_expiry) && game.host.admissions()[slot] {
+                expiry_with_staged_frame = Some(tick);
+            }
+            assert!(tick < deadline, "silent peer missed the absence deadline");
+        }
     }
     let peer = &game.players[player];
     let counters = peer.links[1].counters(game.now / 1_000);
@@ -447,16 +455,25 @@ fn quiet(count: u32, nonreader: bool) -> Value {
     let away = game.event(player, quiet_at, |r| r.away);
     let world = game.world.borrow();
     let rows = &world.steps;
-    let neutral = rows
-        .iter()
-        .find(|row| row.tick > quiet_at && row.axes[slot].map(f32::to_bits) == [0; 3])
-        .expect("fault scenario witness")
-        .tick;
+    let neutral = if nonreader {
+        rows.iter()
+            .find(|row| row.tick > quiet_at && row.axes[slot].map(f32::to_bits) == [0; 3])
+            .expect("fault scenario witness")
+            .tick
+    } else {
+        let due = game.players[player].last_staged + u64::from(settings.held_expiry);
+        assert_eq!(expiry_with_staged_frame, Some(due));
+        let previous = rows
+            .iter()
+            .find(|row| row.tick + 1 == due)
+            .expect("pre-expiry tick");
+        assert_ne!(previous.axes[slot].map(f32::to_bits), [0; 3]);
+        due
+    };
     assert_eq!(away, close_at);
     game.neutral_at(slot, neutral);
     if !nonreader {
         let peer = &game.players[player];
-        assert_eq!(neutral, peer.last_staged + u64::from(settings.held_expiry));
         assert_eq!(away, peer.last_input + u64::from(settings.absence));
         assert!(
             rows.iter()
@@ -468,6 +485,7 @@ fn quiet(count: u32, nonreader: bool) -> Value {
         "closed_at": close_at, "neutral_at": neutral, "away_at": away,
         "last_received_frame": game.players[player].last_input,
         "last_staged_frame": game.players[player].last_staged,
+        "held_expiry_ticks": settings.held_expiry, "expiry_with_staged_frame": expiry_with_staged_frame,
         "reliable_full": counters.refused[2], "most_bytes": game.players[player].most_bytes,
         "most_sets": game.players[player].most_sets, "ring_cap": settings.backlog,
         "other_peer_comparisons": others})

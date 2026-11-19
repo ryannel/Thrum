@@ -446,16 +446,14 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 .staging
                 .take_due(binding(slot, MATCH_EPOCH).peer)
                 .expect("registered player slot");
-            let axes = if self.neutral & (1 << slot) == 0 {
-                self.axes[slot]
-            } else {
-                [0.0; 3]
-            };
-            let mut admitted = frame(slot, MATCH_EPOCH, tick, tick, axes);
+            let mut admitted = frame(slot, MATCH_EPOCH, tick, tick, self.axes[slot]);
             if let Some(input) = input.filter(|_| self.ready(slot)) {
                 results[slot].frame = input.origin.sequence;
                 admitted.axes = input.axes;
                 admitted.actions = input.actions;
+            }
+            if self.neutral & (1 << slot) != 0 {
+                admitted.axes = [0.0; 3];
             }
             if self.ready(slot)
                 && let Some(peer) = self.peers.iter_mut().find(|peer| peer.slot == Some(slot))
@@ -768,12 +766,17 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
     }
 
     fn baseline(&self, peer: &mut Peer<W::Action>, now: u64) {
-        let mut bytes = Vec::new();
-        if self.world.image(&mut bytes).is_err() || bytes.len() > self.settings.image_limit as usize
-        {
+        let limit = self.settings.image_limit as usize;
+        let mut output = super::StateBytes::new(limit);
+        let bytes = self
+            .world
+            .image(&mut output)
+            .ok()
+            .and_then(|()| output.into_bytes());
+        let Some(bytes) = bytes.filter(|bytes| bytes.len() <= limit) else {
             peer.link.close(Close::Synchronization as u32);
             return;
-        }
+        };
         let tick = self.world.tick();
         peer.generation += 1;
         peer.held = tick;

@@ -8,7 +8,7 @@ use thrum_core::{ActorId, Origin, PeerId, sim::InputFrame};
 use thrum_network::{
     envelope::{self, HEADER_BYTES, Header, Kind, MAX_MESSAGE_BYTES},
     input_batch::{self, EncodeRecord},
-    session::{ClientState, Controls, Refusal, Settings, World},
+    session::{ClientState, Controls, Disposition, Input, Refusal, ResultEvent, Settings, World},
 };
 use thrum_transport::{CloseReason, Lane};
 
@@ -108,6 +108,18 @@ fn sets() -> Vec<u8> {
     packet(header(Kind::AdmittedSets, 1, 1, 1), &body)
 }
 
+fn append_command_set(body: &mut Vec<u8>, sequence: u8) {
+    let mut set = vec![16];
+    set.extend(0_u64.to_le_bytes());
+    set.extend([65, sequence, 1]);
+    set.extend(7_u32.to_le_bytes());
+    set.extend(2_u16.to_le_bytes());
+    set.extend(19_u16.to_le_bytes());
+    set.extend([0; 3]);
+    body.extend(u16::try_from(set.len()).expect("one set").to_le_bytes());
+    body.extend(set);
+}
+
 fn report(first: u64, count: usize, actor: u64) -> Vec<u8> {
     let frames: Vec<InputFrame<u16>> = (first..)
         .take(count)
@@ -193,9 +205,11 @@ impl Case {
         let digest = game.host.world().digest();
         if client_side {
             let before = game.clients[0].world().digest();
+            let progress = (game.clients[0].held(), game.clients[0].newest());
             to_client(&mut game, self.lane, bytes);
             if expect_refusal {
                 assert_eq!(game.clients[0].world().digest(), before);
+                assert_eq!((game.clients[0].held(), game.clients[0].newest()), progress);
                 assert_eq!(
                     game.clients[0].state(),
                     &ClientState::Closed(CloseReason::Protocol)
@@ -221,10 +235,23 @@ impl Case {
                         let (held, total) = game.clients[0]
                             .baseline_progress()
                             .expect("offered baseline");
-                        assert_eq!(held, total);
+                        assert_eq!(
+                            held,
+                            envelope::decode(bytes).expect("framed chunk").payload.len()
+                        );
+                        assert_eq!(
+                            total,
+                            envelope::decode(&self.message)
+                                .expect("original chunk")
+                                .payload
+                                .len()
+                        );
                     }
                     Kind::BaselineEnd => assert!(game.clients[0].baseline_progress().is_none()),
-                    Kind::AdmittedSets => assert_eq!(game.clients[0].held(), 1),
+                    Kind::AdmittedSets => {
+                        let size = envelope::decode(bytes).expect("framed sets").payload.len();
+                        assert_eq!(game.clients[0].held(), u64::from(size > 10));
+                    }
                     _ => unreachable!(),
                 }
             }
@@ -251,14 +278,25 @@ impl Case {
                     .kind
                 {
                     Kind::Hello => assert!(game.links[0][1].counters(0).lanes[0].sent >= 3),
-                    Kind::Divergence => assert!(game.host.take_divergence().is_some()),
+                    Kind::Divergence => {
+                        let report = game.host.take_divergence().expect("accepted divergence");
+                        assert_eq!(report.actual, Some(365));
+                        assert_eq!(report.tick, 0);
+                    }
                     Kind::Close => assert_eq!(
                         game.links[0][1].event(),
                         Some(thrum_transport::Event::Closed(CloseReason::Local(2)))
                     ),
-                    _ => {
-                        assert!(game.host.stream(game.links[0][1].id()).is_some());
+                    Kind::InputBatch => {
+                        let bytes = envelope::decode(bytes).expect("framed input").payload;
+                        let staged = game
+                            .host
+                            .stream(game.links[0][1].id())
+                            .expect("welcomed peer")
+                            .staged_frames;
+                        assert_eq!(staged, if bytes.len() == 16 { 0 } else { 2 });
                     }
+                    _ => assert!(game.host.stream(game.links[0][1].id()).is_some()),
                 }
             }
         }
@@ -343,14 +381,32 @@ fn every_session_decoder_handles_full_frames_all_cuts_bad_lengths_and_random_byt
     ];
     assert!(envelope::decode(&[]).is_err());
     let mut random = 0x581a_c38d_2e01_7e2b_u64;
-    let mut exercised = 0;
+    let mut envelopes = 0;
+    let mut payloads = 0;
     for case in &cases {
         case.deliver(&case.message, &images, false);
         for size in 1..case.message.len() {
             case.deliver(&case.message[..size], &images, true);
-            exercised += 1;
+            envelopes += 1;
         }
         let message = envelope::decode(&case.message).expect("bounded fixture bytes");
+        // Each prefix has its own correct envelope length. A shorter chunk,
+        // progress-only packet, or report without optional parts can be valid.
+        for size in 0..message.payload.len() {
+            let accepts = match message.header.kind {
+                Kind::BaselineChunk => size != 0,
+                Kind::InputBatch => size == 16,
+                Kind::AdmittedSets => size == 10,
+                Kind::Divergence => size == 9,
+                _ => false,
+            };
+            case.deliver(
+                &packet(message.header, &message.payload[..size]),
+                &images,
+                !accepts,
+            );
+            payloads += 1;
+        }
         let mut bad_envelope = case.message.clone();
         bad_envelope[8..12].copy_from_slice(&u32::MAX.to_le_bytes());
         case.deliver(&bad_envelope, &images, true);
@@ -380,29 +436,85 @@ fn every_session_decoder_handles_full_frames_all_cuts_bad_lengths_and_random_byt
                 })
                 .collect();
             case.deliver(&bytes, &images, true);
-            // Exercise the message decoder with random bytes under a valid
-            // envelope too. Some chunks can be valid arbitrary fragments.
-            if message.header.kind != Kind::BaselineChunk
-                && (bytes.len() < 16 || message.header.kind != Kind::InputBatch)
-            {
-                let known_invalid = match (message.header.kind, bytes.as_slice()) {
-                    (Kind::Reject, [1..=3])
-                    | (Kind::MatchEnded, [1 | 2])
-                    | (Kind::Divergence, [0]) => false,
-                    (Kind::Divergence, [1, ..]) if bytes.len() == 9 => false,
-                    _ => true,
-                };
-                if known_invalid {
-                    case.deliver(&packet(message.header, &bytes), &images, true);
+            // Random baseline chunks are valid framing and are checked when
+            // the complete image is restored.
+            let framed = packet(message.header, &bytes);
+            match (message.header.kind, bytes.as_slice()) {
+                (Kind::BaselineChunk, _) => case.deliver(&framed, &images, false),
+                (Kind::Reject, [1..=3]) | (Kind::MatchEnded, [1 | 2]) | (Kind::Divergence, [0]) => {
                 }
+                (Kind::Divergence, [1, ..]) if bytes.len() == 9 => {}
+                _ => case.deliver(&framed, &images, true),
             }
         }
         assert!(case.message.len() <= MAX_MESSAGE_BYTES);
     }
     println!(
-        "{} lane/decoder fixtures and {exercised} truncated envelopes",
+        "{} lane/decoder fixtures, {envelopes} envelope cuts and {payloads} reframed payload cuts",
         cases.len()
     );
+}
+
+#[test]
+fn refusing_a_set_batch_preserves_progress_and_leaves_unresolved_commands_uncertain() {
+    let (_, images) = startup();
+    for lane in [Lane::Reliable, Lane::Datagram] {
+        for buffered in [false, true] {
+            let mut game = Match::new(local(), 1, None, false);
+            begin_client(&mut game);
+            for image in &images {
+                to_client(&mut game, Lane::Reliable, image);
+            }
+            assert_eq!(
+                game.clients[0].command(&19).expect("first queued command"),
+                1
+            );
+            assert_eq!(
+                game.clients[0].command(&19).expect("second queued command"),
+                2
+            );
+
+            let mut body = vec![0; 10];
+            if buffered {
+                append_command_set(&mut body, 3);
+                to_client(
+                    &mut game,
+                    lane,
+                    &packet(header(Kind::AdmittedSets, 1, 2, 1), &body),
+                );
+                body.truncate(10);
+            }
+            let client = &mut game.clients[0];
+            let before = (client.held(), client.newest(), client.world().digest());
+            assert_eq!(before.0, 0);
+            assert_eq!(client.result(), None);
+            append_command_set(&mut body, 1);
+            if !buffered {
+                append_command_set(&mut body, 3);
+            }
+            to_client(
+                &mut game,
+                lane,
+                &packet(header(Kind::AdmittedSets, 1, 1, 1), &body),
+            );
+            let client = &mut game.clients[0];
+            assert_eq!(client.state(), &ClientState::Closed(CloseReason::Protocol));
+            assert_eq!(
+                (client.held(), client.newest(), client.world().digest()),
+                before
+            );
+            let commands: Vec<_> = std::iter::from_fn(|| client.result())
+                .filter_map(|ResultEvent { input, disposition }| {
+                    assert_eq!(disposition, Disposition::Uncertain);
+                    match input {
+                        Input::Command(sequence) => Some(sequence),
+                        Input::Frame(_) => None,
+                    }
+                })
+                .collect();
+            assert_eq!(commands, [1, 2]);
+        }
+    }
 }
 
 #[test]

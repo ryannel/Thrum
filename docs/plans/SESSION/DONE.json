@@ -320,10 +320,10 @@
           "check": "python3 scripts/session_match.py memory slow",
           "ask": "For each case, does the record show the host's tick count against the run's virtual time, the most bytes and sets the host held for the slow client, and the reason it was repaired or closed?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-slow.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.6",
@@ -331,20 +331,20 @@
           "check": "cargo test --locked --offline -p thrum-network --test untrusted",
           "ask": "Read the test. Does it drive the decoders the session uses, with each kind of input generated? Is there a stdin target for each decoder this module added?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/M3.6.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.7",
           "statement": "Every store the host keeps for a peer, and a client's buffer of sets, has a cap from the match settings, and each cap has the one outcome the design gives.",
           "ask": "List each queue, ring and buffer the host session keeps for a peer, and the client's buffer of sets. Does each have a cap that a match setting names? At each cap, is the outcome the one mechanisms 3 and 10 give, with no path that grows without bound, waits on the peer or drops a command and carries on?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",

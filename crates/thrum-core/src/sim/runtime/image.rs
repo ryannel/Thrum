@@ -1,4 +1,4 @@
-use crate::profile::{Digest, StateDecode, StateDecodeError, StateEncode, StateReader};
+use crate::profile::{Digest, StateBytes, StateDecode, StateDecodeError, StateEncode, StateReader};
 use crate::sim::ComponentSchemaId;
 
 use super::{GameRuntime, TickGame};
@@ -20,6 +20,8 @@ pub enum WorldImageError {
     RuleSet,
     /// The destination already holds authority state.
     Destination,
+    /// The encoding exceeds the destination's byte limit.
+    Size,
     /// A field or allocation request failed validation.
     Decode(StateDecodeError),
 }
@@ -30,6 +32,7 @@ impl std::fmt::Display for WorldImageError {
             Self::Schema(schema) => write!(f, "no portable codec for component {}", schema.0),
             Self::RuleSet => f.write_str("world image belongs to another rule set"),
             Self::Destination => f.write_str("world images require a fresh unseeded runtime"),
+            Self::Size => f.write_str("world image exceeds its byte limit"),
             Self::Decode(error) => error.fmt(f),
         }
     }
@@ -68,15 +71,50 @@ impl<G: TickGame> GameRuntime<G> {
         self.assert_usable();
         self.world.image_schema().map_err(WorldImageError::Schema)?;
         output.clear();
-        output.extend_from_slice(&MAGIC);
-        output.extend_from_slice(&identity.0);
-        output.extend_from_slice(&0_u64.to_le_bytes());
+        let mut buffer = StateBytes::new(usize::MAX);
+        buffer.bytes = std::mem::take(output);
+        self.encode_world_image(identity, resources, &mut buffer)?;
+        *output = buffer.bytes;
+        Ok(())
+    }
+
+    /// Write this committed endpoint into bounded state storage.
+    ///
+    /// # Errors
+    /// A component has no portable codec or the image exceeds the destination limit.
+    ///
+    /// # Panics
+    /// A tick previously unwound while committing.
+    pub fn write_bounded_world_image(
+        &self,
+        identity: RuleSetIdentity,
+        resources: &impl StateDecode,
+        output: &mut StateBytes,
+    ) -> Result<(), WorldImageError> {
+        self.assert_usable();
+        self.world.image_schema().map_err(WorldImageError::Schema)?;
+        output.bytes.clear();
+        self.encode_world_image(identity, resources, output)
+    }
+
+    fn encode_world_image(
+        &self,
+        identity: RuleSetIdentity,
+        resources: &impl StateDecode,
+        output: &mut StateBytes,
+    ) -> Result<(), WorldImageError> {
+        output.append(&MAGIC);
+        output.append(&identity.0);
+        output.append(&0_u64.to_le_bytes());
         let mut sink = Digest::record(output);
         self.tick.encode(&mut sink);
         self.world.encode_image(&mut sink);
         resources.encode(&mut sink);
+        if output.overflowed {
+            return Err(WorldImageError::Size);
+        }
         let payload = u64::try_from(output.len() - HEADER_BYTES).expect("image size fits u64");
-        output[LENGTH_AT..HEADER_BYTES].copy_from_slice(&payload.to_le_bytes());
+        output.bytes[LENGTH_AT..HEADER_BYTES].copy_from_slice(&payload.to_le_bytes());
         Ok(())
     }
 

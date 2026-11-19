@@ -11,6 +11,7 @@ pub use host::{Host, HostState, PeerStream};
 
 use thrum_core::{
     ActorId, Origin, PeerId,
+    profile::StateBytes,
     sim::{ControlBinding, InputFrame, RuleSetIdentity},
 };
 
@@ -212,11 +213,11 @@ pub trait World {
     fn digest_with_parts(&self, _partial: &mut dyn FnMut(DigestPart)) -> u64 {
         self.digest()
     }
-    /// Write the current committed world image into reusable storage.
+    /// Write the current committed world image into the match's bounded storage.
     ///
     /// # Errors
     /// The authority world was not encodable.
-    fn image(&self, destination: &mut Vec<u8>) -> Result<(), Self::Error>;
+    fn image(&self, destination: &mut StateBytes) -> Result<(), Self::Error>;
     /// Install an image atomically, checking the expected tick before publication.
     ///
     /// # Errors

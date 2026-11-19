@@ -541,6 +541,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
 
     fn terminate(&mut self, state: ClientState, disposition: Disposition) {
         self.state = state;
+        self.replica.packet_sets.clear();
         self.replica
             .results
             .extend(
@@ -867,6 +868,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             }
             tick += 1;
         }
+        let held = self
+            .replica
+            .checked_held(self.held, stepped + cap, self.slot)?;
         if tick > message.header.server_tick {
             self.newest = self.newest.max(tick - 1);
         }
@@ -875,11 +879,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             let index = usize::try_from(stored.tick % cap).expect("bounded backlog");
             self.replica.sets[index] = Some(stored);
         }
-        while self.held < stepped + cap {
+        while self.held < held {
             let next = self.held + 1;
-            if !self.replica.hold(next, self.slot)? {
-                break;
-            }
+            self.replica.hold(next, self.slot);
             self.held = next;
         }
         if let Some(lead) = &mut self.lead {
@@ -1036,15 +1038,50 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
 }
 
 impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
-    fn hold(&mut self, tick: u64, slot: usize) -> Option<bool> {
+    // Validate the whole newly contiguous run, including sets already buffered
+    // past a gap, before publishing progress or consuming any input receipts.
+    fn checked_held(&self, mut held: u64, end: u64, slot: usize) -> Option<u64> {
+        let mut incoming = self.packet_sets.iter().peekable();
+        let mut commands_used = 0;
+        while held < end {
+            let tick = held + 1;
+            let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
+            let stored = if incoming.peek().is_some_and(|stored| stored.tick == tick) {
+                incoming.next()
+            } else {
+                self.sets[index].as_ref()
+            };
+            let Some(stored) = stored.filter(|stored| stored.tick == tick) else {
+                break;
+            };
+            let result = stored.set.results[slot];
+            if stored.ready
+                || (result.frame != 0
+                    && self
+                        .waiting_frames
+                        .binary_search(&(tick, result.frame))
+                        .is_err())
+            {
+                return None;
+            }
+            let commands = usize::from(result.commands);
+            let first = result
+                .last_command
+                .saturating_sub(u64::from(result.commands).saturating_sub(1));
+            for (offset, sequence) in (first..=result.last_command).take(commands).enumerate() {
+                if self.waiting_commands.get(commands_used + offset) != Some(&sequence) {
+                    return None;
+                }
+            }
+            commands_used += commands;
+            held = tick;
+        }
+        Some(held)
+    }
+
+    fn hold(&mut self, tick: u64, slot: usize) {
         let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
-        if self.sets[index].as_ref().is_none_or(|set| set.tick != tick) {
-            return Some(false);
-        }
-        let stored = self.sets[index].as_mut()?;
-        if stored.ready {
-            return None;
-        }
+        let stored = self.sets[index].as_mut().expect("validated contiguous set");
         for (slot, frame) in stored.set.frames.iter_mut().enumerate() {
             if stored.set.changed_axes & (1 << slot) == 0 {
                 frame.axes = self.axes[slot];
@@ -1053,33 +1090,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
         let result = stored.set.results[slot];
         self.axes = std::array::from_fn(|slot| stored.set.frames[slot].axes);
         stored.ready = true;
-        self.resolve(tick, result)?;
-        Some(true)
+        self.resolve(tick, result);
     }
 
-    fn resolve(&mut self, tick: u64, result: wire::SlotResult) -> Option<()> {
-        let first = result
-            .last_command
-            .saturating_sub(u64::from(result.commands).saturating_sub(1));
-        let commands = usize::from(result.commands);
-        if commands > self.waiting_commands.len()
-            || self
-                .waiting_commands
-                .iter()
-                .take(commands)
-                .copied()
-                .ne((first..=result.last_command).take(commands))
-        {
-            return None;
-        }
-        if result.frame != 0
-            && self
-                .waiting_frames
-                .binary_search(&(tick, result.frame))
-                .is_err()
-        {
-            return None;
-        }
+    fn resolve(&mut self, tick: u64, result: wire::SlotResult) {
         while self
             .waiting_frames
             .front()
@@ -1096,13 +1110,12 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
                 disposition,
             });
         }
-        for sequence in self.waiting_commands.drain(..commands) {
+        for sequence in self.waiting_commands.drain(..usize::from(result.commands)) {
             self.results.push_back(ResultEvent {
                 input: Input::Command(sequence),
                 disposition: Disposition::Committed(tick),
             });
         }
-        Some(())
     }
 
     fn commit(&mut self, slot: usize) -> bool {

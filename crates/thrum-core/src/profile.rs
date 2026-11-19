@@ -104,23 +104,77 @@ pub struct Vector {
     pub y: Number,
 }
 
+/// A bounded destination for canonical state encoding.
+#[derive(Debug)]
+pub struct StateBytes {
+    pub(crate) bytes: Vec<u8>,
+    pub(crate) limit: usize,
+    pub(crate) overflowed: bool,
+}
+
+impl StateBytes {
+    /// Start with an empty destination that may retain at most `limit` bytes.
+    pub fn new(limit: usize) -> Self {
+        Self {
+            bytes: Vec::new(),
+            limit,
+            overflowed: false,
+        }
+    }
+
+    /// Number of bytes retained so far.
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
+    /// Whether the destination holds zero bytes.
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+
+    /// Append bytes. Once the limit is exceeded, subsequent writes are ignored
+    /// and the partial encoding cannot be taken as a complete result.
+    pub fn append(&mut self, bytes: &[u8]) {
+        if self.overflowed || bytes.len() > self.limit - self.bytes.len() {
+            self.overflowed = true;
+            return;
+        }
+        let end = self.bytes.len() + bytes.len();
+        if end > self.bytes.capacity() {
+            let capacity = self
+                .bytes
+                .capacity()
+                .saturating_mul(2)
+                .max(end)
+                .min(self.limit);
+            self.bytes.reserve_exact(capacity - self.bytes.len());
+        }
+        self.bytes.extend_from_slice(bytes);
+    }
+
+    /// Take the complete encoding if all writes fit.
+    pub fn into_bytes(self) -> Option<Vec<u8>> {
+        (!self.overflowed).then_some(self.bytes)
+    }
+}
+
 /// Integer-only FNV-1a encoding accumulator, with explicitly ordered bytes.
 #[derive(Debug)]
-pub struct Digest<'a>(u64, bool, Option<&'a mut Vec<u8>>);
+pub struct Digest<'a>(u64, bool, Option<&'a mut StateBytes>);
 impl Default for Digest<'_> {
     fn default() -> Self {
         Self(0xcbf2_9ce4_8422_2325, true, None)
     }
 }
 impl<'a> Digest<'a> {
-    pub(crate) fn record(bytes: &'a mut Vec<u8>) -> Self {
+    pub(crate) fn record(bytes: &'a mut StateBytes) -> Self {
         Self(0, true, Some(bytes))
     }
 
     /// Append bytes in the caller's canonical order.
     pub fn bytes(&mut self, bytes: &[u8]) {
         if let Some(output) = &mut self.2 {
-            output.extend_from_slice(bytes);
+            output.append(bytes);
             return;
         }
         for byte in bytes {

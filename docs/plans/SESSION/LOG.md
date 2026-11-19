@@ -135,3 +135,7 @@
   The Mac checks matched the independent digest traces through late and overlapping joins, link faults and repairs.
   Two release runs at each crowd size recorded image and catch-up costs under load. The reconnect record shows
   replayed old-epoch bytes released by a carrier stall after the new epoch. [M3 evidence](../../../.orchestrate/evidence/SESSION/M3/README.md)
+- 2026-11-19 Held-control expiry now neutralizes axes when a staged frame is still due. The Mac slow-peer run
+  observed neutral axes at tick 114 and absence at 332, with the other replicas still matching. Set batches
+  validate contiguous receipts before publishing progress. Mac tests cover payload prefixes on both set lanes
+  and a 196,813-byte image refused within a 64-byte storage cap. [M3 evidence](../../../.orchestrate/evidence/SESSION/M3/README.md)

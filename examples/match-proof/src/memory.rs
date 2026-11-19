@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 use serde_json::{Value, json};
+use thrum_core::profile::StateBytes;
 use thrum_network::{
     envelope::{self, HEADER_BYTES, Kind},
     input_batch,
@@ -72,7 +73,6 @@ impl Probe {
 #[derive(Default)]
 struct HostProbe {
     warmed: Probe,
-    image: Vec<u8>,
     image_tick: Option<Value>,
 }
 
@@ -107,13 +107,14 @@ impl HostProbe {
         if let Some(start) = image_tick_start
             && tick == before + 1
         {
+            let mut image = StateBytes::new(Settings::default().image_limit as usize);
             let write_start = Instant::now();
-            host.world().image(&mut self.image)?;
+            host.world().image(&mut image)?;
             let write_ns = u64::try_from(write_start.elapsed().as_nanos()).expect("short write");
             let total_ns = u64::try_from(start.elapsed().as_nanos()).expect("short advance");
             self.image_tick = Some(json!({
                 "tick": tick, "total_ns": total_ns, "write_ns": write_ns,
-                "engine_tick_ns": engine_ns, "image_bytes": self.image.len(),
+                "engine_tick_ns": engine_ns, "image_bytes": image.len(),
             }));
         }
         Ok(())

@@ -6,7 +6,10 @@
 
 use std::io::{self, Read};
 
-use thrum_core::sim::{InputFrame, RuleSetIdentity};
+use thrum_core::{
+    profile::StateBytes,
+    sim::{InputFrame, RuleSetIdentity},
+};
 use thrum_network::{
     envelope::{self, Header, Kind, MAX_MESSAGE_BYTES},
     input_batch::{ActionView, ActionWire, InputCodecError},
@@ -36,9 +39,8 @@ impl World for Endpoint {
     fn digest(&self) -> u64 {
         self.0
     }
-    fn image(&self, output: &mut Vec<u8>) -> Result<(), ()> {
-        output.clear();
-        output.extend(self.0.to_le_bytes());
+    fn image(&self, output: &mut StateBytes) -> Result<(), ()> {
+        output.append(&self.0.to_le_bytes());
         Ok(())
     }
     fn restore(&mut self, tick: u64, image: &[u8]) -> Result<(), ()> {

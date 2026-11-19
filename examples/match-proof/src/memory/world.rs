@@ -4,7 +4,10 @@ use std::{
 };
 
 use crowd_2d::{Candidate, Crowd, Simulation};
-use thrum_core::sim::{GameRuntime, HistoryGame, InputFrame, RuleSetIdentity};
+use thrum_core::{
+    profile::StateBytes,
+    sim::{GameRuntime, HistoryGame, InputFrame, RuleSetIdentity},
+};
 use thrum_network::{
     input_batch::{ActionView, ActionWire, InputCodecError},
     session::{RosterEvents, SLOTS, World},
@@ -133,10 +136,10 @@ impl World for CrowdWorld {
         digest
     }
 
-    fn image(&self, destination: &mut Vec<u8>) -> Result<(), String> {
+    fn image(&self, destination: &mut StateBytes) -> Result<(), String> {
         let start = self.costs.then(Instant::now);
         self.runtime
-            .write_world_image(self.identity(), &self.game.resources, destination)
+            .write_bounded_world_image(self.identity(), &self.game.resources, destination)
             .map_err(|error| error.to_string())?;
         if let Some(start) = start {
             self.image_time.borrow_mut().add(elapsed(start));
@@ -184,7 +187,7 @@ pub(super) mod fault_world {
     };
     use std::rc::Rc;
     use thrum_core::{
-        profile::{Digest, StateEncode, Vector},
+        profile::{Digest, StateBytes, StateEncode, Vector},
         sim::SystemId,
     };
     use thrum_network::session::DigestPart;
@@ -286,7 +289,14 @@ pub(super) mod fault_world {
 
         fn change_image(&mut self, fault: Fault) -> Result<(), String> {
             let mut image = Vec::new();
-            self.crowd.image(&mut image)?;
+            self.crowd
+                .runtime
+                .write_world_image(
+                    self.crowd.identity(),
+                    &self.crowd.game.resources,
+                    &mut image,
+                )
+                .map_err(|error| error.to_string())?;
             // World image v1: header and tick, capacity and slot metadata,
             // free list, identity lookups, directory marker, then Body column.
             assert_eq!(&image[..8], b"THRWIMG1");
@@ -373,7 +383,7 @@ pub(super) mod fault_world {
             crowd.digests.borrow_mut().push((crowd.tick(), digest));
             digest
         }
-        fn image(&self, destination: &mut Vec<u8>) -> Result<(), String> {
+        fn image(&self, destination: &mut StateBytes) -> Result<(), String> {
             self.0.borrow().crowd.image(destination)
         }
         fn restore(&mut self, tick: u64, image: &[u8]) -> Result<(), String> {

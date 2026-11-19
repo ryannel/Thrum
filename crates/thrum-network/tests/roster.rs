@@ -4,7 +4,52 @@
 pub mod support;
 
 use support::{Match, Rule, local};
+use thrum_core::profile::StateBytes;
 use thrum_network::session::{ClientState, Controls, PROTOCOL, Settings, World};
+use thrum_transport::CloseReason;
+
+#[test]
+fn oversized_world_images_are_bounded_while_writing_and_close_the_join() {
+    let settings = Settings {
+        image_limit: 64,
+        ..Settings::default()
+    };
+    let mut game = Match::with_settings(local(), 1, None, true, settings);
+    let world = game.host.world();
+    let digest = world.digest();
+    let mut normal = StateBytes::new(Settings::default().image_limit as usize);
+    world
+        .image(&mut normal)
+        .expect("image fits the normal limit");
+    let normal = normal.into_bytes().expect("complete normal image");
+    let mut exact = StateBytes::new(normal.len());
+    world.image(&mut exact).expect("exact-size image fits");
+    let exact = exact.into_bytes().expect("complete exact-size image");
+    assert_eq!(exact, normal);
+    assert_eq!(exact.capacity(), exact.len());
+
+    let mut limited = StateBytes::new(settings.image_limit as usize);
+    assert!(world.image(&mut limited).is_err());
+    assert!(limited.len() <= settings.image_limit as usize);
+    assert!(limited.into_bytes().is_none());
+    for _ in 0..20 {
+        game.neutral(0);
+    }
+    assert_eq!(game.host.world().digest(), digest);
+    assert_eq!(game.host.roster().occupied, 0);
+    assert!(!game.host.ready(0));
+    assert_eq!(game.host.retained(game.links[0][1].id()), 0);
+    assert!(matches!(
+        game.clients[0].state(),
+        ClientState::Closed(CloseReason::Peer(reason))
+            if *reason == thrum_network::session::Close::Synchronization as u32
+    ));
+    println!(
+        "image size {}, session cap {}",
+        normal.len(),
+        settings.image_limit
+    );
+}
 
 #[test]
 fn heroes_respond_to_the_same_four_roster_events_on_authority_and_replicas() {

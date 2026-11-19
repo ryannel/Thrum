@@ -6,7 +6,7 @@
 
 use thrum_core::{
     WorldEpoch,
-    profile::{Digest, StateDecode, StateDecodeError, StateEncode, StateReader},
+    profile::{Digest, StateBytes, StateDecode, StateDecodeError, StateEncode, StateReader},
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, EditWriter, Executor, GameRuntime,
         InputFrame, RegisteredSystem, RegisteredWorldError, RuleSetIdentity, Stage, SystemId,
@@ -313,9 +313,9 @@ impl World for Game {
             .expect("test schema")
     }
 
-    fn image(&self, destination: &mut Vec<u8>) -> Result<(), Failure> {
+    fn image(&self, destination: &mut StateBytes) -> Result<(), Failure> {
         self.runtime
-            .write_world_image(self.identity(), &self.rules.resources, destination)
+            .write_bounded_world_image(self.identity(), &self.rules.resources, destination)
             .map_err(|_| Failure::Image)
     }
 
