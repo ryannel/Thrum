@@ -61,11 +61,12 @@ on the branch `build/atmosphere` until that milestone merges. A held frame at a 
 bare valley's thresholds and calibrated root are constants in the launcher, and `check --source DIR
 --recalibrate` judges another root by the rule. Before changing anything, note the main-branch check's pass
 that covers the starting commit. Everything lands together: terrain, layout, preset, root pins, references,
-registry and both baselines. Make the two launcher changes of
+registry and both baselines. The root pins are every route file naming an old root when you start, which
+includes M6's `exit-fast-yaw.json`. Make the two launcher changes of
 [What a route check must have compared](DESIGN.md#what-a-route-check-must-have-compared) before calibrating
 either baseline, because a calibration run has to pass every control. M6 built the `culling --exit` commands
 that M9.8 and M9.9 run. Keep this milestone's receipts under a name of its own, and leave
-`.orchestrate/evidence/SHOWCASE/M6/` as it is.
+M6's retained receipts as they are.
 
 ## M7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 

@@ -92,3 +92,7 @@
   valley's canonical check fails unless it compared its baseline. M9.6 names the refresh it expects, and the "only
   the pin" rule moved to the six route files, as M9.7. Took both suggestions: M9.4 and M9.5 hold `chrome`, and
   the motion overview says Chrome can defer a tick.
+- 2026-11-19 Second design review of M9 asked for one change: M9.7 listed six route files, and M6 ships a seventh,
+  `exit-fast-yaw.json`, pinned to the exit root. M9.7 now covers every route file that names an old root at M9's
+  starting commit, by rule, with a check that no route file names either old root. M9.8's question about M6's
+  receipts no longer assumes they are in git, since evidence moved to the working folder that day.
