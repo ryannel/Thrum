@@ -139,3 +139,7 @@
   observed neutral axes at tick 114 and absence at 332, with the other replicas still matching. Set batches
   validate contiguous receipts before publishing progress. Mac tests cover payload prefixes on both set lanes
   and a 196,813-byte image refused within a 64-byte storage cap. [M3 evidence](../../../.orchestrate/evidence/SESSION/M3/README.md)
+- 2026-11-19 Reliable set delivery now closes a peer only if a required send still reports a full queue at
+  the deadline. In the Mac regression, one peer drained its queue, returned to datagrams on the same link
+  and matched the authority past the old deadline. A peer that kept the lane full closed for synchronization
+  at the deadline. [M3.7 proof](../../../.orchestrate/evidence/SESSION/M3/M3.7-reliable-delivery.md)

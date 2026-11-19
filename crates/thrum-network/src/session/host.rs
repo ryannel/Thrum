@@ -75,6 +75,35 @@ struct Peer<A> {
 }
 
 impl<A> Peer<A> {
+    fn sent(
+        &mut self,
+        lane: Lane,
+        result: Result<(), LinkError>,
+        now: u64,
+        blocked_limit: u64,
+    ) -> bool {
+        match result {
+            Ok(()) => {
+                if lane == Lane::Reliable {
+                    self.reliable_blocked = None;
+                }
+                true
+            }
+            Err(LinkError::Full) => {
+                let since = *self.reliable_blocked.get_or_insert(now);
+                if now - since >= blocked_limit {
+                    self.link.close(Close::Synchronization as u32);
+                }
+                false
+            }
+            Err(LinkError::NotOpen) => false,
+            Err(_) => {
+                self.link.close(wire::PROTOCOL_CLOSE);
+                false
+            }
+        }
+    }
+
     fn terminal(&mut self, value: Option<u8>, now: u64, settings: Settings) {
         self.phase = Phase::Terminal(value);
         self.deadline = now + u64::from(settings.response_ms) * 1_000;
@@ -513,7 +542,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             for peer in &mut self.peers {
                 if peer.slot.is_some() && peer.held < oldest {
                     match peer.phase {
-                        Phase::Playing => peer.phase = Phase::FallenBehind,
+                        Phase::Playing => {
+                            peer.phase = Phase::FallenBehind;
+                            peer.reliable_blocked = None;
+                        }
                         Phase::Baseline { .. } | Phase::CatchingUp => {
                             peer.link.close(Close::Synchronization as u32);
                         }
@@ -625,15 +657,6 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 };
                 peer.link.close(reason);
                 self.detach(peer, false);
-                continue;
-            }
-            if peer
-                .reliable_blocked
-                .is_some_and(|since| now - since >= u64::from(self.settings.join_ms) * 1_000)
-            {
-                peer.link.close(Close::Synchronization as u32);
-                self.detach(peer, false);
-                peer.deadline = now;
                 continue;
             }
             'lanes: for lane in [Lane::Reliable, Lane::Datagram] {
@@ -785,6 +808,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         peer.stepped = tick;
         peer.behind_since = None;
         peer.progress_sequence = None;
+        peer.reliable_blocked = None;
         peer.deadline = now + u64::from(self.settings.join_ms) * 1_000;
         peer.phase = Phase::Baseline {
             bytes,
@@ -1125,7 +1149,6 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                         *offset = end;
                         if kind == Kind::BaselineEnd {
                             peer.phase = Phase::CatchingUp;
-                            peer.reliable_blocked = None;
                             break;
                         }
                     }
@@ -1141,6 +1164,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             _ => None,
         };
         let tick = self.world.tick();
+        let blocked_limit = u64::from(self.settings.join_ms) * 1_000;
         let mut offered = false;
         for peer in &mut self.peers {
             if !matches!(peer.phase, Phase::CatchingUp | Phase::Playing) {
@@ -1156,13 +1180,18 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             if ending.is_some() || lag > 188 || bytes + SET_PREFIX + HEADER_BYTES > DATAGRAM_LIMIT {
                 lane = Lane::Reliable;
                 next = next.max(peer.reliable + 1);
-            } else if !fresh_tick
-                && (peer.held == tick
-                    || peer.last_datagram.is_some_and(|last| {
-                        now.saturating_sub(last) < u64::from(self.settings.tick_us)
-                    }))
-            {
-                continue;
+            } else {
+                // Acknowledgements can retire the reliable send without any
+                // successful retry. This also applies when a datagram is not due.
+                peer.reliable_blocked = None;
+                if !fresh_tick
+                    && (peer.held == tick
+                        || peer.last_datagram.is_some_and(|last| {
+                            now.saturating_sub(last) < u64::from(self.settings.tick_us)
+                        }))
+                {
+                    continue;
+                }
             }
             let count = pack(
                 &mut self.packet,
@@ -1177,17 +1206,20 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             if count == 0 && !(fresh_tick && lane == Lane::Datagram) {
                 if let Some(reason) = ending
                     && peer.held.max(peer.reliable) >= tick
-                    && wire::send(
+                {
+                    let result = wire::send(
                         &peer.link,
                         Lane::Reliable,
                         peer.connection.header(Kind::MatchEnded, tick, 0),
                         &[reason as u8],
                         send_time,
                         &mut self.scratch,
-                    )
-                    .is_ok()
-                {
-                    peer.terminal(None, now, self.settings);
+                    );
+                    if peer.sent(Lane::Reliable, result, now, blocked_limit) {
+                        peer.terminal(None, now, self.settings);
+                    }
+                } else {
+                    peer.reliable_blocked = None;
                 }
                 continue;
             }
@@ -1196,33 +1228,26 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 .connection
                 .header(Kind::AdmittedSets, next, peer.packet + 1);
             header.acknowledged_sequence = peer.generation;
-            match wire::send(
+            let result = wire::send(
                 &peer.link,
                 lane,
                 header,
                 &self.packet,
                 send_time,
                 &mut self.scratch,
-            ) {
-                Ok(()) => {
-                    peer.packet += 1;
-                    let last = next - 1 + count as u64;
-                    peer.offered = peer.offered.max(last);
-                    if lane == Lane::Reliable {
-                        peer.reliable_blocked = None;
-                        peer.reliable = last;
-                        peer.reliable_sets += count as u64;
-                    } else {
-                        peer.last_datagram = Some(now);
-                        peer.datagram_sizes[count] += 1;
-                    }
-                    offered |= fresh_tick && last == tick;
+            );
+            if peer.sent(lane, result, now, blocked_limit) {
+                peer.packet += 1;
+                let last = next - 1 + count as u64;
+                peer.offered = peer.offered.max(last);
+                if lane == Lane::Reliable {
+                    peer.reliable = last;
+                    peer.reliable_sets += count as u64;
+                } else {
+                    peer.last_datagram = Some(now);
+                    peer.datagram_sizes[count] += 1;
                 }
-                Err(LinkError::Full) => {
-                    peer.reliable_blocked.get_or_insert(now);
-                }
-                Err(LinkError::NotOpen) => {}
-                Err(_) => peer.link.close(wire::PROTOCOL_CLOSE),
+                offered |= fresh_tick && last == tick;
             }
         }
         if offered {

@@ -341,10 +341,10 @@
           "statement": "Every store the host keeps for a peer, and a client's buffer of sets, has a cap from the match settings, and each cap has the one outcome the design gives.",
           "ask": "List each queue, ring and buffer the host session keeps for a peer, and the client's buffer of sets. Does each have a cap that a match setting names? At each cap, is the outcome the one mechanisms 3 and 10 give, with no path that grows without bound, waits on the peer or drops a command and carries on?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/M3.7-reliable-delivery.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",
