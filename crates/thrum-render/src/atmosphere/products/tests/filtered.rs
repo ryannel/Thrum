@@ -178,8 +178,10 @@ pub(super) fn exposure_two(
     super::super::create(
         surface.environment.expect("atmosphere surface"),
         surface.device,
+        surface.directional,
         surface.environment_light,
         &[exposure.clone(), exposure],
+        false,
     )
 }
 

@@ -175,7 +175,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     // The environment lends its filtered radiance; its opaque-material DFG is not R.
     var light=reflected.rgb;
     // Deep-water in-scatter, driven only by the shared hemispherical irradiance.
-    let l=environment_light.direction_to_light.xyz;
+    let l=environment_sun_direction();
     let sunlight=sun_irradiance(input.world);
     let incident=environment_diffuse(vec3(0.0,1.0,0.0))+sunlight*max(l.y,0.0);
     light+=(1.0-fresnel)*incident*water.scatter.rgb/3.14159265;

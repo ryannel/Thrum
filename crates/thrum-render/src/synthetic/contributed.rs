@@ -158,6 +158,7 @@ impl PreparedSynthetic {
             sun_optical_depth: self.cloud.is_some(),
             cloud: self.cloud.as_ref(),
             environment: self.atmosphere.as_ref(),
+            directional: &self.directional_buffer,
             environment_light: &self.environment_light,
             exposure: &self.exposure.samples,
             device: self.capabilities.device(),

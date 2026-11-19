@@ -12,6 +12,8 @@ use super::gpu::AtmospherePrepared;
 /// returning dimensionless transmission and RGB in-scatter, and
 /// `environment_reflection(direction, roughness, view_cosine)` returning filtered
 /// RGB radiance and the dimensionless split-sum pair.
+/// `environment_sun_direction()` returns the same direction toward the Sun
+/// that the forward shader reads from the scene's directional record.
 ///
 /// Sky, diffuse and reflection belong to the active camera. Aerial starts at
 /// that camera, with top-left normalized screen coordinates. Without a cloud
@@ -48,15 +50,7 @@ impl EnvironmentProducts {
 pub(super) fn create(
     atmosphere: &AtmospherePrepared,
     device: &wgpu::Device,
-    environment_light: &wgpu::Buffer,
-    exposure: &[wgpu::Buffer; 2],
-) -> EnvironmentProducts {
-    create_with_far(atmosphere, device, environment_light, exposure, false)
-}
-
-pub(super) fn create_with_far(
-    atmosphere: &AtmospherePrepared,
-    device: &wgpu::Device,
+    directional: &wgpu::Buffer,
     environment_light: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
     far_aerial: bool,
@@ -76,6 +70,7 @@ pub(super) fn create_with_far(
         buffer(0, 128),
         buffer(3, crate::light::ENVIRONMENT_BYTES),
         buffer(10, 16),
+        buffer(11, crate::light::DIRECTIONAL_BYTES),
     ];
     for (binding, view_dimension) in [
         (1, wgpu::TextureViewDimension::D2),
@@ -128,6 +123,10 @@ pub(super) fn create_with_far(
             binding: 9,
             resource: wgpu::BindingResource::Sampler(reflection_sampler),
         },
+        wgpu::BindGroupEntry {
+            binding: 11,
+            resource: directional.as_entire_binding(),
+        },
     ];
     for (binding, view) in [
         (1, atmosphere.transmittance_view()),
@@ -164,7 +163,8 @@ pub(super) fn create_with_far(
 
 fn library(far_aerial: bool) -> String {
     let products = format!(
-        "{}\n{}{}{}",
+        "{}\n{}\n{}{}{}",
+        include_str!("../directional_light.wgsl"),
         include_str!("../environment_light.wgsl"),
         include_str!("products.wgsl"),
         if far_aerial {

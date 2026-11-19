@@ -9,6 +9,11 @@
 @group(0) @binding(8) var sky_dfg: texture_2d<f32>;
 @group(0) @binding(9) var sky_reflection_sampler: sampler;
 @group(0) @binding(10) var<uniform> environment_exposure: vec4<f32>;
+@group(0) @binding(11) var<uniform> environment_directional: DirectionalLight;
+
+fn environment_sun_direction() -> vec3<f32> {
+    return environment_directional.direction_to_light.xyz;
+}
 
 // This scale is applied once by the caller after lighting and aerial composition.
 fn environment_storage_scale() -> f32 { return environment_exposure.x; }
