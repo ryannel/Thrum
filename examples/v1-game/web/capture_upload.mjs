@@ -53,10 +53,11 @@ export function packRgbaRuns(pixels) {
   return new Uint8Array(encoded.buffer, 0, end * 4);
 }
 
-export async function startCaptureUploadWorker(pack = false) {
+export async function startCaptureUploadWorker({ spool = false } = {}) {
   const worker = new Worker(new URL('./capture_upload.mjs', import.meta.url), { type: 'module' });
   const pending = new Map();
   let failure;
+  let finished;
   try {
     await new Promise((resolve, reject) => {
       worker.onmessage = ({ data }) => { if (data.ready) resolve(); };
@@ -67,6 +68,11 @@ export async function startCaptureUploadWorker(pack = false) {
     throw error;
   }
   worker.onmessage = ({ data }) => {
+    if (data.finished) {
+      if (data.error) finished?.reject(new Error(data.error));
+      else finished?.resolve(data);
+      return;
+    }
     const task = pending.get(data.ordinal);
     if (!task) return;
     pending.delete(data.ordinal);
@@ -76,13 +82,22 @@ export async function startCaptureUploadWorker(pack = false) {
     failure = new Error(event.message);
     for (const task of pending.values()) task.reject(failure);
     pending.clear();
+    finished?.reject(failure);
   };
   return {
     upload(ordinal, image) {
       if (failure) return Promise.reject(failure);
       return new Promise((resolve, reject) => {
-        worker.postMessage({ ordinal, image, pack }, [image.pixels.buffer]);
+        worker.postMessage({ ordinal, image, spool }, [image.pixels.buffer]);
         pending.set(ordinal, { resolve, reject });
+      });
+    },
+    finish() {
+      if (!spool) return Promise.resolve();
+      if (failure) return Promise.reject(failure);
+      return new Promise((resolve, reject) => {
+        finished = { resolve, reject };
+        worker.postMessage({ finish: true });
       });
     },
     close() { worker.terminate(); },
@@ -92,12 +107,50 @@ export async function startCaptureUploadWorker(pack = false) {
 // Transfer ownership through the worker, including on request failure. An
 // acknowledgement always returns the same array to the publisher.
 if (typeof DedicatedWorkerGlobalScope !== 'undefined' && self instanceof DedicatedWorkerGlobalScope) {
-  self.onmessage = async ({ data: { ordinal, image, pack } }) => {
+  let opened;
+  let ownedBytes = 0;
+  const ledger = [];
+  self.onmessage = async ({ data: { ordinal, image, spool, finish } }) => {
     const retries = [];
     let error;
-    try { await uploadCapture(ordinal, image, retry => retries.push(retry), pack); }
-    catch (failure) { error = String(failure); }
-    self.postMessage({ ordinal, pixels: image.pixels, retries, error }, [image.pixels.buffer]);
+    try {
+      if (finish) {
+        const { directory, file } = await opened;
+        file.flush();
+        // Replay from the tail and release each range after its ack. The local
+        // spool and the receiver's packets together fit the one output allowance.
+        let left = ledger.length;
+        while (left > 0) {
+          const end = left;
+          const start = Math.max(0, end - 6);
+          await Promise.all(ledger.slice(start, end).map(async ({ ordinal, offset, length, metadata }) => {
+            const pixels = new Uint8Array(length);
+            if (file.read(pixels, { at: offset }) !== length) throw new Error('Short browser spool read');
+            await uploadCapture(ordinal, { pixels, metadata }, retry => retries.push(retry), true);
+          }));
+          file.truncate(ledger[start].offset);
+          left = start;
+        }
+        file.close();
+        await directory.removeEntry('sprite-capture.rgba');
+      } else if (spool) {
+        opened ??= (async () => {
+          const directory = await navigator.storage.getDirectory();
+          const entry = await directory.getFileHandle('sprite-capture.rgba', { create: true });
+          return { directory, file: await entry.createSyncAccessHandle() };
+        })();
+        const { file } = await opened;
+        const length = image.pixels.byteLength;
+        if (ownedBytes + length > 16 * 1024 ** 3 - 64 * 1024 ** 2) throw new Error('Browser spool allowance exhausted');
+        if (file.write(image.pixels, { at: ownedBytes }) !== length) throw new Error('Short browser spool write');
+        ledger.push({ ordinal, offset: ownedBytes, length, metadata: image.metadata });
+        ownedBytes += length;
+      } else {
+        await uploadCapture(ordinal, image, retry => retries.push(retry));
+      }
+    } catch (failure) { error = String(failure); }
+    if (finish) self.postMessage({ finished: true, retries, error, spool_bytes: ownedBytes });
+    else self.postMessage({ ordinal, pixels: image.pixels, retries, error }, [image.pixels.buffer]);
   };
   self.postMessage({ ready: true });
 }

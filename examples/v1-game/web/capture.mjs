@@ -296,7 +296,7 @@ async function captureSpriteField() {
   game.capture_without_pass_timings();
   game.set_visible(true, 0);
   game.set_paused(true, 0);
-  uploadWorker = await startCaptureUploadWorker(true);
+  uploadWorker = await startCaptureUploadWorker({ spool: true });
   for (let index = 0; index < exportSlots; index++) {
     reusablePixels.push(new Uint8Array(extent[0] * extent[1] * 4));
   }
@@ -353,6 +353,9 @@ async function captureSpriteField() {
     fail(`incomplete sprite capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   }
   if (record.images.at(-1).submit_ms - record.images[0].submit_ms < 20000) fail('sprite capture spans less than twenty seconds');
+  const replay = await uploadWorker.finish();
+  record.spool_bytes = replay.spool_bytes;
+  record.export_retries = replay.retries;
   record.complete = true;
 }
 
