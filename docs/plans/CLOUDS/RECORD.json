@@ -239,7 +239,51 @@
     },
     "M3": {
       "definitions": "4253cc345df7ea05a3d0aab3ac6f8cd74f7b5590fbf3e1c4cd4ba478198a3148",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "4ef3a0029e2f9e6dcfcc592dae44e1225ff95770",
+          "review": "docs/evidence/CLOUDS/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "fail",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass",
+            "M3.15": "pass"
+          },
+          "findings": [
+            {
+              "name": "Cost check accepts missing cloud resource measurements",
+              "item": "M3.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 163969,
+            "cached": 4676480,
+            "output": 13370,
+            "turns": 1
+          },
+          "at": "2026-11-19T05:36:43Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Park CLOUDS M3.1's form cue. Lead decision, 18 Nov: M3 has spent about 12h on look tuning, with three blocks today: shap",

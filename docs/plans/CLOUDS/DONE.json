@@ -459,8 +459,8 @@
     {
       "id": "M3",
       "name": "Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -475,8 +475,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -485,8 +485,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -496,8 +496,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -508,8 +508,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -520,8 +520,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -531,8 +531,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -541,8 +541,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.8",
@@ -553,8 +553,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.9",
@@ -562,10 +562,10 @@
           "check": "python3 scripts/cloud_cost.py check --scene first-frame && python3 scripts/cloud_cost.py refuse --scene first-frame",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-cost.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.10",
@@ -574,8 +574,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-bindings.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.11",
@@ -584,8 +584,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.12",
@@ -594,8 +594,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.15",
@@ -606,8 +606,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M3-turrets/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M3-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Cost check accepts missing cloud resource measurements",
+          "item": "M3.9",
+          "repeat": false
         }
       ]
     },
