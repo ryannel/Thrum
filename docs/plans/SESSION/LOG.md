@@ -125,3 +125,8 @@
   The Mac proofs matched all 1,200 digest checkpoints on four independent clients at both link profiles.
   The command, failure, negotiation and playout controls passed. Separate release cost runs recorded engine
   and session time under load and flagged the 64 kbit/s peer bandwidth tripwire. [M2 proof](../../evidence/SESSION/M2.md)
+- 2026-11-19 Addressed the M2 review findings. The Mac checks passed for expired hellos, full-round-trip
+  adaptive startup, the carrier observer, negotiated playout rates and complete stall time. The lead control
+  stayed below the admission floor. Both full matches agreed at all digest checkpoints and recorded costs
+  by negotiated slot, with a whole image-writing tick and comparisons under load.
+  [M2 review fix proof](../../evidence/SESSION/M2-review-fix.md)

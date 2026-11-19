@@ -157,10 +157,10 @@
           "check": "python3 scripts/session_match.py memory lead",
           "ask": "Does the client size its lead only from the margins the host reports and the handshake's round trip, with no profile passed to it? Is each client's session given time from a clock with its own origin, with no host time or shared time passed to it, and does the client whose clock runs at another rate hold the floor too? Is the pinned run made by the same code with only the lead fixed? Does a client author at most one frame for a tick, with target ticks that only rise? Does the record count the lead's changes in each stretch, and set each client's reported lead beside the true one?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M2-review-fix.md",
           "verdict": "fail",
           "review": "docs/evidence/SESSION/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
@@ -190,10 +190,10 @@
           "check": "cargo test --locked --offline -p thrum-network --test negotiation",
           "ask": "Read the test. Is the rule-set mismatch made with a second real rule set, and not a hand-set number? Does the host wait for the refused client to close, up to a timeout, and not close straight after sending?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M2/mac-review-fix-checks.txt",
           "verdict": "fail",
           "review": "docs/evidence/SESSION/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.7",
@@ -212,20 +212,20 @@
           "check": "python3 scripts/session_match.py memory costs",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M2/memory-costs-review-fix.json",
           "verdict": "fail",
           "review": "docs/evidence/SESSION/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.9",
           "statement": "No call on a session waits, sleeps or reads a clock: time comes from the caller. `thrum-network` names no socket, no type of the reference crowd or of any game, and reaches a link only through `thrum-transport`'s link interface.",
           "ask": "Can any public call of the host or client session block or await? Does thrum-network read the wall clock anywhere but the headless host's pacing loop? Does it name a game's component, action or rule? Does thrum-network's own dependency on thrum-transport leave the socket adapters out, and is the new dependency registered in .config/architecture.toml? Is a set written once and sent to every client?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M2-review-fix.md",
           "verdict": "fail",
           "review": "docs/evidence/SESSION/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.10",
@@ -254,10 +254,10 @@
           "check": "cargo test --locked --offline -p thrum-network --test playout_position",
           "ask": "Read the test. Does it read the position at times between advances, as a frame would, and not only when a tick commits? Is the control that must fail the policy of committing every held set at once, run through the same assertions?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SESSION/M2/mac-review-fix-checks.txt",
           "verdict": "fail",
           "review": "docs/evidence/SESSION/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,
