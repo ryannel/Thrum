@@ -798,7 +798,7 @@
         {
           "verdict": "fail",
           "commit": "7bdb4c2df239e2236a2f677c06dff2fc2bd5704c",
-          "review": ".orchestrate/evidence/WATERS/M6-review.md",
+          "review": ".orchestrate/evidence/WATERS/M6-review-1.md",
           "items": {
             "M6.3": "pass",
             "M6.4": "fail",
@@ -857,6 +857,50 @@
             "turns": 1
           },
           "at": "2026-11-19T15:35:22Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "e7799c46e2969c14e9ea411f20bc21feec9b2d17",
+          "review": ".orchestrate/evidence/WATERS/M6-review.md",
+          "items": {
+            "M6.3": "pass",
+            "M6.4": "pass",
+            "M6.5": "pass",
+            "M6.6": "fail",
+            "M6.7": "pass",
+            "M6.15": "pass",
+            "M6.8": "pass",
+            "M6.9": "pass",
+            "M6.10": "pass",
+            "M6.11": "pass",
+            "M6.12": "pass",
+            "M6.13": "pass",
+            "M6.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "A moored craft sinks into its own wake when only the fine level admits its pressure",
+              "item": "M6.6",
+              "different": "The previous finding concerned missing observations of outgoing waves around a settled hull. The check now measures those waves. This is a measured draft error when just one level admits the source.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 157597,
+            "cached": 6534912,
+            "output": 16613,
+            "turns": 1
+          },
+          "at": "2026-11-19T22:02:36Z"
         }
       ],
       "authorised": {

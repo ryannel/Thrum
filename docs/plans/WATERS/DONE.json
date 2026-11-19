@@ -723,8 +723,8 @@
     {
       "id": "M6",
       "name": "The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -751,7 +751,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/interaction-metal-serialized.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
@@ -762,7 +762,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/interaction-metal-serialized.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
@@ -771,8 +771,8 @@
           "check": "cargo test --locked --offline -p water-scene --test wake_scene_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M6/moored-metal-new.txt",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
@@ -849,7 +849,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/cost.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
@@ -861,7 +861,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/interaction-metal-serialized.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
@@ -877,28 +877,9 @@
       ],
       "findings": [
         {
-          "name": "Refused regional pressure still lifts the querying body",
-          "item": "M6.4",
-          "repeat": false
-        },
-        {
-          "name": "Future impulse pages evict admitted drops before their tick",
-          "item": "M6.5",
-          "repeat": false
-        },
-        {
-          "name": "The paired cost baseline still renders water and lacks the prior comparison",
-          "item": "M6.12",
-          "repeat": false
-        },
-        {
-          "name": "The moored-craft check never observes waves outside the settled hull",
+          "name": "A moored craft sinks into its own wake when only the fine level admits its pressure",
           "item": "M6.6",
-          "repeat": false
-        },
-        {
-          "name": "The lifecycle test submits the first endpoint write before discarding",
-          "item": "M6.13",
+          "different": "The previous finding concerned missing observations of outgoing waves around a settled hull. The check now measures those waves. This is a measured draft error when just one level admits the source.",
           "repeat": false
         }
       ]
