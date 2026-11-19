@@ -112,19 +112,12 @@ needs (H05, H08). `thrum-sea` binds 17 buffers and 13 passes by position (H17).
 ## Device setup
 
 Rule: `device-request` counts adapter/device calls outside HOST's capabilities module and the registered
-test-support package. Use that recipe/gate when available; existing copies retain only their current allowance.
+test-support package. Use the recipe and send tests through the gate.
 
-**Shape.** Feature requests come from `DeviceCapabilities::requested_timing_features` in
-`crates/thrum-render/src/capabilities.rs`. Pipelines are created through `DeviceSite::render` / `compute`
-(`runtime/creation.rs`), which records each creation.
-
-**Not shared yet.** Nothing yet owns the rest of a device request: the limits, the compressed-texture features, the
-uncaptured-error handler and the loss watcher. Every host writes its own, and the copies disagree (H01). The iOS
-shell asks for `downlevel_defaults` limits (4 storage buffers per stage), while `thrum-sea` requires 8. The macOS
-shell treats an uncaptured GPU error as fatal; iOS survives it.
-
-If your work adds or changes a device request, don't add another copy. Propose a shared request in
-`thrum-render::capabilities` in the plan log, and use the nearest existing host's request until it lands.
+**Shape.** `DeviceRecipe` selects features and limits by profile and returns the device, queue, capability record
+and fault watch. A host can supply a surface and a wake callback. A test uses the recipe on the adapter admitted
+by the test gate. Pipelines are created through `DeviceSite::render` / `compute` (`runtime/creation.rs`), which
+records each creation.
 
 ## Tests
 
@@ -144,13 +137,12 @@ the gate writes a visible reason to stderr, and fails instead under `THRUM_REQUI
 Use only a dev-dependency on this package. `test-crate-edges` enforces that boundary, and permits
 normal dependencies on a registered fixtures package only from the registered proving ground.
 
-The whole-file gate is the harmful one: in `tests/graph_kinds.rs` it hides 13 CPU-only tests from Linux and
-Windows. Gate only the tests that need a GPU, and say in the test what it needs.
+Gate only the tests that need a GPU, and pass the specific backend for a backend-bound test. The CPU graph
+validation cases use portable limits and feature facts and compile on every target.
 
-**Test devices.** Enable the support package's `render` feature and use the admitted GPU's `device`
-with a portable or native profile and optional restrictions. Restrictions remove features or lower limits.
-TEST-SUPPORT M1 adopts this in the sea and asset GPU tests; its stand-in recipe is replaced by HOST in M2.
-Older local device helpers elsewhere await that migration.
+**Test devices.** Integration tests can enable the support package's `render` feature and open the admitted
+adapter with a portable or native profile. Restrictions remove features or lower limits. Renderer unit tests
+call their own build of `DeviceRecipe` so they use the same renderer types as the code under test.
 
 **Older shapes not to copy:**
 - Support shared by `#[path = "..."]` includes, which rely on implicit `super::` names.

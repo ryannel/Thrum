@@ -6,12 +6,6 @@ pub mod support;
 #[cfg(target_os = "macos")]
 #[test]
 fn portable_metal_publishes_the_authored_weather_within_the_shared_tolerance() {
-    let Some(test_gpu) = thrum_test_support::gpu(
-        "portable_metal_publishes_the_authored_weather_within_the_shared_tolerance",
-        Some(wgpu::Backend::Metal),
-    ) else {
-        return;
-    };
     use std::time::Duration;
     use thrum_clouds::WeatherMap;
     use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
@@ -19,6 +13,12 @@ fn portable_metal_publishes_the_authored_weather_within_the_shared_tolerance() {
         initial_state,
         qualification::{WeatherSnapshot, inspect_weather},
         shade_config,
+    };
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "portable_metal_publishes_the_authored_weather_within_the_shared_tolerance",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
     };
 
     pollster::block_on(async {

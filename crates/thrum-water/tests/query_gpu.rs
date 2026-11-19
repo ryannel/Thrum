@@ -263,13 +263,13 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
 
 #[test]
 fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
+    use thrum_water_model::{Bed, BodyKind, Chart, Map, Stage};
     let Some(test_gpu) = thrum_test_support::gpu(
         "chart_queries_keep_both_tick_pages_and_sample_their_own_stage",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
-    use thrum_water_model::{Bed, BodyKind, Chart, Map, Stage};
     let (device, queue, caps) = metal(&test_gpu);
     let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(true));
     let output = SurfaceOutput {

@@ -542,13 +542,13 @@ fn production_star_pipeline_conserves_flux_and_masks_depth_edges() {
 
 #[test]
 fn resolved_night_footprints_keep_the_magnitude_order() {
+    use super::{OffscreenTarget, PreparedSynthetic, SyntheticScene, atmosphere, capture};
     let Some(test_gpu) = thrum_test_support::gpu(
         "resolved_night_footprints_keep_the_magnitude_order",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
-    use super::{OffscreenTarget, PreparedSynthetic, SyntheticScene, atmosphere, capture};
 
     pollster::block_on(async {
         // Perpendicular lux = 2.54e-6 * 10^(-0.4 * magnitude).

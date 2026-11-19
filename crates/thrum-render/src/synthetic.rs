@@ -2129,6 +2129,8 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     mod cloud;
+    #[cfg(target_os = "macos")]
+    mod motion;
 
     mod compute_material;
     pub(super) mod support;
@@ -2267,6 +2269,3 @@ mod tests {
         );
     }
 }
-
-#[cfg(all(test, target_os = "macos"))]
-mod motion_tests;

@@ -212,6 +212,10 @@ fn history_refuses_partial_updates_duplicate_producers_and_early_result() {
     );
 }
 
+#[expect(
+    dead_code,
+    reason = "the graph kinds test also uses the texture roundtrip fixture"
+)]
 mod support;
 
 #[test]

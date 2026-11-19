@@ -69,7 +69,7 @@ the matching section before you write code that does one of these jobs.
 | Constants shared with WGSL | Generated into a WGSL prelude from the Rust value | `Profile::shader` in `crates/thrum-render/src/atmosphere/spectrum.rs` |
 | Pipelines | Created through `DeviceSite::render` / `compute`, which records each creation | `crates/thrum-render/src/runtime/creation.rs` |
 | Pass names | A named `const PASS: &str` in the owning module, used by the graph, timing and benches | `crates/thrum-render/src/visibility.rs` |
-| Device request | Features from `DeviceCapabilities::requested_timing_features`; no shared request for limits and error handling yet | `crates/thrum-render/src/capabilities.rs` |
+| Device request | `DeviceRecipe` selects the profile, applies restrictions, and returns the device, capability record and fault watch | `crates/thrum-render/src/capabilities/device.rs` |
 | Modules | `foo.rs` plus a `foo/` folder; no `mod.rs` (lint-enforced) | any crate |
 | Unit tests | `#[cfg(test)] mod tests;` with the body in `foo/tests.rs` once it passes a screen or two | `crates/thrum-render/src/visibility.rs` and `visibility/tests.rs` |
 | GPU tests | Ask the shared gate for admission; skips write a visible reason and fail when a GPU is required. Gate only GPU tests, never a whole file | `crates/thrum-test-support/src/lib.rs` |

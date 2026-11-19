@@ -354,6 +354,7 @@ fn bytes(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
         .to_vec()
 }
 
+#[expect(clippy::print_stdout, reason = "report the submitted boundary proof")]
 pub(super) fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit(
     gpu: &thrum_test_support::Gpu,
 ) {

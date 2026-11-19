@@ -8,7 +8,7 @@ mod metal {
 
     use std::cell::Cell;
     use thrum_render::capabilities::{
-        DeviceCapabilities, DeviceRecipe, HardwareFeature, HardwareLaunchError, HardwareRequest,
+        DeviceRecipe, HardwareFeature, HardwareLaunchError, HardwareRequest,
     };
     use thrum_test_support::{Profile, Restriction};
 
@@ -94,46 +94,33 @@ mod metal {
         let Some(gate) = support::gate("ray query device retry") else {
             return;
         };
-        let options = wgpu::RequestAdapterOptions::default();
-        let base = |adapter: &wgpu::Adapter| {
-            DeviceRecipe {
-                profile: Profile::Portable,
-                ..Default::default()
-            }
-            .descriptor(adapter)
-            .expect("portable recipe")
-        };
         let unsupported = wgpu::Features::EXPERIMENTAL_RAY_HIT_VERTEX_RETURN;
         assert!(!gate.adapter.features().contains(unsupported));
         for required_name in ["", "mesh-stages"] {
             let required = HardwareRequest::parse(required_name).expect("base names");
             let mut mixed = required.clone();
             mixed.extend(HardwareRequest::parse("ray-query?").expect("preferred rays"));
-            let (_, expected, _, _) = pollster::block_on(DeviceCapabilities::open_generation(
-                &gate.instance,
-                &options,
-                1,
-                &required,
-                base,
-            ))
-            .expect("base recipe with required names");
+            let (expected, _, _) = gate
+                .fresh_adapter()
+                .device_with_hardware(Profile::Portable, &Restriction::default(), 1, &required)
+                .expect("base recipe with required names");
             let attempts = Cell::new(0);
-            let (_, device, _, caps) = pollster::block_on(DeviceCapabilities::open_generation(
-                &gate.instance,
-                &options,
-                2,
-                &mixed,
-                |adapter| {
-                    let mut descriptor = base(adapter);
-                    if attempts.replace(attempts.get() + 1) == 0 {
-                        // The registry still admits the preference; wgpu rejects the
-                        // resulting device request with this unsupported test flag.
-                        descriptor.required_features |= unsupported;
-                    }
-                    descriptor
-                },
-            ))
-            .expect("one fresh-adapter retry");
+            let (device, _, caps) = gate
+                .fresh_adapter()
+                .device_with_hardware_adjusted(
+                    Profile::Portable,
+                    &Restriction::default(),
+                    2,
+                    &mixed,
+                    |descriptor| {
+                        if attempts.replace(attempts.get() + 1) == 0 {
+                            // The registry still admits the preference; wgpu rejects the
+                            // resulting device request with this unsupported test flag.
+                            descriptor.required_features |= unsupported;
+                        }
+                    },
+                )
+                .expect("one fresh-adapter retry");
             assert_eq!(attempts.get(), 2);
             assert_eq!(device.features(), expected.features());
             assert_eq!(device.limits(), expected.limits());

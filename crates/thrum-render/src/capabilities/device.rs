@@ -141,8 +141,8 @@ impl DeviceRecipe<'_> {
         .await
     }
 
-    /// Open from a caller-supplied adapter source. A diagnostic can inject a descriptor
-    /// fault to exercise the registry's preference retry using a fresh adapter.
+    /// Open from a caller-supplied adapter source. Descriptor adjustment lets a
+    /// diagnostic exercise unusual launch limits or the registry's preference retry.
     ///
     /// # Errors
     /// Reports an invalid restriction or a hardware, adapter or device failure.

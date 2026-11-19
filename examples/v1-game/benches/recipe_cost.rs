@@ -52,6 +52,9 @@ fn creations(host: &FrameHost) -> serde_json::Value {
 }
 
 async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    let Some(gpu) = thrum_test_support::gpu("recipe_cost", Some(wgpu::Backend::Metal)) else {
+        return Ok(());
+    };
     let extent = [
         u32::try_from(number("RECIPE_WIDTH", 1280)?)?,
         u32::try_from(number("RECIPE_HEIGHT", 720)?)?,
@@ -60,17 +63,15 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let samples = number("RECIPE_SAMPLES", 180)?;
     let capture = number("RECIPE_CAPTURE", 0)? != 0;
     let warmup = number("RECIPE_WARMUP", 120)?;
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
     let OpenedDevice {
         adapter,
         device,
         queue,
         capabilities: caps,
         ..
-    } = DeviceRecipe::default().open(&instance, None).await?;
+    } = DeviceRecipe::default()
+        .open_admitted(&gpu.instance, &gpu.adapter)
+        .await?;
     let surface_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("recipe cost virtual surface"),
         size: wgpu::Extent3d {

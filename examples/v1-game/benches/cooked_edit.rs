@@ -101,6 +101,9 @@ struct Scenario {
 }
 
 fn main() {
+    let Some(gpu) = thrum_test_support::gpu("cooked_edit", None) else {
+        return;
+    };
     let mut report = String::new();
     let mut metrics = Metrics::new();
     writeln!(report, "# G5 in-game edit-to-visible and upload cost").ok();
@@ -138,7 +141,7 @@ fn main() {
             edits: 3,
         },
     ] {
-        run(&scenario, &mut report, &mut metrics);
+        run(&gpu.fresh_adapter(), &scenario, &mut report, &mut metrics);
     }
     // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
     let history = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -209,7 +212,12 @@ fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) -> O
     clippy::too_many_lines,
     reason = "one bench scenario reads top to bottom: build, edit, measure, report"
 )]
-fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
+fn run(
+    gpu: &thrum_test_support::Gpu,
+    scenario: &Scenario,
+    report: &mut String,
+    metrics: &mut Metrics,
+) {
     let root = std::env::temp_dir().join(format!(
         "thrum-g5-game-bench-{}-{}",
         std::process::id(),
@@ -252,7 +260,6 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
     .ok();
 
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let OpenedDevice {
             device,
             queue,
@@ -266,7 +273,7 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
             }),
             ..Default::default()
         }
-        .open(&instance, None)
+        .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("device");
         let mut host = FrameHost::new_with_capabilities(

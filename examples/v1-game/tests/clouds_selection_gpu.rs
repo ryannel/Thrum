@@ -21,16 +21,33 @@ fn completed(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 
 #[test]
 fn cloud_attachment_reports_the_device_limit_as_a_gpu_error() {
-    use thrum_test_support::{Profile, Restriction};
+    use thrum_render::capabilities::{
+        DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
+    };
 
     let Some(gpu) = thrum_test_support::gpu("cloud GPU limits", Some(wgpu::Backend::Metal)) else {
         return;
     };
-    let (device, queue, caps) = gpu
-        .device_with_hardware_adjusted(Profile::Portable, &Restriction::default(), 1, &[], |desc| {
-            desc.required_limits.max_storage_textures_per_shader_stage = 2;
-        })
-        .expect("restricted Metal device");
+    let OpenedDevice {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    } = pollster::block_on(
+        DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            restriction: Some(&DeviceRestriction {
+                limits: Some(wgpu::Limits {
+                    max_storage_textures_per_shader_stage: 2,
+                    ..wgpu::Limits::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+        .open_admitted(&gpu.instance, &gpu.adapter),
+    )
+    .expect("restricted Metal device");
     let config = FrameConfig {
         render_extent: [160, 90],
         surface: None,

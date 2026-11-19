@@ -519,13 +519,13 @@ fn stopping_admission_drains_in_submission_order_while_rendering_continues() {
 
 #[test]
 fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
+    use crate::synthetic::CaptureSource;
     let Some(test_gpu) = thrum_test_support::gpu(
         "scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr",
         None,
     ) else {
         return;
     };
-    use crate::synthetic::CaptureSource;
     pollster::block_on(async {
         let (mut host, output) =
             Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
@@ -575,13 +575,13 @@ fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
 
 #[test]
 fn linear_capture_allowance_is_validated_before_target_replacement() {
+    use crate::synthetic::CaptureSource;
     let Some(test_gpu) = thrum_test_support::gpu(
         "linear_capture_allowance_is_validated_before_target_replacement",
         None,
     ) else {
         return;
     };
-    use crate::synthetic::CaptureSource;
     pollster::block_on(async {
         let (mut host, _output) =
             Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;

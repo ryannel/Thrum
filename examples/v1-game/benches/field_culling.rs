@@ -123,8 +123,10 @@ fn open_view(hosts: &mut [FrameHost], tick: u64) {
     reason = "the explicit device benchmark reports paired GPU rows"
 )]
 fn main() {
+    let Some(gpu) = thrum_test_support::gpu("field_culling", None) else {
+        return;
+    };
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let OpenedDevice {
             adapter,
             device,
@@ -132,7 +134,7 @@ fn main() {
             capabilities,
             ..
         } = DeviceRecipe::default()
-            .open(&instance, None)
+            .open_admitted(&gpu.instance, &gpu.adapter)
             .await
             .expect("device");
         let field_meshes = std::env::var("THRUM_FIELD_MESHES").is_ok_and(|value| value == "on");

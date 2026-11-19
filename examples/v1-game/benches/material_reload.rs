@@ -23,6 +23,9 @@ const RELOADS: u32 = 6;
 const QUIET_FRAMES: usize = 60;
 
 fn main() {
+    let Some(gpu) = thrum_test_support::gpu("material_reload", None) else {
+        return;
+    };
     let root = std::env::temp_dir().join(format!("thrum-g6-material-bench-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let source = root.join("source");
@@ -44,7 +47,7 @@ fn main() {
     .cook_all()
     .expect("cook");
     assert!(cooked.failed.is_empty(), "{:?}", cooked.failed);
-    let report = pollster::block_on(run(&root));
+    let report = pollster::block_on(run(&gpu, &root));
     std::fs::remove_dir_all(&root).ok();
     #[expect(clippy::print_stderr, reason = "a bench reports to its terminal")]
     {
@@ -73,15 +76,14 @@ fn hook(index: u32, run: u32) -> MaterialHook {
     }
 }
 
-async fn run(root: &std::path::Path) -> String {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+async fn run(gpu: &thrum_test_support::Gpu, root: &std::path::Path) -> String {
     let OpenedDevice {
         device,
         queue,
         capabilities,
         ..
     } = DeviceRecipe::default()
-        .open(&instance, None)
+        .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("device");
     let mut host = FrameHost::new_with_capabilities(

@@ -466,8 +466,8 @@ fn mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden(
         return;
     };
     pollster::block_on(async {
-        let first = Gpu::new(&gpu, 71).await;
-        let second = Gpu::new(&gpu.fresh_adapter(), 72).await;
+        let first = Gpu::new(&gpu, 71);
+        let second = Gpu::new(&gpu.fresh_adapter(), 72);
         assert!(
             !second.caps.matches(&first.device),
             "distinct replacement device"

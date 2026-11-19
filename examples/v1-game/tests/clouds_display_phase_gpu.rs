@@ -23,15 +23,15 @@ fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 #[test]
 #[cfg(target_os = "macos")]
 fn ramp_mapping_uses_predicted_ticks_and_repeated_ticks_write_no_products() {
+    use thrum_cloud_model::{Parameters, State};
+    use thrum_clouds::{SunPath, WeatherMap};
+    use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
     let Some(test_gpu) = thrum_test_support::gpu(
         "ramp_mapping_uses_predicted_ticks_and_repeated_ticks_write_no_products",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
-    use thrum_cloud_model::{Parameters, State};
-    use thrum_clouds::{SunPath, WeatherMap};
-    use thrum_render::{contribution::EffectTime, runtime::DeviceSite};
     pollster::block_on(async {
         let (_, device, queue, _) = support::device(&test_gpu, "portable", false);
         let site = DeviceSite::untracked(device.clone());

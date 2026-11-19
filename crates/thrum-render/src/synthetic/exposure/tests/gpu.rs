@@ -122,6 +122,10 @@ fn assert_night_policy(
 }
 
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the calibration cases share one prepared meter and device"
+)]
 fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs",

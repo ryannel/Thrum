@@ -274,7 +274,7 @@ fn metal_every_texel_every_mip_all_scopes_resize_and_replacement() {
     ) else {
         return;
     };
-    support::prove_kinds(&gpu);
+    support::gpu::prove_kinds(&gpu);
 }
 
 #[test]

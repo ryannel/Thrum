@@ -60,17 +60,33 @@ fn shade_config() -> ShadeConfig {
 
 #[test]
 fn shade_device_limit_keeps_its_error_kind_in_a_contribution_list() {
-    use thrum_test_support::{Profile, Restriction};
+    use thrum_render::capabilities::{
+        DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice,
+    };
 
     let Some(gpu) = thrum_test_support::gpu("grouped Shade GPU limits", Some(wgpu::Backend::Metal))
     else {
         return;
     };
-    let (_device, queue, caps) = gpu
-        .device_with_hardware_adjusted(Profile::Portable, &Restriction::default(), 1, &[], |desc| {
-            desc.required_limits.max_storage_textures_per_shader_stage = 2;
-        })
-        .expect("restricted Metal device");
+    let OpenedDevice {
+        queue,
+        capabilities: caps,
+        ..
+    } = pollster::block_on(
+        DeviceRecipe {
+            profile: DeviceProfile::Portable,
+            restriction: Some(&DeviceRestriction {
+                limits: Some(wgpu::Limits {
+                    max_storage_textures_per_shader_stage: 2,
+                    ..wgpu::Limits::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+        .open_admitted(&gpu.instance, &gpu.adapter),
+    )
+    .expect("restricted Metal device");
     let config = shade_config();
     let mut host = pollster::block_on(shadow_scene::prepare(
         &caps,

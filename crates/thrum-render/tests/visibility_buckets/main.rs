@@ -18,7 +18,7 @@ struct Gpu {
     caps: DeviceCapabilities,
 }
 impl Gpu {
-    async fn new(test_gpu: &thrum_test_support::Gpu, generation: u64) -> Self {
+    fn new(test_gpu: &thrum_test_support::Gpu, generation: u64) -> Self {
         let adapter = test_gpu.adapter.clone();
         #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
@@ -218,7 +218,7 @@ fn churn_reveal_resize_and_device_replacement_keep_bucket_direct() {
     pollster::block_on(async {
         let mut scene = field();
         for generation in [61, 62] {
-            let gpu = Gpu::new(&test_gpu.fresh_adapter(), generation).await;
+            let gpu = Gpu::new(&test_gpu.fresh_adapter(), generation);
             let mut direct = gpu.prepare(&scene, CullMode::Direct, [320, 180]).await;
             let mut frustum = gpu.prepare(&scene, CullMode::Frustum, [320, 180]).await;
             let mut occlusion = gpu.prepare(&scene, CullMode::Occlusion, [320, 180]).await;
@@ -293,7 +293,7 @@ fn mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses() {
         return;
     };
     pollster::block_on(async {
-        let gpu = Gpu::new(&test_gpu.fresh_adapter(), 63).await;
+        let gpu = Gpu::new(&test_gpu.fresh_adapter(), 63);
         for origin in [[-400.37, 1.13, 400.71], [4000.37, 1.13, -4000.71]] {
             for yaw in [0.0_f32, 0.3] {
                 let (sin, cos) = yaw.sin_cos();

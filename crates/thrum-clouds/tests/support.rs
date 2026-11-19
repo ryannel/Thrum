@@ -41,6 +41,10 @@ fn data() -> (Profile, Vec<Type>) {
     clippy::cast_sign_loss,
     reason = "test compares the hash's deliberate low-word integer addressing and bounded floor coordinates"
 )]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one conformance fixture checks weather and sun products through replacement"
+)]
 pub(super) fn conformance(test: &str, portable: bool, sun_checks: bool) {
     let Some(gpu) = thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)) else {
         return;

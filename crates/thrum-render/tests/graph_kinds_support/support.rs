@@ -1,16 +1,9 @@
-#![allow(
-    dead_code,
-    reason = "graph kinds and effect state use different parts of this fixture"
-)]
-
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::graph::{
     Access, AccessKind, Pass, PassScope, ResourceDescriptor, ResourceId, TextureKind,
 };
-mod gpu;
+pub(crate) mod gpu;
 mod scenes;
-#[allow(unused_imports, reason = "only graph_kinds runs the texture roundtrip")]
-pub(crate) use gpu::prove_kinds;
 pub(crate) use scenes::prove_scenes;
 
 pub(crate) fn descriptor(dimension: TextureKind, size: u32) -> ResourceDescriptor {

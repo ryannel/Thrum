@@ -11,7 +11,7 @@ use thrum_render::timing::GpuTimings;
 
 const EXTENT: [u32; 2] = [320, 180];
 
-async fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
+fn device(test_gpu: &thrum_test_support::Gpu) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
     let adapter = test_gpu.adapter.clone();
     #[cfg(target_os = "macos")]
     assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
@@ -105,7 +105,7 @@ fn differing(a: &[u8], b: &[u8]) -> usize {
 
 fn equivalent(test_gpu: &thrum_test_support::Gpu, view: &SyntheticView, shadows: bool) -> usize {
     pollster::block_on(async {
-        let (adapter, device, queue) = device(test_gpu).await;
+        let (adapter, device, queue) = device(test_gpu);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         let direct = render(
             &capabilities,
@@ -453,7 +453,7 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
         return;
     };
     pollster::block_on(async {
-        let (adapter, device, queue) = device(&test_gpu).await;
+        let (adapter, device, queue) = device(&test_gpu);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
         // Grazing views along the grid occlude most of it; one sits inside
         // the cube layer (near-plane crossings), one looks away (empty).
@@ -549,7 +549,7 @@ async fn equal_depth_case(
     test_gpu: &thrum_test_support::Gpu,
     entering: usize,
 ) -> (Vec<u8>, Vec<u8>) {
-    let (adapter, device, queue) = device(test_gpu).await;
+    let (adapter, device, queue) = device(test_gpu);
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 43);
     let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
     let mut base = SyntheticScene::grid(2).expect("grid");
@@ -655,7 +655,7 @@ async fn flush_tie(
     origin: [f32; 3],
     yaw: f32,
 ) -> (usize, usize) {
-    let (adapter, device, queue) = device(test_gpu).await;
+    let (adapter, device, queue) = device(test_gpu);
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 47);
     let (sin, cos) = yaw.sin_cos();
     let at = |offset: [f32; 3]| {
@@ -784,7 +784,7 @@ fn stale_bits_after_a_swap_or_a_reveal_keep_direct_images() {
         return;
     };
     pollster::block_on(async {
-        let (adapter, device, queue) = device(&test_gpu).await;
+        let (adapter, device, queue) = device(&test_gpu);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
         let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
         let mut hidden = SyntheticScene::grid(2).expect("grid");

@@ -311,11 +311,8 @@ fn game_restore_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
     });
 }
 
-fn open_metal_benchmark_device(gpu_timestamps: bool) -> OpenedDevice {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
+fn open_metal_benchmark_device(gpu_timestamps: bool) -> Option<OpenedDevice> {
+    let gpu = thrum_test_support::gpu("assembled frame benchmark", Some(wgpu::Backend::Metal))?;
     let restriction = DeviceRestriction {
         remove_features: wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS,
         ..Default::default()
@@ -325,13 +322,13 @@ fn open_metal_benchmark_device(gpu_timestamps: bool) -> OpenedDevice {
             restriction: (!gpu_timestamps).then_some(&restriction),
             ..Default::default()
         }
-        .open(&instance, None),
+        .open_admitted(&gpu.instance, &gpu.adapter),
     )
     .expect("real Metal device required for this explicit benchmark");
     let adapter_info = opened.adapter.get_info();
     assert_eq!(adapter_info.backend, wgpu::Backend::Metal);
     report_metal_adapter(&adapter_info);
-    opened
+    Some(opened)
 }
 
 fn measure(
@@ -345,12 +342,15 @@ fn measure(
     callbacks_per_sample: usize,
     mode: FrameMode,
 ) {
-    let OpenedDevice {
+    let Some(OpenedDevice {
         device,
         queue,
         capabilities,
         ..
-    } = open_metal_benchmark_device(gpu_timestamps);
+    }) = open_metal_benchmark_device(gpu_timestamps)
+    else {
+        return;
+    };
     let surface = surface_extent.map(|extent| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("V1 benchmark presentation target"),
