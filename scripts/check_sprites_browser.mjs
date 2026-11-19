@@ -205,10 +205,12 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
       await call('Page.addScriptToEvaluateOnNewDocument', { source: `{
         let base;
         let index = 0;
+        let framesRequested = true;
+        window.stopSpriteQualification = () => { framesRequested = false; };
         window.requestAnimationFrame = callback => window.setTimeout(() => {
           const now = performance.now();
           base ??= now;
-          callback(${fixedClock} ? base + index++ * 1000 / 120 : now);
+          if (framesRequested) callback(${fixedClock} ? base + index++ * 1000 / 120 : now);
         }, 1000 / 120);
         window.cancelAnimationFrame = id => window.clearTimeout(id);
       }` });
@@ -237,6 +239,7 @@ export async function qualifySpriteField({ cdp, origin, output, mode, timeout, w
         }
         return undefined;
       }, timeout, `complete WebGPU ${count}-row field samples`);
+      await call('Runtime.evaluate', { expression: 'window.stopSpriteQualification()' });
       const proof = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
       rows.push({ world_rows: count, extent: [width, height], measurement: result, wasm: proof });
       console.log(`${mode}: ${count} world rows, 2 frame rows, one draw, ${result.fractional_frames} interpolating frames`);

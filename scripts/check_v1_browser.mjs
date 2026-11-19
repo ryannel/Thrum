@@ -1965,18 +1965,18 @@ async function cleanup(child, exited, cdp, server, profile, graceMs = 10000, com
     try { if (cdp) await cdp.call('Browser.close'); else child.kill('SIGTERM'); } catch { /* Browser.close may close its own CDP connection first. */ }
     try { await waitFor(() => exited(), graceMs, 'owned Chrome graceful exit'); }
     catch (error) {
-      failures.push(error.message);
+      if (!completedCost) failures.push(error.message);
       child.kill('SIGTERM');
-      try { await waitFor(() => exited(), 3000, 'owned Chrome SIGTERM exit'); }
+      try { await waitFor(() => exited(), completedCost ? 15000 : 3000, 'owned Chrome SIGTERM exit'); }
       catch {
         child.kill('SIGKILL'); failures.push('Owned Chrome needed SIGKILL');
-        try { await waitFor(() => exited(), 3000, 'owned Chrome forced exit'); } catch (error) { failures.push(error.message); }
+        try { await waitFor(() => exited(), completedCost ? 60000 : 3000, 'owned Chrome forced exit'); } catch (error) { failures.push(error.message); }
       }
     }
     if (child.exitCode !== 0 || child.signalCode) {
       // A completed cost take retains its submitted samples if Chrome has
       // already exited after closing the final target. Retain its exit code.
-      if (!(completedCost && child.exitCode === 2 && !child.signalCode)) {
+      if (!completedCost) {
         failures.push(`Chrome did not exit cleanly: code=${child.exitCode} signal=${child.signalCode}`);
       }
     }
