@@ -329,7 +329,7 @@
         {
           "verdict": "fail",
           "commit": "f1037a825b3ab3047f7f1faa0da54818f82580ff",
-          "review": ".orchestrate/evidence/SESSION/M3-review.md",
+          "review": ".orchestrate/evidence/SESSION/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -382,6 +382,49 @@
             "turns": 1
           },
           "at": "2026-11-19T15:18:16Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "77c7c74eac5bd61312c117c8e454e3a3c14a7915",
+          "review": ".orchestrate/evidence/SESSION/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "fail",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "A recovered peer closes on an expired reliable-send deadline",
+              "item": "M3.7",
+              "different": "The bounded image writer resolves the earlier storage finding. This failure is a stale delivery deadline after the reliable queue drains and set delivery resumes on datagrams.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 111233,
+            "cached": 2557440,
+            "output": 10810,
+            "turns": 1
+          },
+          "at": "2026-11-19T19:31:00Z"
         }
       ],
       "authorised": {

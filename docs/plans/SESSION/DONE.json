@@ -321,7 +321,7 @@
           "ask": "For each case, does the record show the host's tick count against the run's virtual time, the most bytes and sets the host held for the slow client, and the reason it was repaired or closed?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M3/memory-slow.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
           "builder_result": "pass"
         },
@@ -332,7 +332,7 @@
           "ask": "Read the test. Does it drive the decoders the session uses, with each kind of input generated? Is there a stdin target for each decoder this module added?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M3/M3.6.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
           "builder_result": "pass"
         },
@@ -341,10 +341,10 @@
           "statement": "Every store the host keeps for a peer, and a client's buffer of sets, has a cap from the match settings, and each cap has the one outcome the design gives.",
           "ask": "List each queue, ring and buffer the host session keeps for a peer, and the client's buffer of sets. Does each have a cap that a match setting names? At each cap, is the outcome the one mechanisms 3 and 10 give, with no path that grows without bound, waits on the peer or drops a command and carries on?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M3/README.md",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.8",
@@ -401,30 +401,16 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 1,
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "As forgiving as Factorio's multiplayer, where a newcomer downloads the map and catches up while the others keep playing, a desynchronised client is detected and brought back, and a peer that cannot keep up is dropped without the others noticing. Every fault costs only the peer that has it, and the host commits every tick on schedule through all of them.",
       "findings": [
         {
-          "name": "A refused set batch can publish receipts",
-          "item": "M3.6",
-          "repeat": false
-        },
-        {
-          "name": "Host image storage exceeds the match cap during serialization",
+          "name": "A recovered peer closes on an expired reliable-send deadline",
           "item": "M3.7",
-          "repeat": false
-        },
-        {
-          "name": "Staged input overrides held-control expiry",
-          "item": "M3.5",
-          "repeat": false
-        },
-        {
-          "name": "Every-byte cuts stop at the envelope decoder",
-          "item": "M3.6",
+          "different": "The bounded image writer resolves the earlier storage finding. This failure is a stale delivery deadline after the reliable queue drains and set delivery resumes on datagrams.",
           "repeat": false
         }
       ]
