@@ -54,7 +54,7 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
             final_place = place;
             fixture
                 .mailbox
-                .post_bodies(tick, 1, vec![pressure(1, place, heading)]);
+                .post_bodies(tick, Some(1), vec![pressure(1, place, heading)]);
         }
         fixture.query.post(
             tick - 1,
@@ -98,7 +98,7 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
     // Old water must disappear from both levels, and cannot wrap.
     fixture.mailbox.post_bodies(
         241,
-        1,
+        Some(1),
         vec![BodyPressure {
             force: 0.0,
             ..pressure(1, [850.0, 900.0], 0.0)
@@ -307,9 +307,11 @@ fn a_hitch_puts_pressure_along_the_path() {
     };
     fixture.draw(0);
     for tick in 1..=8 {
-        fixture
-            .mailbox
-            .post_bodies(tick, 1, vec![pressure(1, [tick as f64 - 4.0, 0.0], 0.0)]);
+        fixture.mailbox.post_bodies(
+            tick,
+            Some(1),
+            vec![pressure(1, [tick as f64 - 4.0, 0.0], 0.0)],
+        );
     }
     fixture.draw(8);
     let wake = fixture.read();

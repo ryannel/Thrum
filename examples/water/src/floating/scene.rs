@@ -387,7 +387,8 @@ fn build_scene(
                     }
                 })
                 .collect();
-            interaction.post_bodies(number, 0, reactions);
+            let follow = (!demo.is_some_and(|demo| demo.stone)).then_some(0);
+            interaction.post_bodies(number, follow, reactions);
             if number == 60 && lake && demo.is_some_and(|demo| demo.stone) {
                 interaction.post_impulse(Impulse {
                     id: 1,

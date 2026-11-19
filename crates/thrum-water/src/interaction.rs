@@ -81,10 +81,10 @@ impl Mailbox {
         }
     }
 
-    /// Post the reactions for this tick and name the body the windows follow.
+    /// Post the reactions for this tick and optionally name the body the windows follow.
     /// # Panics
     /// Panics if another thread poisoned the mailbox.
-    pub fn post_bodies(&self, tick: u64, follow: u32, mut bodies: Vec<BodyPressure>) {
+    pub fn post_bodies(&self, tick: u64, follow: Option<u32>, mut bodies: Vec<BodyPressure>) {
         bodies.retain(|body| {
             body.place.iter().all(|v| v.is_finite())
                 && body.heading.is_finite()
@@ -95,7 +95,7 @@ impl Mailbox {
         bodies.dedup_by_key(|body| body.id);
         let mut pages = self.pages.lock().expect("water interaction mailbox");
         let page = pages.entry(tick).or_default();
-        page.follow = Some(follow);
+        page.follow = follow;
         page.refused_bodies = bodies.len().saturating_sub(self.limits.bodies as usize) as u64;
         bodies.truncate(self.limits.bodies as usize);
         page.bodies = bodies;
