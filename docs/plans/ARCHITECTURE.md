@@ -952,8 +952,10 @@ changes the valley's terrain, so it moves every registered set, and no plan said
 - **Root pins.** A route file names the cooked root it was made for. M9's builder writes the new root, and the
   generation if it moved, into each file that names an old one: `moving-v1.json` (`APPLE-TILE`'s),
   `culling-fast-yaw.json` (`CULLING`'s), `effect-state.json` and `effect-after-opaque.json` (`EFFECT-GRAPH`'s),
-  its own exit routes and launcher, and any other pin of those roots that `./dev check` reads. It changes
-  nothing else in another module's file. Those modules' items do not change, and their tests keep passing.
+  its own exit routes and launcher, and any other pin of those roots that `./dev check` reads. In a file that
+  holds such a pin it changes nothing else (`SHOWCASE` M9.7). The refresh below is separate and changes
+  `APPLE-TILE`'s references, registry fields and log. Those modules' items do not change, and their tests keep
+  passing.
 - **Which baselines move.** All five registered sets are expected to, since each draws the valley's
   terrain. M9's builder records which did. `SHOWCASE`'s own two thresholded baselines are calibrated again for
   the new roots, by the route decision's fixed rule.

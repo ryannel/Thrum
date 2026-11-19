@@ -22,7 +22,7 @@ The launch, the six stops and the route check were built before the loop as mile
 - Assumption: before M8 the movers' motion is judged tick by tick, from captures of every tick, and real-time takes are a tripwire record labelled with the machine's load (the lead's reading of the owner's bar of 17 November). Stutter at 1x is judged in M8, with the other builders paused. A late frame in M7's records that the load makes impossible to explain is listed as unresolved and answered in that M8 sitting. The other choice judges real-time takes in M5 and wants a cause for every late frame in M7, and each waits for a quiet machine.
 - Assumption: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it.
 - Assumption: the valley's terrain changes once, in M9, to take a bright band off the lookout's rim at sunset, which `ATMOSPHERE` M6 could not pass with. Every registered exact image set is refreshed in that landing, and the two route baselines are calibrated again. The other choice closes gate G3s with the band named as a known defect and leaves it for M8's review to find.
-- Assumption: the sunrise stop moves later than 6.1 h, to the first hour the Sun reaches the lookout, because until then the props stand in the east ridge's shade and cast no shadow. The other choice lowers the east ridge and keeps the hour.
+- Assumption: the sunrise stop moves later than 6.1 h, to the first hour the Sun reaches the lookout, because until then the props stand in the east ridge's shade and cast no shadow. The page's Sunrise button keeps 6.1 h. The other choice lowers the east ridge and keeps the hour.
 
 ## M5 The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome
 
@@ -61,7 +61,11 @@ on the branch `build/atmosphere` until that milestone merges. A held frame at a 
 bare valley's thresholds and calibrated root are constants in the launcher, and `check --source DIR
 --recalibrate` judges another root by the rule. Before changing anything, note the main-branch check's pass
 that covers the starting commit. Everything lands together: terrain, layout, preset, root pins, references,
-registry and both baselines.
+registry and both baselines. Make the two launcher changes of
+[What a route check must have compared](DESIGN.md#what-a-route-check-must-have-compared) before calibrating
+either baseline, because a calibration run has to pass every control. M6 built the `culling --exit` commands
+that M9.8 and M9.9 run. Keep this milestone's receipts under a name of its own, and leave
+`docs/evidence/SHOWCASE/M6/` as it is.
 
 ## M7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 

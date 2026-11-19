@@ -247,19 +247,22 @@
         },
         {
           "id": "M9.4",
-          "statement": "At the six stops the bare valley drawn natively and in Chrome agree under the route check's metric and with its baseline. The thresholds and the baseline were calibrated once for the new cooked root by the route decision's fixed rule, and the controls fail as they must.",
+          "statement": "At the six stops the bare valley drawn natively and in Chrome agree under the route check's metric, and each target's six frames agree with the saved baseline grids: the canonical check fails when the baseline is absent or its identity differs in any part. Each diagnostic control frame is drawn at its stop's preset hour and pose, the sunrise one at the revised hour, and the check fails otherwise. The thresholds and the baseline were calibrated once for the new cooked root by the route decision's fixed rule, and the controls fail as they must.",
           "check": "python3 scripts/run_v1_showcase.py check",
-          "lock": "gpu",
+          "lock": "chrome",
+          "ask": "Read the bare valley's check in `scripts/run_v1_showcase.py` and the record of a canonical run at the claimed commit. Does the canonical check fail when the baseline file is absent, and when its identity differs in any one part, the frame-source version included? Does the record show the baseline `compared`, with all six stops on each target under the thresholds? Does it show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's?",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.5",
-          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric and with the exit baseline. The thresholds and the baseline were calibrated once for the new exit root by the route decision's fixed rule, and the three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities.",
+          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric and with the exit baseline. The thresholds and the baseline were calibrated once for the new exit root by the route decision's fixed rule, and the three controls fail as they must: the diagnostic scene, each frame at its stop's preset hour and pose as in M9.4, a retinted texture, and the same store drawn with no entities.",
           "check": "python3 scripts/run_v1_showcase.py check --exit",
-          "lock": "gpu",
-          "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the log give each baseline file's old and new SHA-256 and the cause?",
+          "lock": "chrome",
+          "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files, and the record of an exit check at the claimed commit. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the record show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's? Does the log give each baseline file's old and new SHA-256 and the cause?",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
@@ -268,14 +271,45 @@
         },
         {
           "id": "M9.6",
-          "statement": "The registered exact baselines are refreshed in the landing that changes the terrain, as the module list's ruling on the valley's lookout rim allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` the landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`, and nothing else. In another module's files it changed only the cooked root, and the generation where it moved, that a file pins. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
+          "statement": "The registered exact baselines are refreshed in the landing that changes the terrain, as the module list's ruling on the valley's lookout rim requires. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, and the verifier passes at the claimed commit. In `.config/exact-baselines.json` the landing changed the `pin` and the `refresh` of each baseline whose reference moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`, and no other field. The files the registry lists as comparisons are as they were. `APPLE-TILE`'s log and this module's each record the cause, every moved reference's old and new SHA-256, and which of the five sets did not move.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "ask": "Read this milestone's diff yourself with `git diff`. In `.config/exact-baselines.json`, does it change only the `pin` and the `refresh` of baselines whose references moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`? In `examples/v1-game/routes/` and in any other file of another module, does it change only a pinned cooked root or generation? Are the comparison scripts and their sampling as they were? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move?",
+          "ask": "Read this milestone's diff yourself with `git diff`. Regenerated reference images and manifests under a registered `reference`, the registry's `pin` and `refresh` fields and a new entry in `APPLE-TILE`'s log are the refresh this item requires, and are expected in the diff. In `.config/exact-baselines.json`, does the diff change only the `pin` and the `refresh` of baselines whose references moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`? Is every file the registry lists under `comparisons` or `comparison_files` unchanged? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move?",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M9.7",
+          "statement": "Each route file that pinned the old valley root or the old exit root names the new one, and its generation where that moved: `moving-v1.json`, `culling-fast-yaw.json`, `effect-state.json`, `effect-after-opaque.json`, `exit-flythrough.json` and `exit-held.json` in `examples/v1-game/routes/`. In each of those files the landing changed the pin and nothing else, so every route's keys, phase and checkpoints are as they were.",
+          "ask": "Read this milestone's diff of `examples/v1-game/routes/` with `git diff`. In each of the six files, does it change only `cooked_root`, and `cooked_generation` where the generation moved?",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.8",
+          "statement": "In the exit scene cooked from the changed terrain, on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving. This milestone's receipts, the Mac's and Chrome's, are of the new exit root, and M6's receipts for the old root are as they were.",
+          "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
+          "lock": "gpu",
+          "ask": "Does this milestone's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Does this milestone's diff leave every file under `docs/evidence/SHOWCASE/M6/` unchanged?",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.9",
+          "statement": "In the exit scene cooked from the changed terrain, in Chrome, Frustum and Occlusion equal bucket-ordered Direct at the exit flythrough's checkpoints, with the movers moving.",
+          "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "builder_result": "open"
         }
       ],
       "failed_reviews": 0,
@@ -514,7 +548,7 @@
         {
           "id": "M8.8",
           "statement": "The V1 exit record names, for each clause of the V1 exit and of gate G7 in the brief, the evidence at the claimed commit, the rows it ran on, and its status as implementation, correctness, visuals and device, kept apart.",
-          "ask": "Take the clauses one at a time. Does each have evidence at the claimed commit on the rows it names? Is any clause claimed on a row it did not run on, or from a stand-in not labelled `proxy:iphone`?",
+          "ask": "Take the clauses one at a time. Does each have evidence at the claimed commit on the rows it names? Is any clause claimed on a row it did not run on, or from a stand-in not labelled `proxy:iphone`? Does the GPU culling clause cite equality receipts, for both Mac recipes and for Chrome, taken on the exit root the claimed commit cooks?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

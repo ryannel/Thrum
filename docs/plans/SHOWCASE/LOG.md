@@ -86,3 +86,9 @@
   the mesh, moves the sunrise stop's hour, and refreshes every baseline the terrain moves, under
   [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix). No item of M5 to M8 changed. The design has not been reviewed
   since this change.
+- 2026-11-19 Design review of M9 asked for four changes; all resolved, in M9 and one question of M8.8. M9.8 and M9.9
+  run M6's two equality commands on the changed exit root, and M8.8 asks that the exit record cite receipts of the root
+  that ships. Each diagnostic control is drawn at its stop's preset hour, the sunrise one at the revised hour. The bare
+  valley's canonical check fails unless it compared its baseline. M9.6 names the refresh it expects, and the "only
+  the pin" rule moved to the six route files, as M9.7. Took both suggestions: M9.4 and M9.5 hold `chrome`, and
+  the motion overview says Chrome can defer a tick.
