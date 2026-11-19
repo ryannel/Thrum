@@ -28,3 +28,8 @@
   volume reads the ambient source once. Verified the three pre-split pixel fixtures byte for byte,
   exercised all three surface fault kinds, and ran the cooked game draw on Metal. The registered
   baselines use the shared main-branch proof. [Evidence](../../evidence/REVIEW-RENDER/M1.md).
+- 2026-11-19 Addressed the M1 review findings. Sprite recording now leaves surface timing admission
+  to the presenter. Shade device limits reach the V1 constructor as GPU errors. Restored the
+  owning modules' source fingerprints and graph fixtures and projected only the light split in
+  their comparisons. Verified the fault paths and historical controls on Metal.
+  [Evidence](../../evidence/REVIEW-RENDER/M1.md).

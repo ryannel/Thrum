@@ -36,8 +36,8 @@
           "lock": "gpu",
           "ask": "Does the test raise a stale binding, an extent mismatch and a timing-capacity failure, and see each reported by its own kind? Is `.is_ok()` or `let _ =` used on a fallible encode anywhere in the runtime?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m12-surface-encode-faults",
           "verdict": "fail",
           "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
         },
@@ -47,8 +47,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test frame_error_kinds",
           "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are M4.4's and are not judged here.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m13-frame-error-variants",
           "verdict": "fail",
           "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
         },
