@@ -287,7 +287,48 @@
     },
     "M3": {
       "definitions": "76cc9d209bd008b3f6d11be645944029d37fc24e0a24c261b0fb964cb95cd1a3",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3197e98706f5a2e35a0b59d68c2afa896ffa65f4",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "fail",
+            "M3.9": "pass",
+            "M3.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "g5_decision_misstates_draw_paths_and_target_qualification",
+              "item": "M3.8",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 174265,
+            "cached": 6441984,
+            "output": 17638,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:24:13Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",

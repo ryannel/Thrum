@@ -366,8 +366,8 @@
           "ask": "Do the frame records come from the game's frame host on its ordinary frame path, with the recipe, whether a drawable was presented, and the generation each reader showed? Is any frame in an edit window longer than the longest steady frame of the same run, and if so is its cause named and outside this module?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#metal-timing; .orchestrate/evidence/CONTENT-LOOP/M3/native-timing-frames.json.gz; .orchestrate/evidence/CONTENT-LOOP/M3/tripwires.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -376,8 +376,8 @@
           "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with TAAU and a moving camera: a mesh that is both placed and an entity's mesh row, a texture that a placement samples and a lease lends, and a leased volume, with both readers of each shared product in view. Judge the eight frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#metal-visual-review; .orchestrate/evidence/CONTENT-LOOP/M3/native/selection.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -388,8 +388,8 @@
           "ask": "At the product sizes the valley and the twelve-volume fixture use, is any interval in an edit window longer than the longest steady interval of the same run? If so, is its cause named and outside this module? A stall this module causes at those sizes fails the item and is fixed, not explained. Separately, does the evidence record the larger product size at which a frame is first lost? That figure is a measurement and gates nothing.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#chrome-timing-and-changed-products; .orchestrate/evidence/CONTENT-LOOP/M3/chrome-timing.json.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -398,8 +398,8 @@
           "inspect": "Capture with T2 engine capture in `realtime` mode in Chrome on the valley with TAAU: the same three edits, with both readers of each shared product in view. Judge the frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#chrome-visual-review; .orchestrate/evidence/CONTENT-LOOP/M3/chrome/selection.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -408,8 +408,8 @@
           "ask": "For each bad save in this list, which test shows the previous content still drawn and the reason recorded, on the mapped store and on the fetched feed? Name any case with no test.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#failed-saves-and-recovery; .orchestrate/evidence/CONTENT-LOOP/M3/bad-saves.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -418,8 +418,8 @@
           "check": "python3 scripts/g5_shipping_links.py",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md; .orchestrate/evidence/CONTENT-LOOP/M3/shipping.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -429,8 +429,8 @@
           "ask": "Which code paths read products published through the watcher or the dev server, and is any of them outside presentation? Does the test publish an intermediate state that validates (a changed glTF over its old buffer) before the buffer is saved, and then compare the final manifest's product hashes with a fresh cook of the finished sources in an empty store? Do the design, the ledger and the G5 decision claim only this, and not that an incomplete save is refused?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md; .orchestrate/evidence/CONTENT-LOOP/M3/preview-saves.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -438,10 +438,10 @@
           "statement": "Gate G5 holds as the brief words it, and the maturity ledger and the G5 decision say what was and was not proved.",
           "ask": "Take gate G5's clauses in the brief one at a time. Does each have evidence at the claimed commit? Does the ledger keep implementation, correctness, visuals and device results apart, and name what is parked (CAS collection, the iPhone volume encoding, parameter files as a product, source admission and with it a boundary for an external save) and what is unmeasured (a physical iPhone, sustained runs, physical residency)? Does the G5 decision's capability table match the code?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#g5-clauses; docs/design/maturity.json; docs/design/decisions/G5-CONTENT-ADDRESSED-LOOP.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.9",
@@ -449,8 +449,8 @@
           "ask": "Could SHOWCASE's planner give the exit scene's entities cooked meshes, and a creator follow an edit from save to screen, from the public documentation alone?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md; docs/design/ENGINE-EXPERIENCE.md#live-cooked-assets",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -459,16 +459,23 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away."
+      "status": "in_progress",
+      "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away.",
+      "findings": [
+        {
+          "name": "g5_decision_misstates_draw_paths_and_target_qualification",
+          "item": "M3.8",
+          "repeat": false
+        }
+      ]
     }
   ]
 }
