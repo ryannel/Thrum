@@ -6,7 +6,7 @@ use thrum_render::{
     present::SurfaceProfile,
     synthetic::{CaptureSource, CullMode},
 };
-use v1_game::{CameraRoute, FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{CameraRoute, FrameConfig, FrameHost, FrameSample, SceneCamera, SurfaceOutput};
 
 mod timing_interleave;
 use timing_interleave::TimingInterleave;
@@ -185,6 +185,14 @@ fn load_valley(host: &mut FrameHost) {
     host.resume(Duration::ZERO).expect("resume");
 }
 
+fn parse_route(text: &str, camera: SceneCamera) -> CameraRoute {
+    if std::env::var("THRUM_SCENE").as_deref() == Ok("exit") {
+        CameraRoute::parse_long_capture(text, camera, 60).expect("exit route")
+    } else {
+        CameraRoute::parse(text, camera, 60).expect("valley route")
+    }
+}
+
 async fn prove() {
     let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
         .expect("route file");
@@ -237,8 +245,7 @@ async fn prove() {
         load_valley(&mut host);
         hosts.push(host);
     }
-    let route = CameraRoute::parse(&text, hosts[0].scene_camera().expect("valley camera"), 60)
-        .expect("route");
+    let route = parse_route(&text, hosts[0].scene_camera().expect("cooked scene camera"));
     let last = route.origin_tick + route.keys.last().expect("key").tick;
     let output = std::path::PathBuf::from(std::env::var("THRUM_CULLING_OUTPUT").expect("output"));
     std::fs::create_dir_all(&output).expect("output directory");

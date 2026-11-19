@@ -248,6 +248,8 @@ impl Game for WindowGame {
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<WorldPort, GameScene>, String> {
         let render_extent = capture::capture_extent()?;
+        let setup = crate::selected_setup()?;
+        let exit = setup.content == crate::GameContent::Exit;
         let mut host = pollster::block_on(FrameHost::new_with_setup(
             gpu.device,
             gpu.queue,
@@ -256,7 +258,7 @@ impl Game for WindowGame {
                 render_extent,
                 surface: Some(gpu.surface),
             },
-            crate::selected_setup()?,
+            setup,
         ))?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let preview = self
@@ -268,6 +270,16 @@ impl Game for WindowGame {
                 Some(crate::content::attach_content_preview(&mut host)?);
             None
         } else if let Some(cooked) = &self.capture_cooked {
+            if exit {
+                let selection = host.culling_selection();
+                let report = serde_json::json!({
+                    "requested": format!("{:?}", selection.requested),
+                    "resolved": format!("{:?}", selection.resolved),
+                    "reason": format!("{:?}", selection.reason),
+                });
+                std::fs::write(cooked.folder.join("culling.json"), report.to_string())
+                    .map_err(|error| error.to_string())?;
+            }
             crate::content::attach_cooked_scene_with_path(&mut host, cooked.path)?
         } else {
             crate::attach_cooked_scene(&mut host)?

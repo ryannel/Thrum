@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Capture-off paired valley route costs. Run under agent_loop.py lock gpu."""
+import argparse
 import json
 import os
-from pathlib import Path
 import statistics
 import run_v1_showcase as showcase
 
@@ -12,11 +12,13 @@ def quantile(values, q):
     return values[round((len(values) - 1) * q)]
 
 
-def summary(rows):
+def summary(rows, windows=None):
     ticks = {}
     for row in rows[1:-1]:
         ticks.setdefault(row['tick'], {})[row['mode']] = row
     groups = {'entire_route': [], 'occlusion_hides_slots': [], 'open_no_occlusion_saving': []}
+    windows = windows or {}
+    groups.update((name, []) for name in windows)
     for tick, modes in ticks.items():
         if len(modes) != 3 or any(row['whole_gpu_ns'] is None for row in modes.values()):
             raise showcase.Failure(f'missing paired timing/count at {tick}')
@@ -24,6 +26,9 @@ def summary(rows):
         groups['entire_route'].append(pair)
         key = 'occlusion_hides_slots' if modes['Occlusion']['counts']['drawn'] < modes['Frustum']['counts']['drawn'] else 'open_no_occlusion_saving'
         groups[key].append(pair)
+        for name, (first, last) in windows.items():
+            if first <= tick <= last:
+                groups[name].append(pair)
     result = {}
     for name, pairs in groups.items():
         result[name] = {'ticks': len(pairs)}
@@ -35,21 +40,45 @@ def summary(rows):
         result[name]['paired_O_minus_F_ms'] = statistics.median(p['Occlusion'] - p['Frustum'] for p in pairs)
         result[name]['paired_F_minus_D_ms'] = statistics.median(p['Frustum'] - p['Direct'] for p in pairs)
     result['nonempty_prepasses'] = sum(m['Occlusion']['counts']['prepass'] > 0 for m in ticks.values())
+    result['hidden_with_nonempty_prepass'] = sum(
+        modes['Occlusion']['counts']['prepass'] > 0
+        and modes['Occlusion']['counts']['drawn'] < modes['Frustum']['counts']['drawn']
+        for modes in ticks.values()
+    )
     return result
 
 
 def main():
-    run = showcase.new_run('culling-cost')
-    route = json.loads(showcase.MOVING_ROUTE.read_text())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--exit', action='store_true', help='measure the populated exit flythrough')
+    args = parser.parse_args()
+    scene = 'exit' if args.exit else 'valley'
+    authored_route = showcase.EXIT_FLYTHROUGH if args.exit else showcase.MOVING_ROUTE
+    run = showcase.new_run(f'culling-cost-{scene}')
+    print(run, flush=True)
+    route = json.loads(authored_route.read_text())
+    windows = {}
+    if args.exit:
+        # Classify the views by their authored camera legs before looking at
+        # the counts. Even an open valley view can hide slots behind terrain.
+        origin = route['origin_tick']
+        shelf = origin + route['keys'][1]['tick']
+        valley = origin + route['keys'][2]['tick']
+        windows = {'shelf_cover': [origin, shelf - 1], 'descent': [shelf, valley - 1],
+                   'open_valley': [valley, origin + route['keys'][-1]['tick']]}
     route['render_extent'] = [1920, 1080]
     route_path = run / 'route.json'
     showcase.write_json(route_path, route)
-    report = {'commit': showcase.git('rev-parse', 'HEAD'), 'contended': True,
+    report = {'commit': showcase.git('rev-parse', 'HEAD'), 'contended': True, 'scene': scene,
               'capture': 'off', 'extent': route['render_extent'], 'order': 'rotating each tick',
-              'warmup_ticks': 179, 'runs': {}}
+              'warmup_ticks': route['origin_tick'] - 1, 'runs': {},
+              'camera_windows_committed_ticks': windows,
+              'authored_route_sha256': showcase.sha256(authored_route),
+              'measured_route_sha256': showcase.sha256(route_path)}
     report['builds'] = showcase.identities(web=False, built=False)
+    source = showcase.copy_source(run, exit_assets=showcase.EXIT_SOURCE) if args.exit else showcase.SOURCE
     with open(run / 'cook.log', 'w') as log:
-        if showcase.bounded([str(showcase.COOK), 'cook', str(showcase.SOURCE), str(run / 'store')], log, 120):
+        if showcase.bounded([str(showcase.COOK), 'cook', str(source), str(run / 'store')], log, 120):
             raise showcase.Failure('cook failed')
     report['cooked_root'] = showcase.store_root(run / 'store')
     if report['cooked_root'] != route['cooked_root']:
@@ -57,7 +86,7 @@ def main():
     for number in (1, 2):
         for recipe in ('portable', 'apple-tile'):
             name = f'{recipe}-{number}'
-            env = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(run / 'store'),
+            env = dict(os.environ, WGPU_BACKEND='metal', THRUM_SCENE=scene, THRUM_ASSET_STORE=str(run / 'store'),
                        THRUM_CAPTURE_ROUTE=str(route_path), THRUM_CULLING_OUTPUT=str(run / name),
                        THRUM_RECIPE=recipe, THRUM_CULLING_TIMING='on', THRUM_VALLEY_MESHES='off')
             with open(run / f'{name}.log', 'w') as log:
@@ -65,7 +94,16 @@ def main():
                                      '--bench', 'valley_culling'], log, 1200, env=env, cwd=showcase.REPO):
                     raise showcase.Failure(f'bench failed: {run / name}')
             rows = [json.loads(line) for line in (run / name / 'rows.jsonl').read_text().splitlines()]
-            report['runs'][name] = {'header': rows[0], 'summary': summary(rows)}
+            result = summary(rows, windows)
+            if args.exit:
+                if not result['hidden_with_nonempty_prepass']:
+                    raise showcase.Failure(f'{name}: no occlusion hiding with a nonempty prepass')
+                for window, (first, last) in windows.items():
+                    if result[window]['ticks'] != last - first + 1:
+                        raise showcase.Failure(f'{name}: incomplete {window} timing')
+            report['runs'][name] = {'header': rows[0], 'summary': result,
+                                    'rows_sha256': showcase.sha256(run / name / 'rows.jsonl'),
+                                    'load_end': os.getloadavg()}
             showcase.write_json(run / 'run.json', report)
     print(run / 'run.json')
 

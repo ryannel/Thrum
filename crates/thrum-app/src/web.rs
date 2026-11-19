@@ -526,6 +526,11 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         &self.samples
     }
 
+    /// Release samples already copied by a caller that streams a longer report.
+    pub fn discard_report_samples_before(&mut self, tick: u64) {
+        self.samples.retain(|sample| sample.tick >= tick);
+    }
+
     fn set_play(&mut self, visible: bool, user_paused: bool, now: Duration) -> Result<(), String> {
         // Record the play state only once the world has applied it, so a refusal is retried.
         match self.clock.transition(visible, user_paused) {

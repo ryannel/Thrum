@@ -155,8 +155,8 @@
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#metal-equality",
+          "builder_result": "pass"
         },
         {
           "id": "M6.2",
@@ -164,46 +164,46 @@
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#chrome-equality",
+          "builder_result": "pass"
         },
         {
           "id": "M6.3",
           "statement": "The exit scene's default culling mode is set by CULLING's rule from paired whole-GPU rows on the exit flythrough at 1920x1080, from two separate runs recorded with their load. The game reports that mode on the Mac and in Chrome.",
           "ask": "Do the two retained runs support the default the code sets, by the rule in CULLING's design? Do the rows show Occlusion's prepass non-empty and slots hidden, so that a row cannot repeat Frustum? Did this milestone change any culling code or comparison?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#default-by-measurement",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.4",
           "statement": "In real time on the Mac with the default mode, nothing pops, flickers or goes missing at the frame edges in a fast yaw, or at ridge and boulder silhouettes as props and movers come out from behind them.",
           "inspect": "Capture the exit flythrough and a fast yaw across the densest scatter with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and at occluder silhouettes.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#metal-real-time-inspection",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.5",
           "statement": "In real time in Chrome with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the exit flythrough.",
           "inspect": "Capture the exit flythrough in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and the ridge line.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M6.md#chrome-real-time-inspection",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M6.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": "main-branch check exact-images",
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,

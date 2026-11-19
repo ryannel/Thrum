@@ -1208,7 +1208,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const onDestroy = () => { intentionalDestroys++; };
   const url = exitCase
     ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
-    : movingCase ? `${origin}/route.html?route=${movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+    : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   const cullingQuery = movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
@@ -1489,16 +1489,15 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
 // The moving proof route: route.html drives the actual authored camera one tick per step at the
 // route's fixed in-tick phase, with no requestAnimationFrame. The web build must ship the checked-in
 // route file byte for byte, and the served cooked store must be the generation and root it names.
-const movingRouteFile = 'moving-v1.json';
-const movingRouteSource = path.join(repo, 'examples/v1-game/routes', movingRouteFile);
-async function movingRouteFiles(files, directory) {
-  const expected = await fs.readFile(movingRouteSource);
+async function movingRouteFiles(files, directory, movingRouteFile = 'moving-v1.json') {
+  const expected = await fs.readFile(path.join(repo, 'examples/v1-game/routes', movingRouteFile));
   const bytes = await fs.readFile(path.join(directory, movingRouteFile));
   if (sha(bytes) !== sha(expected)) throw new Error(`Web build ships a stale ${movingRouteFile}: ${sha(bytes)}, checked in ${sha(expected)}`);
   files.set(`/${movingRouteFile}`, { bytes, type: 'application/json', sha256: sha(bytes) });
   const page = await fs.readFile(path.join(directory, 'route.html'));
   files.set('/route.html', { bytes: page, type: 'text/html', sha256: sha(page) });
   files.movingRoute = expected;
+  files.movingRouteFile = movingRouteFile;
   files.movingRouteExtent = JSON.parse(expected.toString('utf8')).render_extent;
 }
 
@@ -1550,7 +1549,7 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files) 
   const origin = route.origin_tick, last = origin + route.keys.at(-1).tick;
   for (let tick = origin; tick <= last; tick += 1) if (!record.samples[tick]) throw new Error(`moving-route: no sample for routed tick ${tick}`);
   await fs.writeFile(path.join(output, 'moving-route.record.json'), JSON.stringify(record, null, 2));
-  return { file: movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures,
+  return { file: files.movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures,
     scope: 'Fresh route.html page with no requestAnimationFrame: the actual authored camera driven one fresh tick per step at the route phase from page clock origin 0, paced by one route-owned timer per step plus bounded slot-wait timers (500 ms at most) where no frame slot is free; checkpoint images are Chrome presented canvas compositor captures, not the submitted pre-display image; no timing or cadence claim' };
 }
 
@@ -2026,7 +2025,10 @@ async function main() {
     for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'sprites-2d-cost' && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
-    if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
+    if (modes.some(mode => mode.startsWith('moving-route'))) {
+      await movingRouteFiles(files, directory, args.case === 'moving-route' && process.env.THRUM_SCENE === 'exit'
+        ? 'exit-flythrough.json' : undefined);
+    }
     const temporalDefinition = modes.includes('temporal')
       ? execFileSync('rustup', ['run', 'stable', 'cargo', 'run', '--locked', '--offline', '--quiet', '-p', 'thrum-render', '--example', 'temporal_witness'], { cwd: repo })
       : undefined;

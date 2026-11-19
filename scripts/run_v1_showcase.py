@@ -1212,22 +1212,30 @@ def moving(args):
 
 
 def culling(args):
-    """Exact mode oracles on the existing moving route. Hold the gpu lock outside this command."""
-    run = new_run(f'culling-{args.target}-{"meshes" if args.meshes else "cubes"}')
+    """Run the existing mode oracles with the selected moving route and cooked scene."""
+    scene = 'exit' if args.exit else 'valley'
+    route_path = EXIT_FLYTHROUGH if args.exit else MOVING_ROUTE
+    route_file = json.loads(route_path.read_text())
+    expected_frames = route_file['keys'][-1]['tick'] + 1
+    expected_bytes = math.prod(route_file['render_extent']) * 4
+    run = new_run(f'culling-{args.target}-{"exit" if args.exit else "meshes" if args.meshes else "cubes"}')
     report = {'command': 'culling', 'target': args.target, 'meshes': args.meshes,
-              'commit': git('rev-parse', 'HEAD'), 'route_sha256': sha256(MOVING_ROUTE), 'passed': False}
+              'scene': scene, 'commit': git('rev-parse', 'HEAD'), 'route_sha256': sha256(route_path),
+              'passed': False}
+    print(run, flush=True)
     write_json(run / 'run.json', report)
     try:
         if not args.no_build:
             build(run, web=args.target == 'chrome-webgpu')
         report['builds'] = identities(web=args.target == 'chrome-webgpu', built=not args.no_build)
+        source = copy_source(run, exit_assets=EXIT_SOURCE) if args.exit else SOURCE
         if args.target == 'mac-metal':
             with open(run / 'cook.log', 'w') as log:
-                if bounded([str(COOK), 'cook', str(SOURCE), str(run / 'store')], log, 120):
-                    raise Failure('valley cook failed')
+                if bounded([str(COOK), 'cook', str(source), str(run / 'store')], log, 120):
+                    raise Failure(f'{scene} cook failed')
             report['cooked_root'] = store_root(run / 'store')
-            if report['cooked_root'] != json.loads(MOVING_ROUTE.read_text())['cooked_root']:
-                raise Failure('the cooked valley does not match the moving route root')
+            if report['cooked_root'] != route_file['cooked_root']:
+                raise Failure(f'the cooked {scene} does not match the moving route root')
             with open(run / 'test-build.log', 'w') as log:
                 command = ['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
                            '--test', 'valley_culling_gpu', '--no-run']
@@ -1239,8 +1247,8 @@ def culling(args):
             report['recipes'] = {}
             for recipe in ('portable', 'apple-tile'):
                 output = run / recipe
-                env = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(run / 'store'),
-                           THRUM_CAPTURE_ROUTE=str(MOVING_ROUTE), THRUM_CULLING_OUTPUT=str(output),
+                env = dict(os.environ, THRUM_SCENE=scene, THRUM_ASSET_STORE=str(run / 'store'),
+                           THRUM_CAPTURE_ROUTE=str(route_path), THRUM_CULLING_OUTPUT=str(output),
                            THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_RECIPE=recipe,
                            THRUM_CULLING_SOURCE='sdr')
                 with open(run / f'{recipe}.log', 'w') as log:
@@ -1248,36 +1256,56 @@ def culling(args):
                                 '--test', 'valley_culling_gpu', '--', '--ignored', '--nocapture'], log, 1200, env=env, cwd=REPO):
                         raise Failure(f'{recipe} oracle failed: {run / f"{recipe}.log"}')
                 rows = [json.loads(line) for line in (output / 'rows.jsonl').read_text().splitlines()]
-                if rows[-1].get('compared') != 361 or rows[-1].get('equal') is not True:
+                if rows[-1].get('compared') != expected_frames or rows[-1].get('equal') is not True:
                     raise Failure(f'{recipe}: incomplete route')
-                report['recipes'][recipe] = rows[-1]
+                report['recipes'][recipe] = {'header': rows[0], **rows[-1]}
+                if args.exit:
+                    expected_recipe = {'portable': 'Ok(Portable)', 'apple-tile': 'Ok(AppleTile)'}
+                    if rows[0]['recipe'] != expected_recipe[recipe]:
+                        raise Failure(f'{recipe}: the Metal oracle ran {rows[0]["recipe"]}')
+                    caster_passes = {}
+                    for mode in ('Frustum', 'Occlusion'):
+                        samples = [row for row in rows[1:-1] if row['mode'] == mode]
+                        populated = sum((row['counts'] or {}).get('active') == 10_000 for row in samples)
+                        caster_passes[mode] = sum('synthetic Sun caster cull' in (row['pass_gpu_ns'] or {})
+                                                  for row in samples)
+                        if populated != expected_frames or not caster_passes[mode]:
+                            raise Failure(f'{recipe} {mode}: missing exit population or Sun caster cull')
+                    report['recipes'][recipe]['sun_caster_cull_samples'] = caster_passes
         else:
             report['modes'] = {}
-            route_file = json.loads(MOVING_ROUTE.read_text())
             for mode in ('direct', 'default', 'frustum', 'occlusion'):
                 output = run / mode
-                env = dict(os.environ, THRUM_ROUTE_CULLING=mode, THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_CULLING_PROOF='on')
+                env = dict(os.environ, THRUM_SCENE=scene, THRUM_ROUTE_CULLING=mode,
+                           THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_CULLING_PROOF='on')
                 with open(run / f'{mode}.log', 'w') as log:
                     if bounded(['node', str(CHECKER), '--case', 'moving-route', '--cook', str(COOK),
-                                '--web-root', str(WEB), '--output', str(output)], log, 600, env=env, cwd=REPO):
+                                '--web-root', str(WEB), '--assets-source', str(source),
+                                '--output', str(output)], log, 600, env=env, cwd=REPO):
                         raise Failure(f'Chrome {mode} oracle failed: {run / f"{mode}.log"}')
                 record = json.loads((output / 'moving-route.record.json').read_text())
                 direct_record = json.loads((run / 'direct/moving-route.record.json').read_text())
                 resolved = 'Direct' if mode == 'direct' else 'Occlusion' if mode == 'occlusion' else 'Frustum'
                 if f'culling={resolved}' not in record['header']['culling']:
                     raise Failure(f'Chrome {mode} did not resolve to {resolved}')
-                report['modes'][mode] = {'resolved': resolved, 'checkpoints': []}
+                report['modes'][mode] = {'resolved': resolved, 'header': record['header'], 'checkpoints': []}
+                if args.exit:
+                    report['modes'][mode]['exit'] = record['exit']
+                    if (record['exit']['row_generation'] != route_file['cooked_generation']
+                            or (mode != 'direct' and record['exit']['active'] != 10_000)
+                            or record['exit']['mover'] == record['checkpoints'][0]['mover']):
+                        raise Failure(f'Chrome {mode} did not draw the populated exit with moving entities')
                 for index, checkpoint in enumerate(route_file['checkpoints']):
                     name = checkpoint['name']
                     captured = record['checkpoints'][index]
                     oracle = direct_record['checkpoints'][index]
-                    if not captured.get('sha256') or captured['bytes'] != 1280 * 720 * 4 or captured['sha256'] != oracle.get('sha256'):
+                    if not captured.get('sha256') or captured['bytes'] != expected_bytes or captured['sha256'] != oracle.get('sha256'):
                         raise Failure(f'Chrome {mode} submitted bytes differ from Direct at {name}')
                     image = read_png(output / 'moving-route-checkpoints' / f'{name}.png')
                     direct = read_png(run / 'direct/moving-route-checkpoints' / f'{name}.png')
                     if image != direct:
                         raise Failure(f'Chrome {mode} differs from Direct at {name}')
-                    report['modes'][mode]['checkpoints'].append(name)
+                    report['modes'][mode]['checkpoints'].append(captured if args.exit else name)
         report['passed'] = True
     except Exception as error:
         report['error'] = str(error)
@@ -1389,6 +1417,7 @@ def main():
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
     commands.choices['culling'].add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])
     commands.choices['culling'].add_argument('--meshes', action='store_true')
+    commands.choices['culling'].add_argument('--exit', action='store_true', help='use the populated exit flythrough')
     commands.choices['reconstruction'].add_argument('--target', required=True, choices=['mac-metal'])
     commands.choices['reconstruction'].add_argument('--cut', action='store_true')
     commands.choices['check'].add_argument('--save-baseline', action='store_true',

@@ -96,3 +96,8 @@
   `exit-fast-yaw.json`, pinned to the exit root. M9.7 now covers every route file that names an old root at M9's
   starting commit, by rule, with a check that no route file names either old root. M9.8's question about M6's
   receipts no longer assumes they are in git, since evidence moved to the working folder that day.
+- 2026-11-19 Ran the existing exact comparisons on the populated exit. Both Metal recipes
+  passed 1,351 frames and Chrome passed all six checkpoints. Two 1080p runs per Metal recipe
+  favor Frustum in cover and in the open under shared load. The evidence includes default-mode
+  motion on both targets. Exact baselines use the shared main check.
+  [Evidence](../../../.orchestrate/evidence/SHOWCASE/M6.md)

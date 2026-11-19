@@ -471,6 +471,11 @@ impl BrowserGame {
         game::route_slot_ready(&mut self.shell).map_err(js_error)
     }
 
+    /// Release completed route samples older than the page's copied tick.
+    pub fn discard_route_samples_before(&mut self, tick: u32) {
+        self.shell.discard_report_samples_before(u64::from(tick));
+    }
+
     /// Latest committed authority tick.
     #[must_use]
     pub fn committed_tick(&self) -> f64 {
