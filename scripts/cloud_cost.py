@@ -16,6 +16,18 @@ SKY_PASSES = (
     'cloud Sun path far', 'cloud ground field', 'cloud far transmittance',
     'cloud hemisphere light', 'cloud trace', 'cloud resolve', 'cloud compose',
 )
+# The 1440p portable Sky recipe's cloud_resource_bytes inventory. Keep this
+# independent of the measured rows so either input can fail on its own.
+SKY_RESOURCES = {
+    *(f'cloud buffer {index}' for index in range(13)),
+    *(f'cloud layer texture {index}' for index in range(6)),
+    'cloud texture 0 Rgba32Float',
+    'cloud texture 1 Rgba32Float',
+    'cloud texture 2 Rgba32Uint',
+    *(f'cloud texture {index} Rgba16Float' for index in range(3, 7)),
+    'cloud shape noise', 'cloud detail noise', 'cloud hemisphere light',
+    'cloud layer parameters', 'cloud phase tables',
+}
 FIRST_FRAME_ESTIMATES = (
     'CLOUDS DESIGN: weather <0.1 ms, Sun 0.1–0.2 ms, ground <0.05 ms, '
     'resolve 0.1–0.2 ms, compose 0.2–0.4 ms, total 47 MiB. Trace is measured.'
@@ -87,6 +99,25 @@ def positive(value):
     return type(value) in (int, float) and math.isfinite(value) and value > 0
 
 
+def validate_sky_resources(resources):
+    if not isinstance(resources, list):
+        raise ValueError('missing Sky resource inventory')
+    names = set()
+    for entry in resources:
+        if not isinstance(entry, list) or len(entry) != 2:
+            raise ValueError('expected a [name, bytes] Sky resource entry')
+        name, size = entry
+        if not isinstance(name, str) or not name or type(size) is not int or size <= 0:
+            raise ValueError(f'invalid Sky resource byte count for {name!r}')
+        if name in names:
+            raise ValueError(f'duplicate Sky resource measurement: {name}')
+        names.add(name)
+    if names != SKY_RESOURCES:
+        missing = ', '.join(sorted(SKY_RESOURCES - names)) or 'none'
+        unexpected = ', '.join(sorted(names - SKY_RESOURCES)) or 'none'
+        raise ValueError(f'incomplete Sky resource inventory (missing: {missing}; unexpected: {unexpected})')
+
+
 def validate_first_frame(record):
     if not record.get('estimates', '').strip():
         raise ValueError('missing design estimates')
@@ -119,13 +150,18 @@ def validate_first_frame(record):
             if any(not positive(stats.get(key)) for key in
                    ('rays_traced', 'mean_samples', 'p95_samples')):
                 raise ValueError('missing traced rays, mean or p95 samples')
-            resources = row['resources']
-            if not resources or any(not name or type(size) is not int or size <= 0
-                                    for name, size in resources):
-                raise ValueError('missing per-resource byte counts')
+            validate_sky_resources(row.get('resources'))
         if (max(first['whole_frame_gpu_ns'], row['whole_frame_gpu_ns']) > 1e9 / 120
                 and not record['investigation'].strip()):
             raise ValueError('refresh tripwire lacks investigation')
+
+
+def require_refusal(record, rows, description):
+    try:
+        validate(dict(record, runs=rows), 'first-frame')
+    except ValueError as error:
+        return error
+    raise ValueError(f'accepted {description}')
 
 
 def main():
@@ -139,14 +175,21 @@ def main():
             parser.error('refuse is defined for first-frame')
         record = json.loads(destination.read_text())
         validate(record, args.scene)
-        absent = next(row for row in record['runs'] if row['selection'] == 'off')
-        record['runs'] = [absent if row['selection'] == 'sky' else row for row in record['runs']]
-        try:
-            validate(record, args.scene)
-        except ValueError as error:
-            print(f'Refused clouds-absent substitution: {error}')
-            return
-        raise ValueError('accepted an all-clouds-absent record')
+        rows = record['runs']
+        absent = next(row for row in rows if row['selection'] == 'off')
+        substituted = [absent if row['selection'] == 'sky' else row for row in rows]
+        error = require_refusal(record, substituted, 'an all-clouds-absent record')
+        print(f'Refused clouds-absent substitution: {error}')
+        visible_index = next(index for index, row in enumerate(rows) if row['selection'] == 'sky')
+        resources = rows[visible_index]['resources']
+        for index, (name, _) in enumerate(resources):
+            incomplete = rows.copy()
+            incomplete[visible_index] = dict(
+                rows[visible_index], resources=resources[:index] + resources[index + 1:],
+            )
+            require_refusal(record, incomplete, f'a Sky inventory without {name}')
+        print(f'Refused {len(resources)} single-resource omissions')
+        return
 
     before = os.getloadavg()
     rows = measure(args.scene, args.command == 'record')
