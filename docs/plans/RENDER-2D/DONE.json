@@ -40,10 +40,10 @@
           "ask": "Is there one refusal test for each request, each asserting a named error and an unchanged scene? Is any of them accepted and ignored instead? If the frame runtime offers no way to ask for a reconstructor by name, is that shown, with where the builder looked?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/RENDER-2D/M1/review-fixes.log",
+          "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/RENDER-2D/M1-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M1.4",
@@ -110,7 +110,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/RENDER-2D/M1/cost-mac-metal.json.gz",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RENDER-2D/M1-review.md",
           "builder_result": "pass"
         },
@@ -121,7 +121,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/RENDER-2D/M1/cost-chrome-webgpu.json.gz",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RENDER-2D/M1-review.md",
           "builder_result": "pass"
         },
@@ -136,29 +136,16 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 1,
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A 2D path as separate from 3D as Bevy's `core_2d`, Godot's canvas renderer or Unity's 2D Renderer: a 2D game prepares and runs nothing 3D, and a request it cannot meet is refused by name. As exact as a pixel-art game shown at a whole-number scale, such as Celeste: every texel is a clean block of its authored colour.",
       "findings": [
         {
-          "name": "Sprite launch silently accepts a traced-geometry view",
+          "name": "Sprite startup omits the rejected 3D content setting from its error",
           "item": "M1.3",
-          "repeat": false
-        },
-        {
-          "name": "Metal cost verifier accepts missing target byte counts",
-          "item": "M1.9",
-          "repeat": false
-        },
-        {
-          "name": "Chrome cost verifier accepts missing load measurements",
-          "item": "M1.10",
-          "repeat": false
-        },
-        {
-          "name": "Sprite contributions receive the origin for a displaced camera",
+          "different": "The earlier traced-geometry request was accepted and now has a named refusal. The content requests here are refused, but their shared diagnostic drops the identity of the request.",
           "repeat": false
         }
       ]

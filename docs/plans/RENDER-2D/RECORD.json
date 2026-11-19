@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "5dd82c28ed3dce629f542c24259d060badc382d7",
-          "review": "docs/evidence/RENDER-2D/M1-review.md",
+          "review": "docs/evidence/RENDER-2D/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -81,6 +81,48 @@
             "turns": 1
           },
           "at": "2026-11-19T03:28:46Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "02a06ed46672e2b7d0651d0aa2e20054e88b9d9e",
+          "review": "docs/evidence/RENDER-2D/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sprite startup omits the rejected 3D content setting from its error",
+              "item": "M1.3",
+              "different": "The earlier traced-geometry request was accepted and now has a named refusal. The content requests here are refused, but their shared diagnostic drops the identity of the request.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 177821,
+            "cached": 6826880,
+            "output": 12978,
+            "turns": 1
+          },
+          "at": "2026-11-19T07:27:22Z"
         }
       ],
       "authorised": {
