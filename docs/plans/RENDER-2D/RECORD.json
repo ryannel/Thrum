@@ -85,7 +85,7 @@
         {
           "verdict": "fail",
           "commit": "ac79a564a745550aaee319b30649602952d51402",
-          "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/M1-review-2.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -123,6 +123,48 @@
             "turns": 1
           },
           "at": "2026-11-19T07:27:22Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "8633c80e867b4ce59dad9ab63ce4ed7ec99c3adc",
+          "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sprite startup silently ignores the requested native witness provider",
+              "item": "M1.3",
+              "different": "The earlier cloud and content settings now produce named refusals, and traced geometry is refused. The separate THRUM_NATIVE_WITNESS selector is accepted and a frame is submitted without its provider.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 165815,
+            "cached": 9790720,
+            "output": 14802,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:33:16Z"
         }
       ],
       "authorised": {

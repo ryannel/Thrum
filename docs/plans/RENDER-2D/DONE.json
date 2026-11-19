@@ -40,10 +40,10 @@
           "ask": "Is there one refusal test for each request, each asserting a named error and an unchanged scene? Is any of them accepted and ignored instead? If the frame runtime offers no way to ask for a reconstructor by name, is that shown, with where the builder looked?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M1/launch-refusals.md",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M1.4",
@@ -136,16 +136,16 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 2,
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A 2D path as separate from 3D as Bevy's `core_2d`, Godot's canvas renderer or Unity's 2D Renderer: a 2D game prepares and runs nothing 3D, and a request it cannot meet is refused by name. As exact as a pixel-art game shown at a whole-number scale, such as Celeste: every texel is a clean block of its authored colour.",
       "findings": [
         {
-          "name": "Sprite startup omits the rejected 3D content setting from its error",
+          "name": "Sprite startup silently ignores the requested native witness provider",
           "item": "M1.3",
-          "different": "The earlier traced-geometry request was accepted and now has a named refusal. The content requests here are refused, but their shared diagnostic drops the identity of the request.",
+          "different": "The earlier cloud and content settings now produce named refusals, and traced geometry is refused. The separate THRUM_NATIVE_WITNESS selector is accepted and a frame is submitted without its provider.",
           "repeat": false
         }
       ]
