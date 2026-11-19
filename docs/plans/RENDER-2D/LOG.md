@@ -68,3 +68,7 @@
   matched its starting snapshots. Chrome matched the CPU rasterizer before and after resize and device replacement.
   The four fixed Metal stills and two release timing takes per target are in the [M1 evidence](../../evidence/RENDER-2D/M1.md).
   Chrome's sprite median crossed one timestamp step from 1080p to full backing size. The record flags both takes.
+- 2026-11-19 M1 review follow-up. The native sprite launch refuses traced geometry and explicit 3D shadows.
+  On Metal, upload and simulate projected the known world point to the submitted sprite pixel with a displaced view.
+  The cost checks accepted both retained target records and rejected missing build, storage and load observations.
+  Timing excursions are still reported without failing a complete record. [Evidence](../../evidence/RENDER-2D/M1.md#review-follow-up)

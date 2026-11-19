@@ -669,30 +669,26 @@ impl FrameHost {
                 DisplayOverlay::Off => false,
                 DisplayOverlay::TemporalInputs => true,
                 DisplayOverlay::TracedGeometry => {
-                    return Err(runtime::FrameError::InvalidState(
+                    return Err(FrameError::InvalidState(
                         "2D scene refuses traced geometry view (THRUM_TRACED_VIEW=on)",
                     ));
                 }
                 DisplayOverlay::Motion => {
-                    return Err(runtime::FrameError::InvalidState(
-                        "2D scene refuses motion view",
-                    ));
+                    return Err(FrameError::InvalidState("2D scene refuses motion view"));
                 }
                 DisplayOverlay::ExposureZones => {
-                    return Err(runtime::FrameError::InvalidState(
+                    return Err(FrameError::InvalidState(
                         "2D scene refuses exposure zones view",
                     ));
                 }
             };
             if setup.sun_shadow_method == SunShadowMethod::Traced {
-                return Err(runtime::FrameError::InvalidState(
+                return Err(FrameError::InvalidState(
                     "2D scene refuses traced sun shadows",
                 ));
             }
             if setup.lamp_shadows {
-                return Err(runtime::FrameError::InvalidState(
-                    "2D scene refuses lamp shadows",
-                ));
+                return Err(FrameError::InvalidState("2D scene refuses lamp shadows"));
             }
             if rows.is_some() || setup.cooked_mesh_rows == MeshRowSource::Cooked {
                 return Err(FrameError::InvalidState(
