@@ -1,27 +1,14 @@
 {
   "module": "SHOWCASE",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/SHOWCASE/design-review.md",
-    "commit": "c1dc0fa88c42f1503fe78a8834ae00be38fb5559",
-    "hash": "67844fef633b06169a7c399d4c3deaa978da1b110900dab1fc47e00bb05476c1",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
-    "path": "headless",
-    "usage": {
-      "input": 107650,
-      "cached": 988288,
-      "output": 4824,
-      "turns": 1
-    },
-    "at": "2026-11-19T08:52:48Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "87a47e4858d3444c231032b5a5cbb09a487ad51654f6bc6eade020ad9ed4ef3a",
+    "after": [
+      ".orchestrate/evidence/SHOWCASE/design-review-5.md",
+      ".orchestrate/evidence/SHOWCASE/design-review.md"
+    ],
+    "at": "2026-11-19T11:03:50Z"
   },
   "milestones": {
     "M5": {
@@ -223,12 +210,12 @@
       }
     },
     "M9": {
-      "definitions": "e3be11b27659e44f73689f8ad39ccd84d99acc30c9014cca19c709a399daa709",
+      "definitions": "0d4261b79be87bcf5e816704edf9c566c337717a1c5c44e8ead02036f555c7b9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix finding",
-        "at": "2026-11-19T08:48:43Z"
+        "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix",
+        "at": "2026-11-19T11:03:50Z"
       }
     }
   },
@@ -268,11 +255,15 @@
     {
       "task": "The design review of SHOWCASE at docs/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-19T08:48:43Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. This is the last of 2 design review rounds: the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-19T11:03:50Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-19T08:48:43Z"
+    "at": "2026-11-19T11:03:50Z"
   },
   "design_history": [
     {
@@ -389,6 +380,29 @@
         "turns": 1
       },
       "at": "2026-11-19T07:14:35Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/SHOWCASE/design-review.md",
+      "commit": "c1dc0fa88c42f1503fe78a8834ae00be38fb5559",
+      "hash": "67844fef633b06169a7c399d4c3deaa978da1b110900dab1fc47e00bb05476c1",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 107650,
+        "cached": 988288,
+        "output": 4824,
+        "turns": 1
+      },
+      "at": "2026-11-19T08:52:48Z"
     }
   ]
 }
