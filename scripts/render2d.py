@@ -423,17 +423,22 @@ def prove_field(args, scratch):
     if args.action == "field" and not metal:
         raise ValueError("use the ordinary sprites-field browser case for Chrome")
     binary = args.binary.resolve()
+    web = args.web_root.resolve()
+    build = BUILDS[args.target]
     if metal:
         run(BUILDS[args.target].split(), stdout=sys.stderr)
         identity = digest(binary)
     else:
-        run(["sh", "examples/v1-game/web/build.sh"], stdout=sys.stderr,
-            env={**os.environ, "CARGO_TARGET_DIR": "target", "RUSTC_WRAPPER": ""})
-        identity = digest(args.web_root.resolve() / "v1_game_bg.wasm")
+        if web == ROOT / "target/v1-game-web":
+            run(["sh", "examples/v1-game/web/build.sh"], stdout=sys.stderr,
+                env={**os.environ, "CARGO_TARGET_DIR": "target", "RUSTC_WRAPPER": ""})
+        else:
+            build = f"{build}, prebuilt page at {web.relative_to(ROOT)}"
+        identity = digest(web / "v1_game_bg.wasm")
     commit = git("rev-parse", "HEAD")
     compiler = ["rustc"] if metal else ["rustup", "run", "stable", "rustc"]
     result = {"target": args.target, "profile": "release", "commit": commit,
-              "build": BUILDS[args.target], "artifact_sha256": identity,
+              "build": build, "artifact_sha256": identity,
               "toolchain": subprocess.check_output([*compiler, "--version"], text=True).strip(),
               "time_units": "nanoseconds", "coverage": "clipped pixel centres of axis-aligned quads including overdraw",
               "run_started_unix_ns": [], "runs": []}
@@ -447,7 +452,7 @@ def prove_field(args, scratch):
                 result["runs"].append([native_field_run(take, count, extent, binary, commit, identity)
                                        for extent in EXTENTS for count in FIELD_COUNTS])
             else:
-                result["runs"].append(browser_field_run(take, args.web_root.resolve(), identity))
+                result["runs"].append(browser_field_run(take, web, identity))
         result["tripwires_flagged"] = field_tripwires(result["runs"], args.target)
     if args.output:
         args.output.write_text(json.dumps(result, indent=2) + "\n")
