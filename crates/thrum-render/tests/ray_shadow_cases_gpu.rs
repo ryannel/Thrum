@@ -27,19 +27,27 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
         (90.0, 20_000.0, 0.085),
     ] {
         let centre = Vec3::new(x, 0.0, 0.0);
-        let direction = if degrees >= 90.0 {
+        let far_wall = x > 0.0;
+        let normal = if far_wall { Vec3::Z } else { Vec3::Y };
+        let direction = if far_wall {
+            Vec3::Z
+        } else if degrees >= 90.0 {
             Vec3::Y
         } else {
             let (y, z) = degrees.to_radians().sin_cos();
             Vec3::new(0.0, y, z)
         };
-        let half_height = if x > 0.0 { 0.003 } else { 0.07 };
-        let slab = fixture::box_at(
-            1,
-            centre + direction * distance,
-            Vec3::new(0.7, half_height, 0.6),
-        );
+        let half = if far_wall {
+            Vec3::new(0.7, 0.6, 0.003)
+        } else {
+            Vec3::new(0.7, 0.07, 0.6)
+        };
+        let slab = fixture::box_at(1, centre + direction * distance, half);
         let mut scene = fixture::scene(centre, &[slab]);
+        if far_wall {
+            scene.instances[0] =
+                fixture::box_at(0, centre - Vec3::Z * 0.1, Vec3::new(3.0, 2.0, 0.1));
+        }
         scene.view = scene
             .view
             .with_sun_shadow_profile(2, 2.0)
@@ -57,6 +65,7 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
             &queue,
             &prepared,
             direction,
+            normal,
             [centre, clear_point],
             support::read,
         );
@@ -65,7 +74,18 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
             [0.0_f32.to_bits(), 1.0_f32.to_bits()],
             "{degrees} degrees at {x} m"
         );
-        if x == 0.0 {
+        if far_wall {
+            let beyond = fixture::probe_sun(
+                &device,
+                &queue,
+                &prepared,
+                direction,
+                normal,
+                [centre + direction * (distance + 0.01), clear_point],
+                support::read,
+            );
+            assert_eq!(beyond.map(f32::to_bits), [1.0_f32.to_bits(); 2]);
+        } else {
             let dark = fixture::sample(&scene.view, &pixels, centre);
             let lit = fixture::sample(&scene.view, &pixels, clear_point);
             assert!(
@@ -106,6 +126,7 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
                 &queue,
                 &prepared,
                 direction,
+                normal,
                 [moved_point, moved_point + Vec3::NEG_X * 1.6],
                 support::read,
             );
@@ -149,6 +170,10 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
                 "terrain {degrees}°: {shadow:?}, {light:?}"
             );
         }
-        println!("Sun {degrees}° at {x} m, slab {distance} m: visibility {visibility:?}");
+        if far_wall {
+            println!("Wall at {x} m, panel {distance} m ahead: visibility {visibility:?}");
+        } else {
+            println!("Sun {degrees}° on prop, mover and terrain: visibility {visibility:?}");
+        }
     }
 }

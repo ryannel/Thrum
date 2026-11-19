@@ -108,6 +108,7 @@ pub fn probe_sun(
     queue: &wgpu::Queue,
     prepared: &PreparedSynthetic,
     direction: Vec3,
+    normal: Vec3,
     points: [Vec3; 2],
     read: impl FnOnce(&wgpu::Device, &wgpu::Buffer) -> Vec<u8>,
 ) -> [f32; 2] {
@@ -156,7 +157,7 @@ pub fn probe_sun(
             resource: directional.as_entire_binding(),
         }],
     });
-    let points = points.map(|point| point.extend(0.0).to_array());
+    let points = points.map(|point| [point.extend(0.0).to_array(), normal.extend(0.0).to_array()]);
     let points = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("probe points on receiver"),
         contents: bytemuck::cast_slice(&points),

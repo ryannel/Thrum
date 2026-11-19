@@ -210,6 +210,7 @@ pub(crate) fn measure_shadows() {
             report(
                 &json!({"method":format!("{method:?}"),"lamps":lamps,"tick":tick,"timed_pass_span_ns":span,
                 "frame_cpu_ns":(sample.upload_cpu+sample.encode_cpu).as_nanos(),"passes_ns":passes,
+                "upload_cpu_ns":sample.upload_cpu.as_nanos(),"encode_cpu_ns":sample.encode_cpu.as_nanos(),
                 "recipe":"AppleTile","cooked_root":cooked_root,"resolved_draw_path":format!("{:?}",stats.lock().expect("stats").draw_path)}),
             );
         }
