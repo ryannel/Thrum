@@ -4,9 +4,9 @@
     {
       "id": "M1",
       "name": "Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "ATMOSPHERE:M9",
@@ -38,7 +38,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m12-surface-encode-faults",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
@@ -47,8 +47,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test frame_error_kinds",
           "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are M4.4's and are not judged here.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m13-frame-error-variants",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
@@ -75,18 +75,9 @@
       ],
       "findings": [
         {
-          "name": "Sprite presentation loses the timing-capacity fault",
-          "item": "M1.2",
-          "repeat": false
-        },
-        {
           "name": "A cloud GPU limit is classified as a scene error",
           "item": "M1.3",
-          "repeat": false
-        },
-        {
-          "name": "Owning-module exact controls were replaced",
-          "repeat": false
+          "repeat": true
         }
       ]
     },

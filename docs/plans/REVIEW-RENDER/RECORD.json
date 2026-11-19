@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "c8bcaf11e8ad04cd79302da354c0c795308aae70",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "fail",
@@ -70,6 +70,41 @@
             "turns": 1
           },
           "at": "2026-11-19T07:18:33Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "254d9fcbe2fb8167385cf87282926cee810c2dea",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "A cloud GPU limit is classified as a scene error",
+              "item": "M1.3",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 163984,
+            "cached": 5706624,
+            "output": 10021,
+            "turns": 1
+          },
+          "at": "2026-11-19T15:33:56Z"
         }
       ],
       "authorised": {
