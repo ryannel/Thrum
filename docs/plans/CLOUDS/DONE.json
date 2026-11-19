@@ -562,8 +562,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene first-frame && python3 scripts/cloud_cost.py refuse --scene first-frame",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M3-cost.md",
           "verdict": "fail",
           "review": "docs/evidence/CLOUDS/M3-review.md"
         },

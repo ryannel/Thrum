@@ -524,3 +524,7 @@
   show separate clouds with open gaps and relative motion between near crests and distant clusters.
   Integrating with RENDER-2D updates four V1 graph snapshot entries for M3's imported noise textures.
   Shade adds the shared shape texture, and Sky also adds detail. Pass order, transient lifetimes and the other 18 entries match.
+
+- 2026-11-19 M3.9 checks all 31 named byte counts in both committed and fresh Sky runs.
+  [The Metal cost check](../../evidence/CLOUDS/M3-cost.md#m39-review-fix) passed and the refusal controls rejected
+  the all-absent record and all 31 single-resource omissions.
