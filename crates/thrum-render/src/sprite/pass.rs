@@ -8,11 +8,11 @@ use crate::{
     capabilities::DeviceCapabilities,
     extract::SourceTick,
     graph::{CompiledPass, GraphColorAttachment, PipelineKey, ResourceId},
+    records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView},
     runtime::Instant,
     synthetic::{RenderError, SCENE_FORMAT},
     timing::GpuTimings,
 };
-use crate::records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView};
 use bytemuck::Zeroable;
 use coverage::coverage_at;
 
