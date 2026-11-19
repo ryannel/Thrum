@@ -467,8 +467,18 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
-      "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away."
+      "status": "blocked",
+      "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away.",
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "The earlier merge batch needs to clear so the M3 commit can run through the required merge gate.",
+        "work": {
+          "commit": "43b5403eb80402a29f4523217896d03120a726e5",
+          "branch": "build/content-loop",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/CONTENT-LOOP/M3-handoff.md"
+      }
     }
   ]
 }
