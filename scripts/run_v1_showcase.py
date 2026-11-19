@@ -26,6 +26,7 @@ import os
 import shutil
 import shlex
 import signal
+import tempfile
 import struct
 import subprocess
 import sys
@@ -1211,6 +1212,46 @@ def moving(args):
         raise SystemExit(1)
 
 
+def metal_exit_oracle(run, recipe, env, route, command):
+    """Run complete fresh worlds in order, retaining one lossless Direct stream per recipe."""
+    origin = route['origin_tick']
+    ticks = list(range(origin, origin + route['keys'][-1]['tick'] + 1))
+    expected_recipe = {'portable': 'Ok(Portable)', 'apple-tile': 'Ok(AppleTile)'}[recipe]
+    output = run / recipe
+    output.mkdir()
+    arms = {}
+    with tempfile.TemporaryDirectory(prefix='reference-', dir=output) as scratch:
+        reference = Path(scratch) / 'direct.rgba'
+        for name in ('Direct', 'Frustum', 'Occlusion', 'DirectControl'):
+            arm = output / name
+            log_path = output / f'{name}.log'
+            arm_env = dict(env, THRUM_CULLING_EXIT_ARM=name, THRUM_CULLING_EXIT_REFERENCE=str(reference),
+                           THRUM_CULLING_OUTPUT=str(arm))
+            started = time.monotonic()
+            with log_path.open('w') as log:
+                if bounded(command, log, 1200, env=arm_env, cwd=REPO):
+                    raise Failure(f'{recipe} {name} oracle failed: {log_path}')
+            rows = [json.loads(line) for line in (arm / 'rows.jsonl').read_text().splitlines()]
+            header, result = rows[0], rows[-1]
+            if header['recipe'] != expected_recipe:
+                raise Failure(f'{recipe} {name}: the Metal oracle ran {header["recipe"]}')
+            samples = rows[1:-1]
+            if (result.get('equal') is not True or result.get('frames') != len(ticks)
+                    or result.get('compared') != (0 if name == 'Direct' else len(ticks))
+                    or [row['tick'] for row in samples] != ticks
+                    or any(row['mode'] != name for row in samples)):
+                raise Failure(f'{recipe} {name}: incomplete submitted route')
+            arms[name] = {'header': header, **result, 'elapsed_seconds': time.monotonic() - started}
+            if name in ('Frustum', 'Occlusion'):
+                if any((row['counts'] or {}).get('active') != 10_000 for row in samples):
+                    raise Failure(f'{recipe} {name}: incomplete exit population')
+                caster_passes = sum('synthetic Sun caster cull' in (row['pass_gpu_ns'] or {}) for row in samples)
+                if caster_passes != len(ticks) or not any(result['hidden_ticks']):
+                    raise Failure(f'{recipe} {name}: missing Sun-caster sample or no hidden work')
+                arms[name]['sun_caster_cull_samples'] = caster_passes
+    return {'compared': len(ticks), 'equal': True, 'differing_ticks': 0, 'arms': arms}
+
+
 def culling(args):
     """Run the existing mode oracles with the selected moving route and cooked scene."""
     scene = 'exit' if args.exit else 'valley'
@@ -1245,33 +1286,25 @@ def culling(args):
                                         for path in (REPO / 'target/release/deps').glob('valley_culling_gpu-*')
                                         if path.is_file() and os.access(path, os.X_OK)}
             report['recipes'] = {}
+            command = ['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
+                       '--test', 'valley_culling_gpu', '--', '--ignored', '--nocapture']
             for recipe in ('portable', 'apple-tile'):
                 output = run / recipe
                 env = dict(os.environ, THRUM_SCENE=scene, THRUM_ASSET_STORE=str(run / 'store'),
                            THRUM_CAPTURE_ROUTE=str(route_path), THRUM_CULLING_OUTPUT=str(output),
                            THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_RECIPE=recipe,
                            THRUM_CULLING_SOURCE='sdr')
+                if args.exit:
+                    report['recipes'][recipe] = metal_exit_oracle(run, recipe, env, route_file, command)
+                    write_json(run / 'run.json', report)
+                    continue
                 with open(run / f'{recipe}.log', 'w') as log:
-                    if bounded(['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
-                                '--test', 'valley_culling_gpu', '--', '--ignored', '--nocapture'], log, 1200, env=env, cwd=REPO):
+                    if bounded(command, log, 1200, env=env, cwd=REPO):
                         raise Failure(f'{recipe} oracle failed: {run / f"{recipe}.log"}')
                 rows = [json.loads(line) for line in (output / 'rows.jsonl').read_text().splitlines()]
                 if rows[-1].get('compared') != expected_frames or rows[-1].get('equal') is not True:
                     raise Failure(f'{recipe}: incomplete route')
                 report['recipes'][recipe] = {'header': rows[0], **rows[-1]}
-                if args.exit:
-                    expected_recipe = {'portable': 'Ok(Portable)', 'apple-tile': 'Ok(AppleTile)'}
-                    if rows[0]['recipe'] != expected_recipe[recipe]:
-                        raise Failure(f'{recipe}: the Metal oracle ran {rows[0]["recipe"]}')
-                    caster_passes = {}
-                    for mode in ('Frustum', 'Occlusion'):
-                        samples = [row for row in rows[1:-1] if row['mode'] == mode]
-                        populated = sum((row['counts'] or {}).get('active') == 10_000 for row in samples)
-                        caster_passes[mode] = sum('synthetic Sun caster cull' in (row['pass_gpu_ns'] or {})
-                                                  for row in samples)
-                        if populated != expected_frames or not caster_passes[mode]:
-                            raise Failure(f'{recipe} {mode}: missing exit population or Sun caster cull')
-                    report['recipes'][recipe]['sun_caster_cull_samples'] = caster_passes
         else:
             report['modes'] = {}
             for mode in ('direct', 'default', 'frustum', 'occlusion'):

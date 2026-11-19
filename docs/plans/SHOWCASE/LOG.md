@@ -101,3 +101,8 @@
   favor Frustum in cover and in the open under shared load. The evidence includes default-mode
   motion on both targets. Exact baselines use the shared main check.
   [Evidence](../../../.orchestrate/evidence/SHOWCASE/M6.md)
+- 2026-11-19 Diagnosed the exit Metal oracle timeout. Four prepared worlds
+  used 32.8 GB in one process. The same fixed route now runs in one fresh
+  process per mode, using a lossless Direct stream for byte equality and
+  retaining every submitted tick and every Sun-caster timing witness.
+  [Evidence](../../../.orchestrate/evidence/SHOWCASE/M6.md#metal-equality)

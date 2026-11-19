@@ -1,12 +1,18 @@
 //! Explicit cooked-valley route proof, launched by run_v1_showcase.py culling.
 
-use std::{io::Write, time::Duration};
+use std::{
+    io::{Read, Write},
+    time::Duration,
+};
 use thrum_render::{
     capabilities::{DeviceRecipe, OpenedDevice},
     present::SurfaceProfile,
+    runtime::SubmittedImage,
     synthetic::{CaptureSource, CullMode},
 };
-use v1_game::{CameraRoute, FrameConfig, FrameHost, FrameSample, SceneCamera, SurfaceOutput};
+use v1_game::{
+    CameraRoute, FrameConfig, FrameHost, FrameSample, RouteOverlay, SceneCamera, SurfaceOutput,
+};
 
 mod timing_interleave;
 use timing_interleave::TimingInterleave;
@@ -22,6 +28,20 @@ fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
                 timeout: Some(Duration::from_secs(30)),
             })
             .expect("wait");
+    }
+}
+
+fn submitted_image(host: &mut FrameHost, device: &wgpu::Device) -> SubmittedImage {
+    loop {
+        if let Some(image) = host.try_submitted_image().expect("tap") {
+            return image;
+        }
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(30)),
+            })
+            .expect("image wait");
     }
 }
 
@@ -49,17 +69,7 @@ fn recapture_failure(
                 .drive(times[index], Some(surface))
                 .expect("repeat frame");
             let sample = complete(host, device);
-            let image = loop {
-                if let Some(image) = host.try_submitted_image().expect("repeat tap") {
-                    break image;
-                }
-                device
-                    .poll(wgpu::PollType::Wait {
-                        submission_index: None,
-                        timeout: Some(Duration::from_secs(30)),
-                    })
-                    .expect("repeat image wait");
-            };
+            let image = submitted_image(host, device);
             let file = format!(
                 "failure-{tick}-repeat-{repeat}-{index}-{:?}.raw",
                 modes[index]
@@ -193,27 +203,84 @@ fn parse_route(text: &str, camera: SceneCamera) -> CameraRoute {
     }
 }
 
-async fn prove() {
-    let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
-        .expect("route file");
-    let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
-    let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
-    let campaign = std::env::var_os("THRUM_CULLING_CAMPAIGN").is_some();
-    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
-        CaptureSource::SceneLinear
-    } else {
-        CaptureSource::Sdr
-    };
-    let opened = open_metal_device().await;
-    let (device, queue, caps) = (opened.device, opened.queue, opened.capabilities);
-    let texture = surface_texture(&device, extent);
-    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    let surface = SurfaceOutput {
-        view: &view,
-        extent,
-    };
+enum ExitReference {
+    Write(std::fs::File),
+    Compare {
+        file: std::fs::File,
+        pixels: Vec<u8>,
+    },
+}
+
+struct ExitArm {
+    name: String,
+    mode: CullMode,
+    reference: ExitReference,
+}
+
+impl ExitArm {
+    fn from_env() -> Option<Self> {
+        let name = std::env::var("THRUM_CULLING_EXIT_ARM").ok()?;
+        let path = std::env::var_os("THRUM_CULLING_EXIT_REFERENCE").expect("Direct stream path");
+        let mode = match name.as_str() {
+            "Direct" | "DirectControl" => CullMode::Direct,
+            "Frustum" => CullMode::Frustum,
+            "Occlusion" => CullMode::Occlusion,
+            _ => panic!("unknown exit oracle arm {name}"),
+        };
+        let reference = if name == "Direct" {
+            ExitReference::Write(std::fs::File::create_new(path).expect("create Direct stream"))
+        } else {
+            ExitReference::Compare {
+                file: std::fs::File::open(path).expect("open Direct stream"),
+                pixels: Vec::new(),
+            }
+        };
+        Some(Self {
+            name,
+            mode,
+            reference,
+        })
+    }
+
+    fn difference(&mut self, submitted: &[u8]) -> Option<&[u8]> {
+        match &mut self.reference {
+            ExitReference::Write(file) => {
+                file.write_all(submitted).expect("write Direct pixels");
+                None
+            }
+            ExitReference::Compare { file, pixels } => {
+                pixels.resize(submitted.len(), 0);
+                file.read_exact(pixels).expect("read complete Direct frame");
+                (pixels != submitted).then_some(pixels.as_slice())
+            }
+        }
+    }
+
+    fn finish(&mut self, frames: u64) -> u64 {
+        match &mut self.reference {
+            ExitReference::Write(file) => {
+                file.flush().expect("flush Direct stream");
+                0
+            }
+            ExitReference::Compare { file, .. } => {
+                assert_eq!(file.read(&mut [0]).expect("Direct stream tail"), 0);
+                frames
+            }
+        }
+    }
+}
+
+async fn prepare_hosts(
+    opened: &OpenedDevice,
+    extent: [u32; 2],
+    overlay: RouteOverlay,
+    timing: bool,
+    exit_arm: Option<&ExitArm>,
+) -> (Vec<CullMode>, Vec<FrameHost>) {
     let mut modes = vec![CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
-    if !timing {
+    if let Some(arm) = exit_arm {
+        modes = vec![arm.mode];
+    } else if !timing {
         modes.push(CullMode::Direct);
     }
     let mut hosts = Vec::new();
@@ -227,9 +294,9 @@ async fn prove() {
         setup.camera_culling = mode;
         setup.route_overlay = overlay;
         let mut host = FrameHost::new_with_setup(
-            &device,
-            &queue,
-            &caps,
+            &opened.device,
+            &opened.queue,
+            &opened.capabilities,
             FrameConfig {
                 render_extent: extent,
                 surface: Some(SurfaceProfile {
@@ -245,6 +312,35 @@ async fn prove() {
         load_valley(&mut host);
         hosts.push(host);
     }
+    (modes, hosts)
+}
+
+async fn prove() {
+    let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
+        .expect("route file");
+    let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
+    let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
+    let campaign = std::env::var_os("THRUM_CULLING_CAMPAIGN").is_some();
+    let mut exit_arm = ExitArm::from_env();
+    assert!(
+        exit_arm.is_none()
+            || (!timing && !campaign && std::env::var("THRUM_SCENE").as_deref() == Ok("exit"))
+    );
+    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
+        CaptureSource::SceneLinear
+    } else {
+        CaptureSource::Sdr
+    };
+    let opened = open_metal_device().await;
+    let (modes, mut hosts) =
+        prepare_hosts(&opened, extent, overlay, timing, exit_arm.as_ref()).await;
+    let (device, caps) = (opened.device, opened.capabilities);
+    let texture = surface_texture(&device, extent);
+    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    let surface = SurfaceOutput {
+        view: &view,
+        extent,
+    };
     let route = parse_route(&text, hosts[0].scene_camera().expect("cooked scene camera"));
     let last = route.origin_tick + route.keys.last().expect("key").tick;
     let output = std::path::PathBuf::from(std::env::var("THRUM_CULLING_OUTPUT").expect("output"));
@@ -284,23 +380,13 @@ async fn prove() {
             }
             let mut capture_identity = None;
             if !timing {
-                let image = loop {
-                    if let Some(image) = host.try_submitted_image().expect("tap") {
-                        break image;
-                    }
-                    device
-                        .poll(wgpu::PollType::Wait {
-                            submission_index: None,
-                            timeout: Some(Duration::from_secs(30)),
-                        })
-                        .expect("image wait");
-                };
+                let image = submitted_image(host, &device);
                 assert_eq!(image.source.tick, tick);
                 assert_eq!(image.sample.submission_order, sample.submission_order);
                 capture_identity = Some(
                     serde_json::json!({"source_tick":image.source.tick,"submission":sample.submission_order,"alpha_bits":sample.presentation_alpha.to_bits(),"exposure_gpu_words":image.exposure_gpu_words}),
                 );
-                if index == 1
+                if modes[index] == CullMode::Frustum
                     && capture_source == CaptureSource::Sdr
                     && route
                         .checkpoints
@@ -319,11 +405,15 @@ async fn prove() {
             }
             if let Some(counts) = sample.camera_culling {
                 assert_eq!(counts.mode, modes[index]);
-                if index <= 2 {
-                    hidden[index - 1] += u64::from(counts.drawn < counts.active);
+                match modes[index] {
+                    CullMode::Frustum => hidden[0] += u64::from(counts.drawn < counts.active),
+                    CullMode::Occlusion => hidden[1] += u64::from(counts.drawn < counts.active),
+                    CullMode::Direct => {}
                 }
             }
-            let mode = if index == 3 {
+            let mode = if let Some(arm) = &exit_arm {
+                arm.name.clone()
+            } else if index == 3 {
                 "DirectControl".to_owned()
             } else {
                 format!("{:?}", modes[index])
@@ -343,6 +433,28 @@ async fn prove() {
                 (extent[0] * extent[1]) as usize
                     * usize::try_from(capture_source.bytes_per_pixel()).expect("pixel size")
             );
+            if let Some(arm) = &mut exit_arm {
+                if let Some(reference) = arm.difference(&images[0]) {
+                    std::fs::write(output.join(format!("failure-{tick}-Direct.raw")), reference)
+                        .expect("Direct failure pixels");
+                    std::fs::write(
+                        output.join(format!("failure-{tick}-{}.raw", arm.name)),
+                        &images[0],
+                    )
+                    .expect("candidate failure pixels");
+                    recapture_failure(
+                        &mut hosts,
+                        &device,
+                        &surface,
+                        &last_times,
+                        &modes,
+                        &output,
+                        tick,
+                    );
+                    panic!("{} differs at submitted tick {tick}", arm.name);
+                }
+                continue;
+            }
             if campaign {
                 differing_ticks += u64::from(record_campaign_comparison(
                     &images,
@@ -376,6 +488,12 @@ async fn prove() {
                 }
             }
         }
+    }
+    let frames = last - route.origin_tick + 1;
+    if let Some(arm) = &mut exit_arm {
+        let compared = arm.finish(frames);
+        writeln!(log, "{}", serde_json::json!({"frames":frames,"compared":compared,"timed":false,"hidden_ticks":hidden,"hosts":1,"differing_ticks":0,"equal":true})).expect("exit arm result");
+        return;
     }
     assert!(
         hidden.into_iter().all(|ticks| ticks > 0),
