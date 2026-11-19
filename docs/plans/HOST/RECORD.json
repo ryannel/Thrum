@@ -71,7 +71,7 @@
         {
           "verdict": "fail",
           "commit": "d36f636fd7faf6ba9c2bd239006007d02eabddf3",
-          "review": ".orchestrate/evidence/HOST/M1-review.md",
+          "review": ".orchestrate/evidence/HOST/M1-review-2.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "fail",
@@ -104,6 +104,35 @@
             "turns": 1
           },
           "at": "2026-11-19T15:35:30Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "690c1a77a974ad6f134c3044e6c3f14d67b1ec71",
+          "review": ".orchestrate/evidence/HOST/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "visible",
+          "usage": {
+            "input": 116958,
+            "cached": 3841408,
+            "output": 9016,
+            "turns": 1
+          },
+          "at": "2026-11-19T19:28:01Z"
         }
       ],
       "authorised": {
@@ -146,6 +175,13 @@
           "output": 45873,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "690c1a77a974ad6f134c3044e6c3f14d67b1ec71",
+        "review": ".orchestrate/evidence/HOST/M1-review.md",
+        "checked": "4f9ab69349420687989324c8e16c12bb24d3b1b2",
+        "at": "2026-11-19T19:28:01Z"
       }
     },
     "M2": {
