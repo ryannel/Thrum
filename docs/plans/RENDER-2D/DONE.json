@@ -40,10 +40,10 @@
           "ask": "Is there one refusal test for each request, each asserting a named error and an unchanged scene? Is any of them accepted and ignored instead? If the frame runtime offers no way to ask for a reconstructor by name, is that shown, with where the builder looked?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M1/launch-refusals.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",

@@ -76,3 +76,6 @@
   Chrome. A Mac release capture reproduced the silent acceptance of explicit shadow maps and the rebuilt
   launch refused that request by name. All 19 Mac startup probes refused before submission, and the Metal
   scene admission and contribution checks passed. [Evidence](../../../.orchestrate/evidence/RENDER-2D/M1/launch-refusals.md)
+- 2026-11-19 M1's native sprite launch refuses enabled native witness selections by name. Release checkpoints
+  rejected all eight selections before submission on both Metal recipes, and the launch regression and Metal
+  scene checks passed. [Evidence](../../../.orchestrate/evidence/RENDER-2D/M1/launch-refusals.md)
