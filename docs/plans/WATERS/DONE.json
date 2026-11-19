@@ -612,7 +612,7 @@
     {
       "id": "M5",
       "name": "A float and a small craft ride the waves they sit on, at sea and on the lake, from rest to 15 m/s, and a float in a current is carried by it",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -627,8 +627,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-r2-metal-checks.txt",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.2",
@@ -640,7 +640,7 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.3",
@@ -651,7 +651,7 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -663,7 +663,7 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-r1-metal-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.5",
@@ -672,8 +672,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-r2.md",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.6",
@@ -685,7 +685,7 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.7",
@@ -696,7 +696,7 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5-r1-chrome.json",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.8",
@@ -706,7 +706,7 @@
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M5.md",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
+          "review": "docs/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.9",
@@ -716,21 +716,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/M5-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "item": "M5.1",
-          "name": "A stage change after dispatch leaves a stale depth valid at the use tick",
-          "different": "Quarter-alpha display interpolation, historical page retention and chart slope are fixed. This request used the correct authored stage at dispatch, but the map changed again before the requested tick and the mailbox still delivered the obsolete result.",
-          "repeat": false
-        },
-        {
-          "item": "M5.5",
-          "name": "The rendered gale crest cuts through the deck at 15 m/s",
-          "different": "The 5 m/s beam-sea buoy pass is clear. This failure is the water surface crossing the launch deck in the 15 m/s head sea, with no buoy in the hull.",
-          "repeat": false
+          "review": "docs/evidence/WATERS/M5-review.md"
         }
       ]
     },
