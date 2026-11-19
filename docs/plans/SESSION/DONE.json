@@ -276,10 +276,10 @@
           "check": "cargo test --locked --offline -p match-proof --test faults",
           "ask": "Read the test. Is each fault caused through the link or by reaching into one client's world, with no door for it in thrum-network?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/M3.1.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.2",
@@ -287,10 +287,10 @@
           "check": "python3 scripts/session_match.py memory join",
           "ask": "Does the record hold the baseline's tick and size, the ticks the joiner stepped to catch up, and the tick of the join event? Is the joiner's input refused before that tick? Does the host's tick count match the run's virtual time?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-join.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.3",
@@ -298,10 +298,10 @@
           "check": "python3 scripts/session_match.py memory reconnect",
           "ask": "Does the record hold both link identifiers and both epochs? Are the old-epoch datagrams delivered late by the link's own stall, and counted above zero? Is a command left unanswered by the drop reported as uncertain and not sent again?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-reconnect.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.4",
@@ -309,10 +309,10 @@
           "check": "python3 scripts/session_match.py memory repair",
           "ask": "Is each value changed by the harness reaching into the client's world, and is it one the rules carry forward, with the record showing that client's digest differing from the host's at the digest tick? Does the repaired client keep sending input through the repair, and does its player keep moving on the host? Is the host ever repaired, or its world written from a client's? Does a client whose own step refuses a set stop and ask for a repair in the same way?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-repair.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",
@@ -320,10 +320,10 @@
           "check": "python3 scripts/session_match.py memory slow",
           "ask": "For each case, does the record show the host's tick count against the run's virtual time, the most bytes and sets the host held for the slow client, and the reason it was repaired or closed?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-slow.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.6",
@@ -331,20 +331,20 @@
           "check": "cargo test --locked --offline -p thrum-network --test untrusted",
           "ask": "Read the test. Does it drive the decoders the session uses, with each kind of input generated? Is there a stdin target for each decoder this module added?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/M3.6.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.7",
           "statement": "Every store the host keeps for a peer, and a client's buffer of sets, has a cap from the match settings, and each cap has the one outcome the design gives.",
           "ask": "List each queue, ring and buffer the host session keeps for a peer, and the client's buffer of sets. Does each have a cap that a match setting names? At each cap, is the outcome the one mechanisms 3 and 10 give, with no path that grows without bound, waits on the peer or drops a command and carries on?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",
@@ -352,10 +352,10 @@
           "check": "python3 scripts/session_match.py memory join-costs",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-join-costs.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.9",
@@ -363,20 +363,20 @@
           "check": "cargo test --locked --offline -p thrum-network --test roster",
           "ask": "Does the game learn of each roster event only through the admitted set for a tick, on the host as on a client? Does the world hold a slot and nothing of the peer, its link or its epoch?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/M3.9.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.11",
@@ -384,10 +384,10 @@
           "check": "python3 scripts/session_match.py memory lag",
           "ask": "Does the slow client keep draining its link, acknowledging sets and sending input at the full pace, with only its stepping slowed? Does the host decide from the two ticks that client reports? Does the record hold the host's ring length for it, its reported backlog through the run, and the reason and tick of the close?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-lag.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.12",
@@ -395,16 +395,16 @@
           "check": "python3 scripts/session_match.py memory join-pair",
           "ask": "Does the record show the second hello arriving before the first joiner's baseline is complete, with each baseline's tick and size? Is the refused hello sent while two slots are held and two reserved?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M3/memory-join-pair.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "As forgiving as Factorio's multiplayer, where a newcomer downloads the map and catches up while the others keep playing, a desynchronised client is detected and brought back, and a peer that cannot keep up is dropped without the others noticing. Every fault costs only the peer that has it, and the host commits every tick on schedule through all of them."
     },
     {

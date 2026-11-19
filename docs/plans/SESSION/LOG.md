@@ -130,3 +130,8 @@
   stayed below the admission floor. Both full matches agreed at all digest checkpoints and recorded costs
   by negotiated slot, with a whole image-writing tick and comparisons under load.
   [M2 review fix proof](../../../.orchestrate/evidence/SESSION/M2-review-fix.md)
+- 2026-11-19 Added concurrent slot reservations, token-based return, tick-committed roster events, same-link
+  repair, and bounded peer retention with distinct synchronization, absence and catch-up deadlines.
+  The Mac checks matched the independent digest traces through late and overlapping joins, link faults and repairs.
+  Two release runs at each crowd size recorded image and catch-up costs under load. The reconnect record shows
+  replayed old-epoch bytes released by a carrier stall after the new epoch. [M3 evidence](../../../.orchestrate/evidence/SESSION/M3/README.md)
