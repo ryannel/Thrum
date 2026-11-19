@@ -439,7 +439,7 @@
           "ask": "Take gate G5's clauses in the brief one at a time. Does each have evidence at the claimed commit? Does the ledger keep implementation, correctness, visuals and device results apart, and name what is parked (CAS collection, the iPhone volume encoding, parameter files as a product, source admission and with it a boundary for an external save) and what is unmeasured (a physical iPhone, sustained runs, physical residency)? Does the G5 decision's capability table match the code?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#g5-clauses; .orchestrate/evidence/CONTENT-LOOP/M3.md#g5-decision-repair",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CONTENT-LOOP/M3-review.md",
           "builder_result": "pass"
         },
@@ -467,15 +467,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away.",
-      "findings": [
-        {
-          "name": "g5_decision_misstates_draw_paths_and_target_qualification",
-          "item": "M3.8",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A content loop a creator trusts, as live reimport is in Unreal Engine or Unity, at the smoothness of a shipped high-end game: saving a file changes the running valley within a moment, no frame is late or half-drawn because of it, nothing ghosts under reconstruction, and a bad save never takes the picture away."
     }
   ]
 }
