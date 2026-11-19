@@ -3,7 +3,7 @@
 pub mod support;
 
 use support::{Match, local};
-use thrum_network::session::{Playout, Skip, World};
+use thrum_network::session::{Playout, Settings, Skip, World};
 
 #[derive(Clone, Copy)]
 struct Frame {
@@ -16,8 +16,22 @@ struct Frame {
 
 #[test]
 fn bursts_underruns_and_behind_have_distinct_positions() {
-    let mut fixture = Match::new(local(), 1, None, false);
+    for (catch_up, slow_down) in [(1_100, 850), (1_175, 925)] {
+        check_bursts(Settings {
+            digest_interval: 1,
+            playout_catch_up: catch_up,
+            playout_slow_down: slow_down,
+            ..Settings::default()
+        });
+    }
+}
+
+fn check_bursts(settings: Settings) {
+    let mut fixture = Match::with_settings(local(), 1, None, false, settings);
     fixture.ready();
+    assert_eq!(fixture.clients[0].settings(), Some(settings));
+    let catch_up = f64::from(settings.playout_catch_up) / 1_000.0;
+    let period = f64::from(settings.tick_us);
     while fixture.host.world().tick() < 20 {
         fixture.neutral(400);
     }
@@ -43,9 +57,9 @@ fn bursts_underruns_and_behind_have_distinct_positions() {
         );
     }
     assert!(
-        assert_motion(&frames, &windows, f64::from(fixture.settings.tick_us)).is_ok(),
+        assert_motion(&frames, &windows, period, catch_up).is_ok(),
         "{:?}",
-        assert_motion(&frames, &windows, f64::from(fixture.settings.tick_us))
+        assert_motion(&frames, &windows, period, catch_up)
     );
     assert!(
         stalls
@@ -76,7 +90,53 @@ fn bursts_underruns_and_behind_have_distinct_positions() {
             }
         })
         .collect::<Vec<_>>();
-    assert!(assert_motion(&control, &windows, f64::from(fixture.settings.tick_us)).is_err());
+    assert!(assert_motion(&control, &windows, period, catch_up).is_err());
+}
+
+#[test]
+fn a_stall_includes_the_interval_ending_at_the_recovery_poll() {
+    let mut fixture = Match::new(local(), 1, None, false);
+    fixture.ready();
+    while fixture.host.world().tick() < 25 {
+        fixture.neutral(100);
+    }
+    fixture.memory.stall(true);
+    let (start, held) = loop {
+        let at = fixture.now;
+        fixture.neutral(100);
+        let playout = fixture.clients[0].playout(at).unwrap();
+        if playout.rate == 0.0 {
+            break (at, playout.position);
+        }
+        assert!(fixture.host.world().tick() < 50);
+    };
+    fixture.memory.stall(false);
+    for _ in 0..80 {
+        fixture.memory.advance(fixture.now / 1_000);
+        fixture.host.advance(fixture.now, 100);
+        fixture.now += 2_500;
+    }
+    let resumed = fixture.now;
+    assert_eq!(
+        fixture.clients[0]
+            .playout(resumed - 1)
+            .unwrap()
+            .position
+            .to_bits(),
+        held.to_bits()
+    );
+    fixture.neutral(100);
+    let client = &mut fixture.clients[0];
+    assert_eq!(
+        client.playout(resumed).unwrap().position.to_bits(),
+        held.to_bits()
+    );
+    assert!(client.take_skip().is_none());
+    let stall = client.take_stall().expect("stall completed on recovery");
+    assert!(
+        (resumed - start..=resumed - start + 2_500).contains(&stall.duration_us),
+        "{stall:?}"
+    );
 }
 
 fn sample(fixture: &mut Match, frames: &mut Vec<Frame>, stalls: &mut Vec<u64>) {
@@ -98,7 +158,12 @@ fn sample(fixture: &mut Match, frames: &mut Vec<Frame>, stalls: &mut Vec<u64>) {
     }
 }
 
-fn assert_motion(frames: &[Frame], windows: &[(u64, u64)], period: f64) -> Result<(), String> {
+fn assert_motion(
+    frames: &[Frame],
+    windows: &[(u64, u64)],
+    period: f64,
+    catch_up: f64,
+) -> Result<(), String> {
     let mut first_skip = None;
     let mut last_skip = None;
     let mut caught_up = false;
@@ -116,7 +181,7 @@ fn assert_motion(frames: &[Frame], windows: &[(u64, u64)], period: f64) -> Resul
         }
         if let Some(previous) = index.checked_sub(1).map(|index| &frames[index]) {
             let travel = position - previous.playout.position;
-            let limit = 1.1 * (frame_at - previous.at) as f64 / period;
+            let limit = catch_up * (frame_at - previous.at) as f64 / period;
             if travel < -1e-8 || frame.skip.is_none() && travel > limit + 1e-8 {
                 return Err(format!(
                     "position changed by {travel} at {frame_at}, limit {limit}"
@@ -139,7 +204,7 @@ fn assert_motion(frames: &[Frame], windows: &[(u64, u64)], period: f64) -> Resul
         }
         if in_window(1) {
             underrun |= frame.playout.rate == 0.0;
-            caught_up |= underrun && frame.playout.rate > 1.0;
+            caught_up |= underrun && frame.playout.rate.to_bits() == catch_up.to_bits();
         }
         if let Some(skip) = frame.skip {
             if !in_window(2)

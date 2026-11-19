@@ -17,7 +17,7 @@ use thrum_core::{
 /// Number of player slots in the first match profile.
 pub const SLOTS: usize = 4;
 /// Application protocol negotiated inside the stable transport envelope.
-pub const PROTOCOL: u16 = 1;
+pub const PROTOCOL: u16 = 2;
 
 /// Bounds and pacing sent by the authority in its welcome.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,6 +34,10 @@ pub struct Settings {
     pub behind: u16,
     /// Maximum ticks committed in one advance.
     pub catch_up: u8,
+    /// Catch-up playout rate in thousandths of normal speed.
+    pub playout_catch_up: u16,
+    /// Slow-down playout rate in thousandths of normal speed.
+    pub playout_slow_down: u16,
     /// Number of recent timed frames to repeat.
     pub repeats: u8,
     /// Maximum baseline image bytes.
@@ -53,6 +57,8 @@ impl Default for Settings {
             backlog: 3_600,
             behind: 30,
             catch_up: 8,
+            playout_catch_up: 1_100,
+            playout_slow_down: 850,
             repeats: 2,
             image_limit: 4 * 1024 * 1024,
             response_ms: 4_000,
@@ -70,6 +76,8 @@ impl Settings {
             && self.backlog <= 7_200
             && self.behind >= 4
             && (2..=32).contains(&self.catch_up)
+            && self.playout_catch_up >= 1_000
+            && (1..=1_000).contains(&self.playout_slow_down)
             && (1..=8).contains(&self.repeats)
             && (1..=32 * 1024 * 1024).contains(&self.image_limit)
             && (1..=60_000).contains(&self.response_ms)

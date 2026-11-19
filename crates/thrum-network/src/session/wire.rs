@@ -113,6 +113,8 @@ pub(super) fn write_settings(out: &mut Vec<u8>, settings: Settings) {
     out.extend(settings.backlog.to_le_bytes());
     out.extend(settings.behind.to_le_bytes());
     out.extend([settings.catch_up, settings.repeats]);
+    out.extend(settings.playout_catch_up.to_le_bytes());
+    out.extend(settings.playout_slow_down.to_le_bytes());
     out.extend(settings.image_limit.to_le_bytes());
     out.extend(settings.response_ms.to_le_bytes());
     out.extend(settings.join_ms.to_le_bytes());
@@ -127,6 +129,8 @@ pub(super) fn read_settings(input: &mut Read<'_>) -> Option<Settings> {
         behind: input.u16()?,
         catch_up: input.byte()?,
         repeats: input.byte()?,
+        playout_catch_up: input.u16()?,
+        playout_slow_down: input.u16()?,
         image_limit: u32::from_le_bytes(input.fixed()?),
         response_ms: u32::from_le_bytes(input.fixed()?),
         join_ms: u32::from_le_bytes(input.fixed()?),

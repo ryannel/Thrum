@@ -313,10 +313,29 @@ impl Match {
     /// # Panics
     /// The fixture limits or carrier configuration are invalid.
     pub fn new(condition: Conditioner, clients: usize, fail_at: Option<u64>, padded: bool) -> Self {
-        let settings = Settings {
-            digest_interval: 1,
-            ..Settings::default()
-        };
+        Self::with_settings(
+            condition,
+            clients,
+            fail_at,
+            padded,
+            Settings {
+                digest_interval: 1,
+                ..Settings::default()
+            },
+        )
+    }
+
+    /// Form a lobby with explicit match settings.
+    ///
+    /// # Panics
+    /// The fixture limits, settings or carrier configuration are invalid.
+    pub fn with_settings(
+        condition: Conditioner,
+        clients: usize,
+        fail_at: Option<u64>,
+        padded: bool,
+        settings: Settings,
+    ) -> Self {
         let profile = Profile {
             links: 12,
             reliable_bytes: if padded { 65_536 } else { 1_048_576 },

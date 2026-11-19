@@ -1,7 +1,7 @@
 //! Portable link conformance and fault controls, with caller-supplied virtual time.
 use thrum_transport::{
     CloseReason, DATAGRAM_LIMIT, Event, Lane, LinkError, Profile, RELIABLE_LIMIT,
-    memory::{Conditioner, Memory},
+    memory::{Conditioner, DatagramEvent, Memory},
     proof::Script,
 };
 
@@ -75,6 +75,39 @@ fn deterministic_lanes_and_duplicate_control() {
         exchange(false).expect("repeat")
     );
     assert_eq!(exchange(true), Err(CloseReason::Protocol));
+}
+
+#[test]
+fn loss_observer_can_poll_the_link_that_sent_the_datagram() {
+    let (finished, result) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let mut memory = Memory::new(
+            Profile::default(),
+            Conditioner {
+                loss_ppm: 1_000_000,
+                ..Conditioner::default()
+            },
+        )
+        .unwrap();
+        let ends = memory.connect().unwrap();
+        memory.advance(120);
+        ends[0].send(Lane::Datagram, &[7], 120).unwrap();
+        let mut observed = false;
+        memory.advance_observed(121, |source, event, bytes| {
+            assert_eq!(source, 0);
+            assert_eq!(event, DatagramEvent::Lost);
+            assert_eq!(bytes, [7]);
+            assert_eq!(ends[source].counters(121).lanes[1].sent, 1);
+            observed = true;
+        });
+        finished.send(observed).unwrap();
+    });
+    assert!(
+        result
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .expect("observer released the sender")
+    );
+    worker.join().unwrap();
 }
 #[test]
 fn queue_limits_expire_without_more_sends_and_stack_arrives_late() {

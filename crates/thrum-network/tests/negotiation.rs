@@ -2,12 +2,35 @@
 /// The shared integer rule set and carrier fixture.
 pub mod support;
 
-use support::{Game, Match, Rule, shaped};
+use support::{Game, Match, Rule, local, shaped};
 use thrum_network::{
     envelope::{self, Header, Kind},
-    session::{ClientState, PROTOCOL, Refusal, World},
+    session::{ClientState, Controls, PROTOCOL, Refusal, World},
 };
 use thrum_transport::{Lane, LinkError};
+
+#[test]
+fn a_queued_hello_cannot_renew_an_expired_negotiation() {
+    for (hello_ms, welcomed) in [(3_999, true), (4_000, false), (4_001, false)] {
+        let mut fixture = Match::new(local(), 1, None, false);
+        fixture.memory.advance(0);
+        fixture.host.advance(3_999_000, 0);
+        let at = hello_ms * 1_000;
+        fixture.clients[0]
+            .advance(at, |_| Controls::axes([0.0; 3]))
+            .unwrap();
+        fixture.memory.advance(hello_ms);
+        fixture.host.advance(at, 0);
+        fixture.memory.advance(hello_ms);
+        fixture.clients[0]
+            .advance(at, |_| Controls::axes([0.0; 3]))
+            .unwrap();
+        assert_eq!(fixture.clients[0].slot(), welcomed.then_some(0));
+        if !welcomed {
+            assert!(matches!(fixture.clients[0].state(), ClientState::Closed(_)));
+        }
+    }
+}
 
 #[test]
 fn refusals_cross_a0_before_link_close_and_bad_startups_expire() {

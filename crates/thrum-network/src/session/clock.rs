@@ -114,6 +114,9 @@ impl Clock {
         self.at = now;
         self.skip = None;
         self.completed_stall = None;
+        if let Some(stall) = &mut self.stall {
+            stall.duration_us += elapsed;
+        }
         self.skipping |= held - stepped > u64::from(settings.behind);
         if self.skipping {
             let mut last = stepped;
@@ -141,9 +144,9 @@ impl Clock {
 
         let target = held.saturating_sub(u64::from(self.buffer)) as f64;
         let next_rate = if self.position + 2.0 < target {
-            1.1
+            f64::from(settings.playout_catch_up) / 1_000.0
         } else if self.position > target + 6.0 {
-            0.85
+            f64::from(settings.playout_slow_down) / 1_000.0
         } else {
             1.0
         };
@@ -163,18 +166,28 @@ impl Clock {
             }
             committed += 1;
         }
+        let previous = self.position;
         self.position = desired.min(committed as f64);
         let blocked = self.position >= committed as f64 && committed == held;
         let work_cap = self.position >= committed as f64
             && committed < held
             && committed - stepped == u64::from(settings.catch_up);
         if blocked || work_cap {
-            let stall = self.stall.get_or_insert(Stall {
-                position: self.position,
-                duration_us: 0,
-                work_cap,
+            self.stall.get_or_insert_with(|| {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "elapsed travel to the held edge is nonnegative and rounded up to whole microseconds"
+                )]
+                let travel_us = ((self.position - previous) * f64::from(settings.tick_us)
+                    / travel_rate)
+                    .ceil() as u64;
+                Stall {
+                    position: self.position,
+                    duration_us: elapsed.saturating_sub(travel_us),
+                    work_cap,
+                }
             });
-            stall.duration_us += elapsed;
             self.rate = 0.0;
         } else {
             self.completed_stall = self.stall.take();
@@ -204,10 +217,11 @@ impl Lead {
         pinned: Option<u16>,
     ) -> Self {
         let period = u64::from(settings.tick_us);
-        let half_rtt = (rtt / 2).div_ceil(period);
+        let half_rtt = rtt.div_ceil(2 * period);
         let lead = pinned.map_or(half_rtt + 2, u64::from);
         Self {
-            target: held + half_rtt + lead.min(u64::from(settings.staging)),
+            // The first author call increments the tick before stamping the frame.
+            target: (held + rtt.div_ceil(period) + lead.min(u64::from(settings.staging))) - 1,
             next: now,
             half_rtt,
             floor: i16::MAX,
@@ -256,5 +270,44 @@ impl Lead {
         }
         let cap = held + self.half_rtt + u64::from(settings.staging);
         (self.target <= cap).then_some(self.target)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn first_frame_uses_the_held_set_full_round_trip_and_starting_lead() {
+        let settings = Settings::default();
+        let now = 31_000_000;
+        let newest_set = 27;
+        // 100 ms is six periods rounded up. Its 50 ms half is three periods.
+        let mut adaptive = Lead::new(now, newest_set, 100_000, settings, None);
+        let mut pinned = Lead::new(now, newest_set, 100_000, settings, Some(5));
+        for lead in [&mut adaptive, &mut pinned] {
+            assert_eq!(lead.half_rtt, 3);
+            assert_eq!(lead.author(now, newest_set, settings), Some(27 + 6 + 5));
+            assert_eq!(lead.author(now, newest_set, settings), None);
+            assert_eq!(
+                lead.author(now + u64::from(settings.tick_us), newest_set, settings),
+                Some(27 + 6 + 5 + 1)
+            );
+        }
+    }
+
+    #[test]
+    fn leading_the_buffer_uses_the_negotiated_slow_down_rate() {
+        let settings = Settings {
+            playout_slow_down: 925,
+            ..Settings::default()
+        };
+        let mut clock = Clock::new(10, 0);
+        clock.buffer = 8;
+        clock.advance(0, 10, 11, settings, || true);
+        assert_eq!(
+            clock.sample(0, 11, settings).rate.to_bits(),
+            0.925_f64.to_bits()
+        );
     }
 }

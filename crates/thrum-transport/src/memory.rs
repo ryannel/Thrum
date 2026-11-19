@@ -224,6 +224,7 @@ impl Memory {
             }
             for direction in 0..2 {
                 let end = pair.ends[direction].clone();
+                let mut lost = Vec::new();
                 let mut state = end.state.lock().expect("link state poisoned");
                 state.expire(now);
                 if !state.open {
@@ -239,7 +240,7 @@ impl Memory {
                             Lane::Datagram,
                             bytes,
                             now,
-                            &mut observe,
+                            &mut lost,
                         );
                     }
                     while pair
@@ -262,7 +263,7 @@ impl Memory {
                             Lane::Reliable,
                             bytes,
                             now,
-                            &mut observe,
+                            &mut lost,
                         );
                     }
                 }
@@ -288,13 +289,17 @@ impl Memory {
                             Lane::Datagram,
                             bytes,
                             now,
-                            &mut observe,
+                            &mut lost,
                         );
                     } else {
                         pair.stack[direction].push(bytes);
                     }
                 }
                 state.counts.stack_bytes = Some(pair.stack[direction].iter().map(Vec::len).sum());
+                drop(state);
+                for bytes in lost {
+                    observe(direction, DatagramEvent::Lost, &bytes);
+                }
             }
             if !self.cut && !self.stalled {
                 pair.flight.sort_by_key(|f| f.due);
@@ -358,7 +363,7 @@ fn schedule(
     lane: Lane,
     bytes: Vec<u8>,
     now: u64,
-    observe: &mut impl FnMut(usize, DatagramEvent, &[u8]),
+    losses: &mut Vec<Vec<u8>>,
 ) {
     // The virtual network is finite too. A datagram that cannot enter it is network loss,
     // separate from expiry or overflow in the sender's link queue.
@@ -372,12 +377,12 @@ fn schedule(
             + bytes.len()
             > pair.datagram_cap
     {
-        observe(direction, DatagramEvent::Lost, &bytes);
+        losses.push(bytes);
         return;
     }
     let lost = random(rng) % 1_000_000 < u64::from(condition.loss_ppm);
     if lost && lane == Lane::Datagram {
-        observe(direction, DatagramEvent::Lost, &bytes);
+        losses.push(bytes);
         return;
     }
     let delay =

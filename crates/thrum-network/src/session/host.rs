@@ -418,19 +418,20 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     peer.deadline = now;
                 }
             }
-            for lane in [Lane::Reliable, Lane::Datagram] {
-                for _ in 0..128 {
-                    let Some(bytes) = peer.link.receive(lane) else {
-                        break;
-                    };
-                    if self.message(peer, now, lane, &bytes).is_none() {
-                        peer.link.close(wire::PROTOCOL_CLOSE);
-                        break;
-                    }
-                }
-            }
             if now >= peer.deadline {
                 peer.link.close(wire::TIMEOUT_CLOSE);
+            } else {
+                for lane in [Lane::Reliable, Lane::Datagram] {
+                    for _ in 0..128 {
+                        let Some(bytes) = peer.link.receive(lane) else {
+                            break;
+                        };
+                        if self.message(peer, now, lane, &bytes).is_none() {
+                            peer.link.close(wire::PROTOCOL_CLOSE);
+                            break;
+                        }
+                    }
+                }
             }
             if let Some(slot) = peer.slot
                 && !peer.link.is_open()

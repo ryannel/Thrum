@@ -68,6 +68,57 @@ impl Probe {
 }
 
 #[derive(Default)]
+struct HostProbe {
+    warmed: Probe,
+    image: Vec<u8>,
+    image_tick: Option<Value>,
+}
+
+impl HostProbe {
+    fn advance(
+        &mut self,
+        host: &mut Host<CrowdWorld, NoActions>,
+        time: u64,
+        run: MemoryRun<'_>,
+    ) -> Result<(), String> {
+        let before = host.world().tick();
+        let engine = host.world().engine.total;
+        let measured = (run.costs && before >= 600 && before.is_multiple_of(16)).then(Instant::now);
+        let image_tick_start = (run.costs && before == 1_800).then(Instant::now);
+        if measured.is_some() {
+            allocation::begin();
+        }
+        host.advance(time, run.ticks);
+        let tick = host.world().tick();
+        let engine_ns = host.world().engine.total - engine;
+        if let Some(start) = measured {
+            let counts = allocation::finish();
+            if tick == before + 1 {
+                self.warmed.add(start, counts, engine_ns);
+            }
+        }
+        if let Some(error) = host.take_step_error() {
+            return Err(error);
+        }
+        // On a warmed tick, run the same full image writer used in negotiation.
+        // The clock covers this advance's normal barrier, world step and sends.
+        if let Some(start) = image_tick_start
+            && tick == before + 1
+        {
+            let write_start = Instant::now();
+            host.world().image(&mut self.image)?;
+            let write_ns = u64::try_from(write_start.elapsed().as_nanos()).expect("short write");
+            let total_ns = u64::try_from(start.elapsed().as_nanos()).expect("short advance");
+            self.image_tick = Some(json!({
+                "tick": tick, "total_ns": total_ns, "write_ns": write_ns,
+                "engine_tick_ns": engine_ns, "image_bytes": self.image.len(),
+            }));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Default)]
 struct Path {
     latest: u64,
     lost_sets: u64,
@@ -132,7 +183,6 @@ struct Player {
     active: bool,
     stream: Option<PeerStream>,
     repeats: u8,
-    ticks_held: u64,
     welcomed_at: Option<u64>,
     restored_at: Option<u64>,
 }
@@ -185,7 +235,6 @@ impl Player {
             active: true,
             stream: None,
             repeats,
-            ticks_held: 0,
             welcomed_at: None,
             restored_at: None,
         })
@@ -277,6 +326,7 @@ impl Player {
         let changes = self.client.lead_changes();
         let record = json!({
             "player": self.index,
+            "slot": self.slot(),
             "own_frames": admitted,
             "ticks": total,
             "fraction": admitted as f64 / total as f64,
@@ -291,7 +341,11 @@ impl Player {
         record
     }
 
-    fn report(&self, now: u64) -> Value {
+    fn slot(&self) -> usize {
+        self.client.slot().expect("negotiated player slot")
+    }
+
+    fn report(&self, now: u64, held_by_slot: &[u64; SLOTS]) -> Value {
         let stream = self.stream.as_ref();
         let histogram = stream.as_ref().map(|stream| stream.datagram_sizes);
         let restored = self.client.world().restored.expect("baseline installed");
@@ -299,7 +353,7 @@ impl Player {
             "player": self.index,
             "world_epoch": self.client.world().epoch(),
             "restored": [restored.0, restored.1, restored.2 as u64],
-            "slot": self.client.slot(),
+            "slot": self.slot(),
             "off_grid_frames": self.off_grid_axes,
             "axes_changes": self.axes_changes,
             "clock_origin_us": player_time(self.index, 0),
@@ -313,7 +367,7 @@ impl Player {
             })),
             "reliable_sets": stream.as_ref().map(|stream| stream.reliable_sets),
             "repeat_depth": self.repeats,
-            "ticks_held": self.ticks_held,
+            "ticks_held": held_by_slot[self.slot()],
             "baseline_transfer_us": self.restored_at.zip(self.welcomed_at)
                 .map(|(restored, welcomed)| restored - welcomed),
             "join_us": self.restored_at,
@@ -429,17 +483,18 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
         .then(|| rayon::ThreadPoolBuilder::new().num_threads(4).build())
         .transpose()
         .map_err(|error| error.to_string())?;
-    let mut host_probe = Probe::default();
+    let mut host_probe = HostProbe::default();
     let mut stretch_start = 0;
     let mut stretch = Vec::new();
+    let mut stretch_by_slot = Vec::new();
     let mut admissions = [0; SLOTS];
+    let mut held_by_slot = [0; SLOTS];
     let mut local_admitted = 0;
     let mut state = Timing::default();
     let mut time = 0;
     let limit = (run.ticks + 4_000) * u64::from(settings.tick_us);
     while time < limit {
         let before = host.world().tick();
-        let engine = host.world().engine.total;
         for player in &mut players {
             player
                 .memory
@@ -456,30 +511,17 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
             host.stage_local(tick, axes(run.seed, 0, tick), [])
                 .map_err(|error| error.to_string())?;
         }
-        let measured = (run.costs && before >= 600 && before.is_multiple_of(16)).then(Instant::now);
-        if measured.is_some() {
-            allocation::begin();
-        }
-        host.advance(time, run.ticks);
+        host_probe.advance(&mut host, time, run)?;
         let tick = host.world().tick();
-        if let Some(start) = measured {
-            let counts = allocation::finish();
-            if tick == before + 1 {
-                host_probe.add(start, counts, host.world().engine.total - engine);
-            }
-        }
-        if let Some(error) = host.take_step_error() {
-            return Err(error);
-        }
         if tick > before {
             local_admitted += u64::from(run.listen && host.admissions()[0]);
-            for (count, own) in admissions.iter_mut().zip(host.admissions()) {
+            for (slot, own) in host.admissions().into_iter().enumerate() {
+                held_by_slot[slot] += u64::from(!own);
                 if tick > stretch_start + 600 {
-                    *count += u64::from(own);
+                    admissions[slot] += u64::from(own);
                 }
             }
             for player in &mut players {
-                player.ticks_held += u64::from(!host.admissions()[player.index]);
                 if tick > stretch_start + 600 {
                     player.sample_lead(tick, time);
                 }
@@ -489,10 +531,11 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
             {
                 let span = tick.saturating_sub(stretch_start + 600);
                 if span > 0 {
+                    stretch_by_slot.push(admissions);
                     stretch.push(json!(
                         players
                             .iter_mut()
-                            .map(|player| player.stretch(admissions[player.index], span))
+                            .map(|player| player.stretch(admissions[player.slot()], span))
                             .collect::<Vec<_>>()
                     ));
                 }
@@ -591,7 +634,7 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
     }
     let peers = players
         .iter()
-        .map(|player| player.report(time / 1_000))
+        .map(|player| player.report(time / 1_000, &held_by_slot))
         .collect::<Vec<_>>();
     Ok(json!({
         "profile": run.profile, "seed": run.seed, "bodies": run.bodies, "ticks": run.ticks,
@@ -600,10 +643,12 @@ fn execute(run: MemoryRun<'_>) -> Result<Value, String> {
         "final_digest": final_digest, "baseline_digest": baseline_digest, "checkpoints": *checkpoint,
         "listen_host": run.listen, "host_epoch": host.world().epoch(),
         "host_local_admitted": local_admitted,
-        "stretch": stretch, "peers": peers,
-        "host_tick": host_probe.json(),
+        "stretch": stretch, "admitted_by_slot": stretch_by_slot,
+        "peers": peers, "held_by_slot": held_by_slot,
+        "host_tick": host_probe.warmed.json(),
         "host_barrier_to_send_ns": host.world().barrier_send.json(),
         "host_image_write_ns": host.world().image_time.borrow().json(),
+        "host_image_tick": host_probe.image_tick,
         "image_bytes": host.world().image_bytes.get(),
     }))
 }
