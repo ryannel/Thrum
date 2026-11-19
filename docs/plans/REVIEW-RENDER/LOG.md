@@ -33,3 +33,7 @@
   owning modules' source fingerprints and graph fixtures and projected only the light split in
   their comparisons. Verified the fault paths and historical controls on Metal.
   [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M1.md).
+- 2026-11-19 Preserved typed attachment errors across the ordered contribution list.
+  On the restricted Metal device, direct and grouped Shade both returned the Weather
+  map device limit as a GPU error. Secondary-view regressions passed.
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M1/grouped-shade.md).

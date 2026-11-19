@@ -47,8 +47,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test frame_error_kinds",
           "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are M4.4's and are not judged here.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1/grouped-shade.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
