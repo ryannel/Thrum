@@ -503,4 +503,5 @@
   Metal verified isolation, current, impulses, frame lifecycle, craft draft, float response and query height.
   The lake views centre an untracked impact using any admitted tick of a hitch. Chase and overhead clips
   cover both speeds, a turn, a stop and restart, trade wind and the lake. The cost record includes both
-  1440p views and the sea timestamp faults. [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
+  1440p views and the sea timestamp faults. Hardware Chrome verified the float, surviving wake, lake rings
+  and 29 public query samples. [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
