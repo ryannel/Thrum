@@ -46,6 +46,8 @@ pub enum Kind {
     Command = 16,
     /// Final authority endpoint.
     MatchEnded = 17,
+    /// A replica could not commit or disagreed at a digest endpoint.
+    Divergence = 18,
 }
 
 impl TryFrom<u8> for Kind {
@@ -70,6 +72,7 @@ impl TryFrom<u8> for Kind {
             15 => Self::AdmittedSets,
             16 => Self::Command,
             17 => Self::MatchEnded,
+            18 => Self::Divergence,
             _ => return Err(EnvelopeError::ReservedKind),
         })
     }
@@ -90,6 +93,9 @@ pub struct Header {
     /// Associated server tick; zero for initial Hello.
     pub server_tick: u64,
     /// Highest contiguous dispositioned application sequence; zero means none.
+    /// Deterministic sessions use this field for their baseline stream generation
+    /// on baseline, set, input and divergence messages. Set receipts carry both
+    /// progress ticks explicitly in the input payload.
     pub acknowledged_sequence: u64,
 }
 

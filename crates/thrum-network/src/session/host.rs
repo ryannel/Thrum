@@ -3,13 +3,13 @@ use std::{collections::VecDeque, num::NonZeroUsize};
 use thrum_transport::{DATAGRAM_LIMIT, Lane, Link, LinkError, RELIABLE_LIMIT};
 
 use super::{
-    CHUNK, EndReason, MATCH_EPOCH, MAX_COMMANDS, MAX_LINKS, PROTOCOL, Refusal, SLOTS, SessionError,
-    Settings, World, binding, frame,
+    CHUNK, Close, DigestPart, Divergence, EndReason, MATCH_EPOCH, PROTOCOL, PlayerToken, Refusal,
+    Roster, RosterEvents, SLOTS, SessionError, Settings, World, binding, frame,
     wire::{self, Connection, INPUT_PREFIX, Read, SET_PREFIX, SlotResult},
 };
 use crate::{
     envelope::{self, HEADER_BYTES, Kind, Message},
-    future_input::{FutureInputError, FutureInputWindow},
+    future_input::{FutureInputError, FutureInputWindow, StageResult},
     input_batch::{self, ActionWire, EncodeRecord},
 };
 
@@ -30,9 +30,13 @@ enum Phase {
         bytes: Vec<u8>,
         offset: usize,
         began: bool,
+        tick: u64,
+        roster: Roster,
+        axes: [[f32; 3]; SLOTS],
     },
     CatchingUp,
     Playing,
+    FallenBehind,
     Terminal(Option<u8>),
 }
 
@@ -42,7 +46,7 @@ struct Peer<A> {
     slot: Option<usize>,
     phase: Phase,
     deadline: u64,
-    commands: VecDeque<(u64, A)>,
+    commands: VecDeque<(u64, A, usize)>,
     command_sequence: u64,
     held: u64,
     offered: u64,
@@ -56,6 +60,16 @@ struct Peer<A> {
     reliable_sets: u64,
     datagram_sizes: [u64; 188],
     behind_since: Option<u64>,
+    last_input: u64,
+    input_sequence: u64,
+    input_credit: u64,
+    credit_tick: u64,
+    progress_sequence: Option<u64>,
+    last_command_committed: u64,
+    reliable_blocked: Option<u64>,
+    stale: u64,
+    repairs: u8,
+    generation: u64,
 }
 
 impl<A> Peer<A> {
@@ -63,6 +77,26 @@ impl<A> Peer<A> {
         self.phase = Phase::Terminal(value);
         self.deadline = now + u64::from(settings.response_ms) * 1_000;
     }
+}
+
+#[derive(Clone, Copy, Default)]
+enum Slot {
+    #[default]
+    Free,
+    Reserved(PlayerToken),
+    Present(PlayerToken),
+    Away {
+        token: PlayerToken,
+        until: u64,
+        returning: bool,
+    },
+    Local,
+}
+
+struct DigestEndpoint {
+    tick: u64,
+    digest: u64,
+    parts: Vec<DigestPart>,
 }
 
 struct StoredSet {
@@ -83,6 +117,16 @@ pub struct PeerStream {
     pub held: u64,
     /// Latest stepped acknowledgement.
     pub stepped: u64,
+    /// Rejected datagrams from an earlier connection epoch.
+    pub stale_epoch: u64,
+    /// Current repair count.
+    pub repairs: u8,
+    /// Bytes in the retained set ring for this peer and its current image and commands.
+    pub retained_bytes: usize,
+    /// Timed frames retained in this slot's staging window.
+    pub staged_frames: usize,
+    /// The peer is still transferring or catching up to a baseline.
+    pub synchronizing: bool,
 }
 
 /// An authority that owns one world and commits through a single input barrier.
@@ -94,15 +138,17 @@ pub struct Host<W: World, Codec> {
     seed: u64,
     local: bool,
     state: HostState,
-    origin: u64,
     next: u64,
     epoch: u64,
     peers: Vec<Peer<W::Action>>,
-    owners: [bool; SLOTS],
-    ready: [bool; SLOTS],
-    joined: u8,
+    owners: [Slot; SLOTS],
+    roster: Roster,
+    events: RosterEvents,
+    history: VecDeque<DigestEndpoint>,
+    divergences: VecDeque<Divergence>,
     staging: FutureInputWindow<W::Action>,
     axes: [[f32; 3]; SLOTS],
+    neutral: u8,
     sets: VecDeque<StoredSet>,
     spare: Vec<Vec<u8>>,
     packet: Vec<u8>,
@@ -136,8 +182,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             NonZeroUsize::new(usize::from(settings.staging)).expect("validated positive staging");
         let staging = FutureInputWindow::new(&bindings, window, world.tick())
             .expect("distinct fixed slot bindings");
-        let mut owners = [false; SLOTS];
-        owners[0] = local;
+        let mut owners = [Slot::Free; SLOTS];
+        if local {
+            owners[0] = Slot::Local;
+        }
         Ok(Self {
             world,
             codec,
@@ -146,15 +194,20 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             seed,
             local,
             state: HostState::Lobby,
-            origin: now,
             next: now,
             epoch: MATCH_EPOCH,
-            peers: Vec::with_capacity(MAX_LINKS),
+            peers: Vec::with_capacity(usize::from(settings.link_cap)),
             owners,
-            ready: owners,
-            joined: u8::from(local),
+            roster: Roster::default(),
+            events: RosterEvents {
+                joined: u8::from(local),
+                ..RosterEvents::default()
+            },
+            history: VecDeque::with_capacity(usize::from(settings.digest_history)),
+            divergences: VecDeque::with_capacity(usize::from(settings.digest_history)),
             staging,
             axes: [[0.0; 3]; SLOTS],
+            neutral: 0,
             sets: VecDeque::with_capacity(usize::from(settings.backlog)),
             spare: Vec::new(),
             packet: Vec::with_capacity(RELIABLE_LIMIT),
@@ -176,7 +229,17 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
 
     /// Whether the specified slot has finished synchronization.
     pub fn ready(&self, slot: usize) -> bool {
-        self.ready.get(slot).copied().unwrap_or_default()
+        matches!(self.owners.get(slot), Some(Slot::Present(_) | Slot::Local))
+    }
+
+    /// Roster at the last committed authority endpoint.
+    pub fn roster(&self) -> Roster {
+        self.roster
+    }
+
+    /// Oldest retained diagnostic report.
+    pub fn take_divergence(&mut self) -> Option<Divergence> {
+        self.divergences.pop_front()
     }
 
     /// Own-frame admissions at the last committed tick.
@@ -195,11 +258,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             .iter()
             .find(|peer| peer.link.id() == link_id)
             .map_or(0, |peer| {
-                self.sets
-                    .iter()
-                    .rev()
-                    .take_while(|set| set.tick > peer.held)
-                    .count()
+                if matches!(peer.phase, Phase::FallenBehind) || peer.slot.is_none() {
+                    0
+                } else {
+                    pending(&self.sets, peer.held + 1).count()
+                }
             })
     }
 
@@ -212,7 +275,34 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             datagram_sizes: peer.datagram_sizes,
             held: peer.held,
             stepped: peer.stepped,
+            stale_epoch: peer.stale,
+            repairs: peer.repairs,
+            retained_bytes: self.retained_bytes(peer),
+            synchronizing: matches!(peer.phase, Phase::Baseline { .. } | Phase::CatchingUp),
+            staged_frames: peer.slot.map_or(0, |slot| {
+                self.staging.retained(binding(slot, MATCH_EPOCH).peer)
+            }),
         })
+    }
+
+    fn retained_bytes(&self, peer: &Peer<W::Action>) -> usize {
+        let sets = if matches!(peer.phase, Phase::FallenBehind) || peer.slot.is_none() {
+            0
+        } else {
+            pending(&self.sets, peer.held + 1)
+                .map(|set| set.bytes.len())
+                .sum()
+        };
+        let image = match &peer.phase {
+            Phase::Baseline { bytes, .. } => bytes.len(),
+            _ => 0,
+        };
+        sets + image
+            + peer
+                .commands
+                .iter()
+                .map(|(_, _, bytes)| *bytes)
+                .sum::<usize>()
     }
 
     /// Begin authoritative pacing. Negotiation can be polled in the lobby.
@@ -231,7 +321,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         if matches!(self.state, HostState::Ended(_)) {
             return Err(SessionError::Closed);
         }
-        if self.peers.len() == MAX_LINKS
+        if self.peers.len() == usize::from(self.settings.link_cap)
             || self.peers.iter().any(|peer| peer.link.id() == link.id())
         {
             return Err(SessionError::Full);
@@ -256,6 +346,16 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             reliable_sets: 0,
             datagram_sizes: [0; 188],
             behind_since: None,
+            last_input: self.world.tick(),
+            input_sequence: 0,
+            input_credit: self.input_burst(),
+            credit_tick: self.world.tick(),
+            progress_sequence: None,
+            last_command_committed: 0,
+            reliable_blocked: None,
+            stale: 0,
+            repairs: 0,
+            generation: 0,
         });
         Ok(())
     }
@@ -309,8 +409,8 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
     pub fn advance(&mut self, now: u64, through: u64) {
         self.receive(now);
         self.prune();
-        let send_time = now.saturating_sub(self.origin) / 1_000;
-        self.baselines(now, send_time);
+        let send_time = now / 1_000;
+        self.baselines(send_time);
         if self.state == HostState::Running {
             for _ in 0..self.settings.catch_up {
                 if now < self.next || self.world.tick() >= through {
@@ -328,6 +428,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
 
     fn commit(&mut self) -> bool {
         let tick = self.world.tick() + 1;
+        self.expire_slots(tick);
         self.world.barrier(tick);
         let mut results = [SlotResult::default(); SLOTS];
         let frames = std::array::from_fn(|slot| {
@@ -335,27 +436,33 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 .staging
                 .take_due(binding(slot, MATCH_EPOCH).peer)
                 .expect("registered player slot");
-            let mut admitted = frame(slot, MATCH_EPOCH, tick, tick, self.axes[slot]);
-            if let Some(input) = input.filter(|_| self.ready[slot]) {
+            let axes = if self.neutral & (1 << slot) == 0 {
+                self.axes[slot]
+            } else {
+                [0.0; 3]
+            };
+            let mut admitted = frame(slot, MATCH_EPOCH, tick, tick, axes);
+            if let Some(input) = input.filter(|_| self.ready(slot)) {
                 results[slot].frame = input.origin.sequence;
                 admitted.axes = input.axes;
                 admitted.actions = input.actions;
             }
-            if self.ready[slot]
+            if self.ready(slot)
                 && let Some(peer) = self.peers.iter_mut().find(|peer| peer.slot == Some(slot))
             {
                 while admitted.actions.len() < input_batch::MAX_ACTIONS {
-                    let Some((sequence, action)) = peer.commands.pop_front() else {
+                    let Some((sequence, action, _)) = peer.commands.pop_front() else {
                         break;
                     };
                     admitted.actions.push(action);
                     results[slot].last_command = sequence;
+                    peer.last_command_committed = sequence;
                     results[slot].commands += 1;
                 }
             }
             admitted
         });
-        if let Err(error) = self.world.step(&frames, self.joined) {
+        if let Err(error) = self.world.step(&frames, self.events) {
             self.state = HostState::Ended(EndReason::AuthorityStep);
             self.step_error = Some(error);
             return false;
@@ -365,23 +472,45 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             .expect("complete pre-tick barrier");
         let digest = tick
             .is_multiple_of(u64::from(self.settings.digest_interval))
-            .then(|| self.world.digest());
+            .then(|| {
+                let mut parts = if self.history.len() == usize::from(self.settings.digest_history) {
+                    self.history.pop_front().expect("full history").parts
+                } else {
+                    Vec::new()
+                };
+                let digest = wire::digest_parts(&self.world, &mut parts);
+                self.history.push_back(DigestEndpoint {
+                    tick,
+                    digest,
+                    parts,
+                });
+                digest
+            });
         let set = wire::Set {
             frames,
             results,
-            joined: self.joined,
+            events: self.events,
+            changed_axes: 0,
             digest,
         };
         let mut bytes = self.spare.pop().unwrap_or_else(|| Vec::with_capacity(64));
         wire::write_set(&mut bytes, &set, self.axes, &self.codec).expect("validated set encoding");
         self.axes = set.frames.map(|input| input.axes);
         self.admitted = results.map(|result| result.frame != 0);
-        self.joined = 0;
+        self.roster.apply(self.events);
+        self.events = RosterEvents::default();
+        self.neutral = 0;
         if self.sets.len() == usize::from(self.settings.backlog) {
             let oldest = self.sets.front().expect("full ring").tick;
-            for peer in &self.peers {
+            for peer in &mut self.peers {
                 if peer.slot.is_some() && peer.held < oldest {
-                    peer.link.close(wire::TIMEOUT_CLOSE);
+                    match peer.phase {
+                        Phase::Playing => peer.phase = Phase::FallenBehind,
+                        Phase::Baseline { .. } | Phase::CatchingUp => {
+                            peer.link.close(Close::Synchronization as u32);
+                        }
+                        _ => {}
+                    }
                 }
             }
             let expired = self.sets.pop_front().expect("full ring");
@@ -395,7 +524,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         let held = self
             .peers
             .iter()
-            .filter(|peer| peer.slot.is_some() && peer.link.is_open())
+            .filter(|peer| {
+                peer.slot.is_some()
+                    && peer.link.is_open()
+                    && !matches!(peer.phase, Phase::FallenBehind)
+            })
             .map(|peer| peer.held)
             .min()
             .unwrap_or_else(|| self.world.tick());
@@ -405,41 +538,113 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         }
     }
 
+    fn expire_slots(&mut self, tick: u64) {
+        for (slot, owner) in self.owners.iter_mut().enumerate() {
+            if matches!(*owner, Slot::Away { until, returning: false, .. } if tick >= until) {
+                *owner = Slot::Free;
+                self.events.left |= 1 << slot;
+            }
+        }
+        let mut peers = std::mem::take(&mut self.peers);
+        for peer in &mut peers {
+            let Some(slot) = peer.slot.filter(|slot| self.ready(*slot)) else {
+                continue;
+            };
+            let idle = tick - peer.last_input;
+            if idle >= u64::from(self.settings.absence) {
+                peer.link.close(Close::Absent as u32);
+                self.detach(peer, false);
+            } else if idle >= u64::from(self.settings.held_expiry) {
+                self.neutral |= 1 << slot;
+            }
+        }
+        self.peers = peers;
+    }
+
+    fn detach(&mut self, peer: &mut Peer<W::Action>, goodbye: bool) {
+        let Some(slot) = peer.slot.take() else { return };
+        let bit = 1 << slot;
+        self.neutral |= 1 << slot;
+        if self.roster.occupied & bit == 0 {
+            self.events.joined &= !bit;
+            self.owners[slot] = Slot::Free;
+        } else if goodbye {
+            self.events.left |= bit;
+            self.events.back &= !bit;
+            // Keep the slot unavailable until the left event commits.
+            self.owners[slot] = Slot::Away {
+                token: PlayerToken([0; 16]),
+                until: self.world.tick() + 1,
+                returning: false,
+            };
+        } else {
+            match self.owners[slot] {
+                Slot::Present(token) => {
+                    self.events.away |= bit;
+                    self.events.back &= !bit;
+                    self.owners[slot] = Slot::Away {
+                        token,
+                        until: self.world.tick() + 1 + u64::from(self.settings.grace),
+                        returning: false,
+                    };
+                }
+                Slot::Away { token, until, .. } => {
+                    self.owners[slot] = Slot::Away {
+                        token,
+                        until,
+                        returning: false,
+                    };
+                }
+                _ => {}
+            }
+        }
+    }
+
     fn receive(&mut self, now: u64) {
-        // Move the reusable table out while processing so the authority can reserve slots.
         let mut peers = std::mem::take(&mut self.peers);
         for peer in &mut peers {
             while let Some(event) = peer.link.event() {
-                if let thrum_transport::Event::Closed(_) = event {
-                    if let Some(slot) = peer.slot.take() {
-                        self.ready[slot] = false;
-                        self.owners[slot] = false;
-                    }
+                if matches!(event, thrum_transport::Event::Closed(_)) {
+                    self.detach(peer, false);
                     peer.deadline = now;
                 }
             }
             if now >= peer.deadline {
-                peer.link.close(wire::TIMEOUT_CLOSE);
-            } else {
-                for lane in [Lane::Reliable, Lane::Datagram] {
-                    for _ in 0..128 {
-                        let Some(bytes) = peer.link.receive(lane) else {
-                            break;
-                        };
-                        if self.message(peer, now, lane, &bytes).is_none() {
-                            peer.link.close(wire::PROTOCOL_CLOSE);
-                            break;
-                        }
+                let reason = if matches!(peer.phase, Phase::Baseline { .. } | Phase::CatchingUp) {
+                    Close::Synchronization as u32
+                } else {
+                    wire::TIMEOUT_CLOSE
+                };
+                peer.link.close(reason);
+                self.detach(peer, false);
+                continue;
+            }
+            if peer
+                .reliable_blocked
+                .is_some_and(|since| now - since >= u64::from(self.settings.join_ms) * 1_000)
+            {
+                peer.link.close(Close::Synchronization as u32);
+                self.detach(peer, false);
+                peer.deadline = now;
+                continue;
+            }
+            'lanes: for lane in [Lane::Reliable, Lane::Datagram] {
+                for _ in 0..128 {
+                    let Some(bytes) = peer.link.receive(lane) else {
+                        break;
+                    };
+                    if self.message(peer, now, lane, &bytes).is_none() {
+                        peer.link.close(wire::PROTOCOL_CLOSE);
+                    }
+                    if !peer.link.is_open() {
+                        self.detach(peer, false);
+                        peer.deadline = now;
+                        break 'lanes;
                     }
                 }
             }
-            if let Some(slot) = peer.slot
-                && !peer.link.is_open()
-            {
-                self.ready[slot] = false;
-            }
         }
-        peers.retain(|peer| peer.deadline > now || peer.slot.is_some());
+        peers.retain(|peer| peer.deadline > now);
         self.peers = peers;
     }
 
@@ -460,26 +665,60 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             }
             return self.hello(peer, now, message.payload);
         }
-        if !peer.connection.matches(message.header) {
+        let header = message.header;
+        if !peer.connection.matches(header) {
+            if lane == Lane::Datagram && header.match_id == self.id {
+                peer.stale += 1;
+            }
             return (lane == Lane::Datagram).then_some(());
         }
-        match (lane, message.header.kind) {
-            (Lane::Datagram, Kind::InputBatch) => self.input(peer, now, message.payload),
-            (Lane::Reliable, Kind::Command) => self.command(peer, message),
+        match (lane, header.kind) {
+            (Lane::Datagram, Kind::InputBatch)
+                if header.acknowledged_sequence <= peer.generation =>
+            {
+                self.input(peer, now, message)
+            }
+            (Lane::Reliable, Kind::Command)
+                if header.acknowledged_sequence == 0
+                    && header.server_tick == 0
+                    && peer.slot.is_some_and(|slot| self.ready(slot)) =>
+            {
+                self.command(peer, message)
+            }
+            (Lane::Reliable, Kind::Divergence)
+                if header.acknowledged_sequence <= peer.generation =>
+            {
+                self.divergence(peer, now, message)
+            }
+            (Lane::Reliable, Kind::Close)
+                if header.acknowledged_sequence == 0
+                    && header.server_tick == 0
+                    && header.message_sequence == 0
+                    && message.payload.is_empty() =>
+            {
+                self.detach(peer, true);
+                peer.link.close(wire::RESPONSE_CLOSE);
+                Some(())
+            }
             _ => None,
         }
     }
 
     fn hello(&mut self, peer: &mut Peer<W::Action>, now: u64, bytes: &[u8]) -> Option<()> {
-        let mut data = Read::new(bytes);
-        let protocol = data.u16()?;
-        let identity = data.fixed::<32>()?;
-        data.done()?;
+        let (protocol, identity, token) = wire::read_hello(bytes)?;
+        let returning = self.owners.iter().enumerate().position(|(slot, owner)| {
+            matches!(*owner, Slot::Away { token: credential, returning: false, until }
+                if Some(credential) == token && self.world.tick() < until && (self.roster.away | self.events.away) & (1 << slot) != 0)
+        });
+        let free = self
+            .owners
+            .iter()
+            .position(|owner| matches!(owner, Slot::Free));
         let refusal = if protocol != PROTOCOL {
             Some(Refusal::Protocol)
         } else if identity != self.world.identity().0 {
             Some(Refusal::RuleSet)
-        } else if self.owners.iter().all(|taken| *taken)
+        } else if (returning.is_none() && free.is_none())
             || matches!(self.state, HostState::Ended(_))
         {
             Some(Refusal::Full)
@@ -490,40 +729,120 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             peer.terminal(Some(reason as u8), now, self.settings);
             return Some(());
         }
-
-        let slot = self.owners.iter().position(|taken| !taken)?;
-        let mut bytes = Vec::new();
-        if self.world.image(&mut bytes).is_err() || bytes.len() > self.settings.image_limit as usize
-        {
-            peer.link.close(wire::RESPONSE_CLOSE);
-            return Some(());
+        let slot = returning.or(free)?;
+        if let Slot::Away { token, until, .. } = self.owners[slot] {
+            self.owners[slot] = Slot::Away {
+                token,
+                until,
+                returning: true,
+            };
+        } else {
+            let mut entropy = [0; 16];
+            if getrandom::getrandom(&mut entropy).is_err() || entropy == [0; 16] {
+                peer.link.close(wire::RESPONSE_CLOSE);
+                return Some(());
+            }
+            self.owners[slot] = Slot::Reserved(PlayerToken(entropy));
         }
         self.epoch += 1;
         self.staging
             .reconnect(binding(slot, self.epoch))
             .expect("new slot epoch");
-        self.owners[slot] = true;
         peer.slot = Some(slot);
         peer.connection = Connection {
             id: self.id,
             epoch: self.epoch,
         };
-        peer.held = self.world.tick();
-        peer.offered = peer.held;
-        peer.reliable = peer.held;
-        peer.stepped = peer.held;
-        peer.deadline = now + u64::from(self.settings.join_ms) * 1_000;
-        // Baseline axes are snapshotted at precisely the same barrier as the image.
-        let mut axes = Vec::with_capacity(SLOTS * 6);
-        for axes_value in self.axes {
-            wire::write_axes(&mut axes, axes_value);
+        self.baseline(peer, now);
+        Some(())
+    }
+
+    fn baseline(&self, peer: &mut Peer<W::Action>, now: u64) {
+        let mut bytes = Vec::new();
+        if self.world.image(&mut bytes).is_err() || bytes.len() > self.settings.image_limit as usize
+        {
+            peer.link.close(Close::Synchronization as u32);
+            return;
         }
-        axes.append(&mut bytes);
+        let tick = self.world.tick();
+        peer.generation += 1;
+        peer.held = tick;
+        peer.offered = tick;
+        peer.reliable = tick;
+        peer.stepped = tick;
+        peer.behind_since = None;
+        peer.progress_sequence = None;
+        peer.deadline = now + u64::from(self.settings.join_ms) * 1_000;
         peer.phase = Phase::Baseline {
-            bytes: axes,
+            bytes,
             offset: 0,
             began: false,
+            tick,
+            roster: self.roster,
+            axes: self.axes,
         };
+    }
+
+    fn repair(&self, peer: &mut Peer<W::Action>, now: u64) {
+        if peer.repairs == self.settings.repairs {
+            peer.link.close(Close::RepairLimit as u32);
+        } else {
+            peer.repairs += 1;
+            self.baseline(peer, now);
+        }
+    }
+
+    fn divergence(
+        &mut self,
+        peer: &mut Peer<W::Action>,
+        now: u64,
+        message: Message<'_>,
+    ) -> Option<()> {
+        let header = message.header;
+        if header.acknowledged_sequence < peer.generation {
+            return Some(());
+        }
+        let (actual, parts) = wire::read_divergence(message.payload)?;
+        let slot = peer.slot?;
+        let tick = header.server_tick;
+        if header.message_sequence != 0
+            || tick > peer.offered
+            || (actual.is_some() && !tick.is_multiple_of(u64::from(self.settings.digest_interval)))
+            || matches!(peer.phase, Phase::Baseline { .. })
+        {
+            return None;
+        }
+        let endpoint = self.history.iter().find(|endpoint| endpoint.tick == tick);
+        let mut differed = Vec::new();
+        if let Some(endpoint) = endpoint {
+            if actual == Some(endpoint.digest) {
+                return None;
+            }
+            for id in endpoint.parts.iter().chain(&parts).map(|(id, _)| *id) {
+                let find = |list: &[DigestPart]| {
+                    list.binary_search_by_key(&id, |(key, _)| *key)
+                        .ok()
+                        .map(|index| list[index].1)
+                };
+                if find(&endpoint.parts) != find(&parts) {
+                    differed.push(id);
+                }
+            }
+            differed.sort_unstable();
+            differed.dedup();
+        }
+        if self.divergences.len() == usize::from(self.settings.digest_history) {
+            self.divergences.pop_front();
+        }
+        self.divergences.push_back(Divergence {
+            link: peer.link.id(),
+            slot,
+            tick,
+            actual,
+            expected: endpoint.map(|value| value.digest),
+            parts: differed,
+        });
+        self.repair(peer, now);
         Some(())
     }
 
@@ -535,19 +854,37 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         let mut data = Read::new(message.payload);
         let action = wire::read_action(&mut data, &self.codec)?;
         data.done()?;
-        if sequence != peer.command_sequence + 1 || peer.commands.len() >= MAX_COMMANDS {
+        if sequence != peer.command_sequence + 1
+            || peer.commands.len() >= usize::from(self.settings.command_cap)
+        {
             return None;
         }
-        peer.commands.push_back((sequence, action));
+        peer.commands
+            .push_back((sequence, action, message.payload.len()));
         peer.command_sequence = sequence;
         Some(())
     }
 
-    fn input(&mut self, peer: &mut Peer<W::Action>, now: u64, payload: &[u8]) -> Option<()> {
-        let mut data = Read::new(payload);
+    fn input_burst(&self) -> u64 {
+        // Accommodate a burst of delayed datagrams, then earn one new frame per tick.
+        u64::from(self.settings.repeats) * 2 + u64::from(self.settings.behind)
+    }
+
+    fn input(&mut self, peer: &mut Peer<W::Action>, now: u64, message: Message<'_>) -> Option<()> {
+        let header = message.header;
+        if header.server_tick != 0 {
+            return None;
+        }
+        let matching = header.acknowledged_sequence == peer.generation;
+        if header.acknowledged_sequence == 0
+            || (matching && matches!(peer.phase, Phase::Baseline { .. }))
+        {
+            return None;
+        }
+        let mut data = Read::new(message.payload);
         let held = data.u64()?;
         let stepped = data.u64()?;
-        if stepped > held || held > peer.offered {
+        if stepped > held || (matching && held > peer.offered) {
             return None;
         }
         let slot = peer.slot?;
@@ -560,7 +897,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
             }
             let mut previous = (0, 0);
             for (record, destination) in batch.records().zip(&mut decoded) {
-                if record.sequence <= previous.0 || record.target_tick <= previous.1 {
+                if record.sequence <= previous.0
+                    || record.target_tick <= previous.1
+                    || record.sequence > header.message_sequence
+                {
                     return None;
                 }
                 previous = (record.sequence, record.target_tick);
@@ -575,46 +915,103 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 );
             }
         }
-        peer.held = peer.held.max(held);
-        peer.stepped = peer.stepped.max(stepped);
-        let backlog = peer.held - peer.stepped;
+        let committed = self.world.tick();
+        if self.ready(slot) && !matches!(self.state, HostState::Ended(_)) {
+            let mut fresh = 0;
+            for input in decoded.iter().flatten() {
+                match self.staging.validate_stage(input) {
+                    Ok(StageResult::Queued) => fresh += 1,
+                    Ok(StageResult::Duplicate)
+                    | Err(FutureInputError::Late | FutureInputError::TooEarly) => {}
+                    Err(_) => return None,
+                }
+            }
+            let credit = (peer.input_credit + committed - peer.credit_tick).min(self.input_burst());
+            peer.input_credit = credit.checked_sub(fresh)?;
+            peer.credit_tick = committed;
+            for input in decoded.into_iter().flatten() {
+                let sequence = input.origin.sequence;
+                let tick = input.tick;
+                match self.staging.stage(input, |_| Ok(())) {
+                    Ok(_) => {
+                        if sequence > peer.input_sequence {
+                            peer.last_input = committed;
+                            peer.input_sequence = sequence;
+                        }
+                    }
+                    Err(FutureInputError::Late) => peer.late += 1,
+                    Err(_) => {}
+                }
+                if sequence > peer.margin_sequence {
+                    let offset = i128::from(tick) - i128::from(committed) - 1;
+                    peer.margin = i16::try_from(offset.clamp(-600, 600)).expect("clamped margin");
+                    peer.margin_sequence = sequence;
+                }
+            }
+        }
+        if !matching {
+            return Some(());
+        }
+        if matches!(peer.phase, Phase::FallenBehind) {
+            self.repair(peer, now);
+            return Some(());
+        }
+        let fresh = held >= peer.held
+            && stepped >= peer.stepped
+            && peer
+                .progress_sequence
+                .is_none_or(|sequence| header.message_sequence >= sequence);
+        if !fresh {
+            return Some(());
+        }
+        peer.progress_sequence = Some(header.message_sequence);
+        peer.held = held;
+        peer.stepped = stepped;
+        let backlog = held - stepped;
         if matches!(peer.phase, Phase::CatchingUp)
-            && self.world.tick() - peer.held <= u64::from(self.settings.behind / 2)
             && backlog <= u64::from(self.settings.behind)
+            && self.datagram_fits(held)
         {
-            self.ready[slot] = true;
-            self.joined |= 1 << slot;
+            if !self.ready(slot) {
+                let bit = 1 << slot;
+                self.owners[slot] = match self.owners[slot] {
+                    Slot::Reserved(token) => {
+                        self.events.joined |= bit;
+                        Slot::Present(token)
+                    }
+                    Slot::Away { token, .. } => {
+                        self.events.back |= bit;
+                        Slot::Present(token)
+                    }
+                    _ => return None,
+                };
+                peer.last_input = committed;
+            }
             peer.phase = Phase::Playing;
             peer.deadline = u64::MAX;
         }
         if matches!(peer.phase, Phase::Playing) && backlog > u64::from(self.settings.behind) {
-            let since = peer.behind_since.get_or_insert(now);
-            if now.saturating_sub(*since) >= u64::from(self.settings.join_ms) * 1_000 {
-                return None;
+            let since = peer.behind_since.get_or_insert(committed);
+            if committed - *since >= u64::from(self.settings.catch_up_deadline) {
+                peer.link.close(Close::UnableToKeepUp as u32);
             }
         } else {
             peer.behind_since = None;
         }
-        if matches!(self.state, HostState::Ended(_)) {
-            return Some(());
-        }
-        let committed = self.world.tick();
-        for input in decoded.into_iter().flatten() {
-            if input.origin.sequence > peer.margin_sequence {
-                let offset = i128::from(input.tick) - i128::from(committed) - 1;
-                peer.margin = i16::try_from(offset.clamp(-600, 600)).expect("clamped margin");
-                peer.margin_sequence = input.origin.sequence;
-            }
-            match self.staging.stage(input, |_| Ok(())) {
-                Ok(_) | Err(FutureInputError::TooEarly) => {}
-                Err(FutureInputError::Late) => peer.late += 1,
-                Err(_) => return None,
-            }
-        }
         Some(())
     }
 
-    fn baselines(&mut self, now: u64, send_time: u64) {
+    fn datagram_fits(&self, held: u64) -> bool {
+        self.world.tick() - held <= 188
+            && pending(&self.sets, held + 1)
+                .map(|set| set.bytes.len() + 2)
+                .sum::<usize>()
+                + SET_PREFIX
+                + HEADER_BYTES
+                <= DATAGRAM_LIMIT
+    }
+
+    fn baselines(&mut self, send_time: u64) {
         for peer in &mut self.peers {
             match &mut peer.phase {
                 Phase::Terminal(value) if peer.slot.is_none() => {
@@ -636,9 +1033,16 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     bytes,
                     offset,
                     began,
+                    tick,
+                    roster,
+                    axes,
                 } => {
                     if !*began {
-                        let Some(slot) = peer.slot else {
+                        let Some(slot) = peer.slot else { continue };
+                        let (Slot::Reserved(token)
+                        | Slot::Present(token)
+                        | Slot::Away { token, .. }) = self.owners[slot]
+                        else {
                             continue;
                         };
                         self.packet.clear();
@@ -650,12 +1054,25 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                                 .expect("bounded image")
                                 .to_le_bytes(),
                         );
-                        self.packet.extend(&bytes[..SLOTS * 6]);
+                        self.packet.extend(token.0);
+                        self.packet.extend([roster.occupied, roster.away]);
+                        self.packet
+                            .extend(peer.last_command_committed.to_le_bytes());
+                        for axis in *axes {
+                            wire::write_axes(&mut self.packet, axis);
+                        }
                         wire::write_settings(&mut self.packet, self.settings);
+                        let kind = if peer.generation == 1 {
+                            Kind::Welcome
+                        } else {
+                            Kind::BaselineBegin
+                        };
+                        let mut header = peer.connection.header(kind, *tick, 0);
+                        header.acknowledged_sequence = peer.generation;
                         if wire::send(
                             &peer.link,
                             Lane::Reliable,
-                            peer.connection.header(Kind::Welcome, peer.held, 0),
+                            header,
                             &self.packet,
                             send_time,
                             &mut self.scratch,
@@ -664,21 +1081,21 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                         {
                             continue;
                         }
-                        *offset = SLOTS * 6;
                         *began = true;
                     }
                     for _ in 0..8 {
                         let end = (*offset + CHUNK).min(bytes.len());
-                        let position = (*offset - SLOTS * 6) as u64;
                         let kind = if end == *offset {
                             Kind::BaselineEnd
                         } else {
                             Kind::BaselineChunk
                         };
+                        let mut header = peer.connection.header(kind, *tick, *offset as u64);
+                        header.acknowledged_sequence = peer.generation;
                         if wire::send(
                             &peer.link,
                             Lane::Reliable,
-                            peer.connection.header(kind, peer.held, position),
+                            header,
                             &bytes[*offset..end],
                             send_time,
                             &mut self.scratch,
@@ -690,7 +1107,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                         *offset = end;
                         if kind == Kind::BaselineEnd {
                             peer.phase = Phase::CatchingUp;
-                            peer.deadline = now + u64::from(self.settings.join_ms) * 1_000;
+                            peer.reliable_blocked = None;
                             break;
                         }
                     }
@@ -757,9 +1174,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                 continue;
             }
 
-            let header = peer
+            let mut header = peer
                 .connection
                 .header(Kind::AdmittedSets, next, peer.packet + 1);
+            header.acknowledged_sequence = peer.generation;
             match wire::send(
                 &peer.link,
                 lane,
@@ -773,6 +1191,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     let last = next - 1 + count as u64;
                     peer.offered = peer.offered.max(last);
                     if lane == Lane::Reliable {
+                        peer.reliable_blocked = None;
                         peer.reliable = last;
                         peer.reliable_sets += count as u64;
                     } else {
@@ -781,7 +1200,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
                     }
                     offered |= fresh_tick && last == tick;
                 }
-                Err(LinkError::Full | LinkError::NotOpen) => {}
+                Err(LinkError::Full) => {
+                    peer.reliable_blocked.get_or_insert(now);
+                }
+                Err(LinkError::NotOpen) => {}
                 Err(_) => peer.link.close(wire::PROTOCOL_CLOSE),
             }
         }

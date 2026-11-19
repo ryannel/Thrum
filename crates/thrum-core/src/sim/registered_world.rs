@@ -762,12 +762,7 @@ impl RegisteredWorld {
             slot.stable.map_or(0, |id| id.0).encode(digest);
             slot.structural_tick.encode(digest);
         }
-        u64::try_from(self.free.len())
-            .expect("free length fits u64")
-            .encode(digest);
-        for slot in &self.free {
-            slot.encode(digest);
-        }
+        self.encode_free_list(digest);
         // The identity index is canonicalized by logical slot, independently of
         // randomized bucket layout. Encode actual lookups to catch a broken index.
         for slot in &self.slots {
@@ -778,6 +773,16 @@ impl RegisteredWorld {
         self.directory.is_some().encode(digest);
         if let Some(directory) = &self.directory {
             directory.encode(digest);
+        }
+    }
+
+    pub(super) fn encode_free_list(&self, digest: &mut crate::profile::Digest<'_>) {
+        use crate::profile::StateEncode;
+        u64::try_from(self.free.len())
+            .expect("free length fits u64")
+            .encode(digest);
+        for slot in &self.free {
+            slot.encode(digest);
         }
     }
 

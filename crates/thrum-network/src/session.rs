@@ -17,7 +17,7 @@ use thrum_core::{
 /// Number of player slots in the first match profile.
 pub const SLOTS: usize = 4;
 /// Application protocol negotiated inside the stable transport envelope.
-pub const PROTOCOL: u16 = 2;
+pub const PROTOCOL: u16 = 3;
 
 /// Bounds and pacing sent by the authority in its welcome.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,6 +46,22 @@ pub struct Settings {
     pub response_ms: u32,
     /// Baseline and catch-up deadline in milliseconds.
     pub join_ms: u32,
+    /// Host ticks allowed above the playing backlog threshold.
+    pub catch_up_deadline: u16,
+    /// Ticks without a fresh timed frame before axes become neutral.
+    pub held_expiry: u16,
+    /// Ticks without a fresh timed frame before the link is closed.
+    pub absence: u16,
+    /// Ticks an away slot remains reserved for its token.
+    pub grace: u16,
+    /// Maximum repairs on one connection.
+    pub repairs: u8,
+    /// Maximum admitted, uncommitted commands per peer.
+    pub command_cap: u16,
+    /// Maximum simultaneous transport connections, including pending handshakes.
+    pub link_cap: u8,
+    /// Number of digest endpoints retained for diagnosis.
+    pub digest_history: u16,
 }
 
 impl Default for Settings {
@@ -63,6 +79,14 @@ impl Default for Settings {
             image_limit: 4 * 1024 * 1024,
             response_ms: 4_000,
             join_ms: 60_000,
+            catch_up_deadline: 600,
+            held_expiry: 30,
+            absence: 600,
+            grace: 1_800,
+            repairs: 3,
+            command_cap: 256,
+            link_cap: 16,
+            digest_history: 128,
         }
     }
 }
@@ -82,7 +106,83 @@ impl Settings {
             && (1..=32 * 1024 * 1024).contains(&self.image_limit)
             && (1..=60_000).contains(&self.response_ms)
             && (self.response_ms..=120_000).contains(&self.join_ms)
+            && self.catch_up_deadline > 0
+            && self.held_expiry > 0
+            && self.absence > self.held_expiry
+            && self.grace > 0
+            && self.repairs > 0
+            && (1..=1024).contains(&self.command_cap)
+            && (SLOTS..=32).contains(&usize::from(self.link_cap))
+            && (1..=512).contains(&self.digest_history)
     }
+}
+
+/// Rejoin credential issued by the authority. An absent token uses the zero wire value.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct PlayerToken(pub(crate) [u8; 16]);
+
+/// Roster transitions committed together with the slot frames at one tick.
+/// Each mask uses one bit per player slot.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RosterEvents {
+    /// A new player enters the match.
+    pub joined: u8,
+    /// A player's link was lost and its controls become neutral.
+    pub away: u8,
+    /// The same player returns to its slot.
+    pub back: u8,
+    /// A slot's character leaves the match.
+    pub left: u8,
+}
+
+/// Current committed or baseline roster, by slot.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Roster {
+    /// Slots with a character in the world.
+    pub occupied: u8,
+    /// Occupied slots whose players are away.
+    pub away: u8,
+}
+
+impl Roster {
+    fn apply(&mut self, events: RosterEvents) {
+        self.occupied = (self.occupied | events.joined) & !events.left;
+        self.away = (self.away | events.away) & !(events.back | events.left);
+    }
+}
+
+/// Component or resource diagnostic at a committed endpoint.
+pub type DigestPart = (u128, u64);
+
+/// A replica's report and the authority comparison retained for diagnosis.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Divergence {
+    /// Transport link identifier.
+    pub link: u64,
+    /// Player slot on that link.
+    pub slot: usize,
+    /// Endpoint the client refused or found unequal.
+    pub tick: u64,
+    /// Authority digest, when still retained.
+    pub expected: Option<u64>,
+    /// Replica digest. Absent when the replica could not step.
+    pub actual: Option<u64>,
+    /// Component or resource identifiers with different partial digests.
+    pub parts: Vec<u128>,
+}
+
+/// A lifecycle close initiated by the session.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum Close {
+    /// No baseline or reliable delivery progress by its deadline.
+    Synchronization = 4,
+    /// Playing backlog exceeded the catch-up deadline.
+    UnableToKeepUp = 5,
+    /// No new usable timed input by the absence limit.
+    Absent = 6,
+    /// The connection exhausted its repair allowance.
+    RepairLimit = 7,
 }
 
 /// Rule-owned world. All ticks come through the same host and replica boundary.
@@ -97,17 +197,21 @@ pub trait World {
     /// Configured deterministic rule-set identity.
     fn identity(&self) -> RuleSetIdentity;
     /// Commit one tick, atomically on error. Slot frames carry held axes even
-    /// when the player supplied no timed frame. Joined is a bit per slot.
+    /// when the player supplied no timed frame. Events apply at this same tick.
     ///
     /// # Errors
     /// The world refused the candidate without committing it.
     fn step(
         &mut self,
         frames: &[InputFrame<Self::Action>; SLOTS],
-        joined: u8,
+        events: RosterEvents,
     ) -> Result<(), Self::Error>;
     /// Current world digest.
     fn digest(&self) -> u64;
+    /// Sample the digest and optional partials together at this endpoint.
+    fn digest_with_parts(&self, _partial: &mut dyn FnMut(DigestPart)) -> u64 {
+        self.digest()
+    }
     /// Write the current committed world image into reusable storage.
     ///
     /// # Errors
@@ -221,8 +325,8 @@ fn frame<A>(slot: usize, epoch: u64, seq: u64, tick: u64, axes: [f32; 3]) -> Inp
     )
 }
 
-const MAX_LINKS: usize = 16;
 const MAX_PENDING: usize = 8_192;
-const MAX_COMMANDS: usize = 256;
 const CHUNK: usize = 32_768;
 const MATCH_EPOCH: u64 = 1;
+
+const MAX_DIGEST_PARTS: usize = 256;

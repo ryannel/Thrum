@@ -166,6 +166,25 @@ impl<A: PartialEq> FutureInputWindow<A> {
         frame: InputFrame<A>,
         validate_actions: impl FnOnce(&InputFrame<A>) -> Result<(), InputFrameError>,
     ) -> Result<StageResult, FutureInputError> {
+        let (peer, index) = self.frame_slot(&frame)?;
+        validate_actions(&frame).map_err(FutureInputError::InvalidPayload)?;
+        let outcome = self.reservation(peer, index, &frame)?;
+        if outcome == StageResult::Queued {
+            self.peers[peer].frames[index] = Some(frame);
+        }
+        Ok(outcome)
+    }
+
+    // Validate every frame in a datagram before reserving any of its slots.
+    pub(crate) fn validate_stage(
+        &self,
+        frame: &InputFrame<A>,
+    ) -> Result<StageResult, FutureInputError> {
+        let (peer, index) = self.frame_slot(frame)?;
+        self.reservation(peer, index, frame)
+    }
+
+    fn frame_slot(&self, frame: &InputFrame<A>) -> Result<(usize, usize), FutureInputError> {
         frame
             .validate_axes()
             .map_err(|_| FutureInputError::InvalidAxis)?;
@@ -179,11 +198,12 @@ impl<A: PartialEq> FutureInputWindow<A> {
         if ahead > self.horizon {
             return Err(FutureInputError::TooEarly);
         }
-        let peer = self
+        let peer_index = self
             .peers
-            .iter_mut()
-            .find(|peer| peer.binding.peer == frame.origin.peer)
+            .iter()
+            .position(|peer| peer.binding.peer == frame.origin.peer)
             .ok_or(FutureInputError::UnknownPeer)?;
+        let peer = &self.peers[peer_index];
         if frame.origin.connection_epoch != peer.binding.connection_epoch {
             return Err(FutureInputError::WrongConnection);
         }
@@ -193,20 +213,34 @@ impl<A: PartialEq> FutureInputWindow<A> {
         if frame.tick <= peer.last_handoff_tick {
             return Err(FutureInputError::Late);
         }
-        validate_actions(&frame).map_err(FutureInputError::InvalidPayload)?;
         let index =
             usize::try_from(frame.tick % self.horizon).map_err(|_| FutureInputError::TooEarly)?;
-        match &mut peer.frames[index] {
-            slot @ None => {
-                *slot = Some(frame);
-                Ok(StageResult::Queued)
-            }
-            Some(existing) if same_frame(existing, &frame) => Ok(StageResult::Duplicate),
+        Ok((peer_index, index))
+    }
+
+    fn reservation(
+        &self,
+        peer: usize,
+        index: usize,
+        frame: &InputFrame<A>,
+    ) -> Result<StageResult, FutureInputError> {
+        match &self.peers[peer].frames[index] {
+            None => Ok(StageResult::Queued),
+            Some(existing) if same_frame(existing, frame) => Ok(StageResult::Duplicate),
             Some(existing) if existing.tick == frame.tick => {
                 Err(FutureInputError::ConflictingFrame)
             }
             Some(_) => Err(FutureInputError::OccupiedSlot),
         }
+    }
+
+    pub(crate) fn retained(&self, id: PeerId) -> usize {
+        self.peers
+            .iter()
+            .find(|peer| peer.binding.peer == id)
+            .map_or(0, |peer| {
+                peer.frames.iter().filter(|frame| frame.is_some()).count()
+            })
     }
 
     /// Move this peer's next-tick frame to the authoritative admission owner.

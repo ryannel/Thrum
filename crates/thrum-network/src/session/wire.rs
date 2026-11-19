@@ -1,4 +1,4 @@
-use super::{MATCH_EPOCH, SLOTS, Settings, frame};
+use super::{MATCH_EPOCH, RosterEvents, SLOTS, Settings, frame};
 use crate::{
     envelope::{self, Header, Kind},
     input_batch::{ActionView, ActionWire, MAX_ACTION_BYTES, MAX_ACTIONS, dequantize, quantize},
@@ -12,7 +12,7 @@ pub(super) const PROTOCOL_CLOSE: u32 = 1;
 pub(super) const RESPONSE_CLOSE: u32 = 2;
 pub(super) const TIMEOUT_CLOSE: u32 = 3;
 pub(super) const MAX_SET: usize =
-    1 + 8 + SLOTS * (1 + 3 * 2 + 10 + 10 + 1 + MAX_ACTIONS * (6 + MAX_ACTION_BYTES));
+    4 + 8 + SLOTS * (1 + 3 * 2 + 10 + 10 + 1 + MAX_ACTIONS * (6 + MAX_ACTION_BYTES));
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(super) struct Connection {
@@ -32,9 +32,7 @@ impl Connection {
         }
     }
     pub(super) fn matches(self, header: Header) -> bool {
-        header.match_id == self.id
-            && header.connection_epoch == self.epoch
-            && header.acknowledged_sequence == 0
+        header.match_id == self.id && header.connection_epoch == self.epoch
     }
 }
 
@@ -118,6 +116,17 @@ pub(super) fn write_settings(out: &mut Vec<u8>, settings: Settings) {
     out.extend(settings.image_limit.to_le_bytes());
     out.extend(settings.response_ms.to_le_bytes());
     out.extend(settings.join_ms.to_le_bytes());
+    for bound in [
+        settings.catch_up_deadline,
+        settings.held_expiry,
+        settings.absence,
+        settings.grace,
+        settings.command_cap,
+        settings.digest_history,
+    ] {
+        out.extend(bound.to_le_bytes());
+    }
+    out.extend([settings.repairs, settings.link_cap]);
 }
 
 pub(super) fn read_settings(input: &mut Read<'_>) -> Option<Settings> {
@@ -134,6 +143,14 @@ pub(super) fn read_settings(input: &mut Read<'_>) -> Option<Settings> {
         image_limit: u32::from_le_bytes(input.fixed()?),
         response_ms: u32::from_le_bytes(input.fixed()?),
         join_ms: u32::from_le_bytes(input.fixed()?),
+        catch_up_deadline: input.u16()?,
+        held_expiry: input.u16()?,
+        absence: input.u16()?,
+        grace: input.u16()?,
+        command_cap: input.u16()?,
+        digest_history: input.u16()?,
+        repairs: input.byte()?,
+        link_cap: input.byte()?,
     };
     settings.valid().then_some(settings)
 }
@@ -191,7 +208,8 @@ pub(super) struct SlotResult {
 pub(super) struct Set<A> {
     pub(super) frames: [InputFrame<A>; SLOTS],
     pub(super) results: [SlotResult; SLOTS],
-    pub(super) joined: u8,
+    pub(super) events: RosterEvents,
+    pub(super) changed_axes: u8,
     pub(super) digest: Option<u64>,
 }
 
@@ -202,7 +220,12 @@ pub(super) fn write_set<A>(
     wire: &impl ActionWire<A>,
 ) -> Option<()> {
     output.clear();
-    output.push(set.joined | (u8::from(set.digest.is_some()) << 4));
+    let events = set.events;
+    let extra = events.away | events.back | events.left != 0;
+    output.push(events.joined | (u8::from(set.digest.is_some()) << 4) | (u8::from(extra) << 5));
+    if extra {
+        output.extend([events.away, events.back, events.left]);
+    }
     if let Some(digest) = set.digest {
         output.extend(digest.to_le_bytes());
     }
@@ -240,8 +263,18 @@ pub(super) fn read_set<A>(
 ) -> Option<Set<A>> {
     let mut input = Read::new(bytes);
     let flags = input.byte()?;
-    if flags > 31 {
+    if flags > 63 {
         return None;
+    }
+    let mut events = RosterEvents {
+        joined: flags & 15,
+        ..RosterEvents::default()
+    };
+    if flags & 32 != 0 {
+        [events.away, events.back, events.left] = input.fixed()?;
+        if (events.away | events.back | events.left) > 15 {
+            return None;
+        }
     }
     let digest = if flags & 16 == 0 {
         None
@@ -251,16 +284,18 @@ pub(super) fn read_set<A>(
     let mut set = Set {
         frames: std::array::from_fn(|slot| frame(slot, MATCH_EPOCH, tick, tick, prior[slot])),
         results: [SlotResult::default(); SLOTS],
-        joined: flags & 15,
+        events,
+        changed_axes: 0,
         digest,
     };
-    for (frame, result) in set.frames.iter_mut().zip(&mut set.results) {
+    for (slot, (frame, result)) in set.frames.iter_mut().zip(&mut set.results).enumerate() {
         let flags = input.byte()?;
         let count = flags & 15;
         if flags >= 128 || usize::from(count) > MAX_ACTIONS {
             return None;
         }
         if flags & 16 != 0 {
+            set.changed_axes |= 1 << slot;
             frame.axes = read_axes(&mut input)?;
         }
         if flags & 32 != 0 {
@@ -293,3 +328,70 @@ pub(super) fn scratch() -> Box<[u8]> {
 
 #[cfg(test)]
 mod tests;
+
+pub(super) fn read_hello(bytes: &[u8]) -> Option<(u16, [u8; 32], Option<super::PlayerToken>)> {
+    let mut input = Read::new(bytes);
+    let protocol = input.u16()?;
+    let identity = input.fixed()?;
+    // Other protocol versions need only the negotiation prefix to be refused.
+    if protocol != super::PROTOCOL {
+        return Some((protocol, identity, None));
+    }
+    let token = input.fixed()?;
+    input.done()?;
+    Some((
+        protocol,
+        identity,
+        (token != [0; 16]).then_some(super::PlayerToken(token)),
+    ))
+}
+
+pub(super) fn write_divergence(
+    out: &mut Vec<u8>,
+    actual: Option<u64>,
+    parts: &[super::DigestPart],
+) {
+    out.clear();
+    out.push(u8::from(actual.is_some()));
+    if let Some(digest) = actual {
+        out.extend(digest.to_le_bytes());
+    }
+    for (id, digest) in parts {
+        out.extend(id.to_le_bytes());
+        out.extend(digest.to_le_bytes());
+    }
+}
+
+pub(super) fn read_divergence(bytes: &[u8]) -> Option<(Option<u64>, Vec<super::DigestPart>)> {
+    let mut data = Read::new(bytes);
+    let actual = match data.byte()? {
+        0 => return data.done().map(|()| (None, Vec::new())),
+        1 => Some(data.u64()?),
+        _ => return None,
+    };
+    let bytes = data.rest();
+    if !bytes.len().is_multiple_of(24) || bytes.len() / 24 > super::MAX_DIGEST_PARTS {
+        return None;
+    }
+    let mut parts = Vec::with_capacity(bytes.len() / 24);
+    let mut data = Read::new(bytes);
+    for _ in 0..bytes.len() / 24 {
+        parts.push((u128::from_le_bytes(data.fixed()?), data.u64()?));
+    }
+    if !parts.windows(2).all(|pair| pair[0].0 < pair[1].0) {
+        return None;
+    }
+    Some((actual, parts))
+}
+
+pub(super) fn digest_parts<W: super::World>(world: &W, parts: &mut Vec<super::DigestPart>) -> u64 {
+    parts.clear();
+    let digest = world.digest_with_parts(&mut |part| {
+        if parts.len() < super::MAX_DIGEST_PARTS {
+            parts.push(part);
+        }
+    });
+    parts.sort_unstable_by_key(|part| part.0);
+    parts.dedup_by_key(|part| part.0);
+    digest
+}

@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
 use super::{
-    Disposition, EndReason, Input, MAX_COMMANDS, MAX_PENDING, PROTOCOL, Refusal, ResultEvent,
-    SLOTS, SessionError, Settings, World,
+    DigestPart, Disposition, EndReason, Input, MAX_PENDING, PROTOCOL, PlayerToken, Refusal,
+    ResultEvent, Roster, SLOTS, SessionError, Settings, World,
     clock::{Clock, INITIAL_BUFFER, Lead, Playout, Skip, Stall},
     frame,
     wire::{self, Connection, INPUT_PREFIX, Read},
@@ -32,8 +32,8 @@ pub enum ClientState {
     Ended(EndReason, u64),
     /// The link closed without a final authority endpoint.
     Closed(CloseReason),
-    /// A local world step failed, or its digest disagreed.
-    Diverged(u64),
+    /// Waiting for or installing a repair baseline on the same connection.
+    Repairing,
 }
 
 /// Controls sampled only when the authoring clock chooses a new target tick.
@@ -57,17 +57,20 @@ impl<A> Controls<A> {
 struct Baseline {
     tick: u64,
     size: usize,
+    roster: Roster,
     bytes: Vec<u8>,
 }
 
-enum Payload<A> {
-    Encoded(Vec<u8>),
-    Ready(Box<wire::Set<A>>),
+struct Fault {
+    tick: u64,
+    actual: Option<u64>,
+    parts: Vec<DigestPart>,
 }
 
 struct Stored<A> {
     tick: u64,
-    payload: Payload<A>,
+    set: Box<wire::Set<A>>,
+    ready: bool,
 }
 
 /// One replica. Its world only changes by restoring a link baseline or
@@ -81,6 +84,13 @@ pub struct Client<W: World, Codec> {
     slot: usize,
     protocol: u16,
     connection: Connection,
+    token: Option<PlayerToken>,
+    generation: u64,
+    installed_generation: u64,
+    stale: u64,
+    pending_fault: Option<Fault>,
+    awaiting_repair: bool,
+    leaving: bool,
     baseline: Option<Baseline>,
     ending: Option<(EndReason, u64)>,
     clock: Option<Clock>,
@@ -109,13 +119,16 @@ struct Replica<W: World, Codec> {
     codec: Codec,
     axes: [[f32; 3]; SLOTS],
     sets: Vec<Option<Stored<W::Action>>>,
-    spare: Vec<Vec<u8>>,
-    // Preserve the boxes at the high-water mark of the bounded receive buffer.
-    ready_spare: Vec<Box<wire::Set<W::Action>>>,
+    // Retain at most the set buffer's high-water mark of boxes across packets.
+    spare: Vec<Box<wire::Set<W::Action>>>,
+    packet_sets: Vec<Stored<W::Action>>,
     waiting_frames: VecDeque<(u64, u64)>,
     waiting_commands: VecDeque<u64>,
     results: VecDeque<ResultEvent>,
-    fault: Option<ClientState>,
+    fault: Option<Fault>,
+    roster: Roster,
+    own_present: bool,
+    parts: Vec<DigestPart>,
 }
 
 impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
@@ -136,11 +149,14 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                 axes: [[0.0; 3]; SLOTS],
                 sets: Vec::new(),
                 spare: Vec::new(),
-                ready_spare: Vec::new(),
+                packet_sets: Vec::new(),
                 waiting_frames: VecDeque::new(),
                 waiting_commands: VecDeque::new(),
                 results: VecDeque::new(),
                 fault: None,
+                roster: Roster::default(),
+                own_present: false,
+                parts: Vec::new(),
             },
             link,
             state: ClientState::Connecting,
@@ -149,10 +165,17 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             slot: 0,
             protocol,
             connection: Connection::default(),
+            token: None,
+            generation: 0,
+            installed_generation: 0,
+            stale: 0,
+            pending_fault: None,
+            awaiting_repair: false,
+            leaving: false,
             baseline: None,
             ending: None,
             clock: None,
-            origin: now,
+            origin: 0,
             hello: now,
             rtt: 0,
             lead: None,
@@ -176,6 +199,70 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
     /// A replica using this build's protocol and automatic lead.
     pub fn adaptive(world: W, codec: Codec, link: Link, now: u64) -> Self {
         Self::new(world, codec, link, now, PROTOCOL, None)
+    }
+
+    /// Map a virtual carrier's time zero to this client's local clock.
+    /// Socket links measure queue age on their own clock.
+    #[must_use]
+    pub fn with_link_origin(mut self, origin_us: u64) -> Self {
+        self.origin = origin_us;
+        self
+    }
+
+    /// Present a previous connection's token in this client's first hello.
+    #[must_use]
+    pub fn with_token(mut self, token: PlayerToken) -> Self {
+        if self.state == ClientState::Connecting {
+            self.token = Some(token);
+        }
+        self
+    }
+
+    /// Credential for returning to this slot on a fresh client.
+    pub fn token(&self) -> Option<PlayerToken> {
+        self.settings.and(self.token)
+    }
+
+    /// Negotiated connection epoch.
+    pub fn epoch(&self) -> Option<u64> {
+        self.settings.map(|_| self.connection.epoch)
+    }
+
+    /// Roster at the latest committed replica endpoint.
+    pub fn roster(&self) -> Roster {
+        self.replica.roster
+    }
+
+    /// Stale datagrams from earlier connection epochs.
+    pub fn stale_epoch(&self) -> u64 {
+        self.stale
+    }
+
+    /// Ask the host to release the slot rather than retaining it for rejoin.
+    ///
+    /// # Errors
+    /// The client has no slot, or the link could not accept goodbye yet.
+    pub fn goodbye(&mut self, now: u64) -> Result<(), SessionError> {
+        if !self.active() || self.settings.is_none() || self.leaving {
+            return Err(SessionError::Closed);
+        }
+        wire::send(
+            &self.link,
+            Lane::Reliable,
+            self.connection.header(Kind::Close, 0, 0),
+            &[],
+            now.saturating_sub(self.origin) / 1_000,
+            &mut self.scratch,
+        )
+        .map_err(|error| {
+            if error == thrum_transport::LinkError::Full {
+                SessionError::Full
+            } else {
+                SessionError::Closed
+            }
+        })?;
+        self.leaving = true;
+        Ok(())
     }
 
     /// Limit this client's redundant frames within the host's advertised maximum.
@@ -286,10 +373,13 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
     /// # Errors
     /// The action is unencodable, the command/result capacity is full or the match ended.
     pub fn command(&mut self, value: &W::Action) -> Result<u64, SessionError> {
-        if !self.active() || self.ending.is_some() {
+        if !self.active() || self.ending.is_some() || self.leaving {
             return Err(SessionError::Closed);
         }
-        if self.replica.waiting_commands.len() == MAX_COMMANDS || self.pending() >= MAX_PENDING {
+        if self.replica.waiting_commands.len()
+            >= usize::from(self.settings.unwrap_or_default().command_cap)
+            || self.pending() >= MAX_PENDING
+        {
             return Err(SessionError::Full);
         }
         let mut bytes = Vec::new();
@@ -316,6 +406,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                 | ClientState::Synchronizing
                 | ClientState::Playing
                 | ClientState::Behind
+                | ClientState::Repairing
         )
     }
 
@@ -327,6 +418,19 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
     pub fn advance(
         &mut self,
         now: u64,
+        sample: impl FnMut(u64) -> Controls<W::Action>,
+    ) -> Result<(), SessionError> {
+        self.advance_with_step_budget(now, u8::MAX, sample)
+    }
+
+    /// Advance link and input clocks with a caller-imposed limit on replica steps.
+    ///
+    /// # Errors
+    /// Locally sampled controls are unencodable in a single timed frame.
+    pub fn advance_with_step_budget(
+        &mut self,
+        now: u64,
+        budget: u8,
         mut sample: impl FnMut(u64) -> Controls<W::Action>,
     ) -> Result<(), SessionError> {
         if !self.active() {
@@ -337,6 +441,8 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             self.packet.clear();
             self.packet.extend(self.protocol.to_le_bytes());
             self.packet.extend(self.world().identity().0);
+            self.packet
+                .extend(self.token.map_or([0; 16], |token| token.0));
             if wire::send(
                 &self.link,
                 Lane::Reliable,
@@ -365,18 +471,37 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         let Some(settings) = self.settings else {
             return Ok(());
         };
-        self.send_commands(send_time);
-        if self.baseline.is_some() {
+        if self.leaving {
             return Ok(());
         }
-        self.step(now, prior, settings);
+        if self.replica.own_present {
+            self.send_commands(send_time);
+        }
+        if self.baseline.is_none() && !self.awaiting_repair {
+            self.step(now, prior, settings, budget);
+        }
         if self.lead.is_none() && self.newest > self.baseline_tick {
             self.lead = Some(Lead::new(now, self.newest, self.rtt, settings, self.pinned));
         }
         if let Some(fault) = self.replica.fault.take() {
-            self.terminate(fault, Disposition::Uncertain);
-            self.link.close(wire::PROTOCOL_CLOSE);
-            return Ok(());
+            self.request_repair(fault);
+        }
+        if let Some(fault) = &self.pending_fault {
+            wire::write_divergence(&mut self.packet, fault.actual, &fault.parts);
+            let mut header = self.connection.header(Kind::Divergence, fault.tick, 0);
+            header.acknowledged_sequence = self.generation;
+            if wire::send(
+                &self.link,
+                Lane::Reliable,
+                header,
+                &self.packet,
+                send_time,
+                &mut self.scratch,
+            )
+            .is_ok()
+            {
+                self.pending_fault = None;
+            }
         }
         if let Some((reason, tick)) = self.ending
             && self.world().tick() == tick
@@ -398,9 +523,20 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         if now >= self.report_at {
             self.report_at += ((now - self.report_at) / u64::from(settings.tick_us) + 1)
                 * u64::from(settings.tick_us);
-            self.send_report(send_time);
+            // During an image transfer, an existing player continues to send
+            // controls. Its old progress is ignored by the new stream generation.
+            if self.installed_generation > 0 {
+                self.send_report(send_time);
+            }
         }
         Ok(())
+    }
+
+    fn request_repair(&mut self, fault: Fault) {
+        self.state = ClientState::Repairing;
+        self.awaiting_repair = true;
+        self.pending_fault = Some(fault);
+        self.clock = None;
     }
 
     fn terminate(&mut self, state: ClientState, disposition: Disposition) {
@@ -429,6 +565,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             );
         self.commands.clear();
         self.baseline = None;
+        self.pending_fault = None;
         self.clock = None;
     }
 
@@ -460,7 +597,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             }
             return match message.header.kind {
                 Kind::Welcome => self.welcome(now, message),
-                Kind::Reject if Connection::default().matches(message.header) => {
+                Kind::Reject
+                    if Connection::default().matches(message.header)
+                        && message.header.acknowledged_sequence == 0 =>
+                {
                     let refusal = match message.payload {
                         [1] => Refusal::Protocol,
                         [2] => Refusal::RuleSet,
@@ -474,13 +614,33 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                 _ => None,
             };
         }
-        if !self.connection.matches(message.header) {
+        let header = message.header;
+        if !self.connection.matches(header) {
+            if lane == Lane::Datagram && header.match_id == self.connection.id {
+                self.stale += 1;
+            }
             return (lane == Lane::Datagram).then_some(());
         }
+        if lane == Lane::Datagram && header.acknowledged_sequence != self.generation {
+            return Some(());
+        }
         match (lane, message.header.kind) {
-            (Lane::Reliable, Kind::BaselineChunk | Kind::BaselineEnd) => self.image(message),
-            (_, Kind::AdmittedSets) => self.sets(lane, message),
-            (Lane::Reliable, Kind::MatchEnded) => {
+            (Lane::Reliable, Kind::BaselineBegin) => self.welcome(now, message),
+            (Lane::Reliable, Kind::BaselineChunk | Kind::BaselineEnd)
+                if header.acknowledged_sequence == self.generation =>
+            {
+                self.image(message)
+            }
+            (_, Kind::AdmittedSets) if header.acknowledged_sequence == self.generation => {
+                if self.baseline.is_some() {
+                    (lane == Lane::Datagram).then_some(())
+                } else if self.awaiting_repair {
+                    Some(())
+                } else {
+                    self.sets(lane, message)
+                }
+            }
+            (Lane::Reliable, Kind::MatchEnded) if header.acknowledged_sequence == 0 => {
                 let reason = match message.payload {
                     [1] => EndReason::AuthorityStep,
                     [2] => EndReason::Stopped,
@@ -504,7 +664,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         if header.match_id == [0; 16]
             || header.connection_epoch == 0
             || header.message_sequence != 0
-            || header.acknowledged_sequence != 0
+            || header.acknowledged_sequence != self.generation + 1
             || header.server_tick > u64::MAX - 100_000
         {
             return None;
@@ -513,16 +673,69 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         let slot = usize::from(data.byte()?);
         let seed = data.u64()?;
         let size = u32::from_le_bytes(data.fixed()?) as usize;
+        let token = PlayerToken(data.fixed()?);
+        let roster = Roster {
+            occupied: data.byte()?,
+            away: data.byte()?,
+        };
+        let commands = data.u64()?;
         let mut axes = [[0.0; 3]; SLOTS];
         for axis in &mut axes {
             *axis = wire::read_axes(&mut data)?;
         }
         let settings = wire::read_settings(&mut data)?;
         data.done()?;
-        if slot >= SLOTS || size.checked_sub(SLOTS * 6)? > settings.image_limit as usize {
+        let first = self.generation == 0;
+        if slot >= SLOTS
+            || size > settings.image_limit as usize
+            || token.0 == [0; 16]
+            || roster.occupied > 15
+            || roster.away & !roster.occupied != 0
+            || commands > self.command_sequence
+            || (!first
+                && (self.settings != Some(settings)
+                    || self.slot != slot
+                    || self.token != Some(token)
+                    || self.seed != Some(seed)
+                    || header.server_tick < self.world().tick()
+                    || self.ending.is_some()))
+        {
             return None;
         }
-        let size = size - SLOTS * 6;
+        self.token = Some(token);
+        self.generation = header.acknowledged_sequence;
+        self.clock = None;
+        self.awaiting_repair = false;
+        self.pending_fault = None;
+        for entry in &mut self.replica.sets {
+            if let Some(stored) = entry.take() {
+                self.replica.spare.push(stored.set);
+            }
+        }
+        while self
+            .replica
+            .waiting_frames
+            .front()
+            .is_some_and(|(tick, _)| *tick <= header.server_tick)
+        {
+            let (_, sequence) = self.replica.waiting_frames.pop_front()?;
+            self.replica.results.push_back(ResultEvent {
+                input: Input::Frame(sequence),
+                disposition: Disposition::Uncertain,
+            });
+        }
+        while self
+            .replica
+            .waiting_commands
+            .front()
+            .is_some_and(|sequence| *sequence <= commands)
+        {
+            let sequence = self.replica.waiting_commands.pop_front()?;
+            self.replica.results.push_back(ResultEvent {
+                input: Input::Command(sequence),
+                disposition: Disposition::Uncertain,
+            });
+        }
         self.replica.axes = axes;
         self.held = header.server_tick;
         self.newest = self.held;
@@ -534,16 +747,23 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             id: header.match_id,
             epoch: header.connection_epoch,
         };
-        self.rtt = now - self.hello;
+        if first {
+            self.rtt = now - self.hello;
+        }
         self.replica
             .sets
             .resize_with(usize::from(settings.backlog), || None);
         self.baseline = Some(Baseline {
             tick: self.held,
             size,
+            roster,
             bytes: Vec::with_capacity(size),
         });
-        self.state = ClientState::Synchronizing;
+        self.state = if first {
+            ClientState::Synchronizing
+        } else {
+            ClientState::Repairing
+        };
         Some(())
     }
 
@@ -566,19 +786,32 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             if !message.payload.is_empty() || baseline.size != baseline.bytes.len() {
                 return None;
             }
-            self.replica
+            let baseline = self.baseline.take()?;
+            if self
+                .replica
                 .world
                 .restore(baseline.tick, &baseline.bytes)
-                .ok()?;
-            self.baseline = None;
+                .is_err()
+            {
+                self.request_repair(Fault {
+                    tick: baseline.tick,
+                    actual: None,
+                    parts: Vec::new(),
+                });
+            } else {
+                self.installed_generation = self.generation;
+                self.replica.roster = baseline.roster;
+                if self.generation > 1 {
+                    let roster = baseline.roster;
+                    self.replica.own_present =
+                        (roster.occupied & !roster.away) & (1 << self.slot) != 0;
+                }
+            }
         }
         Some(())
     }
 
     fn sets(&mut self, lane: Lane, message: Message<'_>) -> Option<()> {
-        if self.baseline.is_some() && lane == Lane::Reliable {
-            return None;
-        }
         if self.ending.is_some() {
             return (lane == Lane::Datagram).then_some(());
         }
@@ -596,42 +829,51 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         }
         let stepped = self.replica.world.tick().max(self.baseline_tick);
         let cap = u64::from(settings.backlog);
-        // Check message bounds before any set from it enters the queue.
+        // Decode a packet before publishing any of its sets. Axes that hold
+        // their previous value are filled only when the set becomes contiguous.
         let mut encoded = Read::new(bytes);
         let mut remaining = bytes.len();
+        let mut obsolete = 0;
         while remaining != 0 {
             let size = usize::from(encoded.u16()?);
             if !(5..=wire::MAX_SET).contains(&size) {
                 return None;
             }
-            encoded.take(size)?;
-            remaining -= 2 + size;
-        }
-        let mut encoded = Read::new(bytes);
-        let mut remaining = bytes.len();
-        while remaining != 0 {
-            let size = usize::from(encoded.u16()?);
-            let set = encoded.take(size)?;
-            remaining -= 2 + size;
+            let bytes = encoded.take(size)?;
+            remaining -= size + 2;
             if tick <= self.held {
-                self.obsolete += 1;
+                obsolete += 1;
             } else if tick <= stepped + cap {
                 let index = usize::try_from(tick % cap).expect("bounded backlog");
                 if self.replica.sets[index].is_none() {
-                    let mut saved = self
-                        .replica
-                        .spare
-                        .pop()
-                        .unwrap_or_else(|| Vec::with_capacity(64));
-                    saved.extend(set);
-                    self.replica.sets[index] = Some(Stored {
+                    let set = wire::read_set(bytes, tick, [[0.0; 3]; SLOTS], &self.replica.codec)?;
+                    if set.digest.is_some()
+                        != tick.is_multiple_of(u64::from(settings.digest_interval))
+                    {
+                        return None;
+                    }
+                    let set = if let Some(mut saved) = self.replica.spare.pop() {
+                        *saved = set;
+                        saved
+                    } else {
+                        Box::new(set)
+                    };
+                    self.replica.packet_sets.push(Stored {
                         tick,
-                        payload: Payload::Encoded(saved),
+                        set,
+                        ready: false,
                     });
                 }
             }
-            self.newest = self.newest.max(tick);
             tick += 1;
+        }
+        if tick > message.header.server_tick {
+            self.newest = self.newest.max(tick - 1);
+        }
+        self.obsolete += obsolete;
+        for stored in self.replica.packet_sets.drain(..) {
+            let index = usize::try_from(stored.tick % cap).expect("bounded backlog");
+            self.replica.sets[index] = Some(stored);
         }
         while self.held < stepped + cap {
             let next = self.held + 1;
@@ -646,22 +888,29 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         Some(())
     }
 
-    fn step(&mut self, now: u64, prior: u64, settings: Settings) {
+    fn step(&mut self, now: u64, prior: u64, settings: Settings, mut budget: u8) {
         let stepped = self.world().tick();
         let replica = &mut self.replica;
+        let slot = self.slot;
         if let Some(clock) = &mut self.clock {
             if self.held > prior {
                 clock.observe(self.held, now, settings);
             }
-            clock.advance(now, stepped, self.held, settings, || replica.commit());
+            clock.advance(now, stepped, self.held, settings, || {
+                if budget == 0 {
+                    return false;
+                }
+                budget -= 1;
+                replica.commit(slot)
+            });
             self.state = if clock.skip.is_some() {
                 ClientState::Behind
             } else {
                 ClientState::Playing
             };
         } else if self.held - stepped > u64::from(settings.behind) {
-            for _ in 0..settings.catch_up {
-                if !replica.commit() {
+            for _ in 0..settings.catch_up.min(budget) {
+                if !replica.commit(slot) {
                     break;
                 }
             }
@@ -734,8 +983,14 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
 
     fn send_report(&mut self, send_time: u64) {
         self.packet.clear();
-        self.packet.extend(self.held.to_le_bytes());
-        self.packet.extend(self.world().tick().to_le_bytes());
+        let (held, stepped) = if self.installed_generation == self.generation {
+            (self.held, self.world().tick())
+        } else {
+            // The authority ignores old progress but can still admit timed input.
+            (0, 0)
+        };
+        self.packet.extend(held.to_le_bytes());
+        self.packet.extend(stepped.to_le_bytes());
         let actor_wire_id = self.slot as u64 + 1;
         let mut encoded = [0; DATAGRAM_LIMIT - HEADER_BYTES - INPUT_PREFIX];
         if let Some(newest) = self.recent.back() {
@@ -762,9 +1017,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                 }
             }
         }
-        let header = self
+        let mut header = self
             .connection
             .header(Kind::InputBatch, 0, self.frame_sequence);
+        header.acknowledged_sequence = self.installed_generation;
         match wire::send(
             &self.link,
             Lane::Datagram,
@@ -785,30 +1041,19 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
         if self.sets[index].as_ref().is_none_or(|set| set.tick != tick) {
             return Some(false);
         }
-        let Some(Stored {
-            payload: Payload::Encoded(mut bytes),
-            ..
-        }) = self.sets[index].take()
-        else {
+        let stored = self.sets[index].as_mut()?;
+        if stored.ready {
             return None;
-        };
-        let set = wire::read_set(&bytes, tick, self.axes, &self.codec);
-        bytes.clear();
-        self.spare.push(bytes);
-        let set = set?;
-        let result = set.results[slot];
+        }
+        for (slot, frame) in stored.set.frames.iter_mut().enumerate() {
+            if stored.set.changed_axes & (1 << slot) == 0 {
+                frame.axes = self.axes[slot];
+            }
+        }
+        let result = stored.set.results[slot];
+        self.axes = std::array::from_fn(|slot| stored.set.frames[slot].axes);
+        stored.ready = true;
         self.resolve(tick, result)?;
-        self.axes = std::array::from_fn(|slot| set.frames[slot].axes);
-        let ready = if let Some(mut ready) = self.ready_spare.pop() {
-            *ready = set;
-            ready
-        } else {
-            Box::new(set)
-        };
-        self.sets[index] = Some(Stored {
-            tick,
-            payload: Payload::Ready(ready),
-        });
         Some(true)
     }
 
@@ -860,30 +1105,43 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
         Some(())
     }
 
-    fn commit(&mut self) -> bool {
+    fn commit(&mut self, slot: usize) -> bool {
         let tick = self.world.tick() + 1;
         let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
         if self.sets[index]
             .as_ref()
-            .is_none_or(|set| set.tick != tick || !matches!(set.payload, Payload::Ready(_)))
+            .is_none_or(|stored| stored.tick != tick || !stored.ready)
         {
             return false;
         }
-        let Some(Stored {
-            payload: Payload::Ready(set),
-            ..
-        }) = self.sets[index].take()
-        else {
-            unreachable!("checked next ready set")
+        let set = self.sets[index].take().expect("checked ready set").set;
+        let stepped = self.world.step(&set.frames, set.events).is_ok();
+        if stepped {
+            self.roster.apply(set.events);
+            let bit = 1 << slot;
+            if (set.events.joined | set.events.back) & bit != 0 {
+                self.own_present = true;
+            } else if (set.events.away | set.events.left) & bit != 0 {
+                self.own_present = false;
+            }
+        }
+        let actual = if stepped && set.digest.is_some() {
+            Some(wire::digest_parts(&self.world, &mut self.parts))
+        } else {
+            None
         };
-        let stepped = self.world.step(&set.frames, set.joined).is_ok();
-        let agrees = stepped
-            && set
-                .digest
-                .is_none_or(|expected| self.world.digest() == expected);
-        self.ready_spare.push(set);
+        let agrees = stepped && actual == set.digest;
+        self.spare.push(set);
         if !agrees {
-            self.fault = Some(ClientState::Diverged(tick));
+            self.fault = Some(Fault {
+                tick,
+                actual,
+                parts: if actual.is_some() {
+                    self.parts.clone()
+                } else {
+                    Vec::new()
+                },
+            });
         }
         agrees
     }

@@ -186,6 +186,12 @@ allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core", "thru
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
 
+[external_dependencies.getrandom]
+requirement = "=0.2.17"
+license = "MIT OR Apache-2.0"
+purpose = "Issue unguessable reconnect tokens from platform entropy"
+target_cost = "One 16-byte entropy read on the host per new player, including Web Crypto on Wasm"
+
 [external_dependencies.quinn]
 requirement = "=0.11.12"
 license = "MIT OR Apache-2.0"

@@ -39,7 +39,11 @@ fn every_truncation_of_a_settings_or_set_payload_is_refused() {
     let set = Set {
         frames,
         results,
-        joined: 15,
+        events: RosterEvents {
+            joined: 15,
+            ..RosterEvents::default()
+        },
+        changed_axes: 0,
         digest: Some(115),
     };
     let mut wire = Vec::new();

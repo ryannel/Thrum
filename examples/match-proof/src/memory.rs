@@ -1,4 +1,6 @@
 mod allocation;
+mod faults;
+pub use faults::run_fault;
 mod world;
 
 use std::time::Instant;
@@ -213,6 +215,7 @@ impl Player {
             PROTOCOL,
             (run.profile == "pinned").then_some(5),
         )
+        .with_link_origin(player_time(index, 0))
         .with_repeat_limit(repeats);
         Ok(Self {
             client,
@@ -292,7 +295,7 @@ impl Player {
         }
         match self.client.state() {
             ClientState::Ended(_, _) => self.active = false,
-            ClientState::Refused(_) | ClientState::Closed(_) | ClientState::Diverged(_) => {
+            ClientState::Refused(_) | ClientState::Closed(_) => {
                 return Err(format!(
                     "player {index} at tick {before}: {:?}",
                     self.client.state()

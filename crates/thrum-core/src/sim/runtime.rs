@@ -648,6 +648,14 @@ impl<G: TickGame> GameRuntime<G> {
         resources.encode(&mut digest);
         Ok(digest.finish())
     }
+    /// Diagnostic digest of the allocator's free slots in allocation order.
+    /// The full world digest still includes the same allocator bytes.
+    pub fn free_list_digest(&self) -> u64 {
+        let mut digest = crate::profile::Digest::default();
+        self.world.encode_free_list(&mut digest);
+        digest.finish()
+    }
+
     /// Identity of the current committed authority endpoint.
     pub fn endpoint(&self) -> RuntimeEndpoint {
         RuntimeEndpoint {

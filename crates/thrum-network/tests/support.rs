@@ -15,7 +15,9 @@ use thrum_core::{
 };
 use thrum_network::{
     input_batch::{ActionView, ActionWire, InputCodecError},
-    session::{Client, ClientState, Controls, Host, SLOTS, Settings, World},
+    session::{
+        Client, ClientState, Controls, Host, PlayerToken, RosterEvents, SLOTS, Settings, World,
+    },
 };
 use thrum_transport::{
     Link, Profile,
@@ -32,12 +34,16 @@ pub enum Rule {
 struct Resources {
     signature: u64,
     padding: u16,
+    heroes: [u64; SLOTS],
+    positions: [i64; SLOTS],
 }
 
 impl StateEncode for Resources {
     fn encode(&self, sink: &mut Digest<'_>) {
         self.signature.encode(sink);
         self.padding.encode(sink);
+        self.heroes.encode(sink);
+        self.positions.encode(sink);
         for _ in 0..self.padding {
             sink.bytes(&[0; 1_024]);
         }
@@ -48,6 +54,8 @@ impl StateDecode for Resources {
     fn decode(reader: &mut StateReader<'_>) -> Result<Self, StateDecodeError> {
         let signature = u64::decode(reader)?;
         let padding = u16::decode(reader)?;
+        let heroes = <[u64; SLOTS]>::decode(reader)?;
+        let positions = <[i64; SLOTS]>::decode(reader)?;
         if padding > 192 {
             return Err(StateDecodeError::Invalid);
         }
@@ -56,7 +64,12 @@ impl StateDecode for Resources {
                 return Err(StateDecodeError::Invalid);
             }
         }
-        Ok(Self { signature, padding })
+        Ok(Self {
+            signature,
+            padding,
+            heroes,
+            positions,
+        })
     }
 }
 
@@ -64,6 +77,7 @@ impl StateDecode for Resources {
 struct Candidate {
     resources: Resources,
     actions: Vec<(u64, usize, u16)>,
+    events: RosterEvents,
 }
 
 struct Rules {
@@ -72,6 +86,9 @@ struct Rules {
     fail_at: Option<u64>,
     pending: [Option<(usize, u16)>; SLOTS * 8],
     log: Vec<(u64, usize, u16)>,
+    roster: RosterEvents,
+    motion: [i64; SLOTS],
+    roster_log: Vec<RosterRow>,
 }
 
 impl TickGame for Rules {
@@ -82,6 +99,9 @@ impl TickGame for Rules {
     fn reset_candidate(&self, candidate: &mut Candidate) {
         candidate.resources.signature = self.resources.signature;
         candidate.resources.padding = self.resources.padding;
+        candidate.resources.heroes = self.resources.heroes;
+        candidate.resources.positions = self.resources.positions;
+        candidate.events = self.roster;
         candidate.actions.clear();
     }
 
@@ -101,9 +121,17 @@ impl TickGame for Rules {
     ) {
     }
 
-    fn apply(&mut self, _: &WorldRead<'_>, _: u64, candidate: &Candidate) {
+    fn apply(&mut self, _: &WorldRead<'_>, tick: u64, candidate: &Candidate) {
         self.resources.signature = candidate.resources.signature;
         self.log.extend(&candidate.actions);
+        self.resources.heroes = candidate.resources.heroes;
+        self.resources.positions = candidate.resources.positions;
+        self.roster_log.push(RosterRow {
+            tick,
+            events: candidate.events,
+            heroes: self.resources.heroes,
+            positions: self.resources.positions,
+        });
     }
 }
 
@@ -118,6 +146,20 @@ fn play(
     if rules.fail_at == Some(tick) {
         return Err(RegisteredWorldError::InvalidHandle);
     }
+    for slot in 0..SLOTS {
+        let bit = 1 << slot;
+        if candidate.events.joined & bit != 0 {
+            candidate.resources.heroes[slot] = tick;
+            candidate.resources.positions[slot] = 0;
+        }
+        if candidate.events.left & bit != 0 {
+            candidate.resources.heroes[slot] = 0;
+            candidate.resources.positions[slot] = 0;
+        }
+        if candidate.resources.heroes[slot] != 0 {
+            candidate.resources.positions[slot] += rules.motion[slot];
+        }
+    }
     for &(slot, action) in rules.pending.iter().flatten() {
         let value = tick * 61_007 + (slot as u64) * 65_536 + u64::from(action);
         let signature = candidate
@@ -131,6 +173,14 @@ fn play(
         candidate.actions.push((tick, slot, action));
     }
     Ok(())
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RosterRow {
+    pub tick: u64,
+    pub events: RosterEvents,
+    pub heroes: [u64; SLOTS],
+    pub positions: [i64; SLOTS],
 }
 
 pub struct Game {
@@ -163,11 +213,15 @@ impl Game {
                 resources: Resources {
                     signature: 17,
                     padding,
+                    ..Resources::default()
                 },
                 rule,
                 fail_at,
                 pending: [None; SLOTS * 8],
                 log: Vec::new(),
+                roster: RosterEvents::default(),
+                motion: [0; SLOTS],
+                roster_log: Vec::new(),
             },
             runtime: GameRuntime::new_published(
                 WorldEpoch(epoch),
@@ -195,6 +249,10 @@ impl Game {
                 .publish_initial(&mut game.rules, &mut game.candidate);
         }
         game
+    }
+
+    pub fn roster_log(&self) -> &[RosterRow] {
+        &self.rules.roster_log
     }
 
     pub fn log(&self) -> &[(u64, usize, u16)] {
@@ -225,8 +283,17 @@ impl World for Game {
         self.runtime.tick()
     }
 
-    fn step(&mut self, frames: &[InputFrame<u16>; SLOTS], _: u8) -> Result<(), Failure> {
+    fn step(
+        &mut self,
+        frames: &[InputFrame<u16>; SLOTS],
+        roster: RosterEvents,
+    ) -> Result<(), Failure> {
         self.rules.pending.fill(None);
+        self.rules.roster = roster;
+        self.rules.motion = frames.each_ref().map(|frame| {
+            let axis = frame.axes[0];
+            i64::from(axis > 0.0) - i64::from(axis < 0.0)
+        });
         let actions = frames
             .iter()
             .enumerate()
@@ -370,19 +437,31 @@ impl Match {
     /// # Panics
     /// The fixture exceeds its link cap.
     pub fn add(&mut self, rules: Rule, protocol: u16) {
+        self.add_token(rules, protocol, None);
+    }
+
+    /// Attach a fresh client that can present a previous slot token.
+    ///
+    /// # Panics
+    /// The fixture exceeds its link cap.
+    pub fn add_token(&mut self, rules: Rule, protocol: u16, token: Option<PlayerToken>) {
         let index = self.clients.len();
         let [link, authority] = self.memory.connect().expect("fixture link");
         self.host
             .connect(authority.clone(), self.now)
             .expect("host takes the fixture link");
-        self.clients.push(Client::new(
+        let mut client = Client::new(
             Game::new(11 + index as u128, rules, None, 0, false),
             Codec,
             link.clone(),
             self.now,
             protocol,
             None,
-        ));
+        );
+        if let Some(token) = token {
+            client = client.with_token(token);
+        }
+        self.clients.push(client);
         self.links.push([link, authority]);
     }
 

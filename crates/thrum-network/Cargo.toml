@@ -11,3 +11,4 @@ workspace = true
 [dependencies]
 thrum-core = { path = "../thrum-core" }
 thrum-transport = { path = "../thrum-transport", default-features = false }
+getrandom = { version = "=0.2.17", features = ["js"] }

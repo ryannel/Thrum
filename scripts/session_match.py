@@ -16,6 +16,7 @@ import tomllib
 from concurrent.futures import ThreadPoolExecutor
 
 import sim2d_conformance as conformance
+import session_faults
 
 
 ROOT = conformance.ROOT
@@ -370,13 +371,16 @@ def identity(scratch):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["image", "identity", "image-costs", "memory"])
-    parser.add_argument("scenario", nargs="?", choices=["steady", "lead", "costs"])
+    parser.add_argument("scenario", nargs="?", choices=["steady", "lead", "costs", *session_faults.SCENARIOS])
     parser.add_argument("--target", choices=TARGETS, default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.action == "memory":
         if args.scenario is None or args.target != "mac-metal":
             parser.error("memory needs a scenario on mac-metal")
+        if args.scenario in session_faults.SCENARIOS:
+            session_faults.proof(args.scenario, args.output, build)
+            return
         from session_memory import proof
         proof(args.scenario, args.output, build)
         return
