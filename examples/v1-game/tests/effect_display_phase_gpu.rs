@@ -6,13 +6,16 @@ use std::time::{Duration, Instant};
 use v1_game::{FrameConfig, FrameHost, FrameSample, effect::DiagnosticEffect};
 
 #[cfg(target_os = "macos")]
-fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+fn complete(mut poll: impl FnMut() -> Option<FrameSample>, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
-        if let Some(sample) = host.poll_completed().expect("completion") {
+        if let Some(sample) = poll() {
             return sample;
         }
-        assert!(Instant::now() < deadline);
+        assert!(
+            Instant::now() < deadline,
+            "submitted frame did not complete"
+        );
         device
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("Metal");
@@ -77,24 +80,17 @@ fn delayed_observation_still_describes_the_consumed_target() {
             std::thread::sleep(Duration::from_millis(1));
         }
         host.set_presentation_lead(Duration::ZERO);
-        host.drive(
-            observation,
-            Some(&v1_game::SurfaceOutput {
-                view: &view,
-                extent: [96, 54],
-            }),
-        )
-        .expect("delayed render owner");
-        let deadline = Instant::now() + Duration::from_secs(60);
-        let sample = loop {
-            if let Some(sample) = host.poll_completed().expect("completion") {
-                break sample;
-            }
-            assert!(Instant::now() < deadline);
-            device
-                .poll(wgpu::PollType::wait_indefinitely())
-                .expect("Metal");
-        };
+        let report = host
+            .drive(
+                observation,
+                Some(&v1_game::SurfaceOutput {
+                    view: &view,
+                    extent: [96, 54],
+                }),
+            )
+            .expect("delayed render owner");
+        assert!(report.submitted, "delayed frame: {report:?}");
+        let sample = complete(|| host.poll_completed().expect("completion"), &device);
         assert!(
             sample.clock_interpolating,
             "the counterexample needs an active clock"
@@ -160,7 +156,7 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                     host.set_presentation_lead(lead);
                     host.drive(observation, Some(&surface))
                         .expect("scripted frame");
-                    let sample = complete(&mut host, &device);
+                    let sample = complete(|| host.poll_completed().expect("completion"), &device);
                     assert_eq!(sample.observation, observation);
                     assert_eq!(sample.presentation_lead, lead);
                     identity(&sample);
@@ -202,7 +198,7 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
             host.pause().expect("pause inline world");
             host.drive(Duration::from_secs(1), Some(&surface))
                 .expect("paused");
-            let paused = complete(&mut host, &device);
+            let paused = complete(|| host.poll_completed().expect("completion"), &device);
             identity(&paused);
             assert!(!paused.clock_interpolating);
             let texture = handle.lock().expect("effect").textures[2][0].clone();
@@ -251,7 +247,7 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
         host.set_scene_contribution(Box::new(effect))
             .expect("effect");
         let origin = Instant::now();
-        let (mut host, _) = host.into_threaded(origin, || {}).expect("world lane");
+        let (mut host, controls) = host.into_threaded(origin, || {}).expect("world lane");
         let mut interpolating = 0;
         for refresh in [120_u64, 60] {
             let start = origin.elapsed() + Duration::from_millis(20);
@@ -260,26 +256,39 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                 if let Some(wait) = due.checked_sub(origin.elapsed()) {
                     std::thread::sleep(wait);
                 }
-                let observation = origin.elapsed();
                 let target = due + Duration::from_millis(30);
-                let lead = match i % 12 {
-                    0 => Duration::ZERO,
-                    1 => Duration::from_millis(50),
-                    _ => target.saturating_sub(observation),
-                };
-                host.set_presentation_lead(lead);
-                host.drive(observation, Some(&surface))
-                    .expect("threaded frame");
-                let deadline = Instant::now() + Duration::from_secs(60);
-                let sample = loop {
-                    if let Some(s) = host.poll_completed().expect("complete") {
-                        break s;
+                let admission_deadline = Instant::now() + Duration::from_secs(3);
+                let (observation, lead) = loop {
+                    let observation = origin.elapsed();
+                    let lead = match i % 12 {
+                        0 => Duration::ZERO,
+                        1 => Duration::from_millis(50),
+                        _ => target.saturating_sub(observation),
+                    };
+                    host.set_presentation_lead(lead);
+                    let report = host
+                        .drive(observation, Some(&surface))
+                        .expect("threaded frame");
+                    assert!(
+                        report.overload.is_none(),
+                        "threaded clock refusal: {report:?}"
+                    );
+                    if report.submitted {
+                        assert!(report.surface_presented, "threaded surface: {report:?}");
+                        break (observation, lead);
                     }
-                    assert!(Instant::now() < deadline);
-                    device
-                        .poll(wgpu::PollType::wait_indefinitely())
-                        .expect("Metal");
+                    // A threaded drive can omit the optional view while the world
+                    // has no matching publication. Wait for admission before GPU completion.
+                    controls
+                        .check_health()
+                        .expect("threaded world after skipped view");
+                    assert!(
+                        Instant::now() < admission_deadline,
+                        "threaded frame was not submitted at {refresh} Hz, step {i}: {report:?}"
+                    );
+                    std::thread::sleep(Duration::from_millis(1));
                 };
+                let sample = complete(|| host.poll_completed().expect("completion"), &device);
                 identity(&sample);
                 let time = handle.lock().expect("effect").time.expect("delivered time");
                 assert_eq!(sample.observation, observation);
