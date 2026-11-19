@@ -112,7 +112,8 @@ impl PreparedSynthetic {
         if limits.max_bindings_per_bind_group <= ENVIRONMENT_BINDING
             || matches!(lighting, FrameLighting::Atmosphere(_))
                 && (limits.max_sampled_textures_per_shader_stage
-                    < 9 + 2 * u32::from(shadow_enabled) + u32::from(scene.sun_optical_depth.is_some())
+                    < 9 + 2 * u32::from(shadow_enabled)
+                        + u32::from(scene.sun_optical_depth.is_some())
                     || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
         {
             return Err(AbiError::DeviceLimits.into());

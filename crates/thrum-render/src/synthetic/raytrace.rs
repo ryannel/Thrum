@@ -352,6 +352,7 @@ impl PreparedSynthetic {
         self.uses_shadow_rays().then(|| {
             super::forward::LightBindings {
                 directional: &self.directional_buffer,
+                environment_light: &self.environment_light,
                 local: &self.local_light_buffer,
                 heads: &self.cluster_head_buffer,
                 indices: &self.cluster_index_buffer,

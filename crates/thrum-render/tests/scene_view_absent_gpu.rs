@@ -24,14 +24,14 @@ fn every_main_shader_variant_matches_its_no_view_source() {
         &thrum_test_support::Restriction::default(),
     );
     let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
-    // Independently composed from the WGSL files at 8365e5d17 using the
+    // Independently composed from the WGSL files at 447ff77bc using the
     // main-only assembly in scene_source.rs and air_shadow.rs. This includes
     // the split light declarations and CULLING's explicit fragment coverage.
     for (air, shadow, length, expected) in [
-        (false, false, 32_344, 0xda47_bf8a_4663_ae76),
-        (false, true, 32_388, 0x52b3_0da1_910a_4871),
-        (true, false, 39_764, 0x0232_29de_02ee_0c84),
-        (true, true, 42_399, 0x28d9_6ca9_5d6a_41ea),
+        (false, false, 32_344, 0xdace_973c_f515_91c9),
+        (false, true, 32_388, 0x2649_ce84_4c40_dc5a),
+        (true, false, 39_764, 0x7d03_b09e_7f7e_b7ff),
+        (true, true, 42_399, 0x3dc5_2cb0_207f_7a27),
     ] {
         pollster::block_on(async {
             let mut scene = SyntheticScene::grid(1).expect("scene");
