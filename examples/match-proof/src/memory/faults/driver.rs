@@ -38,6 +38,7 @@ pub(super) struct Player {
     pub backlog: Vec<(u64, u64, u64, usize)>,
     pub admissions: u64,
     pub commands: Vec<ResultEvent>,
+    pub measure_catchup: bool,
     pub catchup_ns: Time,
     pub catchup_steps: u64,
     pub catchup_engine_ns: u64,
@@ -139,6 +140,7 @@ impl Match {
             backlog: Vec::new(),
             admissions: 0,
             commands: Vec::new(),
+            measure_catchup: self.measured,
             catchup_ns: Time::default(),
             catchup_steps: 0,
             catchup_engine_ns: 0,
@@ -205,9 +207,7 @@ impl Match {
             {
                 player.admissions += 1;
             }
-            let mut synchronizing = false;
             if let Some(stream) = self.host.stream(player.host_link()) {
-                synchronizing = stream.synchronizing;
                 let sets = self.host.retained(player.host_link());
                 let staged = stream.staged_frames;
                 player.most_sets = player.most_sets.max(sets);
@@ -245,14 +245,9 @@ impl Match {
                 }
                 continue;
             }
-            let stepping = synchronizing
-                || matches!(
-                    player.client.state(),
-                    ClientState::Synchronizing | ClientState::Repairing
-                );
             let before = player.client.world().tick();
             let engine_before = player.world.borrow().crowd.engine.total;
-            let start = self.measured.then(Instant::now);
+            let start = player.measure_catchup.then(Instant::now);
             player
                 .client
                 .advance_with_step_budget(self.now, player.budget, |target| {
@@ -270,8 +265,11 @@ impl Match {
                 let world = player.world.borrow();
                 if world.restores.len() > player.restored_at.len() {
                     player.restored_at.push(after);
+                    player.catchup_ns = Time::default();
+                    player.catchup_steps = 0;
+                    player.catchup_engine_ns = 0;
                 }
-                if let Some(start) = start.filter(|_| stepping) {
+                if let Some(start) = start.filter(|_| !world.restores.is_empty()) {
                     let after = world.crowd.tick();
                     let start_tick = world
                         .restores

@@ -31,12 +31,23 @@ def run(binary, scenario, count, provenance):
 
 
 def comparable_fields(row):
-    retained = {key: row[key] for key in ("largest_retention_bytes", "largest_retention_sets")}
+    retention = ("largest_retention_bytes", "largest_retention_sets",
+                 "largest_staging_frames", "largest_link_queue_bytes")
+    retained = {key: row[key] for key in retention}
+    ordinary = row["ordinary_host_ticks_ns"]
+    retained["ordinary_host_tick.average_ns"] = ordinary["total"] / ordinary["samples"]
+    retained["ordinary_host_tick.max_ns"] = ordinary["max"]
+    for direction, count in zip(("to_host", "from_host"), row["bytes_by_direction"], strict=True):
+        retained[f"bytes_per_second.{direction}"] = count * 1_000_000 / row["measured_until_us"]
     for name in ("join", "repair"):
         shot = row[name]
         retained[f"{name}.catch_up_steps"] = shot["catch_up_steps"]
         retained[f"{name}.catch_up_ns"] = shot["catch_up_calls_ns"]["total"]
         retained[f"{name}.catch_up_engine_ns"] = shot["catch_up_engine_ns"]
+        for field in ("restored_to_playing_us", "hello_to_playing_us",
+                      "restore_to_playing_us", "injection_to_playing_us"):
+            if field in shot:
+                retained[f"{name}.{field}"] = shot[field]
         for key in ("image_bytes", "tick_ns", "image_write_ns"):
             retained[f"{name}.{key}"] = shot["write_tick"][key]
     for field in ("peak", "longest_above_ticks"):

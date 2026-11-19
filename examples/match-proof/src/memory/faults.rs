@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use thrum_network::session::{ClientState, Close, Disposition, Input, Refusal, Settings, World};
 use thrum_transport::{CloseReason, Lane, Profile};
 
-use super::world::{Time, fault_world::Fault};
+use super::world::fault_world::Fault;
 
 fn base(count: u32, players: usize, settings: Settings, measured: bool) -> Match {
     let mut game = Match::new(count, settings, measured);
@@ -740,6 +740,7 @@ fn join_costs(count: u32) -> Value {
     let join_catchup = game.players[peer].catchup_ns.json();
     let join_engine_ns = game.players[peer].catchup_engine_ns;
     let join_steps = game.players[peer].catchup_steps;
+    game.players[peer].measure_catchup = false;
 
     game.advance_to(joined + 40);
     let cut = game.tick();
@@ -764,9 +765,7 @@ fn join_costs(count: u32) -> Value {
     let caught = game.tick();
 
     game.advance_to(caught + 45);
-    game.players[peer].catchup_ns = Time::default();
-    game.players[peer].catchup_steps = 0;
-    game.players[peer].catchup_engine_ns = 0;
+    game.players[peer].measure_catchup = true;
     let injected = game.tick();
     game.players[peer]
         .world
@@ -777,11 +776,18 @@ fn join_costs(count: u32) -> Value {
         game.players[peer].world.borrow().restores.len() == 2
     });
     let restored_at = game.tick();
+    let (repair_tick, _, repair_bytes) = game.players[peer].world.borrow().restores[1];
     game.until(100, |game| {
-        game.players[peer].client.state() == &ClientState::Playing
+        let player = &game.players[peer];
+        player.client.state() == &ClientState::Playing
+            && player.client.world().tick() > repair_tick
+            && game
+                .host
+                .stream(player.host_link())
+                .is_some_and(|stream| !stream.synchronizing)
     });
     let repaired = game.tick();
-    let (repair_tick, _, repair_bytes) = game.players[peer].world.borrow().restores[1];
+    game.players[peer].measure_catchup = false;
     let repair_image = game
         .images
         .iter()
