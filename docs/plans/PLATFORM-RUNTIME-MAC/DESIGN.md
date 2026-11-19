@@ -39,7 +39,7 @@ remain distinct. The held-drawable configuration refusal has one retry, followed
 
 Accepted M1 proves this through arm-disabled, paused-loss and running-loss rows in the same diagnostic build,
 including queue-call audit, retained PID/window, paused image equality and visible control response after recovery.
-The [retained recovery evidence](../../evidence/render/mac-m1-recovery/README.md) owns those historical results.
+The [retained recovery evidence](../../../.orchestrate/evidence/render/mac-m1-recovery/README.md) owns those historical results.
 
 ## Engine motion and console witnesses
 
@@ -78,7 +78,7 @@ CoreAnimation's record of when each drawable reached the screen, the value `MTLD
 it sits on the refresh grid while handler callback times jitter, and M2.5 validates it against the markers. The
 game needs no change and no raw drawable bridge. Both 11 November traces hold it for every drawable in their
 retained window, with three two-refresh intervals between them
-([diagnosis](../../evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)). The Instruments display tables
+([diagnosis](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)). The Instruments display tables
 are not the witness. Their kernel source emitted nothing in either trace while the rest of system-wide kernel
 tracing worked, and the cause is not established. Export them with every recording: populated tables corroborate,
 and empty ones are recorded without blocking.
@@ -141,13 +141,13 @@ tables.
 ### M2 The cooked valley presents smoothly on built-in ProMotion
 
 Uses [T2 capture](../T2-CAPTURE/DESIGN.md); `needs: T2-CAPTURE:M0`. This is milestone M2 on the M3 Max.
-Scene/framing identity only: [Ground E noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png).
+Scene/framing identity only: [Ground E noon tile](../../../.orchestrate/evidence/v1-workload/g7-showcase/route-ground-e.png).
 Its owner image review is not an acceptance gate. Judge quality against the JSON worded list and milestone bar:
 rock/ridge coherence, authored sphere sweep/exit, yaw-consistent settled endpoints, and no cut, snap or reversal;
 record repeats, local holds and pauses at actual elapsed time. Use the same noon view and slow normal-control pan.
 Preserve the historical `0d53d3aa` motion pass and decoded
-38.3 ms untraced / 51.7 ms traced local holds in [evidence](../../evidence/render/mac-m2-pan/README.md).
-That historical verdict does not pass the changed M2.1 or a later build. Current proof is in the done-when file and [current evidence](../../evidence/render/mac-m2-current/README.md).
+38.3 ms untraced / 51.7 ms traced local holds in [evidence](../../../.orchestrate/evidence/render/mac-m2-pan/README.md).
+That historical verdict does not pass the changed M2.1 or a later build. Current proof is in the done-when file and [current evidence](../../../.orchestrate/evidence/render/mac-m2-current/README.md).
 
 **Surface-path ordering:** M2 qualifies the current path with only `T2-CAPTURE:M0` as its delivery prerequisite;
 windowed-tap and trace-tooling work can proceed before G3t. APPLE-TILE cannot gate any M2 item. Its surface-graph/input-seam changes still require new qualification: Mac M3 below
@@ -169,8 +169,8 @@ a reason to hold current-path M2 open.
 - **M2.4 unattended — cadence witness command.** Build the reusable command described under
   [window output, panel cadence and trace tooling](#window-output-panel-cadence-and-trace-tooling), with no new
   recording, against the retained
-  [capture-OFF](../../evidence/PLATFORM-RUNTIME-MAC/m2-presented-off-traced.tsv.gz) and
-  [capture-ON](../../evidence/PLATFORM-RUNTIME-MAC/m2-presented-on-traced.tsv.gz) tables. It must find the
+  [capture-OFF](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/m2-presented-off-traced.tsv.gz) and
+  [capture-ON](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/m2-presented-on-traced.tsv.gz) tables. It must find the
   two-refresh intervals at drawables 526→527 and 544→545 (OFF) and 558→559 (ON), and join 544→545 to the game's
   15.47 ms present-call gap in the retained capture-OFF surface records. Those traces start after the pan began,
   so the command must refuse them as cadence evidence for the whole interval.

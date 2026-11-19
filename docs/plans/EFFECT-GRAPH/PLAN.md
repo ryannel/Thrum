@@ -22,13 +22,13 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: after a pause or an overload, the first moving frame steps display time forward once, by the time its tick took to arrive plus the lead: 38 ms in the planner's run with a 30 ms lead. Alpha has always waited for the first tick after a resume, and M4 leaves that. The other choice interpolates through that wait, which changes when every reader of alpha starts moving after a pause.
 
 ## M1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
-[review](../../evidence/EFFECT-GRAPH/M1-review.md)
+[review](../../../.orchestrate/evidence/EFFECT-GRAPH/M1-review.md)
 
 ## M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome: done
-[review](../../evidence/EFFECT-GRAPH/M2-review.md)
+[review](../../../.orchestrate/evidence/EFFECT-GRAPH/M2-review.md)
 
 ## M3 A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome: done
-[review](../../evidence/EFFECT-GRAPH/M3-review.md)
+[review](../../../.orchestrate/evidence/EFFECT-GRAPH/M3-review.md)
 
 ## M4 A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one
 
@@ -39,17 +39,17 @@ says whose files it is built in.
 M4's first two builds are on main: the phase in `crates/thrum-core/src/clock.rs`, the world lane with its
 refused pair and the clocked world; `FrameWorld`, `EffectTime`, the frame sample and the capture stamp in
 `thrum-render`; one clock read in `Offscreen::step_for`; the capture time record; the ledger row.
-[Its second review](../../evidence/EFFECT-GRAPH/M4-review.md) passed five items and failed M4.2 on a frame after
+[Its second review](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review.md) passed five items and failed M4.2 on a frame after
 a resume. The fault was the plan's: it wrote display time as a time on the host's clock. The items changed, so
 every one is proved again.
 
 The clock and the lane already keep the model
-([the planner's check](../../evidence/EFFECT-GRAPH/M4-timing/README.md)), so no phase, alpha or pair that a
+([the planner's check](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/README.md)), so no phase, alpha or pair that a
 frame is given today should change. What is missing is the due time of a tick, which `ClockSample` holds as
 `last_time` and `fractional_tick` and does not state; its way to the frame's sample and the capture record,
 through every implementer of `FrameWorld`; and tests through a stop. `spans.rs` and `lane_lifecycle.rs`
 beside that check are those tests in outline, and so are your six frames in
-`docs/evidence/EFFECT-GRAPH/M4-resume/probe.rs` at `2f3f2db75` on `build/effect-graph`. C02 carries the
+`.orchestrate/evidence/EFFECT-GRAPH/M4-resume/probe.rs` at `2f3f2db75` on `build/effect-graph`. C02 carries the
 model's words already, written with this plan: change them only where M4.4 would otherwise fail.
 
 `StillWorld` in `crates/thrum-app/src/sky.rs` reports a phase of 1 and a clock that is not interpolating even

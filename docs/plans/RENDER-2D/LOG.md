@@ -14,7 +14,7 @@
   also said "Don't change V1 modules' plans", and builders are on those modules now. So the three asks this module
   needs are built by its own builder after V1, under seam rulings in the module list, as `CREATOR` M2 and
   `CONTENT-LOOP` M2 were. No V1 module's design, plan or done-when file changed. It is an assumption in the plan.
-- 2026-11-13 Planner's probe, in [the evidence folder](../../evidence/RENDER-2D/planning-probe.md). Coverage
+- 2026-11-13 Planner's probe, in [the evidence folder](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md). Coverage
   sampling equals the exact box filter at every scale of 1 or more, to rounding error, while nearest sampling
   makes a texel 2 or 3 pixels wide by turns at a scale of 2.37. Ordering 10,000 rows costs 71 µs natively. All
   256 sRGB codes survive the half-float target. None of it ran on a GPU; M1 and M3 repeat it there.
@@ -31,7 +31,7 @@
   GPU is shared.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
   The reviewer should also read the seam rulings in the module list, which this design depends on.
-- 2026-11-13 [Design review](../../evidence/RENDER-2D/design-review.md): changes requested, two Must Fix findings
+- 2026-11-13 [Design review](../../../.orchestrate/evidence/RENDER-2D/design-review.md): changes requested, two Must Fix findings
   and two Suggestions. The planner resolved all four in the entries below.
 - 2026-11-13 Must Fix `sort-band-does-not-prevent-reversals`. The band held around each row's own sort value is
   gone: two rows that travel together use it up and then swap freely, as the review's trace shows. The order is
@@ -41,7 +41,7 @@
   exchanging a pair that has not passed. M2.2 now claims the exact order alone, M2.13 is new and claims the rule,
   M5.3 measures the crowd and no longer rests the guarantee on a trace, and M5.6 also asks that a clearly lower
   body is in front.
-- 2026-11-13 Planner's probe 4, in [the evidence folder](../../evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost).
+- 2026-11-13 Planner's probe 4, in [the evidence folder](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost).
   The rule held on the review's pair and on 144,000 ticks of random motion, where the old band failed 2,805 times.
   It first put the band between every two rows; in a packed crowd of 10,000 that left 1.2% of overlapping pairs
   more than a band out of order, growing with the crowd, so the rule applies the band to near rows only (0.04%).
@@ -66,9 +66,9 @@
 - 2026-11-19 M1 adds a sprite scene half to the existing frame host and selects it from the V1 game on Mac and web.
   Both Metal recipes passed submitted-pixel, resource, admission and lifecycle checks. The V1 3D graph control
   matched its starting snapshots. Chrome matched the CPU rasterizer before and after resize and device replacement.
-  The four fixed Metal stills and two release timing takes per target are in the [M1 evidence](../../evidence/RENDER-2D/M1.md).
+  The four fixed Metal stills and two release timing takes per target are in the [M1 evidence](../../../.orchestrate/evidence/RENDER-2D/M1.md).
   Chrome's sprite median crossed one timestamp step from 1080p to full backing size. The record flags both takes.
 - 2026-11-19 M1 review follow-up. The native sprite launch refuses traced geometry and explicit 3D shadows.
   On Metal, upload and simulate projected the known world point to the submitted sprite pixel with a displaced view.
   The cost checks accepted both retained target records and rejected missing build, storage and load observations.
-  Timing excursions are still reported without failing a complete record. [Evidence](../../evidence/RENDER-2D/M1.md#review-follow-up)
+  Timing excursions are still reported without failing a complete record. [Evidence](../../../.orchestrate/evidence/RENDER-2D/M1.md#review-follow-up)

@@ -19,10 +19,10 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-crate-edges --zero . && python3 scripts/test_shape_rules.py'",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
           "ask": "Do the rule's fixtures refuse a normal dependency on the support package, a normal dependency on a fixtures package from a package under `crates/`, and a build dependency on either, and pass a dev-dependency on both and a normal dependency on the fixtures package from the proving ground?",
           "verdict": "pass",
-          "review": "docs/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -31,9 +31,9 @@
           "ask": "Read the gate and its tests. Do they run a child test process with the adapter forced absent, under the default harness with no `--nocapture` or `--show-output`, and find the skip line in its output and exit code 0, then a failing exit code with `THRUM_REQUIRE_GPU=1`? Does `./dev check` set the variable on macOS and leave it unset elsewhere? Does the gate reach wgpu only, with no type of `thrum-render`'s in what it hands to a unit test inside `thrum-render`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -42,10 +42,10 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
           "ask": "In `thrum-sea`'s `portable_limits_gpu` and its harness, does the device with seven storage buffers a stage, and the one on WebGPU's default limits, come from the helper, with each assertion as it was? Can a restriction raise a limit or add a feature?",
           "verdict": "pass",
-          "review": "docs/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -53,9 +53,9 @@
           "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line? Does any GPU test in the three crates return early without asking the gate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/TEST-SUPPORT/M1/README.md",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -65,7 +65,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/TEST-SUPPORT/M1-review.md"
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md"
         }
       ]
     },

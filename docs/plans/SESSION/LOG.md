@@ -13,7 +13,7 @@
   client has not acknowledged, not on the reliable lane. The input lead is sized from the margin the host reports,
   not fixed. A world holds player slots and the session holds the roster, so a reconnect never changes world
   bytes. Every client starts from a baseline, the first included. The envelope stays at 64 bytes.
-- 2026-11-13 Planner's probe, in [the evidence folder](../../evidence/SESSION/planning-probe.md): a timing model
+- 2026-11-13 Planner's probe, in [the evidence folder](../../../.orchestrate/evidence/SESSION/planning-probe.md): a timing model
   with no engine code. The lead settled at 4.6 ticks at A0 and 9.6 at 250 ms round trip with 5% loss; a lead fixed
   at five ticks missed every tick there. Sets on datagrams could be stepped 76 ms after the host committed them
   at A0, against 227 ms on a reliable lane. Two repeated frames in an input datagram recovered nearly all of A0's
@@ -35,7 +35,7 @@
   `TRANSPORT` use. `./dev check-docs` fails, and did before this plan: older evidence files still link to
   `ACCEPTED.json`, which the move to `RECORD.json` renamed. It reports nothing in a file this plan wrote.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
-- 2026-11-13 [Design review](../../evidence/SESSION/design-review.md): changes requested, four Must Fix findings
+- 2026-11-13 [Design review](../../../.orchestrate/evidence/SESSION/design-review.md): changes requested, four Must Fix findings
   and two suggestions. The plan was revised the same day; the next four entries say how.
 - 2026-11-13 Finding 1, a set reported commitment before the host committed. The host now steps first and sends
   a set only for a committed tick, so a set's arrival is the confirmation. Cost: the host's tick, about 5 ms at
@@ -67,7 +67,7 @@
   with the reference crowd in a window on the Mac and in Chrome; it waits for `RENDER-2D:M5`. M1 to M6 are
   unchanged. The sandbox assumption is deleted: the owner gave Codex full access. The revised design needs a
   design review.
-- 2026-11-14 Third design review, of commit `5ea9bc40` ([the latest review file](../../evidence/SESSION/design-review.md)
+- 2026-11-14 Third design review, of commit `5ea9bc40` ([the latest review file](../../../.orchestrate/evidence/SESSION/design-review.md)
   until a later one replaces it): changes requested, one Must Fix and two suggestions. The four earlier
   findings stay resolved.
 - 2026-11-15 The Must Fix: catch-up after an underrun jumped at least two ticks, whatever the alpha. Mechanism 6 now
@@ -91,12 +91,12 @@
 - 2026-11-18 Built portable images for registered worlds, with paired codecs and bounded validation before install.
   The Mac, Chrome Wasm and iPhone simulator each restored six Crowd and Mixed images and matched 1,000 retained
   checkpoints. Chrome and the simulator wrote bytes equal to the Mac's. Core tests, identity controls and the
-  Mac SIM-2D conformance run passed. The [M1 proof](../../evidence/SESSION/M1.md) records target revisions and
+  Mac SIM-2D conformance run passed. The [M1 proof](../../../.orchestrate/evidence/SESSION/M1.md) records target revisions and
   both Mac and Chrome cost runs. The exact-image verifier is provided by the shared main-branch check.
 - 2026-11-18 M1.2 now runs both Chrome captures and all six restores under one Chrome lock after the Mac
   images are ready. The revised check matched all six images and 1,000 retained checkpoints in under
-  22 minutes including lock wait. The [M1 proof](../../evidence/SESSION/M1.md) records the retry.
-- 2026-11-18 M1's first [review](../../evidence/SESSION/M1-review.md) failed on M1.5, M1.6, M1.7 and M1.9, and
+  22 minutes including lock wait. The [M1 proof](../../../.orchestrate/evidence/SESSION/M1.md) records the retry.
+- 2026-11-18 M1's first [review](../../../.orchestrate/evidence/SESSION/M1-review.md) failed on M1.5, M1.6, M1.7 and M1.9, and
   sent the last to a planner. Diagnosis: the plan was at fault. M1.4 and seam ruling 1 have the compiler refuse
   a type with half the encoding, while the M1 note and M1.9 froze `SIM-2D`'s tests, whose fixtures in
   `crates/thrum-core/tests` register such types. No build passes both.
@@ -118,15 +118,15 @@
 - 2026-11-18 Bound the image identity to the configured Crowd or Mixed rules and verified refusal in both
   directions. Each untrusted-image fixture now rejects malformed input on a fresh destination that then
   accepts the intact control. All three targets matched the retained digests. The Mac cost record flags the
-  increase in the 5,000-body write tick. The [M1 proof](../../evidence/SESSION/M1.md) records the target runs,
+  increase in the 5,000-body write tick. The [M1 proof](../../../.orchestrate/evidence/SESSION/M1.md) records the target runs,
   SIM-2D fixture audit and the shared exact-image check.
 - 2026-11-19 Built caller-clocked deterministic sessions with post-commit set delivery, baseline restore,
   adaptive input lead, ordered commands, receipt-based results, listen-host admission and bounded playout.
   The Mac proofs matched all 1,200 digest checkpoints on four independent clients at both link profiles.
   The command, failure, negotiation and playout controls passed. Separate release cost runs recorded engine
-  and session time under load and flagged the 64 kbit/s peer bandwidth tripwire. [M2 proof](../../evidence/SESSION/M2.md)
+  and session time under load and flagged the 64 kbit/s peer bandwidth tripwire. [M2 proof](../../../.orchestrate/evidence/SESSION/M2.md)
 - 2026-11-19 Addressed the M2 review findings. The Mac checks passed for expired hellos, full-round-trip
   adaptive startup, the carrier observer, negotiated playout rates and complete stall time. The lead control
   stayed below the admission floor. Both full matches agreed at all digest checkpoints and recorded costs
   by negotiated slot, with a whole image-writing tick and comparisons under load.
-  [M2 review fix proof](../../evidence/SESSION/M2-review-fix.md)
+  [M2 review fix proof](../../../.orchestrate/evidence/SESSION/M2-review-fix.md)

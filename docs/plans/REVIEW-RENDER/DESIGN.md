@@ -1,10 +1,10 @@
 # Review fixes in the renderer: confirmed bugs, GPU records, pass identity, errors and waste
 
 14 November 2026, revised 15 November after the first design review, and on 18 November for
-[the indirect-light query](#mechanisms) and after [its design review](../../evidence/REVIEW-RENDER/design-review.md).
+[the indirect-light query](#mechanisms) and after [its design review](../../../.orchestrate/evidence/REVIEW-RENDER/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
-[the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), slices S1 to S4 ·
+[the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), slices S1 to S4 ·
 [patterns](../../../.agents/skills/thrum-engineering/references/patterns.md)
 
 ## The request
@@ -130,7 +130,7 @@ module cycle the error caused.
 
 *Timing.* The review's M40 asks for two things: resolve timestamp queries in the frame's own encoder, to save a
 submission, and stop allocating for every completed frame. Retained device evidence outranks the first.
-[The M3 Max experiment of 3 November](../../evidence/render/R0-FXAA-1080P-TIMESTAMP-2026-11-03.md) found that
+[The M3 Max experiment of 3 November](../../../.orchestrate/evidence/render/R0-FXAA-1080P-TIMESTAMP-2026-11-03.md) found that
 resolving in the render's own submission returns stale or zero end counters on Metal, with reused query slots and
 with fresh ones, on the wgpu 30.0.1 this checkout still pins. Resolving in a later submission, after the render
 had completed, passed all 432 pairs. Every method drew the same image, so no image check can see the fault. The

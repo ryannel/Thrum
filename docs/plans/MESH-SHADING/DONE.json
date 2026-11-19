@@ -21,9 +21,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m11-launch-admission",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m11-launch-admission",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -33,9 +33,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m12-object-stage-culling",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m12-object-stage-culling",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -45,9 +45,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m13-frame-contract",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m13-frame-contract",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -57,9 +57,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m14-path-selection",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m14-path-selection",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -68,9 +68,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m15-pipeline-preparation",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m15-pipeline-preparation",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -80,9 +80,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m16-per-mesh-eligibility",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m16-per-mesh-eligibility",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -92,9 +92,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m17-material-installation",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m17-material-installation",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -103,9 +103,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M1.md#m18-residency-and-upload",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md#m18-residency-and-upload",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -115,7 +115,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md"
         }
       ]
     },
@@ -135,9 +135,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -147,9 +147,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -159,9 +159,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2/shadow-parity.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/shadow-parity.log",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -169,9 +169,9 @@
           "inspect": "`fixed` stills at the route's stops at noon and at a low Sun and a `realtime` sequence of the route with its snap turns, on the mesh-stage path, with the same stops on the existing path beside them, both on the Apple tile recipe, whole and as native-size crops. The list: (1) terrain is whole to the screen's border and at the near plane, with no meshlet-sized hole; (2) ridge lines and mesh silhouettes are unbroken; (3) every cooked mesh is whole from inside, beside and far away; (4) terrain and meshes cast the shadows they cast on the existing path, with no hole or light leak at a low Sun, near the camera, in the middle distance and beyond the cascades; (5) materials, lighting and texture read as they do at the existing path's stop; (6) in motion nothing pops, flickers or arrives late at the screen's edge, and no cooked surface smears or trails after a snap turn or a cut.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2.md#m24-visual-inspection",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2.md#m24-visual-inspection",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -181,9 +181,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -192,9 +192,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -203,9 +203,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2.md#m27-valley-cost",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2.md#m27-valley-cost",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -214,9 +214,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/MESH-SHADING/M2/mac-metal.log",
+          "evidence": ".orchestrate/evidence/MESH-SHADING/M2/mac-metal.log",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         },
         {
           "id": "M2.9",
@@ -226,7 +226,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md"
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md"
         }
       ]
     },

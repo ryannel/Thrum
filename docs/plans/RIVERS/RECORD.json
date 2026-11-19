@@ -2,9 +2,9 @@
   "module": "RIVERS",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/RIVERS/design-review.md",
+    "review": ".orchestrate/evidence/RIVERS/design-review.md",
     "commit": "b6e79500f2010d6b48c271ba5d0d88910fd5ab51",
-    "hash": "31333ecba7076fb42210d55b4e2df34f2076b97e4456dfa19ea95a18b783d993",
+    "hash": "49d52adc822aa6e1eda035cc1a0fea376f7c868e582a07c1c0d5ae209b502e7a",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "d6b9bc6672c18f715099b04431733b84b638dcee",
-          "review": "docs/evidence/RIVERS/M1-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -71,7 +71,7 @@
         {
           "verdict": "pass",
           "commit": "feca0d95c7a49e34e2a298fd05943abb5097a57b",
-          "review": "docs/evidence/RIVERS/M1-review.md",
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -149,7 +149,7 @@
       "done": {
         "by": "review",
         "commit": "feca0d95c7a49e34e2a298fd05943abb5097a57b",
-        "review": "docs/evidence/RIVERS/M1-review.md",
+        "review": ".orchestrate/evidence/RIVERS/M1-review.md",
         "checked": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
         "at": "2026-11-16T07:45:36Z"
       }
@@ -160,7 +160,7 @@
         {
           "verdict": "fail",
           "commit": "7080267f8bffa6fa52c453dc7d4c0c4e139b9a0a",
-          "review": "docs/evidence/RIVERS/M2-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -197,7 +197,7 @@
         {
           "verdict": "pass",
           "commit": "ac4a0ca0c4f19b21d42c408cf64c82a63329badc",
-          "review": "docs/evidence/RIVERS/M2-review.md",
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -266,7 +266,7 @@
       "done": {
         "by": "review",
         "commit": "ac4a0ca0c4f19b21d42c408cf64c82a63329badc",
-        "review": "docs/evidence/RIVERS/M2-review.md",
+        "review": ".orchestrate/evidence/RIVERS/M2-review.md",
         "checked": "074b2941a7a5cc37ac6dcdfaaffb4078abd87ffe",
         "at": "2026-11-16T16:57:13Z"
       }
@@ -277,7 +277,7 @@
         {
           "verdict": "fail",
           "commit": "0543f431045ef08bea38da3754b2a133b3e9564d",
-          "review": "docs/evidence/RIVERS/M3-review-1.md",
+          "review": ".orchestrate/evidence/RIVERS/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -315,7 +315,7 @@
         {
           "verdict": "fail",
           "commit": "52a8da2809c45fad9dea7ce50d45a5335a2fe2e2",
-          "review": "docs/evidence/RIVERS/M3-review-2.md",
+          "review": ".orchestrate/evidence/RIVERS/M3-review-2.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -352,7 +352,7 @@
         {
           "verdict": "pass",
           "commit": "e944621f78f8314417c25673704bd651f948450f",
-          "review": "docs/evidence/RIVERS/M3-review.md",
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -425,7 +425,7 @@
       "done": {
         "by": "review",
         "commit": "e944621f78f8314417c25673704bd651f948450f",
-        "review": "docs/evidence/RIVERS/M3-review.md",
+        "review": ".orchestrate/evidence/RIVERS/M3-review.md",
         "checked": "43b7f007fa938d3751fd1c7d7524f4a3dd3640de",
         "at": "2026-11-17T06:07:46Z"
       }
@@ -500,7 +500,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/RIVERS/design-review-1.md",
+      "review": ".orchestrate/evidence/RIVERS/design-review-1.md",
       "commit": "51210c3771e938675bac99e66c00aca89635298c",
       "hash": "919ab537297ecd421feff7e45e965f42979618ca320e20252c967f07b94f3196",
       "by": "review",
@@ -523,7 +523,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/RIVERS/design-review-2.md",
+      "review": ".orchestrate/evidence/RIVERS/design-review-2.md",
       "commit": "4d41c4c3d318a99237ba94452050beaeee02c4bc",
       "hash": "da909db18aa7b754ccee096e421e88d04286ea56dc3f9254f9ffdbc64358a56f",
       "by": "review",
@@ -546,7 +546,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/RIVERS/design-review-3.md",
+      "review": ".orchestrate/evidence/RIVERS/design-review-3.md",
       "commit": "65c8998270327a13a763e8ceedbfe55607cb66d3",
       "hash": "9fe1570d72edc0a1f3f28ba60ba7374391f60533448778826ea0c866836a898c",
       "by": "review",
@@ -569,7 +569,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/RIVERS/design-review-4.md",
+      "review": ".orchestrate/evidence/RIVERS/design-review-4.md",
       "commit": "e143da67cf7b381b01d0ab2b1a00c2a4a5d38fbc",
       "hash": "220a68bc5d39df12f21ec585201a694c10189dfee211134810bfb1614803ed2c",
       "by": "review",
@@ -592,7 +592,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/RIVERS/design-review-5.md",
+      "review": ".orchestrate/evidence/RIVERS/design-review-5.md",
       "commit": "bc61a8c9df2b7160cd09d8eeeea650011886206e",
       "hash": "5db25df6ab6adeca3c2e189b1c7d5321453211264bd0d5c6de88e513e7c44144",
       "by": "review",

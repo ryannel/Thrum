@@ -4,7 +4,7 @@
   for the five milestones other builders hold in `thrum-render` (`ATMOSPHERE` M9, `APPLE-TILE` M10,
   `APPLE-PRESENTATION` M3, `EFFECT-GRAPH` M3, `CULLING` M3). Decided for H09: two buffers with one writer each,
   not one record with named offsets. M24, M31 and theme T7 are parked, with reasons in the design.
-- 2026-11-15 Revised after [the first design review](../../evidence/REVIEW-RENDER/design-review.md) (two Must
+- 2026-11-15 Revised after [the first design review](../../../.orchestrate/evidence/REVIEW-RENDER/design-review.md) (two Must
   Fix). Timing: the retained Metal diagnosis of 3 November outranks the code review's M40, by the lead's task, so
   queries are still resolved in a later submission after render completion; M5 removes the allocations and proves
   that a published time is valid and belongs to its frame. Lights: the constant ambient moves to the CPU's
@@ -15,7 +15,7 @@
   pixel, in the landing that already rewrites the first, with no value changed (mechanism 1 in the design; C08;
   [the decision](../../design/decisions/POST-V1-FOUNDATIONS.md)). The atmosphere's lent sky products keep their
   signatures. M1.1 to M1.4 are unchanged. The design review is owed.
-- 2026-11-18 Planner, after [the design review](../../evidence/REVIEW-RENDER/design-review.md) of M1.5 (one Must
+- 2026-11-18 Planner, after [the design review](../../../.orchestrate/evidence/REVIEW-RENDER/design-review.md) of M1.5 (one Must
   Fix): the cooked volume is a medium, so it reads the ambient source and is not a caller of the surface query. The
   design had it pass the world position of its fragment, which is the box's back face and none of the march
   samples it lights. Mechanism 1 now splits `ambient_irradiance(n)` into `ambient_source(direction)`, the source
@@ -27,9 +27,9 @@
   faults reach the drive and completed frame. Surface lighting takes both positions and the cooked
   volume reads the ambient source once. Verified the three pre-split pixel fixtures byte for byte,
   exercised all three surface fault kinds, and ran the cooked game draw on Metal. The registered
-  baselines use the shared main-branch proof. [Evidence](../../evidence/REVIEW-RENDER/M1.md).
+  baselines use the shared main-branch proof. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M1.md).
 - 2026-11-19 Addressed the M1 review findings. Sprite recording now leaves surface timing admission
   to the presenter. Shade device limits reach the V1 constructor as GPU errors. Restored the
   owning modules' source fingerprints and graph fixtures and projected only the light split in
   their comparisons. Verified the fault paths and historical controls on Metal.
-  [Evidence](../../evidence/REVIEW-RENDER/M1.md).
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M1.md).

@@ -21,9 +21,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M1/README.md#review-fixes",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M1/README.md#review-fixes",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -33,9 +33,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -45,9 +45,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -56,9 +56,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M1/README.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -67,9 +67,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M1/README.md#review-fixes",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M1/README.md#review-fixes",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -78,9 +78,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M1/README.md#structure-cost-and-tripwires",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M1/README.md#structure-cost-and-tripwires",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -90,7 +90,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md"
         }
       ]
     },
@@ -109,9 +109,9 @@
           "inspect": "`fixed` stills of the traced view beside the drawn frame, at four views of the valley that between them show the terrain near and far and every cooked mesh, whole and as native-size crops where meshes meet the terrain.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/README.md",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -121,9 +121,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/seam.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/seam.txt",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -133,9 +133,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/edit.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/edit.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -145,9 +145,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/casters.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/casters.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -156,9 +156,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/lifecycle.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/lifecycle.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -167,9 +167,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/demand.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/demand.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -178,9 +178,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M2/valley-cost.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M2/valley-cost.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -190,7 +190,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md"
         }
       ]
     },
@@ -215,9 +215,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/automated-checks.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/automated-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -227,7 +227,7 @@
           "builder_result": "open",
           "evidence": "",
           "verdict": "fail",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -235,9 +235,9 @@
           "inspect": "A `realtime` sequence of the route with the method `Traced`, as consecutive frames at native size around three movers.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/README.md#realtime-route",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/README.md#realtime-route",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -249,7 +249,7 @@
           "builder_result": "open",
           "evidence": "",
           "verdict": "fail",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -259,7 +259,7 @@
           "builder_result": "open",
           "evidence": "",
           "verdict": "fail",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -271,7 +271,7 @@
           "builder_result": "open",
           "evidence": "",
           "verdict": "fail",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -280,9 +280,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/automated-checks.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/automated-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.8",
@@ -291,9 +291,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/contributions.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/contributions.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.9",
@@ -303,9 +303,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/sun-out.json",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/sun-out.json",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.10",
@@ -314,9 +314,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/README.md#contended-timing",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/README.md#contended-timing",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.11",
@@ -326,7 +326,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.12",
@@ -335,9 +335,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RAY-TRACING/M3/automated-checks.txt",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/automated-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md"
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         }
       ],
       "findings": [

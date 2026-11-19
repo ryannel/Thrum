@@ -25,10 +25,10 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: cost is recorded on the Mac only, at 2560×1440 on the island and the showcase's extent in the valley, and no timing figure decides an item (brief decision 3).
 
 ## M1 On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry: done
-[review](../../evidence/PUDDLES/M1-review.md)
+[review](../../../.orchestrate/evidence/PUDDLES/M1-review.md)
 
 ## M2 On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do: done
-[review](../../evidence/PUDDLES/M2-review.md)
+[review](../../../.orchestrate/evidence/PUDDLES/M2-review.md)
 
 ## M3 On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one
 

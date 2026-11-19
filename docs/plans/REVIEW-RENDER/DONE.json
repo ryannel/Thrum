@@ -25,9 +25,9 @@
           "ask": "Does anything outside the atmosphere write the environment light buffer, or anything but the scene renderer's CPU upload write the directional record? With no atmosphere, does anything write the environment light at all? Does the test draw a photometric scene with nonzero `ambient_lux` and no atmosphere, and compare it with bytes taken before the change? Is the literal 48, or the 208-byte binding, left anywhere? Does `thrum-asset-gpu`'s cooked shader still compile against the light group through the published seam?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m11-light-buffer-ownership-and-exact-pixels",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m11-light-buffer-ownership-and-exact-pixels",
           "verdict": "pass",
-          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -37,9 +37,9 @@
           "ask": "Does the test raise a stale binding, an extent mismatch and a timing-capacity failure, and see each reported by its own kind? Is `.is_ok()` or `let _ =` used on a fallible encode anywhere in the runtime?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m12-surface-encode-faults",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m12-surface-encode-faults",
           "verdict": "fail",
-          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -48,9 +48,9 @@
           "ask": "Are both `From<String>` and `From<&str>` gone? At each site that used them, is the variant chosen by what failed and not by where it was raised? Sites that format a source error's `Debug` text into a variant are M4.4's and are not judged here.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m13-frame-error-variants",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m13-frame-error-variants",
           "verdict": "fail",
-          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -60,7 +60,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -68,9 +68,9 @@
           "ask": "Do `ambient_irradiance` and `indirect_radiance` take the two arguments in `synthetic.wgsl`, `synthetic_environment.wgsl` and `synthetic_plain.wgsl`? Trace every entry that reaches `shade`, shadowed and unshadowed, for scene meshes and cooked meshes: does `shade` pass its fragment's interpolated world position and fragment position, and does `indirect_radiance` hand the same two on to `ambient_irradiance`, with no constant or other stand-in? Does `ambient_source` take a direction and no position? Does the cooked volume in `thrum-asset-gpu` read `ambient_source` once before its march, as it read the ambient light before, and call neither surface function? Is `ambient_source` called by anything that shades a surface, other than `ambient_irradiance` itself? In the scene shader and what is composed with it (`thrum-render`'s `synthetic*.wgsl` and `thrum-asset-gpu`'s cooked shaders), does anything light a surface from the diffuse coefficients, the constant ambient or the reflection cube without going through the two query functions? Do the test shaders that stub these functions keep their assertions?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-RENDER/M1.md#m15-surface-queries-and-the-medium-source",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M1.md#m15-surface-queries-and-the-medium-source",
           "verdict": "pass",
-          "review": "docs/evidence/REVIEW-RENDER/M1-review.md"
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M1-review.md"
         }
       ],
       "findings": [

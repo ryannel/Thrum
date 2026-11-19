@@ -101,7 +101,7 @@ What each source was read for, and how far.
   Chen, Kurganov and Noelle 2014, and Michel-Dansac et al. on Manning friction, and from memory of Chen and
   Noelle 2017 and of Delestre et al. 2012, who show Audusse's reconstruction losing the slope's pull where the
   bed falls more across a cell than the water is deep. Both reconstructions are implemented and compared in
-  [part 1](../../evidence/RIVERS/design-proof/README.md). SWASHES' transcritical case is from memory of its
+  [part 1](../../../.orchestrate/evidence/RIVERS/design-proof/README.md). SWASHES' transcritical case is from memory of its
   parameters and is checked against its own closed form there.
 - **Hydraulics, from memory and not re-read:** Manning's relation; the weir relation, a head of 1.5 critical
   depths over a broad sill; the head a hydraulic jump loses; the depth at a free overfall's lip, about 0.71 of
@@ -297,13 +297,13 @@ What follows from the rule:
   dry reach, and no reach is wet under a dry lip.
 - A cell the lower sample wets and the upper leaves dry dries where its mixed level meets its bed.
 
-[Part 8](../../evidence/RIVERS/design-proof/README.md) runs the first design review's case, a channel beside
+[Part 8](../../../.orchestrate/evidence/RIVERS/design-proof/README.md) runs the first design review's case, a channel beside
 a hollow behind a ridge with a notch. The first design's rule, a dry cell at the nearest wet level, puts
 0.80 m of water in the hollow at the low sample. With wetting gauges the hollow is dry until the notch wets
 at a quarter of the way between the samples, and the wet cells are those of a quasi-static flood at every
 gauge tried, each joined to the channel.
 
-[Part 10](../../evidence/RIVERS/design-proof/README.md) runs the second review's case and the rule as it
+[Part 10](../../../.orchestrate/evidence/RIVERS/design-proof/README.md) runs the second review's case and the rule as it
 now stands. A sloping reach between two falls, dry in the lower sample, has no wet cell to flood from, and
 a flood seeded from the lower sample's water alone gives none of its 32 cells a gauge. Seeded where the
 fall lands, at the gauge the lip above wets (0.30 of the way), all 32 take that gauge: the reach is dry
@@ -494,7 +494,7 @@ A **solve** is now one region at one ladder depth and one carriage current, insi
 of 16. Where a level would pass it, regions give up carriage currents first, down to the one mean, before a
 region is left at rest, and the step reports what it dropped.
 
-[Part 9](../../evidence/RIVERS/design-proof/README.md), a section with a pool at 0.2 m/s and a riffle at
+[Part 9](../../../.orchestrate/evidence/RIVERS/design-proof/README.md), a section with a pool at 0.2 m/s and a riffle at
 1.5 m/s in one region and a ring set raised on each at once: with the ladder each set's centre is within
 0.10 m of where its own water carries it after 5 s, in steps of 1 and of 8 ticks, and the pool's is
 unmoved when the riffle's source is five times stronger. Declared approximations: a wave on water whose
@@ -694,8 +694,8 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
 cost records, looks, the `gpu` lock, exact baselines, tests that hold no game content, Broadsides and
 dependencies. In addition:
 
-- **Scratch and evidence.** `tmp/rivers-<milestone>/` and `docs/evidence/RIVERS/`. Copies are listed in
-  `docs/evidence/RIVERS/PROVENANCE.md`; none is expected.
+- **Scratch and evidence.** `tmp/rivers-<milestone>/` and `.orchestrate/evidence/RIVERS/`. Copies are listed in
+  `.orchestrate/evidence/RIVERS/PROVENANCE.md`; none is expected.
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.
 - **The bar.** `WATERS`' handoff carries [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) of 17 November 2026,

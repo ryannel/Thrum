@@ -1,9 +1,9 @@
 # Game split: the game in its own repository, the engine proved without it
 
-14 November 2026, revised 15 November after [its design reviews](../../evidence/GAME-SPLIT/design-review.md).
+14 November 2026, revised 15 November after [its design reviews](../../../.orchestrate/evidence/GAME-SPLIT/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
-[the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T5 (H02, H13, H19, H20, M72, M73) ·
+[the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T5 (H02, H13, H19, H20, M72, M73) ·
 [exact baselines](../ARCHITECTURE.md#exact-baselines)
 
 ## The request
@@ -154,7 +154,7 @@ copy touches no engine reference, and a change to the engine's copy is a baselin
 ## How a game is built by the loop once it lives outside
 
 The loop runs in one repository, so a game's plan, done-when file, record, reviews and evidence stay in Thrum's
-`docs/plans` and `docs/evidence`: that is planning, not game code. A game module's builder (`SHOWCASE` after the
+`docs/plans` and `.orchestrate/evidence`: that is planning, not game code. A game module's builder (`SHOWCASE` after the
 move, `SWARM` from its start) works in its Thrum worktree for those files and commits the game's code on the
 games repository's `main`. Only one game module builds at a time (`SWARM` waits for `SHOWCASE`), so that branch
 has one writer. Each of its checks goes through the gate, so the loop's clean checkout tests the committed game
@@ -177,7 +177,7 @@ baselines as `SHOWCASE` left them. `exit` with no further argument runs them all
 
 What the move does not re-judge is the frame evidence: `SHOWCASE` M7.9 and M7.10's whole-frame records, M8's
 visual reviews and its attended cadence. Those were accepted at the commit `SHOWCASE` claimed and stay valid
-history in `docs/evidence/SHOWCASE/`. The game's `frames` command still runs through the gate, as a record and
+history in `.orchestrate/evidence/SHOWCASE/`. The game's `frames` command still runs through the gate, as a record and
 never a verdict. So after the move the gate claims function and image agreement at an engine commit, and nothing
 new about looks or cadence.
 

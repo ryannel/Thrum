@@ -3,7 +3,7 @@
 - 2026-11-09 Built M7. Shared scene/surface resize prepares a replacement ring and presenter, validates the current
   epoch before publication, drains pending frames, reuses identical extents and preserves fixed-render surface-only
   callers. Device candidates refit scene and presenter, then refresh current camera/lighting at publication.
-  [Full entry](../../evidence/PLATFORM-RUNTIME-IOS/log-entries.md#entry-1).
+  [Full entry](../../../.orchestrate/evidence/PLATFORM-RUNTIME-IOS/log-entries.md#entry-1).
 
 - 2026-11-09 Planned M7 from COOKED-DRAW M1.10's extent blocker at local checkpoint `b0dae34c`.
   Read the layout/source record, README and landscape/portrait screenshots with `git show`. G3b owns the current
@@ -25,7 +25,7 @@
   for the owner to report the held section before posting the revocation.
 - 2026-11-08 M6 development runs (`tmp/g3b-ios-rotation/m6-dev1..6`). In dev run 1 the held-frame loss faulted the
   surface: wgpu-core's `discard` checks device validity before clearing the acquired texture, so the surface stays
-  acquired for any device. [Full entry](../../evidence/PLATFORM-RUNTIME-IOS/log-entries.md#entry-2).
+  acquired for any device. [Full entry](../../../.orchestrate/evidence/PLATFORM-RUNTIME-IOS/log-entries.md#entry-2).
 - 2026-11-08 Full route `route-full5` (load 455 at start) failed M5's "zero presents on a resize-revoked epoch":
   one section that passed its checks before `Resized` presented once after it, at the old extent. That is the
   revocation race bound, which UIKit cannot close without waiting. The strip shows a rigid, aspect-preserved
@@ -62,5 +62,5 @@
 
 - 2026-11-11 Plan reshaped for orchestrate 1.7.0. `Shell design`, its scope and `Seams for Thrum Core` moved to
   the design. The M1–M7 sections, review answers, root conditions and follow-ups moved to
-  [records](../../evidence/PLATFORM-RUNTIME-IOS/M1-M7-records.md). M1–M6 were renamed for what someone can see.
+  [records](../../../.orchestrate/evidence/PLATFORM-RUNTIME-IOS/M1-M7-records.md). M1–M6 were renamed for what someone can see.
   No item or scope changed.

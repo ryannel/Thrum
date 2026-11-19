@@ -10,7 +10,7 @@
 - 2026-11-14 The solve, decided: the steady state of the 2D shallow-water equations with Manning friction over
   the map's bed, marched in pseudo-time on wet cells from filled pools, stored as a river file with a key. Not
   chosen: a spline, routing by steepest slope (no level pool, no jump), an offline particle simulation, and a
-  live solver. [Reproductions 1 to 7](../../evidence/RIVERS/design-proof/README.md) were run for it.
+  live solver. [Reproductions 1 to 7](../../../.orchestrate/evidence/RIVERS/design-proof/README.md) were run for it.
 - 2026-11-14 Found in the reproduction and written into the design as properties of the scheme: Audusse's
   reconstruction stands a thin sheet on steep ground 23% too deep, where Chen and Noelle's is within 5%; and
   friction taken at the new discharge inside a pseudo-time step shifts the steady state with the step; and a
@@ -37,12 +37,12 @@
   West water notes. Not read: the Far Cry 5 water talk, any account of Red Dead Redemption 2's rivers or
   falls, and measurements of a falling sheet's breakup. Horeni's length, the weir relation and the surface's
   turbulent energy are from memory.
-- 2026-11-14 Design review asked for changes: [three Must Fix findings](../../evidence/RIVERS/design-review.md).
+- 2026-11-14 Design review asked for changes: [three Must Fix findings](../../../.orchestrate/evidence/RIVERS/design-review.md).
   All three are resolved in the design, the items and [rulings 2 and 5](../ARCHITECTURE.md#seam-rulings-for-rivers).
 - 2026-11-14 Dry support. A dry cell's level always lies under its bed, and between two samples each cell
   has a prepared wetting gauge: the least gauge at which wet cells join it to the lower sample's water. Below
   it the cell has no water, wave support or margin, so a hollow behind a ridge is dry until the ridge wets.
-  A bank cell's answer is the linear mix it was. [Part 8](../../evidence/RIVERS/design-proof/README.md)
+  A bank cell's answer is the linear mix it was. [Part 8](../../../.orchestrate/evidence/RIVERS/design-proof/README.md)
   reproduces the review's 0.80 m of invented water and its removal. M1.6, M3.2 and M4.3 judge the wet
   cells as well as depth and current; a river file gains a seventh value.
 - 2026-11-14 Rings on running water. The weighted mean is replaced by a current ladder in the interaction
@@ -56,7 +56,7 @@
   M7.11's ledger say that only the island's fall of about 4 m is judged by eye. Short and tall falls for
   the looks alone were not added to the island: they are scenery no cue of the island needs.
 - 2026-11-14 Not run by the planner: the ladder in plan or on the GPU, and wetting gauges on a solved valley.
-- 2026-11-14 Second design review asked for changes: [one Must Fix finding](../../evidence/RIVERS/design-review.md).
+- 2026-11-14 Second design review asked for changes: [one Must Fix finding](../../../.orchestrate/evidence/RIVERS/design-review.md).
   A reach whose lower sample is wholly dry had no wet cell to flood from, so none of its cells took a
   wetting gauge and it never wetted.
 - 2026-11-14 Wetting restated: water spreads from where it is. The flood starts from the lower sample's
@@ -64,7 +64,7 @@
   from the reach above, keyed at the gauge that inflow starts; reaches are flooded from the sources down.
   A wet cell passes water to a neighbour when its own level stands over that neighbour's bed. A part of a
   fall that only the upper sample runs starts at its lip cell's wetting gauge.
-  [Part 10](../../evidence/RIVERS/design-proof/README.md): the review's 32 cells all take the lip's gauge,
+  [Part 10](../../../.orchestrate/evidence/RIVERS/design-proof/README.md): the review's 32 cells all take the lip's gauge,
   and part 8's answers are unchanged. Not chosen: an extra flow sample at the gauge a lip starts, which
   costs solves and still needs the seed.
 - 2026-11-14 Replaced in that rule: a cell's own crossing, taken from its two stored levels. Above a wet
@@ -79,7 +79,7 @@
   hold them all. Ruling 5 says so. M6.10 is unchanged and still measures a turning window.
 - 2026-11-14 Not run by the planner: the solver's own samples with a lip that starts to run, wetting gauges
   on the GPU, and waves blended between three carriage currents.
-- 2026-11-15 M1 built ([evidence](../../evidence/RIVERS/M1.md)). Verified: the valley holds discharge to 0.139%,
+- 2026-11-15 M1 built ([evidence](../../../.orchestrate/evidence/RIVERS/M1.md)). Verified: the valley holds discharge to 0.139%,
   pool level to 5.3 mm at 1.73 critical depths over the sill; closed forms within the items' bounds; WATERS
   takes the chart; one and eight threads give the same bytes; 1.31 s on one thread, 9,798 updates a wet cell.
   By construction, not measured: the energy account closes because the face-based head loss telescopes;
@@ -88,8 +88,8 @@
 - 2026-11-16 M1 review fix (M1.5, the step budget): the solver's last batch now stops at the budget, so a
   solve is refused at exactly its budget or converges inside it. Verified: `tests/report.rs` covers an
   interval longer than the budget and partial final batches; the reviewer's probe now refuses budget 1 at
-  step 1 for intervals 10 and 10,000 ([output](../../evidence/RIVERS/M1-budget-probe-after-fix.txt)).
-- 2026-11-16 M2 built ([evidence](../../evidence/RIVERS/M2.md)). Verified: the lip stands at 1.112 hc where the flow is slow and 1.017 of normal depth where it is fast;
+  step 1 for intervals 10 and 10,000 ([output](../../../.orchestrate/evidence/RIVERS/M1-budget-probe-after-fix.txt)).
+- 2026-11-16 M2 built ([evidence](../../../.orchestrate/evidence/RIVERS/M2.md)). Verified: the lip stands at 1.112 hc where the flow is slow and 1.017 of normal depth where it is fast;
   discharge across the fall is equal to 5 digits; throw against the closed form within 1.5e-12; plunge rms equals the design's figure. Declared choices:
   air share 0.5; a brink end is the `BRINK` body sentinel, because existing `End` literals can't gain a field; a brink is drowned where the body below
   stands at or above the lip's bed; a path may travel over a receiver's box beyond the rectangle; RIVER_FORMAT and SOLVER_VERSION are 2.
@@ -98,19 +98,19 @@
 - 2026-11-16 M2 review fix (M2.5): a path running down dry rock into the pool now meets the water at the shoreline,
   bisected on the stored chord, not at the first point under water. Verified: a new test over three rock faces and five
   stages with the real map gives the surface's level exactly and the place within 5.1e-5 m of a scan; it fails on the old code.
-- 2026-11-16 M3 built ([evidence](../../evidence/RIVERS/M3.md)). Verified: the mix between samples is within 5.2 mm and 7.7% of a fresh solve;
+- 2026-11-16 M3 built ([evidence](../../../.orchestrate/evidence/RIVERS/M3.md)). Verified: the mix between samples is within 5.2 mm and 7.7% of a fresh solve;
   the hollow and the terrace wait for their wetting gauges and rise from nothing; fall records are the samples' mix to 4e-15; the chop
   follows the law to 2e-14; with no bands the water model's answers are identical in bits to before. Fixed: a reach falling into a body
   also got a mouth across the cliff, and its 2 m join left the last 1.6 m above the lip dry in the map; such an end is now a half-cell seam.
   Declared: flow bands have no choppiness; the surf model's long-wave swash does not count the flow bands. M1.1's riffle is
   1.5%, half the design's: its chop is 28× the pool's on average but 19× by rms over each. Suspected, not tested: a landing between a wet
   and a still-dry cell gives no plunge for the first millimetres of gauge (bilinear water under bilinear ground).
-- 2026-11-17 M3 after its first review ([evidence](../../evidence/RIVERS/M3.md#after-the-first-review-a-chart-as-the-source-body-m32)).
+- 2026-11-17 M3 after its first review ([evidence](../../../.orchestrate/evidence/RIVERS/M3.md#after-the-first-review-a-chart-as-the-source-body-m32)).
   Built: `Gauge::Chart { body, place }`, a source body that is another river's chart, read as that chart's own level at the place.
   Verified: a lake moves the river above and, through its pool's level, the gauge, charts and falls of a solved river below it in the one
   map; that river's mix is within 2.2 mm and 4.6% of a fresh solve. Not shown: the two rivers joined in space, which needs the river
   above solved with the branch as a way out (a scene for M6). For M4: the GPU must read this gauge too.
-- 2026-11-17 M3 after its second review ([evidence](../../evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was)).
+- 2026-11-17 M3 after its second review ([evidence](../../../.orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was)).
   Fixed: a river refused for its banks left the map with support from the refused sample; `add_river` now rebuilds before that error.
   Verified: the review's probe as a test, 3,721 answers unchanged after two kinds of refusal; it fails at 167 without the fix.
 
@@ -118,11 +118,11 @@
   diagnostics. Plan: M5.1, M6.1, M6.2, M6.3, M6.10, M7.5 and M7.11 are rewritten without a bound measured first or an f64 reference, and
   M6.3 and M6.10 no longer run `thrum-water-model`'s interaction test, which `WATERS` M6 no longer builds. M4.3 names the tolerance
   `WATERS` M4.1's test states. Three cost records pass on their check alone. No item of a Done milestone changed.
-- 2026-11-18 Design review after the bar was lowered: [changes requested](../../evidence/RIVERS/design-review.md), three Must Fix, no
+- 2026-11-18 Design review after the bar was lowered: [changes requested](../../../.orchestrate/evidence/RIVERS/design-review.md), three Must Fix, no
   Suggestions. Plan: M5.10 is new, the query's answers over a windless riffle against the model's flow bands at `WATERS` M5.1's
   tolerance. M6.10 is rewritten so a ring on blended water must keep half its energy and move with that water, with the half from
-  [part 12](../../evidence/RIVERS/design-proof/README.md) (88.7% at worst); its limits and bit identity move to M6.11. The design's
+  [part 12](../../../.orchestrate/evidence/RIVERS/design-proof/README.md) (88.7% at worst); its limits and bit identity move to M6.11. The design's
   open question on the wave share and ruling 5 no longer assign a measured bound or an f64 reference of the ladder.
-- 2026-11-18 Design review of the revision: [changes requested](../../evidence/RIVERS/design-review.md), one Must Fix. Design: a
+- 2026-11-18 Design review of the revision: [changes requested](../../../.orchestrate/evidence/RIVERS/design-review.md), one Must Fix. Design: a
   query's demand runs the flow bands on the frame that answers, whatever the cadence and the camera. Plan: M5.6 is rewritten. The
-  Suggestion on part 12's 88.7% is taken. [What changed and why](../../evidence/RIVERS/design-replan-2026-11-18.md).
+  Suggestion on part 12's 88.7% is taken. [What changed and why](../../../.orchestrate/evidence/RIVERS/design-replan-2026-11-18.md).

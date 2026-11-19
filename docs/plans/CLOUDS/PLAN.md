@@ -30,18 +30,18 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones. Fog waits for `ATMOSPHERE` M8, and the sea for `WATERS` M8.
 
 ## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
-[review](../../evidence/CLOUDS/M1-review.md)
+[review](../../../.orchestrate/evidence/CLOUDS/M1-review.md)
 
 ## M13 Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see: done
-[review](../../evidence/CLOUDS/M13-review.md)
+[review](../../../.orchestrate/evidence/CLOUDS/M13-review.md)
 
 ## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn: done
-[review](../../evidence/CLOUDS/M2-review.md)
+[review](../../../.orchestrate/evidence/CLOUDS/M2-review.md)
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 
 The work is on `build/clouds` at `5f84d354a3bf`, unmerged; read its handoff with
-`git show 5f84d354a3bf:docs/evidence/CLOUDS/M3-handoff.md`. Each cloud's form has moved to M17, and M3.1 asks
+`git show 5f84d354a3bf:.orchestrate/evidence/CLOUDS/M3-handoff.md`. Each cloud's form has moved to M17, and M3.1 asks
 only for the sky at a glance, which the retained type-plane captures at erosion 0.61 show. Every other item
 keeps the proof that handoff lists: mark each from it, and capture and tune nothing more. No new look belongs
 here. Leave `Orders` and `medium.rs` alone: M14.13 removes them.
@@ -100,7 +100,7 @@ If the handover shows in M15.4 or M15.13, the eighth risk gives the fixes in ord
 ## M17 Each fair-weather cloud holds up on its own: a cluster of heaps of different heights, with no shelf, fold or repeated outline
 
 [Risk 2](DESIGN.md#risks) holds what M3 found and what its looks ruled out. The records are
-`docs/evidence/CLOUDS/M3-erosion/` and `M3-type-plane/`, whose archives hold the opacity observer, the point
+`.orchestrate/evidence/CLOUDS/M3-erosion/` and `M3-type-plane/`, whose archives hold the opacity observer, the point
 march and the capture scripts. Find each flaw's cause with those controls before any look. M17.1 and M17.2
 judge a sky of weather alone, the placed share at 0: the sky M3 stopped on.
 

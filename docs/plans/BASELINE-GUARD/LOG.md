@@ -10,7 +10,7 @@
   there.
 - 2026-11-11 The planner did not run the guard's checks: they need a release build and the GPU. Each check was
   parsed as shell and the done-when file validated with the loop's own validator.
-- 2026-11-11 [Design review](../../evidence/BASELINE-GUARD/design-review-1.md): changes requested, two Must Fix.
+- 2026-11-11 [Design review](../../../.orchestrate/evidence/BASELINE-GUARD/design-review-1.md): changes requested, two Must Fix.
   MF1: `land` rebases, checks and pushes without handing control back, so the full matrix could only run after a
   failing push. MF2: the Chrome comparator needs 481 reference frames that exist only in another builder's scratch.
 - 2026-11-11 Design revised for both. MF1: the verifier writes a proof keyed by a digest of the covered paths, and
@@ -26,39 +26,39 @@
 
 - 2026-11-11 M1 builder: untouched main `1d35b9a6` passed both unchanged native matrices (38 + 4
   exact comparisons) and all four Chrome sets (481 records each). Fresh release/Wasm builds and task-owned
-  cook only; [preflight records](../../evidence/BASELINE-GUARD/M1/preflight/provenance.json) retain hashes.
+  cook only; [preflight records](../../../.orchestrate/evidence/BASELINE-GUARD/M1/preflight/provenance.json) retain hashes.
   Implemented registry, clean-tree verifier, digest mode and content-key gate; proof and integration experiments
   are in progress. Coverage also includes `.cargo/` (design review S3), `tools/` and the registry itself; the
   architecture table records the same wider inputs. No retained reference or owner matrix was changed.
 
-- 2026-11-11 M1.1–M1.3 pass with [target evidence](../../evidence/BASELINE-GUARD/M1.md). The final verifier
+- 2026-11-11 M1.1–M1.3 pass with [target evidence](../../../.orchestrate/evidence/BASELINE-GUARD/M1.md). The final verifier
   passes 42 native comparisons and 1,924 Chrome records at covered key `f6b5c8fa`; all seven focused tests pass.
   Successful owner-published captures are archived incrementally after disk space dropped during shared work.
   Final-version mutant refusals, the third timing and the milestone check remain in progress.
 
 - 2026-11-11 M1.4 passes on the final verifier with incremental capture archiving. The actual loop refuses all
   four scratch cases, with a fixed local remote after each refusal. Native difference metrics, failed manifests,
-  patches, base, commands and logs are [retained](../../evidence/BASELINE-GUARD/M1/refusals-final/report.json).
+  patches, base, commands and logs are [retained](../../../.orchestrate/evidence/BASELINE-GUARD/M1/refusals-final/report.json).
   M1.5 and the complete milestone check remain.
 
 - 2026-11-11 M1 claimed with all five items passing. The rebased source includes APPLE-TILE M3 and passes
   42 native comparisons and all 1,924 Chrome records at covered key `7e7c9a3c`. The required milestone check
   passes all three automated commands, including the profile Check. Its explicit `--timeout 3600` follows the
   design's one-hour allowance after the standalone command's 600-second default interrupted an earlier run.
-  [M1 evidence](../../evidence/BASELINE-GUARD/M1.md) records all four final-version land refusals, three full
+  [M1 evidence](../../../.orchestrate/evidence/BASELINE-GUARD/M1.md) records all four final-version land refusals, three full
   verifier timings with load, three gate timings, preserved references and byte-mode semantics. Lead review remains.
 
 - 2026-11-11 The claim landed as `232d27dc` through the checked integration command. Retained a 7,811-byte
   source patch from published checkpoint `9a29a8c9` to reconstruct the refusal experiment's covered content,
   because its recorded commit was rebased. An isolated index reproduced key `f6b5c8fa` exactly.
-  [Recovery record](../../evidence/BASELINE-GUARD/M1/refusals-final/base-source.json).
+  [Recovery record](../../../.orchestrate/evidence/BASELINE-GUARD/M1/refusals-final/base-source.json).
 
 - 2026-11-11 Claim-time M1.1 failed in the loop checkout. M2 published a completed
   portable route with 14.8 GiB free and immediately ran its next 16 GiB preflight before the polling reaper.
   Reopened M1.1 pending requalification. Added a verifier-owned adapter that calls the owner's run function and
   archives completed captures synchronously after its original report publisher returns. Owner source files,
   comparisons, preflights and return codes are preserved. Nine focused tests pass, including immediate-next-capture
-  release and failed-source preservation. [Failure record](../../evidence/BASELINE-GUARD/M1/disk-repair/loop-failure.json).
+  release and failed-source preservation. [Failure record](../../../.orchestrate/evidence/BASELINE-GUARD/M1/disk-repair/loop-failure.json).
 
 - 2026-11-11 The repaired M1.1 passes all 42 native comparisons and 1,924 Chrome records. Nine focused tests
   pass. The repository Check hit its one-hour timeout after repeated device waits from the per-binary Cargo
@@ -68,15 +68,15 @@
 - 2026-11-11 Reclaimed M1 after the synchronous publication fix. The repaired verifier passes all 42 native
   comparisons and 1,924 Chrome records in 1021.79 seconds. M1.3's nine tests pass, and the full
   repository Check passes after resuming it under one GPU lock. The earlier aggregate timeout and the successful
-  component results are retained without rewriting their outcomes. [Requalification](../../evidence/BASELINE-GUARD/M1/disk-repair/requalification.json).
+  component results are retained without rewriting their outcomes. [Requalification](../../../.orchestrate/evidence/BASELINE-GUARD/M1/disk-repair/requalification.json).
 
-- 2026-11-12 M1 Done: [the review](../../evidence/BASELINE-GUARD/M1-review.md) passed all five items.
+- 2026-11-12 M1 Done: [the review](../../../.orchestrate/evidence/BASELINE-GUARD/M1-review.md) passed all five items.
 
 - 2026-11-15 The lead's task, approved by the owner that day: "the proof key covers exactly the inputs that can
   change a registered exact image or the verifier's verdict ... and nothing else. Derive the set rather than
   hand-list crates ... The gate must still fail closed". M2 added. M1's listed key changed at 33 of main's
   commits on the night of 14 to 15 November; ten of them changed a file a verified build or comparison reads
-  ([measurements](../../evidence/BASELINE-GUARD/M2-plan/README.md)).
+  ([measurements](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md)).
 
 - 2026-11-15 Planner's decisions for M2. Covered paths are derived from Cargo's resolved graph and the scripts'
   references. A proof also sets aside the Rust files no build read, by Cargo's dependency records, and the gate
@@ -85,7 +85,7 @@
   a key over the resolved graph in place of the manifest and lockfile files (spares one commit of 33).
 
 - 2026-11-15 Survey of other proofs keyed to a source identity, as the task asked
-  ([findings](../../evidence/BASELINE-GUARD/M2-plan/README.md#other-proofs-keyed-to-a-source-identity)).
+  ([findings](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md#other-proofs-keyed-to-a-source-identity)).
   `SIM-2D`'s cost records are drawn wider than their inputs: a hand list of the right five packages, with the
   whole workspace manifest, the lockfile, test files and untracked files. `CULLING` M3's campaign names M1's
   listed paths and narrows them by hand, with the same three exclusions M2 derives. Nothing else compares a
@@ -96,7 +96,7 @@
   `check --items-only`: M2.1 to M2.4 and M2.7 fail before the work, none errors. M2.6's check, the verifier, was
   not run: the `gpu` lock had builders queued for over an hour, and the command is M1.1's, unchanged.
 
-- 2026-11-15 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of the M2 revision: changes
+- 2026-11-15 [Design review](../../../.orchestrate/evidence/BASELINE-GUARD/design-review.md) of the M2 revision: changes
   requested, one Must Fix. MF3: a script's read through a computed path, a folder it lists or a Rust source
   read as data escapes a key built from imports and quoted paths, so a proof could outlive a changed input.
   S4: M2.1's "a document" should not invite a builder to drop a linked package's documents from the key.
@@ -114,7 +114,7 @@
   Left open, as an assumption in the plan: a Cargo build script reading another package's unread source.
 
 - 2026-11-15 The root was tried without the GPU
-  ([trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#a-root-that-holds-only-the-covered-paths)): Cargo
+  ([trial](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md#a-root-that-holds-only-the-covered-paths)): Cargo
   loads it with empty files at 56 target roots and resolves the same graph, the cooker builds and cooks there,
   and the owners' scripts load. No matrix or capture has drawn from a root.
 
@@ -122,7 +122,7 @@
   `covered` fail before the work and none errors. M2.6's check, the verifier, was not run: it needs the `gpu`
   lock and is M1.1's command, unchanged.
 
-- 2026-11-15 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of the verification root: changes
+- 2026-11-15 [Design review](../../../.orchestrate/evidence/BASELINE-GUARD/design-review.md) of the verification root: changes
   requested, MF3 again and nothing else. The root fails a read a script needs, but a script that reads a file
   only if it is there, or finds it by listing a folder, carries on without it, and a later change to the file
   keeps the proof. The review has no Suggestions.
@@ -149,16 +149,16 @@
   Closing it means covering those files, which the task excludes for crates and which for `docs/` would lapse
   every proof. Also considered and not taken: `scripts/` covered whole (28 more lapses in 493 commits against
   6), a folder rule for a reference's siblings in `docs/`, and the non-Rust files of unlinked packages
-  ([estimate](../../evidence/BASELINE-GUARD/M2-plan/README.md#covering-by-place)).
+  ([estimate](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md#covering-by-place)).
 
 - 2026-11-15 M2's checks tried by running each command: the six test-class checks, the new `ScriptInputTests`
   among them, and `covered` fail before the work and none errors. The loop's `check --items-only` waited over
   ten minutes on the `gpu` lock for M2.6, with builders holding it, and was stopped; M2.6's check is M1.1's
   command, unchanged. `./dev check-docs` reports only the 18 missing links in `APPLE-PRESENTATION`'s log.
 
-- 2026-11-15 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of covering by place (commit
+- 2026-11-15 [Design review](../../../.orchestrate/evidence/BASELINE-GUARD/design-review.md) of covering by place (commit
   `76daae92`): changes requested, MF3 a third time and nothing else. Data a script reads only if present, or by
-  listing a folder, is still lost when it lies in a place the rules leave out, such as `docs/evidence/`.
+  listing a folder, is still lost when it lies in a place the rules leave out, such as `.orchestrate/evidence/`.
 
 - 2026-11-15 The lead's task, a re-plan of M2: "Take the smaller step. Keep every path the exact-image key in
   scripts/exact_baselines.py covers today, and subtract only workspace crates and examples that are outside the
@@ -178,7 +178,7 @@
   because a linked crate can include a file from an unlinked crate's folder with no dependency. Left open, as
   an assumption: a script or the game reading such a file as data at run time.
 
-- 2026-11-15 Measured at `5dbc2c10` ([README](../../evidence/BASELINE-GUARD/M2-plan/README.md#the-smaller-step)):
+- 2026-11-15 Measured at `5dbc2c10` ([README](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md#the-smaller-step)):
   nine of 23 packages linked; 73 of 738 listed files leave the key. Since 11 November M1's key changed at 204
   of main's commits and the smaller key at 186, so it spares 18, about one lapse in eleven. A fixture
   workspace and the records of two real verifier builds bear out the build-read check.
@@ -188,7 +188,7 @@
   behind queued builders, and was stopped; M2.7's check is M1.1's command, unchanged. `./dev check-docs` passes.
 
 - 2026-11-15 Owner, on the proof regime
-  ([report](../../evidence/BASELINE-GUARD/M2-replan/proof-regime.md)): "Ok, let's get the script and skill
+  ([report](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md)): "Ok, let's get the script and skill
   changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working."
   and "We want all these fixes in place before I head to bed tonight." In the lead's session the owner said "Go
   ahead" to a gate that only warns, an hourly verifier on main, `gpu: 2, chrome: 1`, this module planned again,
@@ -214,7 +214,7 @@
   check's runner on main's tip, which does not yet know `--full`. It was stopped after three minutes while
   still waiting for the `gpu` lock, and no run was recorded.
 
-- 2026-11-16 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of the reference guard at
+- 2026-11-16 [Design review](../../../.orchestrate/evidence/BASELINE-GUARD/design-review.md) of the reference guard at
   `f819b733`: changes requested, two Must Fix. MF4: removing a registry entry, or editing its fields, changes no
   pin, so a comparison could be dropped unseen. MF5: the native byte equality is in
   `scripts/compare_v1_pixels.py`, which no pin covered.
@@ -223,7 +223,7 @@
   list with a refresh, and a new baseline needs a refresh. New item M2.7 is its acceptance. MF5: each entry
   lists its comparison files, written out in the design: the verifier for all five, and for the native baseline
   the wrapper, `apple_tile_m0.py`, `m1`, `m2` and `compare_v1_pixels.py`. M2.1 and M2.2 are written again for
-  it. [The model](../../evidence/BASELINE-GUARD/M2-replan/guard-scope.json) shows each of the review's two
+  it. [The model](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/guard-scope.json) shows each of the review's two
   edits, a redefinition and a verifier edit now move a pin or fail the set check.
 - 2026-11-16 Planner's decision, an assumption in the plan: `read_png` in `scripts/run_v1_showcase.py`, which
   decodes the ten 8-bit native references, stays outside the pins. `SHOWCASE`'s file changed in 19 commits since
@@ -241,7 +241,7 @@
   merge-base registration/retirement checks and CPU guard integration; local proof publication is removed.
   Retention keeps 48 completed records and the newest failed capture set, estimated 1.69 GiB from measured
   runs; incomplete runs stay for diagnosis. Focused tests and retained-reference identity checks pass.
-  [M2 evidence](../../evidence/BASELINE-GUARD/M2.md) separates those checks from the shared exact-image run
+  [M2 evidence](../../../.orchestrate/evidence/BASELINE-GUARD/M2.md) separates those checks from the shared exact-image run
   that the lead performs on main after the merge. No retained reference or comparison behavior changed.
 
 - 2026-11-16 Ruling with `T2-CAPTURE`: its M3 builder changes `scripts/exact_baselines.py` and

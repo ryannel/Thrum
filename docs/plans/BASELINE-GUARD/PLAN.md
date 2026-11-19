@@ -17,7 +17,7 @@ to the commit that made it. [Design](DESIGN.md) · [done-when file](DONE.json), 
 - Assumption: the guard pins the files that choose the comparisons and decide equality, listed in the design, and not the PNG decoder they call from `scripts/run_v1_showcase.py`. `SHOWCASE`'s file changed in 19 commits in two weeks, and pinning it would ask a refresh record of each. The design lists it under what the guard does not stop.
 
 ## M1 A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main: done
-[review](../../evidence/BASELINE-GUARD/M1-review.md)
+[review](../../../.orchestrate/evidence/BASELINE-GUARD/M1-review.md)
 
 ## M2 A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh
 

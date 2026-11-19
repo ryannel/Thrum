@@ -33,14 +33,14 @@ guards.
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
 unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
 [Closing G3s](#closing-g3s) governs M6. Both were revised on 10 November after
-[the first design review](../../evidence/ATMOSPHERE/design-review-1.md): the numerical acceptance is written out
+[the first design review](../../../.orchestrate/evidence/ATMOSPHERE/design-review-1.md): the numerical acceptance is written out
 product by product, environment reflection is a lent and tested operation, and the limits of each lent lookup
 and of the cloud field are stated. They were revised again on 11 November after
-[the second review](../../evidence/ATMOSPHERE/design-review.md): the sky and aerial handoff rows H2 and H4 now
+[the second review](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md): the sky and aerial handoff rows H2 and H4 now
 compare against an independently evaluated filtered decode, with wrong lookups that must fail, and the lent
 values are stated to be free of pre-exposure. A third revision the same day follows M5's builder measuring that
 Metal returns a filtered half-float read at the stored format's precision
-([entry 3](../../evidence/ATMOSPHERE/log-entries.md#entry-3)): the filtered-decode bound gains one stored step,
+([entry 3](../../../.orchestrate/evidence/ATMOSPHERE/log-entries.md#entry-3)): the filtered-decode bound gains one stored step,
 the known field's steps are sized against it, and each lookup stays one hardware-filtered read.
 
 The V1 valley uses one Earth sky from noon through astronomical night. The shipped
@@ -152,7 +152,7 @@ radius exits. Rotation applies only to the unrestricted last call.
 It substantially reduces the coherent flash, but produces visible
 penumbra crosshatching on Metal and Chrome. Keep the stock shader.
 [Unity directional PCSS](https://raw.githubusercontent.com/Unity-Technologies/Graphics/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl) ·
-[Matched screen evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+[Matched screen evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 
 The next design under review filters the scalar Sun visibility in
 the current frame before opaque lighting. The production precedents
@@ -175,7 +175,7 @@ filterable moments are a production option but lose the
 receiver-relative depth correlation and can leak at overlap.
 The measured failure is in the current filter and does not yet
 establish the need for a novel coverage model.
-[Saved-field evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
+[Saved-field evidence](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
 [Filterable shadow-map limits](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-8-summed-area-variance-shadow-maps).
 
 M4 retains the independent finite-disk reference. Clip terrain and
@@ -432,7 +432,7 @@ The rule proves the handoff, the addressing and the units. It does not prove the
 agrees with a quadrature of the reflection model. That is a question about the producer. A table made by a
 cheaper estimator fails it while the consumer returns every texel exactly: at view cosine 0.5 and roughness
 0.5225 a 32-sample table stores a scale of 0.8105 where the quadrature gives 0.8198, 0.0093 apart against P8's
-0.006 ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part A). So the handoff
+0.006 ([the arithmetic](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part A). So the handoff
 asks its own question of the pair: is it the one the atmosphere stored for the requested view cosine and
 roughness?
 
@@ -468,7 +468,7 @@ of the lobe on a sky the fixture wrote: the sky itself at the sharpest level, an
 widest. That too is a question about the producer. The cube is a sampled estimate, and one made with fewer
 samples leaves the closed form while the consumer reads every texel correctly: at the centre of a face of the
 widest level, 16 samples put red 0.024 off and 8 samples 0.056, against the 0.020 the comparison allowed
-([the arithmetic](../../evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part D). So the handoff asks
+([the arithmetic](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/split-sum-handoff.txt), part D). So the handoff asks
 what it is. Does the contribution read the atmosphere's cube, at the face its direction names and the level
 its roughness names, blending the two levels a roughness lies between, and decode it to physical units?
 
@@ -593,7 +593,7 @@ layer beyond holds the value at that end. No drawn point lies on such a line pas
 the lines round a point, and round a point on low ground, or just above the horizon, one of them has ended
 short of the point's distance. The point then reads less haze than its own line holds.
 
-[Part IV](../../evidence/ATMOSPHERE/design-proof/README.md) runs the pass's quadrature in f64 in a stand-in
+[Part IV](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/README.md) runs the pass's quadrature in f64 in a stand-in
 air. In a 60° view, with points 1 to 30 km away:
 
 | Observer above the model's ground | A point on a line 0.05° to 1° above the horizon | A point on the ground |
@@ -750,8 +750,8 @@ would refuse a correct column. That the air does go on is shown where storage ca
 or more layers past the ground, the last layer stores less than the first one past the ground. Over every
 texel of the volume, from 3 m and 245 m, level and pitched down to straight down, at 60° and 90° fields of
 view, that fall is 30 stored half-float steps or more, and a column held at its value at the ground fails it
-([the arithmetic](../../evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt), which estimated 40, and
-[the exact count](../../evidence/ATMOSPHERE/design-review-9/storage-revision-check.txt)). M9.1 is what proves the
+([the arithmetic](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt), which estimated 40, and
+[the exact count](../../../.orchestrate/evidence/ATMOSPHERE/design-review-9/storage-revision-check.txt)). M9.1 is what proves the
 continuation is the right one.
 
 P10's fixture, a camera at 245 m with rows 1.1° below the level, already holds lines that meet the ground
@@ -761,7 +761,7 @@ covers the air under the ground. No preserved referee's reference, case or bound
 ### Exact baselines
 
 M9 is meant to change every scene's default output, so [rule 1](../ARCHITECTURE.md#exact-baselines) applies
-as a planned move. [A reading of the valley's mesh](../../evidence/ATMOSPHERE/design-proof/README.md) predicts
+as a planned move. [A reading of the valley's mesh](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/README.md) predicts
 which pixels: terrain whose altitude is less than about 3% of its distance, which from the valley's cameras is
 the low ground 3 to 12 km out. That is up to 0.4% of the covered pixels at the moving route's checkpoints, 4% to
 5% in the sunset still and 0.1% to 0.2% in the night still. Those pixels gain haze; nothing else is predicted
@@ -803,7 +803,7 @@ The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
 **The valley is `SHOWCASE`'s.** M6's builder found two entries whose cause is the authored valley and not the
-sky or the Sun ([its handoff](../../evidence/ATMOSPHERE/M6-handoff.md)). The bright band along the lookout's rim
+sky or the Sun ([its handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md)). The bright band along the lookout's rim
 at the held 17.4 h stop comes from a terrain mesh too coarse there for the normals it stores. At the 6.1 h
 sunrise stop the east ridge still hides the Sun from the lookout, so no prop can cast a shadow. By
 [the module list's ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) `SHOWCASE` M9 resolves the rim in the
@@ -921,8 +921,8 @@ hour the Sun is up, on the Mac and in Chrome.
 
 On the Mac, on the exit flythrough, a dark stair-stepped strip appears across lit ground between committed
 ticks 233 and 234 and stays. A fixed capture with every tick submitted reproduces it, so no missed frame
-causes it ([the record](../../evidence/SHOWCASE/M5-motion-diagnostics.md#reproduced-shadow-transition),
-[the four ticks](../../evidence/SHOWCASE/M5-motion-fixed-shadow-crop.png)). `SHOWCASE` M5's reviewer had
+causes it ([the record](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.md#reproduced-shadow-transition),
+[the four ticks](../../../.orchestrate/evidence/SHOWCASE/M5-motion-fixed-shadow-crop.png)). `SHOWCASE` M5's reviewer had
 already noted long ground shadows with "coarse stair steps and broad straight sides" at the shelf and slope
 checkpoints.
 
@@ -942,7 +942,7 @@ confirms it first.
   drift of 0.4 to 3 cm a tick carries its edge across one, and the whole tower appears or goes in one tick.
   With each balloon taken as a disc, about 280 of the 1,500 cover a centre at a time, and one starts or stops
   about every second tick somewhere in the valley
-  ([the arithmetic](../../evidence/ATMOSPHERE/design-proof/horizon-columns.txt)). It happens with the camera
+  ([the arithmetic](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/horizon-columns.txt)). It happens with the camera
   held still too.
 
 ### Research
@@ -1131,7 +1131,7 @@ contents, like the Sun moving, and does not move the environment epoch. A weathe
 without one a scene sets them.
 
 What the kind does was measured before M7 was built, with the module's own f64 reference sky in all orders of
-scattering ([the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md)). At a fixed visual range,
+scattering ([the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)). At a fixed visual range,
 `α = 1.3` against 0 moves the sky's colour near the horizon by a CIEDE2000 difference of 4 to 6 in 20 km haze and 6 to
 12 in 3 km with the Sun at 10°, and distant land by 5 to 7 in 3 km. With the Sun at 60° the sky from the
 horizon to 20° up moves by 2 or less in 20 km haze and by 2.2 to 3.4 in 3 km, less than at the low Sun, and
@@ -1223,7 +1223,7 @@ coefficients and a ground band for an analytic bank. It proves the path; `CLOUDS
 
 The joint transport is the aerial integrator this module already runs, with more cells, more terms in each and a
 history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
-[The planner's reproduction](../../evidence/ATMOSPHERE/design-proof/README.md) is arithmetic in f64:
+[The planner's reproduction](../../../.orchestrate/evidence/ATMOSPHERE/design-proof/README.md) is arithmetic in f64:
 
 - **I, the ground band.** One read of a band that holds the whole path gives the true factor; a consumer that
   adds the cloud band's value again squares the upper cloud's.
@@ -1240,7 +1240,7 @@ history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
   leaves the in-scatter read as it was, 2.6 times its ceiling in haze of 3 km, so by itself it is not a
   remedy. A slab of fog of 30 m to 10 km visual range is within 1.1% a cell from its faces.
 
-`CLOUDS`' design proof ([part I](../../evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a
+`CLOUDS`' design proof ([part I](../../../.orchestrate/evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a
 medium split by a near weight composes with the far part to the exact transmittance. Its in-scatter is an
 approximation whose size depends on what stands in the ramp: 0.002 in that proof's uniform medium, and 0.011
 in 0.65 for a bank that occupies a 300 to 500 m ramp (the design review's case). `CLOUDS` M15.4 judges the

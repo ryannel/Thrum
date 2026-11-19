@@ -2,8 +2,8 @@
 
 18 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../BRIEF.md) ·
-planning probes: [the API](../../evidence/RAY-TRACING/planning-probe/README.md) and
-[the ray's origin](../../evidence/RAY-TRACING/planning-probe/OFFSET.md). C04, C06, C07, C08 and C12 in
+planning probes: [the API](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) and
+[the ray's origin](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md). C04, C06, C07, C08 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md),
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) and
 [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) govern.
@@ -114,7 +114,7 @@ Read for this design, 17 and 18 November 2026:
 - **The locked wgpu reaches both features on Metal.** `wgpu-hal` 30.0.1's Metal adapter sets
   `EXPERIMENTAL_RAY_QUERY` from the device's ray-tracing support and builds acceleration structures
   (`metal/adapter.rs`, `metal/command.rs`); naga writes ray queries to MSL. wgpu's own `ray_shadows` example
-  traces from a fragment stage. [The planning probe](../../evidence/RAY-TRACING/planning-probe/README.md) ran
+  traces from a fragment stage. [The planning probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) ran
   on this Mac: the adapter offers ray queries; a 10,000-instance structure rebuilt in about 2 ms of wall time;
   two million any-hit rays from a compute stage and from a fragment stage gave the same answers, and the
   right ones. So no raw Metal is needed, and the
@@ -140,7 +140,7 @@ Read for this design, 17 and 18 November 2026:
   Tracing Gems, chapter 6), lift a ray's origin along the normal by an amount that scales with the point's
   coordinates, in place of a tuned bias. Their constant, 256 float steps, allows for a hit point computed at
   the end of a long ray. It is 0.25 m at 10 km from the origin, which steps over a nearby caster. A raster
-  fragment's position carries far less error. [The second probe](../../evidence/RAY-TRACING/planning-probe/OFFSET.md)
+  fragment's position carries far less error. [The second probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md)
   measured it on this Mac: two float steps cleared every self-hit from 64 m to 20 km and down to half a degree
   of grazing light.
 
@@ -521,11 +521,11 @@ lags in the same way. A darkening still visible after that is a trail, and fails
 
 ### Check that it can work
 
-- **The API path.** [The probe](../../evidence/RAY-TRACING/planning-probe/README.md) built, rebuilt and
+- **The API path.** [The probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) built, rebuilt and
   traced through the locked wgpu on this Mac, from both stages this design traces from.
 - **Poses.** Every instance transform the vertex stage uses is on the CPU when the frame is recorded: the
   instance record's two matrices and the frame's alpha. The scene structure is built from the same values.
-- **The ray's origin.** [The second probe](../../evidence/RAY-TRACING/planning-probe/OFFSET.md) placed
+- **The ray's origin.** [The second probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md) placed
   receivers as the raster path does and found no self-hit at 2 float steps or more, at any distance to 20 km
   and any elevation from 0.5°. At 8 steps a panel 2 cm off a wall still blocks at 20 km. At 256 steps a panel
   10 cm off a wall at 10 km does not.
@@ -680,7 +680,7 @@ that moved, through a third mask bit.
   settle length and one more. The reviewer is given those frames at native size.
 - Every timing of this module is a tripwire taken under load, M6's pair included: it records the load and
   fails only on a missing measurement. No sitting with other builders paused is asked for.
-- Scratch goes in `tmp/ray-tracing-<milestone>/`, selected evidence in `docs/evidence/RAY-TRACING/`.
+- Scratch goes in `tmp/ray-tracing-<milestone>/`, selected evidence in `.orchestrate/evidence/RAY-TRACING/`.
 
 ## Open questions
 

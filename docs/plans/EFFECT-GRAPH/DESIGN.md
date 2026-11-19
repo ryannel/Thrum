@@ -5,11 +5,11 @@
 [graph decision](../../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) and
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern. Revised 16 November 2026: a fourth
 milestone gives effects [the display phase](#the-display-phase-m4). Revised again that day after
-that revision's review (finding MF5; `git show 8ed45fc5b:docs/evidence/EFFECT-GRAPH/design-review.md`): the
+that revision's review (finding MF5; `git show 8ed45fc5b:.orchestrate/evidence/EFFECT-GRAPH/design-review.md`): the
 phase describes the target the clock consumes, and a prediction is carried a tick at a time. Revised a third
-time that day, after M4's first review ([review](../../evidence/EFFECT-GRAPH/M4-review-1.md)): which
+time that day, after M4's first review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review-1.md)): which
 [pair a frame shows](#the-frames-pair) on a world on its own thread. Revised 17 November, after M4's second
-review ([review](../../evidence/EFFECT-GRAPH/M4-review.md)): [the timing model](#the-timing-model), which
+review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review.md)): [the timing model](#the-timing-model), which
 states every rule about a frame's time as one set, with display time on the world's time.
 
 ## The request
@@ -21,7 +21,7 @@ The owner's planning task of 11 November 2026, word for word:
 > it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first
 > milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke
 > APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged
-> (docs/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
+> (.orchestrate/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
 > that alters another module's exact baselines gets caught before landing.
 
 What the module is for comes from [the brief](../BRIEF.md), decision 6: "Sea and clouds are finished as Thrum
@@ -36,7 +36,7 @@ The lead's planning task of 16 November 2026, after `CLOUDS` M2's builder ended 
 > CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared
 > display-time interface change before M2.7's uneven 60× shade motion can be completed.
 
-The builder's diagnosis (`docs/evidence/CLOUDS/M2-temporal-blocker.md` on branch `build/clouds` at
+The builder's diagnosis (`.orchestrate/evidence/CLOUDS/M2-temporal-blocker.md` on branch `build/clouds` at
 `0756d0adce44`) asked that the change go to
 "HOST/EFFECT-GRAPH, with their clock/platform consumers", that it "preserve enough target information and
 endpoint history, or explicitly define a bounded prediction coordinate for presentation-only advection", and that
@@ -46,7 +46,7 @@ is [M4](#the-display-phase-m4) here. `HOST` waits on seven milestones and change
 This design reconciles the code on main; it is not a blind study. Read for it: `graph.rs`, `graph_record.rs`,
 `contribution.rs`, `synthetic/{scene_graph,contributed}.rs`, `atmosphere/graph.rs`, the [SEA](../SEA/BRIEF.md) and
 [CLOUDS](../CLOUDS/BRIEF.md) briefs, and the designs of the three modules whose files it shares. For the revision
-after [the design review](../../evidence/EFFECT-GRAPH/design-review.md), also read: the history scope in
+after [the design review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md), also read: the history scope in
 `graph.rs`, the encoded-frame token in `runtime/tokens.rs`, `timing.rs`, and `APPLE-PRESENTATION`'s M2 and M3 items.
 
 ## Purpose and scope
@@ -217,7 +217,7 @@ Alpha is `p` held to [0, 1]. Whenever the lead carries the target past the next 
 alpha stops at 1, and the display time it stands for stops with it; the first frame of the next tick then makes
 up the difference. With 60 Hz ticks and a 120 Hz display that can be every second frame, and in `CLOUDS` M2's
 60× capture it was: alpha alternated 0.92 and 1.0, so wind travel alternated 3.2 m and 36.8 m where 20 m was
-due ([the planner's reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md) of the builder's record). Every
+due ([the planner's reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md) of the builder's record). Every
 quantity shown by alpha under a lead steps this way, not only clouds.
 
 <a id="the-timing-model"></a>
@@ -344,7 +344,7 @@ frame's effect time (`EffectTime` in `contribution/state.rs`).
   forward **a tick at a time, by that step's own arithmetic with the inputs the committed state holds**, and
   read between the predicted endpoints. One tick's increment carried across several ticks is not this: while a
   rate is itself changing, the same display time would be shown differently from tick `C` and from tick `C + 1`
-  ([6 m in the cloud's case](../../evidence/CLOUDS/M2-plan/display-travel.txt)). A quantity known only at its endpoints
+  ([6 m in the cloud's case](../../../.orchestrate/evidence/CLOUDS/M2-plan/display-travel.txt)). A quantity known only at its endpoints
   keeps alpha.
 - **What a prediction guarantees.** Carried forward so, a quantity is exact for as long as the inputs the
   committed state holds stay what they were: two frames that show one display time from two committed ticks
@@ -382,7 +382,7 @@ its own thread admits ticks from its own reads of the clock. The render owner re
 host collects GPU completions, and only then is the world polled. A tick that fell due in that gap and that the
 world has already committed is due after the observation. M4's first review met it: observed at 1 ms and polled
 once the world had reached 40 ms, a frame with no lead was given tick 2, due at 33.3 ms. The identity then asks
-for a phase of −1.94 ([reproduction](../../evidence/EFFECT-GRAPH/M4-review/zero-lead.txt)). Such a frame is a
+for a phase of −1.94 ([reproduction](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review/zero-lead.txt)). Such a frame is a
 **delayed frame**.
 
 **Decision.** A world on its own thread holds two pairs at most for its frames: the one it shows, and the
@@ -398,7 +398,7 @@ time a frame is given are those of the pair it shows.
   a tick no older than the newest its previous poll saw. Holding only the pair shown, as M4 was first built,
   does not have this. On a 60 Hz display whose frames are observed 0.5 ms before each tick falls due and
   polled 1 ms later, every newest pair is refused: in
-  [the planner's probe](../../evidence/EFFECT-GRAPH/M4-replan/README.md), which runs the repository's clock,
+  [the planner's probe](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/README.md), which runs the repository's clock,
   600 frames stay on one tick and 596 of them sit at the bound. A 60.01 Hz display drifts through that place
   in the tick and holds up to 73 frames, 1.2 s, as it passes. With the refused pair the same frames follow the
   world tick for tick, and their phase does not pass 1.
@@ -407,7 +407,7 @@ time a frame is given are those of the pair it shows.
   takes its target in the span its pair belongs to, and the bound keeps its display time within 50 ms of that
   pair's tick. After a resume the first pair that interpolates is due one tick after the worker's resume, and
   it waits as a refused pair for an observation that reaches it. In
-  [the planner's run of the lane](../../evidence/EFFECT-GRAPH/M4-timing/README.md#the-lane-paused-and-resumed)
+  [the planner's run of the lane](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/README.md#the-lane-paused-and-resumed)
   every frame of a resumed span has one origin, to 7 ns, and the resume's tick is due between the request
   and its reply.
 - **Under the bound.** A delayed frame is under the phase's bound while the time from its previous poll to
@@ -486,7 +486,7 @@ And for which target the phase describes:
 | **The consumed target, with one read where one clock serves** | Selected. It is what the clock evaluates in every frame, so one identity covers `future`, `late` and `clamped` frames. The runner the Mac's captures use then consumes the platform target exactly |
 
 And for what display time is counted in, after M4's second review
-([its frames](../../evidence/EFFECT-GRAPH/M4-review/resume-identity.txt)):
+([its frames](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-review/resume-identity.txt)):
 
 | Choice | Verdict |
 |---|---|
@@ -496,7 +496,7 @@ And for what display time is counted in, after M4's second review
 | Report frames after a resume as not interpolating | The world is running. Motion by the phase would stop for good at the first pause |
 | Record the observation on the world's time | The observation, the lead and the platform target are compared on the host's clock, as a `future` frame's are. One field cannot be both |
 | Carry the origin with each pair | It is negative for a world that starts on a high tick. The due time says the same and is never before the clock's start |
-| **Two times, joined by the due time of the frame's tick** | Selected. The clock sample already holds it, and the clock's and the lane's arithmetic do not change ([the check](../../evidence/EFFECT-GRAPH/M4-timing/README.md)) |
+| **Two times, joined by the due time of the frame's tick** | Selected. The clock sample already holds it, and the clock's and the lane's arithmetic do not change ([the check](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/README.md)) |
 
 The one step a resume leaves, in rule 9, is the hold's: alpha has waited for the first tick after a resume
 since before M4, and every reader of alpha resumes that way. Interpolating through the hold would move when
@@ -511,33 +511,33 @@ this milestone touches and keep its tests passing.
 
 **Check that it can work.**
 
-- **The uneven capture.** In [the planner's reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md), the
+- **The uneven capture.** In [the planner's reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md), the
   targets of the 60× rows (submission time plus consumed lead) put the six frames at `p` = 0.92, 1.40, 0.92,
   1.40, 0.92, 1.40 on ticks 927, 927, 928, 928, 929, 929. Display time `C − 1 + p` then advances 0.48, 0.52,
   0.48, 0.52, 0.48 ticks, which is 19.0 to 20.8 m of travel a frame against the capture's 3.2 and 36.8 m. The
   spread left over is the record's: it holds the submission time, not the observation, which is why M4 writes
   the observation. The arithmetic was run on the rows while planning and is not a capture of the fix.
-- **The consumed target.** [`consumed_target.py`](../../evidence/EFFECT-GRAPH/M4-plan/consumed_target.py), in
-  the clock's own whole-nanosecond arithmetic ([output](../../evidence/EFFECT-GRAPH/M4-plan/consumed-target.txt)):
+- **The consumed target.** [`consumed_target.py`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/consumed_target.py), in
+  the clock's own whole-nanosecond arithmetic ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/consumed-target.txt)):
   in the review's delayed frame, its expired frame and a clamped one, display time is the consumed target less
   one tick and alpha is the phase held to 1; one consumed target seen from ticks 60 and 61 is one display time;
   and over 2,000 platform targets 1/120 s apart, one read gives steps of 8.33 ms in every frame, where two
   reads up to 2 ms apart give 6.39 to 10.27 ms.
-- **The timing model.** [`spans.rs`](../../evidence/EFFECT-GRAPH/M4-timing/spans.rs) drives the repository's
+- **The timing model.** [`spans.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/spans.rs) drives the repository's
   clock from a start at host time 7.3 s on tick 100 through queued ticks, a pause partway through a tick, a
   resume, the hold, two overloads and a ten-tick rewind, at 60 and 100 Hz with leads of 0 to 50 ms, and holds
   every frame to rules 1 to 9 from the script's own times
-  ([output](../../evidence/EFFECT-GRAPH/M4-timing/spans.txt)). Across 272 frames at each rate the worst distance
+  ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/spans.txt)). Across 272 frames at each rate the worst distance
   from the model is 4.2 ns, the phase's `f32`. The review's resumed frames, 1.000 s and 1.008 s from the
   literal identity, are exact with origins of 1000 and 1008 ms.
-  [`lane_lifecycle.rs`](../../evidence/EFFECT-GRAPH/M4-timing/lane_lifecycle.rs) pauses and resumes the
+  [`lane_lifecycle.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/lane_lifecycle.rs) pauses and resumes the
   repository's lane on its own thread, with 0, 3 and 20 ms between each observation and its poll
-  ([output](../../evidence/EFFECT-GRAPH/M4-timing/lane-lifecycle.txt)): origin zero before the pause, one
+  ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/lane-lifecycle.txt)): origin zero before the pause, one
   origin after the resume, and the hold shown as the committed tick. So the clock and the lane already keep
   the model, and M4 has to state the due time, carry it and test it.
-- **The frame's pair.** [`kept_pair.rs`](../../evidence/EFFECT-GRAPH/M4-replan/kept_pair.rs) runs the
+- **The frame's pair.** [`kept_pair.rs`](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/kept_pair.rs) runs the
   repository's clock against four lanes: the newest pair, one held pair, the world's newest two pairs, and a
-  held pair with a refused pair ([output](../../evidence/EFFECT-GRAPH/M4-replan/kept-pair.txt)). In the review's frame the newest pair is
+  held pair with a refused pair ([output](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/kept-pair.txt)). In the review's frame the newest pair is
   32.3 ms from the identity and either held pair meets it at phase 0.06. In runs of delayed frames at 30, 60,
   60.01 and 120 frames a second, with leads of 0, 8 and 50 ms, the refused pair keeps every frame within 3 ns
   of the identity and under the bound, and no frame waits on a tick that has fallen due. It models the lane.
@@ -767,7 +767,7 @@ on the valley route with no effect attached.
   each change of origin instead of failing on them. No M4 item drives a window, so none needs an attended
   display.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<milestone>/`; selected evidence
-  in `docs/evidence/EFFECT-GRAPH/`.
+  in `.orchestrate/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at M3, with implementation, correctness and device results kept
   apart.
 

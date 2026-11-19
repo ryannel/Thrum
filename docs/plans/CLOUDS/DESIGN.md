@@ -1,7 +1,7 @@
 # Clouds: the weather, from the cloud tops to the mist on the ground, that shades and lights the world
 
 13 November 2026, revised 14 November, judged again from first principles the same day, and revised after
-[its second review](../../evidence/CLOUDS/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
+[its second review](../../../.orchestrate/evidence/CLOUDS/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
 [module list](../ARCHITECTURE.md). C02, C04, C06, C07, C08, C09 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [ENVIRONMENT](../../design/modules/ENVIRONMENT.md) and
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern.
@@ -16,23 +16,23 @@ of a ground row and the headless query, and
 the yardstick its proofs quote. Revised 16 November 2026:
 [drift is taken at the display phase](#time-drift-at-the-displays-time-evolution-on-the-tick), which
 `EFFECT-GRAPH` M4 provides. Revised again that day after that revision's review (finding MF1;
-`git show f1076615a:docs/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
+`git show f1076615a:.orchestrate/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
 tick at a time by the step's own arithmetic, and the phase describes the target the clock consumes.
-Revised 17 November 2026 after [M3's handoff](../../evidence/CLOUDS/M3-handoff.md): the Sun term of
+Revised 17 November 2026 after [M3's handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md): the Sun term of
 [cloud light](#cloud-light) is a beam and a diffuse solution, in place of four fixed orders. Revised that day
 for [the owner's bar](#how-the-module-is-proved): the look and the speed decide, references are diagnostics, and
 near and far fog [share one Sun term](#condensate-that-meets-the-ground-mist-fog-and-low-cloud). Revised
-18 November 2026 after [the review of 17 November](../../evidence/CLOUDS/design-review.md) (finding MF1):
+18 November 2026 after [the review of 17 November](../../../.orchestrate/evidence/CLOUDS/design-review.md) (finding MF1):
 [one boundary rule for every consumer](#cloud-light), what each integrator reads, and part XVII. Revised
 that day again after M3 stopped on repeated domes and shelves: a cell's column is
 [a cluster of turrets](#one-weather-field-in-the-air-frame) and the shape noise is
 [a billow field](#one-density-in-m¹), in place of one dome with a fretted skin (part XVIII). Revised that
-day once more after [that revision's review](../../evidence/CLOUDS/design-review.md) (two findings): every
+day once more after [that revision's review](../../../.orchestrate/evidence/CLOUDS/design-review.md) (two findings): every
 level of [the weather map](#the-weather-map) holds the query's own column at its texel's centre, and one
 clearing factor takes a cell's coverage to zero with its thickness. Revised 18 November 2026 on the lead's
 decision to park the form of a single cloud: M3 closes on the sky at a glance and M17 judges each cloud, from
 the diagnosis in [risk 2](#risks). No mechanism and no interface changed. Revised that day after the review
-of that parking (two findings; `git show 061432e11:docs/evidence/CLOUDS/design-review.md`): M17 judges the
+of that parking (two findings; `git show 061432e11:.orchestrate/evidence/CLOUDS/design-review.md`): M17 judges the
 form in [a sky of weather alone](#risks), with no library shape in it, on both targets from both heights, and
 the flaws are excused only until M17 starts.
 
@@ -99,7 +99,7 @@ gives the verdict on every choice the design of 13 November inherited: six chang
 reasons that do not rest on Broadsides having built them. [What Broadsides offers](#what-broadsides-offers) says
 what may be copied.
 
-It is not a blind study. Read for it: the design of 13 November and [its review](../../evidence/CLOUDS/design-review-1.md);
+It is not a blind study. Read for it: the design of 13 November and [its review](../../../.orchestrate/evidence/CLOUDS/design-review-1.md);
 the Broadsides procedural notes at `b4d8250e6` (`THRUM-PORT`, `RUNTIME-DESIGN`, `COST-2026-11-06`, `COST-MODEL`,
 `ASSET-CONTRACT`, `PROCEDURAL-COMPLETION`, `bw_core/src/weather.rs` with its data file, and for this revision
 `bw_core/src/medium/scatter.rs`, `bw_render_clouds/src/phase.rs`, `cloud_lighting.ron` and the list of its cloud
@@ -226,7 +226,7 @@ What each source was read for, and how far.
   single scattering alone, and M3's photon transport measured what that costs (below).
 - **Multiple scattering, looked at again on 17 November** after M3 found no bright side at any density, Sun
   grid or shadow setting. M3's builder traced photons through a level layer that scatters without absorbing
-  ([its record](../../evidence/CLOUDS/M3-handoff.md)): at an optical depth of 64 under a 45° Sun the layer
+  ([its record](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md)): at an optical depth of 64 under a 45° Sun the layer
   reflects 84% of the Sun's flux and the four orders 5%. Shipped practice is Wrenninge's octaves (Frostbite's
   equations 19–20; Unreal's
   [volumetric cloud material](https://dev.epicgames.com/documentation/en-us/unreal-engine/volumetric-cloud-component-in-unreal-engine),
@@ -285,7 +285,7 @@ What each source was read for, and how far.
 Five reproductions were run for this design, the second for its revision, the third for the first-principles
 judgement, the fourth after its second review and the fifth for mist, fog and low cloud; a sixth followed that
 addition's review and a seventh, of cloud light against photon transport, M3's handoff. They are kept with their output in
-[the evidence folder](../../evidence/CLOUDS/design-proof/). [Check that it can work](#check-that-it-can-work)
+[the evidence folder](../../../.orchestrate/evidence/CLOUDS/design-proof/). [Check that it can work](#check-that-it-can-work)
 reports them.
 
 **How a march reaches the look at this frame rate, decided against the cost.**
@@ -370,7 +370,7 @@ and building goes on; whether the layer's extent or the light model should then 
 from that record, never a stop for a builder. If M5 shows the summed Sun-path product cannot carry low-Sun
 relief, its near level is refined or the local samples grow, here first. M3's stills showed the diffuse light
 wrong in a cloud of heaps in a way the box of part XV did not, and [the lit plane](#cloud-light) was corrected
-for it from [the controls](../../evidence/CLOUDS/M3-plane/README.md) (part XIX). If stills show it wrong again,
+for it from [the controls](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md) (part XIX). If stills show it wrong again,
 the plane's turn and the view boundary are where a planner corrects it, from the record; a gain, a second
 light, fixed orders and a plane read from a sample's depths are never the correction. If a game needs hashed shapes and
 directed ones in one sky, the map's texel gains a second slot; nothing else moves. If a game wants the shade of
@@ -504,11 +504,11 @@ The next tick's travel carried across the whole of `p − 1` is not this rule. I
 wrong while a wind or a time scale is ramping, because each tick of a ramp travels a different distance. With
 the wind at 10 m/s on its way to 40, a 10 s response and 60×, one display time two and a half ticks past the
 committed tick is 35 m from tick `C` and 41 m from tick `C + 1`: a 6 m step with nothing changed. By predicted
-ticks it is 43 m from both ([the check](../../evidence/CLOUDS/M2-plan/display-travel.txt), part 1).
+ticks it is 43 m from both ([the check](../../../.orchestrate/evidence/CLOUDS/M2-plan/display-travel.txt), part 1).
 
 The interpolation alpha is not that time. It stops at the committed tick, and a consumed target usually lies
 past it for part of every tick: at 60× in a 40 m/s wind M2's first capture drifted 3.2 m and 36.8 m on alternate
-frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, in a
+frames where 20 m was due ([the reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, in a
 steady wind and time scale, while the world's clock runs and the phase is inside its bound, equal intervals
 between consumed targets are equal steps of travel, across a tick's commit as within a tick; through a ramp
 the steps follow the ramp, as **What the prediction guarantees** says below. A frame whose platform target
@@ -782,13 +782,13 @@ depth, the beam's lobe), keeps one term for every consumer, and says in the evid
   optical depth toward the Sun, with no surface found in the volume, so a sample's light falls smoothly from
   the lit side of its Sun column to the far side whatever the cloud's shape. That much is the published
   practice. The halfway turn is not: it is Thrum's own choice among the planes
-  [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) compared on Metal (part XIX), and it is the
+  [M3's controls](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md) compared on Metal (part XIX), and it is the
   constant a builder tunes by eye ([risk 12](#risks)).
   No depth sets the plane. The first design inferred it at each sample, from the cloud above the sample
   against the cloud between it and the Sun. In a cloud of heaps those two depths say where the gaps are, not
   which way a surface faces: along a base the column overhead is deep and the path to the Sun slips between
   heaps, so the plane turned to face the Sun, and across the face above it the plane turned away.
-  [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) put its bright lip under a dark stripe there, at
+  [M3's controls](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md) put its bright lip under a dark stripe there, at
   2.2 to 1 in solar diffuse alone, and 1.2 to 1 with the plane held level. On a uniform box the inferred plane is the
   closer of the two (part XIX), and no sky is made of boxes.
 - **The view boundary.** A column is unbounded sideways and a cloud is not. Every surface the eye sees is a
@@ -1131,7 +1131,7 @@ near the camera and this module's trace beyond it.
   The in-scatter's error depends on what stands in the ramp: a bank that fills a 300 to 500 m ramp is 0.011
   in 0.65 (`ATMOSPHERE`'s design review). That holds because both integrators take one source there: with a
   view boundary in the trace alone, a bank brightened by up to 19% as it crossed the ramp
-  ([the review of 17 November](../../evidence/CLOUDS/design-review.md), finding MF1), which the boundary weight
+  ([the review of 17 November](../../../.orchestrate/evidence/CLOUDS/design-review.md), finding MF1), which the boundary weight
   removes. With it the review's bank is the same radiance at 200, 325 and 400 m, to rounding, and over every
   case of part XVII the two integrators are within 0.17 of the yardstick of one integrator over the whole
   ray: a bank with soft edges in the ramp, a long bank across it, and the camera inside condensate. Beyond the
@@ -1263,7 +1263,7 @@ From `cloud_field_proof.py`, a CPU sketch with first-profile constants:
 - **K6.** Unrun. The layer's reconstruction and its look under TAAU are first seen in M3 and M9.
 
 From `revision_proof.py`, run for the revision of 14 November against
-[the first design review](../../evidence/CLOUDS/design-review-1.md)'s counterexamples:
+[the first design review](../../../.orchestrate/evidence/CLOUDS/design-review-1.md)'s counterexamples:
 
 - **The Sun's path as the Sun sinks.** Beside a broken cloud bank, with the Sun going from 8° to 1°, the factor
   under open sky, in a gap and where the ray enters the bank changes by an amount that halves when the Sun's
@@ -1295,8 +1295,8 @@ From `first_principles_proof.py`, run for the judgement of 14 November:
   0.3 then 0.3. That holds only if the frame's time passes the committed tick with its consumed target. Taken by
   alpha, M2's capture split each tick's 40 m as 3.2 m then 36.8 m. Recomputed from that capture's rows with
   the display phase, the six frames step 19.0 to 20.8 m against 20 m due, and the spread is the record's
-  ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)).
-- **Drift past the committed tick.** From [`display_travel.py`](../../evidence/CLOUDS/M2-plan/display_travel.py),
+  ([the reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md)).
+- **Drift past the committed tick.** From [`display_travel.py`](../../../.orchestrate/evidence/CLOUDS/M2-plan/display_travel.py),
   run on 16 November after the review of the display-phase revision, in rational arithmetic with the step of
   `state.rs`. Its four parts are cited in [time](#time-drift-at-the-displays-time-evolution-on-the-tick): the
   review's ramp, where one tick's travel carried forward steps 6 m and predicted ticks step nothing; 33,355
@@ -1306,7 +1306,7 @@ From `first_principles_proof.py`, run for the judgement of 14 November:
 - **Directed shapes and capabilities.** Unrun. Both are the placed cell and the profile already reproduced, with
   their inputs from the game; M1 and M8 prove them first.
 
-From `second_revision_proof.py`, run after [the second review](../../evidence/CLOUDS/design-review.md), on its
+From `second_revision_proof.py`, run after [the second review](../../../.orchestrate/evidence/CLOUDS/design-review.md), on its
 counterexamples and wider cases:
 
 - **G, the phase over the Sun's disc.** At droplet diameters of 5, 10, 20, 40 and 50 µm the disc-averaged phase
@@ -1358,7 +1358,7 @@ From `whole_atmosphere_proof.py`, run for the revision of 14 November for mist, 
   geometry edge under reconstruction, first seen in M15.
 
 From `ground_revision_proof.py`, run on 14 November after
-[the review of the ground revision](../../evidence/CLOUDS/design-review.md), on its counterexamples:
+[the review of the ground revision](../../../.orchestrate/evidence/CLOUDS/design-review.md), on its counterexamples:
 
 - **VII, stops.** In one texel with surfaces at 600, 700 and 900 m, a bank at 650 to 690 m and the same bank at
   810 to 850 m leave the same pairs at 600 and 900 m. A stop at 700 m gives 0.301 and 1.000, the truth; the two
@@ -1383,7 +1383,7 @@ From `ground_revision_proof.py`, run on 14 November after
   both.
 
 From `multiple_scattering_proof.py`, run on 17 November after
-[M3's handoff](../../evidence/CLOUDS/M3-handoff.md). Its oracle is photon transport: exponential free paths,
+[M3's handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md). Its oracle is photon transport: exponential free paths,
 no absorption, the 24 µm droplet's phase sampled exactly, a point Sun, every photon followed until it leaves.
 The model in it is [cloud light](#cloud-light)'s Sun term, written apart from any engine code.
 
@@ -1418,7 +1418,7 @@ The model in it is [cloud light](#cloud-light)'s Sun term, written apart from an
   was unrun here and M3's stills saw it: part XIX.
 
 From `handover_light_proof.py`, run on 18 November against finding MF1 of
-[the review of 17 November](../../evidence/CLOUDS/design-review.md), on its bank and wider cases. Each case is
+[the review of 17 November](../../../.orchestrate/evidence/CLOUDS/design-review.md), on its bank and wider cases. Each case is
 one view ray drawn by the two integrators, each lighting its share with the term at the boundary weight,
 against one integrator over the whole ray with the view depth counted from the camera. Errors are shares of
 the yardstick, which is 5.5% of the reference radiance.
@@ -1437,9 +1437,9 @@ the yardstick, which is 5.5% of the reference radiance.
   integrators; the two grains, a cell sixteen pixels across against a texel of four. M15.13's stills see both.
 
 From `cloud_shape_proof.py`, run on 18 November after M3 stopped on repeated domes and shelves
-(`git show 6c696409396a:docs/evidence/CLOUDS/M3-handoff.md`). It makes the fair sky's cells and their density
+(`git show 6c696409396a:.orchestrate/evidence/CLOUDS/M3-handoff.md`). It makes the fair sky's cells and their density
 as `build/clouds` computes them at that commit, and draws the same cells from the side in three forms
-([the picture](../../evidence/CLOUDS/design-proof/cloud-shape-proof.png)). An outline is the top of a cloud's
+([the picture](../../../.orchestrate/evidence/CLOUDS/design-proof/cloud-shape-proof.png)). An outline is the top of a cloud's
 silhouette across its width, both scaled to 1.
 
 - **XVIII, what gives a heaped cloud its form.** Sixteen mature cells, each alone. With nothing eroded, the
@@ -1457,7 +1457,7 @@ silhouette across its width, both scaled to 1.
   alike, a step of ±0.02 in the envelope moves coverage 0.0098, and each halving of the step quarters that, to
   0.00015 at ±0.0025; thickness goes the same way, 11 m to 0.18 m. With coverage whole wherever thickness
   stands, the rule the review found, coverage moves 0.29 to 0.28 at every step: a switch.
-  [The review's probe](../../evidence/CLOUDS/design-review/turret-query-probe.py), run against the corrected
+  [The review's probe](../../../.orchestrate/evidence/CLOUDS/design-review/turret-query-probe.py), run against the corrected
   model, finds no jump.
 - **The far level holds the query's column.** Over a 96 km square of the fair sky, the query every 100 m is
   cloudy at 0.1275 of points with a mean thickness of 99.22 m; at the 3,600 centres of 1,600 m texels, 0.1308
@@ -1468,9 +1468,9 @@ silhouette across its width, both scaled to 1.
   ground then showed what this part did not: shelves, folds and repeats on the turrets
   ([risk 2](#risks)), which M17.1 and M17.2 judge.
 
-From [M3's controls](../../evidence/CLOUDS/M3-plane/README.md) on Metal and `lit_plane_proof.py`, both of 18
+From [M3's controls](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md) on Metal and `lit_plane_proof.py`, both of 18
 November, after M3 stopped a second time, on a bright underside under a dark stripe toward the noon Sun
-(`git show f38c7d77ad24:docs/evidence/CLOUDS/M3-handoff.md`).
+(`git show f38c7d77ad24:.orchestrate/evidence/CLOUDS/M3-handoff.md`).
 
 - **XIX, the lit plane.** *On turrets, in the engine.* The toward-Sun still drawn one light term at a time:
   the lip over the face above it is 1.8 to 1 as built, 1.1 in the beam, 0.9 in the ambient light and 2.2 in
@@ -1639,7 +1639,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    list. From M17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
    inspected item whose view shows it, in M17 and in M12.
 
-   What M3 found, in `docs/evidence/CLOUDS/M3-erosion/README.md` and `M3-type-plane/README.md` (they land
+   What M3 found, in `.orchestrate/evidence/CLOUDS/M3-erosion/README.md` and `M3-type-plane/README.md` (they land
    with M3; before that, `git show 5f84d354a3bf:<path>`):
    - The fold is in the density and not in the light. It is in the trace's opacity before light is composed,
      and turning the lit plane by 0.25, 0.50 and 0.75 changed its brightness and not its outline. The shelves
@@ -1711,7 +1711,7 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
    ray enters between the lit plane and the far one, and would show as a seam along a cloud's shoulder. The
    fixes, in order: the plane's turn, by eye, for the type; the boundary depth; the type's water, which
    deepens the Sun column. The builder makes them and records what changed. If a low-Sun far side still fails
-   M5's list, draw each light term alone first, as [M3's controls](../../evidence/CLOUDS/M3-plane/README.md)
+   M5's list, draw each light term alone first, as [M3's controls](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md)
    did, and log which one holds it. Never a second light, a return to fixed orders, or a plane read from a
    sample's depths: that plane drew M3's bright lip under a dark stripe on turrets, and is the likely cause
    of the level dark band on its domes before them.
@@ -1725,14 +1725,14 @@ proved. Presented cadence on the built-in panel is measured once, attended, in M
   Never substitute a Mac result.
 - **Capture.** Inspected items use T2 engine capture and name their mode.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/clouds-<milestone>/`, selected evidence in
-  `docs/evidence/CLOUDS/`.
+  `.orchestrate/evidence/CLOUDS/`.
 - **Exact baselines.** The module adds crates and a selection that is off by default, and moves no retained
   image. Every milestone carries the verifier as its claim-time check
   ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Broadsides.** Read it at the commits [What Broadsides offers](#what-broadsides-offers) names; never change
   it, and never build against it. A file may be copied or translated where it does what this design states, on
   the owner's words of 14 November. Each copied or translated file is listed in
-  `docs/evidence/CLOUDS/PROVENANCE.md` with its source commit and path, goes through review like any other code,
+  `.orchestrate/evidence/CLOUDS/PROVENANCE.md` with its source commit and path, goes through review like any other code,
   and meets this module's items: a verdict it passed in Broadsides is not a verdict here. Material
   that came into Broadsides from elsewhere keeps its own licence, recorded with it, and nothing GPL or
   share-alike is copied. The cloud library is read from Git LFS without changing the Broadsides checkout, and its

@@ -16,9 +16,9 @@
           "lock": "gpu",
           "ask": "Read the test. Does the consumer reach the textures only through the public lease, with no access to residency's internals, the store or a loader of its own? Are the portable texels compared with bytes mapped through thrum-asset, for every mip?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -28,9 +28,9 @@
           "lock": "gpu",
           "ask": "Does the test discard the frame that records the last copy before it asserts what the consumer was offered, and does it supersede a set that is still uploading?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -40,9 +40,9 @@
           "lock": "gpu",
           "ask": "Does the test discard the first frame that uses the new view, and in another run make that frame a capture, and then assert the diagnostic consumer still applies its invalidation in the next submitted frame that advances history, and in no frame after it?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair; docs/evidence/CONTENT-LOOP/M1/repair-native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair; .orchestrate/evidence/CONTENT-LOOP/M1/repair-native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -52,9 +52,9 @@
           "lock": "gpu",
           "ask": "Does the cooked_edit bench carry a leased scenario, recorded with its load class? Do its upload frames' render-thread times sit within the spread of its steady frames, and if not, is the cause named?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/benchmark.md.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/benchmark.md.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -64,9 +64,9 @@
           "lock": "gpu",
           "ask": "Is the fault injected where a chunk is mapped or written, so that the production failure branch is the code that runs? Does an ordinary build compile without the probe?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/fault.log.gz; docs/evidence/CONTENT-LOOP/M1/repair-fault.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/fault.log.gz; .orchestrate/evidence/CONTENT-LOOP/M1/repair-fault.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -75,9 +75,9 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test lent_products_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -86,9 +86,9 @@
           "check": "node scripts/check_v1_browser.mjs --case lent-products",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/chrome.json.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/chrome.json.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -96,9 +96,9 @@
           "statement": "The lease is documented for the modules that will use it: what a consumer names, what it is offered and when, what it must do on a change, including when the frame that first used the new view is discarded or is a capture, and on a new device generation, and what residency never does for it.",
           "ask": "Could the SEA or CLOUDS planner write a pass that samples a cooked volume or a foam texture from the public documentation and this design alone? Does the lease's public surface name any game type, sea or cloud concept, or placement?",
           "target": "mac-metal",
-          "evidence": "docs/COOKED-LEASES.md; docs/evidence/CONTENT-LOOP/M1.md; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": "docs/COOKED-LEASES.md; .orchestrate/evidence/CONTENT-LOOP/M1.md; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -107,9 +107,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/exact-proof.json.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/exact-proof.json.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -119,9 +119,9 @@
           "lock": "gpu",
           "ask": "Does the test compare the placement's pixels and the consumer's output in every submitted frame from the first copy to the frame after the switch, each against all-old and all-new references? Does it run with the consumer on each side of residency in the contribution list, and once with the switch frame discarded?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M1.md; .orchestrate/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -147,9 +147,9 @@
           ],
           "ask": "Read the test. Is it the loop the `watch` command runs, with only the notice source replaced, and does that source report nothing for the whole test? Does it compare each published manifest with a fresh cook's, not only wait for a generation number?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M4.md; .orchestrate/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -164,9 +164,9 @@
           ],
           "ask": "Read the test. Is the sweep off for the whole test, are the notices in the form the macOS source delivers (absolute paths under the canonical root), and does it tell a re-read of the named paths from a whole scan by the cycle's scan counts?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M4.md; .orchestrate/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -181,9 +181,9 @@
           ],
           "ask": "Compare `crates/thrum-cook/tests/serve_and_watch.rs` with commit `a7390265`. Is `the_watcher_publishes_an_edited_source` the same test, with no wait lengthened, no retry added and no assertion removed or loosened?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/review-repair.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M4.md; .orchestrate/evidence/CONTENT-LOOP/M4/review-repair.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -198,9 +198,9 @@
           ],
           "ask": "Does the test let several sweeps pass, then compare every file under the store by name, bytes and modification time with what was there before them, and count the callback's calls?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M4.md; .orchestrate/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -215,9 +215,9 @@
           ],
           "ask": "Is each outcome decided by a time the test passes in or sets on the file, with no sleep deciding it, so that the test cannot depend on the machine's load?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M4.md; .orchestrate/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -225,9 +225,9 @@
           "statement": "Sweeping takes a set share of the time at most. The wait before the next sweep is never shorter than a floor, nor than a fixed multiple of the time the last sweep took. The sweep's time over an unchanged tree of 1,000 files and of 10,000 files is on record with the machine's load, beside the two constants.",
           "ask": "Read the loop and the evidence. Is the wait derived from the last sweep's measured time, and does the record hold both tree sizes, the load when they were measured and the constants in use?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/baseline.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M4.md; .orchestrate/evidence/CONTENT-LOOP/M4/baseline.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         }
       ],
@@ -250,9 +250,9 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test cooked_rows_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2.md; .orchestrate/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -262,9 +262,9 @@
           "lock": "gpu",
           "ask": "Is the fresh scene prepared in a separate host from the edited store, and compared at the same tick and view? Does one edit grow the mesh past its old bounds and another shrink it, each changing the vertex and index counts, so that a stale range or bound would show?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2/repair/README.md; docs/evidence/CONTENT-LOOP/M2/repair/native.log.gz; docs/evidence/CONTENT-LOOP/M2/repair/extent.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2/repair/README.md; .orchestrate/evidence/CONTENT-LOOP/M2/repair/native.log.gz; .orchestrate/evidence/CONTENT-LOOP/M2/repair/extent.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -274,9 +274,9 @@
           "lock": "gpu",
           "ask": "Does the test compare every submitted frame across the write and the switch with the all-old or the all-new reference, including the frame after a discarded switch frame, the frames after a newer edit arrives behind a discarded switch frame, and the frames after a newer edit supersedes a replacement still being written? Do the arena write, the row switch and the retirement of old space all go through the frame host, so that its exclusive encoded-frame token is what keeps a switch from overtaking an unsubmitted frame, and does the test drive that protocol without reaching around the token?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2/repair/README.md; docs/evidence/CONTENT-LOOP/M2/repair/native.log.gz; docs/evidence/CONTENT-LOOP/M2/repair/extent.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2/repair/README.md; .orchestrate/evidence/CONTENT-LOOP/M2/repair/native.log.gz; .orchestrate/evidence/CONTENT-LOOP/M2/repair/extent.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -285,9 +285,9 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test cooked_rows_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2.md; .orchestrate/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -296,9 +296,9 @@
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test cooked_rows_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2.md; .orchestrate/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -307,9 +307,9 @@
           "check": "node scripts/check_v1_browser.mjs --case mesh-rows",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/mesh-rows.json; docs/evidence/CONTENT-LOOP/M2/browser-gpu.json",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2.md; .orchestrate/evidence/CONTENT-LOOP/M2/mesh-rows.json; .orchestrate/evidence/CONTENT-LOOP/M2/browser-gpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -317,9 +317,9 @@
           "statement": "In real time on the Mac the edited mesh replaces the old one on every entity in one frame: no entity goes missing, no frame mixes old and new, and its shadow changes with it.",
           "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with cooked mesh rows and a moving camera: one edit that grows a prop mesh and one that shrinks it. Judge the frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/realtime/manifest.json; docs/evidence/CONTENT-LOOP/M2/realtime/runtime.json; docs/evidence/CONTENT-LOOP/M2/realtime/preview-1x.mp4",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2.md; .orchestrate/evidence/CONTENT-LOOP/M2/realtime/manifest.json; .orchestrate/evidence/CONTENT-LOOP/M2/realtime/runtime.json; .orchestrate/evidence/CONTENT-LOOP/M2/realtime/preview-1x.mp4",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -329,7 +329,7 @@
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -339,9 +339,9 @@
           "lock": "gpu",
           "ask": "Is the replacement large enough that the row's write is still going for several frames after residency's last copy was submitted, and does the test compare every submitted frame in that interval, whole, with all-old and all-new references? Does it discard the switch frame once? In the refusal case, does the publication also change a texture, and does the test show that texture unchanged?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2/repair/README.md; docs/evidence/CONTENT-LOOP/M2/repair/native.log.gz; docs/evidence/CONTENT-LOOP/M2/repair/extent.log.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M2/repair/README.md; .orchestrate/evidence/CONTENT-LOOP/M2/repair/native.log.gz; .orchestrate/evidence/CONTENT-LOOP/M2/repair/extent.log.gz",
           "verdict": "pass",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         }
       ],
@@ -365,7 +365,7 @@
           "lock": "gpu",
           "ask": "Do the frame records come from the game's frame host on its ordinary frame path, with the recipe, whether a drawable was presented, and the generation each reader showed? Is any frame in an edit window longer than the longest steady frame of the same run, and if so is its cause named and outside this module?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md#metal-timing; docs/evidence/CONTENT-LOOP/M3/native-timing-frames.json.gz; docs/evidence/CONTENT-LOOP/M3/tripwires.log",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#metal-timing; .orchestrate/evidence/CONTENT-LOOP/M3/native-timing-frames.json.gz; .orchestrate/evidence/CONTENT-LOOP/M3/tripwires.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -375,7 +375,7 @@
           "statement": "On the Mac each edit appears whole in one frame under reconstruction, through every reader at once: no partly loaded texture or volume, no missing or mixed mesh, no frame with the new mesh where it is placed and the old one on the entities, no flash, and no ghost or smear of the old content in the frames after.",
           "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with TAAU and a moving camera: a mesh that is both placed and an entity's mesh row, a texture that a placement samples and a lease lends, and a leased volume, with both readers of each shared product in view. Judge the eight frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md#metal-visual-review; docs/evidence/CONTENT-LOOP/M3/native/selection.json",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#metal-visual-review; .orchestrate/evidence/CONTENT-LOOP/M3/native/selection.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -387,7 +387,7 @@
           "lock": "chrome",
           "ask": "At the product sizes the valley and the twelve-volume fixture use, is any interval in an edit window longer than the longest steady interval of the same run? If so, is its cause named and outside this module? A stall this module causes at those sizes fails the item and is fixed, not explained. Separately, does the evidence record the larger product size at which a frame is first lost? That figure is a measurement and gates nothing.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md#chrome-timing-and-changed-products; docs/evidence/CONTENT-LOOP/M3/chrome-timing.json.gz",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#chrome-timing-and-changed-products; .orchestrate/evidence/CONTENT-LOOP/M3/chrome-timing.json.gz",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -397,7 +397,7 @@
           "statement": "In Chrome each edit appears whole in one frame under reconstruction, through every reader at once, with no partly loaded product, missing mesh, flash or ghost.",
           "inspect": "Capture with T2 engine capture in `realtime` mode in Chrome on the valley with TAAU: the same three edits, with both readers of each shared product in view. Judge the frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md#chrome-visual-review; docs/evidence/CONTENT-LOOP/M3/chrome/selection.json",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#chrome-visual-review; .orchestrate/evidence/CONTENT-LOOP/M3/chrome/selection.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -407,7 +407,7 @@
           "statement": "A broken glTF, a glTF saved without its buffer, a truncated texture, a volume the device cannot hold and a save made during a cook each leave the last good content drawing with the reason recorded, and the corrected file publishes normally, from a mapped store and from a fetched one.",
           "ask": "For each bad save in this list, which test shows the previous content still drawn and the reason recorded, on the mapped store and on the fetched feed? Name any case with no test.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md#failed-saves-and-recovery; docs/evidence/CONTENT-LOOP/M3/bad-saves.log",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#failed-saves-and-recovery; .orchestrate/evidence/CONTENT-LOOP/M3/bad-saves.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -417,7 +417,7 @@
           "statement": "No shipping package links the cooker: the dependency graphs of the shipping packages and the symbols of a release shipping binary hold no authoring code, and the same scan finds it in the cooker.",
           "check": "python3 scripts/g5_shipping_links.py",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md; docs/evidence/CONTENT-LOOP/M3/shipping.log",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md; .orchestrate/evidence/CONTENT-LOOP/M3/shipping.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -428,7 +428,7 @@
           "check": "cargo test --locked --offline -p thrum-cook --test preview_saves",
           "ask": "Which code paths read products published through the watcher or the dev server, and is any of them outside presentation? Does the test publish an intermediate state that validates (a changed glTF over its old buffer) before the buffer is saved, and then compare the final manifest's product hashes with a fresh cook of the finished sources in an empty store? Do the design, the ledger and the G5 decision claim only this, and not that an incomplete save is refused?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md; docs/evidence/CONTENT-LOOP/M3/preview-saves.log",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md; .orchestrate/evidence/CONTENT-LOOP/M3/preview-saves.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -438,7 +438,7 @@
           "statement": "Gate G5 holds as the brief words it, and the maturity ledger and the G5 decision say what was and was not proved.",
           "ask": "Take gate G5's clauses in the brief one at a time. Does each have evidence at the claimed commit? Does the ledger keep implementation, correctness, visuals and device results apart, and name what is parked (CAS collection, the iPhone volume encoding, parameter files as a product, source admission and with it a boundary for an external save) and what is unmeasured (a physical iPhone, sustained runs, physical residency)? Does the G5 decision's capability table match the code?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md#g5-clauses; docs/design/maturity.json; docs/design/decisions/G5-CONTENT-ADDRESSED-LOOP.md",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md#g5-clauses; docs/design/maturity.json; docs/design/decisions/G5-CONTENT-ADDRESSED-LOOP.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -448,7 +448,7 @@
           "statement": "The public documentation tells a creator how a saved file reaches the running game, what a bad save does and what an incomplete save can show until it is finished, and tells an engine module how to take placements, cooked mesh rows and leases.",
           "ask": "Could SHOWCASE's planner give the exit scene's entities cooked meshes, and a creator follow an edit from save to screen, from the public documentation alone?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M3.md; docs/design/ENGINE-EXPERIENCE.md#live-cooked-assets",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/M3.md; docs/design/ENGINE-EXPERIENCE.md#live-cooked-assets",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

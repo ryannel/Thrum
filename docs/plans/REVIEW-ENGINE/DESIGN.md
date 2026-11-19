@@ -1,9 +1,9 @@
 # Review fixes outside the renderer: the simulation, the sea, cooked assets and the cooker
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/REVIEW-ENGINE/design-review.md).
+14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/REVIEW-ENGINE/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
-[the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
+[the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
 [patterns](../../../.agents/skills/thrum-engineering/references/patterns.md)
 
 ## The request

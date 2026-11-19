@@ -18,9 +18,9 @@
           "ask": "Read the test. Does it change the wind mid-run and compare the travel with a sum the test keeps itself? Does it run a day of ticks at 40 m/s, and at a time scale of 60, against a sum taken in extended precision?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -29,9 +29,9 @@
           "ask": "Is the type table the test's own, with no name or value that belongs to a game? Does the test cover both ends of the type axis and the middle? Does it read clear columns beside cloudy ones under a type whose base is far from zero, and would a clear answer that is zero in every field fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -39,9 +39,9 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test drift",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -50,9 +50,9 @@
           "ask": "Does the test measure top itself as well as top less base, at a point that turns from clear to cloudy under a type whose base is far from zero? Does it sample finely enough in time to land inside a birth and a death? Does the switched-on cell fail it in each of the four quantities?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -60,9 +60,9 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test births",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -71,9 +71,9 @@
           "ask": "Is the integral in the test a quadrature of its own over the public density function, with its tolerance derived from the step it uses? Does it include points at a cloud's edge, where erosion removes extinction?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -82,9 +82,9 @@
           "ask": "Is the shape the test's own and unlike a dome, and would a volume that was only scaled to match a cell's mean column fail this test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -93,9 +93,9 @@
           "ask": "Do the expected values for segments and the later orders come from `scripts/reference/cloud/optical_reference.py`, recorded with the command that printed them? Do the first order's come from the published fit and from quadrature in the test, and not from the code under test or from a copied file's own tests?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -103,9 +103,9 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -114,9 +114,9 @@
           "ask": "Does any file in the crate or its tests name a preset, a cloud type's values or a look that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -124,9 +124,9 @@
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the files added? For each copied file, do the tests that prove it take their expected values from somewhere other than the copy?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -135,9 +135,9 @@
           "ask": "Is the shape the test's own? Does the test add a shape where cells are alive and show that the column there is the sum, and does it try an overlapping add and an add beyond the limit?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -146,9 +146,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.14",
@@ -157,9 +157,9 @@
           "ask": "Does the test integrate the phase the table holds, with the disc on, by its own quadrature over the sphere and over the disc? Would a lobe widened by the disc with its numerator left alone, which integrates to 0.93 at 20 \u00b5m, fail it, and would the point Sun's phase fail at the Sun's centre? Is the bound the measured one in `docs/evidence/CLOUDS/M1-phase.md`, with the table's size beside the design proof's part G?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.15",
@@ -168,9 +168,9 @@
           "ask": "Do the two shapes have identical footprints and different densities inside, and does each expected depth come from the test's own integration of the voxels and not from the model's reference?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M1.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M1-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M1-review.md"
         }
       ]
     },
@@ -191,9 +191,9 @@
           "ask": "Does the test compare with the same calls made with no surface field and no fog table, over cells, a deck and a placed cell, and not with stored values?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.2",
@@ -202,9 +202,9 @@
           "ask": "Is the relief the test's own, with hollows and ridges at several scales, and does it include a ridge that the datum's window fully contains?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.3",
@@ -213,9 +213,9 @@
           "ask": "Read the test. Does its surface field have a shoreline and relief, and does it carry a bank across both? Would a row whose shore is taken at the point minus the travel fail the shore assertion, as part VIII of `docs/evidence/CLOUDS/design-proof/ground_revision_proof.py` shows?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.4",
@@ -224,9 +224,9 @@
           "ask": "Is the Sun's elevation an argument of the step, with no clock or renderer read inside the model?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-review-fixes-probe.txt",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.5",
@@ -235,9 +235,9 @@
           "ask": "Are the deck's and the ground row's expected depths closed forms, and the shapes' the test's own sums over voxels it made, with only the cells' taken from M1.6's density? Does a segment cross each kind of condensate? Do the two shapes differ at the probed height, as the design review's pair does at 15 m?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-review-fixes-probe.txt",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.6",
@@ -246,9 +246,9 @@
           "ask": "Is the ceiling the design's, unchanged, with no bound taken from this milestone's own measurement? Do the probe points include the ground beside the bank on its far side from the Sun at 10\u00b0 and at 4\u00b0, where a level-layer rule gives no shade, and does the test show each wrong substitute fail there?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.7",
@@ -257,9 +257,9 @@
           "ask": "Is the solar kernel cloud light's Sun term with the Sun's light left out, built from the same weights, extinction scales and phase tables as M1.8 and M1.14, and not a second copy of them? Is the ceiling the design's, unchanged, and does the test show both wrong substitutes fail?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.8",
@@ -267,9 +267,9 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test haze",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.9",
@@ -278,9 +278,9 @@
           "ask": "Does any file in the crate or its tests name a preset, a cloud type's values or a look that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-verification.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         },
         {
           "id": "M13.10",
@@ -288,9 +288,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images; docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-exact-baselines.json",
+          "evidence": "main-branch check exact-images; .orchestrate/evidence/CLOUDS/M13.md; .orchestrate/evidence/CLOUDS/M13-exact-baselines.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M13-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M13-review.md"
         }
       ]
     },
@@ -316,9 +316,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -328,9 +328,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-conformance.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md; .orchestrate/evidence/CLOUDS/M2-conformance.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -340,9 +340,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-conformance.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md; .orchestrate/evidence/CLOUDS/M2-conformance.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -352,9 +352,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-conformance.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md; .orchestrate/evidence/CLOUDS/M2-conformance.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -364,9 +364,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -374,9 +374,9 @@
           "inspect": "Capture `fixed` stills with T2 engine capture in the valley at noon and at a 15\u00b0 Sun, from 2 m and from 40 m. Judge each frame whole, and in native-size crops of a shade edge on terrain, of an object that an edge crosses, and of the far valley.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-display-phase-captures/README.md; docs/evidence/CLOUDS/M2-display-phase-opinion.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md; .orchestrate/evidence/CLOUDS/M2-display-phase-captures/README.md; .orchestrate/evidence/CLOUDS/M2-display-phase-opinion.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -384,9 +384,9 @@
           "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence. Beside them, from the 60x capture's time record, tabulate the travel between consecutive frames against the interval between their consumed targets, with each frame's lead status.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-display-phase-captures/README.md; docs/evidence/CLOUDS/M2-display-phase-opinion.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md; .orchestrate/evidence/CLOUDS/M2-display-phase-captures/README.md; .orchestrate/evidence/CLOUDS/M2-display-phase-opinion.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -395,9 +395,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-conformance.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md; .orchestrate/evidence/CLOUDS/M2-conformance.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.9",
@@ -407,9 +407,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2-cost.json; docs/evidence/CLOUDS/M2.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2-cost.json; .orchestrate/evidence/CLOUDS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.10",
@@ -417,9 +417,9 @@
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.11",
@@ -429,9 +429,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2-display-phase.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2-display-phase.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.12",
@@ -441,7 +441,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         },
         {
           "id": "M2.13",
@@ -450,9 +450,9 @@
           "ask": "Does the test make the later ticks with the model's own `step` on a copy of the state, and work the steady wind and the changed target out in its own arithmetic? Would the next tick's travel carried across several ticks fail it during a ramp, by an amount the test states?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M2-display-phase.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M2-display-phase.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M2-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M2-review.md"
         }
       ]
     },
@@ -474,9 +474,9 @@
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at noon, looking toward, across and away from the Sun, from 2 m and from 40 m, and one pair taken 40 m apart. Judge each frame whole, and the pair for clouds that shift against one another.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-type-plane/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -484,9 +484,9 @@
           "inspect": "Capture `fixed` stills along the horizon at noon and at a 15\u00b0 Sun. Judge native-size crops at about 10, 40 and 150 km.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-type-plane/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -495,9 +495,9 @@
           "ask": "Does the cloud shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own? Is its Sun the identity's true Sun and not the apparent surface light? Is the diffuse light's plane set by the type alone, one direction for a whole cloud, with no depth above a sample read to find it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-type-plane/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -507,9 +507,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-beam/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -519,9 +519,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-beam/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -530,9 +530,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-beam/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -540,9 +540,9 @@
           "inspect": "Capture `realtime` sequences at noon: a 10-second pan, a 40 m walk and a cut. Judge consecutive frames at 1x, whole and in native-size crops of cloud edges against sky and against a ridge.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-type-plane/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-type-plane/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.8",
@@ -552,9 +552,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-beam/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-beam/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.9",
@@ -563,9 +563,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-cost.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-cost.md",
           "verdict": "fail",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.10",
@@ -573,9 +573,9 @@
           "ask": "Does `docs/evidence/CLOUDS/M3-bindings.md` give the count per pass and the limit it was checked against, and is every count within it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-bindings.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-bindings.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.11",
@@ -585,7 +585,7 @@
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.12",
@@ -595,7 +595,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         },
         {
           "id": "M3.15",
@@ -605,9 +605,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M3-turrets/README.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/M3-turrets/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/CLOUDS/M3-review.md"
+          "review": ".orchestrate/evidence/CLOUDS/M3-review.md"
         }
       ],
       "findings": [

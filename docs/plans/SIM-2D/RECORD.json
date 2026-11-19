@@ -2,9 +2,9 @@
   "module": "SIM-2D",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/SIM-2D/design-review.md",
+    "review": ".orchestrate/evidence/SIM-2D/design-review.md",
     "commit": "aed1cd02c2333f4fa1ad039a448074b64dca7306",
-    "hash": "e05b00bb005523e071379260ec477efef6eb7b494cae30970c31346d5c9ac2c4",
+    "hash": "aa42cd7603497013c63d2132d789e38165a2842de547a873b72977bd8336041e",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "2aa357818ab5abcf130d46ab9d0dff0cc7d09024",
-          "review": "docs/evidence/SIM-2D/M1-review-1.md",
+          "review": ".orchestrate/evidence/SIM-2D/M1-review-1.md",
           "items": {
             "M1.1": "fail",
             "M1.2": "fail",
@@ -87,7 +87,7 @@
         {
           "verdict": "pass",
           "commit": "b13711488def74f7f29d85d32c7ff8393ce32fc8",
-          "review": "docs/evidence/SIM-2D/M1-review.md",
+          "review": ".orchestrate/evidence/SIM-2D/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -161,7 +161,7 @@
       "done": {
         "by": "review",
         "commit": "b13711488def74f7f29d85d32c7ff8393ce32fc8",
-        "review": "docs/evidence/SIM-2D/M1-review.md",
+        "review": ".orchestrate/evidence/SIM-2D/M1-review.md",
         "checked": "fd2a2679b4e442d13a55f6643acfcf54a746b04b",
         "at": "2026-11-16T09:25:42Z"
       }
@@ -172,7 +172,7 @@
         {
           "verdict": "fail",
           "commit": "07fe891982906a064c141ab7419ab83b89376bb5",
-          "review": "docs/evidence/SIM-2D/M2-review-1.md",
+          "review": ".orchestrate/evidence/SIM-2D/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -219,7 +219,7 @@
         {
           "verdict": "fail",
           "commit": "8176afb5083a87eaa032d98bf9c5d24ab4588373",
-          "review": "docs/evidence/SIM-2D/M2-review-2.md",
+          "review": ".orchestrate/evidence/SIM-2D/M2-review-2.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -266,7 +266,7 @@
         {
           "verdict": "pass",
           "commit": "511927183f158ef5c3fa16ca668c0c0afbe1f6fc",
-          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "review": ".orchestrate/evidence/SIM-2D/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -343,7 +343,7 @@
       "done": {
         "by": "review",
         "commit": "511927183f158ef5c3fa16ca668c0c0afbe1f6fc",
-        "review": "docs/evidence/SIM-2D/M2-review.md",
+        "review": ".orchestrate/evidence/SIM-2D/M2-review.md",
         "checked": "6c9d5f2cea36d09b90c0d3a583fe3b89d43720e6",
         "at": "2026-11-17T08:22:04Z"
       }
@@ -354,7 +354,7 @@
         {
           "verdict": "fail",
           "commit": "647b38f2079026e1836e3f515fe80b97c541993d",
-          "review": "docs/evidence/SIM-2D/M3-review-1.md",
+          "review": ".orchestrate/evidence/SIM-2D/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -392,7 +392,7 @@
         {
           "verdict": "fail",
           "commit": "5ca20ca8ee3a0d0b060c11b45f72aae887b6a92d",
-          "review": "docs/evidence/SIM-2D/M3-review-2.md",
+          "review": ".orchestrate/evidence/SIM-2D/M3-review-2.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -430,7 +430,7 @@
         {
           "verdict": "fail",
           "commit": "7a024294bbb713f72347ec20223251acb98a0229",
-          "review": "docs/evidence/SIM-2D/M3-review-3.md",
+          "review": ".orchestrate/evidence/SIM-2D/M3-review-3.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -468,7 +468,7 @@
         {
           "verdict": "pass",
           "commit": "8dcc2caef58ee2e5ebacc58324dc65745ef44bbb",
-          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "review": ".orchestrate/evidence/SIM-2D/M3-review.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -539,7 +539,7 @@
       "done": {
         "by": "review",
         "commit": "8dcc2caef58ee2e5ebacc58324dc65745ef44bbb",
-        "review": "docs/evidence/SIM-2D/M3-review.md",
+        "review": ".orchestrate/evidence/SIM-2D/M3-review.md",
         "checked": "ff8a30e76b5d03daeae065e5ea197e6cf294b361",
         "at": "2026-11-18T06:31:04Z"
       }
@@ -570,7 +570,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/SIM-2D/design-review-1.md",
+      "review": ".orchestrate/evidence/SIM-2D/design-review-1.md",
       "commit": "081d74e86a6663988955fa4ce7bf71a305ace6b5",
       "hash": "c80a9eadceff7ad395739b5613aa93336bbe7af27209f4efacb4b0b5d348a27a",
       "by": "review",

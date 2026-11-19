@@ -2,9 +2,9 @@
   "module": "RENDER-2D",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/RENDER-2D/design-review.md",
+    "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
     "commit": "68348f1ee65693c4287f33232c60e7b8581cc934",
-    "hash": "ce0d0bcc7a9f18276e24dd54457031cae248675809d9cbe2f35c2528cc44feeb",
+    "hash": "3b00d5c96cc36982834a2a3d31e2c6047ed3d203243d9bb785983bc0c7dbba43",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "5dd82c28ed3dce629f542c24259d060badc382d7",
-          "review": "docs/evidence/RENDER-2D/M1-review-1.md",
+          "review": ".orchestrate/evidence/RENDER-2D/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -85,7 +85,7 @@
         {
           "verdict": "fail",
           "commit": "02a06ed46672e2b7d0651d0aa2e20054e88b9d9e",
-          "review": "docs/evidence/RENDER-2D/M1-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -258,7 +258,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/RENDER-2D/design-review-1.md",
+      "review": ".orchestrate/evidence/RENDER-2D/design-review-1.md",
       "commit": "fe5c89f9a19238e83e829db8775eb79b0eedf063",
       "hash": "bec4906ba3eabceab466f29f6831e5faa754f3ff04e3b2796cf2eedcbfa087fb",
       "by": "review",
@@ -281,7 +281,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/RENDER-2D/design-review-2.md",
+      "review": ".orchestrate/evidence/RENDER-2D/design-review-2.md",
       "commit": "e119993ac1c087014571ad0862668d33b912841a",
       "hash": "a546ce89a68d6fe1aee858f90a4ee36bacfea84f7566681ae387b2c3fa00566a",
       "by": "review",

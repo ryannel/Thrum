@@ -6,7 +6,7 @@
 by C04, C05, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), and by
 [exact baselines](../ARCHITECTURE.md#exact-baselines). Revised on 18 November 2026 after M5's first review:
 [Motion on a shared machine](#motion-on-a-shared-machine) says how motion is judged before M8. Revised again that
-day for [the design review](../../evidence/SHOWCASE/design-review.md) of that revision: how each target produces
+day for [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md) of that revision: how each target produces
 a tick-by-tick sequence, what build a timing record is of, how the exit baseline is replaced, and what M7 does
 with a late frame it cannot explain. Revised a third time for that review's second round: a timing record's
 digest also covers the scripts that launch, drive and observe its arms. Revised on 19 November 2026 for
@@ -50,7 +50,7 @@ the Mac on the portable recipe, Chrome on the portable recipe.
 
 **Built before this plan** and kept: the launcher `scripts/run_v1_showcase.py` (`mac`, `chrome`, `check`,
 `startup`, `moving`), the six stop presets, the parity metric with its fixed calibration rule and controls, and the
-valley's terrain and ground material ([route slice record](../../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)). Its
+valley's terrain and ground material ([route slice record](../../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)). Its
 milestones were numbered M1 to M4, so this plan starts at M5.
 
 **What the valley is today.** `THRUM_SCENE=valley` draws the cooked terrain, one sphere and one rock. The
@@ -191,7 +191,7 @@ M9, added on 19 November 2026. `ATMOSPHERE` M6 judges the valley's sky and sunli
 earlier reviews recorded, and its builder stopped on two whose cause is the authored valley. The module list's
 [ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) gives the valley's source and stop presets to this
 module and the fix to M9. The numbers below are in
-[the design proof](../../evidence/SHOWCASE/design-proof/lookout-rim.md), which is arithmetic on the generator
+[the design proof](../../../.orchestrate/evidence/SHOWCASE/design-proof/lookout-rim.md), which is arithmetic on the generator
 and not a GPU run.
 
 **The band along the rim.** At the `sunset-clear-sun` stop, and through a pan there, a bright band lies along
@@ -213,7 +213,7 @@ builder chooses from stills, and may reshape the rim so that it reads as a rock 
 featureless edge reads as a stripe. The height function stays the generator's only one. Two things were tried
 before and are not the fix: tapering the shelf to the west halved the step and moved it, and shading with face
 normals in the shader cut the step and added a second contour
-([the record](../../evidence/v1-workload/G3S-HANDOFF.md)). The renderer does not change here.
+([the record](../../../.orchestrate/evidence/v1-workload/G3S-HANDOFF.md)). The renderer does not change here.
 
 **What is and is not the defect.** The defect is a band of brighter ground on a surface that is one piece.
 Where the lookout's ground ends, the valley floor beyond is nearly 2 km farther off, lit at another angle and
@@ -363,8 +363,8 @@ whose cooked root is the one the claimed commit cooks, and M8.8 asks for that.
 
 M5's first review failed its two motion items on real-time takes: a held image for 49.81 ms and a step after
 an 86.31 ms gap on the Mac, and a 92.8 ms gap in Chrome, every submitted image retained
-([review](../../evidence/SHOWCASE/M5-review.md)). The follow-up found two different things
-([diagnostics](../../evidence/SHOWCASE/M5-motion-diagnostics.md)).
+([review](../../../.orchestrate/evidence/SHOWCASE/M5-review.md)). The follow-up found two different things
+([diagnostics](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.md)).
 
 - **A shadow that blinks on, in the renderer.** A dark strip appears on the Mac between committed ticks 233
   and 234 with every tick submitted. It is `ATMOSPHERE`'s, fixed by its M10
@@ -409,7 +409,7 @@ So motion is proved in two parts, and the project's rule for timing decides whic
   the recorder's 1,800-tick limit for an exit route.
 - **Phase.** A route file's phase is one half. The strip was reproduced at route ticks 202 to 203, committed
   ticks 233 to 234, at phase 0.9999, which `THRUM_CAPTURE_PHASE` sets
-  ([record](../../evidence/SHOWCASE/M5-motion-diagnostics.json), `fixed_shadow_diagnostic`). That window is
+  ([record](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.json), `fixed_shadow_diagnostic`). That window is
   judged at both phases, because a fault that shows near the end of a tick can hide at its middle.
 - **Chrome.** `capture_v1_browser.mjs --mode fixed` gives the page a synthetic 60 Hz time at each callback, at
   phase one half, and retains every submission with its source tick. Under load the page can defer a due tick
@@ -453,7 +453,7 @@ an exact comparison is a proposal in this log, and the builder ends `BLOCKED nee
 
 ### The exit record
 
-One page, `docs/evidence/SHOWCASE/V1-EXIT.md`: each clause of the V1 exit and of gate G7 with its evidence at the
+One page, `.orchestrate/evidence/SHOWCASE/V1-EXIT.md`: each clause of the V1 exit and of gate G7 with its evidence at the
 claimed commit, the rows it ran on and its status as implementation, correctness, visuals and device, kept apart;
 the visual digest; platform status, the iPhone simulator's taken from the modules that proved it; known defects;
 and the physical-device runs owed. The maturity ledger and the README are brought to match it. The brief is the
@@ -463,7 +463,7 @@ owner's page and is not edited.
 
 - **Cost.** `CULLING` M2 measured the mixed-mesh field, 100,513 instances with Sun shadows at 1920×1080: whole-GPU
   p50 48.7 ms with Frustum in the open and 108 ms Direct, contended
-  ([record](../../evidence/CULLING/M2.md)). A tenth of the instances at that mesh mix predicts about 5 ms, close
+  ([record](../../../.orchestrate/evidence/CULLING/M2.md)). A tenth of the instances at that mesh mix predicts about 5 ms, close
   to the 8.33 ms interval before terrain, sky and reconstruction. So the sweep comes first, on stand-in meshes.
 - **Size on screen.** At 1080p and a 46° field of view a pixel spans about 0.74 mrad. A 1 m prop is under two
   pixels beyond 700 m; a 20 m balloon is still five pixels at 5 km. Small props stay near, and movers can fill the
@@ -476,7 +476,7 @@ owner's page and is not edited.
 
 | State | Owner |
 |---|---|
-| The exit content, its layout and generator, prop sources, the mover rule, the exit configuration, the flythrough, the exit baseline, the launcher and the exit record | This module (`examples/v1-game`, `scripts/run_v1_showcase.py`, `docs/evidence/SHOWCASE/`) |
+| The exit content, its layout and generator, prop sources, the mover rule, the exit configuration, the flythrough, the exit baseline, the launcher and the exit record | This module (`examples/v1-game`, `scripts/run_v1_showcase.py`, `.orchestrate/evidence/SHOWCASE/`) |
 | The bucket route, the mesh arena, culling modes and their rule | `CULLING` |
 | Cooked products, mesh rows, the publication | `CONTENT-LOOP` |
 | Recipes, the graph, the native segment | `APPLE-TILE` |
@@ -553,7 +553,7 @@ before it trusts any frame.
   the review moves to Claude.
 - **Attended setup.** Two items in M8 need the built-in display unlocked and awake. The agent runs and reviews;
   the owner does nothing else. Console state is recorded and is never a pass condition elsewhere.
-- **Storage.** Scratch in `tmp/showcase-<milestone>/`; selected evidence in `docs/evidence/SHOWCASE/`.
+- **Storage.** Scratch in `tmp/showcase-<milestone>/`; selected evidence in `.orchestrate/evidence/SHOWCASE/`.
 
 ## Open questions
 

@@ -2,9 +2,9 @@
   "module": "EFFECT-GRAPH",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/EFFECT-GRAPH/design-review.md",
+    "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
     "commit": "70c695e0c2724cc05af1ca27d02f9167f89a47bd",
-    "hash": "406da5e82836caf0969e4ca4fce359b13a50001cd679060e94d10fd01b8b36d9",
+    "hash": "89e14078466b4ff99f614bf99da52849965ce7b5e97c1bb69d2138682331635e",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "pass",
           "commit": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -90,7 +90,7 @@
       "done": {
         "by": "review",
         "commit": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
-        "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+        "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
         "checked": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
         "at": "2026-11-12T12:10:17Z"
       }
@@ -101,7 +101,7 @@
         {
           "verdict": "pass",
           "commit": "22376881066df244bc5386e36b0334230c32040e",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -170,7 +170,7 @@
       "done": {
         "by": "review",
         "commit": "22376881066df244bc5386e36b0334230c32040e",
-        "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+        "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
         "checked": "055113576ffcdc18fa39df2fbed36d699f332e71",
         "at": "2026-11-13T03:32:22Z"
       }
@@ -181,7 +181,7 @@
         {
           "verdict": "pass",
           "commit": "160595c5a0996b235043bff5e7624f6b0df6464b",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -256,7 +256,7 @@
       "done": {
         "by": "review",
         "commit": "160595c5a0996b235043bff5e7624f6b0df6464b",
-        "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+        "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
         "checked": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
         "at": "2026-11-16T03:56:19Z"
       }
@@ -267,7 +267,7 @@
         {
           "verdict": "fail",
           "commit": "38a04faa106062fdc582d5564e624bc6f8d140bc",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review-1.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review-1.md",
           "items": {
             "M4.1": "pass",
             "M4.2": "fail",
@@ -302,7 +302,7 @@
         {
           "verdict": "fail",
           "commit": "591e8ae7814f2339c596a55101f6f4142eed40de",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review-2.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review-2.md",
           "items": {
             "M4.1": "pass",
             "M4.6": "pass",
@@ -339,7 +339,7 @@
         {
           "verdict": "pass",
           "commit": "c853e31f20432060e223b84cf6c69c961ecfbe9d",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md",
           "items": {
             "M4.1": "pass",
             "M4.7": "pass",
@@ -408,7 +408,7 @@
       "done": {
         "by": "review",
         "commit": "c853e31f20432060e223b84cf6c69c961ecfbe9d",
-        "review": "docs/evidence/EFFECT-GRAPH/M4-review.md",
+        "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md",
         "checked": "6e9f75b86134bcac4d9bd4d1329513be6406515d",
         "at": "2026-11-17T07:53:19Z"
       }
@@ -455,7 +455,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/EFFECT-GRAPH/design-review-1.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-1.md",
       "commit": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
       "hash": "efcef49432f4c83ff2d08cc23df4e7c4bbc622e384b69152a80a79e872f1faef",
       "by": "review",
@@ -478,7 +478,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/EFFECT-GRAPH/design-review-2.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-2.md",
       "commit": "ae64c2bd9801c3d8699f4c53d00151b5b0620bbf",
       "hash": "5c25a58e9ac08bd05a7d660220eec7ae9c035570181edae57e35226ba1f3b56d",
       "by": "review",
@@ -501,7 +501,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/EFFECT-GRAPH/design-review-3.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-3.md",
       "commit": "3ce8c094333139c2778719d965c403b7d2dd307d",
       "hash": "a5b9bbe4872e184267b72fe56169bbda2e72c1171ad50685a420a2b1d3545a8b",
       "by": "review",
@@ -524,7 +524,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/EFFECT-GRAPH/design-review-4.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-4.md",
       "commit": "0b0388bff829303e2c99837985e9527bbe5b54f0",
       "hash": "9e02135a292764cc93c693037ea51bc9cb279be880dcbede4e4e97349d19359f",
       "by": "review",
@@ -547,7 +547,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/EFFECT-GRAPH/design-review-5.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-5.md",
       "commit": "8bdd01ae0dc375a7350922873c5a0b222be47f30",
       "hash": "9d7585e311ded4b3889e2df7e0fd88e6aac42415f5cb33d23358b3ff414a2af6",
       "by": "review",
@@ -570,7 +570,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/EFFECT-GRAPH/design-review-6.md",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-6.md",
       "commit": "c74d30de25d3b9393219dec7712ebb2d24c0b33c",
       "hash": "af6cdfa2b40f2588acaae4f44ae4243ea83f51a4692876c0a0862149d5537372",
       "by": "review",

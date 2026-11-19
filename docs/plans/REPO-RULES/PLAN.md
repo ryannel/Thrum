@@ -21,7 +21,7 @@ milestone. `scripts/` is a covered path, so every landing here needs a verifier 
 ## M1 A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check`
 
 The rule engine, its fixtures, the ratchet tests and the finishing helper are built on branch `build/repo-rules`
-at `9ac94c46`, and the handoff on that branch, `docs/evidence/REPO-RULES/M1-handoff.md`, says what each run
+at `9ac94c46`, and the handoff on that branch, `.orchestrate/evidence/REPO-RULES/M1-handoff.md`, says what each run
 proved. M1.1 to M1.5 have their proof there and M1.6 is open: the verifier at `db4a38fc` refused one Chrome
 identity with every image equal. [The module list](../ARCHITECTURE.md#a-fixed-capture-that-stalls) settles that
 as a stalled tick. Nothing is owed by `APPLE-TILE` and no reference moves, so the handoff's wait for an owning
@@ -42,7 +42,7 @@ proved on a scratch registry.
 Evidence folders belong to their modules, and several have builders at work. Remove files only by the rule, never
 by judging another module's evidence, and leave every review, record and design as written: the link check learns
 about the manifest so that nothing needs editing. `.gitignore` already ignores archives and `.webm` under
-`docs/evidence/`. A check must leave the loop's clean checkout unchanged, so tests work in scratch. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` gain the rule for
+`.orchestrate/evidence/`. A check must leave the loop's clean checkout unchanged, so tests work in scratch. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` gain the rule for
 new captures. Measure the tree before and after.
 
 ## M3 Names say what things do: the scene renderer is called the scene renderer, milestone codes are out of file names, and the renderer's layers point one way

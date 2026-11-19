@@ -28,7 +28,7 @@ sit in `thrum-core` or beside it.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-core`'s `sim` module (the
 runtime, the registered world, history, input), `examples/v1-game/src/simulation.rs` and its types, the contracts
-above, the networking design and [a planning probe](../../evidence/SIM-2D/planning-probe.md) run for it.
+above, the networking design and [a planning probe](../../../.orchestrate/evidence/SIM-2D/planning-probe.md) run for it.
 
 ## Purpose and scope
 
@@ -99,7 +99,7 @@ avoiding fast-math, disabling fused multiply-add and writing its own trigonometr
 impact" ([Catto, 2024](https://box2d.org/posts/2024/08/determinism/)). Rapier's `enhanced-determinism` gives
 the same results on platforms that "strictly comply to the IEEE 754-2008 floating-points standard", which
 covers "most modern mainstream processors as well as WASM targets"
-([guide](https://rapier.rs/docs/user_guides/rust/determinism/)). [The planning probe](../../evidence/SIM-2D/planning-probe.md)
+([guide](https://rapier.rs/docs/user_guides/rust/determinism/)). [The planning probe](../../../.orchestrate/evidence/SIM-2D/planning-probe.md)
 ran a crowd of 2,000, 5,000 and 10,000 in exactly these operations for 3,600 ticks with churn: the digests were
 equal on the Mac (debug and release), the iPhone simulator and Wasm in Node and Chrome 157. The same crowd with
 the platform's `sin` or `powf` in one rule diverged between the Mac and Wasm.
@@ -367,7 +367,7 @@ addition to C13 is `SESSION`'s proposal.
 
 ## Cost
 
-No budget is set (brief, decision 3). The account, from [the probe](../../evidence/SIM-2D/planning-probe.md), which
+No budget is set (brief, decision 3). The account, from [the probe](../../../.orchestrate/evidence/SIM-2D/planning-probe.md), which
 is a single-threaded stand-in and not the engine:
 
 | Work, per tick at 10,000 bodies | Probe |

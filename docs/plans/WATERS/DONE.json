@@ -20,9 +20,9 @@
           "ask": "Read the test. Are the expected answers closed forms worked out without the model: a cone-shaped hollow's shoreline radius at a level, a ridge between two hollows, a tilted chart? Would a model that floods every cell below the level, connected or not, fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -30,9 +30,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test map",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -40,9 +40,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test stage",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -51,9 +51,9 @@
           "ask": "Are the expected gains worked out in the test from fetch-limited growth relations and band integrals of its own, and not from the function under test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -61,9 +61,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test gains",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -71,9 +71,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test surface",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -81,9 +81,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -91,9 +91,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test bed",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -102,9 +102,9 @@
           "ask": "Does any file in the crate or its tests name a preset, a place, a hull or a water type that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -112,9 +112,9 @@
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -123,9 +123,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -134,9 +134,9 @@
           "ask": "Read the test. Does it compare the surface after the depth limit either side of each end, for a lake raised and lowered and a tide raised and lowered, under a swell, at a shallow end as well as a deep one? Would taking the chart over its neighbours with one stage of its own fail it, and would a swash depth kept once for each body fail it at the shallow mouth, as part K of `docs/evidence/WATERS/design-proof/water_proof.py` shows for both?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -145,9 +145,9 @@
           "ask": "Are the expected heights the closed form, worked out in the test without the model, and would a limit that takes the waves to nothing at the still waterline fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
+          "evidence": ".orchestrate/evidence/WATERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M1-review.md"
+          "review": ".orchestrate/evidence/WATERS/M1-review.md"
         }
       ]
     },
@@ -168,9 +168,9 @@
           "ask": "Read the test. Is the expected phase the integral of Snell's law, worked out in the test without the model's solver? Would a wave that keeps its deep-water phase fail it, and one given the local depth's wavenumber at each point with no integral along its path?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.2",
@@ -179,9 +179,9 @@
           "ask": "Read the test. Does it vary the wavelength and the stage together, between the samples of both, and include a wave of about 113 m in a metre of water halfway between two stages? Is the comparison lag solved in the test's run for the component's own wavelength and stage, on the same grid, so that only the blend's error is left, with M12.1 holding the solve itself to Snell?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.3",
@@ -190,9 +190,9 @@
           "ask": "Does the test's island have a lee the deep-water wave leaves through, and are the expected exposures worked out in the test from the island's outline?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.11",
@@ -201,9 +201,9 @@
           "ask": "Read the test. Is no wet cell of its basin joined to the bed's edge by water, and is the basin's long-wave gain above zero? Are the expected fetch shares worked out in the test from the basin's outline, and does the long-wave surface the model gives there have a height above zero at the downwind shore? A model and a test that agree on a flat lake prove nothing.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.4",
@@ -212,9 +212,9 @@
           "ask": "Is the expected break depth worked out in the test from the dispersion relation and the group velocity, without the model?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.5",
@@ -223,9 +223,9 @@
           "ask": "Does the test run M1.13's plane beach with surf in the profile and hold the waterline's highest and lowest reach to the closed form? Does it search the thrown curve for a crossing at every index, and not only at 1?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.6",
@@ -234,9 +234,9 @@
           "ask": "Read the test. Does it compare the answers without surf with M1's bit for bit, and is the harness's provider the model with only the transform left out?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.12",
@@ -245,9 +245,9 @@
           "ask": "Read the test. Is its reference the sheet's own forward evaluation on a finer lattice, cut by the vertical line over each point, with nothing of the model's search in it? On each sheet do the points include columns that hold three surfaces, and on the crossing trains a rest place set over its own world place, as in part X of `docs/evidence/WATERS/design-proof/surf_cut_proof.py`? Do the two wrong substitutes fail by a large part of a crest's height, and not by a rounding?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.7",
@@ -255,9 +255,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_joins",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.8",
@@ -266,9 +266,9 @@
           "ask": "Does the record give the time and the bytes with the commit and the load on the machine, and say how each grows with the bed's cells and the stage's range? Does it give the cut's nodes and time on each sheet?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.9",
@@ -277,9 +277,9 @@
           "ask": "Does any file in the two crates or their tests name a preset, a place or a beach that belongs to a game? Is every file copied or translated from Broadsides in this milestone listed in `docs/evidence/WATERS/PROVENANCE.md`?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M12.md",
+          "evidence": ".orchestrate/evidence/WATERS/M12.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.10",
@@ -289,7 +289,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M12-review.md"
+          "review": ".orchestrate/evidence/WATERS/M12-review.md"
         }
       ]
     },
@@ -317,9 +317,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -327,9 +327,9 @@
           "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near crests against the troughs, the middle distance, and the rows from about 600 m out to the horizon. A band is a strip whose texture stops at an edge or whose tone steps from the water below it or the sky above. The last few rows, where a wave is under a pixel tall and only the slopes' statistics remain, are not one.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2-reconstruction.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2-reconstruction.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -338,9 +338,9 @@
           "ask": "Does the surface shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -350,9 +350,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -360,9 +360,9 @@
           "inspect": "A `realtime` sequence with the camera panning across the wind: near crests from frame to frame.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -372,9 +372,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -384,9 +384,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2-cost.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2-cost.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -394,9 +394,9 @@
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.9",
@@ -406,7 +406,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         },
         {
           "id": "M2.10",
@@ -416,9 +416,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2-forward.md",
+          "evidence": ".orchestrate/evidence/WATERS/M2-forward.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M2-review.md"
+          "review": ".orchestrate/evidence/WATERS/M2-review.md"
         }
       ]
     },
@@ -439,9 +439,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -450,9 +450,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -460,9 +460,9 @@
           "inspect": "`fixed` stills in Chrome at M2.2's views, judged by M2.2's list and against the Mac's portable-recipe stills.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -470,9 +470,9 @@
           "inspect": "A `realtime` sequence in Chrome with the camera panning.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3-frame-report.md",
+          "evidence": ".orchestrate/evidence/WATERS/M3-frame-report.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -482,7 +482,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M3-review.md"
+          "review": ".orchestrate/evidence/WATERS/M3-review.md"
         }
       ]
     },
@@ -504,9 +504,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -516,9 +516,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -526,9 +526,9 @@
           "inspect": "`fixed` stills of the beach, the lake's shore and the pond from 2 m, and of all three from 40 m on the hill: each waterline, close and at a distance, and the ground between the lake and the sea.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-review-fixes.md",
+          "evidence": ".orchestrate/evidence/WATERS/M4-review-fixes.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -538,9 +538,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -548,9 +548,9 @@
           "inspect": "`fixed` stills and a `realtime` sequence in a trade wind and a gale: the sea off the beach from 2 m and 40 m, the last 30 m of water before the sand, the lake and the pond in the same wind.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-review-fixes.md",
+          "evidence": ".orchestrate/evidence/WATERS/M4-review-fixes.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -559,9 +559,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-fixes/stage.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M4-fixes/stage.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.7",
@@ -570,9 +570,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-chrome.json",
+          "evidence": ".orchestrate/evidence/WATERS/M4-chrome.json",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.8",
@@ -581,9 +581,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/M4-cost.json",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.9",
@@ -593,7 +593,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         },
         {
           "id": "M4.10",
@@ -603,9 +603,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M4-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M4-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M4-review.md"
+          "review": ".orchestrate/evidence/WATERS/M4-review.md"
         }
       ]
     },
@@ -626,9 +626,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-r2-metal-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M5-r2-metal-checks.txt",
           "verdict": "fail",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.2",
@@ -638,9 +638,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.3",
@@ -649,9 +649,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -661,9 +661,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-r1-metal-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M5-r1-metal-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.5",
@@ -671,9 +671,9 @@
           "inspect": "`realtime` sequences from a chase view and a side view, at each speed in each sea: the waterline on the hull and on one float.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-r2.md",
+          "evidence": ".orchestrate/evidence/WATERS/M5-r2.md",
           "verdict": "fail",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.6",
@@ -683,9 +683,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-checks.txt",
+          "evidence": ".orchestrate/evidence/WATERS/M5-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.7",
@@ -694,9 +694,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5-r1-chrome.json",
+          "evidence": ".orchestrate/evidence/WATERS/M5-r1-chrome.json",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.8",
@@ -704,9 +704,9 @@
           "ask": "Does `thrum-water` hold any hydrostatics, drag, thrust or rigid-body step? Does the example reach the water only through the public body record, query points and mailbox?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M5.md",
+          "evidence": ".orchestrate/evidence/WATERS/M5.md",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         },
         {
           "id": "M5.9",
@@ -716,7 +716,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/WATERS/M5-review.md"
+          "review": ".orchestrate/evidence/WATERS/M5-review.md"
         }
       ],
       "findings": [

@@ -8,7 +8,7 @@ Read [Mechanisms](DESIGN.md#mechanisms), [Interfaces](DESIGN.md#interfaces),
 [Limits on every milestone](DESIGN.md#limits-on-every-milestone) and
 [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-ui) before starting any milestone, and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
-[The planning probe](../../evidence/GAME-UI/planning-probe.md) says what was calculated before the design was
+[The planning probe](../../../.orchestrate/evidence/GAME-UI/planning-probe.md) says what was calculated before the design was
 written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human

@@ -18,9 +18,9 @@
           "ask": "Read the test and the rules. Does every rule marked M1 have a violating and a corrected fixture? Do the fixtures include a `pub fn` whose `Result<_, String>` return spans two lines, an `include_str!` that climbs out of its package with `..`, a dependency from a package under `crates/` on one under `examples/`, and `THRUM_G5_CAPTURE_DIR` read in a file whose own name is clean? Is a name such as `rgba8` or `vec3` left alone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -29,9 +29,9 @@
           "ask": "Read the ratchet cases. Is the accepted total taken from the baseline's Git history and never from the working tree's baseline? Does the committed case run the check at the commit that raised the count, with no remote and no branch name given? After a violation that reached history is removed, does the check pass again with nothing waived? In the moved-base case, is the passing branch one whose every commit holds a baseline equal to its own tree?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -40,9 +40,9 @@
           "ask": "Run `check --rule string-errors --zero crates/thrum-app` and `check --rule package-reach --zero crates/thrum-render`: does each fail and list the sites the review named there? Does the baseline hold any count above what its file has now?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -51,9 +51,9 @@
           "ask": "Could a builder who has never seen the review fix a refusal of each rule from its message alone? Does any path through `./dev check` skip the rules?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-final-cpu.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-final-cpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -61,9 +61,9 @@
           "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why? Is every violation the baseline holds beyond the starting record the work of a commit that reached the main branch before the rules did, and none of them this milestone's own?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-main-differences.json; docs/evidence/REPO-RULES/M1-starting-inventory.json",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M1.md; .orchestrate/evidence/REPO-RULES/M1-main-differences.json; .orchestrate/evidence/REPO-RULES/M1-starting-inventory.json",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -73,7 +73,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M1-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md"
         }
       ]
     },
@@ -93,9 +93,9 @@
           "check": "python3 scripts/evidence_store.py check",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/store-tests.log",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/item-checks.json; .orchestrate/evidence/REPO-RULES/M2/store-tests.log",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -104,9 +104,9 @@
           "ask": "Read the test. From a clean checkout, does it restore the largest file, a video and a sample of others, and compare hashes it computes itself? Does it make two worktrees of a scratch repository, put a file from one and restore it in the other? Does `restore` fail loudly for a path that is in neither history nor the local store, and does `check` name a local entry whose file is not on this machine without failing?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/store-tests.log",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/item-checks.json; .orchestrate/evidence/REPO-RULES/M2/store-tests.log",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -115,9 +115,9 @@
           "ask": "Does the milestone's diff change any file under `docs/plans/`, or the text of any review or record under `docs/evidence/`? Pick three links from reviews to files that left: does each resolve through the manifest, and does `restore` bring the file back?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/audit.json; docs/evidence/REPO-RULES/M2/store-tests.log",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/item-checks.json; .orchestrate/evidence/REPO-RULES/M2/audit.json; .orchestrate/evidence/REPO-RULES/M2/store-tests.log",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -125,9 +125,9 @@
           "ask": "From the `evidence-size` refusal and the two documents alone, what does a builder do with a 60 MB real-time capture that a reviewer must see? Is any step missing, and is anything said about a remote copy that does not exist?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/ASSET-LIFECYCLE.md#bulk-review-evidence; CONTRIBUTING.md#review-and-evidence; scripts/shape_matchers.py",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; docs/ASSET-LIFECYCLE.md#bulk-review-evidence; CONTRIBUTING.md#review-and-evidence; scripts/shape_matchers.py",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -135,9 +135,9 @@
           "ask": "Are the figures taken from `git ls-files` at named commits? How large is `docs/evidence` in a fresh checkout after this milestone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/size.json; docs/evidence/REPO-RULES/M2/audit.json; scripts/evidence_inventory.py",
+          "evidence": ".orchestrate/evidence/REPO-RULES/M2.md; .orchestrate/evidence/REPO-RULES/M2/size.json; .orchestrate/evidence/REPO-RULES/M2/audit.json; scripts/evidence_inventory.py",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -147,7 +147,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/REPO-RULES/M2-review.md"
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md"
         }
       ]
     },

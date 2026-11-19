@@ -329,12 +329,12 @@ Read for the second revision of 14 November, for light under water:
   sea. Part R's reference is this design's own ray count.
 
 Reproductions A to G were run for the sea design and are kept with their output in
-[the sea's evidence folder](../../evidence/SEA/design-proof/). Parts H to M were run for this design and are in
-[this module's](../../evidence/WATERS/design-proof/): H the interaction step at depth, I shelter, J dry ground,
+[the sea's evidence folder](../../../.orchestrate/evidence/SEA/design-proof/). Parts H to M were run for this design and are in
+[this module's](../../../.orchestrate/evidence/WATERS/design-proof/): H the interaction step at depth, I shelter, J dry ground,
 K joins, L the swash and M foam in the swash. Parts N to Q were run for the revision and are in
 `surf_view_proof.py` there: N the shore transform, O breaking, P the mirror lookup and Q light under water. Parts R to T were run for the second revision and are in
 `under_light_proof.py` there: R caustics, S shafts and T the meter. Two design reviews of 14 November are kept in
-[the evidence folder](../../evidence/WATERS/), each with its own reproduction. After the first, H was run again
+[the evidence folder](../../../.orchestrate/evidence/WATERS/), each with its own reproduction. After the first, H was run again
 and J to L added. The second found a step at a shallow mouth and no carriage for foam up a beach: K now
 assembles the surface after its depth limit and reproduces that review's case, and M was added.
 [Check that it can work](#check-that-it-can-work) reports them.
@@ -1963,7 +1963,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   section of M13 and the net and shafts of M16 above all, tune it against those items with a fresh opinion before review. After three looks
   that fail the same cue, record them in the log and end `BLOCKED`.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/waters-<milestone>/`, selected evidence in
-  `docs/evidence/WATERS/`.
+  `.orchestrate/evidence/WATERS/`.
 - **Exact baselines.** Water adds crates and an example beside the existing scenes and moves no retained image.
   Every milestone carries the verifier as its claim-time check ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Engine tests hold no game content.** `thrum-water` and `thrum-water-model` are tested on beds, bodies and
@@ -1972,7 +1972,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
   changed. A builder may copy its code, shaders and assets as they are wherever they implement a mechanism of this
   design, and writes from this design and the published sources wherever they do not: the design decides, and a
   file is never a reason to change a mechanism. Every copied or translated file is listed in
-  `docs/evidence/WATERS/PROVENANCE.md` with its source commit and path. The owner's words of 14 November cover
+  `.orchestrate/evidence/WATERS/PROVENANCE.md` with its source commit and path. The owner's words of 14 November cover
   what Broadsides' authors wrote. Material in Broadsides that came from elsewhere keeps its own licence, which is
   recorded with it, and none that is GPL or share-alike is copied. A copied kernel is held to this module's
   items like any other code. Scheduling, allocation and host glue are written for Thrum's seam.

@@ -2,9 +2,9 @@
   "module": "MESH-SHADING",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/MESH-SHADING/design-review.md",
+    "review": ".orchestrate/evidence/MESH-SHADING/design-review.md",
     "commit": "c302189638ba7e2d740e3b5ae327127d57cd82a6",
-    "hash": "4a32bfe8f392e06f197efe3b5325dc880ab26cc029745381a0370b8a94d98f63",
+    "hash": "c30d98934d2a9d0ab8c494a3877c3b50c5fa7bcfd63cd13fdc9b3634d007c739",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "aa79c981394f0338f329aaad7470c10f57de0489",
-          "review": "docs/evidence/MESH-SHADING/M1-review-1.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review-1.md",
           "items": {
             "M1.1": "fail",
             "M1.2": "fail",
@@ -79,7 +79,7 @@
         {
           "verdict": "pass",
           "commit": "cd4e1790e0644d1e9cecca258fae509e4d7f7185",
-          "review": "docs/evidence/MESH-SHADING/M1-review.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -143,7 +143,7 @@
       "done": {
         "by": "review",
         "commit": "cd4e1790e0644d1e9cecca258fae509e4d7f7185",
-        "review": "docs/evidence/MESH-SHADING/M1-review.md",
+        "review": ".orchestrate/evidence/MESH-SHADING/M1-review.md",
         "checked": "a61e745df780f4295fbb6755c28444d35b00cd7e",
         "at": "2026-11-18T14:29:42Z"
       }
@@ -154,7 +154,7 @@
         {
           "verdict": "fail",
           "commit": "098e5c73a36403431772c434c3e927b9ce3907c7",
-          "review": "docs/evidence/MESH-SHADING/M2-review-1.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -198,7 +198,7 @@
         {
           "verdict": "pass",
           "commit": "389c7ec51090fab31c038433144687b5bf92a145",
-          "review": "docs/evidence/MESH-SHADING/M2-review.md",
+          "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -265,7 +265,7 @@
       "done": {
         "by": "review",
         "commit": "389c7ec51090fab31c038433144687b5bf92a145",
-        "review": "docs/evidence/MESH-SHADING/M2-review.md",
+        "review": ".orchestrate/evidence/MESH-SHADING/M2-review.md",
         "checked": "d57b16d86471a4c0d14b6d9d0449c34619936d6d",
         "at": "2026-11-18T22:18:04Z"
       }
@@ -305,7 +305,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/MESH-SHADING/design-review-1.md",
+      "review": ".orchestrate/evidence/MESH-SHADING/design-review-1.md",
       "commit": "d4968d34d66380aaf2b51db6ea618c31bb928646",
       "hash": "667aceebf3f088438c747e174f011e268514c97510292c3cdef09d6286a1a194",
       "by": "review",
@@ -328,7 +328,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/MESH-SHADING/design-review-2.md",
+      "review": ".orchestrate/evidence/MESH-SHADING/design-review-2.md",
       "commit": "56fa1b612b27961a4ffe89a9378f65437e2d4b97",
       "hash": "560693c1b401d0bc60d7b427cf856587165ec74cbe78a804aef2949a161208ff",
       "by": "review",
@@ -351,7 +351,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/MESH-SHADING/design-review-3.md",
+      "review": ".orchestrate/evidence/MESH-SHADING/design-review-3.md",
       "commit": "1ef8e1e0cede49159ead3c81258f35ca3e805d7b",
       "hash": "f5722ae9d175830feed494d16b90f3200d7e2cb484a3bbaf16c21857bf48e72b",
       "by": "review",
@@ -374,7 +374,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/MESH-SHADING/design-review-4.md",
+      "review": ".orchestrate/evidence/MESH-SHADING/design-review-4.md",
       "commit": "70bbbf7a99a83ce4000ebf558779d0a443133e78",
       "hash": "1ccee2673829d47d9120267a2314f9f37fe0411b3ccc295125b449dc1ba79ffe",
       "by": "review",

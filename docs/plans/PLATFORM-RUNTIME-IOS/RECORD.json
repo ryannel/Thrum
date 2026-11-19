@@ -2,7 +2,7 @@
   "module": "PLATFORM-RUNTIME-IOS",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/PLATFORM-RUNTIME-IOS/design-review.md",
+    "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/design-review.md",
     "commit": "fc906ed9d783a06f093f358522fdff4a27bcb8eb",
     "hash": "fe29a169655e23cdf8a7a8fb677a2fb62e9a95558d39fbfd4a17cb0bc1b512c9",
     "by": "review",
@@ -24,7 +24,7 @@
         {
           "verdict": "pass",
           "commit": "749d2afa283ba57976e714ca67c2196090454eb5",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
           "host": "codex",
           "model": "gpt-6.1-sol",
           "effort": "high",
@@ -59,7 +59,7 @@
       "done": {
         "by": "review",
         "commit": "749d2afa283ba57976e714ca67c2196090454eb5",
-        "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+        "review": ".orchestrate/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
         "checked": "749d2afa283ba57976e714ca67c2196090454eb5",
         "at": "2026-11-09T16:06:43Z"
       }

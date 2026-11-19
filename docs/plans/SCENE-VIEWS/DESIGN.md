@@ -42,7 +42,7 @@ draws as opaque geometry: its entities, on both of `CULLING`'s routes, and its c
   ([open for the human](PLAN.md#open-for-the-human)).
 - Air that starts at a tilted plane. Each line of sight would start at its own altitude: lines one row of
   the volume apart start tens to hundreds of metres apart, and further the nearer a line lies to the plane
-  ([part F](../../evidence/SCENE-VIEWS/design-proof/README.md)). A blend of neighbouring columns would then
+  ([part F](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)). A blend of neighbouring columns would then
   be no one observer's, and nothing `ATMOSPHERE` makes could be its reference. Every water plane is level.
   A view may still be cut at a tilted plane, with its air from its camera.
 - A camera off the main camera's vertical: a monitor in the world, a portal, a probe that stands elsewhere,
@@ -106,7 +106,7 @@ one: the same world, lit the same, from the other side. In words, on both target
   specification text.
 - **Not read:** Unreal's source, a frame study of Red Dead Redemption 2, and Kooima's generalised projection
   beyond its result. A search for how shipped engines jitter a reflection capture found nothing, so
-  [part A](../../evidence/SCENE-VIEWS/design-proof/README.md) measures it. A search for which far-shadow
+  [part A](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md) measures it. A search for which far-shadow
   products a shipped engine gives a reflection capture found only forum reports of shadows missing from
   Unreal 4's planar reflections, so that choice below rests on this renderer's own code and measurement.
 
@@ -124,12 +124,12 @@ one: the same world, lit the same, from the other side. In words, on both target
 | | Cascades fitted round the camera for every view | Not selected: it coarsens the main view's shadows in every scene that declares a view |
 | | **Cascades of the view's own, fitted to its frustum, with the scene's height map beyond them** | **Selected** |
 | The Sun's shadows beyond a view's cascades | A caster height map and air shadow heights of the view's own, laid out round its camera | Not selected. Right for any camera, but it is every caster within 16 km drawn top-down and reduced once more, each frame for each view, and for a mirror's camera it draws the bytes the frame already holds. It is the route for [a camera elsewhere](#purpose-and-scope), when a consumer has one |
-| | The frame's map, for any camera that stands inside it | Fails V1. The march toward the Sun ends where it leaves the map, so off the map's centre a receiver loses hills that the main view from that camera has. With the map centred 40 km away, 283 pixels of a 128×128 frame differ by up to 2,904 stored steps ([the builder's Metal run](../../evidence/SCENE-VIEWS/M1/9be4a4887-portable.log), `shadow/tests/scene_view_anchor.rs`). Two maps that overlap are not two equal reads |
+| | The frame's map, for any camera that stands inside it | Fails V1. The march toward the Sun ends where it leaves the map, so off the map's centre a receiver loses hills that the main view from that camera has. With the map centred 40 km away, 283 pixels of a 128×128 frame differ by up to 2,904 stored steps ([the builder's Metal run](../../../.orchestrate/evidence/SCENE-VIEWS/M1/9be4a4887-portable.log), `shadow/tests/scene_view_anchor.rs`). Two maps that overlap are not two equal reads |
 | | **The frame's map, for a camera on the main camera's vertical** | **Selected.** The scene's fit lays the map out by the camera's horizontal position alone, so there the frame's map [is the view's own](#what-a-view-owns-and-what-it-shares) |
-| Which position the fit lays the height map out round | The one it takes back out of the camera's view matrix, as the fit had it | Fails V1 and V3 on a texel's edge. That position carries the matrix's rounding, which follows the camera's direction and height, so a camera and its mirror image in a level plane laid their maps out 32 m apart (the sixth design review's probe, and [part G](../../evidence/SCENE-VIEWS/design-proof/README.md)) |
+| Which position the fit lays the height map out round | The one it takes back out of the camera's view matrix, as the fit had it | Fails V1 and V3 on a texel's edge. That position carries the matrix's rounding, which follows the camera's direction and height, so a camera and its mirror image in a level plane laid their maps out 32 m apart (the sixth design review's probe, and [part G](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)) |
 | | That fit, with equality promised only where two cameras snap alike | Not selected. The limit would be a rounding no consumer can test for, V3 would fail inside it, and a camera in motion meets it: one in 19,000 of part G's cameras at positions unrelated to the grid. Refusing a request there instead would drop a reflection for a frame |
 | | **The position the camera declares** | **Selected.** Nothing is rounded, so every camera on a vertical [has the one map](#where-the-height-map-is-laid-out). It adds no work to a frame, and it steadies the main view's own far shadows as it turns on an edge |
-| The cut at the plane | An oblique near plane in the projection | Not selected. It needs no shader change and [part C](../../evidence/SCENE-VIEWS/design-proof/README.md) finds its depth still usable, but the scene's shader turns stored depth into view depth by the standard projection's formula, to pick a cascade and a cluster slice. An oblique matrix would need that rewritten for every drawer, which moves every exact baseline |
+| The cut at the plane | An oblique near plane in the projection | Not selected. It needs no shader change and [part C](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md) finds its depth still usable, but the scene's shader turns stored depth into view depth by the standard projection's formula, to pick a cascade and a cluster slice. An oblique matrix would need that rewritten for every drawer, which moves every exact baseline |
 | | A hardware clip distance | A candidate for a recipe later: it is an optional feature in WebGPU, and it needs a vertex variant in every drawer |
 | | **A test of each fragment against the plane, in the view's own fragment entry** | **Selected.** A view's pipelines are separate from the main view's in any case, because a view has one colour target where the main view has three |
 
@@ -234,17 +234,17 @@ The forward shader is shared text. What it reads splits by whether the quantity 
     plane's height, air below the plane included. That air is the filter's support and never a fragment's
     own, and it is what a main camera standing on the plane holds on the same lines. The revision before
     this one left them empty, which took 39% of the in-scatter off a line 0.2° above a lake's horizon
-    ([part F](../../evidence/SCENE-VIEWS/design-proof/README.md), after the third design review).
+    ([part F](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md), after the third design review).
 
   So a view's air has [an exact reference](#what-a-views-air-is-held-to). Laid out from the camera, the
   layer the crossing falls in would blend air with none: a panel 20 m beyond a crossing 230 m from the
-  camera would take twice its in-scatter ([part E](../../evidence/SCENE-VIEWS/design-proof/README.md)). A
+  camera would take twice its in-scatter ([part E](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)). A
   camera on the kept side of the plane has its air from the camera.
   The stretch from the main camera to the plane is the reader's, which has it already: the lent aerial pair
   from its own camera to its own surface point. Each stretch has one owner and is applied once (C08).
   The first version of this design folded altitudes about the plane and kept the line's direction; that put
   the wrong phase angle on the stretch below the plane, 40 times the true in-scatter in the design review's
-  case, and a reader could not take it off again ([part D](../../evidence/SCENE-VIEWS/design-proof/README.md)).
+  case, and a reader could not take it off again ([part D](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)).
   A view has clear air even where the main view has the view volume, so with air from the plane a reader
   still applies the main view's fog once, on its own stretch. With no such request the aerial pass and the
   decoder do what they do today, and the main view's shader text never changes.
@@ -265,7 +265,7 @@ one thing this module changes in a scene that declares no view. The cascades' fi
 **What it replaces.** The fit took the position back out of the camera's view matrix. That position carries
 the matrix's rounding, which follows where the camera faces and how high it stands. So on a texel's edge two
 cameras on one vertical, or one camera turning where it stands, could lay the map out a texel apart.
-[Part G](../../evidence/SCENE-VIEWS/design-proof/README.md) reproduces it with the fit's own arithmetic, after
+[Part G](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md) reproduces it with the fit's own arithmetic, after
 the sixth design review's probe. From `(16, 10, 0)`, looking along `(0, 0, −1)` puts the map's centre at one
 texel and looking along `(−2, −1.7, −1)` at the next. The camera `(16, 10, 0)` looking along
 `(−2, −1.7, −1)` and its mirror image in the level plane 5 m up, `(16, 0, 0)` looking along `(−2, 1.7, −1)`,
@@ -319,7 +319,7 @@ projection then lands on the same world point in every frame, while the view's t
 the main view's reconstruction averages the view's edges as it averages its own. In a section, an edge in a
 half-size view read this way sits within 0.02 px of the true edge and wanders 0.19 px as it slides; with no
 jitter in the view it wanders 1.95 px, which is crawl
-([part A](../../evidence/SCENE-VIEWS/design-proof/README.md)). Without temporal sampling a view is not jittered.
+([part A](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)). Without temporal sampling a view is not jittered.
 
 ### What the consumer reads
 
@@ -359,7 +359,7 @@ mirror through water's knobs.
   from it, where a hill's shadow reaches the receivers through the height map alone; and with the main
   camera on a texel's edge and X at its mirror image in a level plane, a pair whose matrices recover
   positions on either side of the edge. At one position the builder's Metal run has it at zero steps with
-  none, one and two cascades ([proof](../../evidence/SCENE-VIEWS/M1/9be4a4887-proof.md)). The displaced
+  none, one and two cascades ([proof](../../../.orchestrate/evidence/SCENE-VIEWS/M1/9be4a4887-proof.md)). The displaced
   case and the edge are unrun on a GPU; part G has the edge's layout on the CPU.
 - **V2, V3.** Nothing a view reads is fitted to the main frustum: its lists, cascades, clusters and aerial
   volume are its own, and the terrain shadows are laid out by the horizontal position the two cameras
@@ -619,7 +619,7 @@ the lead batches for every module. No milestone waits for that window.
   independent quadrature. A larger difference has a cause to find and is never recorded as the bound. A
   builder who cannot close one ends `BLOCKED` with the measurement.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<milestone>/`, selected
-  evidence in `docs/evidence/SCENE-VIEWS/`.
+  evidence in `.orchestrate/evidence/SCENE-VIEWS/`.
 - **Dependencies.** The example's package is registered in `.config/architecture.toml`.
 - **Maturity.** A ledger row for secondary views is added in M3, with implementation, correctness, visuals
   and device apart.

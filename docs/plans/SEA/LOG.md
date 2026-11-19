@@ -8,7 +8,7 @@ provider conformance harness. Nothing was copied or translated from Broadsides.
 
 Verified ten CPU tests, exact regeneration of the 70-digit fixture, all item checks, and `./dev check`
 on source `b0e08412fa39471b272d260f43a177e302977d43`. The unchanged verifier passed 42 native comparisons
-and all four 481-record Chrome sets. [Evidence](../../evidence/SEA/M1.md) keeps the numerical proof,
+and all four 481-record Chrome sets. [Evidence](../../../.orchestrate/evidence/SEA/M1.md) keeps the numerical proof,
 baseline identities and limits together. Sea rendering and GPU cost remain later milestones.
 
 Integration brought in main's CULLING renderer changes and the revised SEA plan, whose M1 items are
@@ -37,7 +37,7 @@ combined source. The merge gate runs the full repository check again.
   alternating ticks, because a history pair does not offer its older side on a skipped frame. Chrome is proved in
   its own milestone (M4) and then in each later one. Packages: `thrum-sea-model`, `thrum-sea` and `sea-scene` in
   `examples/sea`.
-- 2026-11-13 Planner's reproductions, in [the evidence folder](../../evidence/SEA/design-proof/). Wake: transverse
+- 2026-11-13 Planner's reproductions, in [the evidence folder](../../../.orchestrate/evidence/SEA/design-proof/). Wake: transverse
   wavelength within 2% of theory at 3 and 6 m/s, a crest that travels on at its phase speed after source-off, two
   banded levels within 2.2% of one fine level, and 69% error when both levels carry the whole source. Long waves:
   f32 with f64 phase wrap is within 0.05 mm of f64 at 4 km from an anchor 50 km out after 24 hours, against 18 mm
@@ -48,10 +48,10 @@ combined source. The merge gate runs the full repository check again.
   item changed, and no contract's text changed.
 - 2026-11-13 Not read for the design: the Atlas GDC 2019 slides (over the fetch limit), Crest's source and
   Horvath 2015. Rabaud and Moisy 2013 was read as an abstract only.
-- 2026-11-13 Design review: [changes requested](../../evidence/SEA/design-review.md), five Must Fix findings and
+- 2026-11-13 Design review: [changes requested](../../../.orchestrate/evidence/SEA/design-review.md), five Must Fix findings and
   three Suggestions. The design, the plan and the done-when file were revised the same day; the entries below
   say how. New reproductions are parts A to E of `revision_proof.py` in
-  [the evidence folder](../../evidence/SEA/design-proof/).
+  [the evidence folder](../../../.orchestrate/evidence/SEA/design-proof/).
 - 2026-11-13 MF1, numeric gates. No timing figure decides an item or a milestone. `sea_cost.py check` fails only
   on a missing or incomplete record or an uninvestigated tripwire. M3.6, M6.8, M7.9, M8.7, M9.10 and M10.5 were
   written again as paired records with investigations; M3 no longer ends `BLOCKED` on its frame time; M10 was
@@ -121,20 +121,20 @@ combined source. The merge gate runs the full repository check again.
 - 2026-11-14 Built M2's composable every-frame GPU field and loop-frequency CPU model.
   Metal source `4b1fbfa8` passes the long/cache, cascade displacement/rate, moments,
   lifecycle, wind-transition and default-WebGPU-limit tests on this M3 Max. The
-  [M2 record](../../evidence/SEA/M2.md) retains the errors and fixed measured bound;
-  the [cost record](../../evidence/SEA/M2-cost.md) explains the estimate overruns.
+  [M2 record](../../../.orchestrate/evidence/SEA/M2.md) retains the errors and fixed measured bound;
+  the [cost record](../../../.orchestrate/evidence/SEA/M2-cost.md) explains the estimate overruns.
   No surface or integrated performance is claimed. Exact baseline qualification
   and final integration are being completed separately.
 - 2026-11-14 Resumed M2: all Metal targets passed at `4b1fbfa8`, and ambient
   conformance passed again at rebased source `4372f847`. Integration awaits its
   baseline proof. The first capture was incomplete, with 153 readback-ring and
   zero writer omissions; its cause remains unconfirmed. The
-  [recovery note](../../evidence/SEA/M2-handoff.md) links retained diagnostics.
+  [recovery note](../../../.orchestrate/evidence/SEA/M2-handoff.md) links retained diagnostics.
   Background check `20261114-054946-45357` continues; direct M2.8 verifier
   `20261114-074918-88657` is also queued. No baseline reference was changed.
 - 2026-11-14 The direct verifier `20261114-074918-88657` refused its disk-space
   preflight before rendering. Space subsequently recovered to 21 GiB. The
-  [qualification helper](../../evidence/SEA/qualify_m2_baselines.py), job
+  [qualification helper](../../../.orchestrate/evidence/SEA/qualify_m2_baselines.py), job
   `20261114-094322-25542`, remains queued and updates this branch before checking
   its proof. CLOUDS has now merged new covered source, so the helper's rebase is
   required for the final baseline gate. M2.8 remains unproved.
@@ -142,16 +142,16 @@ combined source. The merge gate runs the full repository check again.
   conflicts. Resolved both registrations and rebased to `9bcfed37`; metadata and
   documentation checks pass. Sea and renderer source match the earlier proof.
   Stopped the old queued checker, with no active child, during the rebase.
-  The [recovery note](../../evidence/SEA/M2-handoff.md) records terminal jobs and
+  The [recovery note](../../../.orchestrate/evidence/SEA/M2-handoff.md) records terminal jobs and
   the remaining current-source qualification. No baseline pass is claimed.
 - 2026-11-14 Qualification built at `a490642d`, then the native observer refused
   its 16 GiB disk preflight before capturing. Retained the
-  [attempt metadata](../../evidence/SEA/M2-disk-attempt.json.gz) and cleaned only
+  [attempt metadata](../../../.orchestrate/evidence/SEA/M2-disk-attempt.json.gz) and cleaned only
   owned cooked scratch and 2.3 GiB of build output. The helper now allows 2 GiB
   of build headroom above the observer's unchanged floor. M2.8 remains open.
 - 2026-11-14 M2.8's complete exact verifier passed on `da942df9`: both native
   matrices and all four Chrome sets, with no retained image changed. The
-  [baseline record](../../evidence/SEA/M2-baselines.json) retains source identity,
+  [baseline record](../../../.orchestrate/evidence/SEA/M2-baselines.json) retains source identity,
   artifact hashes, comparison counts and elapsed time. All nine builder items
   now have target evidence; the milestone remains `in_progress` for the lead's
   checks. The rebase changed no sea or renderer source. Final gated integration

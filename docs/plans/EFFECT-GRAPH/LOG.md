@@ -11,7 +11,7 @@
 - 2026-11-11 The heavy checks (release build, GPU, Chrome) were not dry-run by the planner, for lack of disk and
   because the GPU is shared. Each check was parsed as shell and the done-when file validated with the loop's own
   validator.
-- 2026-11-11 [Design review](../../evidence/EFFECT-GRAPH/design-review.md): changes requested, four Must Fix. MF1:
+- 2026-11-11 [Design review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md): changes requested, four Must Fix. MF1:
   the tick rule reset state on a repeated tick. MF2: a skipped ping-pong writer left readers on the older side, and
   time-sliced writes had no initialisation. MF3: M3.1 removed stored depth with the refraction request. MF4: M3's
   bar promised stability under reconstruction with no reconstructor in its `needs`.
@@ -31,7 +31,7 @@
   verifier, and M1 keeps the native matrix and does not wait (an assumption in the plan).
 - 2026-11-11 M1 implementation checkpoint `3d56bf21`: explicit 2D/volume/cube descriptors, natural or declared
   binding views, exact-dimension transient allocation and capability-record validation. Existing declarations keep
-  their 2D kind. [Partial proof](../../evidence/EFFECT-GRAPH/M1-proof.md): all 14 Metal tests and the Chrome
+  their 2D kind. [Partial proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M1-proof.md): all 14 Metal tests and the Chrome
   capability recorder pass; pre-M1 day/night/capture compilation is pinned unchanged. Clippy and check-docs pass.
   M1.5 tried its named release/cook/native matrix command and refused before capture with less than 16 GiB free
   (about 9.4 GiB available). The full repository check refuses the missing exact-baseline proof. M1 remains open,
@@ -42,7 +42,7 @@
   required exact proof; M1.5 stays open.
 - 2026-11-12 Resumed M1 with disk headroom and rebased onto main. Both native exact matrices pass
   (38 plus four comparisons), and all four Chrome baseline sets pass (481 records each), under the GPU lock.
-  [Target proof](../../evidence/EFFECT-GRAPH/M1-proof.md) records the source and artifact identities. All five
+  [Target proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M1-proof.md) records the source and artifact identities. All five
   items pass; M1 is claimed for review. The required milestone check passes all five named commands and `./dev check`.
 - 2026-11-12 The required repository gate exposed eight existing Hi-Z consumers rejected by the new
   view validation. Their logical pass aggregates successive single-mip views in one binding slot. Corrected
@@ -54,7 +54,7 @@
   diagnostic with native/Chrome qualification entry points. Pinned native all-target Clippy and Wasm Clippy pass.
   CPU state-table and cadence-refusal checks passed before the Metal scene-snapshot witness was added. Target
   scripts, realtime trail inspection, exact baselines and integration remain unqualified; no M2 item is claimed.
-- 2026-11-12 M2.6 and M2.7 have [final-source realtime evidence](../../evidence/EFFECT-GRAPH/M2-proof.md).
+- 2026-11-12 M2.6 and M2.7 have [final-source realtime evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/M2-proof.md).
   The builder inspected the complete sequence and native-size consecutive crops: the trail persists and fades,
   stays on the ground through the wrap, and does not jump at the cadence change. Named executor times, descriptor
   bytes and load are recorded alongside the no-effect arm. Six automated item checks remain in progress under
@@ -62,7 +62,7 @@
 - 2026-11-12 M2 is ready for review. All six immutable item commands pass on engine source `41357d2f`
   (checked commit `e1d8fe4b`), including both native recipes, the Chrome state script and all registered exact
   baselines: 38 plus four native comparisons and 481 records in each of four Chrome sets. The separately
-  GPU-locked `./dev check` passes. [Target proof](../../evidence/EFFECT-GRAPH/M2-proof.md) includes the literal
+  GPU-locked `./dev check` passes. [Target proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M2-proof.md) includes the literal
   oracle inspection, actual device replacement, unchanged cadence pipeline count, realtime trail inspection,
   named costs and load. These verify function and captured content; no display-cadence or speedup claim is made.
   The lead starts the independent review after scripted integration; no reviewer was started by this builder.
@@ -78,36 +78,36 @@
   Moved effect-pass recording unchanged into the existing contribution module. Repository policy and native
   all-target Clippy pass after the split. Fresh target, capture and exact proofs will pin this final source.
 - 2026-11-13 Requalified M2 on final branch source `ec9dd79c`: all six automated item commands and the
-  separately GPU-locked `./dev check` pass. The [refreshed target proof](../../evidence/EFFECT-GRAPH/M2-proof.md)
+  separately GPU-locked `./dev check` pass. The [refreshed target proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M2-proof.md)
   retains the native/Chrome oracle results, all exact comparisons, 964 reviewed realtime images and named costs.
   All eight items pass; M2 stays `in_progress` for scripted integration and the lead's review. No M3 work was built.
 - 2026-11-13 Resolved the integration rebase by retaining the upstream browser checker's default build alongside
   both modules' cases. Chrome state/recovery and all exact baselines pass again on `c9ebc788`; the
-  [source diff and proof](../../evidence/EFFECT-GRAPH/M2-proof.md) identify the unaffected native/capture evidence.
+  [source diff and proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M2-proof.md) identify the unaffected native/capture evidence.
   Upstream production renderer and diagnostic code did not change. M2 remains `in_progress` for the scripted gate.
 - 2026-11-15 Planner, after M3's builder ended `BLOCKED needs_dependency` and named `APPLE-TILE` (handoff on
   `build/effect-graph-m3` at `baeb6d1f`). Read the two retained frames: the 12,637 pixels of Chrome night
   scene-linear record 1 lie along the far hills' triangle edges, the load variation `CULLING` M3 corrects, and
-  `APPLE-TILE` M10 met the same without M3 ([reading](../../evidence/EFFECT-GRAPH/M3-replan/README.md)). So
+  `APPLE-TILE` M10 met the same without M3 ([reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M3-replan/README.md)). So
   `APPLE-TILE` owes nothing and no dependency was added. [The module list](../ARCHITECTURE.md#a-frame-that-varies-under-load)
   gained a ruling on setting such a run aside, the design a paragraph, and M3 the item M3.9. M3.1 to M3.8 are
   unchanged. The plan file took the current shape, without task lists. No GPU check was run for this revision.
 - 2026-11-15 Builder resumed the revised plan on the failed run's exact content key. The unchanged verifier
   on `f5b26a9e` passed both native matrices and all Chrome day SDR records, then its day scene-linear capture
-  stopped at the visibility guard before comparison ([record](../../evidence/EFFECT-GRAPH/M3/capture-interruption/README.md)).
+  stopped at the visibility guard before comparison ([record](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/capture-interruption/README.md)).
   Independently regenerated and inspected the original night-linear difference: its identities, matching bytes
-  and triangle-edge pattern meet tests 1–3 ([inspection](../../evidence/EFFECT-GRAPH/M3/night-linear-failure/builder-inspection.md)).
+  and triangle-edge pattern meet tests 1–3 ([inspection](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/night-linear-failure/builder-inspection.md)).
   Test 4 still needs a complete same-content verifier pass; no failed image run is set aside and all nine
   builder flags remain open. Native/Wasm preparation, all-target Clippy and documentation checks pass.
 - 2026-11-15 Audit found and validated a complete unchanged `f5b26a9e` verifier pass on the original
   failed content key, completing that night-frame record. The retry on `bd3468d5` failed a new Chrome day
   SDR image at ordinal 25. All 481 identities and hashes verify; only 528 opaque hill-edge pixels differ,
-  at most two byte values, with matching lossless control bytes held. [The run audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md)
+  at most two byte values, with matching lossless control bytes held. [The run audit](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/variation-runs.md)
   retains both records and inspections. The new failure needs a later complete same-content pass; no
   reference or comparator changed, no new failed run is set aside, and all nine flags stay open.
 - 2026-11-15 The unchanged verifier on `58a6a0bb` passed both native matrices and all four 481-record
   Chrome sets on the original content key, completing the day SDR ordinal-25 ruling as well as the night
-  record. [The audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md) retains both failed runs and their
+  record. [The audit](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/variation-runs.md) retains both failed runs and their
   lossless controls; the new complete pass's comparisons, identities, digests and hashes were validated.
   Integration-base checks, fixed native crossings, paired costs and the full gate remain outstanding.
   Resolved failure bulk was released after byte-for-byte retained-root verification.
@@ -127,7 +127,7 @@
 - 2026-11-15 Independently regenerated both failed-frame differences, inspected whole images and densest
   native-size crops beside failed frames, and revalidated all 481 identities per failure, retained
   source/control hashes and both complete same-content pass archives. Promoted the denser night crop
-  at (114, 230). M3.9's builder proof passes; [the audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md)
+  at (114, 230). M3.9's builder proof passes; [the audit](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/variation-runs.md)
   retains both failed records. Documentation checks pass. Fresh integration target checks and merge
   remain pending while the existing campaign waits for the shared GPU; no target result is inferred.
 - 2026-11-15 Privately rebased onto main `3042de93c`, integrating APPLE-PRESENTATION's TAAU path.
@@ -136,21 +136,21 @@
   late compute witness checks its final epilogue before TAAU. Native workspace all-target Clippy,
   rustfmt and documentation checks pass. Fresh target proofs remain queued in the existing campaign.
   Release native/Web builds and pinned native/Wasm Clippy pass at `7aea52c74`, with source/build
-  hashes and repaired preparation failures in [the record](../../evidence/EFFECT-GRAPH/M3/reconstruction-integration-preparation.json).
+  hashes and repaired preparation failures in [the record](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/reconstruction-integration-preparation.json).
 - 2026-11-15 The first combined-source M3.1 target run reached late compute readback and failed
   because TAAU requires the input diagnostic to be selected explicitly. The fixture now selects
   `DisplayOverlay::TemporalInputs` when it needs that reader, retaining actual TAAU and ordering checks.
-  Pinned native/Wasm Clippy pass. [The retained failure](../../evidence/EFFECT-GRAPH/M3/reconstruction-witness-failure.md)
+  Pinned native/Wasm Clippy pass. [The retained failure](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/reconstruction-witness-failure.md)
   records the target result. Fresh qualification remains required for M3.1–M3.8.
 - 2026-11-15 Fresh target qualification at `8134e6973` passed every M3 check, the affected
   M2 Chrome recovery consumer, the complete unchanged exact verifier and the official full milestone
   check including `./dev check`. Inspected all five fixed whole frames and native-size crossings.
   Retained twelve paired cost arms with load; transfer-only cost and reconstructed motion are unclaimed.
-  [Target proof](../../evidence/EFFECT-GRAPH/M3-proof.md) separates checks, visual judgment and costs.
+  [Target proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M3-proof.md) separates checks, visual judgment and costs.
   All builder items pass; normal integration follows this evidence checkpoint, with review owned by the lead.
 - 2026-11-15 The later official merge gate at `99e9fb125` failed the cooker's generation-2
   watcher deadline. The exact workspace binary then passed three focused reruns and all four suite
-  tests unchanged. [Diagnosis](../../evidence/EFFECT-GRAPH/M3/watcher-retry/record.json) retains the
+  tests unchanged. [Diagnosis](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/watcher-retry/record.json) retains the
   failed gate and reruns; the cause is unconfirmed. No cooker source changed. Target proofs remain
   valid because integration brought only plan/status changes. A fresh normal merge gate is required.
 - 2026-11-15 Resumed from the retained target proof. Cancelled the old GPU-queued merge wrapper
@@ -161,7 +161,7 @@
   frame upload. Added bounded replay of the same submitted bytes and strict receiver deduplication.
   Four transport regression tests, 17 T2 tests and documentation checks pass. The affected Chrome
   check passes all 127 fixed frames; its selected slab frame matches the retained image exactly.
-  [The failed and passing records](../../evidence/EFFECT-GRAPH/M3/upload-recovery/README.md) retain source identities;
+  [The failed and passing records](../../../.orchestrate/evidence/EFFECT-GRAPH/M3/upload-recovery/README.md) retain source identities;
   the socket reset's origin is unestablished. Normal checked integration follows this correction.
 - 2026-11-16 Planner: M4 added for the display phase, on the lead's task after `CLOUDS` M2 ended
   `BLOCKED needs_dependency` ("settle and assign the shared display-time interface change"). Alpha stops at the
@@ -173,20 +173,20 @@
   frame and an expired target has one meaning. `Offscreen::step_for` reads the clock once; the window hosts are
   left as they are. A prediction is carried a tick at a time. M4.1 to M4.4 rewritten; the record gains the
   observation, the lead's status, the platform target and whether the clock interpolated.
-  [Check](../../evidence/EFFECT-GRAPH/M4-plan/consumed-target.txt). S5 taken; S4 left, since M2 is Done.
+  [Check](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/consumed-target.txt). S5 taken; S4 left, since M2 is Done.
 - 2026-11-16 Implemented the phase and one-read offscreen observation; normal Mac target scripts pass,
   including 144 effect frames and 32 realtime records. Native/Wasm Clippy and iOS compilation pass.
   A new submitted-frame counterexample at `5a8f26002` fails M4.2: after render preemption the world
   supplies tick 2 for observation 42.417 us, with alpha/phase zero and interpolation true, a 33.291 ms error.
   Proposal: the planner must settle observation-coherent endpoint selection or a revised consumption policy;
   either changes more existing frame behavior than the current design permits. No merge was attempted.
-  [Handoff and reproduction](../../evidence/EFFECT-GRAPH/M4-handoff.md) separate passing scope from the failure.
+  [Handoff and reproduction](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-handoff.md) separate passing scope from the failure.
 - 2026-11-16 Resumed M4 after the owner's instruction to carry on. The lane now enforces the design's
   existing `t_C <= observation` premise, retaining its previous pair if a preempted poll sees a future endpoint.
   Sampling formulas, consumed target and authority are unchanged; no history or clock read is added.
   Four core integration tests and both Mac GPU checks pass, including the old counterexample and a real
   completion-callback stall inside the offscreen driver. All 32 captured frames satisfy the target identity.
-  [Updated proof](../../evidence/EFFECT-GRAPH/M4-proof.md) retains source identities and the historical failure.
+  [Updated proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-proof.md) retains source identities and the historical failure.
   Exact images use the shared main-branch run; visual prediction quality and physical cadence remain unclaimed.
 - 2026-11-16 Planner: M4 re-planned on the lead's task after its first review failed M4.2 and the builder ended
   `BLOCKED needs_context` ("Decide the policy, update the design and done-when file so they agree, and name
@@ -194,21 +194,21 @@
   frame shows a tick due by its observation, and the bar says which frames change. The built lane's one held
   pair stalls in a run of delayed frames, so it also holds the refused pair. Bar, M4.2 and M4.4 rewritten;
   M4.6 added. [Design](DESIGN.md#the-frames-pair), with who meets a delayed frame ·
-  [probe and the choice not taken](../../evidence/EFFECT-GRAPH/M4-replan/README.md).
+  [probe and the choice not taken](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-replan/README.md).
 - 2026-11-16 The resumed builder reproduced the review's zero-lead selection change with the actual
   clock on `8a72a0c0b`: tick 2/alpha 0 becomes tick 0/alpha 0.06 after a delayed observation.
   Keeping tick 2 requires phase -1.94 to satisfy M4.2, contradicting M4.1's nonnegative phase.
   Proposal for the planner: retain causal endpoint selection and explicitly settle its zero-lead
   compatibility exception, affected threaded consumers and regression proof in the design and criteria.
-  No engine or criteria changed; M4.2 stays open. [Reproduction](../../evidence/EFFECT-GRAPH/M4-compatibility.md)
-  and [handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) retain the conflict; no new GPU claim or merge.
+  No engine or criteria changed; M4.2 stays open. [Reproduction](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-compatibility.md)
+  and [handoff](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-handoff.md) retain the conflict; no new GPU claim or merge.
   The CPU probe and documentation checks pass; owned probe scratch was removed.
 - 2026-11-16 Implemented the revised pair rule: the lane retains the refused clock/page pair, so repeated
   delayed polls progress while authority continues and completed ticks are reported once. Updated C02,
   public effect documentation and the separate implementation/correctness ledger claims.
   Five core tests and both Mac Metal frame checks pass at `fbb4115cc`, including 12 delayed polls,
   144 effect frames and 32 realtime frames with no dropped opportunity. The capture includes an expired
-  target and a 45 ms render-owner delay. [Proof](../../evidence/EFFECT-GRAPH/M4-proof.md) retains the results.
+  target and a 45 ms render-owner delay. [Proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-proof.md) retains the results.
   Cost is at most one additional leased page; physical cadence and consumer prediction remain unqualified.
 - 2026-11-17 Planner: M4 re-planned on the lead's task after its second review failed M4.2 on a resumed frame
   and the builder ended `BLOCKED needs_context` ("write the whole timing model for M4 (origin, phase, lead,
@@ -217,23 +217,23 @@
   display time and each bounded step at a span's edge together, and a frame's record gains its tick's due time.
   C02 rewritten with it; `CLOUDS`' design corrected in three places, its items unchanged. M4.2 to M4.4
   rewritten; M4.7 to M4.10 added: spans, the lane through a resume, resumed frames, the sky world's stand-in.
-  [Check on the repository's clock and lane](../../evidence/EFFECT-GRAPH/M4-timing/README.md).
+  [Check on the repository's clock and lane](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-timing/README.md).
 - 2026-11-17 Confirmed the second review's M4.2 origin failure on six submitted Mac Metal frames at
   `8ea0cd27d`, through the public V1 pause/resume path and the actual effect time. Leads 0, 10 and 50 ms
   give a 1.000 s identity error; a partial-tick pause adds 8 ms discarded by pause. Alpha, phase and
   authority preserve their existing semantics. No implementation or planner/reviewer field changed.
   Proposal: the planner must define a clock-origin mapping, preserve raw target records, and revise the
-  identity and its record semantics together. [Evidence](../../evidence/EFFECT-GRAPH/M4-resume/README.md)
-  and [handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) retain the contradiction and affected producers.
+  identity and its record semantics together. [Evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-resume/README.md)
+  and [handoff](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-handoff.md) retain the contradiction and affected producers.
 - 2026-11-17 Resumed at `605cc0329` and checked origin/main `a590c33b3`; M4's design, plan, criteria
   and C02 have no intervening planner changes. The retained actual-clock probe again confirms a 1 s
   M4.2 identity error after resume for leads 0, 10 and 50 ms. No GPU qualification was repeated.
   No implementation or criteria changed; M4.2 remains open pending the time-origin contract decision.
-  [Rewritten handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) records the reproduction and next action.
+  [Rewritten handoff](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-handoff.md) records the reproduction and next action.
 - 2026-11-17 Implemented the reviewed timing model: clock-sample due times now reach every world adapter,
   completed frame and capture record; the ticking sky states its own phase with bitwise unchanged alpha.
   The clock's phase, alpha, authority and refused-pair selection are unchanged. Three span tests, five
   phase tests, the sky regression and all three Mac Metal checks pass. Submitted lifecycle arms retain
   22 omitted delayed opportunities and validate 24 submitted frames per threaded arm; capture records
-  include a stop, resume and origin change. [Proof and identities](../../evidence/EFFECT-GRAPH/M4-proof.md).
+  include a stop, resume and origin change. [Proof and identities](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-proof.md).
   Numerical Mac correctness is separate from visuals, device speed, consumer prediction and panel cadence.

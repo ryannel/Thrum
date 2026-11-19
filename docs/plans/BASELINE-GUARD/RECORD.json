@@ -2,9 +2,9 @@
   "module": "BASELINE-GUARD",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/BASELINE-GUARD/design-review.md",
+    "review": ".orchestrate/evidence/BASELINE-GUARD/design-review.md",
     "commit": "3a3a347dc6b4cb3270d58a2b1db1f94551472c8c",
-    "hash": "9330d4392b5cc9b526e97c912b403b1a8430f3c0b0ac75bc297c24e6b789c9a3",
+    "hash": "18f1c9e28a66f1d62408d9925d301e99a1ddc99578e89ef945c4603c503daaf3",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "pass",
           "commit": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
-          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -92,7 +92,7 @@
       "done": {
         "by": "review",
         "commit": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
-        "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+        "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
         "checked": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
         "at": "2026-11-12T07:32:49Z"
       }
@@ -103,7 +103,7 @@
         {
           "verdict": "pass",
           "commit": "e4660f55dba893c9c0caaa84238ac7dbc5cd0a16",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -168,7 +168,7 @@
       "done": {
         "by": "review",
         "commit": "e4660f55dba893c9c0caaa84238ac7dbc5cd0a16",
-        "review": "docs/evidence/BASELINE-GUARD/M2-review.md",
+        "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md",
         "checked": "160595c5a0996b235043bff5e7624f6b0df6464b",
         "at": "2026-11-16T03:48:25Z"
       }
@@ -215,7 +215,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-1.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-1.md",
       "commit": "9619c1370075b6b03f9d436f12af454f6020197c",
       "hash": "8be565bd5a8d6503a76f72faa161268229f35d85799b2ccbaa5ce9c5dd5efa67",
       "by": "review",
@@ -238,7 +238,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-2.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-2.md",
       "commit": "4a1e0aeaf5a5d8ae028b4f803b4f9e4d5c3faf94",
       "hash": "b89d57dd2741f175ca1e8666774e41524a2f6f48015e775658f766efeb470893",
       "by": "review",
@@ -261,7 +261,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-3.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-3.md",
       "commit": "df6b07f5a087047414470b6fcb41af42163842b7",
       "hash": "52ee16101da1dd933be563be77480f57f6320b82e93279bd81b2e086e6c6d065",
       "by": "review",
@@ -284,7 +284,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-4.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-4.md",
       "commit": "9b44ba81ca8ffc30f75146142a0b476cbe699291",
       "hash": "7cf090f0c1b1fddcc3afade9394b1340c413daed34b929fe629d171ee4aeaac6",
       "by": "review",
@@ -307,7 +307,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-5.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-5.md",
       "commit": "76daae923d793ce01755a7c43d45ed66c6a804de",
       "hash": "a5683d2fb9f0cb127b179d4fb95e2e69743db00134a80207aefe7b09c3f4b335",
       "by": "review",
@@ -330,7 +330,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-6.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-6.md",
       "commit": "eb175e7f01739922cebe8f8c99b80505033febda",
       "hash": "1ed3a4d0bd0942ba697891c6d79ef4a9a3e51dad85c16eb5a8981c317b6814fa",
       "by": "review",
@@ -353,7 +353,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/BASELINE-GUARD/design-review-7.md",
+      "review": ".orchestrate/evidence/BASELINE-GUARD/design-review-7.md",
       "commit": "f819b733334ba830f389a95bb3899079ef5c9c7f",
       "hash": "045d2d9ec00867a957bbdbc656f92cd3c3b95ee45428608f0ee6659e7ecff494",
       "by": "review",

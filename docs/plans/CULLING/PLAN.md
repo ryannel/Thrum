@@ -20,10 +20,10 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 - Assumption: `CULLING` takes no quiet-machine sitting and no attended panel sitting. Gate G3c asks for costs "as tripwires", so M3.3's and M3.13's rows are paired, taken once while other builders work, and recorded with their load, and no item judges frame cadence: `SHOWCASE` judges "smooth at the display's full refresh" on the culled exit scene (the design's Frame cadence section). The other choice is one sitting with the other builders paused at the end of M3, as `ORCHESTRATE.md` offers a module's last milestone; it gives uncontended figures and a cadence record for today's valley, costs every builder that pause, and `SHOWCASE` takes the record again.
 
 ## M1 On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel: done
-[review](../../evidence/CULLING/M1-review.md)
+[review](../../../.orchestrate/evidence/CULLING/M1-review.md)
 
 ## M2 The game picks its culling mode from the device and the measurements, and says which mode ran: done
-[review](../../evidence/CULLING/M2-review.md)
+[review](../../../.orchestrate/evidence/CULLING/M2-review.md)
 
 ## M3 The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome
 
@@ -31,15 +31,15 @@ Criteria: M3.1–M3.13 in the done-when file. Read [Frame cadence](DESIGN.md#fra
 [One image under load](DESIGN.md#m3-one-image-under-load) for anything you change.
 
 Everything is built and on main. The coverage output, its references and pins landed at `534ba5021`, the
-campaign on main passed, and [the second review](../../evidence/CULLING/M3-review.md) passed eleven items. It
+campaign on main passed, and [the second review](../../../.orchestrate/evidence/CULLING/M3-review.md) passed eleven items. It
 saw no culling artifact in M3.7's or M3.8's captures and left both unjudged for "full-refresh smoothness". The
 re-plan of 17 November 2026 settles that cadence is not this module's, and rewrote M3.7, M3.8 and the quality
 bar to say so. Nothing else is asked.
 
 Because the definitions changed, the script cleared every item's claim and verdict. No proof changed, so claim
 each item again from the evidence it had:
-[the list](../../evidence/CULLING/M3-replan/claims-before-2026-11-17.md). M3.7 and M3.8 are claimed from your
-merged-build capture pass, `docs/evidence/CULLING/M3/replan/motion.md`. Take no new capture, campaign, cost
+[the list](../../../.orchestrate/evidence/CULLING/M3-replan/claims-before-2026-11-17.md). M3.7 and M3.8 are claimed from your
+merged-build capture pass, `.orchestrate/evidence/CULLING/M3/replan/motion.md`. Take no new capture, campaign, cost
 row or reference run, unless the script says a check failed or you have merged a change under `crates/` or
 `examples/v1-game/` since that proof.
 

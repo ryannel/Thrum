@@ -1,10 +1,10 @@
 # Repo rules: the shapes held by check, bulk files out of the tree, names and layout
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/REPO-RULES/design-review.md),
+14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/REPO-RULES/design-review.md),
 and again that day when M1's first landing was refused ([log](LOG.md)).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
-[the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
+[the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
 [patterns](../../../.agents/skills/thrum-engineering/references/patterns.md)
 
 ## The request
@@ -95,7 +95,7 @@ every fix is kept.
 | `device-request` | A call to `request_adapter` or `request_device` outside the modules [HOST](../HOST/DESIGN.md) and [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md) register as the owners | T4, T6 | M1 |
 | `whole-file-gpu-gate` | A file-level `#![cfg(target_os = …)]` on a test file | T6 | M1 |
 | `history-names` | A name that carries a milestone or gate code, in any of the places such names live: a path segment of a tracked file under `crates/`, `examples/`, `tools/` or `scripts/`; an environment variable name in source; a Cargo target name; a Cargo `description`. A code is one of the measured families (`g<n>` with an optional letter, `t2`, `a1`, `m<n>` with an optional letter) standing as a whole word or segment | T9 | M1 |
-| `evidence-size` | A tracked file under `docs/evidence/` over the cap, unless it is a registered exact-baseline reference. Added with the store that gives a refused file somewhere to go | T13 | M2 |
+| `evidence-size` | A tracked file under `.orchestrate/evidence/` over the cap, unless it is a registered exact-baseline reference. Added with the store that gives a refused file somewhere to go | T13 | M2 |
 | `layering` | In `thrum-render`, an import from the scene renderer or the atmosphere in the graph or timing, and a new one in the frame runtime or the presenter (mechanism 5) | T10 | M3 |
 
 M1 proves the rules marked M1. The names that exist when `history-names` is registered are its baseline, like any
@@ -113,8 +113,8 @@ the game gate uses it on a games repository.
 **4. Bulk files leave the tree and stay reachable.** No history is rewritten, so every blob that was ever
 committed stays in the object store. That makes Git history the durable store for what is already tracked:
 
-- A file under `docs/evidence/` over the cap is removed from the tree at HEAD. It is listed in a manifest,
-  `docs/evidence/BULK.json`, as a **history** entry: its path, byte count, SHA-256, Git blob ID and the last commit
+- A file under `.orchestrate/evidence/` over the cap is removed from the tree at HEAD. It is listed in a manifest,
+  `.orchestrate/evidence/BULK.json`, as a **history** entry: its path, byte count, SHA-256, Git blob ID and the last commit
   that held it.
 - `python3 scripts/evidence_store.py restore <path>` writes the file back to its path, as an untracked, ignored
   file. A history entry comes from its blob, in any clone.
@@ -183,7 +183,7 @@ orphan directories go; feature-gated code is compiled by `./dev check`.
 | Interface | For | Defined here |
 |---|---|---|
 | `shape_rules.py check [--rule R] [--zero PATH…]`, the baseline file, and how a module adds a rule with fixtures | Every module that proves a crate clean | Mechanisms 1 to 3 |
-| `evidence_store.py check`, `restore`, `put`; `docs/evidence/BULK.json` with its history and local entries; the one local store beside the main checkout | Every builder and reviewer | Mechanism 4 |
+| `evidence_store.py check`, `restore`, `put`; `.orchestrate/evidence/BULK.json` with its history and local entries; the one local store beside the main checkout | Every builder and reviewer | Mechanism 4 |
 
 ## What it must not do
 

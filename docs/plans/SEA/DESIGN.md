@@ -95,7 +95,7 @@ where the sea design's list now lives. The three that select this module's mecha
 
 Broadsides code may be copied where it implements a mechanism of this design as stated here; paths are in the
 Broadsides repository at `ae8c1ebb7`, and nothing there is changed. [`WATERS`' handoff](../WATERS/DESIGN.md#proof-and-builder-handoff)
-says how a copy is recorded; this module's copies are listed in `docs/evidence/SEA/PROVENANCE.md`.
+says how a copy is recorded; this module's copies are listed in `.orchestrate/evidence/SEA/PROVENANCE.md`.
 
 | Mechanism here | Where Broadsides has it | Expected fit |
 |---|---|---|
@@ -210,7 +210,7 @@ evaluated, so it needs no wrapping history. It is a display cache: nothing that 
   at most 0.12%. Part G: a blend of endpoints one tick apart misstates a 0.4 m wave by 0.53% of its amplitude and
   evaluation at the display's time by nothing.
 
-The scripts and their output are in [the evidence folder](../../evidence/SEA/design-proof/).
+The scripts and their output are in [the evidence folder](../../../.orchestrate/evidence/SEA/design-proof/).
 
 ## The system as it runs
 
@@ -253,7 +253,7 @@ the cadence knobs lower the field's rate if a record favours that. No timing fig
 ## Proof and builder handoff
 
 - **Target.** `mac-metal`. Every GPU check holds the `gpu` lock. Scratch goes in `tmp/sea-<milestone>/`, selected
-  evidence in `docs/evidence/SEA/`.
+  evidence in `.orchestrate/evidence/SEA/`.
 - **Exact baselines.** The sea adds crates beside the existing scenes and moves no retained image. Every
   milestone carries the verifier as its claim-time check ([rules](../ARCHITECTURE.md#exact-baselines)).
 - **Broadsides, dependencies and provenance** are as [`WATERS`' handoff](../WATERS/DESIGN.md#proof-and-builder-handoff)

@@ -3,9 +3,9 @@
   "adopted": true,
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/T2-CAPTURE/design-review.md",
+    "review": ".orchestrate/evidence/T2-CAPTURE/design-review.md",
     "commit": "352cd3e661bf317cd5f44b69c03e30fb118a0f2c",
-    "hash": "ee88258c7d8159002bd2658f8d4912725b3981904f1f084cae089d227ae317c2",
+    "hash": "ae54d73cb282b72d99f536b859684865ae80d87c76b1e8e6f12254fde5b9c5f1",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -51,7 +51,7 @@
         {
           "verdict": "pass",
           "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
-          "review": "docs/evidence/T2-CAPTURE/M2-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M2-review.md",
           "host": "claude",
           "model": "claude-opus-5-5",
           "effort": "high",
@@ -85,7 +85,7 @@
       "done": {
         "by": "review",
         "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
-        "review": "docs/evidence/T2-CAPTURE/M2-review.md",
+        "review": ".orchestrate/evidence/T2-CAPTURE/M2-review.md",
         "checked": "60b79a2b0401de3f82498e5c20156cf0286b117d",
         "at": "2026-11-10T00:57:24Z"
       }
@@ -96,7 +96,7 @@
         {
           "verdict": "pass",
           "commit": "4b1b818419c066320515be5c08453d50c34b11c5",
-          "review": "docs/evidence/T2-CAPTURE/M3-review.md",
+          "review": ".orchestrate/evidence/T2-CAPTURE/M3-review.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -159,7 +159,7 @@
       "done": {
         "by": "review",
         "commit": "4b1b818419c066320515be5c08453d50c34b11c5",
-        "review": "docs/evidence/T2-CAPTURE/M3-review.md",
+        "review": ".orchestrate/evidence/T2-CAPTURE/M3-review.md",
         "checked": "82352848cbd3a1b89acf2ec0e164768055d29c15",
         "at": "2026-11-16T23:46:32Z"
       }
@@ -178,7 +178,7 @@
   "design_history": [
     {
       "verdict": "ok",
-      "review": "docs/evidence/T2-CAPTURE/design-review-1.md",
+      "review": ".orchestrate/evidence/T2-CAPTURE/design-review-1.md",
       "commit": "bce5a43206979da35aba1f1d432dc74f8e9da5a7",
       "hash": "ae14ac7bb699e5a75f183b34c41ae4f4268b1f9b1f31af21900ca6334a71ad1e",
       "by": "review",

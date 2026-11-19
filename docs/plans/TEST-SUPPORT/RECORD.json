@@ -2,9 +2,9 @@
   "module": "TEST-SUPPORT",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/TEST-SUPPORT/design-review.md",
+    "review": ".orchestrate/evidence/TEST-SUPPORT/design-review.md",
     "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
-    "hash": "3dedd928465bb440b5203f34c213042ccf68b269cc692a9835d8b23eb0661fe1",
+    "hash": "4f54ade3024d9add839e5284cfcd9ab04103891bca0c9effab4266250d74425c",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "pass",
           "commit": "67ed516e293fad08fa7ced8d91937931314aab0f",
-          "review": "docs/evidence/TEST-SUPPORT/M1-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -100,7 +100,7 @@
       "done": {
         "by": "review",
         "commit": "67ed516e293fad08fa7ced8d91937931314aab0f",
-        "review": "docs/evidence/TEST-SUPPORT/M1-review.md",
+        "review": ".orchestrate/evidence/TEST-SUPPORT/M1-review.md",
         "checked": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
         "at": "2026-11-16T07:45:21Z"
       }
@@ -143,7 +143,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/TEST-SUPPORT/design-review-1.md",
+      "review": ".orchestrate/evidence/TEST-SUPPORT/design-review-1.md",
       "commit": "6f262e4fa78d3660db457cdaa058e43a9e2339de",
       "hash": "6d9b266ed87bb34ba6768c7a04aca3565ed06fe1750038df2ec40e558ee99f2c",
       "by": "review",

@@ -2,9 +2,9 @@
   "module": "PUDDLES",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/PUDDLES/design-review.md",
+    "review": ".orchestrate/evidence/PUDDLES/design-review.md",
     "commit": "acc7e93eb745926105089314cada910ba4788a79",
-    "hash": "6a34b631f347487171d703b7fbe84a1e2a6e60af0312f0c3d539e911e25fe01c",
+    "hash": "fb5fa92a8208d716f86ef159b2b2ac4f68027e7d84db17b3026e8c835933a058",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "ae165194050e057721756969f150f36bbb5c1a25",
-          "review": "docs/evidence/PUDDLES/M1-review-1.md",
+          "review": ".orchestrate/evidence/PUDDLES/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -73,7 +73,7 @@
         {
           "verdict": "pass",
           "commit": "9309d87496b5d28e2a1a00c18ecb1e40d4f5c1ae",
-          "review": "docs/evidence/PUDDLES/M1-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -109,7 +109,7 @@
       ],
       "authorised": {
         "by": "design review",
-        "review": "docs/evidence/PUDDLES/design-review.md",
+        "review": ".orchestrate/evidence/PUDDLES/design-review.md",
         "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
         "at": "2026-11-14T13:32:41Z"
       },
@@ -154,7 +154,7 @@
       "done": {
         "by": "review",
         "commit": "9309d87496b5d28e2a1a00c18ecb1e40d4f5c1ae",
-        "review": "docs/evidence/PUDDLES/M1-review.md",
+        "review": ".orchestrate/evidence/PUDDLES/M1-review.md",
         "checked": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
         "at": "2026-11-16T06:54:21Z"
       }
@@ -165,7 +165,7 @@
         {
           "verdict": "fail",
           "commit": "1d63087e103fbcdc1b0756cd63e68ff86e90dd16",
-          "review": "docs/evidence/PUDDLES/M2-review-1.md",
+          "review": ".orchestrate/evidence/PUDDLES/M2-review-1.md",
           "items": {
             "M2.1": "fail",
             "M2.2": "pass",
@@ -209,7 +209,7 @@
         {
           "verdict": "fail",
           "commit": "b55c36b929f46358069de169bd7187ad26f2b948",
-          "review": "docs/evidence/PUDDLES/M2-review-2.md",
+          "review": ".orchestrate/evidence/PUDDLES/M2-review-2.md",
           "items": {
             "M2.1": "fail",
             "M2.2": "pass",
@@ -255,7 +255,7 @@
         {
           "verdict": "fail",
           "commit": "ef9ea8b51541c4266d5ea0dc481be7156323f885",
-          "review": "docs/evidence/PUDDLES/M2-review-3.md",
+          "review": ".orchestrate/evidence/PUDDLES/M2-review-3.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -294,7 +294,7 @@
         {
           "verdict": "pass",
           "commit": "b607d212f8e2f1eaf0c31884770c8872e4a1f248",
-          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -365,7 +365,7 @@
       "done": {
         "by": "review",
         "commit": "b607d212f8e2f1eaf0c31884770c8872e4a1f248",
-        "review": "docs/evidence/PUDDLES/M2-review.md",
+        "review": ".orchestrate/evidence/PUDDLES/M2-review.md",
         "checked": "a5900b5deb917960fe274ae70f35fe77b9ba0a35",
         "at": "2026-11-17T03:38:57Z"
       }
@@ -411,7 +411,7 @@
       "reviews": [],
       "authorised": {
         "by": "design review",
-        "review": "docs/evidence/PUDDLES/design-review.md",
+        "review": ".orchestrate/evidence/PUDDLES/design-review.md",
         "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
         "at": "2026-11-14T13:32:41Z"
       },
@@ -470,7 +470,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/PUDDLES/design-review-1.md",
+      "review": ".orchestrate/evidence/PUDDLES/design-review-1.md",
       "commit": "783c3b1acbf1154dc97e3d533169cd4c719221b4",
       "hash": "53949efaff67b1afe1a3875c560c15d3a28bf746a63ca13db31507de4cb81948",
       "by": "review",
@@ -493,7 +493,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/PUDDLES/design-review-2.md",
+      "review": ".orchestrate/evidence/PUDDLES/design-review-2.md",
       "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
       "hash": "2e1ff0f8286a37d642c6d57fd8461325ebf42267f71c49cfc1d7385dc5fa1ce0",
       "by": "review",
@@ -516,7 +516,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/PUDDLES/design-review-3.md",
+      "review": ".orchestrate/evidence/PUDDLES/design-review-3.md",
       "commit": "3f008c03116dc6d9fd82a5bf2eca3ec01968140a",
       "hash": "e40b04170ccfe48c17a1c0264bb2aa6fa610b417c7bb8e58a6d14cbfcc68c951",
       "by": "review",
@@ -539,7 +539,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/PUDDLES/design-review-4.md",
+      "review": ".orchestrate/evidence/PUDDLES/design-review-4.md",
       "commit": "a590c33b35279abba92805a11b53553c0e7796a6",
       "hash": "434834a94f17933d56fd45be408bdeb566d03e79770bca50b4be5f591747df62",
       "by": "review",
@@ -562,7 +562,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/PUDDLES/design-review-5.md",
+      "review": ".orchestrate/evidence/PUDDLES/design-review-5.md",
       "commit": "e143da67cf7b381b01d0ab2b1a00c2a4a5d38fbc",
       "hash": "c9b46e05012d0e21098dbca6952633027c4151991f7b48fcc12cd0d7ed4da186",
       "by": "review",

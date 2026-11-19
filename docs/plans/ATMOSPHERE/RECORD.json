@@ -2,7 +2,7 @@
   "module": "ATMOSPHERE",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/ATMOSPHERE/design-review.md",
+    "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
     "commit": "433567c351a7d6127aced3cfa8d7f9176eb70e3c",
     "hash": "178a92d0967680f73a0752d5deb2cc067e049fca603370829a6dec518915fa8d",
     "by": "review",
@@ -30,7 +30,7 @@
         {
           "verdict": "pass",
           "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
           "items": {
             "M5.1": "pass",
             "M5.2": "pass",
@@ -97,7 +97,7 @@
       "done": {
         "by": "review",
         "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
-        "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/M5-review.md",
         "checked": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
         "at": "2026-11-11T17:09:31Z"
       }
@@ -135,7 +135,7 @@
         {
           "verdict": "pass",
           "commit": "cd3a10001a14de222574b412b50574cfb195bcda",
-          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
           "items": {
             "M9.1": "pass",
             "M9.2": "pass",
@@ -202,7 +202,7 @@
       "done": {
         "by": "review",
         "commit": "cd3a10001a14de222574b412b50574cfb195bcda",
-        "review": "docs/evidence/ATMOSPHERE/M9-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/M9-review.md",
         "checked": "05ac8f6e0ae1fbedfc3c36f974229fe8d8ec2877",
         "at": "2026-11-16T13:11:17Z"
       }
@@ -213,7 +213,7 @@
         {
           "verdict": "pass",
           "commit": "8cafb923210d9c4cd1f4831e5aade0db4a4462c6",
-          "review": "docs/evidence/ATMOSPHERE/M10-review.md",
+          "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md",
           "items": {
             "M10.1": "pass",
             "M10.2": "pass",
@@ -274,7 +274,7 @@
       "done": {
         "by": "review",
         "commit": "8cafb923210d9c4cd1f4831e5aade0db4a4462c6",
-        "review": "docs/evidence/ATMOSPHERE/M10-review.md",
+        "review": ".orchestrate/evidence/ATMOSPHERE/M10-review.md",
         "checked": "b2c4e650a5037405fc488b871c8c484845dbaefe",
         "at": "2026-11-18T14:04:09Z"
       }
@@ -357,7 +357,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-1.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-1.md",
       "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
       "hash": "5a00c930692d1e01faa364127cb0abbfecbbfe4e8478c60408a3b318daf18ba6",
       "by": "review",
@@ -377,7 +377,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-2.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-2.md",
       "commit": "27473469f1715ebfc77cdd4a6cd24137a29b1415",
       "hash": "8319f1dca92b5f11b915c09bd9075605d183d07530e52a1d5295acfa8016cd44",
       "by": "review",
@@ -397,7 +397,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/ATMOSPHERE/design-review-3.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-3.md",
       "commit": "631e222b6a5ef4c7ca3fed88d85a2da247f54a0b",
       "hash": "3886206f3ce9f0fb392eec40b48979007b5cd88c1903df2873a52853818d5732",
       "by": "review",
@@ -417,7 +417,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/ATMOSPHERE/design-review-4.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-4.md",
       "commit": "156912c341ffbfbf8d74c48bfc6cb028d6f187be",
       "hash": "c2ac9572b482d453da0188bcaa9ad50ffecd346eb2acf61fedabbb9a1cd9e9db",
       "by": "review",
@@ -440,7 +440,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-5.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-5.md",
       "commit": "ea124871d9744fee4264447e8d4a99c6bcae4dac",
       "hash": "cba31dd640ec53c4f9d2b4aa665a5cca3ede405de7c0cad194ea56af559db6aa",
       "by": "review",
@@ -463,7 +463,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/ATMOSPHERE/design-review-6.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-6.md",
       "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
       "hash": "64a3879192a14b614eb64f6d9af40d62e93368a21f3e737e9d86efb83d51fcd8",
       "by": "review",
@@ -486,7 +486,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-7.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-7.md",
       "commit": "68c1e58228f5e78efe7fb70ac55084bec90650ba",
       "hash": "c9fc998ef90f774485560a119ba7f9c45bdab57fca3ad847397d8e166716b0dd",
       "by": "review",
@@ -509,7 +509,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/ATMOSPHERE/design-review-8.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-8.md",
       "commit": "dab411099aaa0b49859d50bf3b9ee69fc88ecaba",
       "hash": "43fd18234a3e1f6866355ae19ff53da2a3cb26571f14ef374a04eeb5bef20ac3",
       "by": "review",
@@ -532,7 +532,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/ATMOSPHERE/design-review-9.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-9.md",
       "commit": "c3e18e609bd2177b2aec029eb25a709587125377",
       "hash": "c025e9ec2e9c86fc3e3d40077c797b6dd7ddc197005d243c0192125f2a4158d9",
       "by": "review",
@@ -555,7 +555,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-10.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-10.md",
       "commit": "e143da67cf7b381b01d0ab2b1a00c2a4a5d38fbc",
       "hash": "5564c820915670f05d5b43b34adc632a5f95b44ce9875f45bfd492e9cf46189d",
       "by": "review",
@@ -578,7 +578,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-11.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-11.md",
       "commit": "cda25f4ef12467a97c43b81338f7529a15d9c9bf",
       "hash": "8abbcc81a2e076fefa53bdab181c820c386d0c715207fb372e47526fc4ea61a1",
       "by": "review",
@@ -601,7 +601,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-12.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-12.md",
       "commit": "83815c17284c2886c53df3c69d51e733d09c535a",
       "hash": "c5708abefd28f78d2b555e2cdba73b23487a1a4382e5924eb7bd676484c0c44c",
       "by": "review",
@@ -624,7 +624,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/ATMOSPHERE/design-review-13.md",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review-13.md",
       "commit": "267d631488c8aeb86b356d9fa381f285800753ba",
       "hash": "4531078c439ce4b026b8780f8a66c5f9de28b95452e3f59b4d7f9e3b391ef62d",
       "by": "review",

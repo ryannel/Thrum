@@ -4,7 +4,7 @@
   Confirmed four scratch-repository integration tests on this Mac, including builds against two engine
   revisions, unchanged source/index/lockfile, dirty and missing repositories, and rejected boundary edges.
   Existing shape-rule tests passed. Evidence and the command convention are in
-  [M1 evidence](../../evidence/GAME-SPLIT/M1.md). Exact-image proof remains the shared main-branch check;
+  [M1 evidence](../../../.orchestrate/evidence/GAME-SPLIT/M1.md). Exact-image proof remains the shared main-branch check;
   no runtime source or retained image changed.
 
 - 2026-11-14 Owner: "it sounds like we're blurring the lines between the engine and the game a ton. Please let's
@@ -16,14 +16,14 @@
   game's folder, so the gate works from a detached copy.
 - 2026-11-14 Decided: the move waits for `SHOWCASE` M8; the proving ground stays at `examples/v1-game` under its
   old name until no open check names it, because 54 approved checks in other modules' open milestones do.
-- 2026-11-15 Revised after [the first design review](../../evidence/GAME-SPLIT/design-review.md) (three Must
+- 2026-11-15 Revised after [the first design review](../../../.orchestrate/evidence/GAME-SPLIT/design-review.md) (three Must
   Fix). The mixed-mesh field is one fixture in `crates/thrum-fixtures`, `TEST-SUPPORT`'s package, read by the
   visibility tests as a dev-dependency and by the proving ground as a normal one; M2 proves the proving ground's
   Mac and wasm32 builds. The presets, routes, valley sources and pages the exact baselines are drawn from stay in
   Thrum as frozen qualification content, and M4 runs the verifier with the games repository unavailable. M4's
   exit check runs every command `SHOWCASE` M5.5 and M7.2 to M7.8 pinned, the live clauses included; frame and
   visual evidence stays `SHOWCASE`'s accepted history. The owner's decisions are unchanged.
-- 2026-11-15 Revised after [the second design review](../../evidence/GAME-SPLIT/design-review.md) (one Must
+- 2026-11-15 Revised after [the second design review](../../../.orchestrate/evidence/GAME-SPLIT/design-review.md) (one Must
   Fix). M1 now waits for `TEST-SUPPORT:M1` as well as `REPO-RULES:M1`, because M1.4's `boundary` runs that
   milestone's `test-crate-edges` rule; the rule keeps one owner and no M1 item changed. Chosen over moving the
   check to M2 because nothing uses the gate before M4, so the wait costs nothing, and the gate's whole boundary
@@ -37,4 +37,4 @@
 - 2026-11-18 M2 moved the mixed-mesh field to `thrum-fixtures` and routed the temporal witness, cloud shader and
   crowd trace through their owning packages. Both boundary rules are at zero, nine Metal visibility tests passed,
   and the engine built 214 test and bench executables with both game directories absent. The release Wasm bundle
-  emitted the original witness bytes. The shared main-branch check supplies exact images. [Evidence](../../evidence/GAME-SPLIT/M2.md)
+  emitted the original witness bytes. The shared main-branch check supplies exact images. [Evidence](../../../.orchestrate/evidence/GAME-SPLIT/M2.md)

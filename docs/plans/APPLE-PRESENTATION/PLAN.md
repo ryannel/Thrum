@@ -7,7 +7,7 @@ Reconstruction, display and the quality governor (gate G4), governed by
 
 For M4 and later read [M4 to M12, settled](DESIGN.md#m4-to-m12-settled-14-november-2026) and the rulings for
 seams 5–9 before starting. The milestones run in the order below: M12 comes before M11.
-[The drafts](../../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md) are history; the done-when file holds
+[The drafts](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md) are history; the done-when file holds
 the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, and new browser cases in
 `scripts/check_v1_browser.mjs`. Nothing that needs a window, Chrome or the simulator runs under `./dev check`.
 
@@ -24,18 +24,18 @@ the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, 
 - Assumption: a patched copy of wgpu's Metal backend (wgpu-hal 30.0.1) is kept in this repository from M10, one milestone earlier than planned, because the released backend cannot run shaders compiled ahead of time; M12 adds the archive to the same copy. Nothing is posted upstream; that stays yours (U1).
 
 ## M1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
-[review](../../evidence/APPLE-PRESENTATION/M1-review.md)
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/M1-review.md)
 
 ## M2 Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames: done
-[review](../../evidence/APPLE-PRESENTATION/M2-review.md)
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/M2-review.md)
 
 ## M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome: done
-[review](../../evidence/APPLE-PRESENTATION/M3-review.md)
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/M3-review.md)
 
 ## M4 The valley fills the window at any size, and keeps presenting while the window is resized
 
 The extent work and the proof arms for D4.1 to D4.3 are on `build/apple-presentation` at `71577cd6`; what was
-tried is in [the handoff](../../evidence/APPLE-PRESENTATION/M4-handoff.md). The rest is built on
+tried is in [the handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-handoff.md). The rest is built on
 [the surface across a transition](DESIGN.md#the-surface-across-a-transition-m4). Before anything else, show in the
 real window that a surface left alone is scaled to fill a resized window, since the rest stands on it.
 `render_actor.rs` reconfigures at each resize step today, and resizing is synchronous in `runtime/extent.rs` and
@@ -101,11 +101,11 @@ offer it upstream. Post nothing, and open no issue or pull request.
 
 ## U1 The Metal pipeline-cache change is offered upstream by the owner
 
-Later, and not part of V1. After M12 is proved; the owner writes and approves every public post. [As drafted](../../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md#u1-upstream-metal-pipeline-cache-later-not-v1-gating-if-needed-pending).
+Later, and not part of V1. After M12 is proved; the owner writes and approves every public post. [As drafted](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md#u1-upstream-metal-pipeline-cache-later-not-v1-gating-if-needed-pending).
 
 ## M11 Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and G4 closes
 
 `APPLE-TILE` M12's record holds the fixed-extent baseline and the eligibility rows this proof reruns with real
-reconstruction readers and scale steps. The evidence page is `docs/evidence/render/G4-PAIRED-<date>.md`, and the
+reconstruction readers and scale steps. The evidence page is `.orchestrate/evidence/render/G4-PAIRED-<date>.md`, and the
 ledger is `docs/design/maturity.json`. Ask for the owner's look at the panel in the evidence page and in your
 report, and never wait for it: G4 closes on the agent and device evidence, with the look recorded as outstanding.

@@ -2,9 +2,9 @@
   "module": "TRANSPORT",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/TRANSPORT/design-review.md",
+    "review": ".orchestrate/evidence/TRANSPORT/design-review.md",
     "commit": "51e404c67c7ba37c89e4e7e4b24622a7e0b6328f",
-    "hash": "e97ad72724d185caf5ab9faefa0ac11e546f7f0b352ad56814a5b5797a7fd12a",
+    "hash": "d2531eabb70627398afa739d5559156847d672370f40617f66f77fd7e8534cad",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
-          "review": "docs/evidence/TRANSPORT/M1-review-1.md",
+          "review": ".orchestrate/evidence/TRANSPORT/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -71,7 +71,7 @@
         {
           "verdict": "pass",
           "commit": "5b68d69480590089b8920389c214e202897d2c47",
-          "review": "docs/evidence/TRANSPORT/M1-review.md",
+          "review": ".orchestrate/evidence/TRANSPORT/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -147,7 +147,7 @@
       "done": {
         "by": "review",
         "commit": "5b68d69480590089b8920389c214e202897d2c47",
-        "review": "docs/evidence/TRANSPORT/M1-review.md",
+        "review": ".orchestrate/evidence/TRANSPORT/M1-review.md",
         "checked": "b99cd3d9e875eb37b05d0635ef843c582f4b80c9",
         "at": "2026-11-16T11:22:17Z"
       }
@@ -158,7 +158,7 @@
         {
           "verdict": "pass",
           "commit": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
-          "review": "docs/evidence/TRANSPORT/M2-review.md",
+          "review": ".orchestrate/evidence/TRANSPORT/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -232,7 +232,7 @@
       "done": {
         "by": "review",
         "commit": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
-        "review": "docs/evidence/TRANSPORT/M2-review.md",
+        "review": ".orchestrate/evidence/TRANSPORT/M2-review.md",
         "checked": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
         "at": "2026-11-16T19:17:04Z"
       }
@@ -275,7 +275,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/TRANSPORT/design-review-1.md",
+      "review": ".orchestrate/evidence/TRANSPORT/design-review-1.md",
       "commit": "f574992194499bc5f2e5f6f5e6450e90eabacff2",
       "hash": "c9fda0855c1b38df50ff421e538a15c61d6a9c56db811378d7f10597655a7382",
       "by": "review",
@@ -298,7 +298,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/TRANSPORT/design-review-2.md",
+      "review": ".orchestrate/evidence/TRANSPORT/design-review-2.md",
       "commit": "50be8377a702f2cee6da806e1aef1c0fc89052d6",
       "hash": "e6d2a207e6c8fb6638026da9535a6c0bcccf95c1d5a4fb42b0107bd5ad534a7a",
       "by": "review",
@@ -321,7 +321,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/TRANSPORT/design-review-3.md",
+      "review": ".orchestrate/evidence/TRANSPORT/design-review-3.md",
       "commit": "4e9956d6dbae7bc5facfd4dca2bbaaa1a6e85a7a",
       "hash": "d62a824a707b898992b568f5175c7892321136563f20691718976287f51c5b73",
       "by": "review",
@@ -344,7 +344,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/TRANSPORT/design-review-4.md",
+      "review": ".orchestrate/evidence/TRANSPORT/design-review-4.md",
       "commit": "6c01e8cadca9be4ef2e9be3376e3838a96468488",
       "hash": "c3981c8da6327787b36885bd59a0c0322662feac18c8c339a4e68465114541c7",
       "by": "review",

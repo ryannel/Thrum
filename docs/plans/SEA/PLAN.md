@@ -32,4 +32,4 @@ callable from another crate. This milestone also changes `thrum-sea-model`, whic
 whole-cycle loop frequencies (M2.9), and the model gives each cascade's rate of change. Broadsides'
 `ocean_evolve.wesl` and `ocean_fft.wesl` already do the loop phase and the 256-point transform
 ([what Broadsides offers](DESIGN.md#what-broadsides-offers)). M2.2's bound is measured first and then asserted.
-The recorded Chrome limits are in `docs/evidence/EFFECT-GRAPH/M1/`.
+The recorded Chrome limits are in `.orchestrate/evidence/EFFECT-GRAPH/M1/`.

@@ -5,7 +5,7 @@ record. Milestones run in the order M5, M6, M9, M7, M8. [Design](DESIGN.md) · [
 [module list](../ARCHITECTURE.md)
 
 The launch, the six stops and the route check were built before the loop as milestones M1 to M4
-([record](../../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)), so this plan starts at M5. Read
+([record](../../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md)), so this plan starts at M5. Read
 [Mechanisms](DESIGN.md#mechanisms), [Limits for every milestone](DESIGN.md#limits-for-every-milestone),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
@@ -27,10 +27,10 @@ The launch, the six stops and the route check were built before the loop as mile
 ## M5 The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome
 
 The scene, layout, mover rule, route and checks are built and on main (`1556e66d0`), and M5.1 to M5.7 and M5.10
-passed [the first review](../../evidence/SHOWCASE/M5-review.md). Claim those again from their evidence, renewing
+passed [the first review](../../../.orchestrate/evidence/SHOWCASE/M5-review.md). Claim those again from their evidence, renewing
 only what has changed since. What is left is motion and, if a stop moved, the exit baseline: read
 [Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine) first.
-[The handoff](../../evidence/SHOWCASE/M5-handoff.md) is history. Its shadow task became `ATMOSPHERE` M10, which
+[The handoff](../../../.orchestrate/evidence/SHOWCASE/M5-handoff.md) is history. Its shadow task became `ATMOSPHERE` M10, which
 took the false strip off the far ground and marked the balloon row in `exit_scene.rs`, and its retakes are
 M5.11.
 
@@ -38,7 +38,7 @@ The launcher gains three things. `ticks` drives the native route recorder for M5
 held route, with the windows and the phase its caller names, so that a reviewer takes its own.
 `scripts/capture_v1_runtime.py --mode fixed` cannot give that sequence, and
 `scripts/capture_v1_browser.mjs --mode fixed` with the exit route already gives Chrome's. `motion` takes M5.11's
-six arms and writes `docs/evidence/SHOWCASE/M5-motion-record.json`; `motion --check` reads that file, computes
+six arms and writes `.orchestrate/evidence/SHOWCASE/M5-motion-record.json`; `motion --check` reads that file, computes
 the input digest and starts nothing. That digest covers `scripts/` and `.cargo/` as well as the build paths, so
 finish the launcher first. Take the arms last, on a branch that holds main, and land the record with nothing
 else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames, then add and
@@ -55,7 +55,7 @@ them on the exit scene and changes none of them. If equality fails, stop and dia
 Read [The lookout's rim and the sunrise stop](DESIGN.md#the-lookouts-rim-and-the-sunrise-stop) and
 [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) first: the ruling says which files of other modules
 take the new root and how `APPLE-TILE`'s references are refreshed. `ATMOSPHERE` M6's builder found both
-defects, and its evidence, with the held frames to compare against, is `docs/evidence/ATMOSPHERE/M6/README.md`
+defects, and its evidence, with the held frames to compare against, is `.orchestrate/evidence/ATMOSPHERE/M6/README.md`
 on the branch `build/atmosphere` until that milestone merges. A held frame at a preset comes from
 `scripts/capture_v1_runtime.py --mode fixed --case checkpoint --params <preset> --reconstruction taau`. The
 bare valley's thresholds and calibrated root are constants in the launcher, and `check --source DIR
@@ -65,7 +65,7 @@ registry and both baselines. Make the two launcher changes of
 [What a route check must have compared](DESIGN.md#what-a-route-check-must-have-compared) before calibrating
 either baseline, because a calibration run has to pass every control. M6 built the `culling --exit` commands
 that M9.8 and M9.9 run. Keep this milestone's receipts under a name of its own, and leave
-`docs/evidence/SHOWCASE/M6/` as it is.
+`.orchestrate/evidence/SHOWCASE/M6/` as it is.
 
 ## M7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 

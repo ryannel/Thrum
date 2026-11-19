@@ -507,7 +507,7 @@ It makes runs that reach the last wave, so that the late game can be measured an
 - **Thousands in view.** In a 16:9 view whose short side is `S`, bodies of diameter `d` that cover a share `c`
   of the view outside a clear ring around the hero number about `2.2 c S² / d²`. At 1920×1080: bodies of 27
   px (`S/40`) need 60% cover for 2,000; bodies of 22 px (`S/50`) reach 2,170 at 40% and 3,260 at 60%
-  ([probe](../../evidence/SWARM/planning-probe.md)). So a common enemy's body is about a fiftieth of the short
+  ([probe](../../../.orchestrate/evidence/SWARM/planning-probe.md)). So a common enemy's body is about a fiftieth of the short
   side: 22 px at 1080p and 45 px on the built-in display's 2234. A sprite may be drawn taller than its body,
   since rows overlap in height order. `RENDER-2D`'s pixel sampling is exact from one output pixel a texel, so
   an enemy of 12 to 16 texels stays crisp down to a short side of about 700 px, and is drawn softer below.
@@ -698,8 +698,8 @@ in the closing record as not run.
 - **Exact baselines.** This module edits `crates/`, `scripts/`, the workspace manifest and the lockfile, which
   are covered paths, and moves no retained image. Every milestone but M1 carries the verifier.
 - **GPU.** Every check that draws holds the `gpu` lock. Scratch goes in `tmp/swarm-<milestone>/`; selected
-  evidence in `docs/evidence/SWARM/`.
-- **The closing record,** `docs/evidence/SWARM/TRACK-3-RECORD.md`, written in M8: what each of the five engine
+  evidence in `.orchestrate/evidence/SWARM/`.
+- **The closing record,** `.orchestrate/evidence/SWARM/TRACK-3-RECORD.md`, written in M8: what each of the five engine
   modules proved in the game and on which targets, and what was not run. It says track 3 is closed only once
   the owner has accepted the game, and quotes the acceptance.
 - **The owner's play.** M8.12 passes on the owner's acceptance and on nothing else. If the owner asks for

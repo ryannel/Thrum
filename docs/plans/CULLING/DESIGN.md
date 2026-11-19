@@ -14,7 +14,7 @@ The owner's planning task of 11 November 2026, word for word:
 > it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first
 > milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke
 > APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged
-> (docs/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
+> (.orchestrate/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change
 > that alters another module's exact baselines gets caught before landing.
 
 What the module must deliver comes from [the brief](../BRIEF.md):
@@ -27,13 +27,13 @@ What the module must deliver comes from [the brief](../BRIEF.md):
 - decision 3: numeric performance figures are baselines, not gates.
 
 This design reconciles work that already exists; it is not a blind study. Read for it: the four G3c evidence pages
-([camera culling](../../evidence/render/G3C-CAMERA-CULLING-2026-11-07.md),
-[field Frustum](../../evidence/render/G3C-FIELD-FRUSTUM-2026-11-07.md),
-[the occlusion experiment](../../evidence/render/G3C-OCCLUSION-EXPERIMENT-2026-11-07.md),
-[shipped Occlusion](../../evidence/render/G3C-OCCLUSION-M3A-2026-11-07.md)), the earlier session's uncommitted
+([camera culling](../../../.orchestrate/evidence/render/G3C-CAMERA-CULLING-2026-11-07.md),
+[field Frustum](../../../.orchestrate/evidence/render/G3C-FIELD-FRUSTUM-2026-11-07.md),
+[the occlusion experiment](../../../.orchestrate/evidence/render/G3C-OCCLUSION-EXPERIMENT-2026-11-07.md),
+[shipped Occlusion](../../../.orchestrate/evidence/render/G3C-OCCLUSION-M3A-2026-11-07.md)), the earlier session's uncommitted
 design and plan, and `crates/thrum-render/src/visibility*` and `synthetic/{camera_culling,mesh_route,buckets}.rs`
 on main. This file replaces that earlier design as the governing one. For the revision after
-[the design review](../../evidence/CULLING/design-review.md), also read: `runtime.rs` (`visual_prepare_inputs`,
+[the design review](../../../.orchestrate/evidence/CULLING/design-review.md), also read: `runtime.rs` (`visual_prepare_inputs`,
 `publish_visual`, `rebuild_contribution`), `runtime/visual.rs` and `rebuild_inner` in `thrum-asset-gpu`.
 
 ## Purpose and scope
@@ -126,7 +126,7 @@ claimed.
   draw is moved after the test and kept in slot order, because the split forward pass of the first experiment
   handed equal-depth pixels to the wrong surface (3,216 pixels in the tie witness). The alternatives costed then
   (a slot-ID target, a depth bias, reversed late order) are in
-  [the experiment's record](../../evidence/render/G3C-OCCLUSION-EXPERIMENT-2026-11-07.md).
+  [the experiment's record](../../../.orchestrate/evidence/render/G3C-OCCLUSION-EXPERIMENT-2026-11-07.md).
 - **Instance, then meshlet.** Both published chains cull whole instances first and clusters second. Thrum has both
   stages but in different modules; [one authority per entity](#one-visibility-authority-per-entity) settles which
   one answers for each entity.
@@ -262,7 +262,7 @@ buffer gains compute visibility; no second table is made.
 ### M3: one image under load
 
 Added 14 November 2026, after M3's builder stopped on [the module list's](../ARCHITECTURE.md#exact-baselines)
-rule 1. Its evidence is on branch `build/culling`, under `docs/evidence/CULLING/M3/` (`pinned-probes-d70c1a27/`,
+rule 1. Its evidence is on branch `build/culling`, under `.orchestrate/evidence/CULLING/M3/` (`pinned-probes-d70c1a27/`,
 `triangle-merging/`, `sample-dependency/`, `sample-frequency/`, `qualification-a5ab2143/`), and reaches main
 when that branch merges.
 
@@ -574,7 +574,7 @@ with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
   T2 engine capture and name its modes: `fixed` for stills, `realtime` for the pan, which is read as a sequence of
   submitted frames and [never as a timing](#frame-cadence).
 - **GPU.** Each GPU check holds one lock: `gpu` on the Mac, `chrome` for a run that starts Chrome. Scratch goes in `tmp/culling-<milestone>/`; selected evidence in
-  `docs/evidence/CULLING/`.
+  `.orchestrate/evidence/CULLING/`.
 - **Once, then `merge`.** Each proof is one run on the branch; the script's run on the merged tip is the proof
   of record, and [no job of the builder's](#no-landing-pipeline) chains proofs, guards the merge or follows it.
   M3.11's campaign is the one proof the builder takes on main, [after the merge](#what-a-campaign-stands-for).

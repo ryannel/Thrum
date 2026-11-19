@@ -1,7 +1,7 @@
 # T2-CAPTURE log
 
 - 2026-11-09 Owner scope correction removes console lock as an admission/pass condition from open M2.1 and applies the
-  same policy to M2.2 lifecycle capture. [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-1).
+  same policy to M2.2 lifecycle capture. [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-1).
 
 - 2026-11-09 Planner linked M2 to its prerequisite: `needs` `COOKED-DRAW:M1`, G5's capability-selected direct
   cooked draw path and the iOS route's cooked attach. Items, bar and counters are unchanged, and M2 stays blocked. The lead may `unblock` it once
@@ -9,31 +9,31 @@
 
 - 2026-11-09 Attempted M2 on the real locked iPhone 18 Pro / iOS 27.2 simulator. Shared booted-device
   install/container requests wedged; a fresh owned simulator boots and runs the ordinary diagnostic foreground route.
-  [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-2).
+  [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-2).
 
 
 - 2026-11-09 Built M1 with the existing renderer-owned tap, normal WebShell submission/lifecycle and V1 route.
   Fixed-time samples wait explicitly. Elapsed-time samples consume actual page time, initial pause release and
-  ordinary overload policy. [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-3).
+  ordinary overload policy. [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-3).
 
 
 - 2026-11-09 Fixed second-review M0.3/.8 with original-frame-hashed temporal XOR/Zstd, separate finite codec/I/O
   ownership and 256 MiB encoded burst reserve. Five native writer probes and thirty consecutive integrated sessions
   retain every original image; twenty are strictly disk-capped below the review's normal 280 MB/s floor.
-  [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-4).
+  [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-4).
 
-- 2026-11-09 Reclaimed M0 after [first milestone review](../../evidence/T2-CAPTURE/M0-review.md). Expanded the finite
+- 2026-11-09 Reclaimed M0 after [first milestone review](../../../.orchestrate/evidence/T2-CAPTURE/M0-review.md). Expanded the finite
   CPU burst reserve to 96 (six staging, 1 GiB pixel cap); five consecutive full writer probes and five consecutive
   corrected-build pans complete without omission, at unchanged 1920×1080/120 Hz workload.
-  [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-5).
+  [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-5).
 
 
 - 2026-11-09 Built M0 through the existing FrameHost graph, app/game semantic handler and ordinary presenter gate. The
   early writer probe selected uncached raw spill; integrated bursts selected bounded six/32 buffering under 512 MiB,
   preserving 1920×1080 and 120 requested opportunities/s.
-  [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-6).
+  [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-6).
 
-- 2026-11-09 Addressed [second-review F1/F2](../../evidence/T2-CAPTURE/design-review-2.md): Mac M2 now
+- 2026-11-09 Addressed [second-review F1/F2](../../../.orchestrate/evidence/T2-CAPTURE/design-review-2.md): Mac M2 now
   qualifies the current path after T2 M0 only; new Mac M3 owns post-G3t motion/cadence with an explicit Apple M3
   dependency. Recorded APPLE-TILE parked after its second failed design review in plans and consumers; no restart
   or resolution of its seven findings is claimed. Replaced Ground E image-quality comparison with worded pan
@@ -41,10 +41,10 @@
   with no new evidence. `./dev check-docs`, JSON/dependency validation and historical-proof preservation checks pass.
   Independent design re-review of this revision is owed; no agents launched.
 
-- 2026-11-09 Addressed [review F1–F10](../../evidence/T2-CAPTURE/design-review.md) without commissioning
+- 2026-11-09 Addressed [review F1–F10](../../../.orchestrate/evidence/T2-CAPTURE/design-review.md) without commissioning
   implementation. F1: Mac M2.3 owns real-window tap integration/proof. F2: M2.2 gains a capture-OFF traced cadence arm
   alongside two capture-ON observer/content arms. F3: Mac M2.4 explicitly commissions bounded trace diagnosis, with
-  trigger/stop rule. [Full entry](../../evidence/T2-CAPTURE/log-entries.md#entry-7).
+  trigger/stop rule. [Full entry](../../../.orchestrate/evidence/T2-CAPTURE/log-entries.md#entry-7).
 
 - 2026-11-09 Owner requested unattended visual/live-motion evidence and prohibited subagents. Settled T2 ownership
   with V1/V4/F1 producers and Mac/G3t consumers under C12; selected submitted-image tap plus distinct fixed-time and
@@ -72,11 +72,11 @@
   propagation through the Mac capture, native matrices and exact verifier; other defaults and comparisons hold.
   Actual Metal mixed-load control loses 163 images at a full ring; eight wait arms verify 2,245/2,245 originals.
   SDR/linear forced-full controls and seven exit-path tests pass; a stronger CPU load honestly expires the writer.
-  [Evidence and limits](../../evidence/T2-CAPTURE/M3/README.md) retain the records, source hashes and scope audit.
+  [Evidence and limits](../../../.orchestrate/evidence/T2-CAPTURE/M3/README.md) retain the records, source hashes and scope audit.
   The shared exact-images run after merge remains the proof of record; no branch-wide exact run was made.
 
 - 2026-11-18 SHOWCASE M5 now uses a 60 Hz native exit capture and the browser's animation-frame
   callbacks, with optional pass timings disabled in those arms. A bounded worker and raw spool
   keep Chrome transport and live compression out of the presentation callback. The native exit
   runner records overload recovery through the existing world-lane barriers and refuses affected
-  takes as continuous evidence. [Motion diagnostics](../../evidence/SHOWCASE/M5-motion-diagnostics.md)
+  takes as continuous evidence. [Motion diagnostics](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.md)

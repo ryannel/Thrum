@@ -33,7 +33,7 @@ Criteria: M1.1–M1.4 in the done-when file.
 
 No engine code is involved and no package is added: the concepts, their sprite sources, the script that
 composes the mock arenas and the check live in `examples/swarm/concepts/`, which is not a covered path, so this
-milestone needs no verifier run. [The planning probe](../../evidence/SWARM/planning-probe.md) gives the body
+milestone needs no verifier run. [The planning probe](../../../.orchestrate/evidence/SWARM/planning-probe.md) gives the body
 size the mocks use. Give each concept one attempt: most will be turned down. Do every other item before
 stopping for the owner's pick.
 

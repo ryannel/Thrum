@@ -3,7 +3,7 @@
 9 November 2026. **M1 claimed; all twelve items pass, independent lead review owed.**
 The revised Mac oracle, Mac/Chrome BASE preservation, simulator function/lifecycle/rotation with attributed denied permission preflights and sampled
 cooked visual proof are recorded in the [plan](PLAN.md) and
-[evidence](../../evidence/render/cooked-draw/README.md). PLATFORM-RUNTIME-IOS M7 supplies oriented scene sizing.
+[evidence](../../../.orchestrate/evidence/render/cooked-draw/README.md). PLATFORM-RUNTIME-IOS M7 supplies oriented scene sizing.
 This is a child design of
 [the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md), owned by G5 (`thrum-asset-gpu`). It sits under
 [C04](../../design/CONTRACTS.md#c04-feature-composition-and-quality--f2), [C06](../../design/CONTRACTS.md#c06-gpu-execution-and-lifetime--v1),
@@ -16,7 +16,7 @@ Plan: [plan](PLAN.md). Done when: [done-when file](DONE.json).
 
 The cooked scene must draw on every adapter Thrum runs on. The commissioned gap was its requirement for indirect
 execution: the iOS simulator's Metal adapter lacks it, blocking T2-CAPTURE M2
-([original evidence](../../evidence/render/t2-capture-m2/README.md)). The local builder checkpoint now draws the
+([original evidence](../../../.orchestrate/evidence/render/t2-capture-m2/README.md)). The local builder checkpoint now draws the
 cooked valley on the simulator, but M1 remains unaccepted and T2-CAPTURE M2 stays gated on it.
 
 The consumers are the V1 game on all three targets, T2-CAPTURE M2, which needs the cooked valley on the simulator,
@@ -108,7 +108,7 @@ These are geometry and visibility arguments, not a guarantee of identical shadin
 At checkpoint `9c230ff4`, Apple M3 Max / Metal produced 1,506 differing final pixels (maximum channel delta 18)
 along terrain triangle edges. Keeping every meshlet left the selected indirect image unchanged, while one full-range
 indirect command per mesh matched direct exactly. Same-path repeats were exact. The
-retained controls (the builder's checkpoint `9c230ff4`, `docs/evidence/render/cooked-draw/README.md`, integrated with M1) establish partition dependence for that view,
+retained controls (the builder's checkpoint `9c230ff4`, `.orchestrate/evidence/render/cooked-draw/README.md`, integrated with M1) establish partition dependence for that view,
 not a culling defect or the low-level cause. Pixel-quad derivatives and draw-boundary ordering remain hypotheses.
 
 Research checked 9 November 2026: [WGSL §§15.6.2 and 15.7.4.1](https://www.w3.org/TR/WGSL/#derivatives) describe

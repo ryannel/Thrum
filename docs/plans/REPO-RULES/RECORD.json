@@ -2,9 +2,9 @@
   "module": "REPO-RULES",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/REPO-RULES/design-review.md",
+    "review": ".orchestrate/evidence/REPO-RULES/design-review.md",
     "commit": "0c23368e9e4962d74431a7cc109bfd58c5faf1e2",
-    "hash": "2fc7579ef58503d4bb116ff029e9bcbfc0b9d6009a62ef7d40bf0e8d085e0c63",
+    "hash": "baad289d6b0c3e84abef42043af73d347221ffff4bc7215ef6743139ebc48a7f",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "pass",
           "commit": "4426db09669c847f5d138505592fd366b3b44859",
-          "review": "docs/evidence/REPO-RULES/M1-review.md",
+          "review": ".orchestrate/evidence/REPO-RULES/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -101,7 +101,7 @@
       "done": {
         "by": "review",
         "commit": "4426db09669c847f5d138505592fd366b3b44859",
-        "review": "docs/evidence/REPO-RULES/M1-review.md",
+        "review": ".orchestrate/evidence/REPO-RULES/M1-review.md",
         "checked": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
         "at": "2026-11-16T03:49:00Z"
       }
@@ -112,7 +112,7 @@
         {
           "verdict": "pass",
           "commit": "38d9019b78a7ea4e893ceab0ecb7f73a262dbb7a",
-          "review": "docs/evidence/REPO-RULES/M2-review.md",
+          "review": ".orchestrate/evidence/REPO-RULES/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -180,7 +180,7 @@
       "done": {
         "by": "review",
         "commit": "38d9019b78a7ea4e893ceab0ecb7f73a262dbb7a",
-        "review": "docs/evidence/REPO-RULES/M2-review.md",
+        "review": ".orchestrate/evidence/REPO-RULES/M2-review.md",
         "checked": "382cefab4d21d89cc746a7263fc0e907687af9c8",
         "at": "2026-11-16T09:22:40Z"
       }
@@ -243,7 +243,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/REPO-RULES/design-review-1.md",
+      "review": ".orchestrate/evidence/REPO-RULES/design-review-1.md",
       "commit": "11f781ec2a7d843ace86fba5145d15ec3647e2ce",
       "hash": "d4708147bb7b60fd76c9c9dd3d4bf8f0eb93cd821b1aa569e07e0a8c8a6be1c3",
       "by": "review",
@@ -266,7 +266,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/REPO-RULES/design-review-2.md",
+      "review": ".orchestrate/evidence/REPO-RULES/design-review-2.md",
       "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
       "hash": "dff233b0c643f333992a87bbb296c20bcd1b55c1406c9d673e6973b7767cb480",
       "by": "review",

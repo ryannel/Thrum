@@ -17,39 +17,39 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
 - Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
 - Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.
-- Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. The check of 17 November (`docs/evidence/ATMOSPHERE/haze-kind-check.md`) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
+- Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. The check of 17 November (`.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md`) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
 - Assumption: with its false strip gone (M10), a balloon casts no shadow on ground beyond the Sun's shadow maps, about 512 m from the camera in the exit scene. The other choices are a longer reach for that scene, which `SHOWCASE` may set and its M8 judges, or a new far-shadow method for things in the air, which is a re-plan with its own cost.
 - Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out. `SHOWCASE` M9 fixes the lip and the sunrise stop in the valley's content, and M6 waits for it.
 
 ## M1 The valley remains legible at moonless midnight: done
-[record and reviews](../../evidence/ATMOSPHERE/M1-M4-records.md#m1-the-valley-remains-legible-at-moonless-midnight-done)
+[record and reviews](../../../.orchestrate/evidence/ATMOSPHERE/M1-M4-records.md#m1-the-valley-remains-legible-at-moonless-midnight-done)
 
 ## M2 Stars emerge as the observer turns and time advances: done
-[record and reviews](../../evidence/ATMOSPHERE/M1-M4-records.md#m2-stars-emerge-as-the-observer-turns-and-time-advances-done)
+[record and reviews](../../../.orchestrate/evidence/ATMOSPHERE/M1-M4-records.md#m2-stars-emerge-as-the-observer-turns-and-time-advances-done)
 
 ## M3 The west lookout’s shadow crosses the ground without a flash
 
 <a id="m3-sunset-crossing"></a>
 
 A parked spike, outside the done-when file: the stock graph ships and M6 does not judge the moving spur edge.
-[The record](../../evidence/ATMOSPHERE/M1-M4-records.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-parked-spike)
+[The record](../../../.orchestrate/evidence/ATMOSPHERE/M1-M4-records.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-parked-spike)
 holds its criteria D1 to D3, the proposed reference clip, the diagnosis handoff, the finished work and the work
 left. It re-enters only as a new commission against those criteria.
 
 ## M4 Exact finite-disk shadow reference match
 
 A deferred bounded spike, outside the done-when file. M3 and the other V1 gates proceed without it.
-[The record](../../evidence/ATMOSPHERE/M1-M4-records.md#m4-exact-finite-disk-shadow-reference-match-deferred-bounded-spike)
+[The record](../../../.orchestrate/evidence/ATMOSPHERE/M1-M4-records.md#m4-exact-finite-disk-shadow-reference-match-deferred-bounded-spike)
 holds its criteria, the finished work and the work left.
 
 ## M5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once: done
-[review](../../evidence/ATMOSPHERE/M5-review.md)
+[review](../../../.orchestrate/evidence/ATMOSPHERE/M5-review.md)
 
 ## M9 Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome
-[review](../../evidence/ATMOSPHERE/M9-review.md)
+[review](../../../.orchestrate/evidence/ATMOSPHERE/M9-review.md)
 
 ## M10 A balloon adrift over the valley no longer lays a dark bar across the far ground or blinks one on and off: beyond the Sun's shadow maps, only the ground and what stands on it cast shadow
-[review](../../evidence/ATMOSPHERE/M10-review.md)
+[review](../../../.orchestrate/evidence/ATMOSPHERE/M10-review.md)
 
 ## M6 The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes
 
@@ -67,7 +67,7 @@ texel load, and a pass the test owns stores the probe.
 `split_sum_reads_stored` and `reflection_reads_stored_cube`, which the checks filter on.
 
 The branch `build/atmosphere` holds those tests, the capture drivers and the first captures;
-[the handoff](../../evidence/ATMOSPHERE/M6-handoff.md) says what they showed. `SHOWCASE` M9 has since changed
+[the handoff](../../../.orchestrate/evidence/ATMOSPHERE/M6-handoff.md) says what they showed. `SHOWCASE` M9 has since changed
 the valley's terrain and sunrise hour, so take the stops, the motion and the cost pair again on main's valley.
 [The ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) covers a look change that moves `APPLE-TILE`'s
 references.
@@ -86,7 +86,7 @@ present make sure the volume does not take it. Record M7.1's base before changin
 picture that looks wrong, and no item compares the volume with it. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
 terminal pair. `scripts/view_volume.py` is created here. The aerosol's kind makes its eight band values differ;
 the f64 reference in `atmosphere/gpu/tests/reference/` takes one Mie value per band, and
-[the haze-kind check](../../evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
+[the haze-kind check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md) holds a probe that sets them band by band. Part III says which grids band in thick, coloured haze; the builder chooses the grid from the stills.
 
 ## M8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
 

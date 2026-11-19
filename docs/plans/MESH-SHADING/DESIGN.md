@@ -2,7 +2,7 @@
 
 17 November 2026, revised 18 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac) · [the brief](../BRIEF.md) ·
-[planning probe](../../evidence/RAY-TRACING/planning-probe/README.md). C04, C05, C06, C07 and C12 in
+[planning probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md). C04, C05, C06, C07 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md), [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md),
 [the cooked draw design](../COOKED-DRAW/DESIGN.md) and
 [the owner's bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) govern.
@@ -123,7 +123,7 @@ Read for this design, 17 November 2026:
 - **The locked wgpu reaches the stages on Metal.** `wgpu-hal` 30.0.1's Metal adapter offers
   `EXPERIMENTAL_MESH_SHADER` on Apple GPUs, creates `MTLMeshRenderPipelineDescriptor` pipelines and records
   `drawMeshThreadgroups`; naga parses `enable wgpu_mesh_shader` WGSL and writes it to MSL. On this Mac
-  [the planning probe](../../evidence/RAY-TRACING/planning-probe/README.md) drew 4,096 meshlets through 64
+  [the planning probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) drew 4,096 meshlets through 64
   object workgroups, rejected half in the object stage from a storage table, read vertices from a storage
   buffer in the mesh stage, and every meshlet was right. The adapter allows 256 vertices and 256 primitives
   for each mesh workgroup, which holds the cooker's 64 and 124, and 1,048,576 mesh workgroups for each object
@@ -388,7 +388,7 @@ So a pass rasterises only the meshlets that reach it, and what it stores is what
 
 ### Check that it can work
 
-- **The API path.** [The probe](../../evidence/RAY-TRACING/planning-probe/README.md) ran object and mesh
+- **The API path.** [The probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) ran object and mesh
   stages with a payload, a uniform and storage buffers on this Mac through the locked wgpu.
 - **Limits.** The cooker's meshlets fit a mesh workgroup's output. An object workgroup may launch far more
   mesh workgroups than it owns meshlets. The payload holds 16,352 bytes, and a run of survivor indices is a
@@ -500,7 +500,7 @@ about 25% worse than its last record, growth that is not linear in what it shoul
   proved from its report (M3.2), not from pictures.
 - Every timing of this module is a tripwire taken under load, M3's pair included: it records the load and
   fails only on a missing measurement. No sitting with other builders paused is asked for.
-- Scratch goes in `tmp/mesh-shading-<milestone>/`, selected evidence in `docs/evidence/MESH-SHADING/`.
+- Scratch goes in `tmp/mesh-shading-<milestone>/`, selected evidence in `.orchestrate/evidence/MESH-SHADING/`.
 
 ## Open questions
 

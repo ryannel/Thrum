@@ -4,8 +4,8 @@
 [Brief](BRIEF.md) · [Plan](PLAN.md) · [Done when](DONE.json) ·
 [Boundary](../../design/decisions/G3T-METAL-BOUNDARY.md) · [G4 consumer](../APPLE-PRESENTATION/DESIGN.md).
 C04/C06/C07/C08/C12 in [CONTRACTS](../../design/CONTRACTS.md) govern.
-The lead commissioned this scoped re-plan on 9 November after the [second design review](../../evidence/APPLE-TILE/design-review-2.md)
-returned seven findings at `224b58a1`. The findings are answered in [the disposition table](../../evidence/APPLE-TILE/replan-handoff-2026-11-11.md#disposition-of-second-review-findings). Independent design
+The lead commissioned this scoped re-plan on 9 November after the [second design review](../../../.orchestrate/evidence/APPLE-TILE/design-review-2.md)
+returned seven findings at `224b58a1`. The findings are answered in [the disposition table](../../../.orchestrate/evidence/APPLE-TILE/replan-handoff-2026-11-11.md#disposition-of-second-review-findings). Independent design
 approval is owed to the loop; M0 remains parked and no implementation, qualification or unpark is claimed.
 This reconciles current sources rather than claiming a blind design.
 
@@ -51,7 +51,7 @@ Inspected on 9 November 2026; these are API/architecture evidence, not measureme
   public-API path only when the compiled variant has no later reader. More recent API changes do not change our lockfile.
 - [Apple WWDC20 10603](https://developer.apple.com/videos/play/wwdc2020/10603/), transcript's memory-bandwidth discussion:
   store only future pass inputs; compression and caches separate logical traffic from device-memory traffic. The
-  [Thrum probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md) supplies the actual per-encoder counter method.
+  [Thrum probe](../../../.orchestrate/evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md) supplies the actual per-encoder counter method.
 - [wgpu 30.0.1 CommandEncoder](https://docs.rs/wgpu/30.0.1/wgpu/struct.CommandEncoder.html#method.as_hal_mut),
   raw access safety, rechecked for this re-plan: do not destroy/end the command buffer or overlap recording.
   The locked core's Raw/Wgpu distinction requires a dedicated whole raw encoder.
@@ -393,7 +393,7 @@ windowed-tap integration/correspondence, which this observer does not require or
 proves response only. Agent runs/reviews after setup; do not automate grant changes. Missing setup leaves these rows open
 while unblocked work proceeds. Mac M3 separately owns attended Instruments/panel qualification with capture OFF.
 
-Use `tmp/g3t-<milestone>/` for scratch and selected `docs/evidence/render/` records under the storage rules. Retain
+Use `tmp/g3t-<milestone>/` for scratch and selected `.orchestrate/evidence/render/` records under the storage rules. Retain
 lossless sources, provenance, exact diffs and 1x views; inspect full frames and native-size crops for Sun, stars,
 local lights, shadows, mirrors, cut/skip/history and replacement. Exact bytes do not replace visual review.
 Performance baselines use capture OFF, paired capture ON observer-cost arms, A/A and alternating recipes. Any

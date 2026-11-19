@@ -5,4 +5,4 @@ The cooked draw path for adapters without indirect execution, owned by G5 under
 [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
 ## M1 Cooked scene draws on adapters without indirect execution, selected from the capability record: done
-[review](../../evidence/COOKED-DRAW/M1-review.md)
+[review](../../../.orchestrate/evidence/COOKED-DRAW/M1-review.md)

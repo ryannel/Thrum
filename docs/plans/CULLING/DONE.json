@@ -12,9 +12,9 @@
           "lock": "gpu",
           "ask": "Read the tests this check runs. Do they compare every frame with bucket-ordered Direct, assert that Occlusion is the resolved mode and hides at least one slot, and fail under each mutant the design names: a two-sided prepass on a back-culled open mesh, and the final draw reading the prepass list?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M1.md",
+          "evidence": ".orchestrate/evidence/CULLING/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M1-review.md",
+          "review": ".orchestrate/evidence/CULLING/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -23,9 +23,9 @@
           "check": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M1.md",
+          "evidence": ".orchestrate/evidence/CULLING/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M1-review.md",
+          "review": ".orchestrate/evidence/CULLING/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -35,9 +35,9 @@
           "lock": "gpu",
           "ask": "Which witness exercises the depth slack and which the footprint widening? Does the evidence hold the zero-depth-tolerance mutant failing on the mesh tie witness (a cube witness does not answer this), and for the widening either a no-widening mutant failing on its witness or the poses searched without finding one?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M1.md",
+          "evidence": ".orchestrate/evidence/CULLING/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M1-review.md",
+          "review": ".orchestrate/evidence/CULLING/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -47,9 +47,9 @@
           "lock": "gpu",
           "ask": "Does a test in this target resize the surface and replace the device while slots are hidden, and compare the next frames with the oracle?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M1.md",
+          "evidence": ".orchestrate/evidence/CULLING/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M1-review.md",
+          "review": ".orchestrate/evidence/CULLING/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -58,9 +58,9 @@
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M1.md",
+          "evidence": ".orchestrate/evidence/CULLING/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M1-review.md",
+          "review": ".orchestrate/evidence/CULLING/M1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -84,9 +84,9 @@
           "lock": "gpu",
           "ask": "Trace the mode from the request to the prepared pipelines. Is the capability record its only input, and do the existing equality tests assert the resolved mode, so a fallback cannot pass as culling?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M2.md",
+          "evidence": ".orchestrate/evidence/CULLING/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M2-review.md",
+          "review": ".orchestrate/evidence/CULLING/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -95,9 +95,9 @@
           "check": "python3 scripts/culling_sim.py",
           "lock": "gpu",
           "target": "ios-sim",
-          "evidence": "docs/evidence/CULLING/M2.md",
+          "evidence": ".orchestrate/evidence/CULLING/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M2-review.md",
+          "review": ".orchestrate/evidence/CULLING/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -106,9 +106,9 @@
           "check": "node scripts/check_v1_browser.mjs --case field-mixed-oracle",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CULLING/M2.md",
+          "evidence": ".orchestrate/evidence/CULLING/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M2-review.md",
+          "review": ".orchestrate/evidence/CULLING/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -116,9 +116,9 @@
           "statement": "The mixed-mesh field's default mode follows the design's rule: paired whole-GPU rows for Direct, Frustum and Occlusion at 1920x1080, behind cover and in the open, from two separate runs, are recorded with their load, and the default is Occlusion only if it wins in both.",
           "ask": "Do the two retained run logs support the default the code sets, by the design's rule? Does the bench assert that Occlusion's prepass is non-empty and that it hides slots, so a row cannot repeat the fault that withdrew the rows of 8 November?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M2.md",
+          "evidence": ".orchestrate/evidence/CULLING/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M2-review.md",
+          "review": ".orchestrate/evidence/CULLING/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -127,9 +127,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M2.md",
+          "evidence": ".orchestrate/evidence/CULLING/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M2-review.md",
+          "review": ".orchestrate/evidence/CULLING/M2-review.md",
           "builder_result": "pass"
         }
       ],
@@ -154,7 +154,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -165,7 +165,7 @@
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -175,7 +175,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -186,7 +186,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -197,7 +197,7 @@
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -208,7 +208,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -216,9 +216,9 @@
           "statement": "On the Mac, with the valley's default culling mode, no frame the game submits while it runs in real time shows a culling artifact: nothing pops in or out, flickers or is missing at a frame edge during a fast yaw, or at an occluder's silhouette when the camera steps out of cover. The item is about what each submitted frame holds. How fast or how evenly the frames arrive is not part of it.",
           "inspect": "Capture the valley with T2 engine capture, with the game reporting its default mode: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive submitted frames at 1x. Use a realtime capture that holds every submitted frame, because an omitted frame cannot show what it held. Read that capture as a sequence of images only. It is taken under load with the capture observer on, so its submission intervals, gaps and frame rate count neither for nor against this item, and the target's full-refresh edge condition is not run for it. The design's 'Frame cadence' section says who judges smoothness.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/geometry/README.md; docs/evidence/CULLING/M3/geometry/audit.json; docs/evidence/CULLING/M3/replan/motion-selection.tar; docs/evidence/CULLING/M3/replan/field-and-fixed-selection.tar",
+          "evidence": ".orchestrate/evidence/CULLING/M3/geometry/README.md; .orchestrate/evidence/CULLING/M3/geometry/audit.json; .orchestrate/evidence/CULLING/M3/replan/motion-selection.tar; .orchestrate/evidence/CULLING/M3/replan/field-and-fixed-selection.tar",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -226,9 +226,9 @@
           "statement": "In Chrome, with the valley's default culling mode, no frame the page submits while it runs in real time shows a culling artifact: nothing pops in or out, flickers or is missing at a frame edge or at an occluder's silhouette on the valley route. The item is about what each submitted frame holds. How fast or how evenly the frames arrive is not part of it.",
           "inspect": "Capture the valley in Chrome with T2 engine capture, with the page reporting its default mode: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive submitted frames at 1x. Use a realtime capture that holds every submitted frame, because an omitted frame cannot show what it held. Read that capture as a sequence of images only. Its recorder runs headless on a 60 Hz timer, under load, so its submission intervals, gaps and frame rate count neither for nor against this item, and the target's full-refresh edge condition is not run for it. The design's 'Frame cadence' section says who judges smoothness.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CULLING/M3/geometry/README.md; docs/evidence/CULLING/M3/geometry/audit.json; docs/evidence/CULLING/M3/replan/motion-selection.tar; docs/evidence/CULLING/M3/replan/field-and-fixed-selection.tar",
+          "evidence": ".orchestrate/evidence/CULLING/M3/geometry/README.md; .orchestrate/evidence/CULLING/M3/geometry/audit.json; .orchestrate/evidence/CULLING/M3/replan/motion-selection.tar; .orchestrate/evidence/CULLING/M3/replan/field-and-fixed-selection.tar",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -238,7 +238,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -249,7 +249,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -259,7 +259,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -269,7 +269,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         },
         {
@@ -279,7 +279,7 @@
           "target": "mac-metal",
           "evidence": "",
           "verdict": "pass",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": ".orchestrate/evidence/CULLING/M3-review.md",
           "builder_result": "open"
         }
       ],

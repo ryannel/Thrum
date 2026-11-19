@@ -6,7 +6,7 @@
   waterline, keeping it out of chart-owned water. All 32 water-model tests,
   strict Clippy and documentation checks pass, including mirrored/translated
   seed cells, remote diagonal necks, reversible stages, surface answers and
-  stage/sea spill refusals. [M1 evidence](../../evidence/WATERS/M1.md) identifies
+  stage/sea spill refusals. [M1 evidence](../../../.orchestrate/evidence/WATERS/M1.md) identifies
   CPU and Mac/Chrome proofs; GPU water quality and performance remain unclaimed.
 
 - 2026-11-15 Fixed both verified findings from the first M1 review. Triangle
@@ -14,7 +14,7 @@
   fallback. Continuous map lookup now checks monotone reach inside a bilinear
   cell, so a supported crest cannot lend support downhill. All 26 water-model
   tests pass, including below-fallback overlap order and subcell sea, basin and
-  chart ridge regressions. The retained [M1 proof](../../evidence/WATERS/M1.md)
+  chart ridge regressions. The retained [M1 proof](../../../.orchestrate/evidence/WATERS/M1.md)
   identifies CPU and exact-baseline source revisions; no water GPU visuals or
   device performance are claimed.
 
@@ -23,7 +23,7 @@
   the sea-model tests, strict Clippy and documentation checks; all passed.
   Re-read the independent map, gains, conformance, joins and swash oracles and
   the provenance declaration. The fresh exact verifier is running on this source;
-  [the retained target record](../../evidence/WATERS/M1-baselines.json) identifies
+  [the retained target record](../../../.orchestrate/evidence/WATERS/M1-baselines.json) identifies
   the complete pass once promoted, separately from the earlier failed captures.
 
 - 2026-11-15 Resolved the older CREATOR, CULLING and CLOUDS link repairs by
@@ -35,19 +35,19 @@
 - 2026-11-15 CPU proofs passed on `32382d0a`. The exact verifier then stopped at
   an incomplete native route capture: 434 submissions, 292 images and 142 ring
   omissions, with host load near 100. This is not a fresh baseline pass.
-  [Diagnostic record](../../evidence/WATERS/M1-runtime-admission.json) retains
+  [Diagnostic record](../../../.orchestrate/evidence/WATERS/M1-runtime-admission.json) retains
   the identity and observed contention; references and comparisons are unchanged.
 
 - 2026-11-14 Resumed M1 with 91 GiB free, inspected the CPU oracle tests and
   provenance, and resolved the integration-only handoff conflict on rebase.
   The GPU-locked driver refreshes target proofs before the official merge;
-  [M1 evidence](../../evidence/WATERS/M1.md) retains the source identities.
+  [M1 evidence](../../../.orchestrate/evidence/WATERS/M1.md) retains the source identities.
 
 - 2026-11-14 After owned cache cleanup, retry `20261114-142437-51691` rebuilt all
   verifier artifacts and cooked content on `3ec5e9f6`, then the first native
   capture refused less than 16 GiB free. The observed remainder was 15.9546 GiB.
-  [Admission record](../../evidence/WATERS/M1-disk-admission.json) and
-  [handoff](../../evidence/WATERS/M1-handoff.md) preserve the source and remaining
+  [Admission record](../../../.orchestrate/evidence/WATERS/M1-disk-admission.json) and
+  [handoff](../../../.orchestrate/evidence/WATERS/M1-handoff.md) preserve the source and remaining
   requirement. Shared disk headroom is needed for M1.11 and integration; no fresh
   baseline pass or merge is claimed. Owned rebuilt cache is selected for cleanup.
 
@@ -63,11 +63,11 @@
   62's tick/alpha identity (182/0 versus 181/1). This suggests an interpolation
   boundary variation; its cause is unconfirmed. The failed candidate is retained
   in `tmp/baseline-guard/verify-20261114T123313.738319Z/` for diagnosis; references
-  and tolerances are unchanged. [Continuation](../../evidence/WATERS/M1-handoff.md).
+  and tolerances are unchanged. [Continuation](../../../.orchestrate/evidence/WATERS/M1-handoff.md).
 
 - 2026-11-14 Resumed integration: both native baseline matrices and all four
   Chrome sets passed on `343e6bd3` in 910.41 seconds; retained the fresh record and
-  CPU test log in [M1 evidence](../../evidence/WATERS/M1.md). The first merge gate
+  CPU test log in [M1 evidence](../../../.orchestrate/evidence/WATERS/M1.md). The first merge gate
   found two upstream APPLE-TILE handoff links to evidence not yet retained on main.
   Preserved their paths as text so repository link checks can run without claiming
   those artifacts are present. M1 criteria and builder results are unchanged.
@@ -75,7 +75,7 @@
 - 2026-11-14 M1 builder implemented the CPU map, stages, joined rows, wave limits,
   surface oracle, triangle bed and conformance harness. All 24 water-model and ten
   sea-model tests passed, with strict Clippy and documentation checks; an analytic
-  plane test covers the corrected chart level slope. [Evidence](../../evidence/WATERS/M1.md).
+  plane test covers the corrected chart level slope. [Evidence](../../../.orchestrate/evidence/WATERS/M1.md).
   Both native matrices and all four Chrome baselines passed on `2aba4634`.
   No GPU water surface, visual quality or device-performance result is claimed.
 
@@ -92,7 +92,7 @@
   cohesively." Earlier the same day, of clouds: "The agent should look at that work from first principles and
   figure out how to design the best possible atmospheric system for the thrum game engine."
 - 2026-11-14 Planned from the lead's task on those words: one design for all water, a plan and a done-when file
-  with eleven milestones. The module is named `WATERS` because `docs/evidence/water` already holds the 1 November
+  with eleven milestones. The module is named `WATERS` because `.orchestrate/evidence/water` already holds the 1 November
   water evidence and this Mac's file system does not tell `WATER` from `water`.
 - 2026-11-14 Planner's decisions. Water is a map (where it lies and how it moves in bulk), waves on it, material
   it carries and one optics, and each kind of water is data for those. Bodies are a sea, a basin or a chart.
@@ -107,7 +107,7 @@
   those claims reach was written again, and items were added for the map, a lake and a beach (M4), floating
   inland, rings at depth, shore foam, the bed and the shore's reflection, and a hand-made channel (M9) that
   proves the chart `RIVERS` will write. `CLOUDS` M11 now waits on M8 here.
-- 2026-11-14 Planner's reproductions, in [the evidence folder](../../evidence/WATERS/design-proof/). Part H:
+- 2026-11-14 Planner's reproductions, in [the evidence folder](../../../.orchestrate/evidence/WATERS/design-proof/). Part H:
   depth bins a factor of two apart carry waves within 1.6% of the finite-depth speed and take under 0.3% of
   their height a second; one operator at a pond's mean depth is 23% fast in its shallows. Part I: at 10 m/s a
   lake with 1 km of fetch takes 0, 0.25, 1 and 1 of the four wave layers, and 1 m of depth holds a 2.1 m sea to
@@ -119,7 +119,7 @@
 - 2026-11-14 Not read for the design: the Far Cry 5 water talk, Uncharted 4's rapids talk, Fluid Flux's
   documentation and Barnes 2014. Unreal's, HDRP's and Crest's pages were read as fetched summaries. Thornton and
   Guza's ratio and the JONSWAP growth relations are from memory; part I reproduces the second.
-- 2026-11-14 [Design review](../../evidence/WATERS/design-review.md): Design Changes Requested, four Must Fix
+- 2026-11-14 [Design review](../../../.orchestrate/evidence/WATERS/design-review.md): Design Changes Requested, four Must Fix
   findings. Hard precedence left a step where two bodies meet; zeroing dry cells did not stop the FFT step
   crossing land; the depth limit pinned the waterline the items asked to move; and the depth bins neither
   covered a mixed window nor were the operator the proof measured.
@@ -142,7 +142,7 @@
 - 2026-11-14 The review's suggestions, both taken. Basin merging is a named seam question in `PUDDLES`' brief,
   and the plan's order now matches the module list (`RIVERS` is planned before M9). Foam on the lake's shore is
   in proportion to the power its waves lose, not none: M7.5 and M7.9 say so.
-- 2026-11-14 Second [design review](../../evidence/WATERS/design-review.md): Design Changes Requested, two Must
+- 2026-11-14 Second [design review](../../../.orchestrate/evidence/WATERS/design-review.md): Design Changes Requested, two Must
   Fix findings. The swash depth, one number for each body, sat outside the join's mix, so the surface after its
   depth limit could step at a shallow mouth (0.21 m in its case); and M7.9 asked foam to ride the sheet up the
   sand while the transport said nothing carries it shoreward.
@@ -170,7 +170,7 @@
 - 2026-11-14 Re-planned on those words. Replaced: "surf is not planned", "scenery off screen is not reflected;
   no module plans the probe", and "a camera that stays above the water". Kept: one water surface in a column,
   and no caustics, which the owner did not name. Cues W7 to W9 added, with their research and reproductions
-  N to Q in [the evidence folder](../../evidence/WATERS/design-proof/) (`surf_view_proof.py`).
+  N to Q in [the evidence folder](../../../.orchestrate/evidence/WATERS/design-proof/) (`surf_view_proof.py`).
 - 2026-11-14 Surf, decided. Each long wave carries a phase lag solved over the bed (an eikonal first arrival,
   for the lattice's eight directions, wavelengths a factor of two apart and stages 0.5 m apart), a shoaling
   height and an exposure, and a crest takes one breaker section by its breaking index, as Horizon bakes one. The depth
@@ -205,7 +205,7 @@
   principles and current practice. Do not change WATERS M1, which is being built."
 - 2026-11-14 Re-planned on that task. Replaced: "no caustics and no shafts of light", "the exposure scale is
   the sky's, so deep water is dark" and risk 24 as a declared defect. Cues W10 to W12 added, with their
-  research and reproductions R to T in [the evidence folder](../../evidence/WATERS/design-proof/)
+  research and reproductions R to T in [the evidence folder](../../../.orchestrate/evidence/WATERS/design-proof/)
   (`under_light_proof.py`). Still not built, and now an assumption: drops on the lens, particles and bubbles.
 - 2026-11-14 Light under water, decided: one caustic field. The surface's light is carried down its refracted
   rays onto thirteen depths a factor of √2 apart, each cell spread over where it lands, blurred by depth times
@@ -269,14 +269,14 @@
   ([its design](../SCENE-VIEWS/DESIGN.md#what-a-view-owns-and-what-it-shares)). A mirror's plane here is a
   body's level, so no text, item or bound here changed. For M14's builder: near sea level `ATMOSPHERE`'s
   product thins haze just above the horizon, in the main view and in a mirror alike
-  ([part F](../../evidence/SCENE-VIEWS/design-proof/README.md)), so M14.2's panel wants a line well above it.
+  ([part F](../../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)), so M14.2's panel wants a line well above it.
 - 2026-11-14 `ATMOSPHERE` planned its M9, [the air at the ground](../ATMOSPHERE/DESIGN.md#the-air-at-the-ground):
   the aerial pass carries a line of sight on under the model's ground, so the sea and whatever stands just
   above its horizon take the haze of their own lines. M2 now waits for `ATMOSPHERE:M9`, because M2.2 and M2.3
   judge the horizon and the far sea's haze from 2 m and 40 m, where the old stop took up to 72% of the sea's
   in-scatter, in bands that moved with the camera. No text, item or bound here changed. The note above for
   M14's builder holds only until M9 is Done.
-- 2026-11-14 [The design review of the surf, mirror and underwater revisions](../../evidence/WATERS/design-review.md)
+- 2026-11-14 [The design review of the surf, mirror and underwater revisions](../../../.orchestrate/evidence/WATERS/design-review.md)
   asked for changes, three Must Fix. Re-planned; M1 is untouched. (1) Water that land encloses has no path to
   the bed's edge, so its long waves now start at its own waterline where that faces the wave, and their
   exposure is the share of the declared fetch upwind; the sea's rule and its lee shelter stand. M12.1 says
@@ -288,13 +288,13 @@
   for the component's own wavelength and stage, within 7% and 13% where the design measured 5.0% and 8.0%,
   and a component with no blend must fail. Suggestions taken: the foam's conservation is scoped to cover
   under the cap, and the caustic mask's use of the level is declared. The figures are parts U to W of
-  [the design proof](../../evidence/WATERS/design-proof/README.md).
-- 2026-11-14 [The fifth design review](../../evidence/WATERS/design-review.md) asked for changes, one Must Fix:
+  [the design proof](../../../.orchestrate/evidence/WATERS/design-proof/README.md).
+- 2026-11-14 [The fifth design review](../../../.orchestrate/evidence/WATERS/design-review.md) asked for changes, one Must Fix:
   the scan of the throw inverts a straight section and not the assembled sheet, where a surface arrives from
   beside the line through the point and from an envelope larger than the point's. Re-planned; M1 is untouched.
   The highest surface is now a cut of the sheet: forward evaluation on a 0.25 m lattice of rest places fixed in
   the world, over the cells within a throw reach that needs no wave evaluated, refined on the assembled map.
-  Part X of [the design proof](../../evidence/WATERS/design-proof/README.md) holds it to a cut eight times
+  Part X of [the design proof](../../../.orchestrate/evidence/WATERS/design-proof/README.md) holds it to a cut eight times
   finer on three sheets, the review's among them. Continued below.
 - 2026-11-14 The same re-plan, continued. M12.12 is new and takes the highest surface from M12.6; M13.3 and
   M15.1 put their lip under two crossing trains; M12.8 and M13.12 record the cut's cost, about 1,200 to 5,500
@@ -305,27 +305,27 @@
   entries from today. M11.1 is unchanged. The design is unchanged.
 - 2026-11-15 Built M12's CPU lag ladder, sector exposure, shoaling, breaker section and highest-sheet cut,
   with optional surf on the existing map and shared join weights. No GPU surf or game content was added.
-  [CPU proof](../../evidence/WATERS/M12.md) records 59 passing model tests, strict Clippy and independent
+  [CPU proof](../../../.orchestrate/evidence/WATERS/M12.md) records 59 passing model tests, strict Clippy and independent
   Snell, fetch, swash and fine forward-cut references, including the actual prepared surface and reach.
-  [Cost](../../evidence/WATERS/M12-preparation.md) records preparation bytes/time and six column probes.
+  [Cost](../../../.orchestrate/evidence/WATERS/M12-preparation.md) records preparation bytes/time and six column probes.
   Earlier incomplete baseline captures remain diagnostic history; the current shared main-branch
   `exact-images` check supplies M12.10's proof after integration. GPU surf and its appearance remain for M13.
 - 2026-11-16 M12's post-merge gate exposed a watcher publication timeout. Added bounded stat-cache
   reconciliation to recover delayed or absent notifications, retaining the original debounce and test deadline.
-  [Recovery proof](../../evidence/WATERS/M12-watch-recovery.md) records the native trace, no-notification
+  [Recovery proof](../../../.orchestrate/evidence/WATERS/M12-watch-recovery.md) records the native trace, no-notification
   edit/add/remove/idle regression, cooker regressions and strict Clippy. The water model is unchanged.
 - 2026-11-16 Reconciled M12's retained watcher regression with creator's landed shared fixture and adaptive
   sweep API after the merge gate found duplicate helper types. The original ten-second watchdog remains.
-  [Integration proof](../../evidence/WATERS/M12-watch-recovery.md#integration-with-the-creators-sweep)
+  [Integration proof](../../../.orchestrate/evidence/WATERS/M12-watch-recovery.md#integration-with-the-creators-sweep)
   records eight watcher tests, four server/watch tests and strict cooker Clippy passing on the Mac.
 
 - 2026-11-16 M2 stopped on M2.2: from 40 m up the crests were round and a smooth belt lay under the horizon, after
-  eight tuning attempts ([handoff](../../evidence/WATERS/M2-handoff.md)). The lead's task was to settle the approach
+  eight tuning attempts ([handoff](../../../.orchestrate/evidence/WATERS/M2-handoff.md)). The lead's task was to settle the approach
   at the same bar, preferring what current engines ship. The planner read the branch's shaders and found two causes
   in the representation, not the tuning. The long-wave cache stores the map inverted onto a fixed world grid, and
   vertices move only vertically, so a crest turns over a texel. Every layer is read from storage buffers at mips
   0, 4 and 8, chosen by the footprint's longest side, which collapses the sea to one variance about 600 m out.
-- 2026-11-16 Parts Y and Z of [the design proof](../../evidence/WATERS/design-proof/README.md) measure both. Part Y
+- 2026-11-16 Parts Y and Z of [the design proof](../../../.orchestrate/evidence/WATERS/design-proof/README.md) measure both. Part Y
   predicts the belt 61 rows under the horizon, where the opinions saw 50 to 70. In part Z, the forward form draws
   a 53 m crest within 1.3 to 2.3 times its width, where the world grid draws it 8 to 28 times too wide.
   Decided, in [the surface](DESIGN.md#the-surface-and-the-frame-contract): layers are drawn forward from the rest
@@ -341,12 +341,12 @@
   Corrected coherent Fourier phases, shared Fresnel/exposure composition and world-space cascade normals.
   Three fresh builder opinions still find rounded crests; the design's three-look stop rule was reached.
   The profile diagnostic identifies an untried larger permitted choppiness, not a proof that the model cannot work.
-  [Evidence](../../evidence/WATERS/M2.md) separates that visual finding from functional and device proof.
+  [Evidence](../../../.orchestrate/evidence/WATERS/M2.md) separates that visual finding from functional and device proof.
 - 2026-11-16 Resumed M2 at `69a7ba617`; its scene, frame-contract and stage checks pass again on Metal.
   Preserved the selected rounded-crest failure and verified recovery from the local evidence store.
   The first paired cost run failed with missing GPU durations and timing faults; its cause is unconfirmed.
   No fourth visual attempt was made under the design's three-look stop rule.
-  [Handoff](../../evidence/WATERS/M2-handoff.md) asks the lead/planner for direction and records both issues.
+  [Handoff](../../../.orchestrate/evidence/WATERS/M2-handoff.md) asks the lead/planner for direction and records both issues.
 - 2026-11-16 The owner directed M2 to continue after the three-look stop. Testing the existing profile's
   larger permitted long-wave choppiness, 0.9 with the same 0.45 contraction budget.
   Diagnosed the missing cost times as Metal's invalid end timestamps on empty Sun-shadow passes.
@@ -381,65 +381,65 @@
   Fixed shared-light inspection and fresh elapsed-motion opinion support M2.3 and M2.5; M2.7 now has valid timings.
   Stronger swell and delayed cache LOD still fail fresh opinions on crest shape and the elevated horizon belt.
   M2.2 remains open; proposing planner diagnosis of geometric/cache-to-statistical transition without lowering its bar.
-  [Handoff](../../evidence/WATERS/M2-handoff.md) retains attempts, current proofs and the unmerged checkpoint.
+  [Handoff](../../../.orchestrate/evidence/WATERS/M2-handoff.md) retains attempts, current proofs and the unmerged checkpoint.
 - 2026-11-16 Built the approved forward rest-sheet cache and full filterable LEAN pyramids, with 16x
   anisotropic reads, omitted-wave covariance and sky-only facet reflection. Native/portable texture errors
-  stay below 0.932 mm height and 0.000122 slope; [proof](../../evidence/WATERS/M2-forward.md).
+  stay below 0.932 mm height and 0.000122 slope; [proof](../../../.orchestrate/evidence/WATERS/M2-forward.md).
   Fresh opinions pass the named crest/horizon/light cues after height/compression crest in-scatter;
   rectangular near-field highlights remain a disclosed limitation. The motion proof selects jittered TAAU.
-  [Cost](../../evidence/WATERS/M2-cost.md): forward cache about 0.354 ms, above the 0.2–0.3 ms estimate;
+  [Cost](../../../.orchestrate/evidence/WATERS/M2-cost.md): forward cache about 0.354 ms, above the 0.2–0.3 ms estimate;
   qualified cadence and remaining optimization stay with M11. Integration runs the full project gate.
 - 2026-11-16 Extended M2.10's readback to SEA's 20 m/s envelope: single-half displacement missed the
   height bound by 6.17 mm. Paired high/residual displacement in the same five texture planes now keeps
   every texel below 0.0392 mm height and 0.000244 slope on native/portable Metal, at both ages and winds.
   Full mip averages retain the residual carry; optional float16 arithmetic is unnecessary. The new
-  frame-contract probe passes. Allocation is unchanged; [paired cost](../../evidence/WATERS/M2-cost.md)
+  frame-contract probe passes. Allocation is unchanged; [paired cost](../../../.orchestrate/evidence/WATERS/M2-cost.md)
   records the extra vertex read. The queued pre-correction merge was withdrawn before resubmission.
 - 2026-11-17 Integrated M2's three remaining precision commits on current main after confirming the
   earlier checkpoint was already present under rewritten hashes. The full `./dev check` passed and
   `fa59e2679` merged. Refreshed six fixed views and a 310-frame realtime pan on that merged source,
-  with zero omissions; [final evidence](../../evidence/WATERS/M2-merged.md) records recovery and inspection.
+  with zero omissions; [final evidence](../../../.orchestrate/evidence/WATERS/M2-merged.md) records recovery and inspection.
   Rectangular foreground highlights and concurrent-load cost tripwires remain disclosed; physical
   cadence stays unqualified. The script owns the milestone's next status and review.
 - 2026-11-17 Corrected the first review's near-water lattice by reconstructing magnified LEAN moments
   with positive cubic weights. A Metal probe matches independent convolution, retains covariance and
-  leaves minified reads unchanged; [proof and fresh opinion](../../evidence/WATERS/M2-reconstruction.md).
+  leaves minified reads unchanged; [proof and fresh opinion](../../../.orchestrate/evidence/WATERS/M2-reconstruction.md).
   The first new look passes the six spatial/light views. A one-second observer now fits its existing
   queues without writer progress; its 94-frame pan has zero omissions and sampled motion passes.
   Surface sampling costs about 26% more in the concurrent-load paired run; the named tripwires and
-  M11 follow-ups are in [cost](../../evidence/WATERS/M2-cost.md). No physical cadence is qualified.
+  M11 follow-ups are in [cost](../../../.orchestrate/evidence/WATERS/M2-cost.md). No physical cadence is qualified.
 - 2026-11-17 Merged the reconstruction correction at `387d5a69d` after the full project gate passed.
   Rebuilt and captured that merged source: all six fixed views are pixel-identical to the fresh-opinion
-  candidate; the final bounded pan has 101 frames and zero omissions. [Selected proof](../../evidence/WATERS/M2-r1.md)
+  candidate; the final bounded pan has 101 frames and zero omissions. [Selected proof](../../../.orchestrate/evidence/WATERS/M2-r1.md)
   records source comparisons, recovery and inspection. Independent review and physical cadence remain separate.
 - 2026-11-17 Built M3's Chrome route, hidden-world clock, graphics recovery and bounded submitted-output tools.
   Hardware Chrome passes the first-frame and seven-checkpoint CPU-oracle trace, including real tab visibility
-  and destruction/replacement of its device, with no validation faults. [Numerical proof](../../evidence/WATERS/M3.md)
+  and destruction/replacement of its device, with no validation faults. [Numerical proof](../../../.orchestrate/evidence/WATERS/M3.md)
   keeps these target results separate from the fixed/motion inspections recorded after integration.
 - 2026-11-17 M3 merged at `07cecc854` after the full project gate passed for its integration batch.
   Captured four Chrome and six portable Metal fixed views, plus 62 contiguous Chrome pan frames with no omissions.
   Builder and fresh visual inspection pass the named cues; the clip's phase-sampling limit and page clock remain explicit.
-  [Final proof](../../evidence/WATERS/M3.md) records pixel comparisons and verified archive recovery. Physical cadence is unqualified.
+  [Final proof](../../../.orchestrate/evidence/WATERS/M3.md) records pixel comparisons and verified archive recovery. Physical cadence is unqualified.
 - 2026-11-17 Corrected M3's reviewed resume clock: pause discards the partial tick, and resume holds the
   committed endpoint until a new full tick commits. Rust regressions and ten hardware Chrome field checkpoints
   pass, including independent hold/commit expectations, a hitch and device replacement, with no validation faults.
-  [Resume proof](../../evidence/WATERS/M3-resume.md) records exact source/Wasm identity and numerical bounds.
+  [Resume proof](../../../.orchestrate/evidence/WATERS/M3-resume.md) records exact source/Wasm identity and numerical bounds.
   The passed visual judgments remain scoped to their retained captures; physical cadence remains unqualified.
 - 2026-11-17 M3's resume correction merged at `e5de7027e` after the full project gate passed.
-  [Fresh submitted output](../../evidence/WATERS/M3-resume-visual.md) matches all retained Chrome and portable
+  [Fresh submitted output](../../../.orchestrate/evidence/WATERS/M3-resume-visual.md) matches all retained Chrome and portable
   Metal fixed pixels exactly. All 53 consecutive Chrome pan crops were inspected, with zero capture omissions.
   A 99.9 ms page callback gap and 116.6 ms submission gap are recorded separately from field continuity;
   neither this capture-ON run nor its page clock qualifies physical cadence.
 - 2026-11-17 Diagnosed M3.5's shared-check wait: Chrome capture failed before rendering because the
   repository-wide source listing exceeded Node's output buffer. The driver's owner already merged
   `8c6dc8847`; a CPU check confirms its scoped list preserves every hashed path at both historical commits.
-  [Follow-up](../../evidence/WATERS/M3-exact-check-followup.md) separates that verified cause and fix from
+  [Follow-up](../../../.orchestrate/evidence/WATERS/M3-exact-check-followup.md) separates that verified cause and fix from
   the shared runner's still-pending coverage proof. No baseline, comparison or WATERS runtime changed.
 - 2026-11-17 Diagnosed the clean-checkout M3 gate's unstable rustc incremental fingerprints.
   Both verification launchers now disable the incremental query cache; other commands retain their setting.
   Chrome first-frame and lifecycle checks pass, and `clock_spans` executes without the compiler panic.
   The builder's full gate reached later GPU tests before its 600-second limit; the merge gate proves integration.
-  [Compiler-cache evidence](../../evidence/WATERS/M3-compiler-cache.md) separates these results and limits.
+  [Compiler-cache evidence](../../../.orchestrate/evidence/WATERS/M3-compiler-cache.md) separates these results and limits.
 
 - 2026-11-17 Human: "Ok let's lower the bar." The most plausible result as fast as possible, not physical accuracy; references become
   diagnostics. Plan, for M4 onward (M3, Ready for Review, is untouched): dropped M6.1, M6.2, M7.1, M7.16, M8.8, M15.2 and M16.3, which
@@ -465,36 +465,36 @@
 - 2026-11-18 M3 now reads its browser frame clock directly from successful submissions.
   Hardware Chrome passed 11 oracle checkpoints and agreed with captured submission 632 after the
   completion history filled. The runtime merged at `e9a449b08` after `./dev check` passed.
-  [Target evidence](../../evidence/WATERS/M3-frame-report.md) includes four new Chrome/Metal fixed
+  [Target evidence](../../../.orchestrate/evidence/WATERS/M3-frame-report.md) includes four new Chrome/Metal fixed
   pairs and a 62-frame Chrome pan on the merged runtime. Callback timing measures the page clock.
 
 - 2026-11-18 Built M4's camera-independent map sampler, indexed body draws and the island's sea, lake and pond.
   Metal checks passed for map and gains, pixel ownership and hidden overlap, stage and history, and the submitted
   swash cut. Hardware Chrome drew all three bodies and passed the f64 map comparison inside its binding limits.
-  [M4 evidence](../../evidence/WATERS/M4.md) links fixed and realtime inspections and the paired island cost.
+  [M4 evidence](../../../.orchestrate/evidence/WATERS/M4.md) links fixed and realtime inspections and the paired island cost.
   The thin sheet blends directly into the opaque colour. Refracted lookup and qualified device timing are later work.
 
 - 2026-11-18 M4.6 compares submitted coverage against an opaque-depth control at the sill and bank.
   The Metal control confirmed that reset history makes dry ground reactive. The lake sweep still checks the
-  submitted level and motion across the stage edits. [Target run](../../evidence/WATERS/M4-checks.txt).
+  submitted level and motion across the stage edits. [Target run](../../../.orchestrate/evidence/WATERS/M4-checks.txt).
 
 - 2026-11-18 M4 review fixes sample stage and sill connectivity at presentation time and keep the
   previous submitted level for motion. Metal passed 40 fractional-stage samples. The calm shoreline
   uses an optical path fade at the depth cut and a rounded, locally refined pond bank.
-  [Target captures and stage series](../../evidence/WATERS/M4-review-fixes.md).
+  [Target captures and stage series](../../../.orchestrate/evidence/WATERS/M4-review-fixes.md).
 
 - 2026-11-18 Built M5's tick query, mapped mailbox and example-owned hull dynamics.
   Metal passed query, expiry, refusal, draft, gale, sheltered-lake and current checks. Hardware Chrome
   delivered body replies and counted the unavailable station uses across a deliberate hitch.
-  [M5 evidence](../../evidence/WATERS/M5.md) links twelve elapsed-time sequences and the capture-off cost.
+  [M5 evidence](../../../.orchestrate/evidence/WATERS/M5.md) links twelve elapsed-time sequences and the capture-off cost.
   Empty Sun shadow timestamps prevented a complete native or portable GPU timing report.
 
 - 2026-11-19 Preserved accepted query pages across catch-up frames and sampled authored stages and chart slopes at the use tick.
   The craft follows the encountered waterline rate. Metal passed ten minutes of the scene gale at each commanded speed.
   Chrome reconciled individual reply ages through the hitch. The Metal candidate records the wider beam-sea buoy course.
-  [Review fixes and target evidence](../../evidence/WATERS/M5-r1.md).
+  [Review fixes and target evidence](../../../.orchestrate/evidence/WATERS/M5-r1.md).
 
 - 2026-11-19 Recompose in-flight replies when a stage edit changes the use-tick map. Metal covered an edited chart,
   a late reply for the prior stage and a newly supported swash point. The launch has more freeboard.
   Twelve submitted Metal sequences and the extended gale clip show the deck clear through the reported crests.
-  [Merged-build evidence](../../evidence/WATERS/M5-r2.md).
+  [Merged-build evidence](../../../.orchestrate/evidence/WATERS/M5-r2.md).

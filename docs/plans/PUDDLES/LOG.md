@@ -14,7 +14,7 @@
   depression hierarchy), water volumes are stepped on the CPU by fill, spill and merge, and the map reads a
   label and a level. Nothing is rebuilt at a merge, so the body's identity, its query and its rings hold. Not
   chosen: a basin for each hollow, one flood level over a mask, and a live shallow-water solver.
-  [Reproductions 1 to 6](../../evidence/PUDDLES/design-proof/README.md) were run for it.
+  [Reproductions 1 to 6](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md) were run for it.
 - 2026-11-14 Replaced, from `WATERS`' design and the interface table: "a puddle is a basin whose stage rain
   raises" and "`PUDDLES`' drops are the same record". A bed 3.2 m square holds 20 hollows whose fills overlap
   in 10 pairs, and a square metre takes thousands of drops a second. Rain rings are two wave layers that are a
@@ -35,9 +35,9 @@
   or wet ground of The Last of Us Part II, Red Dead Redemption 2, Forza Horizon, Spider-Man, Alan Wake 2 or
   Cyberpunk 2077. From memory: Marshall and Palmer's drop sizes, Atlas's fall speed and the form of Lekner and
   Dorf's model, which part 4 derives again and which gives 0.55 where Lagarde quotes about 0.68 for asphalt.
-- 2026-11-14 Design review asked for changes: [five Must Fix findings](../../evidence/PUDDLES/design-review.md).
+- 2026-11-14 Design review asked for changes: [five Must Fix findings](../../../.orchestrate/evidence/PUDDLES/design-review.md).
   All five are resolved in the design, the items and [the rulings](../ARCHITECTURE.md#seam-rulings-for-puddles),
-  with [reproductions 7 to 10](../../evidence/PUDDLES/design-proof/README.md).
+  with [reproductions 7 to 10](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md).
 - 2026-11-14 The mirror (finding 1). A hollows body is no longer one plane at the mean of its ground, which
   cut the foot off everything standing in a low puddle. New ruling 8: it gives the mirror its levels in
   bands no taller than 5 cm, each cut at its lowest water, ranked with every other level; a lookup refuses
@@ -65,7 +65,7 @@
   the covering transfers in a full fill step. Part 1's account was run without stores.
 - 2026-11-14 `SCENE-VIEWS`' third design review: a view's air may start only at a level plane. A band's
   plane is its lowest water, which is level, so ruling 8 and M7 stand. No text, item or bound here changed.
-- 2026-11-14 Dependency audit ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M6 now waits for `SHOWCASE:M5` in place of `SHOWCASE:M6`: it needs
+- 2026-11-14 Dependency audit ([the dependency audit](../../../.orchestrate/evidence/dependency-audit-2026-11-14/README.md)). M6 now waits for `SHOWCASE:M5` in place of `SHOWCASE:M6`: it needs
   the exit scene and its props, which M5 delivers, and `SHOWCASE` M6 changes no pixel of it. No design text or
   item changed; one assumption names the new milestone.
 - 2026-11-16 M1 built (code 78c4af12b). Verified: thrum-rain-model (tree of hollows, fill step, account, canopy,
@@ -102,7 +102,7 @@
   one frame to commit upload bytes) while other builders share the GPU; it belongs to that test's owning module.
 - 2026-11-16 M2 failed its third review on M2.11, the finding of the second again: an emptied puddle left no film
   on ground it uncovered and the model owed it. The builder ended Blocked without changing code
-  ([handoff](../../evidence/PUDDLES/M2-handoff.md)): the design's covering rule did not say what happens when a
+  ([handoff](../../../.orchestrate/evidence/PUDDLES/M2-handoff.md)): the design's covering rule did not say what happens when a
   puddle holds less than the pores it rises over or the film it must leave, and on ground with deep pores that is
   the ordinary case.
 - 2026-11-16 Re-planned by the lead's task: "Settle a conserving rule (water is never invented or silently owed),
@@ -111,7 +111,7 @@
   in its class's state, and ground the puddle cannot pay for is held until it can
   ([design](DESIGN.md#the-mark-and-ground-that-changes-hands)). Not chosen: a debt named in the design, a named
   source, ground left uncovered until its pores are paid for, and the old rule limited to shallow pores.
-- 2026-11-16 [Part 11](../../evidence/PUDDLES/design-proof/README.md) runs the rule on one hollow: 3,024 cases close
+- 2026-11-16 [Part 11](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md) runs the rule on one hollow: 3,024 cases close
   to 4e-13 with nothing below none, and ground is held in 75, on a floor half under a crown and in a dish as
   shallow as its relief. Not run: the Rust model, and hollows that share a puddle. Read for the soak rate:
   hydrology course texts on ponded infiltration, as summarised by one search.
@@ -120,7 +120,7 @@
   change: the three M2.11 cases in `tests/receivers.rs` and the four coupled account cases in `tests/stores.rs`
   are replaced; `tests/state.rs` and `tests/margins.rs` follow the state's fields. M1 shrinks to its review link.
 - 2026-11-17 Design review of the re-plan asked for changes:
-  [one Must Fix](../../evidence/PUDDLES/design-review.md). Rain on held ground was given to the puddle because
+  [one Must Fix](../../../.orchestrate/evidence/PUDDLES/design-review.md). Rain on held ground was given to the puddle because
   the hollow keeps that ground's account, and held ground stands above the water, so C09's first hit is the
   ground. Its probe: on part 11d's dish at 1 mm/h the puddle was given 5.1e-8 m³ a tick where 2.8e-9 falls on
   water. The conserving transfers, the mark and the hold stand as approved.
@@ -139,13 +139,13 @@
   the band and gives the steady fall's range; the recurrence stays the authority. Part 11's sketch takes the
   percolation rate over full pores (11g), M2.13 holds both orders of the two rates, and the sweep has a class
   that soaks 1 mm/h and percolates 15.
-- 2026-11-17 [Part 11](../../evidence/PUDDLES/design-proof/README.md) run again with the rule: 3,528 cases close
+- 2026-11-17 [Part 11](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md) run again with the rule: 3,528 cases close
   to 4e-13 with nothing below none; ground held in 90, with rain on the held ground in 6. 11f sums each
   receiver from the bed, the exposure and the level and matches the step. The review's probe still reproduces
   its witness state on the sketch; its last assertion, that the sketch takes the soak rate over full pores,
   now fails, as intended. Not run: the Rust model, hollows that share a puddle, and M2's item checks other
   than `--test marks`, which fails for want of the file, as it should.
-- 2026-11-16 M2 third review: Blocked on M2.11, no code changed ([handoff](../../evidence/PUDDLES/M2-handoff.md)).
+- 2026-11-16 M2 third review: Blocked on M2.11, no code changed ([handoff](../../../.orchestrate/evidence/PUDDLES/M2-handoff.md)).
   Verified on the review's witness: the floor's pores have room for 4.8e-4 m³ and the whole shower is 2.1e-4 m³,
   so the puddle can't fill the pores it rises over and holds nothing when it uncovers. Proposal for a planner:
   the design's covering rule must say what happens when a puddle holds less than a transfer. Suspected: no
@@ -154,7 +154,7 @@
   from the cells, the stores and the state before it, and the model matches on the review's twelve floors, a
   dish that holds ground for 1,645 ticks, a floor held in the rain and two hollows through a merge and a parting;
   the account closes to 1.7e-13 on the design's bed. `owed` is gone, and a class may percolate faster than it
-  soaks. All rain-model tests pass; clippy clean. [Evidence](../../evidence/PUDDLES/M2-evidence.md). Suspected:
+  soaks. All rain-model tests pass; clippy clean. [Evidence](../../../.orchestrate/evidence/PUDDLES/M2-evidence.md). Suspected:
   nothing else reads the saved rain state, whose format changed (`THRRAIN3`).
 
 - 2026-11-17 Human: "Ok let's lower the bar." The most plausible result as fast as possible, not physical accuracy; references become

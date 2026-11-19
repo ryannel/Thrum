@@ -26,17 +26,17 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 
-[Review](../../evidence/WATERS/M1-review.md)
+[Review](../../../.orchestrate/evidence/WATERS/M1-review.md)
 
 ## M12 On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee
 
-[Review](../../evidence/WATERS/M12-review.md)
+[Review](../../../.orchestrate/evidence/WATERS/M12-review.md)
 
 ## M2 An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh
 
 This creates `thrum-water` as one effect on `EFFECT-GRAPH`'s seam, `examples/water` (package `water-scene`) as a game on `thrum-app`'s shell with its own ticking world, and `scripts/water_cost.py`. `examples/v1-game` is the working model. [Rulings 1 and 3](../ARCHITECTURE.md#seam-rulings-for-waters) are built here without changing the owning modules' items or tests; `CREATOR` M2 and M3 edit `thrum-app` too, so integrate on top of what has landed.
 
-The work so far is on `build/waters`, and [its handoff](../../evidence/WATERS/M2-handoff.md) says what M2.2 tried. Build M2.10 before the next look at M2.2: [how the surface reads the wave field](DESIGN.md#the-surface-and-the-frame-contract) replaces the inverted cache and the three-mip reads, and changes one `SEA` test, as [the asks](DESIGN.md#what-waters-asks-of-other-modules) say. `REVIEW-ENGINE` M5 repacks `thrum-sea`'s transforms; whichever lands second integrates on the other.
+The work so far is on `build/waters`, and [its handoff](../../../.orchestrate/evidence/WATERS/M2-handoff.md) says what M2.2 tried. Build M2.10 before the next look at M2.2: [how the surface reads the wave field](DESIGN.md#the-surface-and-the-frame-contract) replaces the inverted cache and the three-mip reads, and changes one `SEA` test, as [the asks](DESIGN.md#what-waters-asks-of-other-modules) say. `REVIEW-ENGINE` M5 repacks `thrum-sea`'s transforms; whichever lands second integrates on the other.
 
 ## M3 The same sea draws in Chrome from one command
 

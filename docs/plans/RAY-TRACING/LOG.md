@@ -4,7 +4,7 @@
 - 2026-11-17 Planned from the lead's task, quoted in [the design](DESIGN.md#the-request). Six milestones: the
   structure for entities, the whole valley with edits, hard shadows from the Sun and lamps, soft Sun shadows,
   ambient occlusion, and the paired record with promotion, which waits for `SHOWCASE` M8. Reflections by ray
-  and global illumination are left for a later plan. [The planning probe](../../evidence/RAY-TRACING/planning-probe/README.md)
+  and global illumination are left for a later plan. [The planning probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md)
   showed that wgpu 30.0.1 traces correctly on this Mac from compute and fragment stages. The design review is
   owed.
 
@@ -12,13 +12,13 @@
   diagnostics. Plan: dropped M4.1 and M5.1, which held the soft-shadow and occlusion estimators to reference fractions; their look
   is judged by inspection. The ray oracle of M1 to M3 stays, because whether a ray is blocked is a fact about geometry. Five cost
   records pass on their check alone.
-- 2026-11-18 [The design review](../../evidence/RAY-TRACING/design-review.md) asked for changes: seven Must Fix,
+- 2026-11-18 [The design review](../../../.orchestrate/evidence/RAY-TRACING/design-review.md) asked for changes: seven Must Fix,
   resolved in the design and items. (1) Promotion needs cost no higher and a gain, beside portable runs, a
   difference image and a ten-minute run (M6.1 to M6.5). (2) The window asks for `ray-query` only in a qualified
   configuration, and the portable recipe refuses ray effects (M3.6, M6.4). (3) A centre ray traced each frame
   overrides a settled history, and a soft edge's latency is a stated settle length (M4.4, M4.7, M5.5).
 - 2026-11-18 The same review, continued. (4) A ray's origin is lifted 8 float steps, not 256, after
-  [a second probe](../../evidence/RAY-TRACING/planning-probe/OFFSET.md) (M3.1). (5) Membership is the scene's,
+  [a second probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/OFFSET.md) (M3.1). (5) Membership is the scene's,
   before any culling (M2.2, M2.4, M3.4). (6) Ray demand is the scene's and reaches the arena and cooked
   residency before allocation (M1.5, M2.6). (7) Pipeline creation is counted for each generation (M3.7). The
   suggestion was taken: M1.6 records a still scene and every entity moving beside the 1,500 movers. Items were
@@ -59,25 +59,25 @@
   geometry and the scene build follows the accepted draw rows at the frame's alpha. Verified M1.1–M1.6
   on Apple tile Metal at `e0fb4a93a`, with an exact no-demand comparison to the pre-change renderer.
   The contended field-count CPU rebuild was 9.804 ms median, with finish and submit the larger share.
-  [Proofs and tripwire investigation](../../evidence/RAY-TRACING/M1/README.md).
+  [Proofs and tripwire investigation](../../../.orchestrate/evidence/RAY-TRACING/M1/README.md).
 - 2026-11-18 Routed the shared native test gate through registry admission, resolved ray demand before
   resource creation, and restored the sky kit's public error variants. Verified the portable fallback and
   the shared gate's ordinary and named requests on Metal, and compiled the sky kit's exhaustive match.
-  [Review fix evidence](../../evidence/RAY-TRACING/M1/README.md#review-fixes).
+  [Review fix evidence](../../../.orchestrate/evidence/RAY-TRACING/M1/README.md#review-fixes).
 - 2026-11-18 Cooked residency now builds mesh structures from its draw buffers and contributes every
   placement using the raster publication's transform and switch. Verified sampled rays and raster bytes
   across placement and entity edits, discard, refusal and device replacement on Apple tile Metal.
   Inspected four T2 fixed valley pairs and native-size contact crops. The two contended timing runs found
   a cold terrain-build outlier and an estimated 0.737–0.905 ms added GPU cost for the edit.
-  [M2 evidence](../../evidence/RAY-TRACING/M2/README.md).
+  [M2 evidence](../../../.orchestrate/evidence/RAY-TRACING/M2/README.md).
 - 2026-11-18 Routed the opt-in M2 timing probe's two pipelines through the prepared scene's device
   generation. The probe installation is recorded as a creation transition.
 - 2026-11-18 Completed arena builds during startup and device preparation, carried them across
   same-device visual replacement, and gated initial cooked publication on completed mesh builds.
   Verified both Metal generations, the edit builds, and the traced view's instance colors and distance
-  cue. [Review fix evidence](../../evidence/RAY-TRACING/M2/README.md).
+  cue. [Review fix evidence](../../../.orchestrate/evidence/RAY-TRACING/M2/README.md).
 - 2026-11-19 Added opt-in hard Sun and lamp shadows with prepared fallback and map-only secondary views.
   The Metal fixtures verified receiving-surface hits, cooked casters, no-Sun parity, air-shadow bytes, and
   day, night and capture preparation on two device generations. Inspected the fixed route and three movers
   at elapsed speed, and kept the night lamp contact crops. The contended repeat showed higher traced frame
-  CPU time and timed-pass span, with both cascade passes absent. [M3 evidence](../../evidence/RAY-TRACING/M3/README.md).
+  CPU time and timed-pass span, with both cascade passes absent. [M3 evidence](../../../.orchestrate/evidence/RAY-TRACING/M3/README.md).

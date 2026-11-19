@@ -12,7 +12,7 @@ as deferred work. Read [Sequence and dependencies](DESIGN.md#sequence-and-depend
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
 ## M0 A repeatable offscreen valley proves the comparison path: done
-[review](../../evidence/APPLE-TILE/M0-review.md)
+[review](../../../.orchestrate/evidence/APPLE-TILE/M0-review.md)
 
 ## M1 The valley selects a recipe and stores only actual future inputs
 

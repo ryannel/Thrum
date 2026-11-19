@@ -25,13 +25,13 @@ evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exa
 
 ## M1 A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome: done
 
-[review](../../evidence/CONTENT-LOOP/M1-review.md)
+[review](../../../.orchestrate/evidence/CONTENT-LOOP/M1-review.md)
 
 ## M4 A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac
 
 Criteria: M4.1–M4.6 in the done-when file. Built before M2: it waits on nothing.
 
-Read [the sweep](DESIGN.md#the-sweep-m4) and [the diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md) first. The loop is `crates/thrum-cook/src/watch.rs`. The scan it needs is the stat cache's `scan_all`, and today the cook cycle saves the stat cache on every call, which an idle sweep must not do. `crates/thrum-cook/tests/serve_and_watch.rs` is not edited: M4.3 runs `the_watcher_publishes_an_edited_source` as it stands, so `watch` keeps the signature that test calls. The checks pick the new tests by words in their names: `missed_notices` (M4.1), `notice_alone` (M4.2), `quiet_tree` (M4.4) and `settling_save` (M4.5). [The diagnostic](../../evidence/CONTENT-LOOP/M4/watch-diagnostic.rs) shows the loss on this Mac while `fseventsd` is busy, if you want to see it; no item depends on the host being in that state. The ledger's G5 row waits for M3 unless a sentence in it becomes false.
+Read [the sweep](DESIGN.md#the-sweep-m4) and [the diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md) first. The loop is `crates/thrum-cook/src/watch.rs`. The scan it needs is the stat cache's `scan_all`, and today the cook cycle saves the stat cache on every call, which an idle sweep must not do. `crates/thrum-cook/tests/serve_and_watch.rs` is not edited: M4.3 runs `the_watcher_publishes_an_edited_source` as it stands, so `watch` keeps the signature that test calls. The checks pick the new tests by words in their names: `missed_notices` (M4.1), `notice_alone` (M4.2), `quiet_tree` (M4.4) and `settling_save` (M4.5). [The diagnostic](../../../.orchestrate/evidence/CONTENT-LOOP/M4/watch-diagnostic.rs) shows the loss on this Mac while `fseventsd` is busy, if you want to see it; no item depends on the host being in that state. The ledger's G5 row waits for M3 unless a sentence in it becomes false.
 
 ## M2 An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome
 

@@ -5,7 +5,7 @@
   deadline at generation 2. Twenty isolated repetitions pass, and the native watcher registers its stream before the initial
   cook; that inspection does not explain the intermittent failure. The full gate retry and the checked merge supply the
   remaining integration verification. M3 remains `in_progress`, with all ten builder items pass and target evidence linked
-  from [M3 evidence](../../evidence/CULLING/M3.md). Retain `tmp/culling-m3/capture-20261113-231534/` (7.2 GiB) through
+  from [M3 evidence](../../../.orchestrate/evidence/CULLING/M3.md). Retain `tmp/culling-m3/capture-20261113-231534/` (7.2 GiB) through
   independent motion review. The complete M3 scratch root (22 GiB including that recording) remains available for review and
   the historical pixel investigation; release redundant recordings after review and decisive failure-input retention checks.
 
@@ -29,13 +29,13 @@
   A resource-reflection audit finds its non-shadowed entry still requires Sun
   bindings despite a false flag. Preparation now removes that call for the
   unshadowed profile; CPU reflection controls and the actual Metal material-table
-  compute test pass. [Evidence](../../evidence/CULLING/M3-investigation.md#preserve-the-unshadowed-profiles-resource-boundary)
+  compute test pass. [Evidence](../../../.orchestrate/evidence/CULLING/M3-investigation.md#preserve-the-unshadowed-profiles-resource-boundary)
   separates this compatibility repair from the earlier pixel investigation.
 
 - 2026-11-13 The implicit-sampling-order candidate on `c98b6578` passes all
   38 native retained comparisons and eight complete 361-frame mesh routes
   (four per recipe), including independent Direct controls. The
-  [retained rows and identities](../../evidence/CULLING/M3/pre-sample-c98b6578/report.json)
+  [retained rows and identities](../../../.orchestrate/evidence/CULLING/M3/pre-sample-c98b6578/report.json)
   are bounded positive evidence; the original failure remains individually
   unattributed. Integrate the upstream cooked-product lease repair before final
   target, cost and capture qualification. M3 stays `in_progress`, with items open.
@@ -44,7 +44,7 @@
   A diagnostic copies colour, all three Sun depth layers and the air-shadow map
   from each same submission. After two passing full routes, tick 430 differs
   at 23 Frustum colour pixels while every stored shadow map is byte-identical
-  across four hosts. [Evidence](../../evidence/CULLING/M3-investigation.md#simultaneous-colour-and-shadow-resources-on-the-original-shader)
+  across four hosts. [Evidence](../../../.orchestrate/evidence/CULLING/M3-investigation.md#simultaneous-colour-and-shadow-resources-on-the-original-shader)
   narrows this failure to other inputs or forward evaluation; it is not a repair.
   Diagnostic production edits are restored, and M3 items remain open.
 
@@ -52,15 +52,15 @@
   native meshes differ at six SDR pixels at tick 255. Metal API/GPU shader validation separately reproduces an 18-pixel scene-linear
   difference without a reported validation error. The exact verifier rejects APPLE-TILE's `portable-sdr-approach` with 4,859 changed
   pixels. The explicit-gradient candidate is rejected and the shader restored byte for byte to its `64c81cd2` blob; no reference
-  changed. The [retained evidence](../../evidence/CULLING/M3.md#explicit-gradient-candidate-rejected-at-2fd5cf06) separates
+  changed. The [retained evidence](../../../.orchestrate/evidence/CULLING/M3.md#explicit-gradient-candidate-rejected-at-2fd5cf06) separates
   candidate results from the unqualified restored source. Under the plan's exact-baseline stop rule, the
-  [handoff](../../evidence/CULLING/M3-handoff.md) proposes continuing diagnosis with existing sampling and retained references. M3
+  [handoff](../../../.orchestrate/evidence/CULLING/M3-handoff.md) proposes continuing diagnosis with existing sampling and retained references. M3
   stays `in_progress`, all builder items remain open, and no merge is claimed.
 
 - 2026-11-13 Clean `64c81cd2` passes Chrome cubes/meshes, the full temporal cycle and every exact baseline (native 38 +
   4, four Chrome sets of 481). The native item checks reproduce sparse terrain differences: cube Occlusion at tick 379
   and independent mesh Direct at tick 180. All three same-time recaptures of each host converge to the common Direct
-  bytes, with no tick advance or changed alpha/exposure value. [Reachable evidence](../../evidence/CULLING/M3.md)
+  bytes, with no tick advance or changed alpha/exposure value. [Reachable evidence](../../../.orchestrate/evidence/CULLING/M3.md)
   retains the original failures and the earlier fully passing native mesh run. Shader-instrumented stage comparisons
   pass but change compilation and do not repair the original. A new scoped candidate evaluates explicit UV gradients
   before Sun control flow and shares them across material samples; sampler and anisotropy stay unchanged. Four extra
@@ -69,7 +69,7 @@
 - 2026-11-13 Resumed M3 from `f8255e6b`. Promoted the selected native/Chrome fixed and realtime inspection frames,
   the mixed-field readbacks and the independent-Direct SDR/scene-linear failure bytes. [M3
   evidence](../../evidence/CULLING/M3.md) distinguishes historical passes from pending committed-source
-  qualification; [the investigation](../../evidence/CULLING/M3-investigation.md) records the exact failures. A
+  qualification; [the investigation](../../../.orchestrate/evidence/CULLING/M3-investigation.md) records the exact failures. A
   temporary depth readback finds all 361 near-shadow maps identical across Direct, Frustum, Occlusion and
   independent Direct; the other layers remain queued. Shadowed-air-only ablation still fails at tick 180.
   Temporary renderer edits are reverted. Repaired 27 stale evidence-link destinations after the plan-record
@@ -77,7 +77,7 @@
 
 - 2026-11-11 Planned from the owner's task, quoted in the design. Before the loop, a Claude session built Frustum,
   Occlusion on cubes, the bucket route in Direct and Frustum, and Sun-caster culling (7–8 November); its four
-  evidence pages are in `docs/evidence/render/G3C-*.md`. Its design and plan were never committed. This design
+  evidence pages are in `.orchestrate/evidence/render/G3C-*.md`. Its design and plan were never committed. This design
   carries their mechanisms forward and replaces them; their remaining milestones became M1–M3 here.
 - 2026-11-11 Planner's decisions: each entity has one visibility authority (instance culling for field entities,
   meshlet culling for cooked placements), recorded as an interface in the module list; G3c closes on the scenes
@@ -86,7 +86,7 @@
 - 2026-11-11 The heavy checks (release build, GPU, Chrome) were not dry-run by the planner: the planner's checkout
   had 23 GiB free against the 16 GiB the capture scripts require, and the GPU is shared. Each check was parsed as
   shell and the done-when file validated with the loop's own validator.
-- 2026-11-11 [Design review](../../evidence/CULLING/design-review.md): changes requested, one Must Fix. MF1: the
+- 2026-11-11 [Design review](../../../.orchestrate/evidence/CULLING/design-review.md): changes requested, one Must Fix. MF1: the
   live mode switch relied on host republication, which has no Chrome entry point, takes no requested mode, and
   rebuilds the cooked contribution's pipelines at publication, where a failure detaches the cooked scene.
 - 2026-11-11 Design revised. MF1: the live switch is removed, with M2.5 and M2.6 and cue C4. The brief and gate G3c
@@ -100,7 +100,7 @@
   does not wait; the plan lists that as an assumption.
 
 - 2026-11-11 M1 implementation: logical-slot bucket history, class-matched depth twins and mesh admission.
-  [Metal evidence](../../evidence/CULLING/M1.md): eight tests pass through churn, reveal, resize and fresh-device
+  [Metal evidence](../../../.orchestrate/evidence/CULLING/M1.md): eight tests pass through churn, reveal, resize and fresh-device
   preparation; all three required mutations fail pixel equality, including the mesh tie with zero tolerance.
   The footprint reference search found no witness in 8,640 valid poses. Full flythrough, exact images, Check
   and integration remain unverified; no speed or new motion-quality claim.
@@ -116,14 +116,14 @@
 
 - 2026-11-12 Disk headroom recovered. Full exact verifier passed clean `53646df3` under the GPU lease:
   native matrices 38+4 comparisons, all four Chrome sets 481 records each; retained references untouched.
-  [Compact proof](../../evidence/CULLING/M1.md#exact-baselines-12-november-continuation). Mandatory milestone/profile
+  [Compact proof](../../../.orchestrate/evidence/CULLING/M1.md#exact-baselines-12-november-continuation). Mandatory milestone/profile
   check and a new independent-Direct/recapture diagnostic remain queued/running; M1 stays open.
 
 - 2026-11-12 Second tick-866 investigation: independent Direct plus both culled modes match on every prefix
   tick through900; all248 extra Direct recaptures around866 are stable. CPU support diagnostic finds no
   rounding-allowance overlap at866 and its visible count agrees with the aligned GPU row. No runtime fix
   was made. Original pixels were not captured, so the old event cannot be attributed retrospectively;
-  [the evidence](../../evidence/CULLING/M1.md#second-investigation-of-tick-866) records the tested hypotheses and limits.
+  [the evidence](../../../.orchestrate/evidence/CULLING/M1.md#second-investigation-of-tick-866) records the tested hypotheses and limits.
 
 - 2026-11-12 M1 set to claimed as requested once every item was pass with linked Metal evidence.
   The full 1,930-tick named target, bucket witnesses/mutations and exact native matrices support the claim;
@@ -132,7 +132,7 @@
 
 - 2026-11-12 Final aggregate qualification passes all five pinned M1 commands and the profile Check;
   the raw native matrices pass 38+4 exact comparisons. Compact reports and source identity are
-  retained in [M1 evidence](../../evidence/CULLING/M1.md#final-mandatory-qualification). M1 is claimed for lead review.
+  retained in [M1 evidence](../../../.orchestrate/evidence/CULLING/M1.md#final-mandatory-qualification). M1 is claimed for lead review.
 
 - 2026-11-12 Reopened M1/M1.2 after the loop's clean-copy target exited101 at integrated b2d6ad8f.
   The supplied stderr tail omits the panic, so replaying its exact executable with full output and
@@ -142,7 +142,7 @@
   frame context and uncaptured stderr panic summaries. The formerly rejected executable, a fresh
   build and the first current-source full-path stress trial all pass; none proves a rendering repair.
   The full-route CPU plane reference found no vertex crossing in its 25 rounding candidates.
-  Investigation and limitations: [M1 evidence](../../evidence/CULLING/M1.md#clean-copy-rejection-12-november).
+  Investigation and limitations: [M1 evidence](../../../.orchestrate/evidence/CULLING/M1.md#clean-copy-rejection-12-november).
 
 - 2026-11-12 Bounded repair candidate: the shadow caster position lacked WGSL's invariance
   guarantee, while the forward position already requests it. Both caster entry points now request
@@ -158,7 +158,7 @@
   all five pinned M1 commands and ./dev check pass; the full 1,930-tick field is equal with
   1,918 halved-list ticks; exact native/surface and four Chrome baseline sets pass unchanged.
   Fresh required mutants fail at pixel equality and the restored eight-test target passes.
-  M1.2 passes and M1 is claimed for lead review. [Current evidence](../../evidence/CULLING/M1.md#current-repair-and-qualification).
+  M1.2 passes and M1 is claimed for lead review. [Current evidence](../../../.orchestrate/evidence/CULLING/M1.md#current-repair-and-qualification).
 
 - 2026-11-12 Review round 1 MF1 reopens M1.4: the old target-resize/fresh-device fixture did not
   exercise a running host. Added explicit plan work and a named-target witness using the actual
@@ -171,7 +171,7 @@
   All 17 tests pass and the full exact verifier passes native 38+4 and four Chrome sets of 481 records.
   The running host retains the mixed field, mode and current authority through surface resize and device
   publication, with all 12 next frames equal to independent Direct and renewed hiding. Reachable logs,
-  image hashes and native-size PNGs are retained in [M1 evidence](../../evidence/CULLING/M1.md#review-round-1-repair--mf1-host-lifecycle).
+  image hashes and native-size PNGs are retained in [M1 evidence](../../../.orchestrate/evidence/CULLING/M1.md#review-round-1-repair--mf1-host-lifecycle).
   Aggregate qualification and integration continue with M1 in progress.
 
 - 2026-11-12 Set M1 ready_for_review once all five items pass, with committed evidence for each item.
@@ -181,12 +181,12 @@
   Fresh rebased qualification passes all five literal M1 checks and `./dev check`; the full release field test
   passes in 1,002.80 seconds, the bucket target passes 17 tests and the native matrices pass 38+4 comparisons.
   The full verifier also passes all four Chrome sets of 481 records each, with retained references unchanged.
-  [Reports, source identity and complete compressed logs](../../evidence/CULLING/M1.md#orchestrate-210-continuation)
+  [Reports, source identity and complete compressed logs](../../../.orchestrate/evidence/CULLING/M1.md#orchestrate-210-continuation)
   separate these target results from the initial sandbox adapter failure. Required mutation production files
   remain unchanged; no new speed or elapsed-time motion claim. The script owns the post-merge state and the lead owns review.
 
 - 2026-11-13 M2 implements capability-record-only camera selection and reports requested/resolved
-  modes and the reason. [Evidence](../../evidence/CULLING/M2.md) proves Metal fallback, simulator
+  modes and the reason. [Evidence](../../../.orchestrate/evidence/CULLING/M2.md) proves Metal fallback, simulator
   Direct function and the 16-view Chrome mixed-mesh oracle. Two 1,800-tick paired 1080p runs favour
   Occlusion in cover and open views, selecting it for mixed meshes; cubes retain Frustum.
   The milestone checker passes all four automated items. Clean `3cf04848` passes native 38+4 exact
@@ -199,7 +199,7 @@
   when reading the whole Wasm response; `84403f5a` hashes the actual instantiation input
   inside Chrome instead. All four automated M2 items now pass, including 16 exact Chrome
   views and all registered baselines (38 + 4 native, four Chrome sets of 481 records).
-  [Current evidence](../../evidence/CULLING/M2.md) retains identities, reports and the
+  [Current evidence](../../../.orchestrate/evidence/CULLING/M2.md) retains identities, reports and the
   failed transport trace. M2 remains `in_progress`; integration and lead review follow.
 
 - 2026-11-13 Final clean-source simulator samples progress from 117 to 957 presents
@@ -212,7 +212,7 @@
 - 2026-11-13 The rebased exact verifier passes on clean `2f91255a` in 905.27 seconds:
   native 38 + 4 comparisons and all four Chrome sets of 481 records, with retained
   references unchanged. The current proof, complete verifier log and record are
-  retained in [M2 evidence](../../evidence/CULLING/M2.md). Retry the checked merge
+  retained in [M2 evidence](../../../.orchestrate/evidence/CULLING/M2.md). Retry the checked merge
   with M2 still `in_progress`; no production source changed in this rebase.
 
 - 2026-11-13 The full repository gate caught two mesh-route fixture assertions that
@@ -225,7 +225,7 @@
 - 2026-11-13 Clean `0b520c56` passes both repaired Frustum bucket tests and the full
   exact verifier in 891.16 seconds: 38 + 4 native comparisons and four Chrome sets of
   481 records. Retained the original gate failure, focused pass and fresh exact proof
-  in [M2 evidence](../../evidence/CULLING/M2.md). The checked merge retries the whole
+  in [M2 evidence](../../../.orchestrate/evidence/CULLING/M2.md). The checked merge retries the whole
   repository gate with M2 left `in_progress`.
 
 - 2026-11-13 Review round 1 reopens M2.2 for `simulator_complete_scene_unchecked`.
@@ -241,7 +241,7 @@
   12,648,528 RGBA bytes against explicit Direct and presents eight progressing samples.
   The actual omitted-geometry draw fails by 1,158,221 pixels. All four M2 automated
   checks and iOS Clippy pass, including native 38 + 4 exact comparisons and four Chrome
-  sets of 481 records. [M2 evidence](../../evidence/CULLING/M2.md) retains the reports,
+  sets of 481 records. [M2 evidence](../../../.orchestrate/evidence/CULLING/M2.md) retains the reports,
   raw readbacks, stills and mutation patch. M2.2 is pass, and M2 is `in_progress`.
 
 - 2026-11-14 Planner, from the lead's task: "Decide ownership of the helper-derivative (Metal triangle-merging)
@@ -267,7 +267,7 @@
 
 - 2026-11-15 Planner, from `EFFECT-GRAPH` M3's stop: Chrome's image varies too. Two Chrome records, one of
   `APPLE-TILE` M10 and one of `EFFECT-GRAPH` M3, differ from their references only along shared triangle edges
-  ([reading](../../evidence/EFFECT-GRAPH/M3-replan/README.md)); the design lists Chrome as not measured.
+  ([reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M3-replan/README.md)); the design lists Chrome as not measured.
   [The module list's ruling](../ARCHITECTURE.md#a-frame-that-varies-under-load) lets a failed verifier run of
   that kind be set aside until M3's coverage output lands; after that such a failure ends `BLOCKED`. The design
   and M3's items are unchanged.
@@ -299,39 +299,39 @@
   drawn Direct, so they cannot tie a campaign made on the branch to the culled and bucket pipelines after a
   rebase. M3.11's campaign is now taken once on main, after the merge; it adds the cube route and stops after
   sixteen pairs. M3.11 written again; every other item unchanged. One new assumption for the owner. No check
-  command changed, and no GPU check was run. [Record](../../evidence/CULLING/M3-replan/loaded-proof-on-main.md).
+  command changed, and no GPU check was run. [Record](../../../.orchestrate/evidence/CULLING/M3-replan/loaded-proof-on-main.md).
 
 - 2026-11-16 Resumed from reset main `8bdd01ae0`; selected the coverage, browser-default and benchmark fixes,
   leaving the old landing pipeline on its preserved branch and removing its scratch twins. Added coverage to
   main's new opaque secondary-view entries and a bounded, measurement-only campaign for all eight combinations.
   Documentation checks pass. ATMOSPHERE M9 moved eighteen reference files, so fresh differences are required.
   The shared exact-image run fails at the pre-existing APPLE-TILE temporal capture stage and is bisecting;
-  no current reference qualification, target pass or merge is claimed. [Evidence](../../evidence/CULLING/M3.md).
+  no current reference qualification, target pass or merge is claimed. [Evidence](../../../.orchestrate/evidence/CULLING/M3.md).
 
 - 2026-11-16 Current native/Chrome route checks and temporal cycle pass; paired rows keep Frustum and all
   twenty scene/star/request cases pass. Coverage changes implicit derivatives only at opaque triangle joins.
   Thirty native references and four Chrome manifests are regenerated without changing comparisons or sampling.
   All five sets moved: apple-tile-native, chrome-day-sdr, chrome-day-scene-linear, chrome-night-sdr and
-  chrome-night-scene-linear; none stayed unchanged. [Every old/new SHA-256](../../evidence/CULLING/M3/replan/reference-refresh.json).
+  chrome-night-scene-linear; none stayed unchanged. [Every old/new SHA-256](../../../.orchestrate/evidence/CULLING/M3/replan/reference-refresh.json).
   Native and all 36 selected Chrome difference pairs pass the builder's inspection; the initial old-main
   day-linear variation and full unchanged retry are retained. The refreshed-build verifier and merge remain.
 
 - 2026-11-16 The refreshed-build verifier completes native 38 + 4 and all four 481-record Chrome sets,
   then rejects its checkout invariant because the builder edited the campaign counter during the run.
-  [All successful component results and the rejected overall record](../../evidence/CULLING/M3/replan/verifier-checkout-change/record.json)
+  [All successful component results and the rejected overall record](../../../.orchestrate/evidence/CULLING/M3/replan/verifier-checkout-change/record.json)
   are retained; no overall pass is claimed. The counter now counts completed GPU rows rather than metadata,
   with a passing CPU regression test. The failed verification is retried on a frozen checkout, with all
   references, comparisons and sampling unchanged. No merge or main-branch campaign is claimed.
 
 - 2026-11-16 The frozen coverage build `f3e96ad1c` passes the complete refreshed-reference verifier:
   native 38 + 4 comparisons and four Chrome sets of 481 records, with its clean-checkout invariant intact.
-  [Complete compact records](../../evidence/CULLING/M3/replan/verifier-pass/record.json) retain the source,
+  [Complete compact records](../../../.orchestrate/evidence/CULLING/M3/replan/verifier-pass/record.json) retain the source,
   artifacts, workload and toolchain. The preceding incomplete temporal observer is retained separately.
   The untouched starting-main verifier runs next; no reference or comparison was changed between attempts.
   Main has advanced without moving the 34 references, so the reviewed plan requires no regeneration.
 
 - 2026-11-16 The clean starting main `8bdd01ae0` passes its full verifier: native 38 + 4 and all
-  four 481-record Chrome sets. [Starting-main record](../../evidence/CULLING/M3/replan/starting-main-pass/record.json)
+  four 481-record Chrome sets. [Starting-main record](../../../.orchestrate/evidence/CULLING/M3/replan/starting-main-pass/record.json)
   proves the replaced references were what main drew. The coverage build's full verifier also passes.
   The coverage output, regenerated references and pins now go through the official merge together;
   their cause and every old/new SHA-256 remain in the linked shared refresh inventory above.
@@ -340,14 +340,14 @@
   It expects 31,434 source bytes and observes 31,903, exactly the coverage-only addition of 469 bytes.
   This is a source fingerprint, not an image mismatch. The test remains unchanged under this plan's stop rule.
   Proposal for the lead and SCENE-VIEWS owner: rebase its independent no-view source witness onto the approved
-  coverage output while retaining every absence check. [Failure and diagnosis](../../evidence/CULLING/M3/replan/merge-failure/diagnosis.md).
+  coverage output while retaining every absence check. [Failure and diagnosis](../../../.orchestrate/evidence/CULLING/M3/replan/merge-failure/diagnosis.md).
   M3.13's paired cost measurement can proceed independently; the main-only campaign and captures cannot.
 
 - 2026-11-16 M3.13 records two paired interleaved capture-off 1080p valley runs per native recipe,
   with 361 ticks per mode/run and complete per-pass/whole-frame p50/p95, identities, raw rows and load.
   Frustum paired whole p50 increases are Portable +0.168373/+0.183998 ms and AppleTile +0.149372/+0.149298 ms.
   All twelve mode/run paired p50 increases are 2.81–5.06%; no 25% tripwire crosses. These are contended costs,
-  not budgets. [Evidence and exact retained inputs](../../evidence/CULLING/M3/replan/coverage-cost/README.md).
+  not budgets. [Evidence and exact retained inputs](../../../.orchestrate/evidence/CULLING/M3/replan/coverage-cost/README.md).
   The ledger records them on branch fbce0768c; main-only campaign and fresh motion remain unqualified.
 
 - 2026-11-16 Resumed after SCENE-VIEWS fixed its independent source witness on main in `8bc658ebe`
@@ -359,14 +359,14 @@
 - 2026-11-16 T2-CAPTURE landed comparison tooling and new pins without moving references. A diagnostic
   merge identifies only the registry conflict; the waiting CULLING client is canceled and the branch rebased.
   All baseline definitions are retained, combined pins recomputed and CULLING M3 refreshes preserved.
-  The CPU reference guard passes. [Pin reconciliation](../../evidence/CULLING/M3/replan/pin-rebase.json).
+  The CPU reference guard passes. [Pin reconciliation](../../../.orchestrate/evidence/CULLING/M3/replan/pin-rebase.json).
   The official merge is retried alone, with no repeated image proof or coverage-cost measurement.
 
 - 2026-11-16 The official merge returned MERGED at `534ba5021`, together with RIVERS M3.
   Coverage, all thirty native references, four Chrome manifests and pins landed together.
   The registry diff changes only the five sets' pins and CULLING M3 refreshes; registered comparisons are unchanged.
-  [Landing and registry audit](../../evidence/CULLING/M3/replan/landing/registry-audit.json) and
-  [fresh default-release build identities](../../evidence/CULLING/M3/replan/main-builds.json) retain the proof.
+  [Landing and registry audit](../../../.orchestrate/evidence/CULLING/M3/replan/landing/registry-audit.json) and
+  [fresh default-release build identities](../../../.orchestrate/evidence/CULLING/M3/replan/main-builds.json) retain the proof.
   The main-build loaded campaign and final target motion capture pass are now running separately.
 
 - 2026-11-16 M3.7 and M3.8 have fresh merged-build T2 content inspection: native 963 and Chrome 416
@@ -374,37 +374,37 @@
   No culling pop, hole or flicker was observed in whole frames and consecutive 1× edge/ridge/cover crops.
   Three incomplete Chrome exports remain recorded; the complete arm uses an eight-thread Node observer pool,
   with game bytes, capture buffers, frame rate and export bounds unchanged. No cause or cadence is inferred.
-  [Motion proof and verified source selections](../../evidence/CULLING/M3/replan/motion.md).
+  [Motion proof and verified source selections](../../../.orchestrate/evidence/CULLING/M3/replan/motion.md).
   The first campaign stopped on disk reserve after six clean candidate routes; a new bounded run is active.
 
 - 2026-11-16 M3.11's standalone main-build campaign passes eight complete pairs, covering every recipe,
   source and entity-route combination with four hosts and two counted render workers. The coverage build
   differs in none of eight routes; the coverage-only control differs in five, at eleven ticks in total.
-  [Report, complete raw sources and identities](../../evidence/CULLING/M3/replan/main-campaign/README.md).
+  [Report, complete raw sources and identities](../../../.orchestrate/evidence/CULLING/M3/replan/main-campaign/README.md).
   All thirteen items now have target evidence.
   The G3c clause audit and ledger separate implementation, correctness, content and contended costs.
 
 <<<<<<< HEAD
-- 2026-11-17 Re-plan on the lead's task, after [the second review](../../evidence/CULLING/M3-review.md) left
+- 2026-11-17 Re-plan on the lead's task, after [the second review](../../../.orchestrate/evidence/CULLING/M3-review.md) left
   M3.7 and M3.8 unjudged for "full-refresh smoothness" and the builder asked for a paused-builder sitting.
   Cadence is not this module's: `SHOWCASE` judges it on the culled exit scene
   ([ruling](../ARCHITECTURE.md#who-judges-frame-cadence), [design](DESIGN.md#frame-cadence)). The design's
   Cost paragraph and M3's quality bar had said "smooth at the display's full refresh", which the review followed;
   both, and M3.7 and M3.8, now say they judge which geometry each submitted frame holds. No check changed. The
-  script clears M3's claims; [what each item had](../../evidence/CULLING/M3-replan/claims-before-2026-11-17.md).
+  script clears M3's claims; [what each item had](../../../.orchestrate/evidence/CULLING/M3-replan/claims-before-2026-11-17.md).
 =======
 - 2026-11-17 The second review passes eleven items and leaves M3.7/M3.8 unjudged for full-refresh motion.
   The initial display query found an awake 120 Hz panel; the recorded preflight then found it asleep/inactive.
   Source inspection confirms the headless Chrome recorder is capped at 60 Hz; the ordinary page uses rAF.
   No cause for the review's native/Chrome gaps is established, and no new capture or trace is claimed.
-  [Follow-up and setup request](../../evidence/CULLING/M3/motion-followup/README.md) retain the limits.
+  [Follow-up and setup request](../../../.orchestrate/evidence/CULLING/M3/motion-followup/README.md) retain the limits.
   Resume with an awake active panel and ORCHESTRATE's lead-arranged final cadence sitting.
 
 - 2026-11-17 Applied the reviewed geometry-only scope of M3.7/M3.8; cadence belongs to SHOWCASE.
   Restored three selected-source archives and audited complete 963-frame native and 416-frame Chrome joins.
   Re-inspected whole frames, consecutive 1× edge/ridge/cover/cut crops, five exact fixed checkpoints per target
   and twelve paired field cover frames. No culling pop, missing geometry, delayed reveal or flicker was seen.
-  [Geometry judgement and reproducible identity audit](../../evidence/CULLING/M3/geometry/README.md).
+  [Geometry judgement and reproducible identity audit](../../../.orchestrate/evidence/CULLING/M3/geometry/README.md).
   Accepted correctness, baseline, campaign and cost evidence stands; no runtime or reference changed.
 >>>>>>> 83165972e (Record CULLING motion review gaps and attended setup blocker)
 

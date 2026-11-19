@@ -7,14 +7,14 @@
   Refusal preserves the endpoint, digest, resources, publication and prior delta; finite retry succeeds.
   Clean Mac, Chrome and simulator runs reproduce both unchanged retained traces and profile vectors.
   The local full gate timed out late in V1 GPU tests; canonical integration reruns the whole gate.
-  [Repair evidence](../../evidence/SIM-2D/M3-resource-repair.md) records verification and target limits.
+  [Repair evidence](../../../.orchestrate/evidence/SIM-2D/M3-resource-repair.md) records verification and target limits.
 
 - 2026-11-17 M2 second-review repair: fresh full two-run release campaigns at `768636def`.
   Both cost validators and the documentation gate pass; no applicability check was relaxed.
   Mac retains all 24 serial/parallel rows and Chrome all 12 rows, with original clean-build provenance.
   M1 regressions and scaling flags remain explained; warmed Mac calls measure zero allocations.
   Timing and replay variation remain shared-host observations, with no isolated causal claim.
-  [Current records, source identities and limits](../../evidence/SIM-2D/M2.md).
+  [Current records, source identities and limits](../../../.orchestrate/evidence/SIM-2D/M2.md).
 
 - 2026-11-17 M2 Chrome queue repair: nine conformance requests share one browser and queue turn.
   Full Chrome vectors and eight trace routes pass; unused returned timelines are omitted.
@@ -22,15 +22,15 @@
   Eleven harness tests and JavaScript syntax pass; the full gate passed before rebase.
   Integrated two-run Mac and Chrome costs at `119bd20ab` pass both source validators.
   Zero warmed allocations; all tripwires retained; legacy CULLING links repaired; docs gate passes.
-  [Proof, failed attempt and limits](../../evidence/SIM-2D/M2/chrome-queue-repair.md).
-  [Current measurements](../../evidence/SIM-2D/M2/performance.md) and [recovery note](../../evidence/SIM-2D/M2-handoff.md).
+  [Proof, failed attempt and limits](../../../.orchestrate/evidence/SIM-2D/M2/chrome-queue-repair.md).
+  [Current measurements](../../../.orchestrate/evidence/SIM-2D/M2/performance.md) and [recovery note](../../../.orchestrate/evidence/SIM-2D/M2-handoff.md).
 
 - 2026-11-16 M2 review repair: fresh two-run Mac and Chrome costs at `d24658b33`.
   Both source/completeness validators pass with the integrated clock/presentation sources.
   Original records and profiles retain their historical provenance; no measurements were relabeled.
   Current rows retain load, serial/parallel outcomes, M1/repeat comparators and every tripwire.
   Native warmed calls allocate zero; timing figures remain shared-host baselines.
-  [Fresh evidence, regressions and limits](../../evidence/SIM-2D/M2.md).
+  [Fresh evidence, regressions and limits](../../../.orchestrate/evidence/SIM-2D/M2.md).
 
 - 2026-11-16 M2 added ordered circle, box, capsule and nearest queries with bounded wide scans.
   The oracle, hand geometry, domain refusal and live swept-hit checks pass on the Mac.
@@ -38,7 +38,7 @@
   Crowd's retained file is unchanged; Mixed was retained independently by a straight corrected run.
   Two full release repeats per cost target retain load and comparator rows; warmed calls allocate zero.
   Mac and Chrome CPU profiles locate hot paths behind the recorded regressions; no causal share is claimed.
-  Full and documentation gates pass. [Evidence and limits](../../evidence/SIM-2D/M2.md); images use the main check.
+  Full and documentation gates pass. [Evidence and limits](../../../.orchestrate/evidence/SIM-2D/M2.md); images use the main check.
 
 - 2026-11-15 M1 integration resumed with all twelve retained builder results passing.
   Stopped the inherited, idle two-hour custom merge job without source changes.
@@ -51,7 +51,7 @@
   engine-owned publication API adaptation. Refreshed both two-repeat cost records.
   The first Mac 5,000-body row regressed 44.7%; the second regressed 5.6%, with
   concurrent target runs and recorded load supporting contention as a likely cause.
-  [Evidence](../../evidence/SIM-2D/M1.md) retains every repeat and the unchanged digests.
+  [Evidence](../../../.orchestrate/evidence/SIM-2D/M1.md) retains every repeat and the unchanged digests.
 
 - 2026-11-15 M1 clean-checkout recovery: the reported gate failure came from
   APPLE-PRESENTATION M3 links to evidence absent from the merged checkout. Main's
@@ -77,7 +77,7 @@
   encoding, preventing a diagnostic digest from observing a NaN payload. The registered-rule
   refusal test uses a nested component and the arithmetic tests exercise distinct NaN encodings.
 - 2026-11-15 Full target qualification and two full-trace cost runs passed at `aa8dd9cb`.
-  [M1 evidence](../../evidence/SIM-2D/M1.md) retains receipts, tests and costs. The retained folds
+  [M1 evidence](../../../.orchestrate/evidence/SIM-2D/M1.md) retains receipts, tests and costs. The retained folds
   stay `87496bd96b8c5be4`, `290bd104cb7a0409`, `8f66295acaf3bd0c`. Table-size growth explains
   the 5,000-body neighbour-scaling tripwires. Shared-host load is recorded with both repeats.
   Eight-tick replay at 10,000 costs 69 ms on the Mac and 73–86 ms in Chrome.
@@ -89,7 +89,7 @@
   rounded operations behind one engine-owned number type, not fixed point: Rust and WebAssembly both promise those
   operations bit for bit apart from a NaN's bits, and Box2D 3.1 and Rapier ship on the same footing. The queries
   go in a new crate, `thrum-sim2d`, beside `thrum-core`.
-- 2026-11-13 Planner's probe, in [the evidence folder](../../evidence/SIM-2D/planning-probe.md). A throwaway crowd
+- 2026-11-13 Planner's probe, in [the evidence folder](../../../.orchestrate/evidence/SIM-2D/planning-probe.md). A throwaway crowd
   of 2,000, 5,000 and 10,000 in those operations gave equal digests over 3,600 ticks on the Mac, the iPhone
   simulator and Wasm in Node and Chrome 157. The platform's `sin` and `powf` diverged between the Mac and Wasm
   but not between the Mac and the simulator, so the Wasm row is the one that discriminates and is where the
@@ -112,7 +112,7 @@
   it should before the work exists. The verifier items were not dry-run, because the GPU is shared.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
 - 2026-11-13 Design review: Design Changes Requested, two Must Fix findings
-  ([review](../../evidence/SIM-2D/design-review.md)). The design, plan and done-when file were changed to answer it.
+  ([review](../../../.orchestrate/evidence/SIM-2D/design-review.md)). The design, plan and done-when file were changed to answer it.
 - 2026-11-13 MF1, performance gates removed. The 16.7 ms line no longer fails the cost command or stops a builder,
   and M2.4 no longer requires zero warmed allocations: brief decision 3 and the owner's decision of 6 November make
   such figures baselines. Times and allocation counts are still recorded, tripwires are flagged in the record and
@@ -156,7 +156,7 @@ their newer entries. The rebased source at `37134ad8` contains six upstream clou
 source/test changes. Both retained simulation cost records still pass their measured-source
 identity checks. The simulation sources are byte-identical to the qualified M1 source.
 
-The selected [exact-baseline receipt](../../evidence/SIM-2D/M1/exact-baselines.json) records
+The selected [exact-baseline receipt](../../../.orchestrate/evidence/SIM-2D/M1/exact-baselines.json) records
 each proof's actual revision, covered-content key, comparisons and build identities.
 Canonical integration requires the verifier on rebased covered content and `./dev check`
 on the combined tree. The proof-and-merge runner refreshes that receipt before merging.
@@ -177,7 +177,7 @@ Preserved the previous cost record across both repeats; a regression test covers
 Mac, Chrome and simulator conformance reproduce the unchanged folds and expanded vectors; the sine control diverges.
 Two release cost runs per target at `6ce949c39` pass source and completeness checks, with named prior comparators.
 Clock and quarter-regression flags are false; the 5,000-body scaling flags remain explained by grid growth.
-The six focused Rust checks pass. [Evidence and measured limits](../../evidence/SIM-2D/M1.md).
+The six focused Rust checks pass. [Evidence and measured limits](../../../.orchestrate/evidence/SIM-2D/M1.md).
 
 ## M1 cost identity after merge, 16 November 2026
 
@@ -186,7 +186,7 @@ The key now follows the runner's normal/build dependencies on all targets and th
 Five focused tests and the historical merge regression pass; runtime changes still invalidate the key.
 Fresh two-run release records at `42fe7d0fd` pass both cost validators and retain identical artifact hashes.
 Clock and quarter-regression flags are false. The evidence records the scaling flags and replay outlier.
-[Evidence, regression receipt and measured limits](../../evidence/SIM-2D/M1.md).
+[Evidence, regression receipt and measured limits](../../../.orchestrate/evidence/SIM-2D/M1.md).
 
 ## M1 package feature graph, 16 November 2026
 
@@ -195,7 +195,7 @@ The key now hashes the package-scoped Cargo tree's active features/edges and sel
 Records retain input manifests. Seven tests and the actual clean-checkout comparison pass.
 Both historical workspace/lockfile changes preserve the key; runtime source changes invalidate it.
 Fresh two-run records at `8d59950fc` pass both cost validators, with unchanged native/Wasm hashes.
-[Evidence and current measurements](../../evidence/SIM-2D/M1.md) retain the known scaling flags.
+[Evidence and current measurements](../../../.orchestrate/evidence/SIM-2D/M1.md) retain the known scaling flags.
 
 ## M3 portable rule authoring, 17 November 2026
 
@@ -204,14 +204,14 @@ The guard pins configuration, forbids lowering profile lints and runs with its c
 One passing fixture, eleven refusals and fifteen conformance adapter tests pass on the Mac.
 Crowd and Mixed reproduce retained digests and profile vectors on Mac, Chrome and iPhone simulator.
 The guide's straight recording matches Crowd; the registered sine control diverges at tick 1 in Chrome.
-[Evidence and limits](../../evidence/SIM-2D/M3.md) record unchanged references and simulator function only.
+[Evidence and limits](../../../.orchestrate/evidence/SIM-2D/M3.md) record unchanged references and simulator function only.
 
 ## M3 target-specific rule guard, 18 November 2026
 
 Every registered rule package is linted in development and release on native, Wasm and ARM64 simulator builds.
 The two target-specific controls are refused where compiled, including a release-only simulator call.
 Crowd and Mixed match all retained folds, checkpoints and profile vectors on Mac, Chrome and iPhone simulator.
-[Evidence](../../evidence/SIM-2D/M3-target-guard.md) includes the six build configurations and all 26 trace rows.
+[Evidence](../../../.orchestrate/evidence/SIM-2D/M3-target-guard.md) includes the six build configurations and all 26 trace rows.
 
 ## M3 full Philox draw, 18 November 2026
 
@@ -219,4 +219,4 @@ Exposed the full keyed 64-bit draw and its top-24-bit conversion to a profile nu
 The native public API test and all three published two-word known answers pass.
 All 26 Mac, Chrome Wasm and iPhone simulator rows match the retained folds and checkpoints.
 The guide recording matches 603 Crowd data rows, and the sine control diverges at tick 1.
-[Evidence and target limits](../../evidence/SIM-2D/M3-random-draw.md).
+[Evidence and target limits](../../../.orchestrate/evidence/SIM-2D/M3-random-draw.md).

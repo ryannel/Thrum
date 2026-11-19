@@ -21,9 +21,9 @@
           "ask": "Read the test. Does it make a scratch games repository and two engine trees that differ, and show the game built against the tree the gate ran in and not the sibling one? Does it pass with no `thrum-games` on the machine?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M1-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -31,9 +31,9 @@
           "ask": "After a gate run, is the games repository's working tree, lockfile and index exactly as before? What does the record hold when the games tree was taken as it stands?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M1-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -41,9 +41,9 @@
           "ask": "Is the exit code for a missing repository distinct from a failed build and from a failed game check? With `THRUM_GAMES` set to a path that does not exist, does the gate report a missing repository even when one sits beside the main checkout? Does anything in `./dev check` call the gate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M1-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -51,9 +51,9 @@
           "ask": "Does the test's scratch game fail `boundary` when it depends on a package under the engine's `examples/`, when it includes a file from the engine's source by path, and when it takes `thrum-fixtures` as a normal dependency?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M1-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -63,7 +63,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M1-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md"
         }
       ]
     },
@@ -89,9 +89,9 @@
           "check": "python3 scripts/shape_rules.py check --rule package-reach --zero .",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M2.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M2-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -101,9 +101,9 @@
           "ask": "Is the field's data (entities, materials, camera path, prop meshes, day cycle) defined anywhere but `thrum-fixtures`: in the proving ground, in `thrum-render`'s tests, or as a second copy? Does `thrum-fixtures` depend on wgpu or on any workspace package? Does anything but the proving ground take it as a normal dependency? Are the visibility tests' assertions and references unedited?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M2.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M2-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -111,9 +111,9 @@
           "ask": "Does any engine test's result still depend on a file under `examples/`? Does the web build script still copy a file out of `thrum-render`'s source?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M2.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M2-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -122,9 +122,9 @@
           "ask": "Read the script. Does it work on a copy in which the two folders are really absent, and build tests and benches, not only libraries?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/GAME-SPLIT/M2.md",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M2-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -134,7 +134,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/GAME-SPLIT/M2-review.md"
+          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md"
         }
       ]
     },

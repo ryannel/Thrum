@@ -20,9 +20,9 @@
           "ask": "Read the test. Are the expected figures worked out there from continuity and the weir relation, without the solver? Would a solver that routes water down the steepest slope and takes its depth from Manning cell by cell fail the pool?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -31,9 +31,9 @@
           "ask": "Are the closed forms in the test its own arithmetic (Bernoulli's branches and the jump condition, a bed integrated for a chosen depth, Manning's normal depth), as in part 1 of `docs/evidence/RIVERS/design-proof/river_proof.py`? Would Audusse's reconstruction, 23% over on the steep sheet there, fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -41,9 +41,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test fronts",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -52,9 +52,9 @@
           "ask": "Does the test compute friction's power from Manning's relation itself and compare, or does it read both sides from the solver's own account?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -62,9 +62,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test report",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -73,9 +73,9 @@
           "ask": "Is the chart declared only through `thrum-water-model`'s public interface, with no change to that crate in this milestone? Does the test work the expected joined row out from the join's documented weight and the two rows, with no joined cell skipped? Would a chart that gave a dry cell the nearest wet level fail the hollow?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -83,9 +83,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test store",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -94,9 +94,9 @@
           "ask": "Was the record taken on this milestone's solver, in a release build, and does it say how its cell updates compare with part 5's count?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/river-cost.json",
+          "evidence": ".orchestrate/evidence/RIVERS/river-cost.json",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -105,9 +105,9 @@
           "ask": "Does any file in the crate or its tests name a place, a preset or a water type that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -115,9 +115,9 @@
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/PROVENANCE.md",
+          "evidence": ".orchestrate/evidence/RIVERS/PROVENANCE.md",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -125,9 +125,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
+          "evidence": ".orchestrate/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M1-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M1-review.md"
         }
       ]
     },
@@ -147,9 +147,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test brinks",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (brinks)",
+          "evidence": ".orchestrate/evidence/RIVERS/M2.md#measured (brinks)",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -158,9 +158,9 @@
           "ask": "Does the test show a lower dry cell in place of the lip's face failing the lip's depth, as part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py` does?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (falls)",
+          "evidence": ".orchestrate/evidence/RIVERS/M2.md#measured (falls)",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -169,9 +169,9 @@
           "ask": "Is the change to the map's preparation confined to a declared brink end, so that no chart an existing test or the example declares is prepared differently? Was any existing test of `thrum-water-model` edited?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (brink_end, thrum-water-model tests)",
+          "evidence": ".orchestrate/evidence/RIVERS/M2.md#measured (brink_end, thrum-water-model tests)",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -180,9 +180,9 @@
           "ask": "Are the expected paths, speeds and thicknesses the closed forms of part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py`, worked out in the test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (sheet)",
+          "evidence": ".orchestrate/evidence/RIVERS/M2.md#measured (sheet)",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -190,9 +190,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test plunge",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#review-fix-the-plunge-at-the-shoreline (plunge, incl. a_path_down_the_rock_meets_the_water_at_the_shoreline_at_every_stage)",
+          "evidence": ".orchestrate/evidence/RIVERS/M2.md#review-fix-the-plunge-at-the-shoreline (plunge, incl. a_path_down_the_rock_meets_the_water_at_the_shoreline_at_every_stage)",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -201,9 +201,9 @@
           "ask": "Does any new file or test name a place, a preset or a water type that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (cargo tree)",
+          "evidence": ".orchestrate/evidence/RIVERS/M2.md#measured (cargo tree)",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -213,7 +213,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M2-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M2-review.md"
         }
       ]
     },
@@ -233,9 +233,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test samples",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (samples); docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (samples); .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -244,9 +244,9 @@
           "ask": "Does the test compare the mixed row with a fresh solve at the level between, in the cells both samples wet, as part 3 of `docs/evidence/RIVERS/design-proof/river_proof.py` does, and would a chart left at one sample with its level raised fail it? Was any existing test of `thrum-water-model` edited?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (gauge, thrum-water-model tests); docs/evidence/RIVERS/M3.md#after-the-first-review-a-chart-as-the-source-body-m32; docs/evidence/RIVERS/M3-gauge-chart.txt; docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (gauge, thrum-water-model tests); .orchestrate/evidence/RIVERS/M3.md#after-the-first-review-a-chart-as-the-source-body-m32; .orchestrate/evidence/RIVERS/M3-gauge-chart.txt; .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -254,9 +254,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test fall_gauge",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (fall_gauge); docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (fall_gauge); .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.8",
@@ -265,9 +265,9 @@
           "ask": "Are the wet cells judged at gauges either side of each wetting, the ridge's and the lip's, as parts 8 and 10 of `docs/evidence/RIVERS/design-proof/` do? Would a dry cell at the nearest wet level fail the hollow, and a flood seeded only from the lower sample's wet cells fail the dry reach?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (wetting, thrum-water-model tests); docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (wetting, thrum-water-model tests); .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -276,9 +276,9 @@
           "ask": "Does the test work the expected heights out from Manning's relation at the solver's depths and speeds, with its own arithmetic?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (chop); docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (chop); .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -287,9 +287,9 @@
           "ask": "Do the flow bands hold any power that depends on the wind, the fetch or a swell? Is a body that is not a river given a flow gain anywhere?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (flow_bands, thrum-water-model tests); docs/evidence/RIVERS/M3-bits.md; docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (flow_bands, thrum-water-model tests); .orchestrate/evidence/RIVERS/M3-bits.md; .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -297,9 +297,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (conformance); docs/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
+          "evidence": ".orchestrate/evidence/RIVERS/M3.md#measured (conformance); .orchestrate/evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -309,7 +309,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/RIVERS/M3-review.md"
+          "review": ".orchestrate/evidence/RIVERS/M3-review.md"
         }
       ]
     },

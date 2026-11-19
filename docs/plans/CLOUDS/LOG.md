@@ -5,7 +5,7 @@
   its old integration helper holds a device lock across merges. Current integration
   uses the canonical merge directly; M13.10 cites the shared main-branch exact-images
   check, retaining the earlier target receipt as history. The two numerical fixes
-  and their CPU-only scope remain documented in [the evidence](../../evidence/CLOUDS/M13.md).
+  and their CPU-only scope remain documented in [the evidence](../../../.orchestrate/evidence/CLOUDS/M13.md).
 
 - 2026-11-15 M13's rebase at `f0e05146` changes no cloud-model implementation or
   test. All ten item commands passed again, including 38/4 native comparisons and
@@ -17,7 +17,7 @@
 - 2026-11-15 M13 adds surface/datum and fog references, radiative cooling, visibility,
   Sun paths, medium coefficients and haze to the renderer-free model. All nine CPU
   and dependency commands passed on `db3d8514` on mac-metal. The saturated-overcast
-  regression and exact shore-margin probes pass. [Evidence](../../evidence/CLOUDS/M13.md)
+  regression and exact shore-margin probes pass. [Evidence](../../../.orchestrate/evidence/CLOUDS/M13.md)
   and its receipt separate CPU correctness from visuals and performance, neither qualified.
   M13.10 passed at `4e8e9f27`: 38/4 native comparisons and 481 records in each of four
   Chrome sets, in 936.36 seconds. Its receipt retains the target artifact identities.
@@ -26,7 +26,7 @@
 - 2026-11-15 The full milestone check passed all 15 automated commands on `e866a1d7`,
   including `./dev check`. M1.13 passed on `7e41bac7`: 38/4 native comparisons and 481
   records in each of four Chrome sets, in 960.25 seconds. Every builder item has target
-  evidence. [Verification identities and diagnostics](../../evidence/CLOUDS/M1-final-verification.json)
+  evidence. [Verification identities and diagnostics](../../../.orchestrate/evidence/CLOUDS/M1-final-verification.json)
   retain the binary, Wasm, cooked-root and check-log identities. No cloud visual or speed
   qualification follows from this CPU milestone.
 - 2026-11-15 Canonical integration found duplicate handoff-link repairs; rebasing onto
@@ -45,7 +45,7 @@
   checks every coverage-zero column. Temporal and spatial tests measure top, thickness,
   coverage and optical depth, include different type bases and clear/cloud transitions,
   and reject a switched cell in each quantity. The unchanged reviewer probe's top maxima
-  are now 25.799/14.199/7.615 m at 4/2/1 seconds; [current evidence](../../evidence/CLOUDS/M1.md)
+  are now 25.799/14.199/7.615 m at 4/2/1 seconds; [current evidence](../../../.orchestrate/evidence/CLOUDS/M1.md)
   retains its output. The older contradiction and blocked handoff below are historical.
 - 2026-11-14 All 13 CPU/dependency item commands passed on `cb8f2aeb`, with full outputs
   under shared Git check key `212e9f1f636916305ff19efa`. Builder inspection found the ask
@@ -63,7 +63,7 @@
 - 2026-11-14 Proposal for the planner: define top only where a column is cloudy, retaining
   clear zeros, and require thickness continuity through clear transitions; separately test
   top where defined, including a changing type-table base. This is a proposal, not an adopted
-  interpretation or a change to the items. [Handoff](../../evidence/CLOUDS/M1-handoff.md).
+  interpretation or a change to the items. [Handoff](../../../.orchestrate/evidence/CLOUDS/M1-handoff.md).
 
 - 2026-11-13 Owner, through the lead, when asked whether SEA and CLOUDS planning could start now: "On 2 use the
   fable planner like normal but you can bring that across when it makes sense." The lead's reading, recorded as
@@ -88,7 +88,7 @@
   so an overcast sunset stays dark. Placed volumes are proved with stand-in shapes (M6) and the accepted library
   arrives late (M10), so the licence holds back as little as it can. Packages: `thrum-cloud-model` and
   `thrum-clouds`; the example is a selection in `examples/v1-game` and `examples/sea`.
-- 2026-11-13 Planner's reproduction, in [the evidence folder](../../evidence/CLOUDS/design-proof/). Weather
+- 2026-11-13 Planner's reproduction, in [the evidence folder](../../../.orchestrate/evidence/CLOUDS/design-proof/). Weather
   field: coverage takes cloudy columns from 0 to 100% with no step; column optical depth changes by at most 0.4
   a second of 41; births are Poisson in time, and a half-period birth jitter showed a peak of 4 at the
   generation period that a full-period jitter removed. Sun-path product at 80 m columns: ground shade within
@@ -103,11 +103,11 @@
 - 2026-11-13 Not read for the design: the Red Dead Redemption 2 course notes (Bauer 2019), the 2015 and 2017
   Nubis talks, and the Broadsides cloud shaders. The Nubis decks were read as slide text; they carry no speaker
   notes.
-- 2026-11-14 [Design review](../../evidence/CLOUDS/design-review.md): changes requested, four Must Fix findings
+- 2026-11-14 [Design review](../../../.orchestrate/evidence/CLOUDS/design-review.md): changes requested, four Must Fix findings
   and three suggestions. The lead's task: "Resolve its 4 Must Fix findings in the design and the plan. Its
   Suggestions are yours to take or leave; say which you took and why." The design, the plan, the done-when file
   and seam ruling 1 were revised. Reproduction:
-  [revision_proof.py](../../evidence/CLOUDS/design-proof/revision_proof.py) with its output beside it.
+  [revision_proof.py](../../../.orchestrate/evidence/CLOUDS/design-proof/revision_proof.py) with its output beside it.
 - 2026-11-14 MF1, numeric gates. No timing figure decides an item, a milestone or the next one's start (brief
   decision 3). The ten cost items (M2.9, M3.9, M5.7, M6.8, M7.8, M8.8, M9.8, M10.7, M11.6, M12.5) were written
   again as paired records whose tripped wires each carry an investigation; `cloud_cost.py check` fails only on a
@@ -157,7 +157,7 @@
   M8.9; "shadow-only" is Weather and Shade). K5 is restated as what the engine does.
 - 2026-11-14 Changed: the first scattering order takes the droplets' phase, Henyey-Greenstein plus Draine, as
   type data (M1.8, M5.1 and M5.3 written again; M5.8 is new). Part E of
-  [first_principles_proof.py](../../evidence/CLOUDS/design-proof/first_principles_proof.py): the reference lobe
+  [first_principles_proof.py](../../../.orchestrate/evidence/CLOUDS/design-proof/first_principles_proof.py): the reference lobe
   is 3.9 times too bright at 5 degrees from the Sun and 2 to 3.4 times too dim looking away from it.
 - 2026-11-14 Changed: drift is shown at the display's time and evolution stays on the tick (M1.1, M2.7, M3.4 and
   M7.4 written again; M2.11 is new). Part F: at 60x in a 40 m/s wind a near cloud would step 0 then 37 pixels.
@@ -179,7 +179,7 @@
   `SEA` keeps only the wave field. M11 waits on `WATERS:M8` in place of `SEA:M8`, and its example is
   `examples/water` (package `water-scene`, `scripts/check_water_browser.mjs`). Nothing else of this module changed.
 - 2026-11-14 Second design review: changes requested, two Must Fix
-  ([review](../../evidence/CLOUDS/design-review.md)). A footprint cannot give a placed shape's shade under a
+  ([review](../../../.orchestrate/evidence/CLOUDS/design-review.md)). A footprint cannot give a placed shape's shade under a
   slanting Sun, yet Shade without Sky was given footprints alone; and the Sun-disc spread on the first order's
   lobe removed 2% to 23% of its energy from 10 to 50 µm. The four earlier findings were found resolved.
 - 2026-11-14 Resolved, a shape's shade: the Sun's path integrates the forms that are drawn, so Shade holds the
@@ -187,7 +187,7 @@
   cell in its column form is shaded through it in every profile. M6.2 and M8.9 written again; M1.15 and M6.12
   are new. M6.2's Sun-path bound is M6's own measured one, since a hard edge sits within a column's width.
   New assumption: a shadow-only scene with shapes keeps its library loaded.
-- 2026-11-14 Found in [part H](../../evidence/CLOUDS/design-proof/second_revision_proof.py): the Sun's path
+- 2026-11-14 Found in [part H](../../../.orchestrate/evidence/CLOUDS/design-proof/second_revision_proof.py): the Sun's path
   must read a slab at its finest level. An average to the 80 m column spreads an opaque shape's shade, 0.11 to
   0.18 RMS against 0.01 to 0.05. Not chosen: a path from the column form in both profiles (0.04 to 0.14 RMS
   from the volume's shade), and a small always-resident coarse copy of each shape, which is that average.
@@ -221,7 +221,7 @@
   `ATMOSPHERE`'s own M7 and M8.
 - 2026-11-14 M1's items are unchanged, and it builds what it was building. Its note gained one sentence: ground
   condensate is M13's. M3's note asks that the trace be written over the general interval.
-- 2026-11-14 Reproduction: [whole_atmosphere_proof.py](../../evidence/CLOUDS/design-proof/whole_atmosphere_proof.py).
+- 2026-11-14 Reproduction: [whole_atmosphere_proof.py](../../../.orchestrate/evidence/CLOUDS/design-proof/whole_atmosphere_proof.py).
   The handover composes to the exact transmittance and to the in-scatter within 0.002; pooled mist covers 19%
   to 89% of a 200 m relief with no step; one integrated value forms mist by 22 h and clears it by 8 h, with none
   under overcast or wind; a ground band of 80 m columns and 9 heights is within 0.011 RMS in transmittance where
@@ -235,8 +235,8 @@
   under its word limit; no milestone's scope changed beyond the items named above.
 
 - 2026-11-14 M1 builder implemented the renderer-free CPU weather authority, directed footprints and volume
-  paths, density/conformance references, and point/disc optics. [Evidence](../../evidence/CLOUDS/M1.md) and
-  [phase measurements](../../evidence/CLOUDS/M1-phase.md) distinguish the numerical proofs from later visuals.
+  paths, density/conformance references, and point/disc optics. [Evidence](../../../.orchestrate/evidence/CLOUDS/M1.md) and
+  [phase measurements](../../../.orchestrate/evidence/CLOUDS/M1-phase.md) distinguish the numerical proofs from later visuals.
   All 14 item checks and the full project gate passed before integration; the detailed counts and revisions
   are in the evidence. Provenance was inspected with no Broadsides file copied. Integration rebased onto
   `145cadb2` and correctly requested a replacement baseline proof after two covered upstream scripts changed.
@@ -265,7 +265,7 @@
 
 - 2026-11-14 Rebased onto SEA M2 and dropped the duplicate private handoff-link fix. Covered inputs at
   `f83c2549` hash to `df6dcdc5e3fca468d0c8a0ae2ea9ad4cfff52c2c3fde8084b2aa2bd86e31293e`, matching
-  [SEA's retained verifier record](../../evidence/SEA/M2-baselines.json): Mac and Chrome passed in
+  [SEA's retained verifier record](../../../.orchestrate/evidence/SEA/M2-baselines.json): Mac and Chrome passed in
   965.46 seconds, with 38 and 4 native comparisons and 481 records in each of four Chrome sets.
   All 13 CPU/dependency commands were refreshed there, under shared Git check key `d82f679aa755f3194b973a13`.
   Canonical integration keeps GPU exclusivity and removes owned development builds before unlocking.
@@ -277,7 +277,7 @@
   Sun's-path section's first paragraph and M14.3's second sentence now say so; the fill is unchanged. The
   handover's in-scatter figure is qualified by that review's bank at the ramp. No other item changed.
 
-- 2026-11-14 [The design review of the ground revision](../../evidence/CLOUDS/design-review.md) asked for
+- 2026-11-14 [The design review of the ground revision](../../../.orchestrate/evidence/CLOUDS/design-review.md) asked for
   changes, four Must Fix. Re-planned; M1 is untouched. (1) The trace keeps a stop at every pixel's depth in
   place of two stops, and a carried stop is used only on its own surface; M15.1 and M15.7 rewritten. (2) A
   ground row's world factors (height over the surface, datum, shore) stay with the world and its air factors
@@ -290,10 +290,10 @@
   now takes the lent air in parts (a quarter of the ceiling); M3.6's form holds for a ray through one cloud.
   Suggestions taken: Chrome motion in M14.9, M15.9, M16.6 and M11.10, mist under MetalFX in M12.2, M11.1's
   owner, M11.2's water exclusion, and depth against density at amount zero. The figures are parts VII to XI of
-  [the design proof](../../evidence/CLOUDS/design-proof/README.md).
+  [the design proof](../../../.orchestrate/evidence/CLOUDS/design-proof/README.md).
 - 2026-11-14 M1 was Blocked on two of its items: M1.2 made every answer of a clear column zero and M1.4 had
   top never step, so top jumped by the base's height at each clear/cloud transition
-  ([review](../../evidence/CLOUDS/M1-review.md), [handoff](../../evidence/CLOUDS/M1-handoff.md)). Settled:
+  ([review](../../../.orchestrate/evidence/CLOUDS/M1-review.md), [handoff](../../../.orchestrate/evidence/CLOUDS/M1-handoff.md)). Settled:
   type and base are the weather's in cloud and in clear air; a clear column has no thickness, its top exactly
   at its base, and its coverage, age and optical depth are exactly zero. The builder's proposal, top defined
   only in cloud with zero kept for clear air, was not taken: the weather map filters base and top, so a zero
@@ -312,50 +312,50 @@
   The full CPU crate suite passes. Three-day tests cover four moisture levels, and footprint integrals
   cover erosion 0/0.4/1, three scales, three rotations and partial envelopes. The unchanged reviewer probe
   now returns 1.5 at erosion 0.4 and exactly zero saturated amounts from 11:00 through afternoon.
-  [Fresh proof and scope](../../evidence/CLOUDS/M13.md) retain the probe output; baseline and merge checks follow.
+  [Fresh proof and scope](../../../.orchestrate/evidence/CLOUDS/M13.md) retain the probe output; baseline and merge checks follow.
 - 2026-11-16 M13's second-review fix on `0df0b5f26` confines footprint-sum preservation to visibility
   queries. Sun paths, physical density and both medium entry points retain column-form erosion.
   M13.1–9 CPU/dependency checks pass on mac-metal; new regressions cover eroded footprint-only and
   supplied-volume Sun rays at four elevations, partial envelopes, ground overlap and medium agreement.
-  [The receipt](../../evidence/CLOUDS/M13-sun-path-fix.json) records source and output; existing visibility
+  [The receipt](../../../.orchestrate/evidence/CLOUDS/M13-sun-path-fix.json) records source and output; existing visibility
   integral regressions still pass. No GPU speed, rendered fog or display qualification is claimed.
 - 2026-11-16 Resumed M13 at `df12d883c`; all ten builder proofs remain recorded.
   The milestone helper confirms M13.1–9 on mac-metal. M13.10 returns the expected
   `NOT_ON_MAIN`, pending the shared exact-images run after merge. Its 600-second
   workspace gate times out during GPU tests without a reported test failure;
-  canonical integration runs the gate with its merge timeout. [CPU evidence](../../evidence/CLOUDS/M13.md)
+  canonical integration runs the gate with its merge timeout. [CPU evidence](../../../.orchestrate/evidence/CLOUDS/M13.md)
   includes the latest Sun-path and medium regressions; no visual claim is added.
 
 - 2026-11-16 M2 resumes Weather/Shade with publication-owned weather, integer map axes and
   GPU-written atmosphere shade; CPU diagnostic and absent providers retain their paths.
   Mac Metal item probes, default-limit conformance, submitted display-time mapping and
-  prescribed GPU-shade integration pass. [Bounds](../../evidence/CLOUDS/M2-conformance.md)
+  prescribed GPU-shade integration pass. [Bounds](../../../.orchestrate/evidence/CLOUDS/M2-conformance.md)
   retain the large coarse-grid/low-Sun errors and age's zero-contribution discontinuity.
   The workspace command passes; canonical integration proves its exact rebased source.
-  [Cost](../../evidence/CLOUDS/M2-cost.json) records refresh and memory excess with investigations;
-  [valley inspection](../../evidence/CLOUDS/M2.md) follows on the merged build.
+  [Cost](../../../.orchestrate/evidence/CLOUDS/M2-cost.json) records refresh and memory excess with investigations;
+  [valley inspection](../../../.orchestrate/evidence/CLOUDS/M2.md) follows on the merged build.
 - 2026-11-16 Planner: M2's block answered, on the lead's task ("settle and assign the shared display-time
   interface change before M2.7's uneven 60× shade motion can be completed"). The interpolation alpha stops at the
   committed tick, so it is not the display's time under a lead. `EFFECT-GRAPH` gains M4, the display phase, and
   M2 depends on it. Drift is taken at the phase, predicted past the tick from committed state. M2.7's inspection
   reads the time record and M2.11 covers both sides of a tick; M2's proof is reset.
-  [The reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md). M1's and M13's notes left the plan.
+  [The reading](../../../.orchestrate/evidence/EFFECT-GRAPH/M4-plan/README.md). M1's and M13's notes left the plan.
 - 2026-11-16 Planner: M2's drift revised after the design review's one Must Fix (MF1), with `EFFECT-GRAPH`.
   One tick's travel carried across a prediction of several ticks stepped 6 m during a wind ramp with nothing
   changed. Travel past the committed tick is now carried a tick at a time by the step's own arithmetic, exact
   while the targets stand; a changed target corrects by the change. The phase describes the consumed target.
   M2.11 rewritten, M2.13 added for the model, M2.7 reads lead status.
-  [Check](../../evidence/CLOUDS/M2-plan/display-travel.txt). S1 to S3 taken; S4 left, since M1 is Done.
+  [Check](../../../.orchestrate/evidence/CLOUDS/M2-plan/display-travel.txt). S1 to S3 taken; S4 left, since M1 is Done.
 - 2026-11-17 Planner, with `EFFECT-GRAPH` M4's re-plan: the design said display time is the consumed target less
   one tick, which is true only until the world's clock first stops. Three places now say it is the world's time
   ([the timing model](../EFFECT-GRAPH/DESIGN.md#the-timing-model)). No item and no mechanism changed: this module
   reads the tick and the phase as before.
-  [Valley inspection](../../evidence/CLOUDS/M2.md) records the subsequent merged build.
+  [Valley inspection](../../../.orchestrate/evidence/CLOUDS/M2.md) records the subsequent merged build.
 - 2026-11-16 M2 source `5ec67bed0` merged with the workspace gate passing; fixed-still
   completion bookkeeping is corrected. M2.6's four views and receiver passage pass builder
   and fresh-agent inspection. M2.7's complete 60× sequence visibly steps unevenly.
   Submitted alpha alternates near .92 and 1, requiring 36.8/3.2 m wind steps at ~8 ms.
-  [Proposal](../../evidence/CLOUDS/M2-temporal-blocker.md): the planner should assign a shared
+  [Proposal](../../../.orchestrate/evidence/CLOUDS/M2-temporal-blocker.md): the planner should assign a shared
   display-time policy to HOST/EFFECT-GRAPH that preserves unclipped target information;
   CLOUDS cannot recover it from the existing alpha. Other possible pop causes remain unisolated.
 
@@ -364,11 +364,11 @@
   Source `05ca24a7d` merged with the workspace gate passing. The merged fixed views and
   selected 1×/60× motion pair pass builder inspection and a fresh visual opinion; a zero-wind
   control adds local formation/dissolution evidence. The loaded first pair and its steps remain
-  retained. [Evidence](../../evidence/CLOUDS/M2-display-phase-captures/README.md) keeps complete
+  retained. [Evidence](../../../.orchestrate/evidence/CLOUDS/M2-display-phase-captures/README.md) keeps complete
   sources, per-frame target/travel tables and sampled-image limits; no physical cadence claim.
 - 2026-11-17 Ruling 8 now passes the haze's kind with its amount: the weather state holds an Ångström exponent
   beside the clear air's visual range, default 0, and the cloud selection hands both to `ATMOSPHERE`'s haze
-  input ([ATMOSPHERE's check](../../evidence/ATMOSPHERE/haze-kind-check.md)). M16.4 gains the exponent's
+  input ([ATMOSPHERE's check](../../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)). M16.4 gains the exponent's
   control and M16 gains M16.11. The visual range, the query and every built item are unchanged.
 
 - 2026-11-17 M3 adds a development Sky trace/compose and far-aerial candidate at
@@ -376,36 +376,36 @@
   diagnostic fixed stills and fresh opinions still fail M3.3's broad sunlit-side cue,
   reaching the plan's three-look stop. These are early, incomplete implementations:
   the phase, ambient integration and temporal pipeline remain provisional or absent.
-  [Attempts](../../evidence/CLOUDS/M3-attempts/README.md) and
-  [handoff](../../evidence/CLOUDS/M3-handoff.md) distinguish confirmed runs from open work.
+  [Attempts](../../../.orchestrate/evidence/CLOUDS/M3-attempts/README.md) and
+  [handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md) distinguish confirmed runs from open work.
 
 - 2026-11-17 M3 resumes at `b911eb4a5` with uncommitted lighting and temporal work,
   retained in checkpoint `8f7f15c55`. Scoped Clippy, formatting, the Metal slab
   test and all three submitted-frame tests pass; M3.4 has builder proof.
-  [Evidence](../../evidence/CLOUDS/M3-resume.md) distinguishes those tests from
+  [Evidence](../../../.orchestrate/evidence/CLOUDS/M3-resume.md) distinguishes those tests from
   unproved lighting, far-air accuracy, motion quality and cost. The plan's recorded
   three-look stop still needs the lead's direction; no fourth look was taken.
-  [The rewritten handoff](../../evidence/CLOUDS/M3-handoff.md) names the remaining work.
+  [The rewritten handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md) names the remaining work.
 
 - 2026-11-17 The owner said “Carry on with M3”; source `b845ab8bb` adds retained
   far-air/slab/shadow-only probes and bounded air parts. `e706eef48` records
   M3.5, M3.6, M3.8, M3.10 and M3.11 builder proofs alongside M3.4.
-  [Three resumed looks](../../evidence/CLOUDS/M3-resumed-looks/README.md) still fail
+  [Three resumed looks](../../../.orchestrate/evidence/CLOUDS/M3-resumed-looks/README.md) still fail
   bright sunlit sides; fine Sun grids and lower water do not recover them.
   An unshadowed diagnostic suggests cache refinement alone is insufficient;
-  this is not a proven failure of the model. [Costs](../../evidence/CLOUDS/M3-cost.md)
+  this is not a proven failure of the model. [Costs](../../../.orchestrate/evidence/CLOUDS/M3-cost.md)
   retain the over-refresh investigations; the lead is asked for a lighting diagnosis.
 
 - 2026-11-17 M3's focused diagnosis at `843203a07` retains six Metal rays and
-  an independent f64 source/transport reference, with [point and pixel tables](../../evidence/CLOUDS/M3-lighting-diagnosis/README.md).
+  an independent f64 source/transport reference, with [point and pixel tables](../../../.orchestrate/evidence/CLOUDS/M3-lighting-diagnosis/README.md).
   Density, phase, ambient and local-source arithmetic agree closely; the Sun
   cache retains up to 0.2882 absolute T error against its own split model.
   Noon RGB pixels differ by at most 1.1%; no production lighting fix or fresh
   visual look is claimed. A planner ruling on lighting/exposure and that cache
-  approximation is requested; [handoff](../../evidence/CLOUDS/M3-handoff.md) records checks and limits.
+  approximation is requested; [handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md) records checks and limits.
 
 - 2026-11-17 M3 resumes with a cumulative Sun-depth interpolant at `851a7a126`.
-  [The independent reconstruction](../../evidence/CLOUDS/M3-sun-reconstruction/README.md)
+  [The independent reconstruction](../../../.orchestrate/evidence/CLOUDS/M3-sun-reconstruction/README.md)
   reproduces the old cache error; the selected height cubic reduces maximum T
   error from 0.2882 to 0.1802 without a light gain or added resources.
   Metal cumulative-depth and native route-admission tests pass; a bounded
@@ -415,7 +415,7 @@
 - 2026-11-17 Plan, answering M3's block (`needs_context`: a ruling on the multiple-scattering model). [Cloud light](DESIGN.md#cloud-light)'s
   Sun term is now a beam (the droplet's phase thinned at its broad lobe's rate, and one middle lobe) and a diffuse two-stream
   solution along the Sun column, with a lit plane from two depths and a view boundary, in place of four fixed orders whose weights sum to one.
-  [Parts XII to XVI](../../evidence/CLOUDS/design-proof/multiple-scattering-proof.txt) hold it to photon transport: a level layer's returned flux within
+  [Parts XII to XVI](../../../.orchestrate/evidence/CLOUDS/design-proof/multiple-scattering-proof.txt) hold it to photon transport: a level layer's returned flux within
   0.017 from a 45° Sun up; box faces typically a factor of 1.35 out, where the four orders are 40 and octaves 14. M3.6 and M5.1 are
   written again; M3.13, M3.14 and M14.13 are new; M2's note shrinks to its review. M1.8's and M13.7's clauses on the orders stand as
   built until M14.13 removes `Orders`: rewording them would send two Done milestones back through build and review for no change
@@ -428,14 +428,14 @@
   as a starting point a builder may tune by eye. Design review MF1 is answered by a boundary weight: the view boundary is off inside
   the handover for both integrators and fades in beyond it, so near and far fog take one source. No item of a Done milestone changed.
 
-- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../evidence/CLOUDS/design-review.md)'s MF1, which read the design
+- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../../.orchestrate/evidence/CLOUDS/design-review.md)'s MF1, which read the design
   before the boundary weight of the entry above. Settled as one boundary rule for every consumer of the Sun term, with both integrators
-  taking the term and its depths through the same two shader functions; [part XVII](../../evidence/CLOUDS/design-proof/handover-light-proof.txt)
-  and [the proof's README](../../evidence/CLOUDS/design-proof/README.md) hold the cases and figures. M14.13 is written again and M15.13,
+  taking the term and its depths through the same two shader functions; [part XVII](../../../.orchestrate/evidence/CLOUDS/design-proof/handover-light-proof.txt)
+  and [the proof's README](../../../.orchestrate/evidence/CLOUDS/design-proof/README.md) hold the cases and figures. M14.13 is written again and M15.13,
   an inspection, is new. S5 taken in the design; M2.11's wording and S4's M1.2 are left, since M2 and M1 are Done. No item of a Done
   milestone changed. The design needs a review.
 
-- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../evidence/CLOUDS/design-review.md)'s two findings with the
+- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../../.orchestrate/evidence/CLOUDS/design-review.md)'s two findings with the
   smallest check each. MF1: presence probes passed a GPU drawing twice the query's extinction, so M14.2 gains one sight line whose
   optical depth is held to the public query's, M6.9 the map's column at a point inside a directed shape, and M6.2 and M7.6 the drawn
   column's upper bound at a point inside, each at the allowance its test states and each failing at twice the amount. MF2: M3.9's
@@ -444,7 +444,7 @@
   Left: S5's M2.11 and S4's M1.2, since M2 and M1 are Done. No item of a Done milestone changed. The design needs a review.
 
 - 2026-11-18 Plan, answering M3's block (`needs_context`: how to break up the repeated domes and shelves three shape trials left;
-  work on `build/clouds` at `6c696409396a`, unmerged). Cause, from its code and [part XVIII](../../evidence/CLOUDS/design-proof/README.md):
+  work on `build/clouds` at `6c696409396a`, unmerged). Cause, from its code and [part XVIII](../../../.orchestrate/evidence/CLOUDS/design-proof/README.md):
   a cell's column was one dome, whose scaled outline is the same for every cell, under one octave of 200 m noise, so pitch, depth and
   taper only resized one outline; the shelf is a shallow cell's dome under a deep one's. Decided: the column is
   [a cluster of turrets](DESIGN.md#one-weather-field-in-the-air-frame) under the cell's dome, and [the shape noise](DESIGN.md#one-density-in-m¹)
@@ -452,11 +452,11 @@
   again to name the cue. M2.2's test compares each map level with the model's column at that level's footprint; its statement stands.
   The level dark band is not explained: risk 12 says what to do first. No interface or Done item changed. The design needs a review.
 
-- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../evidence/CLOUDS/design-review.md)'s two findings on the turret
+- 2026-11-18 Plan, on the lead's task to resolve [the design review](../../../.orchestrate/evidence/CLOUDS/design-review.md)'s two findings on the turret
   revision. MF1: no share stands in for unresolved turrets. The turret field takes no footprint, and every level of
   [the weather map](DESIGN.md#the-weather-map) holds the query's column at its texel's centre, as M2 built it; the far level samples
   turrets, which M3.2 judges. This replaces the entry above's footprint comparison: M2.2's test compares at centres, as written. MF2:
-  one clearing factor scales a cell's coverage with its thickness before cells combine. [Part XVIII](../../evidence/CLOUDS/design-proof/cloud-shape-proof.txt)
+  one clearing factor scales a cell's coverage with its thickness before cells combine. [Part XVIII](../../../.orchestrate/evidence/CLOUDS/design-proof/cloud-shape-proof.txt)
   is corrected and holds both cases; its turret figures moved to 0.090 and 0.243. M3.15 is new. The review listed no Suggestions; of
   MF1's two routes the point column was taken, since an area value needs a second rule and a new M2 test. No interface or Done item
   changed. The design needs a review.
@@ -465,7 +465,7 @@
   stripe; work on `build/clouds` at `f38c7d77ad24`, unmerged). Of the lead's two routes, the cause was named and the cue stays in M3:
   controls on Metal put it in the lit plane inferred at each sample. Decided: [the type sets the plane](DESIGN.md#cloud-light), level
   for a layered type and halfway to the Sun for a heaped one, with no depth read for it.
-  [The record](../../evidence/CLOUDS/M3-plane/README.md#the-decision) holds the figures, the routes not taken and what it costs.
+  [The record](../../../.orchestrate/evidence/CLOUDS/M3-plane/README.md#the-decision) holds the figures, the routes not taken and what it costs.
   Risk 12 is written again, and M3.3's question gains the plane. No interface or Done item changed. The design needs a review.
 
 - 2026-11-18 Plan, answering M3's third block (`needs_context`; work on `build/clouds` at `5f84d354a3bf`, unmerged). Lead decision:
@@ -479,52 +479,52 @@
 - 2026-11-18 Plan, resolving the two findings of the design review of the parking. M17.1 and M17.2 judge the fair preset with the
   placed share at 0, a sky of weather alone, from 2 m and from 40 m on both targets, and the form flaws are excused only until M17
   starts. M17.3 looks at the presets as they ship. The earlier attribution suggestion on the lit plane is taken. M3 and M4 are
-  unchanged, and no mechanism or interface changed. [The record](../../evidence/CLOUDS/M17-plan.md) holds each finding and its
+  unchanged, and no mechanism or interface changed. [The record](../../../.orchestrate/evidence/CLOUDS/M17-plan.md) holds each finding and its
   answer. The design needs a review.
 - 2026-11-17 The corrected-source fresh look still fails M3.3's bright side.
-  [Independent photon transport](../../evidence/CLOUDS/M3-model-diagnosis/README.md)
+  [Independent photon transport](../../../.orchestrate/evidence/CLOUDS/M3-model-diagnosis/README.md)
   reflects 84.456% at thick-slab V1 noon versus the planned formula's 5.489%.
   Proposed for the planner: retain the droplet first order and Beer transport,
   replacing higher orders with a conservative, physically validated source.
-  [Motion diagnostics](../../evidence/CLOUDS/M3-motion-diagnostics/README.md)
+  [Motion diagnostics](../../../.orchestrate/evidence/CLOUDS/M3-motion-diagnostics/README.md)
   find stride-one edges cleaner; final integrated visual/cost proofs stay open.
 
 - 2026-11-18 M3 implements the beam and diffuse light and anchors far-air transmission at 32 km.
-  [Three independent Metal looks](../../evidence/CLOUDS/M3-beam/README.md) show bright lit faces
+  [Three independent Metal looks](../../../.orchestrate/evidence/CLOUDS/M3-beam/README.md) show bright lit faces
   and clean ridge occlusion, but repeat shallow domes and shelves. M3.1 hits the three-look stop.
   M3.2's far range and M3.7's stable motion and cut sharpness remain open.
   Required-GPU transport, frame contract, shadow-only and far-air checks pass.
-  The [paired cost and refusal check](../../evidence/CLOUDS/M3-cost.md) pass under load.
+  The [paired cost and refusal check](../../../.orchestrate/evidence/CLOUDS/M3-cost.md) pass under load.
 
-- 2026-11-18 M3 resumes on the owner's instruction. [Metal horizon and motion proofs](../../evidence/CLOUDS/M3-refresh/README.md)
+- 2026-11-18 M3 resumes on the owner's instruction. [Metal horizon and motion proofs](../../../.orchestrate/evidence/CLOUDS/M3-refresh/README.md)
   retain the corrected far-plane composition and complete half-extent refresh.
   M3.2 and M3.7 have builder evidence. The frame contract and loaded cost/refusal checks pass.
   Three more shape trials retain the deeper mature cells and still expose repeated domes and shelves.
   M3.1 remains open under the plan's three-look stop.
 
 - 2026-11-18 M3 builds cleared turrets and shared GPU billow noise at `acbf93577`.
-  [Metal evidence](../../evidence/CLOUDS/M3-turrets/README.md) covers clearing and exact weather centres,
+  [Metal evidence](../../../.orchestrate/evidence/CLOUDS/M3-turrets/README.md) covers clearing and exact weather centres,
   the distant haze, and first-frame cost. Three turret looks still show shelves and a bright underside
   in the toward-Sun views. Isolating beam, diffuse and ambient places the strongest stripe in solar diffuse.
-  M3.1 and M3.3 remain open. The [handoff](../../evidence/CLOUDS/M3-handoff.md) records the stop and next diagnosis.
+  M3.1 and M3.3 remain open. The [handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md) records the stop and next diagnosis.
 
 - 2026-11-18 M3 sets the diffuse plane from the resolved type at `8fd3e8108`, removing three column reads per lit sample.
-  [Metal proof](../../evidence/CLOUDS/M3-type-plane/README.md) passes the lighting and ridge checks, and refreshes the horizon and motion evidence.
-  The [first visible submission](../../evidence/CLOUDS/M3-cost.md) cost 42.770 ms under load. The cost check and its refusal passed.
+  [Metal proof](../../../.orchestrate/evidence/CLOUDS/M3-type-plane/README.md) passes the lighting and ridge checks, and refreshes the horizon and motion evidence.
+  The [first visible submission](../../../.orchestrate/evidence/CLOUDS/M3-cost.md) cost 42.770 ms under load. The cost check and its refusal passed.
   M3.1 still shows shelves and an overhead fold at turns 0.25, 0.50 and 0.75. The fold survives in the trace's opacity.
-  The plan limits tuning to the turn. The [handoff](../../evidence/CLOUDS/M3-handoff.md) records the remaining form problem.
+  The plan limits tuning to the turn. The [handoff](../../../.orchestrate/evidence/CLOUDS/M3-handoff.md) records the remaining form problem.
 
-- 2026-11-18 The lead's one [Metal look at erosion 0.20](../../evidence/CLOUDS/M3-erosion/README.md#metal-trial-at-020) completed all seven fixed views.
+- 2026-11-18 The lead's one [Metal look at erosion 0.20](../../../.orchestrate/evidence/CLOUDS/M3-erosion/README.md#metal-trial-at-020) completed all seven fixed views.
   The builder and independent inspector still saw shelves, an overhead silhouette break and repeated caps.
   M3.1 remains open. The branch restores 0.61 for the prior passing proofs.
   The lead's next step is to move the form cue to a later milestone.
 
 - 2026-11-19 M3.1 passes the revised whole-sky inspection on the retained 0.61 Metal matrix.
-  [The six views and lossless translation pair](../../evidence/CLOUDS/M3-type-plane/README.md#m31-form)
+  [The six views and lossless translation pair](../../../.orchestrate/evidence/CLOUDS/M3-type-plane/README.md#m31-form)
   show separate clouds with open gaps and relative motion between near crests and distant clusters.
   Integrating with RENDER-2D updates four V1 graph snapshot entries for M3's imported noise textures.
   Shade adds the shared shape texture, and Sky also adds detail. Pass order, transient lifetimes and the other 18 entries match.
 
 - 2026-11-19 M3.9 checks all 31 named byte counts in both committed and fresh Sky runs.
-  [The Metal cost check](../../evidence/CLOUDS/M3-cost.md#m39-review-fix) passed and the refusal controls rejected
+  [The Metal cost check](../../../.orchestrate/evidence/CLOUDS/M3-cost.md#m39-review-fix) passed and the refusal controls rejected
   the all-absent record and all 31 single-resource omissions.

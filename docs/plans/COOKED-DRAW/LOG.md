@@ -2,12 +2,12 @@
 
 - 2026-11-09 Builder applied planner revision `58c3414e`. Removed every console admission/refusal and manual setup
   wait across all simulator modes. Console observations retain actual raw output or an unavailable reason.
-  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-1).
+  [Full entry](../../../.orchestrate/evidence/COOKED-DRAW/log-entries.md#entry-1).
 
 - 2026-11-09 Owner corrected console locking from a run precondition to a recorded capability witness. Overnight
   locked runs established that the route could work without desktop capture; requiring that setup on every check
   blocked verification during normal Mac use without strengthening the proof.
-  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-2).
+  [Full entry](../../../.orchestrate/evidence/COOKED-DRAW/log-entries.md#entry-2).
 
 - 2026-11-09 Replanned dependency after builder checkpoint `b0dae34c` blocked M1.10. Its README and
   `rotation/layout-failure.json` show the source stays 640×360 while surface/presented extents rotate. G3b now owns
@@ -25,20 +25,20 @@
 - 2026-11-09 Re-planned M1.3 at the owner's request after blocked checkpoint `9c230ff4`. The first valley view's 1,506
   differing pixels / max delta 18 persisted with all meshlets kept; one full-range indirect command matched direct
   exactly. This isolates draw partitioning for that view, not the low-level cause.
-  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-3).
+  [Full entry](../../../.orchestrate/evidence/COOKED-DRAW/log-entries.md#entry-3).
 
 - 2026-11-09 Builder checkpoint, following the fresh DESIGN OK and building against the proposed additive interfaces as permitted above. The capability record lends known/unknown downlevel flags; unknown selects direct. Direct draws allocate no cull/indirect/count/readback resources; history writes run on both paths. Cooked GPU cases run on adapter-backed and masked records; the bench retains an adapter-backed indirect record. The ordinary iOS selection attaches cooked content and exposes drawn-device generation. The initial simulator feature risk is cleared; no additional unsupported feature surfaced. M1.7/M1.8 pass on the final source: locked-console advancing counters, background hold/resume and a drawn-device witness on generation 2.
   - M1.3 is blocked: 1,506 final submitted pixels differ in the noon valley view, despite exact same-path repeats. Scratch controls disprove a rejected-meshlet explanation and isolate command partitioning. **Proposal to planner:** investigate partition-invariant output, or explicitly reconsider the whole-range strategy or exact oracle. Do not alter the production indirect path or weaken equality within this build.
   - Remaining views, base/Chrome parity, cost/tripwire work, rotation/pan and full visual qualification are unfinished. The parity command refuses incomplete modes. T2-CAPTURE M2 remains gated on acceptance. See the evidence README for actual checks and simulator records. `./dev check` passes (651 tests, including all 13 cooked GPU cases on both paths); documentation checks pass. No reviewer launched, acceptance definitions unchanged, no milestone claim.
 
-- 2026-11-09 Answered the [design review](../../evidence/COOKED-DRAW/design-review.md).
-  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-4).
+- 2026-11-09 Answered the [design review](../../../.orchestrate/evidence/COOKED-DRAW/design-review.md).
+  [Full entry](../../../.orchestrate/evidence/COOKED-DRAW/log-entries.md#entry-4).
 
   Items were renumbered (stills M1.10, pan M1.11, docs M1.12). No proof existed, `fails` and `replans` stay 0, and a
   fresh design review is owed.
 
 - 2026-11-09 Planned, at the owner's direction through the lead, after T2-CAPTURE M2 was blocked
-  ([evidence](../../evidence/render/t2-capture-m2/README.md)). The design selects a direct full-range indexed draw,
+  ([evidence](../../../.orchestrate/evidence/render/t2-capture-m2/README.md)). The design selects a direct full-range indexed draw,
   chosen from adapter downlevel flags in the capability record. It rejects CPU culling, compaction culling, delayed
   readback, per-meshlet direct draws and a simulator override, on cost and complexity grounds. T2-CAPTURE M2 now
   `needs` `COOKED-DRAW:M1`. The design names an adjacent gap for G3c: synthetic culled modes use indirect draws
@@ -56,4 +56,4 @@
 
 - 2026-11-11 Plan reshaped for orchestrate 1.7.0: status lines and M1's finished work list removed (git keeps
   them), `Ownership and agreements` moved to the design, and the console witness handoff moved to
-  [evidence](../../evidence/COOKED-DRAW/console-witness-handoff.md). No item or scope changed.
+  [evidence](../../../.orchestrate/evidence/COOKED-DRAW/console-witness-handoff.md). No item or scope changed.

@@ -12,9 +12,9 @@
           "lock": "gpu",
           "ask": "Does the verifier take every input from the checkout and its own fresh outputs, reading nothing from another task's scratch such as tmp/g3t-m0? Does its record hold the revision, the content key, the native binary's hash, the Wasm artefact hashes and the cooked root? Do its registry and the table in ARCHITECTURE.md list the same baselines, owners and covered paths?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -22,9 +22,9 @@
           "statement": "The Chrome comparison covers all 481 records of each of the four retained sets (day and night, submitted SDR and scene-linear): the identity fields are equal, and each fresh frame's decoded bytes hash to the retained digest. Every retained reference file is unchanged, and the owner's byte comparison behaves as before.",
           "ask": "Read the comparison and one verifier record. Is each fresh frame's hash computed again from its bytes, not copied from the candidate's manifest? Are all four sets and all 481 records of each compared? Did this milestone's diff leave every file under the registered baselines byte-identical?",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -33,9 +33,9 @@
           "check": "python3 scripts/test_exact_baselines.py",
           "ask": "Read the test and the gate. Does the test drive fetch, rebase, gate and push against a throwaway remote, and show that remote's main unmoved after each refusal? Does `./dev check` run the gate, with no flag or environment variable that skips it?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -43,9 +43,9 @@
           "statement": "The loop's own `land`, run in a scratch clone against a local bare remote, refuses three regressions and leaves that remote's main unmoved: jitter on the game's default views, a night-only change and a Chrome-only change. Each fails the verifier by name, so no proof is written. A proved change rebased onto a covered-path commit is refused the same way.",
           "ask": "Do the retained patches, base revision, commands and logs let you reproduce each refusal? Does each verifier failure name the baseline, its owner and the comparison, and tell a changed image from a reference file that cannot be read? Was the real remote never pushed to?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -53,9 +53,9 @@
           "statement": "The time one verifier run and one gate check take is recorded from three runs each, with the load.",
           "ask": "What do the recorded runs show a covered-path landing pays, and how close is one verifier run to the loop's one-hour limit on a check?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -80,9 +80,9 @@
           "ask": "Read the guard and the registry. Is each pin computed from the commit's tree, over every field of the entry but the pin and the refresh, every tracked file of the reference and every comparison file? Does each baseline list every comparison file the design's table names for it? Does the first refresh of each baseline name an anchor that the module list holds?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -91,9 +91,9 @@
           "ask": "Read the tests. Is each case decided by the function `./dev check` calls, in a Git repository made for the test, with the refusal's text asserted to name the baseline, the owner and the file? Is there a flag, an environment variable or a file other than the registry that makes the guard pass?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -102,9 +102,9 @@
           "ask": "Does `./dev check` call the guard, and does it fail when the guard fails? Does a `verify --full` record still hold the revision, the content key, the binary and Wasm hashes and the cooked root?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -113,9 +113,9 @@
           "ask": "Read the pruning and its tests. Can it remove anything outside `tmp/baseline-guard/` of its own checkout, the run in progress, or the latest failed run's captures? What do the recorded sizes say the checkout holds after a day of runs?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -125,7 +125,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md",
           "ask": "Read this milestone's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
         },
         {
@@ -134,9 +134,9 @@
           "ask": "Do the four documents agree with the guard as built? Does a builder making a planned refresh find in them every step it must take (regenerate, run `verify --full`, update the pin and the refresh, merge in one landing), and a planner retiring a baseline the record it must leave?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -145,9 +145,9 @@
           "ask": "Read the tests. Does one remove a single baseline and leave every other entry, pin and refresh untouched, and is the refusal's text asserted to name that baseline? Is each case decided by the function `./dev check` calls, against the merge base's registry read from Git and not from the working tree?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
+          "review": ".orchestrate/evidence/BASELINE-GUARD/M2-review.md"
         }
       ]
     }

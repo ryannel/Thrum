@@ -23,9 +23,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -35,9 +35,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.14",
@@ -46,9 +46,9 @@
           "ask": "Does the test take each layout from the scene's own fit, as a frame uses it, and show that the four cameras' view matrices recover positions in more than one texel, so that a fit from the matrix would fail it? Does anything that lays out the height map, addresses it or reduces the air's shadow heights still take a camera's position from a matrix?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -57,9 +57,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -69,9 +69,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -81,9 +81,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -93,9 +93,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -105,9 +105,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -116,9 +116,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -128,9 +128,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -139,9 +139,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -150,9 +150,9 @@
           "ask": "Could `WATERS`' builder write its mirror from the seam's documentation and types without reading `thrum-render`'s internals? Does any other module's item, test, bound or reference differ from before this milestone?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -161,9 +161,9 @@
           "lock": "gpu",
           "ask": "Do the two requests differ in every field, and would per-view products shared between slots (one cluster table, aerial volume, cascade set or culled list) fail?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M1/caster-culling/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md",
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -174,7 +174,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M1-review.md"
         }
       ]
     },
@@ -196,9 +196,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -207,9 +207,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -219,9 +219,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#cooked-placements-and-transport",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -229,9 +229,9 @@
           "inspect": "`fixed` stills from 1.5 m and 10 m at noon with the tower in frame and with the camera tilted down until it is out of frame, and a `realtime` tilt between the two: each waterline, the post, and the pool's edge.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -239,9 +239,9 @@
           "inspect": "`fixed` stills at the four hours from 1.5 m, each with the direct view of the same things in frame: lit and shaded sides, each shadow, the lamp's pool of light and the hill, in the scene and in the mirror.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -249,9 +249,9 @@
           "inspect": "`realtime` sequences of a pan, a tilt, an orbit, the time scrub and the mover, with temporal sampling off: consecutive frames at the waterlines and at the shadows in the mirror.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M2/README.md#fixed-and-realtime-inspections",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -261,7 +261,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M2-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M2-review.md"
         }
       ]
     },
@@ -282,9 +282,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m31-chrome-stored-format-checks",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m31-chrome-stored-format-checks",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -292,9 +292,9 @@
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon and dusk, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m32-submitted-noon-and-dusk-inspection",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m32-submitted-noon-and-dusk-inspection",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -304,9 +304,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m33-runtime-quality-controls",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m33-runtime-quality-controls",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -319,9 +319,9 @@
           ],
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost",
+          "evidence": ".orchestrate/evidence/SCENE-VIEWS/M3/README.md#m34-capture-off-metal-cost",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -331,7 +331,7 @@
           "builder_result": "pass",
           "evidence": "docs/EFFECTS.md#secondary-views",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -341,7 +341,7 @@
           "builder_result": "pass",
           "evidence": "docs/design/maturity.json",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -351,7 +351,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/SCENE-VIEWS/M3-review.md"
+          "review": ".orchestrate/evidence/SCENE-VIEWS/M3-review.md"
         }
       ]
     }

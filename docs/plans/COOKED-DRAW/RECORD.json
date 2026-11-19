@@ -3,7 +3,7 @@
   "adopted": true,
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/COOKED-DRAW/design-review.md",
+    "review": ".orchestrate/evidence/COOKED-DRAW/design-review.md",
     "commit": "58c3414ee8f86cc06fe0dd5867cf07c1a9fc7372",
     "hash": "7141bf98b406161e0f9ee76086122f114898f7c15bffbf5fbf7be63544db5d0a",
     "by": "review",
@@ -25,7 +25,7 @@
         {
           "verdict": "pass",
           "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "review": ".orchestrate/evidence/COOKED-DRAW/M1-review.md",
           "host": "codex",
           "model": "gpt-6.1-sol",
           "effort": "high",
@@ -60,7 +60,7 @@
       "done": {
         "by": "review",
         "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
-        "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+        "review": ".orchestrate/evidence/COOKED-DRAW/M1-review.md",
         "checked": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
         "at": "2026-11-09T20:01:03Z"
       }

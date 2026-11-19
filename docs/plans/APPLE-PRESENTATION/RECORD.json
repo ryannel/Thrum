@@ -2,9 +2,9 @@
   "module": "APPLE-PRESENTATION",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/APPLE-PRESENTATION/design-review.md",
+    "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
     "commit": "3b8f7c7d0b8f1cba5632d3277ef0052ba9754099",
-    "hash": "4dc1c3d2c78ab42a5e190de437e2c1b99e1f1cb3b98d4efa596756664622f086",
+    "hash": "10bd3c20b3b8193c325ee2e4a2fd10760e908a157b5f130a2536d31b37f0e5d2",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "40319eafb334754d9753706283e9655c94bf3eb6",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review-1.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -64,7 +64,7 @@
         {
           "verdict": "pass",
           "commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -126,7 +126,7 @@
       "done": {
         "by": "review",
         "commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
-        "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M1-review.md",
         "checked": "ba9549f5f67b0084325e24f10a3badf293da2d16",
         "at": "2026-11-11T13:30:12Z"
       }
@@ -137,7 +137,7 @@
         {
           "verdict": "fail",
           "commit": "5b6c8aaaef0678966369373ef83855f3ef33a2f4",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review-1.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -174,7 +174,7 @@
         {
           "verdict": "pass",
           "commit": "e0c113ba1d1a98165633cb2e93a94380c3c75580",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -247,7 +247,7 @@
       "done": {
         "by": "review",
         "commit": "e0c113ba1d1a98165633cb2e93a94380c3c75580",
-        "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M2-review.md",
         "checked": "9f42233e900253fa6e7788c631ff3102add35bd8",
         "at": "2026-11-13T14:16:37Z"
       }
@@ -258,7 +258,7 @@
         {
           "verdict": "fail",
           "commit": "06df50992199386232c4332d10c093e38f581a8b",
-          "review": "docs/evidence/APPLE-PRESENTATION/M3-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review-1.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -299,7 +299,7 @@
         {
           "verdict": "pass",
           "commit": "f2e4ff0224da2fa42749e82124e31f12b75435c0",
-          "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -363,7 +363,7 @@
       "done": {
         "by": "review",
         "commit": "f2e4ff0224da2fa42749e82124e31f12b75435c0",
-        "review": "docs/evidence/APPLE-PRESENTATION/M3-review.md",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M3-review.md",
         "checked": "c2fb235d937d07d472ad3afb1e7875a7d092e9fc",
         "at": "2026-11-18T22:21:00Z"
       }
@@ -533,7 +533,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-1.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-1.md",
       "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
       "hash": "255a77bc45d47120311453a6c2dcc1641d8f2a76d565b8ab2d449bdb426d52b0",
       "by": "review",
@@ -553,7 +553,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-2.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-2.md",
       "commit": "9f83a70ea4ef2e38fd0837ab9c391184777cb262",
       "hash": "59304cedbe887f4936753f9d89c1bd78780d7845c49983269d4c9e24a5ef4ad3",
       "by": "review",
@@ -573,7 +573,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-3.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-3.md",
       "commit": "a471fe5d83beb926bdd1cf49e123696090d4e262",
       "hash": "531385a596c8e01967b2a4f579f450d804b4e462468e66ea6794a6f9b783b658",
       "by": "review",
@@ -596,7 +596,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-4.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-4.md",
       "commit": "a3f8690b0680426b04520c0afb5a2a0330ed44aa",
       "hash": "7133a4d6e2cb3576893fd101f396b3620aeef4927f6cee31438195e45777ba21",
       "by": "review",
@@ -619,7 +619,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-5.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-5.md",
       "commit": "1630751e5734b75c114b39e453e96008a16ccdc5",
       "hash": "da7c10415883d4bc96663093ab5b09d85b69bb9eed362b3037cdbdca3165d2eb",
       "by": "review",
@@ -642,7 +642,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-6.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-6.md",
       "commit": "08233c25555a69e075f8fd2162b9c2537dc392de",
       "hash": "0f1f7c2b78f174bfd552010c94008c522254053a6f7426254fae1467fac911c2",
       "by": "review",
@@ -665,7 +665,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/APPLE-PRESENTATION/design-review-7.md",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-7.md",
       "commit": "5f49c732c3dec83bcc6bb6711446267d2455238d",
       "hash": "1a9d836abbe1900c06702fce03fd9ac851456abb3ebf4e75707f8656f114274d",
       "by": "review",

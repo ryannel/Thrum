@@ -24,7 +24,7 @@ dynamic resolution; neither is necessary for native-resolution correctness. This
 deferral for this baseline only. Shared `thrum-render` changes are part of M7, not a second runtime or scene owner.
 
 The failure was read from builder checkpoint `b0dae34c` with `git show`, including
-`docs/evidence/render/cooked-draw/README.md`, `rotation/layout-failure.json` and both rotation screenshots.
+`.orchestrate/evidence/render/cooked-draw/README.md`, `rotation/layout-failure.json` and both rotation screenshots.
 The recorded 640×360 source is letterboxed into 1206×2622 portrait and 2622×1206 landscape surfaces. Existing
 `FrameHost::resize_surface` and `PreparedDevice::resize_surface` resize the presenter while retaining the scene
 extent; the iOS owner supplies a fixed `RENDER_EXTENT`. These are observations, not successful extent proof.

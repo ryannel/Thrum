@@ -33,7 +33,7 @@ This design reconciles the code on main at `8f038dec`; it is not a blind study. 
 `synthetic/display.rs`, `present.wgsl` and `contribution.rs`; `thrum-app`'s `game.rs`, `app.rs` and `lib.rs`;
 `examples/v1-game-ios`'s shell, gesture and route files; `scripts/check_v1_browser.mjs`; the designs of
 `RENDER-2D`, `APPLE-TILE`, `APPLE-PRESENTATION`, `CONTENT-LOOP`, `SESSION` and `TRANSPORT`; and
-[a planning probe](../../evidence/GAME-UI/planning-probe.md) run for it.
+[a planning probe](../../../.orchestrate/evidence/GAME-UI/planning-probe.md) run for it.
 
 **This module is planned before the code it builds on exists.** `RENDER-2D` is not built, and neither are
 `APPLE-TILE` M10 to M12, `APPLE-PRESENTATION` M3 to M11 or `CONTENT-LOOP` M1 to M3. So this design names the
@@ -231,7 +231,7 @@ blend over the scene's displayed colour, to within one code. A scrim of black at
 **In the float mode** the target is linear already, so the blend is the target's own and no view is involved.
 An opaque, untinted texel leaves the frame as the linear value of its authored code: put through the sRGB curve
 it rounds back to that code, with 0.46 of a code to spare
-([probe 5](../../evidence/GAME-UI/planning-probe.md#5-do-authored-colours-and-a-one-code-allowance-survive-a-half-float-target)).
+([probe 5](../../../.orchestrate/evidence/GAME-UI/planning-probe.md#5-do-authored-colours-and-a-one-code-allowance-survive-a-half-float-target)).
 Opaque white is exactly 1.0 at any headroom. A tinted or part-transparent texel is the same blend over the
 scene's displayed value, to within one code of the mode's encoding. The result is not clamped, so a scene value
 above 1 keeps its share beneath a part-transparent row: black at half alpha over a highlight of 4.0 leaves 2.0.
@@ -295,7 +295,7 @@ pixels when the font is cooked.** The table also lists which base letter and com
 character of the set. A malformed table is refused before any of it is used, by name.
 
 Only the sheet of the scale in use is resident: 1.6 MiB, 5.4 MiB or 11.4 MiB for one face at four sizes
-([probe 1](../../evidence/GAME-UI/planning-probe.md#1-how-large-is-a-cooked-font)). The font product is the one
+([probe 1](../../../.orchestrate/evidence/GAME-UI/planning-probe.md#1-how-large-is-a-cooked-font)). The font product is the one
 the module list asks of `CONTENT-LOOP`. It hot-reloads as a sheet does, and the text laid out from it changes
 in the same submitted frame: [mechanism 11](#11-a-list-and-its-sheets-change-together) says how. No frame is
 blank, and none draws a new glyph at the old font's spacing or in the old font's box. A save that cannot be
@@ -307,7 +307,7 @@ the reason is named.
 A **run** is one string in one font, size and colour. Its glyphs sit at whole-pixel offsets from its origin,
 found by adding each advance and each pair's kerning; the origin snaps to a whole output pixel. So a run is
 rigid: the same string has the same shape wherever it is drawn and whenever it moves
-([probe 2](../../evidence/GAME-UI/planning-probe.md#2-does-rounding-the-pen-keep-spacing-even)).
+([probe 2](../../../.orchestrate/evidence/GAME-UI/planning-probe.md#2-does-rounding-the-pen-keep-spacing-even)).
 
 - A size or scale the font was not cooked at is refused, by name, when the text is made. Nothing is resampled.
 - A character the font lacks draws the missing-glyph box at a fixed advance and is counted.
@@ -367,7 +367,7 @@ Tab with and without Shift.
 
 In a row, a column or a grid every control is reachable by direction keys and every move is undone by its
 opposite; elsewhere next and previous still reach everything
-([probe 4](../../evidence/GAME-UI/planning-probe.md#4-can-direction-keys-reach-every-control)).
+([probe 4](../../../.orchestrate/evidence/GAME-UI/planning-probe.md#4-can-direction-keys-reach-every-control)).
 
 A pointer that moves over a control focuses it, so keys and pointer never disagree. The focused control is
 drawn in its focused style after a key or pointer event, and not after a touch. A button's styles (idle,
@@ -404,7 +404,7 @@ point goes to the control whose drawn box is nearest, then to the later in tree 
 the press and does nothing. A control removed while pressed cancels its press.
 
 The rule held on 20,000 random interleavings in
-[probe 3](../../evidence/GAME-UI/planning-probe.md#3-does-the-event-ownership-rule-ever-hand-the-game-half-of-a-press).
+[probe 3](../../../.orchestrate/evidence/GAME-UI/planning-probe.md#3-does-the-event-ownership-rule-ever-hand-the-game-half-of-a-press).
 
 What the interface hands the game is small: a control was activated, a scope was cancelled, a text drop
 arrived. The game turns those into its own commands; in a match, a choice becomes
@@ -709,7 +709,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
   and moves no retained image. Each milestone carries the verifier.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/game-ui-<milestone>/`; selected evidence
-  in `docs/evidence/GAME-UI/`.
+  in `.orchestrate/evidence/GAME-UI/`.
 - **Maturity.** Ledger rows for the interface are added in M5, with implementation, correctness, visuals and
   device results kept apart.
 

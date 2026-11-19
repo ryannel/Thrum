@@ -9,7 +9,7 @@ Before any milestone, read [What is proved, and how hard](DESIGN.md#what-is-prov
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
 [the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5),
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) and
-[the planning probe](../../evidence/RAY-TRACING/planning-probe/README.md), whose source shows the wgpu calls
+[the planning probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md), whose source shows the wgpu calls
 that work on this Mac.
 
 ## Open for the human

@@ -12,25 +12,25 @@ and [the bounded frame host](../../design/decisions/V1-BOUNDED-FRAME-HOST.md) ·
   swap record or photons. Overturning it means finding why the display source is silent before M2 can close.
 
 ## M0 The Mac qualification plan passes independent review: done
-[record and review](../../evidence/PLATFORM-RUNTIME-MAC/M0-M1-records.md#m0-reviewed-mac-qualification-plan-done)
+[record and review](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/M0-M1-records.md#m0-reviewed-mac-qualification-plan-done)
 
 ## M1 The same Mac game resumes after graphics loss: done
-[record and review](../../evidence/PLATFORM-RUNTIME-MAC/M0-M1-records.md#m1-the-same-mac-game-resumes-after-graphics-loss-done)
+[record and review](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/M0-M1-records.md#m1-the-same-mac-game-resumes-after-graphics-loss-done)
 
 ## M2 The cooked valley presents smoothly on built-in ProMotion
 
-The [13 November current-build proof](../../evidence/render/mac-m2-20261113/README.md) supplies fresh motion,
+The [13 November current-build proof](../../../.orchestrate/evidence/render/mac-m2-20261113/README.md) supplies fresh motion,
 window replacement and matched cadence arms from the merged `7a791b20` source.
 
 Needs `T2-CAPTURE:M0` only; no item waits on `APPLE-TILE`. Each item's full protocol is in
 [the design](DESIGN.md#m2-and-m3-qualification-protocol), and the done-when file owns the criteria. Cadence is
 judged from the OS-reported presented time of each game drawable, because both 11 November traces had empty
 display tables for a cause that is not authorization
-([diagnosis](../../evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)).
-[The attended runbook](../../evidence/render/mac-m2-presented-20261111/RUNBOOK.md) holds the tested collection commands; its
+([diagnosis](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)).
+[The attended runbook](../../../.orchestrate/evidence/render/mac-m2-presented-20261111/RUNBOOK.md) holds the tested collection commands; its
 trace steps are replaced by M2.4 and M2.5. For the attended items the owner unlocks the Mac and wakes the
 built-in panel, and nothing else. Verdicts on `0d53d3aa` qualify only that build
-([history](../../evidence/render/mac-m2-pan/README.md)).
+([history](../../../.orchestrate/evidence/render/mac-m2-pan/README.md)).
 
 - [x] M2.1, unattended: current-build runtime content motion over the two-second 0°–36° noon pan and both
       one-second holds, with denied Screen Recording preflights and console state recorded as a witness only.

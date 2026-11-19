@@ -9,13 +9,13 @@ Engine capture for every visual milestone. [Design](DESIGN.md) · [brief](BRIEF.
 - Assumption: only the Mac capture gains exit 75. Chrome's captures in the check run on a fixed clock, already wait for each frame, and have not ended incomplete in any recorded run.
 
 ## M0 Mac engine images and runtime motion without a desktop capture grant: done
-[review](../../evidence/T2-CAPTURE/M0-review.md)
+[review](../../../.orchestrate/evidence/T2-CAPTURE/M0-review.md)
 
 ## M1 Chrome WebGPU images and runtime motion without desktop capture: done
-[review](../../evidence/T2-CAPTURE/M1-review.md)
+[review](../../../.orchestrate/evidence/T2-CAPTURE/M1-review.md)
 
 ## M2 iOS simulator engine motion without desktop capture: done
-[review](../../evidence/T2-CAPTURE/M2-review.md)
+[review](../../../.orchestrate/evidence/T2-CAPTURE/M2-review.md)
 
 ## M3 A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit
 
@@ -28,9 +28,9 @@ The opportunity loop and the completeness rule are in `examples/v1-game/src/wind
 clock and the `Offscreen` driver in `crates/thrum-app/src/offscreen/`, and the tap in
 `crates/thrum-render/src/runtime/submitted_capture.rs`. `scripts/capture_v1_runtime.py` turns the runtime record
 into the manifest and the exit status, and `run_t2` in `scripts/apple_tile_m0.py` is how the matrices call it.
-Many scripts under `scripts/` and `docs/evidence/` call that wrapper or `run_t2`; none may start reading an
+Many scripts under `scripts/` and `.orchestrate/evidence/` call that wrapper or `run_t2`; none may start reading an
 incomplete capture as a pass. The run that failed was pruned from the shared scratch, so
-[the handoff](../../evidence/REVIEW-ENGINE/M3-handoff.md) holds its numbers and the load has to be made again.
+[the handoff](../../../.orchestrate/evidence/REVIEW-ENGINE/M3-handoff.md) holds its numbers and the load has to be made again.
 
 `APPLE-TILE` owns the matrices and `BASELINE-GUARD` owns the verifier, its scratch rule and the registry. The
 ruling lists the only changes allowed there. Those files are pinned, so the reference guard in `./dev check`

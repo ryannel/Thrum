@@ -2,9 +2,9 @@
   "module": "RAY-TRACING",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/RAY-TRACING/design-review.md",
+    "review": ".orchestrate/evidence/RAY-TRACING/design-review.md",
     "commit": "83e2a085c0256a5575f959f07255390049cf6cda",
-    "hash": "47fddd6bda607804847234b499a095c052c71011cf7b77a4c0bf3acbfa489c32",
+    "hash": "d5ca9ef002241a59ef1ffc78c78213e4234bbd27bd9f99aa8254691b6139f5a3",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "97165c84d0b5813077371a4a8610b5425fe78b40",
-          "review": "docs/evidence/RAY-TRACING/M1-review-1.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review-1.md",
           "items": {
             "M1.1": "fail",
             "M1.2": "pass",
@@ -76,7 +76,7 @@
         {
           "verdict": "pass",
           "commit": "116dc4481c7f8edc87f7da9150446b12349e9860",
-          "review": "docs/evidence/RAY-TRACING/M1-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -141,7 +141,7 @@
       "done": {
         "by": "review",
         "commit": "116dc4481c7f8edc87f7da9150446b12349e9860",
-        "review": "docs/evidence/RAY-TRACING/M1-review.md",
+        "review": ".orchestrate/evidence/RAY-TRACING/M1-review.md",
         "checked": "675c1a21d6cbc1a31df093be8e9ff847b1b06169",
         "at": "2026-11-18T12:28:06Z"
       }
@@ -152,7 +152,7 @@
         {
           "verdict": "fail",
           "commit": "76f2a88b1e3ec68eb0918d3297da901ebc656ba4",
-          "review": "docs/evidence/RAY-TRACING/M2-review-1.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -194,7 +194,7 @@
         {
           "verdict": "pass",
           "commit": "0f9a2854e4aff6873ee4967307911a43dc43c45e",
-          "review": "docs/evidence/RAY-TRACING/M2-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -260,7 +260,7 @@
       "done": {
         "by": "review",
         "commit": "0f9a2854e4aff6873ee4967307911a43dc43c45e",
-        "review": "docs/evidence/RAY-TRACING/M2-review.md",
+        "review": ".orchestrate/evidence/RAY-TRACING/M2-review.md",
         "checked": "564604fb7cb06afe81594eff222a2e600955c827",
         "at": "2026-11-18T20:43:14Z"
       }
@@ -271,7 +271,7 @@
         {
           "verdict": "fail",
           "commit": "3a6ce80630c4ccb202d3f7229ad0f54aea62f8f1",
-          "review": "docs/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -418,7 +418,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/RAY-TRACING/design-review-1.md",
+      "review": ".orchestrate/evidence/RAY-TRACING/design-review-1.md",
       "commit": "d4968d34d66380aaf2b51db6ea618c31bb928646",
       "hash": "c57197c9632a522c775e3dcddf38037093df4e42686852309eb5e1a1b7f84eec",
       "by": "review",
@@ -441,7 +441,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/RAY-TRACING/design-review-2.md",
+      "review": ".orchestrate/evidence/RAY-TRACING/design-review-2.md",
       "commit": "eaf682210eabb6f980000074b3c7fe68970f1da7",
       "hash": "277e0797da750015edd86c5931c94eaeab64420dbb507deb84793b88a307e1a8",
       "by": "review",
@@ -464,7 +464,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/RAY-TRACING/design-review-3.md",
+      "review": ".orchestrate/evidence/RAY-TRACING/design-review-3.md",
       "commit": "66c37436f35a1532270394474d49a1b797a79991",
       "hash": "0dfb0ce97bed5c942cf5db98c913463722deef0bb363293e5083de498b19ba2c",
       "by": "review",

@@ -1,6 +1,6 @@
 # Web shell: the engine carries the browser platform runtime (G3b)
 
-8 November 2026. Moved from the web shell plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape. The web shell was designed, built and reviewed before the loop, so this module has no done-when file; [the record](../../evidence/PLATFORM-RUNTIME-WEB/M1-record.md) holds what was accepted and [the log](LOG.md) the reviews. The sections below are unchanged.
+8 November 2026. Moved from the web shell plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape. The web shell was designed, built and reviewed before the loop, so this module has no done-when file; [the record](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/M1-record.md) holds what was accepted and [the log](LOG.md) the reviews. The sections below are unchanged.
 
 Family design: [PLATFORM-RUNTIME.md](../../design/modules/PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation),
 contracts [C02](../../design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world),

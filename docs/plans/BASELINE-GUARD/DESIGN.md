@@ -9,11 +9,11 @@
 The owner's planning task of 11 November 2026 ended:
 
 > APPLE-PRESENTATION M1's jitter change broke APPLE-TILE's exact baseline comparisons, and nothing caught it
-> before it merged (docs/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs
+> before it merged (.orchestrate/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs
 > how a module's change that alters another module's exact baselines gets caught before landing.
 
 M1 answered it with a verifier and a gate that refused any covered change without a proof of its exact content.
-That gate stalled the build ([the report](../../evidence/BASELINE-GUARD/M2-replan/proof-regime.md)), and on
+That gate stalled the build ([the report](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md)), and on
 15 November 2026 the owner approved the report's regime:
 
 > Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's
@@ -101,7 +101,7 @@ runs it on main's tip in a checkout of its own, kept between runs so the builds 
    Wasm hashes and the cooked root.
 
 It takes every input from the checkout and its own fresh outputs. One run takes about 16 minutes
-([58 passing records](../../evidence/BASELINE-GUARD/M2-replan/proof-regime.md#measured-this-session): native
+([58 passing records](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md#measured-this-session): native
 matrices 410 s and 369 s, the four Chrome sets about 140 s).
 
 ### The answer for a commit
@@ -163,7 +163,7 @@ changes, a baseline is added, a baseline is retired. Each is a commit that edits
 names a ruling, which is one place for a reviewer to look and an edit rule 1 allows only under that ruling.
 `covered_paths` is outside the pins: it selects no comparison, and only keys the verifier's record.
 
-**Check that it can work.** [A model of the pins](../../evidence/BASELINE-GUARD/M2-replan/guard-scope.json) at
+**Check that it can work.** [A model of the pins](../../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/guard-scope.json) at
 `81138094` has the figures; `guard_scope.py` beside it reproduces them.
 
 - *The culprit that regenerates.* Main fails, and the named module regenerates the reference to pass.
@@ -209,7 +209,7 @@ kept are the builder's, set from the measured size of a failed run.
   which an owner edits when it changes one of its comparison files. Its retired list, for a baseline a ruling
   ends.
 - After M2, `gate`, `proof_path` and the proof file are gone. The scripts that called them
-  (`docs/evidence/WATERS/finish_m1.py`, `docs/evidence/SEA/qualify_m2_baselines.py` and others like them) are
+  (`.orchestrate/evidence/WATERS/finish_m1.py`, `.orchestrate/evidence/SEA/qualify_m2_baselines.py` and others like them) are
   retained evidence of a procedure the ruling ended, and nothing runs them.
 
 ## What it does not stop
@@ -267,7 +267,7 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
   key, and nine commits of it are on the branch `build/baseline-guard`, unmerged. It spared 18 of 204 lapses.
   With no proof asked before a merge it saves nothing, so it is not merged. It would matter again only for the
   skip above. Its design is this file at `4101a7cf`, and the fuller derived key it withdrew is recorded there
-  with [the planner's measurements](../../evidence/BASELINE-GUARD/M2-plan/README.md).
+  with [the planner's measurements](../../../.orchestrate/evidence/BASELINE-GUARD/M2-plan/README.md).
 
 ## Limits on builders
 
@@ -287,5 +287,5 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
 ## Proof and builder handoff
 
 `mac-metal` and `chrome-webgpu`. A `verify --full` run a builder makes holds the `gpu` lock. Scratch goes in
-`tmp/baseline-guard/`; selected evidence in `docs/evidence/BASELINE-GUARD/`. The guard's tests build small Git
+`tmp/baseline-guard/`; selected evidence in `.orchestrate/evidence/BASELINE-GUARD/`. The guard's tests build small Git
 repositories of their own, so they run offline and need no GPU.

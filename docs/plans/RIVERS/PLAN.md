@@ -23,7 +23,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M1 On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes
 
-This creates `thrum-river-model`, on `thrum-water-model` from `WATERS` M1, which it does not change here. Part 1 of `docs/evidence/RIVERS/design-proof/river_proof.py` is a first-order sketch of the scheme and the source of M1.2's bounds; parts 2 and 6 give the section and the kind of valley M1.1 and M1.4 name. The river file's reader goes in `thrum-water-model` as a new file. If that crate's chart has no loss grid yet, the river file keeps the loss and M4 hands it over.
+This creates `thrum-river-model`, on `thrum-water-model` from `WATERS` M1, which it does not change here. Part 1 of `.orchestrate/evidence/RIVERS/design-proof/river_proof.py` is a first-order sketch of the scheme and the source of M1.2's bounds; parts 2 and 6 give the section and the kind of valley M1.1 and M1.4 name. The river file's reader goes in `thrum-water-model` as a new file. If that crate's chart has no loss grid yet, the river file keeps the loss and M4 hands it over.
 
 ## M2 On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on
 

@@ -1,7 +1,7 @@
 # Creator experience: closing G6
 
 10 November 2026, revised 11 November after
-[the design review](../../evidence/CREATOR/design-review.md) and 17 November for M3's proofs ([log](LOG.md)). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
+[the design review](../../../.orchestrate/evidence/CREATOR/design-review.md) and 17 November for M3's proofs ([log](LOG.md)). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
 [Plan](PLAN.md) · [Done when](DONE.json) ·
 [G6 decision](../../design/decisions/G6-CREATOR-EXPERIENCE.md) · [Creator guide](../../design/ENGINE-EXPERIENCE.md) ·
 [C11](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) ·
@@ -186,7 +186,7 @@ adds fragment work raises the pass that draws the cooked mesh.
 ### The fresh-agent proof
 
 The fresh agent is a separate new session that the lead commissions for M3.1 from
-[the brief](../../evidence/CREATOR/M3-fresh-agent-brief.md). It is never the milestone's builder or reviewer, nor a
+[the brief](../../../.orchestrate/evidence/CREATOR/M3-fresh-agent-brief.md). It is never the milestone's builder or reviewer, nor a
 subagent of either. The builder has seen the work. The reviewer cannot be fresh either: the review skill and the
 project's instruction files load engineering guidance before a reviewer reads any item.
 
@@ -198,7 +198,7 @@ engine item; the agent follows none of its links. It leaves a record: every file
 command; the scene source and its registration diff; the game-line count; every engine item the scene names; its
 friction; and captures from both targets.
 
-The builder retains that record unchanged under `docs/evidence/CREATOR/m3/fresh-lead/` (a later run beside it as
+The builder retains that record unchanged under `.orchestrate/evidence/CREATOR/m3/fresh-lead/` (a later run beside it as
 `fresh-lead-<date>/`) and cites it. The reviewer judges the record and need not be fresh: it reads the read log
 and friction against the limits above, checks the retained scene against the item, and runs that scene itself on
 the reviewed checkout, offscreen on the Mac and in Chrome, so the frames it judges are its own. Blocking friction
@@ -219,7 +219,7 @@ starter, drags the slider with synthetic pointer events, saves the files, and ca
 by window id. An offscreen frame does not stand in for the window. Without the Accessibility grant a person does
 the drag and nothing else. Agents never change a grant.
 
-The route is the module's window driver, `docs/evidence/CREATOR/m3/window_journey.py` with `window_ui.swift`
+The route is the module's window driver, `.orchestrate/evidence/CREATOR/m3/window_journey.py` with `window_ui.swift`
 beside it, for the builder and the reviewer alike. A reviewer reads both first, because the builder wrote them,
 then runs the driver on the reviewed checkout and judges its captures. Computer Use is not a route. It cannot
 select the starter, which `./dev starter` runs as an unbundled executable, and with the same executable wrapped in

@@ -25,9 +25,9 @@
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-app/src examples/v1-game/src examples/v1-game/benches examples/v1-game-ios/src",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
           "verdict": "fail",
-          "review": "docs/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -37,9 +37,9 @@
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
           "verdict": "fail",
-          "review": "docs/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -49,9 +49,9 @@
           "ask": "Do the Mac window, the browser page and the iPhone app each install the recipe's one watch and no handler of their own? Does the test raise a real validation error on a device and see the process survive and the error recorded? Is the path by which a delayed execution error retires the generation and resets its histories still there, as C07 requires?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -61,9 +61,9 @@
           "ask": "Read the runner. Does it run the loss and recovery checks `PLATFORM-RUNTIME-MAC` and the web shell left, unedited, in a real window and a real browser?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -71,9 +71,9 @@
           "inspect": "the simulator run at the claimed commit: engine output at start, after a rotation and after background and foreground, with the game's report of its texture profile and limits. Function only",
           "target": "ios-sim",
           "builder_result": "pass",
-          "evidence": "docs/evidence/HOST/M1-proof.md",
+          "evidence": ".orchestrate/evidence/HOST/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -83,7 +83,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/HOST/M1-review.md"
+          "review": ".orchestrate/evidence/HOST/M1-review.md"
         }
       ],
       "findings": [

@@ -14,9 +14,9 @@
           "check": "python3 scripts/session_match.py image --target mac-metal",
           "ask": "Read the harness. Is the image restored in a different process from the one that wrote it, into a runtime with a different world epoch? Does the restored world step through thrum_core::sim's registered runtime? Are the digests compared with SIM-2D's retained files, unchanged in git since SIM-2D was accepted? Is an image taken at tick 0 and at more than one later tick, with reused slots and despawned bodies counted above zero at the later ones?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/recheck/image-mac-metal.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/image-mac-metal.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -24,9 +24,9 @@
           "statement": "As Wasm in Chrome, the reference crowd stepped to the same ticks writes images byte for byte equal to the Mac's, and a world restored there from the Mac's image steps the rest of both traces to the retained digests.",
           "check": "python3 scripts/session_match.py image --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SESSION/M1/recheck/image-chrome-webgpu.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/image-chrome-webgpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -34,9 +34,9 @@
           "statement": "In the iPhone simulator, the reference crowd stepped to the same ticks writes images byte for byte equal to the Mac's, and a world restored there from the Mac's image steps the rest of both traces to the retained digests.",
           "check": "python3 scripts/session_match.py image --target ios-sim",
           "target": "ios-sim",
-          "evidence": "docs/evidence/SESSION/M1/recheck/image-ios-sim.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/image-ios-sim.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -45,9 +45,9 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_image",
           "ask": "Read the test. Does it cover, one at a time, each kind in the design's list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Does any encoded value pass through the machine's width or std::hash? Does thrum-core name anything of the reference crowd?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/recheck/core-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/core-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -56,9 +56,9 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_image_untrusted",
           "ask": "Read the test. Does it drive the restore the session will use, with each kind of input in the statement generated? Is every refusal made by a runtime that the same test then shows installing the unaltered image, so that nothing but the bytes can be the cause? Is the whole image validated before any part of the world is replaced? Is there a stdin target for the image decoder, in the style of thrum-network's?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/recheck/core-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/core-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -67,9 +67,9 @@
           "check": "python3 scripts/session_match.py identity",
           "ask": "Is the identity derived when the game is built from the sources the design lists, with no number a person raises? Does it also cover the game's action wire and the toolchain? Does every argument of the crowd's constructors that its rules read reach either the world image or the identity? Does the command make each change in a scratch copy outside the tree and fail if any leaves the identity unchanged, if Crowd and Mixed state one identity, or if either's runtime installs the other's image? Do the Chrome and simulator image runs show an image written under the Mac's identity accepted there?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/recheck/identity-mac-metal.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/identity-mac-metal.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -78,9 +78,9 @@
           "check": "python3 scripts/session_match.py image-costs --target mac-metal",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/recheck/image-costs-mac-metal.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/image-costs-mac-metal.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -88,9 +88,9 @@
           "statement": "For the reference crowd at 2,000, 5,000 and 10,000 bodies, the time to restore an image in Chrome is on record from two separate runs, each row with build, browser version and load. The figures are baselines: none decides the result.",
           "check": "python3 scripts/session_match.py image-costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SESSION/M1/recheck/image-costs-chrome-webgpu.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/image-costs-chrome-webgpu.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -99,9 +99,9 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this milestone change any item or trace comparison of SIM-2D's? In the tests SIM-2D was accepted with, is every change since then either the decoding half of a fixture's type or a signature the state encoding's interface now has, as seam ruling 1 allows, with no test, assertion, input or expected value removed or altered?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M1/recheck/sim2d-mac-metal.json",
+          "evidence": ".orchestrate/evidence/SESSION/M1/recheck/sim2d-mac-metal.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -111,7 +111,7 @@
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M1-review.md",
+          "review": ".orchestrate/evidence/SESSION/M1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -135,9 +135,9 @@
           "check": "cargo test --locked --offline -p match-proof --test steady",
           "ask": "Read the test. Does each of the five peers hold its own world and runtime? Does a client's world change only by restoring a baseline and stepping sets that arrived over its link, never by a call from the test or the host? Is each peer's digest taken by that peer? Do the scripted players' axes change through the run, most of them off the wire's 16-bit grid? Does the test run inside ./dev check and open no socket?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -146,9 +146,9 @@
           "check": "python3 scripts/session_match.py memory steady",
           "ask": "Is it a release build of the same session, crowd and scripted players the test uses? Does the harsh profile have a 250 ms round trip, 50 ms of jitter each way and 5% loss?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/memory-steady.json",
+          "evidence": ".orchestrate/evidence/SESSION/M2/memory-steady.json",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -157,9 +157,9 @@
           "check": "python3 scripts/session_match.py memory lead",
           "ask": "Does the client size its lead only from the margins the host reports and the handshake's round trip, with no profile passed to it? Is each client's session given time from a clock with its own origin, with no host time or shared time passed to it, and does the client whose clock runs at another rate hold the floor too? Is the pinned run made by the same code with only the lead fixed? Does a client author at most one frame for a tick, with target ticks that only rise? Does the record count the lead's changes in each stretch, and set each client's reported lead beside the true one?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2-review-fix.md",
+          "evidence": ".orchestrate/evidence/SESSION/M2-review-fix.md",
           "verdict": "fail",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -168,9 +168,9 @@
           "check": "cargo test --locked --offline -p thrum-network --test commands",
           "ask": "Read the test. Does its game hold state that each command changes, so that a lost, repeated or reordered command would change a digest? Is the late timed action made late by the link, and not by the test leaving it out?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -179,9 +179,9 @@
           "check": "cargo test --locked --offline -p thrum-network --test results",
           "ask": "Does a client tell a frame the host held over from one it admitted using only what the set stream carries? Is a set written to a link only after the host's step for its tick has committed?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -190,9 +190,9 @@
           "check": "cargo test --locked --offline -p thrum-network --test negotiation",
           "ask": "Read the test. Is the rule-set mismatch made with a second real rule set, and not a hand-set number? Does the host wait for the refused client to close, up to a timeout, and not close straight after sending?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-review-fix-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-review-fix-checks.txt",
           "verdict": "fail",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -201,9 +201,9 @@
           "check": "cargo test --locked --offline -p match-proof --test listen_host",
           "ask": "Does the local player's frame pass through the same staging and admission as a remote one's, with no second path into the world?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -212,9 +212,9 @@
           "check": "python3 scripts/session_match.py memory costs",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/memory-costs-review-fix.json",
+          "evidence": ".orchestrate/evidence/SESSION/M2/memory-costs-review-fix.json",
           "verdict": "fail",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -222,9 +222,9 @@
           "statement": "No call on a session waits, sleeps or reads a clock: time comes from the caller. `thrum-network` names no socket, no type of the reference crowd or of any game, and reaches a link only through `thrum-transport`'s link interface.",
           "ask": "Can any public call of the host or client session block or await? Does thrum-network read the wall clock anywhere but the headless host's pacing loop? Does it name a game's component, action or rule? Does thrum-network's own dependency on thrum-transport leave the socket adapters out, and is the new dependency registered in .config/architecture.toml? Is a set written once and sent to every client?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2-review-fix.md",
+          "evidence": ".orchestrate/evidence/SESSION/M2-review-fix.md",
           "verdict": "fail",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -234,7 +234,7 @@
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -243,9 +243,9 @@
           "check": "cargo test --locked --offline -p thrum-network --test authority_failure",
           "ask": "Read the test. Is the failure the runtime's own refusal of the host's step, raised by the test's rule set on the host, and not a set the test withheld? Are frames and a command for that tick in flight under loss when it happens? Does the host retry the tick, or send anything that names it as committed?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-checks.txt",
           "verdict": "pass",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -254,9 +254,9 @@
           "check": "cargo test --locked --offline -p thrum-network --test playout_position",
           "ask": "Read the test. Does it read the position at times between advances, as a frame would, and not only when a tick commits? Is the control that must fail the policy of committing every held set at once, run through the same assertions?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SESSION/M2/mac-review-fix-checks.txt",
+          "evidence": ".orchestrate/evidence/SESSION/M2/mac-review-fix-checks.txt",
           "verdict": "fail",
-          "review": "docs/evidence/SESSION/M2-review.md",
+          "review": ".orchestrate/evidence/SESSION/M2-review.md",
           "builder_result": "pass"
         }
       ],

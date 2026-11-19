@@ -33,7 +33,7 @@ This design reconciles the code on main at `54ab55bb`; it is not a blind study. 
 `runtime.rs`, `extract.rs`, `contribution.rs`, `synthetic/{scene_graph,view,display,upload}.rs` and
 `synthetic_display.wgsl`; `thrum-app`'s `game.rs`, `offscreen.rs` and `web.rs`; `examples/v1-game/src/content.rs`;
 the designs of `APPLE-TILE`, `EFFECT-GRAPH`, `CONTENT-LOOP` and `SIM-2D`; and
-[a planning probe](../../evidence/RENDER-2D/planning-probe.md) run for it.
+[a planning probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md) run for it.
 
 **This module is planned before the code it builds on is finished.** `APPLE-TILE` M10 to M12,
 `APPLE-PRESENTATION` M3 to M11, `CONTENT-LOOP` M1 to M3 and `EFFECT-GRAPH` M3 are still to be built. So this design
@@ -130,7 +130,7 @@ judged in words, in the running scenes.
   [GameDev.net](https://www.gamedev.net/blog/1480/entry-2259786-flickering-overlapping-objects-common-bug/); searched
   13 November). That cures equal keys and does nothing for neighbours pushed back and forth across each other. No
   source was found for hysteresis in sprite order, so the band of [mechanism 4](#4-order) is this design's own,
-  with its argument written there and [a probe](../../evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost) behind it.
+  with its argument written there and [a probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost) behind it.
 - **Limits.** WebGPU's defaults allow 16 sampled textures and 8 storage buffers in a stage, 256 array layers and
   8192 texels a side ([limits](https://www.w3.org/TR/webgpu/#limits), read 13 November). The capability record is
   the authority; M1 records what Chrome reports.
@@ -279,7 +279,7 @@ the rule. M5.3 records the same figures for `SIM-2D`'s crowd.
 The order is updated on the CPU at each tick and uploaded as a list of row indices. A depth buffer was not
 chosen: blended edges need back-to-front drawing whatever a depth test does, so depth would add a second path for
 the opaque parts only. A GPU sort was not chosen: the kept order of 10,000 rows took 121 µs a tick in the probe
-([probe 4](../../evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost)).
+([probe 4](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost)).
 
 ### 5. One pass, one draw
 
@@ -324,7 +324,7 @@ target is scene-linear half-float at the output's extent, and it is the pre-tone
 A 2D scene selects a **display-referred transfer** in the output half: a value from 0 to 1 is sRGB-encoded with
 no tone curve and no dither. An opaque texel therefore leaves the frame as the 8-bit code it was authored with.
 All 256 codes survive the half-float target with 0.46 of a code to spare
-([probe](../../evidence/RENDER-2D/planning-probe.md#3-do-authored-8-bit-colours-survive-the-half-float-scene-target)).
+([probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#3-do-authored-8-bit-colours-survive-the-half-float-scene-target)).
 
 Blending is in linear light, which is the engine's one colour contract (C07). Soft art therefore looks lighter
 over dark than in a paint tool that blends in display space: white at half alpha over black is code 188, not
@@ -526,7 +526,7 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
 - **Exact baselines.** This module edits `crates/`, `examples/v1-game/` and `scripts/`, which are covered paths,
   and moves no retained image. Each milestone carries the verifier.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/render-2d-<milestone>/`; selected evidence
-  in `docs/evidence/RENDER-2D/`.
+  in `.orchestrate/evidence/RENDER-2D/`.
 - **Maturity.** Ledger rows for 2D are added in M5, with implementation, correctness, visuals and device results
   kept apart.
 

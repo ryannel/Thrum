@@ -36,8 +36,8 @@ and never gates it. Nothing here uses anything `SHOWCASE` builds, and the proof 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-network` (the envelope and the
 input, state and acknowledgement codecs, none of which opens a socket), the tick-quantised `LinkConditioner` in
 `crates/thrum-core/tests/support/v1_workload.rs`, the contracts and decisions above, the sources of the candidate
-crates, [a planning probe](../../evidence/TRANSPORT/planning-probe.md) run for it on all three targets, and
-[a second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe) of Quinn's stream opening and of datagrams on a stalled path, run to answer
+crates, [a planning probe](../../../.orchestrate/evidence/TRANSPORT/planning-probe.md) run for it on all three targets, and
+[a second probe](../../../.orchestrate/evidence/TRANSPORT/design-review-response.md#the-probe) of Quinn's stream opening and of datagrams on a stalled path, run to answer
 the design review.
 
 ## Purpose and scope
@@ -103,7 +103,7 @@ its last message to arrive waits for the peer's answer before it closes.
 link's own queue for the QUIC stack beneath: Quinn, or the browser. The limit bounds that wait and nothing after
 it. A datagram the stack holds, or the network delays, has no deadline, so one can arrive long after it was sent,
 and [mechanism 5](#5-bounds-backpressure-and-liveness) says how much can be held. In
-[the second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe), with a 250 ms age limit and a
+[the second probe](../../../.orchestrate/evidence/TRANSPORT/design-review-response.md#the-probe), with a 250 ms age limit and a
 path cut for 2 to 3 s, the one to three datagrams the stack still held arrived 0.7 to 5 s old once the path
 healed. The link gives no meaning to a datagram and cannot judge one stale on arrival. `SESSION` does that by content, as its contracts already require,
 since this lane reorders in any case: input by its target tick against "a bounded age/window"
@@ -147,7 +147,7 @@ before any message.
 ([Quinn's `accept_bi`](https://docs.rs/quinn/latest/quinn/struct.Connection.html#method.accept_bi)), and
 `web-transport-quinn` writes nothing on a raw connection's stream. A game whose client waits for the host's
 welcome would never get one. The planning probe's client always sent first, so it did not show this;
-[the second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe) did, on sockets: with no write
+[the second probe](../../../.orchestrate/evidence/TRANSPORT/design-review-response.md#the-probe) did, on sockets: with no write
 the host's accept never completed, and after a four-byte hello the host accepted the stream and sent first. So the
 link writes first, on every adapter:
 

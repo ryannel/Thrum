@@ -95,19 +95,19 @@ through the module named, and [the status page](STATUS.md) says where that modul
 
 - **G0, integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Shipping trees exclude SQLite and authoring.
-  [Evidence](../evidence/v1-workload/G0-INTEGRITY-2026-11-05.md).
+  [Evidence](../../.orchestrate/evidence/v1-workload/G0-INTEGRITY-2026-11-05.md).
 - **G2S, simulation correctness and multiplayer fitness.** Typed shared and mutable queries, validated admission,
   trusted in-place rules under sparse undo, engine-owned publication, retained-input amendment and corrected
   replay, with complete authority-state equality against the straight corrected run. Never closed on a partial
-  hash or an easier row. [Evidence](../evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md);
-  [recorded figures](../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history.
+  hash or an easier row. [Evidence](../../.orchestrate/evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md);
+  [recorded figures](../../.orchestrate/evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history.
 - **G3a, executing graph and live scene.** Render, compute and copy closures execute in dependency order with
   culling, derived attachment ops, live camera, lights and cascades, reversed-Z `Depth32Float`, indexed draws and
   submitted transforms.
 - **G3b, functional engine frame runtime.** Display-link targets drive Mac, iOS and browser presentation; Mac runs
   world and render work off its main thread; GPU interpolation, late acquisition and a two-frame limit are shared.
   Modules: `PLATFORM-RUNTIME-MAC`, `PLATFORM-RUNTIME-IOS`, and the web shell.
-  [Frame history](../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu allocations are baselines.
+  [Frame history](../../.orchestrate/evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu allocations are baselines.
 - **G3s, physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple scattering, sky-view and aerial
   LUTs and Sun disk; physical illuminance drives lights and shadows; time controls span dawn through night. Follow
   the Broadsides reading map and the PD and CC0 rules. Module: `ATMOSPHERE`.
@@ -125,15 +125,15 @@ through the module named, and [the status page](STATUS.md) says where that modul
   atomic manifest, watcher and dev server. Keep only the runtime validation the game needs; shipping never links
   authoring. Prove visible asset edits without GPU stalls. Modules: `COOKED-DRAW`, `CONTENT-LOOP`
   ([design](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md),
-  [evidence](../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)).
+  [evidence](../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)).
 - **G6, creator experience and demo controls.** Native and browser text, sliders, toggles and field overlays bound
   to typed parameters. One command produces a lit scene, sky, cooked mesh, camera and slider; diagnostics and hot
   reload support asset, shader and parameter edits. A fresh agent uses only public docs and the starter, builds a
   small scene without reading internals, and records friction. Keep that scene to about 100 game lines, report
   game lines and zero engine game types. See [the creator guide](../design/ENGINE-EXPERIENCE.md). Module: `CREATOR`.
-  [M1](../evidence/CREATOR/M1.md) proves the shared Mac/Chrome scene route and live assets;
-  [M2](../evidence/CREATOR/M2.md) and its [independent review](../evidence/CREATOR/M2-review.md)
-  prove the profiler. [M3](../evidence/CREATOR/M3.md) records the lead-commissioned fresh scene on Mac and
+  [M1](../../.orchestrate/evidence/CREATOR/M1.md) proves the shared Mac/Chrome scene route and live assets;
+  [M2](../../.orchestrate/evidence/CREATOR/M2.md) and its [independent review](../../.orchestrate/evidence/CREATOR/M2-review.md)
+  prove the profiler. [M3](../../.orchestrate/evidence/CREATOR/M3.md) records the lead-commissioned fresh scene on Mac and
   Chrome, the documentation check, native mistakes and the attended window journey.
   The clipping and shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside
   this gate's scope.

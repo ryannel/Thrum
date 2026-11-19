@@ -152,7 +152,7 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 **Who judges frame cadence on the culled valley (with `CULLING` and `SHOWCASE`), 17 November 2026.** `CULLING`
 M3's review left M3.7 and M3.8 unjudged for "full-refresh smoothness", from submission intervals in a loaded
 capture, and its builder asked for a paused-builder sitting
-([review](../evidence/CULLING/M3-review.md)). The brief's bar, "smooth at the display's full refresh", has one
+([review](../../.orchestrate/evidence/CULLING/M3-review.md)). The brief's bar, "smooth at the display's full refresh", has one
 judge for the showcase, and it is not `CULLING`.
 
 - **`SHOWCASE` judges it**, on the exit scene, which is the valley populated and drawn in `CULLING`'s default
@@ -712,8 +712,8 @@ An **exact baseline** is a set of retained bytes that a proof compares rendered 
 has one owner. On 11 November `APPLE-PRESENTATION` M1 applied jitter to every game view, which moved every
 rasterised pixel of `APPLE-TILE`'s M0 baseline. The builder changed two exact tests in `./dev check` to absorb it,
 and the change merged. `APPLE-TILE` M2 was then claimed on evidence from a binary built before its rebase
-([APPLE-TILE M2 review](../evidence/APPLE-TILE/M2-review.md), MF1;
-[APPLE-PRESENTATION M1 review](../evidence/APPLE-PRESENTATION/M1-review-1.md), MF1). Three rules close those holes.
+([APPLE-TILE M2 review](../../.orchestrate/evidence/APPLE-TILE/M2-review.md), MF1;
+[APPLE-PRESENTATION M1 review](../../.orchestrate/evidence/APPLE-PRESENTATION/M1-review-1.md), MF1). Three rules close those holes.
 
 <a id="proofs-run-once-on-main"></a>
 
@@ -723,7 +723,7 @@ with more than three covered merges an hour a proof was usually void before it c
 milestones reached Ready for Review against 419 commits, 163 of 288 background jobs failed, and the one GPU lock
 was busy 92% to 94% of the day, mostly in rebase, re-prove and merge attempts that failed. Of 79 verifier runs,
 one failure was a real pixel change and 21 were flakes or infrastructure
-([the report](../evidence/BASELINE-GUARD/M2-replan/proof-regime.md)). The owner approved its regime: "Ok, let's
+([the report](../../.orchestrate/evidence/BASELINE-GUARD/M2-replan/proof-regime.md)). The owner approved its regime: "Ok, let's
 get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the
 lead on Thrum working." and "We want all these fixes in place before I head to bed tonight." In the lead's
 session that day the owner said "Go ahead" to a gate that only warns, an hourly verifier on main, `gpu: 2,
@@ -818,10 +818,10 @@ an exact test changed by a module that does not own it, with no ruling here, rec
 
 | Baseline | Owner | What it pins | Compared by | Covered paths |
 |---|---|---|---|---|
-| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | Listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files. |
-| Four Chrome manifests: `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `docs/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
-| `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
-| The exit baselines under `docs/evidence/SHOWCASE/`, created by `SHOWCASE` M5 and extended to one per row in M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
+| `.orchestrate/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | Listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files. |
+| Four Chrome manifests: `.orchestrate/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `.orchestrate/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
+| `.orchestrate/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
+| The exit baselines under `.orchestrate/evidence/SHOWCASE/`, created by `SHOWCASE` M5 and extended to one per row in M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
 
 The verifier, `python3 scripts/exact_baselines.py verify --full`, runs the first two rows.
 
@@ -844,7 +844,7 @@ stop is a defect of the one aerial product and a selection would keep it in ever
   manifests. Each holds terrain that reads a line which met the ground: low ground 3 to 12 km from the
   valley's cameras, up to 0.4% of the covered pixels at the route's checkpoints, 4% to 5% in the sunset still
   and 0.1% to 0.2% in the night still
-  ([the planner's reading of the mesh](../evidence/ATMOSPHERE/design-proof/README.md), a prediction and not a
+  ([the planner's reading of the mesh](../../.orchestrate/evidence/ATMOSPHERE/design-proof/README.md), a prediction and not a
   GPU run). Those pixels gain haze. The sky, the stars, the near ground, the props and the letterbox bars are
   predicted not to move. M9's builder records which sets did move.
 - **Who refreshes them.** The change and the references land together, as rule 2's planned refresh, so no
@@ -986,9 +986,9 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
 - **What it is.** In the reference, records 0 and 1 of that set are one tick submitted twice, with one digest.
   In the failed capture record 0 hashes to it and record 1 does not. The two differ at 12,637 pixels, by a median
   of 2 half-float steps, and those pixels are thin lines along the triangle edges of the far hills
-  ([the planner's reading](../evidence/EFFECT-GRAPH/M3-replan/README.md)). `APPLE-TILE` M10 met the same a day
+  ([the planner's reading](../../.orchestrate/evidence/EFFECT-GRAPH/M3-replan/README.md)). `APPLE-TILE` M10 met the same a day
   earlier on a build without `EFFECT-GRAPH` M3: Chrome day SDR, record 227, 299 pixels, at most two byte values,
-  and a retry that matched all 481 ([its record](../evidence/APPLE-TILE/M10/chrome-frame-227/chrome-diagnostic.json)).
+  and a retry that matched all 481 ([its record](../../.orchestrate/evidence/APPLE-TILE/M10/chrome-frame-227/chrome-diagnostic.json)).
   This is the signature of the defect in [`CULLING`'s design](CULLING/DESIGN.md#m3-one-image-under-load), where
   derivatives at shared triangle edges change with GPU load, now seen in Chrome, which that design lists as not
   measured. It is an inference from where the pixels lie, not a reading of Chrome's derivatives.
@@ -1041,12 +1041,12 @@ for `APPLE-TILE` to resolve it.
 - **What it is.** No image moved, and neither the reference nor the content key is stale. All 481 digests of the
   failed capture equal the retained ones, and tick 217 with alpha 1 is the instant of tick 218 with alpha 0. The
   same covered content, by its content key and with the same Wasm and native binaries, passed the whole verifier
-  less than an hour before ([`WATERS`' record](../evidence/WATERS/M1-baselines.json)), on the same Chrome. A fixed
+  less than an hour before ([`WATERS`' record](../../.orchestrate/evidence/WATERS/M1-baselines.json)), on the same Chrome. A fixed
   capture gives the game a synthetic time at each callback, but in the browser the game's world stops committing
   due ticks once a callback's tick work has taken 2 ms of real time, and commits the rest at the next callback
   (`with_tick_work_slice` in `examples/v1-game/src/host/world.rs`). Record 98 is one of 140 that two ticks reach.
   Its callback took 12.9 ms, the longest of the 481, where the median is 1.6 ms
-  ([the planner's reading](../evidence/REPO-RULES/M1-replan/README.md)). So the page stalled inside the first
+  ([the planner's reading](../../.orchestrate/evidence/REPO-RULES/M1-replan/README.md)). So the page stalled inside the first
   tick, and the second waited for record 99, where the capture is level with the reference again. This is an
   inference from the callback's time: no tick was timed. `EFFECT-GRAPH` M3 met the same once, on earlier content.
 - **Whose it is.** Nothing is owed by `APPLE-TILE` or `BASELINE-GUARD`: the references, the comparisons, the
@@ -1060,7 +1060,7 @@ for `APPLE-TILE` to resolve it.
   place of stopping under rule 1, only when all three of these hold:
   1. *Images.* Every record of the failed Chrome set holds the retained digest. The comparison stops at the
      first refusal, so the builder reads the capture's manifest against the retained one for all 481
-     (`docs/evidence/REPO-RULES/M1-replan/identity_reading.py` is one way).
+     (`.orchestrate/evidence/REPO-RULES/M1-replan/identity_reading.py` is one way).
   2. *Identities.* The only identity fields that differ are `tick`, `source_tick` and `alpha`, and in every
      record where they differ the reference holds a tick with alpha 0 and the capture holds the tick before it
      with alpha 1. Every other identity field of every record matches.
@@ -1090,7 +1090,7 @@ for `APPLE-TILE` to resolve it.
 **Ruling on a motion capture that drops frames under load (with `T2-CAPTURE`, `APPLE-TILE`, `BASELINE-GUARD` and
 `REVIEW-ENGINE`), 16 November 2026.** `REVIEW-ENGINE` M3's builder stopped with every item passed: the
 main-branch check kept failing before any pixel was compared
-([its handoff](../evidence/REVIEW-ENGINE/M3-handoff.md)). The owner asked for the capture to keep every frame on
+([its handoff](../../.orchestrate/evidence/REVIEW-ENGINE/M3-handoff.md)). The owner asked for the capture to keep every frame on
 a loaded machine and to exit 75 when it is incomplete.
 
 - **What it is.** Four runs of the verifier failed on 16 November, each at a different realtime motion arm of
@@ -1122,7 +1122,7 @@ a loaded machine and to exit 75 when it is incomplete.
   one may. `BASELINE-GUARD`'s limit on editing the matrices binds its own builders.
 - **Everyone else.** Nothing is owed. A module's own realtime capture keeps `omit` unless that module selects
   `wait`, which it may do only for a claim that every submitted image was kept.
-- **Not part of this.** `docs/evidence/APPLE-TILE/M10/window-proof.py` ending "CUA app selection timed out" is
+- **Not part of this.** `.orchestrate/evidence/APPLE-TILE/M10/window-proof.py` ending "CUA app selection timed out" is
   a wait for a computer-use action in the attended window proof. It stays with `APPLE-TILE` M10's sitting.
 
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
@@ -1226,7 +1226,7 @@ state, each kind with one owner:
 | `PUDDLES` | Rain's hollows and their fill, rain's rings, and the wetness of ground | Its state is a game's own, stepped on the CPU, and it reaches into the forward pass's surfaces, which no other water module touches |
 
 `SEA`'s old M3 to M10 became `WATERS`' M2 to M11, written again for every body of water. A module called `WATER`
-would share its evidence folder's name with the 1 November `docs/evidence/water` on this Mac's file system, so
+would share its evidence folder's name with the 1 November `.orchestrate/evidence/water` on this Mac's file system, so
 the module is `WATERS`. The older water designs and [the water decision](../design/decisions/E1-GPU-WATER.md) are
 evidence `WATERS`' design judged; where they differ, that design holds.
 
@@ -1260,7 +1260,7 @@ Briefs for the modules not yet planned. Modules with a design are linked from th
 ### APPLE-PRESENTATION M4–M11 (G4)
 
 Planned on 14 November 2026: [design](APPLE-PRESENTATION/DESIGN.md#m4-to-m12-settled-14-november-2026),
-[plan](APPLE-PRESENTATION/PLAN.md). [The drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)
+[plan](APPLE-PRESENTATION/PLAN.md). [The drafted milestones](../../.orchestrate/evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)
 became done-when items, with the drafted M10 split in two: the order is M4 (extent and generation transitions),
 M5 (dynamic scale), M6 (EDR), M7 (the governor and its knob registry), M8 (MetalFX), M9 (prepared paths and
 launch-to-ready), M10 (cooked shader libraries and parallel preparation), M12 (the pipeline archive) and M11
@@ -1284,7 +1284,7 @@ staying parked: CAS garbage collection and leases on the store, layered EAC, par
 
 M4, added on 16 November 2026, is built at once and ahead of M2: the cooker's watcher scans its source tree on
 its own clock, because macOS left saves unreported on the fleet's Mac and `thrum-cook`'s watcher test failed the
-full check for every module ([diagnosis](../evidence/CONTENT-LOOP/M4-diagnosis.md)). `ATMOSPHERE` M9 is Blocked
+full check for every module ([diagnosis](../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)). `ATMOSPHERE` M9 is Blocked
 on it. It has no `depends_on` entry, so that its proved items stand, and the lead unblocks it when M4 is Done.
 
 ### SHOWCASE (G7)
@@ -1292,7 +1292,7 @@ on it. It has no `depends_on` entry, so that its proved items stand, and the lea
 Planned on 13 November 2026: [design](SHOWCASE/DESIGN.md), [plan](SHOWCASE/PLAN.md). Its milestones are M5 to M8;
 M1 to M4 were the route slice, built before the loop under
 [the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md) and kept in
-[its record](../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:M2` and `CULLING:M3`; M7
+[its record](../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:M2` and `CULLING:M3`; M7
 needs the closing milestones it builds on and M8 the last milestone of every other track 1 module. The swarm game, `SWARM`, starts when M8 is Done.
 
 ### EFFECT-GRAPH (track 2 foundation)
@@ -1791,7 +1791,7 @@ is reached through the V1 game's shell.
 Planned on 13 November 2026: [design](GAME-UI/DESIGN.md), [plan](GAME-UI/PLAN.md). Its planner settled the two
 choices this brief carried: glyphs are rasterised when a font is cooked, with `skrifa`, `harfrust` and `zeno` in
 the cooker only, so a shipped game holds no font code; and a join ticket is never typed, but arrives as a text
-drop from a link, a launch argument or a paste. [A probe](../evidence/GAME-UI/planning-probe.md) sized a cooked
+drop from a link, a launch argument or a paste. [A probe](../../.orchestrate/evidence/GAME-UI/planning-probe.md) sized a cooked
 font and checked the rules for spacing, event ownership and direction keys. Six milestones, all after
 `RENDER-2D:M5`, whose sprite scene the first checks against, and `APPLE-PRESENTATION:M6`, whose EDR present pass
 the interface is drawn in. The sixth, added on 14 November, is the iPhone shell shared by every game. The asks of `APPLE-TILE`,
@@ -1808,7 +1808,7 @@ says what was activated; there is no text field, scrolling list or transition sy
 Planned on 13 November 2026: [design](TRANSPORT/DESIGN.md), [plan](TRANSPORT/PLAN.md). Its planner settled the
 three choices this brief carried: Quinn with `web-transport-quinn` on the host and a hand-written binding of the
 browser's `WebTransport`; one I/O thread that meets the world lane only at bounded queues; and no WebSocket
-fallback. [A probe](../evidence/TRANSPORT/planning-probe.md) reached one host from the Mac, Chrome and the
+fallback. [A probe](../../.orchestrate/evidence/TRANSPORT/planning-probe.md) reached one host from the Mac, Chrome and the
 simulator with datagrams, so the fallback this brief named, input on the reliable stream for Chrome, is held in
 reserve and not built. Two milestones, the first waiting for nothing and started
 [when a builder slot is free](#transports-timing); `SESSION` needs M1 for the in-memory conditioned link and M2 before its socket
@@ -1823,7 +1823,7 @@ Planned on 13 November 2026: [design](SESSION/DESIGN.md), [plan](SESSION/PLAN.md
 choices this brief carried: the crowd is drawn at the confirmed tick and only a player's own character is
 predicted; digests are compared twice a second to start, a setting of the match; and a modal choice is a command
 on the reliable lane, admitted at one tick and sent to every peer in that tick's set.
-[A timing model](../evidence/SESSION/planning-probe.md) settled two more: the host's admitted input travels as
+[A timing model](../../.orchestrate/evidence/SESSION/planning-probe.md) settled two more: the host's admitted input travels as
 datagrams that repeat what a client has not acknowledged, and a client sizes its input lead from what the host
 reports. Seven milestones; the seventh, added on 14 November, is a windowed match on a driven world. `SWARM`
 needs M7 for co-op and can rehearse on the in-memory link from M4. The world
@@ -1851,7 +1851,7 @@ named, the guard and what the window and page still assume are built in M2 under
 ## Track 4: the code review and the game's separation
 
 Added 14 November 2026 from two requests of the owner's that day. On the
-[whole-repository code review](../evidence/code-review-2026-11-14/CODE-REVIEW.md) (20 High, 81 Medium, 61 Low and
+[whole-repository code review](../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md) (20 High, 81 Medium, 61 Low and
 17 Nit findings, in thirteen themes T1 to T13): "can you not just plan and drive that work?" On the game: "it
 sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as
 much as we can, it shouldn't even sit in the same code base ideally." Six modules, rows 26 to 31. None gates the
@@ -1934,7 +1934,7 @@ belongs to its owner.
    reaches main, so a violation that reaches main before the rule does is in its baseline. Another module adds
    a rule through the same engine, with fixtures, in the milestone that first needs it.
 2. **Bulk evidence** (`REPO-RULES` M2). A file over the cap leaves the tree and stays in Git history, listed in
-   `docs/evidence/BULK.json`; the link check accepts a link to a listed path. Evidence folders stay their
+   `.orchestrate/evidence/BULK.json`; the link check accepts a link to a listed path. Evidence folders stay their
    modules'. No review, record or design is edited, and a registered exact-baseline reference never leaves. From
    then on a builder keeps large captures in scratch or the local store, as
    [the design](REPO-RULES/DESIGN.md#mechanisms) says. The local store is one folder beside the main checkout,
@@ -2087,7 +2087,7 @@ Max under [the hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENG
 kept as fallback and reference, each path promoted only by a measured win, V1 not delayed, and the desktop-high
 recipe out of scope. Two modules build it: [RAY-TRACING](RAY-TRACING/DESIGN.md) and
 [MESH-SHADING](MESH-SHADING/DESIGN.md). Before either was designed,
-[a probe](../evidence/RAY-TRACING/planning-probe/README.md) showed that the locked wgpu reaches both features on
+[a probe](../../.orchestrate/evidence/RAY-TRACING/planning-probe/README.md) showed that the locked wgpu reaches both features on
 this Mac through its public API, so neither needs raw Metal.
 
 ### What the two features serve
@@ -2489,7 +2489,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   the sky overlay and haze scale was added, and [five seam rulings](#seam-rulings-for-clouds) settle its asks of
   `ATMOSPHERE` and of the two games it is shown in. The clouds' assumption moved to [its plan](CLOUDS/PLAN.md).
   No contract, exact baseline or other module's done-when item changed.
-- 2026-11-14 `CLOUDS` revised after [its design review](../evidence/CLOUDS/design-review.md).
+- 2026-11-14 `CLOUDS` revised after [its design review](../../.orchestrate/evidence/CLOUDS/design-review.md).
   [Ruling 1](#seam-rulings-for-clouds) now gives a GPU-written Sun-path field a path direction, a border and a
   far value, so its factor is continuous in the Sun's elevation and across the field's edge; the Sun-path row
   says the same. The note on stacked volumes states how far their mips stay inside a slab. No other ruling,
@@ -2518,7 +2518,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   three sea rulings are now [rulings for `WATERS`](#seam-rulings-for-waters), with ruling 2 covering see-through
   and mirror-still water; `CLOUDS` M11 waits on `WATERS:M8`. Track 3's rows are renumbered 19 to 24. No
   contract, exact baseline or other module's item changed.
-- 2026-11-14 `WATERS` re-planned after [its design review](../evidence/WATERS/design-review.md) asked for changes.
+- 2026-11-14 `WATERS` re-planned after [its design review](../../.orchestrate/evidence/WATERS/design-review.md) asked for changes.
   The water-map row now carries a chart's ends and joins, stage ranges, what preparation refuses and the shore
   margin. `RIVERS`' brief gains the chart's ends and how a reach answers its source's stage; `PUDDLES`' brief
   gains the seam question of basins that merge, and its wet shore is the sand's darkening under the film
@@ -2604,7 +2604,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   the ground. No design or item of `SCENE-VIEWS`, `CLOUDS` or `APPLE-TILE` changed, no other item of
   `WATERS`, and no contract text.
 - 2026-11-14 Dependency audit, on the lead's task from the owner's word that too few milestones can start at
-  once: [the record](../evidence/dependency-audit-2026-11-14/README.md) gives a verdict for each of the 82
+  once: [the record](../../.orchestrate/evidence/dependency-audit-2026-11-14/README.md) gives a verdict for each of the 82
   edges. Five only set an order: `SCENE-VIEWS` M1 now waits for `CULLING:M1`, `PUDDLES` M6 for `SHOWCASE:M5`,
   `SHOWCASE` M8 and not M7 for `PLATFORM-RUNTIME-MAC:M3` and `CREATOR:M3`, and `SWARM` M3 and M6, not M2, for
   `GAME-UI`. `SHOWCASE` M7.1 no longer asks for `ATMOSPHERE`'s track-2 milestones. The swarm gate stays, by the
@@ -2724,7 +2724,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   out of a view matrix, that position rounds differently by direction and height, so on a texel's edge two
   cameras on one vertical could have maps 32 m apart. A scene with no view changes only at such a camera.
   A reproduction of the showcase valley's cameras expects no registered exact baseline to move
-  ([part G](../evidence/SCENE-VIEWS/design-proof/README.md)); the verifier decides. `SCENE-VIEWS` M1.1, M1.7
+  ([part G](../../.orchestrate/evidence/SCENE-VIEWS/design-proof/README.md)); the verifier decides. `SCENE-VIEWS` M1.1, M1.7
   and M1.13 are written again and it gains M1.14. No other module's item or design changed.
 - 2026-11-16 `T2-CAPTURE` gained M3 and the ruling on
   [a motion capture that drops frames under load](#ruling-on-a-capture-that-drops-frames), after the
@@ -2734,7 +2734,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - 2026-11-17 [Ruling 8 for `CLOUDS`](#seam-rulings-for-clouds) and the air's-haze interface now carry the
   haze's kind, an Ångström exponent, beside its amount, after `ATMOSPHERE`'s f64 reference sky showed the
   colour it gives visible at a low Sun in haze of 20 and 3 km
-  ([the check](../evidence/ATMOSPHERE/haze-kind-check.md)). The weather state holds it (`CLOUDS` M16) and
+  ([the check](../../.orchestrate/evidence/ATMOSPHERE/haze-kind-check.md)). The weather state holds it (`CLOUDS` M16) and
   `ATMOSPHERE` M7 applies it; the default, 0, is today's grey aerosol, so no scene and no exact baseline changes.
   No contract changed.
 - 2026-11-17 Track 5 added from the owner's words, quoted in its section: `RAY-TRACING` (six milestones) and
@@ -2744,38 +2744,38 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   sequencing were brought into step. No V1 module's design, plan or done-when item changed, nothing was added
   to a `SHOWCASE` dependency, and no contract or exact baseline changed. Both design reviews are owed.
 - 2026-11-18 Track 5 rulings 1, 4 and 10, the cooked draw path interface and owner decision 33 were amended
-  after [MESH-SHADING's design review](../evidence/MESH-SHADING/design-review.md): the window asks for
+  after [MESH-SHADING's design review](../../.orchestrate/evidence/MESH-SHADING/design-review.md): the window asks for
   `mesh-stages` unasked only in a qualified configuration, meshlet storage follows the contribution's resolved
   path and each mesh's eligibility, a material reload covers both forward pipelines, and `Auto` reads the Sun
   shadow method. `RAY-TRACING`'s half of ruling 4 keeps its meaning. No contract or exact baseline changed.
 - 2026-11-18 Track 5 rulings 1, 3, 4 and 5, the three ray interfaces, the module table's row 32 and owner
-  decisions 33 and 34 were amended after [RAY-TRACING's design review](../evidence/RAY-TRACING/design-review.md):
+  decisions 33 and 34 were amended after [RAY-TRACING's design review](../../.orchestrate/evidence/RAY-TRACING/design-review.md):
   the window asks for `ray-query` unasked only in a qualified configuration, ray structures follow the scene's
   ray demand and not the device, a contribution offers what it holds and not what a pass draws, ray effects
   resolve only on the Apple tile recipe, and promotion needs a gain as well as no higher cost. No V1 module's
   item, contract or exact baseline changed.
 - 2026-11-18 Track 5 rulings 1 and 7, the launch and traced-visibility interfaces, the module table's row 32
-  and owner decisions 33 and 34 were amended after [RAY-TRACING's second design review](../evidence/RAY-TRACING/design-review.md)
+  and owner decisions 33 and 34 were amended after [RAY-TRACING's second design review](../../.orchestrate/evidence/RAY-TRACING/design-review.md)
   and the lead's direction, quoted in [its design](RAY-TRACING/DESIGN.md#the-request): no ray effect is promoted
   or chosen by the engine, a ray request that cannot be met falls back to the map frame, a launch gives a
   hardware name as required or preferred, and the frame's timing record gains a whole-frame GPU span.
   `MESH-SHADING`'s half of ruling 1 keeps its meaning. No V1 module's item, contract or exact baseline changed.
 - 2026-11-18 Track 5 rulings 1, 7, 8 and 10, the launch and cooked-draw-path interfaces, the module table's
   row 33 and owner decisions 32 and 33 were amended after
-  [MESH-SHADING's second design review](../evidence/MESH-SHADING/design-review.md) and the lead's direction,
+  [MESH-SHADING's second design review](../../.orchestrate/evidence/MESH-SHADING/design-review.md) and the lead's direction,
   quoted in [its design](MESH-SHADING/DESIGN.md#the-request): the mesh stages are an opt-in a launch and a
   scene ask for and no host or `Auto` selects them, a `MeshStages` request that cannot be met falls back with
   a reason, the caster view layout is visible to the object and mesh stages on a device that enabled them,
   and whichever of `RAY-TRACING` M3 and `MESH-SHADING` M2 lands first adds the whole-frame GPU span. No V1
   module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
 - 2026-11-18 Track 5 ruling 7, the cooked-draw-path interface and owner decision 33 were amended and ruling 12
-  was added after [MESH-SHADING's third design review](../evidence/MESH-SHADING/design-review.md):
+  was added after [MESH-SHADING's third design review](../../.orchestrate/evidence/MESH-SHADING/design-review.md):
   `MeshStages` is met only on the Apple tile recipe, a host may prefer Apple tile where no recipe is named,
   and the timing record's span is named the timed-pass span, with the queued transfers it leaves out
   disclosed. No V1 module's item, contract or exact baseline changed, and no file of `RAY-TRACING` changed.
   Its design still calls the span the whole frame's and says its opt-in leaves the recipe as it is today.
 - 2026-11-18 Track 5 ruling 12 and owner decision 33 were amended after
-  [RAY-TRACING's third design review](../evidence/RAY-TRACING/design-review.md): `RAY-TRACING` M6 builds
+  [RAY-TRACING's third design review](../../.orchestrate/evidence/RAY-TRACING/design-review.md): `RAY-TRACING` M6 builds
   the recipe preference if `MESH-SHADING` M3 has not, and its launch selection prefers Apple tile on a
   generation that enabled `ray-query`. Its design now names ruling 7's timed-pass span as that ruling does.
   No V1 module's item, contract or exact baseline changed, and no file of `MESH-SHADING` changed.

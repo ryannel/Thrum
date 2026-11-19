@@ -14,7 +14,7 @@
   start, and M1 gains a retained-view checker addition, landed first on today's facade, proving the recovered device
   presents a camera and time changed during loss.
 - 2026-11-08 Revised for the independent design review (REVISE).
-  [Full entry](../../evidence/PLATFORM-RUNTIME-WEB/log-entries.md#entry-1).
+  [Full entry](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/log-entries.md#entry-1).
 - 2026-11-08 Recheck at 14fb0b8a approved with changes, all taken. Game edits compare through `host()` before one
   mutable borrow, so unchanged edits reset no history (R1). Both gate witnesses count GPU calls on the lost device, and
   attach-after-loss gets its own navigation (R2). A deferred attach that is refused ends the attempt in
@@ -51,5 +51,5 @@
   capabilities' site, so the facade keeps one device authority. That diff goes as its own seam.
 - 2026-11-11 Converted from the flat web shell plan for orchestrate 1.7.0: the design sections became
   [DESIGN.md](DESIGN.md), M1's criteria and work moved to
-  [the record](../../evidence/PLATFORM-RUNTIME-WEB/M1-record.md), and this log took the plan's log and review
+  [the record](../../../.orchestrate/evidence/PLATFORM-RUNTIME-WEB/M1-record.md), and this log took the plan's log and review
   line. No done-when file was written, because the module has no open milestone.

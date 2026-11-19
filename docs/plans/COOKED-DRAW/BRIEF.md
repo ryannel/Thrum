@@ -7,7 +7,7 @@ G5 owns cooked GPU residency and drawing in `crates/thrum-asset-gpu` under
 [the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md). Its scene contribution culls meshlets on the GPU and
 draws them with `multi_draw_indexed_indirect`. The iPhone 18 Pro / iOS 27.2 simulator's Metal adapter does not report
 `DownlevelFlags::INDIRECT_EXECUTION`, so no cooked scene draws there at all
-([evidence and reproducer](../../evidence/render/t2-capture-m2/README.md)). The
+([evidence and reproducer](../../../.orchestrate/evidence/render/t2-capture-m2/README.md)). The
 [hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) and C04 require every accelerated path to be
 selected from the capability registry, with a portable fallback. This path has none, so this closes a gap against
 that decision. It is not a simulator workaround.

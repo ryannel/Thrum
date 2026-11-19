@@ -6,7 +6,7 @@ Two to four players share one run and keep seeing the same crowd. [Design](DESIG
 Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-session) before starting any milestone, and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
-[The planning probe](../../evidence/SESSION/planning-probe.md) is a timing model with no engine code; its source
+[The planning probe](../../../.orchestrate/evidence/SESSION/planning-probe.md) is a timing model with no engine code; its source
 was thrown away on purpose, so build from the design.
 
 ## Open for the human
@@ -25,7 +25,7 @@ was thrown away on purpose, so build from the design.
 
 Criteria: M1.1–M1.10 in the done-when file.
 
-A first build is on main, and [its review](../../evidence/SESSION/M1-review.md) says what it left wrong: the
+A first build is on main, and [its review](../../../.orchestrate/evidence/SESSION/M1-review.md) says what it left wrong: the
 image is in `crates/thrum-core/src/sim/runtime/image.rs` and `registered_world/image.rs`, its tests are
 `crates/thrum-core/tests/world_image*`, and the three-target proofs are `examples/match-proof` with
 `scripts/session_match.py`. `SIM-2D` left the state encoding and the digest in `thrum-core`, the reference
@@ -67,7 +67,7 @@ Criteria: M4.1–M4.7 in the done-when file.
 [A5's controller replay](../../design/decisions/A5-CONTROLLER-REPLAY.md) describes the ring; its nine-step cap and
 its tolerances are replaced as the design says. Exposing the crowd's player movement as one function edits
 `examples/crowd-2d` under [seam ruling 2](../ARCHITECTURE.md#seam-rulings-for-session). `SIM-2D`'s cost record,
-which M4.6 quotes, is in `docs/evidence/SIM-2D/`.
+which M4.6 quotes, is in `.orchestrate/evidence/SIM-2D/`.
 
 ## M5 Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss
 

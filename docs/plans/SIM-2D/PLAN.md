@@ -6,7 +6,7 @@ bodies each tick. [Design](DESIGN.md) · [done-when file](DONE.json), which owns
 
 Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before starting any milestone.
-[The planning probe](../../evidence/SIM-2D/planning-probe.md) says what was measured before the design was written;
+[The planning probe](../../../.orchestrate/evidence/SIM-2D/planning-probe.md) says what was measured before the design was written;
 its code was thrown away on purpose, so build from the design.
 
 ## Open for the human

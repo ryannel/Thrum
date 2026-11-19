@@ -26,7 +26,7 @@
   this module's builder under four seam rulings in the module list, as the other track 3 modules' asks were. The
   iOS shell is lifted into `thrum-app` and shared, not copied. No other module's design, plan or done-when file
   changed, and no contract's text changed.
-- 2026-11-13 Planner's probe, in [the evidence folder](../../evidence/SWARM/planning-probe.md): arithmetic on
+- 2026-11-13 Planner's probe, in [the evidence folder](../../../.orchestrate/evidence/SWARM/planning-probe.md): arithmetic on
   how many bodies fit a 16:9 view. Bodies a thirtieth of the short side cannot reach 2,000; a fiftieth reaches
   2,170 at 40% cover. So a common enemy is about 22 px at 1080p.
 - 2026-11-13 Researched: Brotato's waves and what happens between them (its wiki), Vampire Survivors' online
@@ -36,7 +36,7 @@
 - 2026-11-13 Not measured while planning, because no engine module is built: the game's tick, its cap in
   Chrome, its world image and every byte count. M2, M5 and M7 record them.
 - 2026-11-13 Design review: changes requested, five Must Fix
-  ([review](../../evidence/SWARM/design-review.md)). The entries below are the planner's answers.
+  ([review](../../../.orchestrate/evidence/SWARM/design-review.md)). The entries below are the planner's answers.
 - 2026-11-13 `spawn-depends-on-local-view`. The spawn rule no longer names a view. Constants of the rule set
   (the sight spans, the view slack, the spawn margin) give each hero a sight square; the budget spawns outside
   every present hero's, and the view is held inside it. The view fits the sight spans, so a window that is not
@@ -63,7 +63,7 @@
   out. Left as written, M5.6 could not be met by a hero that spends a run in the crowd.
 - 2026-11-13 The revised design still needs its review.
 - 2026-11-13 Second design review: changes requested, two Must Fix and no Suggestions
-  ([review](../../evidence/SWARM/design-review.md)). The entries below are the planner's answers.
+  ([review](../../../.orchestrate/evidence/SWARM/design-review.md)). The entries below are the planner's answers.
 - 2026-11-13 `run-end-priority-precedes-damage`. The priority is unchanged; the tick now produces it. Run rules
   early in a tick count the clock and judge no ending. One rule, the last of the tick, reads what the tick has
   staged (the boss's death, who still stands, the clock) and stages the new state, so one commit carries the
@@ -77,7 +77,7 @@
   equality from the next tick. The causes on record now include the session's own return from a stall or a
   repair, which `SESSION:M4.2` names. No engine capability is added.
 - 2026-11-13 The revised design still needs its review.
-- 2026-11-14 Dependency audit ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M2 no longer waits for `GAME-UI:M5`: the slice draws no interface,
+- 2026-11-14 Dependency audit ([the dependency audit](../../../.orchestrate/evidence/dependency-audit-2026-11-14/README.md)). M2 no longer waits for `GAME-UI:M5`: the slice draws no interface,
   and the edge only kept two builders out of the shells at once. M3 now waits for `GAME-UI:M4` and M6 for
   `GAME-UI:M5`, the milestones that deliver what each uses. The design's "Order between modules" says so. No
   item changed. The swarm gate on `SHOWCASE:M8` stays, by the owner's decision of 14 November. The revised

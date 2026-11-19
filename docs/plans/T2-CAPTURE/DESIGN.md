@@ -158,7 +158,7 @@ Added 16 November 2026, for M3. On that day the main-branch check `exact-images`
 motion arm of `APPLE-TILE`'s matrices, at a different arm each time and twice on one commit: `portable-variants-motion`,
 `apple-tile-route-motion`, `portable-route-motion` and `apple-tile-render-stall-motion`. The retained record of one
 reports `complete: false` with 129 ring omissions, none from the writer, 419 images and 547 GPU records, while five
-modules' GPU tests ran beside it ([handoff](../../evidence/REVIEW-ENGINE/M3-handoff.md)). Those tests run inside
+modules' GPU tests ran beside it ([handoff](../../../.orchestrate/evidence/REVIEW-ENGINE/M3-handoff.md)). Those tests run inside
 `./dev check`, which takes no lock, so no lock keeps them away. The completeness rule was right to refuse the run.
 
 **The cause, to be confirmed first by M3.1.** A realtime capture asks for 120 opportunities a second on elapsed
@@ -279,9 +279,9 @@ encoder path or complete Metal recorder is not needed for the first proof. Live 
 critical path. M0 margin applies to its measured scene compressibility. Each M1 content workload needs its own
 back-to-back capture series and sink-rate refusal measurements before throughput is qualified.
 
-Locked-console feasibility is supported by the [retained design review's probe account](../../evidence/T2-CAPTURE/design-review.md#what-checks-out):
+Locked-console feasibility is supported by the [retained design review's probe account](../../../.orchestrate/evidence/T2-CAPTURE/design-review.md#what-checks-out):
 it read `tmp/platform-runtime-mac-m2/console-probe.txt` at 01:59 CET (`IOConsoleLocked = Yes`,
-`CGSSessionScreenIsLocked = Yes`) and the successful 02:00 CET [offscreen parity record](../../evidence/render/mac-m2-pan/parity-20261109.json).
+`CGSSessionScreenIsLocked = Yes`) and the successful 02:00 CET [offscreen parity record](../../../.orchestrate/evidence/render/mac-m2-pan/parity-20261109.json).
 The second review locates probe scratch in the separate platform-runtime-mac worktree; the parity JSON alone
 does not record lock state. This is historical feasibility evidence, not a fresh T2 run or runtime-motion
 qualification. Accepted M0/M1 subsequently retained locked-run witnesses with their own proof.
@@ -356,7 +356,7 @@ Run `./dev check` for implementation, focused real-device/lifecycle and negative
 new documented scenario commands. Checks must fail on unavailable required hardware. This planning revision uses
 `./dev check-docs`. Exact source images, sample logs and decisive failure controls live in `tmp/t2-capture-<milestone>/`
 with a storage record, byte allowance and closeout condition. Promote compact reproducible proof and selected excerpts
-to `docs/evidence/render/` under ASSET-LIFECYCLE; ignored scratch alone is not durable selected evidence.
+to `.orchestrate/evidence/render/` under ASSET-LIFECYCLE; ignored scratch alone is not durable selected evidence.
 The default four-second SDR session allowance is 16 GiB including raw/packaged coexistence; run bulk sessions
 serially and verify retained selected roots before reusing their space. Longer/HDR sessions declare their own cap.
 

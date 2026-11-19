@@ -15,9 +15,9 @@
           "statement": "The prop meshes were sized from a sweep recorded before they were made: whole-frame GPU time for the exit scene's 10,000 entities at 1920x1080 with Sun shadows, at the stop with the most entities in view, for at least three triangle counts per prop, on both Mac recipes and in Chrome, in two separate runs. The shipped set follows the design's sizing rule, and its rows are kept as this module's cost baseline.",
           "ask": "Do the two retained runs support the shipped mesh set by the design's sizing rule? Was the heaviest stop chosen from the scene's own in-view counts, and is every row labelled with its build, recipe and load?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5-sizing-sweep.json; docs/evidence/SHOWCASE/M5.md#mesh-sizing",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-sizing-sweep.json; .orchestrate/evidence/SHOWCASE/M5.md#mesh-sizing",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -26,9 +26,9 @@
           "check": "python3 scripts/run_v1_showcase.py layout",
           "ask": "Does the command take heights from the terrain mesh as shipped, not from heights stored in the layout, and does it sample each mover's whole loop?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5-retake/checks.txt; docs/evidence/SHOWCASE/M5.md#layout-and-terrain-clearance",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/M5.md#layout-and-terrain-clearance",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -37,9 +37,9 @@
           "check": "cargo test --locked --offline -p v1-game --test exit_scene",
           "ask": "Read the test. Is the equality over complete authority state, as gate G2S requires, and not a partial hash? Is the hour stepped tick by tick through the game's own rules?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5-retake/checks.txt; docs/evidence/SHOWCASE/M5.md#authoritative-replay-and-drift",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/M5.md#authoritative-replay-and-drift",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -49,9 +49,9 @@
           "lock": "gpu",
           "ask": "Does the CPU reference test each entity's bounds against the view by itself, without reading the GPU's lists? Would the test fail if the scene fell back to cubes or to Direct?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5-retake/checks.txt; docs/evidence/SHOWCASE/M5.md#cooked-draw-and-route-comparison",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/checks.txt; .orchestrate/evidence/SHOWCASE/M5.md#cooked-draw-and-route-comparison",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -61,9 +61,9 @@
           "lock": "gpu",
           "ask": "Was each threshold set by the fixed rule from the first run that passed all three controls, and left alone afterwards? Does the no-entities control fail at every stop that has entities in view? If the baseline file changed after its calibration, are its identity and thresholds the calibrated ones, and does its refresh record name the grids that moved and the shadow correction as their cause?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5-exit-baseline.json; docs/evidence/SHOWCASE/M5-retake/parity.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-exit-baseline.json; .orchestrate/evidence/SHOWCASE/M5-retake/parity.json",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -72,19 +72,19 @@
           "check": "node scripts/check_v1_browser.mjs --case exit-scene",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SHOWCASE/M5-retake/browser-function.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-retake/browser-function.json",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md"
         },
         {
           "id": "M5.7",
           "statement": "On the Mac, at each of the six stops and the flythrough's checkpoints, props sit in the ground: none floats, sinks to its middle or stands inside the lookout, and the scatter shows no grid, row or repeated stamp and no hard edge where it ends.",
           "inspect": "Capture the six stops and the exit flythrough's checkpoints with T2 engine capture in `fixed` mode. Judge each frame whole and in native-size crops of the near ground, the middle distance and the far slopes.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5.md#metal-stops-and-fixed-motion; docs/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5.md#metal-stops-and-fixed-motion; .orchestrate/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -92,9 +92,9 @@
           "statement": "On the Mac the movers drift continuously along the exit flythrough and in a held view of the densest group of movers. From one tick to the next none pops in or out, jumps or passes through terrain, each mover's shadow, where it has one, moves with it, and no shadow appears or vanishes.",
           "inspect": "Record the exit flythrough, and a route that holds the held view, with the native route recorder: T2 engine capture in `fixed` mode, one fresh tick for each submission, at least 1,200 consecutive routed ticks each. Read each take's log first: it lists every routed tick once, in order, at the take's phase. Then judge windows of consecutive ticks, with every tick's submitted image retained, whole and in native-size crops of single movers and their shadows. Judge at least committed ticks 228 to 240 of the flythrough, at the route's phase and at phase 0.9999, where the strip was reproduced; the stretch round its `balloons` checkpoint; and windows of your own choosing across both takes.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SHOWCASE/M5.md#metal-stops-and-fixed-motion; docs/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5.md#metal-stops-and-fixed-motion; .orchestrate/evidence/SHOWCASE/M5-metal-fixed.tar.zst",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -102,9 +102,9 @@
           "statement": "In Chrome the six stops show the same props and movers as the Mac, with none missing, and along the exit flythrough the movers drift from one tick to the next without popping in or out or jumping.",
           "inspect": "Capture the six stops and the exit flythrough in Chrome with T2 engine capture in `fixed` mode, every submission of the flythrough retained. Judge the stops whole and in native-size crops beside the Mac's at the same stop. For the flythrough, read each run's source ticks from the capture's records first. A record that repeats a tick, with the next carrying two, is the page deferring a due tick under load: it is noted, and the longer step after it is not counted as a jump. That accounts for how far the scene moves between those frames and for nothing else, so a mover or prop that is missing, new or changed in them is judged like any other. Judge runs of consecutive frames whose ticks advance one at a time, with the stretch round the `balloons` checkpoint among them.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SHOWCASE/M5.md#chrome-fixed-motion; docs/evidence/SHOWCASE/M5-retake/chrome-half-tick.json; docs/evidence/SHOWCASE/M5-chrome-half-tick.tar",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5.md#chrome-fixed-motion; .orchestrate/evidence/SHOWCASE/M5-retake/chrome-half-tick.json; .orchestrate/evidence/SHOWCASE/M5-chrome-half-tick.tar",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md",
           "builder_result": "pass"
         },
         {
@@ -115,7 +115,7 @@
           "evidence": "main-branch check exact-images",
           "builder_result": "pass",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md"
         },
         {
           "id": "M5.11",
@@ -134,9 +134,9 @@
           ],
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SHOWCASE/M5-motion-record.json",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M5-motion-record.json",
           "verdict": "pass",
-          "review": "docs/evidence/SHOWCASE/M5-review.md"
+          "review": ".orchestrate/evidence/SHOWCASE/M5-review.md"
         }
       ],
       "failed_reviews": 2,

@@ -6,8 +6,8 @@ Two processes exchange messages over real internet protocols, and one of them ma
 
 Read [Mechanisms](DESIGN.md#mechanisms) and [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) before
 starting either milestone, and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
-[The planning probe](../../evidence/TRANSPORT/planning-probe.md) says what was measured before the design was
-written, and [the second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe) how Quinn opens a
+[The planning probe](../../../.orchestrate/evidence/TRANSPORT/planning-probe.md) says what was measured before the design was
+written, and [the second probe](../../../.orchestrate/evidence/TRANSPORT/design-review-response.md#the-probe) how Quinn opens a
 stream and treats datagrams on a stalled path. The code of both was thrown away on purpose, so build from the
 design.
 
@@ -23,7 +23,7 @@ design.
 
 Criteria: M1.1–M1.12 in the done-when file.
 
-[The first builder's handoff](../../evidence/TRANSPORT/M1-handoff.md) says what is on branch `build/transport`,
+[The first builder's handoff](../../../.orchestrate/evidence/TRANSPORT/M1-handoff.md) says what is on branch `build/transport`,
 what was tried and what to do first; start there and keep that work. The only sockets outside this module are the
 cooker's loopback dev-server tests, which are `CONTENT-LOOP`'s, run in `./dev check` and are not this milestone's
 to move or to answer for. `thrum-network` holds byte codecs that belong to `SESSION`; this

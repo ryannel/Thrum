@@ -3,7 +3,7 @@
   "adopted": true,
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/APPLE-TILE/design-review.md",
+    "review": ".orchestrate/evidence/APPLE-TILE/design-review.md",
     "commit": "8d8bf889ed704befbea47ec5393ae0238c68f08c",
     "hash": "062dea2d6dd62734467d48c202f10523e348f62830d7a24ac3f2f16df1c73be5",
     "by": "review",
@@ -31,7 +31,7 @@
         {
           "verdict": "pass",
           "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
-          "review": "docs/evidence/APPLE-TILE/M0-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M0-review.md",
           "host": "claude",
           "model": "claude-opus-5-5",
           "effort": "high",
@@ -78,7 +78,7 @@
       "done": {
         "by": "review",
         "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
-        "review": "docs/evidence/APPLE-TILE/M0-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M0-review.md",
         "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
         "at": "2026-11-11T03:34:51Z"
       }
@@ -89,7 +89,7 @@
         {
           "verdict": "pass",
           "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
-          "review": "docs/evidence/APPLE-TILE/M1-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M1-review.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -143,7 +143,7 @@
       "done": {
         "by": "review",
         "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
-        "review": "docs/evidence/APPLE-TILE/M1-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M1-review.md",
         "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
         "at": "2026-11-11T05:52:52Z"
       }
@@ -154,7 +154,7 @@
         {
           "verdict": "fail",
           "commit": "a6101020a94c50e386bc33ce7f41743a84937957",
-          "review": "docs/evidence/APPLE-TILE/M2-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M2-review-1.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -189,7 +189,7 @@
         {
           "verdict": "pass",
           "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
-          "review": "docs/evidence/APPLE-TILE/M2-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M2-review.md",
           "items": {
             "D2.1": "pass",
             "D2.2": "pass",
@@ -277,7 +277,7 @@
       "done": {
         "by": "review",
         "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
-        "review": "docs/evidence/APPLE-TILE/M2-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M2-review.md",
         "checked": "22850993580103eafe7d63166484e3f51151fae2",
         "at": "2026-11-11T15:24:43Z"
       }
@@ -288,7 +288,7 @@
         {
           "verdict": "fail",
           "commit": "e2129272a95335ae94aeb680668dc553c60b61d4",
-          "review": "docs/evidence/APPLE-TILE/M3-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M3-review-1.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -323,7 +323,7 @@
         {
           "verdict": "pass",
           "commit": "9d6318cff422df7f2b05519f7a30b72821f73b63",
-          "review": "docs/evidence/APPLE-TILE/M3-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M3-review.md",
           "items": {
             "D3.1": "pass",
             "D3.2": "pass",
@@ -384,7 +384,7 @@
       "done": {
         "by": "review",
         "commit": "9d6318cff422df7f2b05519f7a30b72821f73b63",
-        "review": "docs/evidence/APPLE-TILE/M3-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M3-review.md",
         "checked": "79d39ed1e247cc941502b89938c4debe48bf500e",
         "at": "2026-11-14T03:18:03Z"
       }
@@ -395,7 +395,7 @@
         {
           "verdict": "pass",
           "commit": "f1e4b7deaaafbc63a62545da7f86122b0d991150",
-          "review": "docs/evidence/APPLE-TILE/M10-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M10-review.md",
           "items": {
             "D10.1": "pass",
             "D10.2": "pass",
@@ -459,7 +459,7 @@
       "done": {
         "by": "review",
         "commit": "f1e4b7deaaafbc63a62545da7f86122b0d991150",
-        "review": "docs/evidence/APPLE-TILE/M10-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M10-review.md",
         "checked": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
         "at": "2026-11-16T20:14:58Z"
       }
@@ -470,7 +470,7 @@
         {
           "verdict": "fail",
           "commit": "ce4b9786d61bd164cbba1ff45ef6b063dd1bea02",
-          "review": "docs/evidence/APPLE-TILE/M11-review-1.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M11-review-1.md",
           "items": {
             "D11.1": "pass",
             "D11.2": "fail",
@@ -503,7 +503,7 @@
         {
           "verdict": "pass",
           "commit": "e98423cea50356861380455ae7d23f6dbaf290ef",
-          "review": "docs/evidence/APPLE-TILE/M11-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M11-review.md",
           "items": {
             "D11.1": "pass",
             "D11.2": "pass",
@@ -564,7 +564,7 @@
       "done": {
         "by": "review",
         "commit": "e98423cea50356861380455ae7d23f6dbaf290ef",
-        "review": "docs/evidence/APPLE-TILE/M11-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M11-review.md",
         "checked": "979f3c42a64a9becd186e0201c181b2e433ece86",
         "at": "2026-11-17T03:56:17Z"
       }
@@ -575,7 +575,7 @@
         {
           "verdict": "pass",
           "commit": "21cfda4c36a87d25e5f6b5158c7c0f317f849c42",
-          "review": "docs/evidence/APPLE-TILE/M12-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/M12-review.md",
           "items": {
             "D12.1": "pass",
             "D12.2": "pass",
@@ -647,7 +647,7 @@
       "done": {
         "by": "review",
         "commit": "21cfda4c36a87d25e5f6b5158c7c0f317f849c42",
-        "review": "docs/evidence/APPLE-TILE/M12-review.md",
+        "review": ".orchestrate/evidence/APPLE-TILE/M12-review.md",
         "checked": "9364759b57ae4bb6e456747b2d380acec8997923",
         "at": "2026-11-17T14:14:57Z"
       }
@@ -705,7 +705,7 @@
   "design_history": [
     {
       "verdict": "ok",
-      "review": "docs/evidence/APPLE-TILE/design-review-1.md",
+      "review": ".orchestrate/evidence/APPLE-TILE/design-review-1.md",
       "commit": "2514d8240876d2ca6772698cfe6f451332fc48b4",
       "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
       "by": "review",
@@ -722,7 +722,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/APPLE-TILE/design-review-3.md",
+      "review": ".orchestrate/evidence/APPLE-TILE/design-review-3.md",
       "commit": "019f849d519ba0978f31971d55da1780888023bb",
       "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
       "by": "review",

@@ -20,9 +20,9 @@
           "ask": "Read the test. Are the expected hollows, sills and paths worked out there from the bed by brute force, without the code under test?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/tree.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/tree.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -31,9 +31,9 @@
           "ask": "Is the flood in the test written apart from the tree's code, and does it start from pits only? Would a point test that read one level for the whole body fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/point_test.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/point_test.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -42,9 +42,9 @@
           "ask": "Does the test take its bound on a level's change from the tick's own volumes and surfaces, and does it cover a merge of two puddles that are each already several hollows? Would a fill that set both levels to their mean at a merge fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/fill.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/fill.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -52,9 +52,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test account",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/account.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/account.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -62,10 +62,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test exposure",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/exposure.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/exposure.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "ask": "Would exposure taken from the lowest canopy alone fail the crown under the roof, as part 10 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows?",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -73,9 +73,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Does the test sum each receiver's cells by brute force from the bed, the levels and the shelters, without the model? Does it check each entry by itself and not only their sum?",
           "target": "mac-metal",
-          "evidence": "crates/thrum-rain-model/tests/receivers.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal), and fails on the code before the fix; docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/receivers.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal), and fails on the code before the fix; .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -85,9 +85,9 @@
           "ask": "Is the change to the map confined to the new kind, so that no body an existing test or the example declares is prepared or answered differently? Was any existing test of `thrum-water-model` changed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/map.rs and crates/thrum-water-model/tests (unchanged): passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/map.rs and crates/thrum-water-model/tests (unchanged): passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -95,9 +95,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test state",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/state.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/state.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -105,9 +105,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/conformance.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "crates/thrum-rain-model/tests/conformance.rs: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -116,9 +116,9 @@
           "ask": "Was the record taken on this milestone's code, in a release build, and does it give the bytes a node's curve of level for volume takes?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/rain-cost.json from scripts/rain_cost.py record: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": ".orchestrate/evidence/PUDDLES/rain-cost.json from scripts/rain_cost.py record: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -127,9 +127,9 @@
           "ask": "Does any file in the crate or its tests name a place, a preset or a ground class that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "cargo tree -p thrum-rain-model; .config/architecture.toml: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": "cargo tree -p thrum-rain-model; .config/architecture.toml: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -137,9 +137,9 @@
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/PROVENANCE.md: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "evidence": ".orchestrate/evidence/PUDDLES/PROVENANCE.md: passed on 2ae13f69c4bf3577424ca00035eaf230482f1010 (mac-metal); .orchestrate/evidence/PUDDLES/M1-evidence.md",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -149,7 +149,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M1-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M1-review.md"
         }
       ]
     },
@@ -170,9 +170,9 @@
           "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m21",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -180,9 +180,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test wetness",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m22",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m22",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -191,9 +191,9 @@
           "ask": "Does the shore's case read the wave support from `thrum-water-model`'s own function, so that it is the support `WATERS`' film reads?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m23",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m23",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -201,9 +201,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test wet_look",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m24",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m24",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -212,9 +212,9 @@
           "ask": "Does the test integrate the response itself, with its own Bessel function, and take the energy's closed form from its own algebra?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m25",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m25",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -223,9 +223,9 @@
           "ask": "Do the bands hold any state between evaluations other than the committed history, or any power that depends on the wind? Would births read from the present rate fail the stop and the restart, as part 9 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows? Was any existing test of `thrum-water-model` changed?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m26",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m26",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.11",
@@ -233,9 +233,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test marks",
           "ask": "Does the test sum each receiver's cells from the bed, the shelters and the level at the tick's start, reading the mark only to tell held ground from open ground? Would a model that gave the puddle the rain on held ground fail it, at the rain under the percolation rate, though that model's total closes? Would one that passed a puddle's rain through the ground's stores?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m211",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -245,9 +245,9 @@
           "ask": "Does the test take each donor's water from the state before the entry, and check that the donor lost what the receiver gained? Does the held case show ground kept for more than one tick and then handed over? Does the rain state keep any quantity that stands for water not yet delivered?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m212",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m212",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.13",
@@ -256,9 +256,9 @@
           "ask": "Does the test work each figure from the cells, the stores and the puddle's water at the tick's start, without the model? Would a model that filled the pores under a puddle at once fail it, and one that took the lesser of the two rates over full pores?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m213",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m213",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.9",
@@ -266,9 +266,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m29",
+          "evidence": ".orchestrate/evidence/PUDDLES/M2-evidence.md#m29",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         },
         {
           "id": "M2.10",
@@ -278,7 +278,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "review": ".orchestrate/evidence/PUDDLES/M2-review.md"
         }
       ]
     },

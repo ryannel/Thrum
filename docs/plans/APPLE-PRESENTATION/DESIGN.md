@@ -9,11 +9,11 @@
 [Render spec](../../design/RENDER-SPEC.md) · [Apple tile (G3t)](../APPLE-TILE/DESIGN.md) · [Milestones](PLAN.md)
 
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
-[the loop's design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
+[the loop's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
 fresh design review of that revision passed on 11 November. Revised 14 November for M4 to M12
 ([settled below](#m4-to-m12-settled-14-november-2026)), and twice on 19 November for
 [the surface across a transition](#the-surface-across-a-transition-m4), the second time after
-[its design review](../../evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
+[its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
 after a failed configure and for a stated iOS transition. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
@@ -22,7 +22,7 @@ proposals.
 EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
 that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
 exit in docs/BUILD-PLAN.md, so builders always have a next milestone". The task for this revision says, word for
-word: "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks".
+word: "Revise APPLE-PRESENTATION's design and plan as .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asks".
 The task for the 14 November revision says, word for word: "APPLE-PRESENTATION M4 to M11 have no done-when
 entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them [...]. Write their
 done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3,
@@ -529,7 +529,7 @@ Chrome is not affected: its canvas is resized by the page and prepared between t
 documentation calls it intended. No call through the released crates changes a drawable's size without it. A
 raw `setDrawableSize` behind wgpu leaves wgpu-core and the Metal backend describing the old size, which makes two
 authorities for one extent. The M4 builder's source audit found both, and
-[its handoff](../../evidence/APPLE-PRESENTATION/M4-handoff.md) records them. Two designs would remove the wait:
+[its handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/M4-handoff.md) records them. Two designs would remove the wait:
 an engine-owned drawable path beside wgpu's surface, or a patched copy of wgpu-core. Neither is taken. Each adds
 an authority or a pinned crate from M4 on, to save one wait that falls after the size has settled, and neither
 shows a better picture: a build starts only when the extent has been stable for the debounce, so the old picture

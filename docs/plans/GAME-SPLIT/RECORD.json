@@ -2,9 +2,9 @@
   "module": "GAME-SPLIT",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/GAME-SPLIT/design-review.md",
+    "review": ".orchestrate/evidence/GAME-SPLIT/design-review.md",
     "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
-    "hash": "a360130ff323e797a1bbb25d1ebd2b79a74d9f69da9cbbf84d58ee85b7656b77",
+    "hash": "e9c6d2f165df822a351d525b75c27d0a589b94fffca37cd81b5e546d1a658cb0",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "pass",
           "commit": "0fd6a9de0a9872d4e923c94666a3b717584206f2",
-          "review": "docs/evidence/GAME-SPLIT/M1-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -58,7 +58,7 @@
       ],
       "authorised": {
         "by": "design review",
-        "review": "docs/evidence/GAME-SPLIT/design-review.md",
+        "review": ".orchestrate/evidence/GAME-SPLIT/design-review.md",
         "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
         "at": "2026-11-14T23:37:07Z"
       },
@@ -101,7 +101,7 @@
       "done": {
         "by": "review",
         "commit": "0fd6a9de0a9872d4e923c94666a3b717584206f2",
-        "review": "docs/evidence/GAME-SPLIT/M1-review.md",
+        "review": ".orchestrate/evidence/GAME-SPLIT/M1-review.md",
         "checked": "40de2f151a22598b4a79ab2a788d2c1dcf890abd",
         "at": "2026-11-17T08:43:58Z"
       }
@@ -112,7 +112,7 @@
         {
           "verdict": "pass",
           "commit": "7a1695105b6486125c88c1827abb3634f685a3ed",
-          "review": "docs/evidence/GAME-SPLIT/M2-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -182,7 +182,7 @@
       "done": {
         "by": "review",
         "commit": "7a1695105b6486125c88c1827abb3634f685a3ed",
-        "review": "docs/evidence/GAME-SPLIT/M2-review.md",
+        "review": ".orchestrate/evidence/GAME-SPLIT/M2-review.md",
         "checked": "551de28bdb3bc26297457dfe5053d588e552bc2e",
         "at": "2026-11-19T03:56:16Z"
       }
@@ -250,7 +250,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/GAME-SPLIT/design-review-1.md",
+      "review": ".orchestrate/evidence/GAME-SPLIT/design-review-1.md",
       "commit": "837467483f1e43292357e58e9084dc363870b80c",
       "hash": "1a7ce4c3a630b2dffea656e22e69000335e145916e2d8466ecc082704f15ceed",
       "by": "review",
@@ -273,7 +273,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/GAME-SPLIT/design-review-2.md",
+      "review": ".orchestrate/evidence/GAME-SPLIT/design-review-2.md",
       "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
       "hash": "22be991fdd856c8accc8dfdc452fa836d041e29359096a48fb19496a4e10f8c2",
       "by": "review",

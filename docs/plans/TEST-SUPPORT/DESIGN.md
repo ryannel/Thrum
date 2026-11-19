@@ -1,9 +1,9 @@
 # Test support: one GPU gate, one test device, shared fixtures
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/TEST-SUPPORT/design-review.md).
+14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/TEST-SUPPORT/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
-[the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
+[the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
 [patterns: tests](../../../.agents/skills/thrum-engineering/references/patterns.md#tests)
 
 ## The request
@@ -47,7 +47,7 @@ game gate's `boundary` runs the same rule on a game, so a game may use either in
 - With none, the gate reports the skip and the test returns. The report is one line,
   `thrum-gpu-skip: <test>: <reason>`, written to the process's standard error handle and not through the print
   macros. Rust's test harness cannot report a skip at run time and it captures the print macros of a passing test,
-  but it does not capture the handle: [a probe](../../evidence/TEST-SUPPORT/planning/skip-line-probe.md) on the
+  but it does not capture the handle: [a probe](../../../.orchestrate/evidence/TEST-SUPPORT/planning/skip-line-probe.md) on the
   pinned toolchain shows the line in an ordinary run. So a skip is visible in `cargo test`, `./dev check` and every
   pinned check, with no flag.
 - With `THRUM_REQUIRE_GPU=1` and no adapter, the test fails with the same reason. `./dev check` sets the variable

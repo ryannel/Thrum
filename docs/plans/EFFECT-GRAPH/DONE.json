@@ -12,9 +12,9 @@
           "lock": "gpu",
           "ask": "Read the tests this check runs. Is every texel of each kind, every mip included, read back and compared exactly, and are the persistent and history cases rebuilt and compared again after device replacement?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -24,9 +24,9 @@
           "lock": "gpu",
           "ask": "Is there one refusal test for each misuse in the design's list, each asserting a named error, and a test that two transients that differ only in dimension never share an allocation?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -36,9 +36,9 @@
           "lock": "gpu",
           "ask": "Does validation read only the capability record, with no device query in a pass? Does the evidence record the storage formats, storage-texture count and 3D extent that Chrome's record reports on this Mac?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -48,9 +48,9 @@
           "lock": "gpu",
           "ask": "Which test pins the compiled pass names, order and attachment storage of the day, night and capture variants, and did any of them change in this milestone's diff?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -59,9 +59,9 @@
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M1-review.md",
           "builder_result": "pass"
         }
       ],
@@ -85,9 +85,9 @@
           "lock": "gpu",
           "ask": "Does the public seam let a crate outside thrum-render declare resources and passes with no access to renderer internals, and does the cooked contribution compile and draw unchanged?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -97,9 +97,9 @@
           "lock": "gpu",
           "ask": "Read the scripted run. Are the kept-state and reset expectations written from the design's state table, not taken from stepping code the GPU path shares? Is the field nonempty before the repeated ticks and the pause? Are the ticks a stall dropped beyond the declared bound counted?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -109,9 +109,9 @@
           "lock": "gpu",
           "ask": "Does the test read back the consumer's own output on each run-to-skip and skip-to-run boundary of both histories and after the discarded update, and every texel after the first frame of an epoch and after a reset? Does the compiler refuse each declaration the design's cadence section lists?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -120,9 +120,9 @@
           "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -131,9 +131,9 @@
           "check": "node scripts/check_v1_browser.mjs --case effect-state",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -141,9 +141,9 @@
           "statement": "In real time on the Mac the diagnostic trail persists and fades after its source stops, stays fixed to the ground as the camera pans across the wrapping boundary, and shows no jump when the cadence changes.",
           "inspect": "Capture with T2 engine capture in `realtime` mode: the source moving and then stopping, a pan that carries the anchor across at least one wrap, and a cadence change mid-run. Judge the trail in whole frames and native-size crops as consecutive frames at 1x.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -151,9 +151,9 @@
           "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
           "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE M3 owns?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -162,9 +162,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M2-review.md",
           "builder_result": "pass"
         }
       ],
@@ -188,9 +188,9 @@
           "lock": "gpu",
           "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth? Do the compiled graphs for the four cases (no effect with reconstruction off, no effect with reconstruction on, a depth-only effect, a refracting effect) each hold exactly the storage and passes their declared accesses require?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -200,9 +200,9 @@
           "lock": "gpu",
           "ask": "Are the motion and reactive values read from submitted frames and compared with the slab's known displacement, with temporal sampling selected?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -211,9 +211,9 @@
           "check": "cargo test --locked --offline -p thrum-render --test effect_state",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -223,9 +223,9 @@
           "lock": "gpu",
           "ask": "Can a caller that knows nothing about the effect list its knobs and set one, as the governor will? Does the timing record tell a skipped pass from a pass that took no time?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -235,9 +235,9 @@
           "lock": "chrome",
           "inspect": "Capture a `fixed` still in Chrome with T2 engine capture, with the slab crossing terrain, a prop and open sky. Judge the whole frame and a native-size crop of each crossing.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3/upload-recovery/README.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3/upload-recovery/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -245,9 +245,9 @@
           "statement": "On both native recipes the slab is cut cleanly by nearer geometry, refracts the scene behind it, dims the sky and stars behind it once, and leaves no seam where it meets opaque surfaces.",
           "inspect": "Capture `fixed` stills with T2 engine capture at noon and at night, on the portable and Apple tile recipes, with the slab crossing terrain, a prop and open sky. Judge whole frames and native-size crops of each crossing.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -255,9 +255,9 @@
           "statement": "The seam is documented for the modules that will use it, the cost of the refraction copy and the pass break is recorded on both native recipes, and the maturity ledger has a row for the seam.",
           "ask": "Could the SEA or CLOUDS planner write their passes from the public documentation and this design alone? Are the copy and pass-break costs recorded as paired rows with the load, and does the ledger keep implementation, correctness and device results apart?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -267,7 +267,7 @@
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -276,9 +276,9 @@
           "inspect": "For each record, make the difference image yourself from its two lossless frames (`docs/evidence/EFFECT-GRAPH/M3-replan/difference.py` is one way) and judge it whole and in a native-size crop of its densest part, beside the failed frame: thin lines along the triangle edges of opaque geometry, no patch filled, and none in the sky, among the stars or in the letterbox bars.",
           "ask": "Does each record show that every identity field matched, that the matching bytes hash to the retained reference, and that a complete, unchanged verifier run then passed on the same content key as the failed run?",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3/variation-runs.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M3/variation-runs.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         }
       ],
@@ -309,9 +309,9 @@
           "ask": "Are the expected phases written in the test from its scripted observations, tick rate and leads, and not computed with the clock's own phase function? Do they include a consumed target past the next tick's due time, one at the bound and one beyond it, a tick rate other than 60 Hz, and each state that gives exactly 1?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.7",
@@ -320,9 +320,9 @@
           "ask": "Is every expected due time and display time worked out in the test from its scripted start, resume and observation times and the tick the world stood on, and never from a phase, an alpha or a due time the clock returned? Does the pause fall partway through a tick, so that a clock which kept the part-tick, or a test which left it out, would fail?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -331,9 +331,9 @@
           "ask": "Does the test make every poll of its run a delayed one, by waiting until the world has committed a tick due after the observation it then polls with? Would that run fail on a lane that holds only the pair it shows?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.8",
@@ -342,9 +342,9 @@
           "ask": "Does the test take its bracket from its own reads of the host clock before the request and after the reply, and each due time from the lane and not from a phase? Does at least one arm poll after a gap in which the world committed a tick?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -354,9 +354,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.9",
@@ -366,9 +366,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -378,9 +378,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.10",
@@ -389,9 +389,9 @@
           "ask": "Are the expected phases written in the test from its scripted observations, leads and tick duration, with one past 1 and one at the bound, and is the alpha compared with the value the world gave before this change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -399,9 +399,9 @@
           "ask": "Do C02's and `docs/EFFECTS.md`'s words say what the design's timing model says, with nothing added that it does not say? Does the ledger row claim only what the other M4 items proved?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -411,7 +411,7 @@
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/M4-review.md"
         }
       ]
     }

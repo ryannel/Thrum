@@ -4,7 +4,7 @@
   host-owned writes, tentative switches of every row reader and submit-only retirement. The retained
   scene follows committed geometry through resize and device reconstruction. Metal trial tests passed
   exact fresh-scene equality in all three culling modes, refusal/recovery, discard, supersession and reuse.
-  The write bound is 1 MiB; contended timings and the reserved capacity are in [the proof](../../evidence/CONTENT-LOOP/M2.md).
+  The write bound is 1 MiB; contended timings and the reserved capacity are in [the proof](../../../.orchestrate/evidence/CONTENT-LOOP/M2.md).
   Chrome's visible-entity fixture and the merged-build realtime inspection are being verified separately.
 
 - 2026-11-16 M4 review repair removes the added watcher-test logging. The complete integration-test
@@ -12,7 +12,7 @@
   The earlier preservation claim was stale after integration and is superseded by this fresh proof.
   Production cooker code is unchanged. The first merge gate hit invalid GPU buffers; a focused rerun
   passed all 13 cases without renderer or assertion changes. Both results are retained in the
-  [evidence](../../evidence/CONTENT-LOOP/M4.md).
+  [evidence](../../../.orchestrate/evidence/CONTENT-LOOP/M4.md).
 
 - 2026-11-16 M4 adds adaptive sweeps independent of notice traffic, with a 500 ms floor, ten-times-cost
   wait, recent-write deferral and a silent idle path. The notice fast path is unchanged; the test's
@@ -21,20 +21,20 @@
   remain quiet after one error. Warm sweeps measured 11.031–60.717 ms at 1,000 files and 120.881–269.822 ms
   at 10,000 under recorded heavy load; these are baselines, not qualified performance. The first checkpoint
   merged as `c3342faa9`; the restored-source repair follows through the merge gate.
-  [Evidence and limits](../../evidence/CONTENT-LOOP/M4.md).
+  [Evidence and limits](../../../.orchestrate/evidence/CONTENT-LOOP/M4.md).
 
 - 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed the lease-only consumer, the per-mip
   comparisons, the coupled-reader test, the staging probe and the public guide. The item check passed there
   (job `20261113-170643-440`), and the full milestone check, `./dev check` included, passed at `23f3cf2f`
   (job `20261113-172340-10345`). All ten items are marked passed; M1 stays `in_progress` for the lead's
-  checks and review. [Detail](../../evidence/CONTENT-LOOP/M1.md#resume-at-4f47db28-13-november).
+  checks and review. [Detail](../../../.orchestrate/evidence/CONTENT-LOOP/M1.md#resume-at-4f47db28-13-november).
 
 - 2026-11-13 M1 built and target-proved. The native lease and coupled-reader tests pass, including both
   profiles, all portable mips, BC4 quality, discarded recordings, capture invalidation, device loss and shared
   switches. The fault test passes through the production error branch; Chrome verifies 28,766,400 bytes after
   load, edit and recovery with one product fetched. The unique-volume bench and existing tripwires pass;
   cold first-load CPU costs remain visible. Both native exact matrices and four Chrome sets passed at
-  `eceb4c9a`. [Compact evidence and limits](../../evidence/CONTENT-LOOP/M1.md). Final script checks and merge follow;
+  `eceb4c9a`. [Compact evidence and limits](../../../.orchestrate/evidence/CONTENT-LOOP/M1.md). Final script checks and merge follow;
   the milestone state stays `in_progress` for the lead.
 
 - 2026-11-13 M1 implementation checkpoint: residency now offers configured sampled products through a public
@@ -47,7 +47,7 @@
 - 2026-11-06 Before the loop: the content-addressed loop was built and run in the V1 game (`thrum-asset`,
   `thrum-cook`, `thrum-asset-gpu`), with bounded staging, tripwires and the Chrome client added by 8 November.
   [G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md);
-  [evidence](../../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md). The direct draw path is
+  [evidence](../../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md). The direct draw path is
   [COOKED-DRAW](../COOKED-DRAW/PLAN.md) M1.
 - 2026-11-13 Planned from the lead's task, quoted in the design, and the brief in the module list. Three
   milestones: leases for other modules with the staging failure test (after `APPLE-PRESENTATION:M2`), cooked
@@ -67,7 +67,7 @@
   commands that pass today; they were parsed as shell and not run, because they need release builds, the shared
   GPU and Chrome.
 - 2026-11-13 The design still needs its review; the planner could not start one.
-- 2026-11-13 [Design review](../../evidence/CONTENT-LOOP/design-review.md) of `8d09e6b4`: changes requested, two
+- 2026-11-13 [Design review](../../../.orchestrate/evidence/CONTENT-LOOP/design-review.md) of `8d09e6b4`: changes requested, two
   Must Fix findings and three suggestions. Both findings were checked against the code and are right.
 - 2026-11-13 MF1 resolved by narrowing the claim, not by building source admission. M3.7 promised that a "partial
   change set keeps the previous set"; the watcher and cooker cannot know where an external save ends, and the G5
@@ -85,7 +85,7 @@
   larger-size figure is a record. S3: the design says each reader switches whole in a frame of its own, with the
   coupled cases named and a second assumption for the owner.
 - 2026-11-13 The changed design needs a second review; the planner could not start one.
-- 2026-11-13 [Second design review](../../evidence/CONTENT-LOOP/design-review.md) of `a0620453`: changes
+- 2026-11-13 [Second design review](../../../.orchestrate/evidence/CONTENT-LOOP/design-review.md) of `a0620453`: changes
   requested, one Must Fix finding (MF3) and one suggestion (S4). MF1, MF2 and S1 to S3 were found resolved. MF3
   is right: the revision let placements, leases and rows switch in frames of their own and deferred C05's one
   switch to source admission.
@@ -113,12 +113,12 @@
   Checks: the done-when file passed the loop's validator, `./dev check-docs` passed, and the two test commands
   the new items use fail as written. No number was added to any item.
 - 2026-11-13 The changed design needs a third review; the planner could not start one.
-- 2026-11-13 Fixed M1.3's overlapping-edit reuse defect from the [M1 review](../../evidence/CONTENT-LOOP/M1-review.md)
+- 2026-11-13 Fixed M1.3's overlapping-edit reuse defect from the [M1 review](../../../.orchestrate/evidence/CONTENT-LOOP/M1-review.md)
   in `f3099f6d`. Upload plans retain their resident HEAD; plans prepared behind a protected ready publication
   are replanned after its switch, before recording copies. Native and fetched preparation share the rule.
   Verified on this Mac's Metal device: all three lease tests passed, including both profiles, both contribution
   orders and native/fetched overlapping edits; Clippy passed. The full exact verifier passed both native
-  matrices and all four Chrome sets (977.48 seconds). [Compact proof](../../evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
+  matrices and all four Chrome sets (977.48 seconds). [Compact proof](../../../.orchestrate/evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
 - 2026-11-13 The repository gate exposed 27 historical evidence links left pointing to `ACCEPTED.json`
   after the plan migration. Retargeted only those links to `RECORD.json`, which owns the cited briefs and
   human feedback. `./dev check-docs` passed (774 Markdown files, 4,955 links); review prose and verdicts are unchanged.
@@ -126,7 +126,7 @@
   Reviewing M1.5's full refusal statement then found that cached textures skipped use-dimension validation.
   `011521f8` centralizes that validation for both cached and newly mapped textures. The stronger Metal fault
   test passed: a manifest assertion proves the invalid volume request reuses the placement's resident 2D
-  product, and the whole publication is refused. Clippy passed. [Proof](../../evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
+  product, and the whole publication is refused. Clippy passed. [Proof](../../../.orchestrate/evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
 - 2026-11-13 Complete candidate `fa1077748324f157223291c3c0ae7f1e7db07796`: the script's M1 items-only
   check passed all nine automated items on Metal and hardware Chrome WebGPU. Native lease, cached-product
   refusal, device replacement, coupled-reader and fetched-store checks passed. Both native baseline matrices
@@ -137,12 +137,12 @@
   "Find whether it is a real defect in the cooker's watcher or a timing-dependent test, and get it fixed fast
   ... Do not weaken what the test proves." It is a defect. With `fseventsd` at a full core, 12 of 240 runs
   missed the test's ten seconds and 8 of those saves were unreported after 60, with no notice of loss; a 500 ms
-  scan missed none in 240 ([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)). No test-only fix was
+  scan missed none in 240 ([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)). No test-only fix was
   made: a longer deadline leaves the store wrong. M1's checklist left the plan for its review link. The design
   has not been reviewed since this change, and no builder starts M4 until a review returns Design Approved.
 - 2026-11-17 M2 joins bounded cooked-row writes to residency's submitted publication, including repeated
   products, discarded switches and store epochs. Native fresh-scene equalities and hardware Chrome passed;
-  their target records and the measured 1 MiB row-write bound are in the [M2 evidence](../../evidence/CONTENT-LOOP/M2.md).
+  their target records and the measured 1 MiB row-write bound are in the [M2 evidence](../../../.orchestrate/evidence/CONTENT-LOOP/M2.md).
   A rebuilt merged `ec02ebff3` supplied 382 complete realtime Metal images of both edits during a pan.
   Inspected consecutive whole frames and native crops show each visible rock and its shadow switching
   together, without missing or mixed meshes. Bulk preview/source recovery was hash-verified locally.
@@ -153,7 +153,7 @@
   Verified on Metal: all eight game tests passed, including twelve exact fresh-scene rebuild cases across
   Direct, Frustum and Occlusion, later shrink edits, and stale-device refusal/recovery. The detached-extent
   regression and scoped Clippy passed. The varied-normal conversion oracle was strengthened as suggested.
-  [Repair evidence and logs](../../evidence/CONTENT-LOOP/M2/repair/README.md); no reference or comparison was loosened.
+  [Repair evidence and logs](../../../.orchestrate/evidence/CONTENT-LOOP/M2/repair/README.md); no reference or comparison was loosened.
   The merge size gate required moving the unchanged host methods into the mesh-row module; repo checks and Clippy passed.
 - 2026-11-18 Planner, from the owner's 17 November decision to leave Nanite-class geometry until after V1 if
   nothing forces rework: the design gains three promises under
@@ -167,4 +167,4 @@
   The ordinary Chrome windows stayed within the steady callback maximum. A larger R8 volume first missed a callback
   at 256³ in the size probe. Five failure cases retained the previous pixels through mapped and fetched readers.
   The preview convergence test and shipping scan passed. G5 scope, the maturity ledger and creator instructions
-  record the preview boundary and measurement limits. [Evidence](../../evidence/CONTENT-LOOP/M3.md)
+  record the preview boundary and measurement limits. [Evidence](../../../.orchestrate/evidence/CONTENT-LOOP/M3.md)

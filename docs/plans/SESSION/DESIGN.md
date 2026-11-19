@@ -32,7 +32,7 @@ travel, and how a modal choice reaches every peer in order.
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-network` (the envelope, the
 input batch, the future-input window and the state-delta codec, none of which runs a session), `thrum-core`'s
 `sim` module (the runtime, its capture and restore, history, input), the contracts and decisions above, the two
-designs this module depends on with their probes, and [a planning probe](../../evidence/SESSION/planning-probe.md)
+designs this module depends on with their probes, and [a planning probe](../../../.orchestrate/evidence/SESSION/planning-probe.md)
 run for it. `SIM-2D` and `TRANSPORT` are designed and not yet built, so what this design says of their code is
 what their designs promise.
 
@@ -79,7 +79,7 @@ by this module. Drawing a game: M1 to M6's proofs have no window, and M7 draws o
 | Need | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **N1 Keep every peer's world the same** | A host and 1 to 4 players; 0 to 10,000 bodies; 36,000 ticks; A0's profile and a harsh one (250 ms round trip, ±50 ms, 5% loss), with reordering and duplicated datagrams; any mix of the three targets | Peers that share one world in one process, or digests compared once at the end. Rejected by separate worlds, on sockets separate processes, compared at every digest tick |
-| **N2 Get input to the host in time as the link changes** | Round trips from under 2 ms to 250 ms; a link that worsens and recovers mid-match | A fixed lead. The old fixture's five ticks pass A0 and miss every tick on the harsh profile ([probe](../../evidence/SESSION/planning-probe.md)). Rejected by the harsh profile and a profile change, with a pinned lead as the control that must fail |
+| **N2 Get input to the host in time as the link changes** | Round trips from under 2 ms to 250 ms; a link that worsens and recovers mid-match | A fixed lead. The old fixture's five ticks pass A0 and miss every tick on the harsh profile ([probe](../../../.orchestrate/evidence/SESSION/planning-probe.md)). Rejected by the harsh profile and a profile change, with a pinned lead as the control that must fail |
 | **N3 Make a one-time choice happen once, in order, on every peer** | Under loss, a stalled link, and a choice made while a join is under way | Sending it on a timed input frame, where a late frame is dropped. Rejected by commands issued into loss and a stall |
 | **N4 Join a match that is already running** | A world of 10,000 bodies at any tick; while the others play; a join that takes longer than a second; two joins under way at once | Everyone starting together at tick 0. Rejected by a join after tick 3,600 with slots reused |
 | **N5 Drop and come back** | A link lost for longer than the idle timeout; a client killed and started again; an app sent to the background | Pausing on a link that never closed. Rejected by a new link and epoch, the same slot, and old input refused |
@@ -171,7 +171,7 @@ report that says otherwise is a protocol error. Datagrams reorder, so the host k
 has been told and ignores an older report.
 
 **Why not the reliable lane.** A client cannot step tick `n` without set `n`, so on an ordered stream one lost
-packet holds back every later tick until it is resent. In [the probe](../../evidence/SESSION/planning-probe.md)
+packet holds back every later tick until it is resent. In [the probe](../../../.orchestrate/evidence/SESSION/planning-probe.md)
 the wait from the host committing a tick to a client being able to step it, with the buffer a steady pace needs,
 was 76 ms on datagrams and 227 ms on a reliable lane at A0, and 164 ms against 720 ms on the harsh profile. With
 datagrams the next one, a tick later, repairs a loss. This is the practice for input-only netcode: "redundantly

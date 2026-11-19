@@ -8,7 +8,7 @@
   `web-transport-wasm` needs a build flag on every Wasm build; `wtransport`, `webtrans` and `h3-webtransport` were
   audited and not chosen. The runtime: one I/O thread with a single-threaded Tokio runtime, meeting the world lane
   only at bounded queues. The WebSocket fallback is not built.
-- 2026-11-13 Planner's probe, in [the evidence folder](../../evidence/TRANSPORT/planning-probe.md). One Quinn
+- 2026-11-13 Planner's probe, in [the evidence folder](../../../.orchestrate/evidence/TRANSPORT/planning-probe.md). One Quinn
   endpoint served a Mac client, an iPhone-simulator client and headless Chrome 157 on one port, with datagrams, a
   pinned 13-day P-256 certificate and no browser flag. So the fallback the brief named, input on the reliable
   stream for Chrome, is not built; it is what a planner applies if M1's Chrome row fails.
@@ -30,8 +30,8 @@
   verifier items were not dry-run, because a builder held the GPU lock; they are the command `SIM-2D` uses.
   `./dev check-docs` passes with the new files.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
-- 2026-11-13 [Design review](../../evidence/TRANSPORT/design-review.md) of `f5749921`: design changes, three Must
-  Fix findings and two suggestions. [The planner's answer](../../evidence/TRANSPORT/design-review-response.md)
+- 2026-11-13 [Design review](../../../.orchestrate/evidence/TRANSPORT/design-review.md) of `f5749921`: design changes, three Must
+  Fix findings and two suggestions. [The planner's answer](../../../.orchestrate/evidence/TRANSPORT/design-review-response.md)
   holds the reasoning for each entry below, what was considered and not chosen, and a second probe.
 - 2026-11-13 Must Fix, datagram expiry after handoff: the promise is narrowed and said outright. A datagram's age
   runs from the send call until it leaves the link's own queue, where a timer enforces it. Beneath, a new profile
@@ -60,7 +60,7 @@
   nothing. The assumptions about waiting for V1 and about asking to leave the Codex sandbox are deleted: the
   owner gave Codex full access the same day. No item and no word of the design changed, so its approval stands.
 - 2026-11-15 Re-plan after M1 ended `BLOCKED needs_dependency`: the builder found M1.10 false before this module
-  existed, and [its handoff](../../evidence/TRANSPORT/M1-handoff.md) asked `CONTENT-LOOP` to gate its tests or the
+  existed, and [its handoff](../../../.orchestrate/evidence/TRANSPORT/M1-handoff.md) asked `CONTENT-LOOP` to gate its tests or the
   planner to settle the scope. The plan was at fault: it said nothing in the repository opened a socket, so
   M1.10 claimed the whole of `./dev check`. The cooker's loopback dev-server tests have run there since 6 November.
 - 2026-11-15 Planner's ruling, in [the module list](../ARCHITECTURE.md#build-order-after-the-v1-exit): the module
@@ -101,15 +101,15 @@
   `build/transport` stays for the builder that resumes M1, as the plan's note says. The changed paragraph has
   not been reviewed; no builder starts until a design review returns Design Approved.
 - 2026-11-16 Builder: M1 complete and merged; every item passes, evidence in
-  [M1.md](../../evidence/TRANSPORT/M1.md). Verified: M1.1 to M1.11 target proofs at `2b8d0530a`; the exact-baseline
+  [M1.md](../../../.orchestrate/evidence/TRANSPORT/M1.md). Verified: M1.1 to M1.11 target proofs at `2b8d0530a`; the exact-baseline
   verifier passed all five baselines at `ae375af3d` before the last rebase. Not yet verified: that pass on the merged
   tip, which the main-branch check `exact-images` supplies; transport touches no captured crate, so a change is unlikely.
 - 2026-11-16 Builder, after the first M1 review: fixed host-drop-leaves-open-links. A dropped native host now closes
   every link it created as `Local(0)`, including retained clones, unaccepted links and failed or panicked I/O
   threads. Verified: Mac conformance's new `host-drop` case passes at `30a795a13` and fails on the unfixed adapter
-  ([evidence](../../evidence/TRANSPORT/M1.md#host-teardown-after-the-first-review-commit-30a795a13)). Not verified
+  ([evidence](../../../.orchestrate/evidence/TRANSPORT/M1.md#host-teardown-after-the-first-review-commit-30a795a13)). Not verified
   locally: the other targets' checks after this change; the script's post-merge run covers them.
-- 2026-11-16 Builder: M2 built and merged; items pass, evidence in [M2.md](../../evidence/TRANSPORT/M2.md). Interface
+- 2026-11-16 Builder: M2 built and merged; items pass, evidence in [M2.md](../../../.orchestrate/evidence/TRANSPORT/M2.md). Interface
   additions: `native::Host::counters()` returning `HostCounters`, `LaneCounts::inbound_bytes`, the public `wire`
   decoder every adapter reads through, `TICKET_LIMIT` and a strict canonical ticket parser. Native links now time out
   on a resume after a freeze longer than the idle timeout. Verified at `2e3abfd4a`: M2.1 to M2.10 target proofs and

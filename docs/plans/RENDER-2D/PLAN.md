@@ -7,7 +7,7 @@ Read [Mechanisms](DESIGN.md#mechanisms), [Interfaces](DESIGN.md#interfaces),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-render-2d) before starting any milestone, and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
-[The planning probe](../../evidence/RENDER-2D/planning-probe.md) says what was calculated before the design was
+[The planning probe](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md) says what was calculated before the design was
 written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
@@ -48,7 +48,7 @@ The 3D instance field is the precedent for extraction, changed-row upload and in
 `synthetic/upload.rs`. The world rows of the sprite scene come from the V1 game's own simulation, which stays
 as it is. The order is new: nothing in the 3D path keeps a list from tick to tick. Its rule and the cases a test
 must cover are in [mechanism 4](DESIGN.md#4-order), and the planner's throwaway version is described in
-[probe 4](../../evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost).
+[probe 4](../../../.orchestrate/evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost).
 
 ## M3 Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls
 

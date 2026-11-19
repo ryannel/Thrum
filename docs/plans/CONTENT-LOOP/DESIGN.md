@@ -38,13 +38,13 @@ M4 answers the lead's task of 16 November 2026, about `thrum-cook`'s
 > as the first item of the owning module. A test that only passes on an idle machine is a defect here, because
 > the fleet keeps the machine busy. Do not weaken what the test proves.
 
-It is a defect in the watcher ([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)), so it is this
+It is a defect in the watcher ([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)), so it is this
 module's next milestone, and the test stays as it is.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-asset`, `thrum-cook`,
 `thrum-asset-gpu` (`lib.rs`, `load.rs`, `staging.rs`), `thrum-render`'s `contribution.rs`, `synthetic.rs` and
 `synthetic/{mesh_arena,mesh_route,camera_culling}.rs`, `runtime.rs`, `examples/v1-game/src/cooked.rs`, the G5
-decision and [its evidence](../../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md), the designs of
+decision and [its evidence](../../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md), the designs of
 `CULLING`, `EFFECT-GRAPH` and `APPLE-PRESENTATION`, the `SEA` and `CLOUDS` briefs, and the Broadsides cloud
 asset contract (`notes/clouds/ASSET-CONTRACT.md` at `b4d8250e6`, read only).
 
@@ -298,7 +298,7 @@ chunk is mapped or written, so the production branch is the code that runs.
 **The defect.** `watch` re-reads a source only when a change notice names it. On 16 November macOS left saves
 unreported on this Mac, with no notice of loss, and those saves were never cooked: 12 of 240 runs of the test's
 steps missed its ten seconds, and 8 of those 12 were still unreported after 60
-([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)). The watcher has to reach every save by itself.
+([diagnosis](../../../.orchestrate/evidence/CONTENT-LOOP/M4-diagnosis.md)). The watcher has to reach every save by itself.
 
 **One loop, two ways to learn of a save.** The loop that `thrum-cook watch` runs starts a cook cycle for either
 of two reasons.
@@ -328,7 +328,7 @@ The lines the command prints for a cycle that did something keep their form: `sc
 `scripts/run_v1_showcase.py` read `serving http://…` and `generation N` from them.
 
 **What a sweep costs.** A warm scan of 10,000 unchanged files took 27 ms on this Mac
-([G5 evidence](../../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)), and the valley's source is
+([G5 evidence](../../../.orchestrate/evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)), and the valley's source is
 a few dozen files. The wait before the next sweep is the larger of a floor and a fixed multiple of the time the
 last sweep took, so sweeping takes a set share of the time at most, however large the tree. The diagnosis ran a
 500 ms floor and missed nothing in 240 runs while notices were being lost. The builder sets the two constants
@@ -546,7 +546,7 @@ route with nothing attached.
 - **Fixtures.** Tests cook their own products with `thrum-cook`, as the in-game G5 tests do. The twelve-volume
   fixture is generated. Nothing is lifted from Broadsides: its cloud library waits on the owner's licence.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/content-loop-<milestone>/`; selected
-  evidence in `docs/evidence/CONTENT-LOOP/`.
+  evidence in `.orchestrate/evidence/CONTENT-LOOP/`.
 - **M4.** Proved on the CPU: no GPU lock, no browser launch and no capture. Its checks name tests by words in
   their names, which the plan's note lists.
 - **Maturity.** The ledger's G5 row is brought up to date in M3, with implementation, correctness, visuals and

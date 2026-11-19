@@ -1,9 +1,9 @@
 # Host: one device recipe, one host core, one contract for a game
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/HOST/design-review.md).
+14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/HOST/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
-[the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T4 (H01, H15, M01, M02, M03, M56,
+[the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T4 (H01, H15, M01, M02, M03, M56,
 M76, M78, M79) · [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
 
 ## The request

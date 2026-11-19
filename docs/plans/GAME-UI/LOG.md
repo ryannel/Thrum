@@ -30,7 +30,7 @@
   display image, as sprites do and as FreeType's guidance asks of text. Blending in display space would match
   paint tools and would need a second form of the sprite pass, and on an EDR surface a layer of its own. It is
   an assumption in the plan, tied to `RENDER-2D`'s.
-- 2026-11-13 Planner's probe, in [the evidence folder](../../evidence/GAME-UI/planning-probe.md). One Latin face at
+- 2026-11-13 Planner's probe, in [the evidence folder](../../../.orchestrate/evidence/GAME-UI/planning-probe.md). One Latin face at
   four sizes is 1.6, 5.4 and 11.4 MiB at scales of 1, 2 and 3, so a font cooks to one sheet for each scale and
   only the one in use is resident. Rounding the pen leaves the gap between two glyphs a pixel out depending on
   where a line starts, so advances are rounded once, at cook, and a run is rigid. The event-ownership rule broke
@@ -52,18 +52,18 @@
   reaches the GPU. The verifier items were not dry-run, because the GPU is shared.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
   The reviewer should also read the four seam rulings in the module list, which this design depends on.
-- 2026-11-13 [The design review](../../evidence/GAME-UI/design-review.md) of `faa2d843` asked for changes: two
+- 2026-11-13 [The design review](../../../.orchestrate/evidence/GAME-UI/design-review.md) of `faa2d843` asked for changes: two
   Must Fix findings and two suggestions. This entry and the three below are the planner's answer.
 - 2026-11-13 MF1, the stage had no form for the EDR output `APPLE-PRESENTATION` designs. Mechanisms 1 and 2
   and ruling 1 now have two display modes: the 8-bit mode unchanged, and a float mode in which the stage draws
   into the present pass's `Rgba16Float` target after the transform, with white at 1.0. M1.1, M1.2, M1.4, M1.5,
   M1.6 and M1.10 were written again. `APPLE-PRESENTATION`'s files did not change.
-  [What was decided and why](../../evidence/GAME-UI/design-review-response.md#mf1-the-float-mode).
+  [What was decided and why](../../../.orchestrate/evidence/GAME-UI/design-review-response.md#mf1-the-float-mode).
 - 2026-11-13 MF2, a font edit could draw new glyphs at the old layout. New mechanism 11: a paint list carries a
   stamp of the sheets it was measured from, the stage draws it only with those, and the interface is a reader
   of the publication (ruling 3). M2.6, M2.8 and M2.9 were written again, M3.14 is new, and M4.2 gained a
   sentence. `CONTENT-LOOP`'s files did not change.
-  [What was decided and why](../../evidence/GAME-UI/design-review-response.md#mf2-a-list-and-its-sheets-change-together).
+  [What was decided and why](../../../.orchestrate/evidence/GAME-UI/design-review-response.md#mf2-a-list-and-its-sheets-change-together).
 - 2026-11-13 Suggestions. S1 taken: "element" is defined in the design, and M3.5, M3.8, M3.9, M4.10 and M3's
   quality bar now forbid one element covering another, not any two nodes overlapping, which the tree does on
   purpose. S2 taken in part: durations and repeat counts in M1.9, M2.13, M3.9, M3.10 and M4.9 became what the

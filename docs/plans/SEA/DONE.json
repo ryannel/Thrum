@@ -18,9 +18,9 @@
           "ask": "Read the test. Is its tolerance on the summed variance derived from the quadrature it uses, and is it tighter than the smallest band's share? Does it cover a glassy calm, a trade wind and a gale, each with and without swell?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -28,9 +28,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -39,9 +39,9 @@
           "ask": "Does the closed-form comparison use values the test worked out without calling the evaluator? Does the test cover a sea steep enough that the surface above a point must be found by iteration, and say when the iteration cannot converge?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -49,9 +49,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascades",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -59,9 +59,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test transition",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -69,9 +69,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -80,9 +80,9 @@
           "ask": "Does any file in the crate or its tests name a sea preset, a hull or a water type that belongs to a game?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -90,9 +90,9 @@
           "ask": "Does the provenance file exist and say either that nothing was lifted or which files were, and does the log hold the owner's licence if any were?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -101,9 +101,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md",
+          "evidence": ".orchestrate/evidence/SEA/M1.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M1-review.md"
+          "review": ".orchestrate/evidence/SEA/M1-review.md"
         }
       ]
     },
@@ -127,9 +127,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -139,9 +139,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -150,9 +150,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -162,9 +162,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -173,9 +173,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -184,9 +184,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -194,9 +194,9 @@
           "ask": "Does `docs/evidence/SEA/M2-cost.md` hold those rows at the claimed commit, and name a cause for any pass over its estimate?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2-cost.md",
+          "evidence": ".orchestrate/evidence/SEA/M2-cost.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -205,9 +205,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2-baselines.json",
+          "evidence": ".orchestrate/evidence/SEA/M2-baselines.json",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         },
         {
           "id": "M2.9",
@@ -215,9 +215,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascade_loop",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M2.md",
+          "evidence": ".orchestrate/evidence/SEA/M2.md",
           "verdict": "pass",
-          "review": "docs/evidence/SEA/M2-review.md"
+          "review": ".orchestrate/evidence/SEA/M2-review.md"
         }
       ]
     }

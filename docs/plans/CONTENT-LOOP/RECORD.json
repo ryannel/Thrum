@@ -2,9 +2,9 @@
   "module": "CONTENT-LOOP",
   "design": {
     "verdict": "ok",
-    "review": "docs/evidence/CONTENT-LOOP/design-review.md",
+    "review": ".orchestrate/evidence/CONTENT-LOOP/design-review.md",
     "commit": "ba15995ef06341ec4d59778135625ad7df202aaa",
-    "hash": "6114d2f54ffe6e4980e0325b931e53129ae1acaed8815706beb0697954516ed9",
+    "hash": "8b65ff96140d5084f7aafb8108417b5e997532762b49436c4ded4736c72f0694",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "cf47dfbf4068ed727f658263208e97655019fca5",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -70,7 +70,7 @@
         {
           "verdict": "pass",
           "commit": "84a1158ec37f3c8ff83c0f0a321050e262c89f7a",
-          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -142,7 +142,7 @@
       "done": {
         "by": "review",
         "commit": "84a1158ec37f3c8ff83c0f0a321050e262c89f7a",
-        "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/M1-review.md",
         "checked": "64a5b4c27adf506f1cb6d14fbc1372164b333823",
         "at": "2026-11-13T20:56:29Z"
       }
@@ -153,7 +153,7 @@
         {
           "verdict": "fail",
           "commit": "337bf550844e075f1c1a239ee32dec0dea1224f6",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "fail",
@@ -202,7 +202,7 @@
         {
           "verdict": "pass",
           "commit": "0071679aa68a554a26c38ddb3be8645b2a06ce29",
-          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -280,7 +280,7 @@
       "done": {
         "by": "review",
         "commit": "0071679aa68a554a26c38ddb3be8645b2a06ce29",
-        "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/M2-review.md",
         "checked": "46396be0ab6914fc3098133fc5bf11299640206d",
         "at": "2026-11-17T15:27:17Z"
       }
@@ -307,7 +307,7 @@
         {
           "verdict": "fail",
           "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review-1.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review-1.md",
           "items": {
             "M4.1": "pass",
             "M4.2": "pass",
@@ -343,7 +343,7 @@
         {
           "verdict": "pass",
           "commit": "f712699c434df1a67a42571ddbc1b8c90966e475",
-          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
           "items": {
             "M4.1": "pass",
             "M4.2": "pass",
@@ -404,7 +404,7 @@
       "done": {
         "by": "review",
         "commit": "f712699c434df1a67a42571ddbc1b8c90966e475",
-        "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/M4-review.md",
         "checked": "67ed516e293fad08fa7ced8d91937931314aab0f",
         "at": "2026-11-16T08:15:33Z"
       }
@@ -439,7 +439,7 @@
   "design_history": [
     {
       "verdict": "changes",
-      "review": "docs/evidence/CONTENT-LOOP/design-review-1.md",
+      "review": ".orchestrate/evidence/CONTENT-LOOP/design-review-1.md",
       "commit": "8d09e6b4d2a67b72fe88d449be1f94baf297e008",
       "hash": "fd97d6fef8ae0697c49e29457b0302a23cd9163a7682316147909fe585708430",
       "by": "review",
@@ -462,7 +462,7 @@
     },
     {
       "verdict": "changes",
-      "review": "docs/evidence/CONTENT-LOOP/design-review-2.md",
+      "review": ".orchestrate/evidence/CONTENT-LOOP/design-review-2.md",
       "commit": "a06204535dde8dc3e87278c399a1ebe4215fc6c7",
       "hash": "98d78f7f978ec6926956177ec4b52536c22232acd3f9aaea3c51be2157a896e7",
       "by": "review",
@@ -485,7 +485,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/CONTENT-LOOP/design-review-3.md",
+      "review": ".orchestrate/evidence/CONTENT-LOOP/design-review-3.md",
       "commit": "953c0423aa6fe50104b048464fca27be37e45ae1",
       "hash": "e780b836a0cd8a37699e3a918b0e58964337aef94f4b5bb66f2e8b110d81ae21",
       "by": "review",
@@ -508,7 +508,7 @@
     },
     {
       "verdict": "ok",
-      "review": "docs/evidence/CONTENT-LOOP/design-review-4.md",
+      "review": ".orchestrate/evidence/CONTENT-LOOP/design-review-4.md",
       "commit": "086cfee4bf3f7dfa284d97f0392bf500fd847319",
       "hash": "bd1c73dde09ffa293b83ac649de9a3e5391359b49959bf6ef2ea5e4545e29577",
       "by": "review",
