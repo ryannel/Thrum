@@ -376,8 +376,21 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
-      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
+      "status": "blocked",
+      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function.",
+      "blocked": {
+        "reason": "needs_access",
+        "items": [
+          "D4.7"
+        ],
+        "what": "Grant Screen Recording to the window-capture tool on the unlocked Mac so D4.7 can be recorded and reviewed.",
+        "work": {
+          "commit": "727b1f32b54c9e7601ea2b3cb4c174fd319fe09e",
+          "branch": "build/apple-presentation",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/M4-handoff.md"
+      }
     },
     {
       "id": "M5",
