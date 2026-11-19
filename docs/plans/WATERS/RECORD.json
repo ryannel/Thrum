@@ -602,7 +602,7 @@
         {
           "verdict": "fail",
           "commit": "7dec527f11d56f87ba5ac28fff5ed005e964170a",
-          "review": "docs/evidence/WATERS/M5-review.md",
+          "review": "docs/evidence/WATERS/M5-review-1.md",
           "items": {
             "M5.1": "fail",
             "M5.2": "pass",
@@ -662,6 +662,52 @@
             "turns": 1
           },
           "at": "2026-11-18T21:08:40Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "6e583c1c57f1423cda4e63b8e9c651d996c370f1",
+          "review": "docs/evidence/WATERS/M5-review.md",
+          "items": {
+            "M5.1": "fail",
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "pass",
+            "M5.5": "fail",
+            "M5.6": "pass",
+            "M5.7": "pass",
+            "M5.8": "pass",
+            "M5.9": "pass"
+          },
+          "findings": [
+            {
+              "item": "M5.1",
+              "name": "A stage change after dispatch leaves a stale depth valid at the use tick",
+              "different": "Quarter-alpha display interpolation, historical page retention and chart slope are fixed. This request used the correct authored stage at dispatch, but the map changed again before the requested tick and the mailbox still delivered the obsolete result.",
+              "repeat": false
+            },
+            {
+              "item": "M5.5",
+              "name": "The rendered gale crest cuts through the deck at 15 m/s",
+              "different": "The 5 m/s beam-sea buoy pass is clear. This failure is the water surface crossing the launch deck in the 15 m/s head sea, with no buoy in the hull.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 205983,
+            "cached": 10987776,
+            "output": 24766,
+            "turns": 1
+          },
+          "at": "2026-11-19T06:31:14Z"
         }
       ],
       "authorised": {
