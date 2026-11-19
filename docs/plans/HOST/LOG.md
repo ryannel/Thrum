@@ -15,3 +15,6 @@
   The registered image baselines are covered by the shared main-branch check. [Evidence](../../evidence/HOST/M1-proof.md)
 - 2026-11-19 Reran M1.4 from clean main at `a319249fb` with the display held awake. All three Mac window
   rows and all eight Chrome cases passed. [Evidence](../../evidence/HOST/M1-proof.md#m14-mac-window-and-chrome-recovery)
+- 2026-11-19 Addressed the M1.1 and M1.2 review findings. Verified the measurement entry points and recipe limits
+  on Metal, the expanded device-request guard, and the starter and V1 WebAssembly builds.
+  [Evidence](../../evidence/HOST/M1-proof.md#m11-one-request)
