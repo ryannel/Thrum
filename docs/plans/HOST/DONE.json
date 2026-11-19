@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "One device recipe: the Mac window, the browser page, the iPhone app, captures and benches ask for their device the same way and answer a GPU fault the same way",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -85,7 +85,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_access",
+        "what": "Unlock the Mac console for an attended rerun of M1.4\u2019s Mac and Chrome lifecycle check.",
+        "work": {
+          "commit": "661b80f5d7aabd7f25f038684ae609fa6474029f",
+          "branch": "build/host",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/HOST/M1-handoff.md"
+      }
     },
     {
       "id": "M2",
