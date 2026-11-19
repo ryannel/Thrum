@@ -884,7 +884,7 @@ impl Gpu {
                     reply.status = SurfaceStatus::Missing;
                     return Ok(Some(cancel_revoked(encoded, reply, background)));
                 }
-                SurfaceAction::Reconfigure => {
+                SurfaceAction::Reconfigure { .. } => {
                     leased.configured = None;
                     reply.status = SurfaceStatus::Reconfigure;
                     return Ok(Some(cancel_revoked(encoded, reply, background)));

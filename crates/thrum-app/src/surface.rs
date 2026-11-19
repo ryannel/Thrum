@@ -18,7 +18,10 @@ pub enum SurfaceAction {
         occluded: bool,
     },
     /// Skip this frame and retry surface configuration before acquiring again.
-    Reconfigure,
+    Reconfigure {
+        /// Acquire reported validation on an otherwise configured surface.
+        validation: bool,
+    },
 }
 
 /// Interpret a drawable acquisition independently of device-loss and window ownership.
@@ -34,8 +37,9 @@ pub fn surface_action(texture: CurrentSurfaceTexture) -> SurfaceAction {
         },
         CurrentSurfaceTexture::Timeout => SurfaceAction::Skip { occluded: false },
         CurrentSurfaceTexture::Occluded => SurfaceAction::Skip { occluded: true },
-        CurrentSurfaceTexture::Outdated
-        | CurrentSurfaceTexture::Lost
-        | CurrentSurfaceTexture::Validation => SurfaceAction::Reconfigure,
+        CurrentSurfaceTexture::Outdated | CurrentSurfaceTexture::Lost => {
+            SurfaceAction::Reconfigure { validation: false }
+        }
+        CurrentSurfaceTexture::Validation => SurfaceAction::Reconfigure { validation: true },
     }
 }

@@ -1,11 +1,16 @@
 //! Host lifecycle policy exercised with an inline clock and a resident world lane.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+#[cfg(not(target_arch = "wasm32"))]
+use thrum_core::sim::{WorldLane, WorldLaneFault};
 
 use thrum_core::{
     ClockConfig, WorldEpoch,
     sim::{
-        ClockedWorld, SnapshotId, WorldGame, WorldLane, WorldLaneFault,
+        ClockedWorld, SnapshotId, WorldGame,
         WorldLifecycle::{Pause, Resume},
         WorldLifecyclePolicy, WorldLifecycleStatus, WorldPublication, WorldStep,
     },
@@ -141,9 +146,12 @@ fn inline_overload_drains_accepted_ticks_and_holds_until_explicit_resume() {
 }
 
 #[test]
+#[cfg(not(target_arch = "wasm32"))]
 fn threaded_overload_round_trip_through_the_lane() {
     let (send, receive) = std::sync::mpsc::channel();
-    let origin = Instant::now() - Duration::from_secs(1);
+    let origin = Instant::now()
+        .checked_sub(Duration::from_secs(1))
+        .expect("backdated clock origin");
     let (_lane, controls) = WorldLane::start(world(), (), origin, move || {
         let _ = send.send(());
     })

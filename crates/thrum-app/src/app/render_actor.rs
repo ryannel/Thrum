@@ -364,7 +364,7 @@ impl<G: Game> Actor<G> {
                 };
                 return Ok(encoded.skip());
             }
-            SurfaceAction::Reconfigure => {
+            SurfaceAction::Reconfigure { .. } => {
                 self.needs_reconfigure = true;
                 reply.surface_status = SurfaceStatus::NeedsReconfigure;
                 return Ok(encoded.skip());

@@ -5,16 +5,16 @@ use wgpu::CurrentSurfaceTexture;
 
 #[test]
 fn surface_loss_outdated_and_validation_all_retry_configuration() {
-    for outcome in [
-        CurrentSurfaceTexture::Lost,
-        CurrentSurfaceTexture::Outdated,
-        CurrentSurfaceTexture::Validation,
-    ] {
+    for outcome in [CurrentSurfaceTexture::Lost, CurrentSurfaceTexture::Outdated] {
         assert!(matches!(
             surface_action(outcome),
-            SurfaceAction::Reconfigure
+            SurfaceAction::Reconfigure { validation: false }
         ));
     }
+    assert!(matches!(
+        surface_action(CurrentSurfaceTexture::Validation),
+        SurfaceAction::Reconfigure { validation: true }
+    ));
 }
 
 #[test]

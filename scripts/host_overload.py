@@ -50,6 +50,8 @@ def check_mac_overload(folder, preset):
 
         try:
             wait_for('initial Mac Pause', events, lambda rows: rows and rows[-1][0] == 'Pause')
+            wait_for('first Mac present', log.read_text,
+                     lambda output: 'm1 app presented generation=1' in output)
             (markers / 'press-p').touch(exist_ok=False)
             before = wait_for('explicit Mac Resume', events, lambda rows: rows[-1][0] == 'Resume')
             force_scheduling_gap(game.pid)
@@ -59,17 +61,22 @@ def check_mac_overload(folder, preset):
                 raise RuntimeError(f'Mac overload changed the drained endpoint: {pause}, {resume}')
             if pause[1] != before[-1][1]:
                 raise RuntimeError('Mac overload replaced the world')
+            presented = log.read_text().count('m1 queue present')
+            wait_for('Mac presents after overload', log.read_text,
+                     lambda output: output.count('m1 queue present') >= presented + 4)
             (markers / 'finish').touch(exist_ok=False)
             if game.wait(timeout=30) != 0:
                 raise RuntimeError(f'Mac overload witness exited {game.returncode}')
         finally:
             if game.poll() is None:
                 game.kill()
-    match = re.search(r'world_overloads=(\d+); overload_refused_ticks=(\d+)', log.read_text())
-    if match is None or int(match[1]) < 1 or int(match[2]) < 1:
+    match = re.search(r'committed_ticks=(\d+); .*world_overloads=(\d+); overload_refused_ticks=(\d+)',
+                      log.read_text())
+    if match is None or int(match[1]) <= int(resume[2]) or int(match[2]) < 1 or int(match[3]) < 1:
         raise RuntimeError('Mac overload did not report any refused ticks')
-    record = dict(pid=game.pid, pause=pause, resume=resume, overloads=int(match[1]),
-                  refused_ticks=int(match[2]), binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+    record = dict(pid=game.pid, pause=pause, resume=resume, final_tick=int(match[1]),
+                  overloads=int(match[2]), refused_ticks=int(match[3]),
+                  binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
     (output / 'result.json').write_text(json.dumps(record, indent=2) + '\n')
     print(f'Mac window overload recovered at epoch {resume[1]}, tick {resume[2]}', flush=True)
 

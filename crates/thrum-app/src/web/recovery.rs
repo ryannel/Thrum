@@ -129,9 +129,15 @@ impl Replacement {
                 reconfigure
             }
             SurfaceAction::Skip { .. } => return Ok(None),
-            SurfaceAction::Reconfigure => {
+            SurfaceAction::Reconfigure { validation: true } => {
                 self.configured_extent = None;
                 return Ok(None);
+            }
+            SurfaceAction::Reconfigure { validation: false } => {
+                // WebGPU signals a thrown configure as Lost. This candidate
+                // has never presented, so report its failed activation and
+                // leave the explicit retry available.
+                return Err("replacement canvas configuration did not become usable".to_owned());
             }
         };
         host.publish_device(&mut self.prepared)

@@ -301,7 +301,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
                         self.needs_reconfigure |= reconfigure;
                         Some(frame)
                     }
-                    SurfaceAction::Reconfigure => {
+                    SurfaceAction::Reconfigure { .. } => {
                         self.needs_reconfigure = true;
                         self.unavailable += 1;
                         None
