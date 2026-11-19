@@ -39,6 +39,7 @@ pub struct ExtentTransition {
     delay: Duration,
     build: Option<Build>,
     ready: Option<PreparedExtent>,
+    discarded: Vec<PreparedExtent>,
     attempted: bool,
     /// Eligibility and call counts for the current switch.
     pub surface: SurfaceSwitch,
@@ -54,6 +55,7 @@ impl ExtentTransition {
             delay: Duration::ZERO,
             build: None,
             ready: None,
+            discarded: Vec::new(),
             attempted: true,
             surface: SurfaceSwitch::configured(),
         }
@@ -61,7 +63,7 @@ impl ExtentTransition {
 
     /// Cancel pending work on loss or shutdown.
     pub fn cancel(&mut self) {
-        self.ready = None;
+        self.discarded.extend(self.ready.take());
         if let Some(build) = &self.build {
             build.cancelled.store(true, Ordering::Release);
         }
@@ -89,6 +91,16 @@ impl ExtentTransition {
     /// Keep an admitted candidate available after a deferral.
     pub fn defer(&mut self, ready: PreparedExtent) {
         self.ready = Some(ready);
+    }
+
+    /// Discard an unbound candidate on the preparation thread.
+    pub fn discard(&mut self, ready: PreparedExtent) {
+        self.discarded.push(ready);
+    }
+
+    /// Repeat preparation after the host's scene or capture inputs changed.
+    pub fn refresh(&mut self) {
+        self.attempted = false;
     }
 
     /// Update the latest request without constructing resources, including when
@@ -139,22 +151,34 @@ impl ExtentTransition {
                 .map_err(|_| FrameError::Gpu("extent preparation thread stopped".into()));
             if build.request == request && !build.cancelled.load(Ordering::Acquire) {
                 self.ready = result??;
+            } else if let Ok(Ok(Some(obsolete))) = result {
+                self.discard(obsolete);
             }
         }
-        if self.build.is_some()
-            || self.attempted
-            || request.extent.contains(&0)
-            || now.saturating_sub(self.changed) < self.delay
-        {
+        if self.build.is_some() {
             return Ok(());
         }
-        self.attempted = true;
-        let inputs = inputs()?;
+        let may_build = !self.attempted
+            && !request.extent.contains(&0)
+            && now.saturating_sub(self.changed) >= self.delay;
+        let inputs = if may_build {
+            self.attempted = true;
+            Some(inputs()?)
+        } else {
+            None
+        };
+        if inputs.is_none() && self.discarded.is_empty() {
+            return Ok(());
+        }
+        let discarded = std::mem::take(&mut self.discarded);
         let cancelled = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&cancelled);
         let job = thread::Builder::new()
             .name("thrum extent preparation".into())
-            .spawn(move || inputs(&flag))
+            .spawn(move || {
+                drop(discarded);
+                inputs.map_or(Ok(None), |build| build(&flag))
+            })
             .map_err(|error| FrameError::Gpu(format!("start extent preparation: {error}")))?;
         self.build = Some(Build {
             request,

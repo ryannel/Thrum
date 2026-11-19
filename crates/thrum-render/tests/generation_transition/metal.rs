@@ -148,24 +148,28 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
         .advance(stale, old, ms(99), unexpected_build)
         .expect("transition fixture");
     let (release, blocked) = mpsc::channel();
+    let (built, observed_build) = mpsc::channel();
     let first_build = prepare(&host, STALE);
     transition
         .advance(stale, old, ms(100), || {
             Ok(move |cancel: &AtomicBool| {
                 // Hold a finished result on the preparation thread until it is superseded.
-                let ready = first_build(cancel)?;
+                let ready = first_build(cancel)?.expect("superseded candidate resources");
+                built.send(()).expect("notify completed preparation");
                 blocked
                     .recv_timeout(Duration::from_secs(10))
                     .expect("transition fixture");
                 assert!(cancel.load(Ordering::Acquire));
-                drop(ready);
-                Ok(None)
+                Ok(Some(ready))
             })
         })
         .expect("transition fixture");
 
     submit(&mut host, &old_output, OLD);
     let first = complete(&mut host, &device);
+    observed_build
+        .recv_timeout(Duration::from_secs(5))
+        .expect("observe completed preparation");
     transition
         .advance(new, old, ms(102), unexpected_build)
         .expect("transition fixture");

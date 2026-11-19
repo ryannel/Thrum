@@ -2,7 +2,7 @@
 //! bounds, cluster table and dispatch. The same builder serves the main view.
 
 use super::{
-    Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, Mutex, Pass, PassScope, PipelineKey,
+    Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, Pass, PassScope, PipelineKey,
     PreparedSynthetic, RenderError, ResourceDescriptor, ResourceScope, SecondaryViewError,
     SyntheticView,
 };
@@ -14,7 +14,7 @@ pub(super) const PASS: &str = "secondary view clusters";
 #[derive(Clone)]
 pub(super) struct Lighting {
     pub(super) groups: [wgpu::BindGroup; 2],
-    state: SharedGpu<Mutex<ClusterState>>,
+    state: SharedGpu<ClusterState>,
     pub(super) gpu: bool,
 }
 
@@ -86,12 +86,12 @@ impl Lighting {
         );
         Ok(Self {
             groups,
-            state: SharedGpu::new(Mutex::new(ClusterState {
+            state: SharedGpu::new(ClusterState {
                 table,
                 heads,
                 indices,
                 compute,
-            })),
+            }),
             gpu,
         })
     }
@@ -102,10 +102,7 @@ impl Lighting {
         sources: &[SyntheticPointLight],
         view: &SyntheticView,
     ) -> Result<(), RenderError> {
-        let mut state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut state = self.state.write();
         if self.gpu {
             state.table.repack_gpu(sources, view)?;
         } else {
@@ -129,10 +126,7 @@ impl Lighting {
         shared: &[Access],
         opaque: &mut Vec<Access>,
     ) -> Result<(), RenderError> {
-        let state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = self.state.write();
         let mut writes = Vec::new();
         for buffer in [&state.heads, &state.indices] {
             let id = graph.resource(
@@ -183,10 +177,7 @@ impl Lighting {
         pass: &CompiledPass,
         timings: Option<&mut crate::timing::GpuTimings>,
     ) -> Result<(), RenderError> {
-        let state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = self.state.write();
         state
             .compute
             .as_ref()

@@ -10,7 +10,7 @@ use crate::{
     },
     synthetic::{RenderError, SyntheticView},
 };
-use std::{collections::BTreeSet, sync::Mutex};
+use std::collections::BTreeSet;
 
 pub(crate) const PASS: &str = "secondary view aerial perspective";
 
@@ -23,7 +23,7 @@ pub(crate) struct SecondaryAerial {
     sampler: wgpu::Sampler,
     pipeline: wgpu::ComputePipeline,
     group: wgpu::BindGroup,
-    night: crate::SharedGpu<Mutex<crate::atmosphere::night::NightProfile>>,
+    night: crate::SharedGpu<crate::atmosphere::night::NightProfile>,
 }
 
 impl AtmospherePrepared {
@@ -110,7 +110,7 @@ impl AtmospherePrepared {
             sampler: self.aerial_sampler.clone(),
             pipeline,
             group,
-            night: crate::SharedGpu::new(Mutex::new(night)),
+            night: crate::SharedGpu::new(night),
         }
     }
 }
@@ -143,10 +143,7 @@ impl SecondaryAerial {
         let datum = world.frame.camera_altitude_m - camera_height;
         let mut frame = world.frame;
         frame.camera_altitude_m = (observer_world_height + datum).clamp(0.0, 100_000.0);
-        self.night
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .select(queue, frame.nightglow_active());
+        self.night.write().select(queue, frame.nightglow_active());
         queue.write_buffer(
             &self.uniform,
             0,
@@ -184,12 +181,7 @@ impl SecondaryAerial {
             ResourceScope::Imported { initialized: true },
         )?;
         let mut writes = shared.to_vec();
-        writes.extend(
-            self.night
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .graph_reads(graph)?,
-        );
+        writes.extend(self.night.write().graph_reads(graph)?);
         let read = Access::new(uniform, 0..UNIFORM_BYTES, AccessKind::UniformRead);
         writes.push(read.clone());
         let sampling = graph.resource(

@@ -89,7 +89,7 @@ struct Slot {
     copy_ns: Option<f64>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(super) struct TapSpec {
     pub(super) source: CaptureSource,
     session: u64,

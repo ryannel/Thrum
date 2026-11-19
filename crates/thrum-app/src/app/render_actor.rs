@@ -495,6 +495,8 @@ impl<G: Game> Actor<G> {
         }
         if let Some(candidate) = self.transition.ready() {
             if !self.host.admits_extent(&candidate) {
+                self.transition.discard(candidate);
+                self.transition.refresh();
                 return Ok(());
             }
             let mut config = self.gpu.config.clone();
@@ -534,6 +536,7 @@ impl<G: Game> Actor<G> {
                     self.refused_surface_generation = None;
                 }
                 SurfaceSwitchOutcome::Refused => {
+                    self.transition.discard(candidate);
                     let record = self.transition.surface.record();
                     reply.transition_error = Some(format!(
                         "{request:?}: {:?}; restore: {:?}",
