@@ -278,7 +278,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
+- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows (SHOWCASE M9): Not Started · [plan](SHOWCASE/PLAN.md)
 - The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore (WATERS M6): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/M6-review.md)
 - The same sky and the same shade draw in Chrome (CLOUDS M4): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M4-review.md)
@@ -286,7 +286,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up (SESSION M3): Ready for Review · [plan](SESSION/PLAN.md) · [latest review](../../.orchestrate/evidence/SESSION/M3-review.md)
 - Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]` (TEST-SUPPORT M2): Not Started · [plan](TEST-SUPPORT/PLAN.md)
 - Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test (REVIEW-RENDER M2): Ready for Review · [plan](REVIEW-RENDER/PLAN.md)
-- Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app (HOST M2): Ready for Review · [plan](HOST/PLAN.md)
+- Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app (HOST M2): In Progress · [plan](HOST/PLAN.md) · [latest review](../../.orchestrate/evidence/HOST/M2-review.md)
 - The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): Ready for Review · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
 
 ### Recently done
@@ -360,7 +360,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2), 13 Nov · [review](../../.orchestrate/evidence/CULLING/M2-review.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2), 13 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M2-review.md)
 - A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome (EFFECT-GRAPH M2), 13 Nov · [review](../../.orchestrate/evidence/EFFECT-GRAPH/M2-review.md)
-- On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1), 13 Nov · [review](../../.orchestrate/evidence/CULLING/M1-review.md)
 
 ## All modules
 
@@ -372,7 +371,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Done 17 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · In Progress |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | Waiting: On Dependency, SHOWCASE:M9 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
@@ -395,7 +394,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | Done 18 Nov |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | M2 of 2 · Not Started |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | M2 of 5 · Ready for Review |
-| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | M2 of 5 · Ready for Review |
+| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | M2 of 5 · In Progress |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Waiting: On Dependency, HOST:M4 |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | M3 of 6 · Ready for Review |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Waiting: On Dependency, SHOWCASE:M8 |
