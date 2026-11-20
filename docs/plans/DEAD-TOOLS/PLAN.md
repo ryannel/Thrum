@@ -18,7 +18,7 @@ each count is frozen before the milestone that lowers it.
 - Assumption: the game's frame bench goes too, 865 lines, because `./dev baseline-inventory` was the only thing that ran it and you saw no need to keep a bench nothing runs. The other choice keeps its two timing rows and adds a `./dev` command that runs them.
 - Assumption: the culling campaign script and the campaign mode in the culling route test are deleted, because `CULLING` is Done and its plan says no loaded campaign repeats. The other choice keeps both for a later campaign.
 - Assumption: the frozen pre-sprite graph snapshot stays, because it is the only graph check driven by the game's own exit and valley setups. The other choice retires it, about 326 lines: the test and its text file.
-- Assumption: from the day `script-caller` lands, a new file under `scripts/` needs something standing that names it: a `./dev` command, CI, a main-branch check, Rust source, a document outside the plans, or a script that is itself called. A proof tool that only its own milestone's check runs is kept in that milestone's evidence folder, outside Git. The other choice counts a done-when item's check as a caller: then no new proof script is refused, and scripts that only finished milestones ran keep collecting, as 11 have.
+- Assumption: a proof tool that only its own milestone's check runs is tracked under `scripts/`, because your rule is that a file a check reads is tracked and not evidence, and there a reviewer reads it. So `script-caller` takes any done-when item's check as naming a script and refuses only a script nothing names at all, and a tool whose milestone is Done stays until a cleanup landing deletes it, as M1 deletes thirteen now. The other choice keeps such tools in the milestone's evidence folder, outside Git and outside review: that reverses your rule, and the open items of six modules that name nine scripts not yet written would have to be planned again.
 - Assumption: three benches the review did not look at are left for a second landing: `thrum-core`'s `v1_workload`, `thrum-water-model`'s `surf` and the game's `recipe_cost`. Your decision named the nine. The other choice deletes any that nothing runs, in M2.
 
 ## M5 Each module's record of what it copied, from where and under what licence is tracked in Git, where a clone gets it
@@ -33,8 +33,8 @@ file; `ORCHESTRATE.md` says that means the tracked record, so leave those design
 
 The rule engine is `scripts/shape_rules.py`, with its matchers in `scripts/shape_matchers.py`; it compares each
 rule's count for each file with `.config/shape-baseline.json`, and `tighten` records a lower count.
-`pinned_names` there already reads the checks of milestones that are not Done, which is the caller
-`script-caller` must leave out. `TEST-SUPPORT` M1 added `test-crate-edges` the same way. The engine's own suites,
+`pinned_names` there reads the checks of milestones that are not Done; `script-caller` reads every
+milestone's, Done or not. `TEST-SUPPORT` M1 added `test-crate-edges` the same way. The engine's own suites,
 `test_shape_rules.py` and `test_shape_ratchet.py`, run in no check until M1.3 lands, so run them yourself.
 `crates/thrum-asset-gpu/src/mesh_stages.rs` holds a `.replace(` that injects a fault for a test feature: it is
 counted like the rest, since a frozen count needs no exemption.
@@ -48,7 +48,9 @@ the deletion list and are also named in findings this module does not build: del
 `scripts/reference/cloud/` alone. Among the suites the check will newly find, `test_game_gate.py` builds temporary
 Git repositories and `test_sim2d_conformance.py` runs a conformance pass; each took 5 seconds or less when the
 planner ran them, and `test_mac_m2_presented` failed. Deleting a counted script lowers `script-caller`, so
-tighten the baseline in the same landing. `GATE-TIME` M1, M6 and M7 edit other arms of the same `main.rs`, and M5
+tighten the baseline in the same landing. Deleting `reconstruction_motion.py` removes the only caller of
+`capture_mac_m2_ungranted.py`, `mac_m2_capture_launcher.swift` and `review_v1_playback.mjs`, so they go too;
+`PLATFORM-RUNTIME-MAC`'s design names the first, and stays as it is. `GATE-TIME` M1, M6 and M7 edit other arms of the same `main.rs`, and M5
 its test step after this module's M2.
 
 ## M2 Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran

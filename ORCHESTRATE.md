@@ -159,7 +159,7 @@ run on main (M7). Until its milestone is Done, `./dev check` runs what it ran be
 |---|---|---|---|---|
 | **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach. Then the merging milestone's item checks, which test what that milestone changed | A fault that only a long run, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
 | **Main** | On main's tip after merges, by the `Main-branch check` lines under [Rules](#rules), each no more often than its `every` | Exact images; the long tests in a release build and the tests behind a Cargo feature; and every fast test in the workspace | The fault sits on main for up to the check's interval and one run, and later merges build on it. It costs the module that caused it; nothing ships from main | A failure is run again once, then traced through the commits since the last pass to the first that fails. Each step of the trace is one whole run of the check, so the commit is named some hours after its merge, not within the hour. The lead gives that commit's module the fix as its next task, or reverts the commit |
-| **Milestone and release** | Once, when a milestone claims Ready for Review; and at a release point, which is the V1 exit's closing record or anything published | A milestone's captures, inspections, cost records and sittings. At a release point, everything on the one commit: the whole-workspace check, every main-branch check, and the release's own items | A fault only an eye, a device or a quiet machine shows lasts until the milestone that looks, or the release | The review names the item. At a release point the tier that fails names it, as above |
+| **Milestone and release** | Once, when a milestone claims Ready for Review; and at a release point, which is the V1 exit's closing record or anything published | A milestone's captures, inspections, cost records and sittings, and the test command once more on main's tip, which there is the whole workspace's fast tests unless the merge's own pass is reused. At a release point, everything on the one commit: the whole-workspace check, every main-branch check, and the release's own items | A fault only an eye, a device or a quiet machine shows lasts until the milestone that looks, or the release | The review names the item. At a release point the tier that fails names it, as above |
 
 - **A long test takes over about a minute in `./dev check` on this Mac.** It is marked `#[ignore]` with a reason
   that starts `long:`, is named in the main-tier list, `.config/long-tests.txt`, and runs in the main tier through
@@ -168,7 +168,9 @@ run on main (M7). Until its milestone is Done, `./dev check` runs what it ran be
   catches a kind of fault nothing else catches, in any tier.
 - **The merge tier is targeted.** `./dev check` runs the test binaries of the packages a change can reach: each
   workspace package that holds a changed file, and every package that depends on one, directly or through others,
-  by Cargo's own graph. The change is what differs from the checkout's merge base with main. What would stop
+  by Cargo's own graph. Where a test reads another package's files when it runs, which the graph cannot show, the
+  selection declares the edge: a change under that path selects the reader's package too. The change is what
+  differs from the checkout's merge base with main. What would stop
   every builder is not selected: the build, the lints, the repository guards and the script suites run whole on
   every merge. So do the fast proofs of faults that are silent and costly, which
   [the bar above](#what-is-proved-and-how-hard) lists, for every package the change can reach.
@@ -178,22 +180,33 @@ run on main (M7). Until its milestone is Done, `./dev check` runs what it ran be
   the plans, `scripts/` and the data under `.config/` reach no Rust test and select none; the guards and suites
   that read them run on every merge.
 - **The risk the selection accepts.** A test whose result depends on something Cargo's graph does not show, such
-  as a file another folder owns that it reads at run time, is not selected when only that thing changes. The
-  missed edge reaches main and sits there until the next whole-workspace run, the main-branch check
-  `workspace-tests`: up to its interval and one run, and some hours more to name the commit. Until that run the
-  script still counts main as passing, so a later merge whose selection holds the failing test is refused for a
-  fault it did not cause. A builder whose merge fails in a test its change cannot reach reads
-  `python3 "$ORCHESTRATE_SCRIPT" main-check workspace-tests` before it debugs. No milestone waits for the whole
-  run: it is Done on its merge check and its items.
+  as a file another package owns that it reads at run time, is not selected when only that thing changes, unless
+  the selection declares the edge. The one such test known is declared; nothing finds a new one when it is added.
+  The missed edge reaches main and sits there until the next whole-workspace run, the main-branch check
+  `workspace-tests`: up to its interval and one run, and some hours more to name the commit. Until that commit
+  is fixed or reverted the script still counts main as passing, and two things fail for a fault they did not
+  cause. One is a later merge whose selection holds the failing test. The other is every milestone's Ready for
+  Review: after a builder merges, the script runs the test command once more on main's tip, where nothing
+  differs from main, so that run is the whole workspace unless no other merge has landed since and the merge's
+  own pass is reused. So no merge waits for the whole run, but a fault on main holds the Ready for Review of
+  every module's milestones, not only of the module that caused it. A builder whose merge or Ready for Review
+  fails in a test its change cannot reach reads `python3 "$ORCHESTRATE_SCRIPT" main-check workspace-tests`
+  before it debugs. Where that shows the test failing on main, the builder leaves the test alone and ends
+  `BLOCKED main_broken:` with the test's name, and the lead has the commit fixed or reverted. *(planner's
+  assumption until the owner answers: the other choice selects the Ready for Review run by the milestone's own
+  change, which needs a change to the orchestrate script)*
 - **A test behind a Cargo feature** (`creation-counters`, `draw-probe`, `fault-probe`) is compiled in the merge
-  tier and run in the main tier: the main-tier list names its package and features beside the long tests, and
-  `./dev long-tests` runs it. A feature that no tier names is a fault in the list, not a way to keep a test out
-  of a tier. *(planner's assumption until the owner answers: the other choice runs these only in the item checks
-  that name them)*
+  tier and run in the main tier: the main-tier list names its package and features beside the long tests, whole
+  or by test binary, and `./dev long-tests` runs it. The docs check reads the test files as well as the
+  manifests: a feature named in a test file's `cfg`, or required by a test target, that the list does not cover
+  fails it. A feature that no tier names is a fault in the list, not a way to keep a test out of a tier.
+  *(planner's assumption until the owner answers: the other choice runs these only in the item checks that name
+  them)*
 - **What keeps the merge tier fast.** `./dev check` fails when one test binary runs for over three minutes, and
   the docs check fails when a test marked `long:` sits in a binary the list does not name. Three minutes is about
   2.4 times the slowest binary the tier keeps, past the 1.6 times a loaded machine was seen to add, so load alone
-  does not trip it. *(planner's assumption until the owner answers: the other choice reports a slow binary and
+  does not trip it; the limit is raised to twice that binary's time if the hourly long tests are seen to slow it
+  past 90 seconds. *(planner's assumption until the owner answers: the other choice reports a slow binary and
   fails nothing)*
 - **A change is tested where it is made.** A builder runs the tests of what it touched while it works, and
   `./dev check` once, to merge. A milestone that changes what a long test or a test behind a feature guards

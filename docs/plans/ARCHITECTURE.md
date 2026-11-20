@@ -2383,23 +2383,36 @@ land while any of them is held.
 
 9. **Tests behind a Cargo feature** (`GATE-TIME` M6; the modules whose tests they are, among them
    `RAY-TRACING`, `MESH-SHADING`, `CONTENT-LOOP` and `SCENE-VIEWS`). Every merge compiles them, and the main-branch check `long-tests` runs
-   them, from the main-tier list. No test is edited to join the list: one that fails at the commit M6 starts
+   them, from the main-tier list. The list covers a package's feature tests whole or by test binary, and
+   `thrum-render` is covered whole, so a new gated test file there runs with no edit to the list. Anywhere else
+   the docs check fails a test file whose `cfg` names a feature, or a test target that requires one, until the
+   list names it. No test is edited to join the list: one that fails at the commit M6 starts
    from is listed as not run, with its failure, and its owning module fixes it. Open items that run these tests
    by name keep their text. `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 edit files that hold them, wait for M6
    and carry the main-branch item.
 10. **The merge selection** (`GATE-TIME` M7; every module, and `REPO-RULES`, whose check command it is). By the
     owner's decision of 20 November, `./dev check` runs the tests of the packages a change can reach, by Cargo's
     graph, and the main-branch check `workspace-tests` runs the whole workspace. A shared input, or a path the
-    selection has no rule for, selects everything. The risk accepted is in
+    selection has no rule for, selects everything. A test that reads another package's files when it runs is
+    reached by a declared edge, kept with the path rules: `crates/thrum-asset-gpu/src/` selects `thrum-render`,
+    for the renderer's guard on where cooked pipelines are created, and a module that adds such a reader
+    declares its edge in the same landing. The risk accepted is in
     [the test tiers](../../ORCHESTRATE.md#test-tiers): a missed edge sits on main until the next whole run, and
-    until then a later merge can be refused for it. A module that adds a folder outside a package gets the whole
-    workspace on every change there until it adds a path rule. No milestone waits for the whole run.
+    until it is fixed or reverted a later merge can be refused for it, and so can any milestone's Ready for
+    Review, which runs the whole workspace on main's tip. A module that adds a folder outside a package gets the
+    whole workspace on every change there until it adds a path rule. No merge waits for the whole run.
 11. **Frozen rules** (`DEAD-TOOLS` M6, `TEST-SUPPORT` M5; `REPO-RULES`' rule engine, and every builder). Six
     rules enter the shape check at the count of the commit they land on, before the cleanups that lower them:
     `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`.
     They go in through the engine with fixtures, as the track 4 rules did, and the engine itself does not
     change. From the day one lands, a landing in any module that adds one more of its shape is refused, with a
-    message that says what to write instead. `shader-text-edit` holds a shape whose replacement is
+    message that says what to write instead. `script-caller` refuses a script that nothing names. A done-when
+    item's check names one, whether its milestone is open or Done, so a proof tool is tracked under `scripts/`
+    at the path its item gives and lands with no extra step: the nine scripts that open items of `SWARM`,
+    `GAME-UI`, `RENDER-2D`, `ATMOSPHERE`, `REPO-RULES` and `GAME-SPLIT` name and nobody has written yet land
+    that way. Records under `docs/evidence` name nothing. A change that removes the last thing naming a script
+    or a bench deletes it, or names it elsewhere, in the same landing; that binds a planner who drops the last
+    check naming a script that exists, because the next merge in any module would fail on it. `shader-text-edit` holds a shape whose replacement is
     [not planned yet](#not-planned-in-track-6); until that design exists a new variant is made the way the
     engineering patterns already ask, through a hook with a stub.
 
@@ -2440,9 +2453,9 @@ Each of these needs a design of its own, or a decision, before it is planned.
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
 | **Long test**: a test over about a minute, marked ignored with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | `GATE-TIME:M1` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
-| **The main-tier list**, `.config/long-tests.txt`: each long-test binary and each test behind a Cargo feature, with its package, features and build | `GATE-TIME:M1` and `M6` → any module that adds a long test or a feature that gates a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
-| **The merge selection**: `./dev check` runs the tests of the packages a change can reach; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:M7` → every builder | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
-| **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:M6` and `TEST-SUPPORT:M5` → every builder | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
+| **The main-tier list**, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary | `GATE-TIME:M1` and `M6` → any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
+| **The merge selection**: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the declared edges; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:M7` → every builder, and any module with a test that reads another package's files at run time | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:M6` and `TEST-SUPPORT:M5` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 | **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:M5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:M3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Contribution defaults**: five hooks of `SceneContribution` need not be written | `DEAD-CODE:M2` → every contribution | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
@@ -3036,3 +3049,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   and M7 (the merge selection), `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 (six rules frozen before their cleanups).
   Seam rulings 9 to 11 and four interfaces were added, the wave table gained `TEST-SUPPORT`, and the test tiers
   in the project settings were written again. No Done item, exact baseline, comparison or contract changed.
+- 2026-11-20 `GATE-TIME` and `DEAD-TOOLS` revised after their third design reviews. Seam rulings 9 to 11 and
+  three interfaces now say what the designs say: the main-tier list covers a package's feature tests whole or
+  by binary; the merge selection has declared edges, and its accepted risk includes every milestone's Ready
+  for Review; `script-caller` takes a done-when item's check as naming a script, so a proof tool is tracked.
+  The test tiers in the project settings carry the same risk text.

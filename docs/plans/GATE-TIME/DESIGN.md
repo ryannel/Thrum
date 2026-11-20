@@ -9,7 +9,7 @@ The findings this module answers are cited by id, such as L1-01. They are in the
 which is kept in the main checkout at `/Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/`: `REPORT.md` ranks
 them, `results.json` holds each finding with its verifier's note, and `verified/` holds the notes in full. Where a
 verifier corrected a finding, the verifier is right. `HARDENING.md` beside them is the second read of this plan
-that the third revision applies.
+that the third revision applied.
 
 ## The request
 
@@ -93,11 +93,12 @@ changes the child's arguments in the water scene's `with_cooked_island`.
 
 **2. One command runs the main tier's tests from one list, and a main-branch check runs it.** `./dev long-tests`
 runs the tests the main-tier list names and nothing else. The list is one tracked file,
-`.config/long-tests.txt`. For each entry it gives the package, the test binary, the Cargo features if any, and
-the build. The command runs the ignored tests of each long-test binary, so a binary on the list holds no ignored
-test that is not a long test: other ignored tests in the workspace need a cooked store, or are measurements. It
-uses the toolchain `./dev check` uses and requires a GPU, so a test that finds no adapter fails where it would
-have skipped. The list names the foam's binary from M1: a binary with no ignored test passes.
+`.config/long-tests.txt`. For each long test it gives the package, the test binary and the build; mechanism 3
+says what it gives for the tests behind a Cargo feature. The command runs the ignored tests of each long-test
+binary, so a binary on the list holds no ignored test that is not a long test: other ignored tests in the
+workspace need a cooked store, or are measurements. It uses the toolchain `./dev check` uses and requires a GPU,
+so a test that finds no adapter fails where it would have skipped. The list names the foam's binary from M1: a
+binary with no ignored test passes.
 
 The build is release with overflow checks on. Debug assertions stay off, because the flythrough chooses its
 length by them and would stop at tick 460. M1 starts by running the six once in that build, because five of them
@@ -123,22 +124,36 @@ fast-forwards the main checkout, because the script reads the settings there.
 
 **3. A test behind a Cargo feature is compiled by every merge and run on main.** Three features hide tests from
 `cargo test --workspace`: `creation-counters` in `thrum-render` (27 files, among them twelve ray-tracing test
-binaries that run zero tests in the check), and `draw-probe` and `thrum-asset-gpu/fault-probe` in the game (the
-ray-tracing proof, the mesh-stage tests and the cooked fault test). Until now they ran only in the item checks
-that name them, so a sweep that broke one merged green and stopped another module's builder days later.
+binaries that run zero tests in the check); `draw-probe` and `thrum-asset-gpu/fault-probe` in the game (the
+ray-tracing proof, the mesh-stage tests and the cooked fault test); and `thrum-asset-gpu`'s own `draw-probe`,
+which gates one test of its error inventory. Until now they ran only in the item checks that name them, so a
+sweep that broke one merged green and stopped another module's builder days later.
 
-- *At every merge*, `./dev check` builds and lints every test target of `thrum-render` with `creation-counters`
-  on, and of the game with `draw-probe` and `thrum-asset-gpu/fault-probe` on, under the lints the rest of the
-  workspace gets. The build of an unchanged crate is reused, so a merge that touches none of them pays seconds.
-- *On main*, `./dev long-tests` runs them with their features on and a GPU required. The list names each one's
-  package, binary and features. They run in the debug build, as the item checks that run them do. For these
-  binaries the command runs the tests that are not ignored: an ignored test there is a measurement that a cost
-  script runs.
+Only two of the game's test targets say so in a manifest, with `required-features`. Every other one gates inside
+the file, with `#[cfg(feature = …)]`: the binary builds without the feature and runs fewer tests, or none. So
+the list and its guard work from the test files, not only from the manifests.
+
+- *The list covers a package's feature tests whole or by binary.* An entry names a package and its features.
+  With no binary named it covers every test binary of the package, and `./dev long-tests` runs them all with
+  the features on, so a new gated file runs with no edit to the list. With binaries named it covers those.
+  `thrum-render` is listed whole with `creation-counters`: its gated tests are spread over the library's tests
+  and a set of binaries that `RAY-TRACING` adds to each week. The game is listed by binary, because its package
+  is a third of the workspace's test time.
+- *At every merge*, `./dev check` builds and lints the test targets of each package the list names, with the
+  features the list gives it, under the lints the rest of the workspace gets. The build of an unchanged crate is
+  reused, so a merge that touches none of them pays seconds.
+- *On main*, `./dev long-tests` runs them with their features on and a GPU required, in the debug build, as the
+  item checks that run them do. It runs the tests that are not ignored: an ignored test there is a measurement
+  that a cost script runs.
 - A test that fails at the commit M6 starts from is listed as not run, with its failure and its owning module,
-  and is not changed here.
-- *Membership is held by a check.* `./dev check-docs` fails when a test target requires a Cargo feature that the
-  list does not name, so a new feature cannot take a test target out of every tier unnoticed. A `cfg` on a
-  feature inside a test file is found by search when M6 is reviewed.
+  and is not changed here. The builder's handoff names each one, so the lead can give it to its owner: until
+  then it runs in no tier.
+- *Membership is held by a check that reads the tests.* `./dev check-docs` fails when a test target requires a
+  Cargo feature, or a `cfg` in a test file names one, and the list does not cover that file's package with that
+  feature: whole, or by the binary the file builds into. Where the check cannot tell which binary a file
+  builds into, as with a module several binaries share, only a whole-package entry covers it. The message names
+  the file, the feature and the list. So a new gated test file either runs on main through a whole-package entry
+  or fails the docs check until the list names it, and no feature takes a test out of every tier unnoticed.
 
 **4. A merge runs the tests its change can reach, and main runs them all.** `./dev check` selects test binaries
 by package. `./dev check-all` runs everything, whatever changed, and a main-branch check runs it.
@@ -149,7 +164,18 @@ by package. `./dev check-all` runs everything, whatever changed, and a main-bran
   branches rebased together, and this definition gives the right change in each.
 - *The selection* is each workspace package that holds a changed path, and every workspace package that depends
   on one, directly or through others, as a normal, build or dev dependency. The graph is Cargo's own, read from
-  `cargo metadata`. The check runs the unit and integration test binaries of the selected packages.
+  `cargo metadata`. The check runs the unit and integration test binaries of the selected packages. The
+  draw-probe pass of the cooked-asset tests is one of the game's, and runs when the game's package is selected.
+- *A declared edge* covers what Cargo's graph cannot show: a test that reads another package's files when it
+  runs. It is a path rule that names a path and the package whose tests a change under that path selects as
+  well, kept and tested with the other path rules. It adds that package's own test binaries and nothing that
+  depends on it, because only the reader reads the path. One is needed today: `crates/thrum-asset-gpu/src/`
+  selects `thrum-render`, whose guard that every cooked pipeline is created through the scene surface scans that
+  folder. `thrum-asset-gpu` depends on `thrum-render`, not the reverse, so without the edge the one change the
+  guard exists to catch would merge green. The planner's search of test code for a reader outside its own
+  package found no other that needs one: the rest reach a dependency of their own package (the river model
+  reads the water model's manifest), `docs/evidence`, which selects everything, or scratch under `tmp/`, which
+  Git does not hold. A module that adds such a reader adds its edge in the same landing.
 - *What is not selected.* The build and the lints cover the whole workspace on every merge, with the compile of
   mechanism 3, the repository guards, the script suites and the doc tests. They are what would stop every
   builder, an unchanged crate's build is reused, the Python steps take seconds, and the doc tests 0.1 s in all.
@@ -168,8 +194,8 @@ by package. `./dev check-all` runs everything, whatever changed, and a main-bran
   guards and suites that do read them run on every merge.
 - *Anything else selects the whole workspace*: a path with no rule above, such as the root `tests/fixtures/`,
   `docs/evidence` or a new top-level folder; a checkout with no merge base, as in a shallow clone or CI; a
-  checkout that does not differ from the main branch, which is what the main tier runs; and a dependency graph the
-  check cannot read. The check prints what it selected and why.
+  checkout that does not differ from the main branch, which is what the main tier runs, and the script's run
+  before Ready for Review; and a dependency graph the check cannot read. The check prints what it selected and why.
 - *On main*, M7 adds one line to `ORCHESTRATE.md`, in these words:
 
 ```
@@ -181,10 +207,25 @@ by package. `./dev check-all` runs everything, whatever changed, and a main-bran
   whichever is longer, because that first run builds the workspace from nothing in a checkout of its own.
 - *The risk accepted*, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: the whole workspace is
   still built and linted at every merge, so no compile-time edge can be missed. What can be missed is a test
-  whose result depends on something Cargo's graph does not show, such as a file another folder owns that it reads
-  at run time. That edge reaches main and sits there until the next whole run, up to an hour and one run, and
-  some hours more to trace. Until then the script counts main as passing, because the merge that broke it passed
-  its own check, so a later merge that selects the failing test is refused for a fault it did not cause.
+  whose result depends on something Cargo's graph does not show and no edge declares, such as a new test that
+  reads a file another package owns at run time. Nothing finds such a reader when it is added: M7's reviewer
+  searches once, and after that the whole run on main is what catches it. The missed edge reaches main and sits
+  there until the next whole run, up to an hour and one run, and some hours more to trace. Until it is fixed or
+  reverted the script counts main as passing, because the merge that broke it passed its own check, and two
+  things fail for a fault they did not cause:
+  - a later merge whose selection holds the failing test;
+  - every milestone's Ready for Review. After a builder merges, the script runs the test command once more on
+    main's tip in its own checkout, before it sets Ready for Review. That checkout does not differ from the main
+    branch, so the run is the whole workspace. A pass on the same files is reused, so the run costs nothing
+    when no other merge has landed since the milestone's own, and with several builders one usually has.
+
+  So no merge waits for the whole run, but a milestone's Ready for Review does run it, and a fault on main holds
+  every module's milestones there, not only the module that caused it. A builder whose merge or Ready for Review
+  fails in a test its change cannot reach reads `python3 "$ORCHESTRATE_SCRIPT" main-check workspace-tests`
+  before it debugs. Where that shows the test failing on main, the builder leaves the test alone and ends
+  `BLOCKED main_broken:` with the test's name, and the lead has the commit fixed or reverted. Selecting the
+  Ready for Review run by the milestone's own change is the script's to offer, because only the script knows
+  that range; it is an assumption in [the plan](PLAN.md) and a change to raise with the orchestrate skill.
 - *Finer than a package is not built.* Nothing says which test binary of a package a source file reaches without
   a coverage map, and a wrong map misses edges silently. The game's package is a third of what is left and
   depends on everything; it leaves the engine's check when [GAME-SPLIT](../GAME-SPLIT/DESIGN.md) moves the game.
@@ -195,8 +236,12 @@ nothing objecting. Three checks now notice:
 - `./dev check` fails when one test binary's run takes over three minutes by the check's own clock. The message
   names the binary and says what to do: make the test fast, or mark it `#[ignore = "long: …"]` and list it. Three
   minutes is about 2.4 times the slowest binary the tier keeps (74 s), past the 1.6 times load was seen to add,
-  so a correct landing does not fail on someone else's test. The foam scene's binary is exempt by name until M3.
-  A hard stop is the owner's call and an assumption in [the plan](PLAN.md).
+  so a correct landing does not fail on someone else's test. That factor was measured before the main tier
+  existed, and from M1 an hourly release run of the long tests shares the GPU with the merge check, which takes
+  no lock. So before M7 switches the limit on, it measures how long the slowest binary the tier keeps takes
+  while the main-branch check `long-tests` is running: from the script's saved logs of merge checks that
+  overlapped a run, or by running that binary during one. If that is over 90 seconds, the limit is twice it,
+  and the log says so. The foam scene's binary is exempt by name until M3. A hard stop is the owner's call and an assumption in [the plan](PLAN.md).
 - `./dev check-docs` fails when a test marked `long:` sits in a binary the list does not name, so a test cannot
   be marked and then run in no tier.
 - The feature check of mechanism 3.
@@ -253,8 +298,8 @@ or binary over the limit still fails.
 | Interface | For |
 |---|---|
 | A long test: marked `#[ignore]` with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | Any module with a test that takes over about a minute. Its builder adds the binary to the list |
-| The main-tier list, `.config/long-tests.txt`: each long-test binary and each test behind a Cargo feature, with its package, features and build | Any module that adds a long test or a Cargo feature that gates a test |
-| The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules of mechanism 4; `./dev check-all` runs the whole workspace | Every builder, and any module that adds a folder outside a package: until it has a path rule, a change there selects the whole workspace |
+| The main-tier list, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary. The docs check fails a test file or target that names a feature the list does not cover | Any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole |
+| The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
 
 ## Whose code this is built in
 
@@ -274,8 +319,8 @@ landing moves them, whatever your row says. The rows are in build order.
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
 | M1 | `examples/water/tests/floating_gpu.rs`; `examples/v1-game/tests/exit_scene.rs`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`; `crates/thrum-water-model/tests/shore_blend.rs`; the new command and the help text in `tools/xtask/src/main.rs` and its line in `dev`; the new `.config/long-tests.txt`; the listed-binary check in `scripts/repo_check.py` with its suite; the one settings line in `ORCHESTRATE.md` | Nothing. It merges first in wave 1 | No open item runs any of these tests. `DEAD-TOOLS` M1 and M2 edit other arms of `tools/xtask/src/main.rs` and the same help text. `scripts/repo_check.py` is imported by a pinned comparison file: it keeps its name and what that file uses. The check keeps a checkout and a release build of its own, so the lead checks free disk first: builders stall below about 16 GiB |
-| M6 | The lint step and the long-test command in `tools/xtask/src/main.rs`; `.config/long-tests.txt`; the feature check in `scripts/repo_check.py` with its suite; the timeout of the settings line | Nothing | `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 wait for it. `DEAD-TOOLS` M1 edits the script-suite step of the same `main.rs` |
-| M7 | The check command in `tools/xtask/src/` (the selection, the run of test binaries, `check-all`, the limit on one binary) and its tests; one settings line in `ORCHESTRATE.md`; the exemption of the foam's binary, kept with the list | Nothing | `DEAD-TOOLS` M1 and M2 edit the script-suite step, the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
+| M6 | The lint step and the long-test command in `tools/xtask/src/main.rs`; `.config/long-tests.txt`; the feature check in `scripts/repo_check.py`, which already tells a test file from production code, with its suite; the timeout of the settings line | Nothing | `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 wait for it. `DEAD-TOOLS` M1 edits the script-suite step of the same `main.rs` |
+| M7 | The check command in `tools/xtask/src/` (the selection with its path rules and declared edges, the run of test binaries, `check-all`, the limit on one binary) and its tests; one settings line in `ORCHESTRATE.md`; the exemption of the foam's binary, kept with the list | Nothing | `DEAD-TOOLS` M1 and M2 edit the script-suite step, the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
 | M2 | `crates/thrum-water/tests/query_gpu.rs`, `swash_gpu.rs` and `crates/thrum-water/Cargo.toml`; the four conformance files, `support.rs` and `Cargo.toml` of `crates/thrum-clouds/tests`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`, `examples/v1-game/tests/clouds_display_time_gpu.rs`, and the `[[test]]` tables of `examples/v1-game/Cargo.toml`; `.config/long-tests.txt`; `crates/thrum-render/src/atmosphere/gpu/tests.rs` and `tests/reference*` | `TEST-SUPPORT` M2, which is rewriting these test files | `CLOUDS` builds in `thrum-clouds`. No open item names any of these test binaries. `DEAD-TOOLS` M2 edits the `[[bench]]` tables of the same `Cargo.toml`, and its M3 edits `atmosphere/gpu/tests/aerial_ground.rs`, which `atmosphere/gpu/tests.rs` declares |
 | M3 | `examples/water/tests/foam_scene_gpu.rs`; the child's arguments in `examples/water/tests/support/island.rs`; the foam binary's exemption, kept with `.config/long-tests.txt` | `WATERS` M7, whose open items run this test for its ten minutes | `PUDDLES` M5.4 runs the binary and needs only that it passes. `stage_gpu`, `inland_floating_gpu` and `bodies_gpu` also start a child through `island.rs`, each with a test that is not ignored, so running ignored tests in the child changes nothing for them |
 | M4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` M2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
@@ -292,6 +337,12 @@ landing moves them, whatever your row says. The rows are in build order.
   [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md)'s.
 - **A selection finer than a package**, and **a pass reused when a landing touches nothing the check reads**,
   which is the script's to offer.
+- **A standing guard that finds a new run-time reader of another package's files.** A search by text misses a
+  reader that reaches the path through a helper, and the whole run on main catches what it misses. The declared
+  edge and M7's one search are what is built.
+- **Two changes to the orchestrate script**, which the lead can raise with the skill: the Ready for Review run
+  selected by the milestone's own change, and a "was main already broken" run that does not reuse a selected
+  pass, so that a failure outside a merge's selection is not blamed on the incoming branch.
 
 ## What it must not do
 
@@ -305,9 +356,10 @@ where the selection cannot be computed.
 
 A long test is proved by its absence from what `./dev check` runs, by its presence as an ignored test with an
 unchanged body, which a reviewer reads, and by the main-branch check `long-tests` passing on main. A test behind
-a feature is proved by a scratch fault that fails the merge check, and by the same main-branch check. The
-selection is proved by its own tests, which a reviewer reads, by scratch changes whose selection the reviewer
-predicts from the rules, and by the record of what it saves, made before it is switched on. A deleted duplicate
-is proved by the reviewer's list of where each of its assertions still runs. A retired reference is proved by the
-test that replaces it, which the reviewer reads. The machinery is proved by its record: the timings, the load,
+a feature is proved by a scratch fault that fails the merge check, by a scratch gated test file that the list
+covers or the docs check refuses, and by the same main-branch check. The selection is proved by its own tests,
+which a reviewer reads, by scratch changes whose selection the reviewer predicts from the rules and the declared
+edge, and by the record of what it saves, made before it is switched on. A deleted duplicate is proved by the
+reviewer's list of where each of its assertions still runs. A retired reference is proved by the test that
+replaces it, which the reviewer reads. The machinery is proved by its record: the timings, the load,
 the decision, and the test results before and after.

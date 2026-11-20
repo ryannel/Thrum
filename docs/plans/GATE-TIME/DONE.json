@@ -75,8 +75,8 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "`./dev check` builds and lints every test that sits behind a Cargo feature, with that feature on: `thrum-render`'s test targets with `creation-counters`, and the game's with `draw-probe` and `thrum-asset-gpu/fault-probe`, under the lints the rest of the workspace gets. The record gives what the step adds to the check's time.",
-          "ask": "In a scratch copy, add a type error to `crates/thrum-render/tests/ray_instances_seam.rs` and, separately, to `examples/v1-game/tests/cooked_fault_gpu.rs`: does `./dev check` fail on each? What did the step add to the check's time on a warm build, measured, with the load recorded?",
+          "statement": "`./dev check` builds and lints every test that sits behind a Cargo feature, with that feature on: the test targets of each package the main-tier list names, with the features the list gives it, under the lints the rest of the workspace gets. That is `thrum-render` with `creation-counters`, the game with `draw-probe` and `thrum-asset-gpu/fault-probe`, and `thrum-asset-gpu` with its own `draw-probe`. The record gives what the step adds to the check's time.",
+          "ask": "In a scratch copy, add a type error to `crates/thrum-render/tests/ray_instances_seam.rs`; separately to `examples/v1-game/tests/cooked_fault_gpu.rs`; and separately inside the `draw-probe` test of `crates/thrum-asset-gpu/tests/error_types.rs`: does `./dev check` fail on each? Does the step take its packages and features from the list, with no second copy of them in the command? What did the step add to the check's time on a warm build, measured, with the load recorded?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -85,9 +85,9 @@
         },
         {
           "id": "M6.2",
-          "statement": "`./dev long-tests` also runs every test behind a Cargo feature, with its feature on and a GPU required, and they pass in the main-branch check `long-tests` on main at the claimed commit. The main-tier list names each one's package, test binary and features. A test that failed at the starting commit is listed as not run, with its failure and the module that owns it, and is not changed.",
+          "statement": "`./dev long-tests` also runs every test behind a Cargo feature, with its feature on and a GPU required, and they pass in the main-branch check `long-tests` on main at the claimed commit. The main-tier list names each package with its features, and covers it whole or by test binary: `thrum-render` is listed whole with `creation-counters`, so every test binary of that package runs with the feature on and a new one runs with no edit to the list. A test that failed at the starting commit is listed as not run, with its failure and the module that owns it, and is not changed.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
-          "ask": "Search the workspace's manifests and test files for a test behind a Cargo feature: is each in the list with its features, or listed as not run with its failure and its owner? Was any such test edited? How long does one run of `./dev long-tests` take now, and is the settings line's timeout at least twice that?",
+          "ask": "Search the workspace's test files and manifests for a Cargo feature, in `required-features` and in `cfg`: is each test it gates covered by the list with that feature, or listed as not run with its failure and its owner? Was any such test edited? Does the handoff name each test listed as not run? How long does one run of `./dev long-tests` take now, and is the settings line's timeout at least twice that?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -96,8 +96,8 @@
         },
         {
           "id": "M6.3",
-          "statement": "A Cargo feature cannot take a test target out of every tier unnoticed: `./dev check-docs` fails when a test target requires a feature that the main-tier list does not name.",
-          "ask": "In a scratch copy, give one test target `required-features` naming a feature the list lacks and run `./dev check-docs`: does it fail and name the target and the feature?",
+          "statement": "A Cargo feature cannot take a test out of every tier unnoticed, however the test is gated. `./dev check-docs` fails when a test target requires a feature, or a `cfg` in a test file names one, and the main-tier list does not cover that file's package with that feature: whole, or by the test binary the file builds into. The message names the file, the feature and the list.",
+          "ask": "In a scratch copy, add `crates/thrum-render/tests/zz_probe_gpu.rs` holding one test under `#[cfg(feature = \"creation-counters\")]`: does `./dev check-docs` pass, and is that binary among what `./dev long-tests` runs for `thrum-render`, with no edit to the list? Add a file to the game's `tests/` holding one test under `#[cfg(feature = \"draw-probe\")]`: does `./dev check-docs` fail and name the file and the feature, and pass once the list names its binary? Give one test target `required-features` naming a feature the list lacks: does it fail? Does a test file that names no feature still pass?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -137,7 +137,7 @@
         },
         {
           "id": "M7.2",
-          "statement": "`./dev check` runs the unit and integration test binaries of the packages its change can reach and of no other: each workspace package that holds a changed path, and every workspace package that depends on one, directly or through others, as a normal, build or dev dependency. The change is every path that differs between the checkout and its merge base with the main branch, uncommitted and untracked paths included. The build, the lints, the repository guards, the script suites and the doc tests run whole, as they did. The check prints what it selected and why.",
+          "statement": "`./dev check` runs the unit and integration test binaries of the packages its change can reach and of no other: each workspace package that holds a changed path, every workspace package that depends on one, directly or through others, as a normal, build or dev dependency, and the package a declared edge names for a changed path. The change is every path that differs between the checkout and its merge base with the main branch, uncommitted and untracked paths included. The build, the lints, the repository guards, the script suites and the doc tests run whole, as they did, and the draw-probe pass of the cooked-asset tests runs when the game's package is selected. The check prints what it selected and why.",
           "check": "sh -c 'out=$(cargo test --locked --offline -p xtask selection 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Read the selection's tests: do they cover a file of a package nothing depends on, a file of a package others depend on, an edge that is only a dev dependency, and an uncommitted file? In a scratch branch that changes one source file of `thrum-rain-model`, which test binaries does `./dev check` run, and does it still lint the whole workspace? In one that changes `thrum-core`?",
           "target": "mac-metal",
@@ -150,6 +150,16 @@
           "id": "M7.3",
           "statement": "Where the selection cannot be sure, `./dev check` runs the whole workspace's tests and says why. That is so for a change to the root manifest, the lockfile, the toolchain file, the lint configuration, `./dev` itself, `tools/xtask` or the test runner's own configuration; for a changed path the design gives no rule; and for a checkout with no merge base, with no difference from the main branch, or with a dependency graph the check cannot read. Markdown, `docs/` outside `docs/evidence`, the plans, `.agents/`, `.github/`, `scripts/` and the data under `.config/` that only the guards read select no Rust test.",
           "ask": "Read the path rules and their tests: is every rule of the design there, and does a path with no rule select everything? In scratch branches, change only `Cargo.lock`; only `rust-toolchain.toml`; add a file in a new top-level folder; and check out main's tip with nothing changed: does each run the whole workspace and say why? Does a branch that changes only a Markdown file and a script run no Rust test binary, and still run the guards and script suites?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.9",
+          "statement": "A test that reads another package's files when it runs is selected when those files change. A declared edge, kept and tested with the path rules, names a path and the package whose own test binaries a change under it selects as well. `crates/thrum-asset-gpu/src/` selects `thrum-render`, whose guard on where cooked pipelines are created scans that folder. No test code reads a tracked file outside its own package except through a dependency of its package, a declared edge, or a path that selects the whole workspace.",
+          "ask": "In a scratch branch that changes only one file under `crates/thrum-asset-gpu/src/`, does `./dev check` run `every_cooked_pipeline_goes_through_the_seam_and_escapes_nothing`, and say that a declared edge selected `thrum-render`? Does it leave out the packages that depend on `thrum-render` and not on `thrum-asset-gpu`? Search test code for a reader outside its own package: `CARGO_MANIFEST_DIR` joined with a path that climbs out of the package, and `include_str!`, `include_bytes!` or `#[path]` that does. Is each one a dependency of the reader's package, a declared edge, a path that selects everything, or scratch under `tmp/`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -189,8 +199,8 @@
         },
         {
           "id": "M7.7",
-          "statement": "`./dev check` and `./dev check-all` fail when one test binary's run takes over three minutes by the check's own clock. The message names the binary and says what to do: make the test fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. The foam scene's binary is exempt by name until M3, and no other binary is.",
-          "ask": "In a scratch copy, add a test that sleeps 200 seconds to a fast binary of a selected package: does `./dev check` fail and name the binary, with what to do? Is any binary exempt but the foam scene's?",
+          "statement": "`./dev check` and `./dev check-all` fail when one test binary's run takes over the limit by the check's own clock. The limit is three minutes, or twice the time the slowest binary the check keeps took while the main-branch check `long-tests` was running, where that time is over 90 seconds; the record gives that time and the log gives the limit. The message names the binary and says what to do: make the test fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. The foam scene's binary is exempt by name until M3, and no other binary is.",
+          "ask": "In a scratch copy, add a test that sleeps past the limit to a fast binary of a selected package: does `./dev check` fail and name the binary, with what to do? Is any binary exempt but the foam scene's? Does the record give the slowest kept binary's time from a check that overlapped a run of the main-branch check `long-tests`, and is the limit at least twice it?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

@@ -58,6 +58,7 @@ What M1 deletes, each the owner's call where the plan says so:
 |---|---|---|
 | The headless release-trust toolchain, written 1 to 3 November to prepare and verify a sealed release build for an example since deleted, run by nothing, compiled by every check. Fifteen scripts: `prepare_headless_cargo_home`, `prepare_macos_tool_root_clone`, `inventory_headless_tool_roots`, `run_bounded_native_build`, `qualify_held_macos_native_ab`, `release_cargo_selection`, the three `hold_macos_*` and the six `verify_*`. Their thirteen `test_*` suites, and the binary `tools/xtask/src/bin/rustc_receipt.rs` | P1-01, P2-01, L5-01 | 8,500 lines |
 | Thirteen one-shot milestone proof scripts and `creator_profile_probe.rs`, each written for one milestone of `APPLE-TILE`, `APPLE-PRESENTATION`, `COOKED-DRAW`, `CREATOR` or `TRANSPORT`. M1.2's check lists them | P1-03 | 1,650 lines |
+| Three files that only one of those scripts, `reconstruction_motion.py`, runs: `capture_mac_m2_ungranted.py`, `mac_m2_capture_launcher.swift` and `review_v1_playback.mjs`. Deleting their one caller leaves them dead, and the rule `script-caller` of mechanism 8 would count them | P1-02 and L5-02, in their verifiers' notes | 210 lines |
 | `culling_campaign.py` and its suite. `CULLING` is Done and its plan says no loaded campaign repeats | G2-05 | 350 lines with M4's half |
 
 **4. The check finds script suites itself.** Today `./dev check` runs 8 of 29 `scripts/test_*.py` suites from a
@@ -137,25 +138,68 @@ each later milestone here lowers a count as it deletes.
 | Rule | What it counts | Who lowers it |
 |---|---|---|
 | `evidence-path` | A source file under `crates`, `examples`, `scripts` or `tools` that names a path under `docs/evidence`, except the evidence store's code that restores history | M3 and M4, to zero |
-| `script-caller` | A file under `scripts/` that nothing standing names: not `dev`, `tools/xtask`, a CI workflow, a `Main-branch check` line, Rust source, a tracked document outside the plans folder, nor another script that is itself called. A suite is counted with the script it tests | M1, by its deletions |
-| `bench-runner` | A `[[bench]]` target that no script, `./dev` command, CI workflow or tracked document outside the plans folder names | M2, to the benches left for a second landing |
+| `script-caller` | A file under `scripts/` that nothing names: not `dev`, `tools/xtask`, a CI workflow, a `Main-branch check` line, Rust source, a done-when item's check, a tracked document outside the plans folder and `docs/evidence`, nor another script that is itself named. A suite is counted with the script it is named for, and a suite named for no script is not counted | M1, by its deletions |
+| `bench-runner` | A `[[bench]]` target that no script, `./dev` command, CI workflow or tracked document outside the plans folder and `docs/evidence` names | M2, to the benches left for a second landing |
 | `shader-text-edit` | A `.replace(` or `.replacen(` in a non-test Rust file that mentions WGSL. It is coarse on purpose | Nobody in this track: [the design it waits for](../ARCHITECTURE.md#not-planned-in-track-6) is not planned yet |
 
-`script-caller` is mechanism 1 as a rule, with one caller left out: a done-when item's check. A milestone's check
-stops running when the milestone is Done, so counting it would raise the count on the day a milestone closed and
-fail the next unrelated merge. The consequence is that a new script only its own milestone's check runs is
-refused, and its message says what to do: give the script a standing caller, or keep a proof tool that only one
-milestone runs in that milestone's evidence folder, where an item's check can still run it. That is a change to
-how every module adds a proof tool, so it is an assumption in [the plan](PLAN.md). `shader-text-edit` rides here
-because it is one landing in the same matcher file, and its message names the hook shape the engineering
-patterns already ask for. A rule's message always says what to write instead.
+**`script-caller` is the merge's gate, and it is looser than mechanism 1 on purpose.** Mechanism 1 is the test a
+person applies before deleting, and asks what runs a tool today. The rule asks only whether anything names the
+script, and takes as naming it two things mechanism 1 does not: a document that merely mentions it, and a
+done-when item's check whether its milestone is open or Done. Each keeps the count from moving at a time no
+builder controls. A count that followed open checks only would rise on the day a milestone closed and fail the
+next unrelated merge. So the rule refuses a script that nothing names at all, and its message says what to do:
+name it from what runs it.
+
+**A proof tool is tracked.** A script that only its own milestone's check runs lives under `scripts/`, at the
+path its item names. By the owner's rule that
+[a file a check reads is test data, not evidence](../../../ORCHESTRATE.md#starting-from-a-clean-clone), it is
+not kept in the evidence folder: there no reviewer would read it in the merge, and it could change after the
+review without a trace. Its item's check is what names it, so it lands with no extra step. Nine scripts that
+open items name and nobody has written yet land that way:
+
+| Script | Open items that name it |
+|---|---|
+| `swarm.py`, `swarm_sim.py` | `SWARM` |
+| `game_ui.py`, `game_ui_sim.py` | `GAME-UI`, `SWARM` |
+| `render2d_sim.py` | `RENDER-2D`, `GAME-UI`, `SWARM` |
+| `view_volume.py`, `atmosphere_cost.py` | `ATMOSPHERE` |
+| `repo_layout.py`, `open_check_names.py` | `REPO-RULES`, `GAME-SPLIT` |
+
+When its milestone is Done a proof tool is history. Nothing runs it again, mechanism 1 calls it dead unless
+something else has come to run it, and any landing may delete it, as
+[ruling 1](../ARCHITECTURE.md#seam-rulings-for-track-6) allows and as M1 does for the thirteen there are today.
+Nothing deletes it on the day its milestone closes, so such tools stay until a cleanup landing takes them. That
+is the cost of tracking them, and an assumption in [the plan](PLAN.md).
+
+**A deletion must not raise a count.** Deleting a script's last caller, or a bench's, leaves it counted where it
+was not, and the engine refuses a count above the lowest it has held. Two things keep a correct deletion from
+failing its own check:
+
+- *Records are not callers.* `docs/evidence` and the working folder name scripts and benches as history, and M3
+  deletes 373 such records. Neither rule reads them, so M3 moves no count.
+- *The change that removes a last caller deletes what it orphans, or gives it another caller, in the same
+  landing.* That holds for a deleted script, document or Rust file in any module, and for a planner who drops
+  the last check that names a script. The rule's failure names the orphaned file. M1 meets it once: deleting
+  `reconstruction_motion.py` orphans the three files listed with what M1 deletes, which go with it.
+
+A suite named for no script, such as `test_shape_ratchet.py`, is not counted, because M1.3 takes the hand-kept
+list of suites out of the check: from then on the check runs every suite it finds and names the ones it
+excludes, so no suite is unrun and unnamed. There are six today.
+
+The planner ran an approximation of the rule on the planning commit, which matches by file name and Python
+import, so its counts are rough: about 35 of 179 files counted, 11 of them deleted by M1, and M1's deletions
+orphan the three files above and no other. The script and its output are in the working folder, under
+`planning/`.
+
+`shader-text-edit` rides here because it is one landing in the same matcher file, and its message names the
+hook shape the engineering patterns already ask for. A rule's message always says what to write instead.
 
 ## Interfaces
 
 | Interface | For |
 |---|---|
 | Where evidence goes: run records in the working folder, test data in fixtures, and the rule `evidence-path` | Every builder and planner |
-| The rules `script-caller`, `bench-runner` and `shader-text-edit`, each a count that can only fall | Every builder: a new script or bench needs something standing that runs it, and a new shader variant is not made by replacing text |
+| The rules `script-caller`, `bench-runner` and `shader-text-edit`, each a count that can only fall | Every builder and planner. A new script needs something that names it, which for a proof tool is its item's check, and a new bench needs something that runs it. A change that removes a script's or a bench's last caller deletes it or names it elsewhere in the same landing. A new shader variant is not made by replacing text. The modules whose open items name scripts not yet written (`SWARM`, `GAME-UI`, `RENDER-2D`, `ATMOSPHERE`, `REPO-RULES`, `GAME-SPLIT`) land them as their items say |
 | A module's provenance record, tracked at `docs/provenance/<MODULE>.md` | Every module that copies or translates a file from elsewhere, and whoever publishes the code |
 | The evidence manifest under `.config/`, with `evidence_store.py check` and `restore` as they were | Every builder and reviewer. It changes [REPO-RULES](../REPO-RULES/DESIGN.md) M2's interface only in where the manifest is kept |
 
@@ -171,7 +215,7 @@ makes the same edit again. The rows are in build order, so M5 is first and M6 se
 |---|---|---|---|
 | M5 | Five new files, `docs/provenance/SEA.md`, `WATERS.md`, `CLOUDS.md`, `PUDDLES.md` and `RIVERS.md`; the `docs/provenance/` row of `docs/REPOSITORY.md`; one line at the head of each module's `PROVENANCE.md` in the working folder, which Git does not hold | Nothing | `CLOUDS` M6 waits for this milestone. Nobody else writes under `docs/provenance` |
 | M6 | The four rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`, and the sections of the engineering patterns their messages point at | Nothing | `TEST-SUPPORT` M5 adds two rules to the same files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
-| M1 | The deleted files under `scripts/`; `tools/xtask/src/bin/rustc_receipt.rs`; the script-suite step of `tools/xtask/src/main.rs`; the three F4 and T2 headless-build designs under `docs/design/` and the research notes that link the toolchain; the toolchain's rows of `docs/design/maturity.json`, and its entries in `.config/shape-baseline.json` and `.config/architecture.toml` | Nothing | No builder is in these scripts. `CLOUDS` works in `scripts/reference/cloud/`, which is not touched. `GATE-TIME` M1 adds a command to the same `main.rs` |
+| M1 | The deleted files under `scripts/`, with any file there that a deletion leaves with no caller; `tools/xtask/src/bin/rustc_receipt.rs`; the script-suite step of `tools/xtask/src/main.rs`; the three F4 and T2 headless-build designs under `docs/design/` and the research notes that link the toolchain; the toolchain's rows of `docs/design/maturity.json`, and its entries in `.config/shape-baseline.json` and `.config/architecture.toml` | Nothing | No builder is in these scripts. `CLOUDS` works in `scripts/reference/cloud/`, which is not touched. `GATE-TIME` M1 adds a command to the same `main.rs` |
 | M2 | `crates/thrum-render/benches/` and the `[[bench]]` tables and bench dependency of `crates/thrum-render/Cargo.toml`, with the `Cargo.lock` entries that follow from it; `examples/v1-game/benches/field_culling.rs`, `material_reload.rs`, `g2r.rs` and `frame.rs`, and the `[[bench]]` tables of `examples/v1-game/Cargo.toml`; the `baseline-inventory` command in `tools/xtask/src/main.rs`; its row in `CONTRIBUTING.md` | Nothing | `HOST` edited `field_culling.rs` seven times in three days and its M3.2 asks about benches, so deleting first saves it work: tell its builder. `GATE-TIME` M2 edits the `[[test]]` tables of the same game manifest |
 | M3 | The deletions under `docs/evidence/`; one link in `docs/design/decisions/G7-SHOWCASE-ROUTE.md`; `scripts/render2d.py`, `test_render2d.py` and the receipts they read; `crates/thrum-render/src/atmosphere/gpu/tests/aerial_ground.rs` and its volumes; `scripts/evidence_store.py`, its suite and the two manifests; `.gitignore`; the evidence text of `AGENTS.md`, `CONTRIBUTING.md`, `docs/ASSET-LIFECYCLE.md`, `docs/REPOSITORY.md`, the engineering patterns and `scripts/shape_matchers.py` | Nothing | `RENDER-2D` edits `render2d.py`, and its open M2.10, M2.11, M5.4 and M5.5 run `render2d.py costs`, which must read the same receipts after the move. `GATE-TIME` M2 edits `atmosphere/gpu/tests.rs`, which declares `aerial_ground` |
 | M4 | The cost and proof scripts that name `docs/evidence` (`cloud_cost.py`, `water_cost.py`, `river_cost.py`, `rain_cost.py`, `scene_view_cost.py`, `sim2d_conformance.py`, `session_memory.py`, `session_prediction.py`, `ray_tracing_proof.py`, `transport_link.py`, `environment_products.py`, `cache_reconstruction.py`, `check_g5_tripwires.sh`, one line of `run_v1_showcase.py`); the tests and benches that do (`thrum-cloud-model`'s optics test, three `thrum-river-model` tests, the cooker's edit-to-visible bench, the game's `cooked_edit` bench, one line of the game's `host.rs`); the records they read, moved to fixtures; `examples/v1-game/tests/valley_route_support/` | `TEST-SUPPORT` M2, which is rewriting `valley_route_support` | The busiest set here. Open checks of `CLOUDS`, `WATERS`, `RENDER-2D`, `SESSION` and `RAY-TRACING` run these scripts, and their builders edit them: each command must run as it did and read the same prior record |
@@ -201,8 +245,9 @@ provenance record says was copied, from where, or under what licence.
 ## Proof
 
 A deletion is proved by the name's absence from everything that is left, by `./dev check` and `./dev check-docs`
-passing, and by a reviewer applying mechanism 1 to what was deleted and to what was kept. A move of test data is
-proved by Git blobs that match and by the tests that read it. The manifest is proved by the store's own check
-and suite, with the counts it reported before. A rule is proved by its fixtures, which a reviewer reads, by its
-count holding from the commit it landed on, and for `evidence-path` by its zero. A tracked
-provenance record is proved by a reviewer reading it against the working-folder record it came from.
+passing with no frozen count raised, and by a reviewer applying mechanism 1 to what was deleted and to what was
+kept. A move of test data is proved by Git blobs that match and by the tests that read it. The manifest is
+proved by the store's own check and suite, with the counts it reported before. A rule is proved by its fixtures,
+which a reviewer reads, by a reviewer's own count against the log's, by its count holding from the commit it
+landed on, and for `evidence-path` by its zero. A tracked provenance record is proved by a reviewer reading it
+against the working-folder record it came from.
