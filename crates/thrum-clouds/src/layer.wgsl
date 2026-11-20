@@ -91,10 +91,25 @@ const SUN_FOOTPRINT = array(
     vec2(-1.0,0.0), vec2(0.5,-0.8660254), vec2(0.5,0.8660254),
 );
 
+fn probe_sun_depth(point:vec3<f32>,direction:vec3<f32>,reach:f32,footprint:f32)->f32 {
+    var depth=0.0;
+    var distance=0.0;
+    for (var segment=0u; segment<240u && distance<reach; segment++) {
+        let width=min(reach-distance,max(32.0,0.017*distance));
+        depth+=cloud_density(point+direction*(distance+0.5*width),max(footprint,0.5*width))*width;
+        distance+=width;
+    }
+    return depth;
+}
 fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->vec2<f32> {
     let samples = cloud.settings.y;
     if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
     let path = mapping.path_border.xyz;
+    if path.y < 0.18 && distance < 15000.0 {
+        let outside=probe_sun_depth(point,path,(cloud.heights.y-point.y)/path.y,footprint);
+        let inside=probe_sun_depth(point,-path,(point.y-cloud.heights.x)/path.y,footprint);
+        return vec2(outside,outside+inside);
+    }
     // A grazing ray can stay inside the same lobe for hundreds of metres.
     // Resolve that relief in the full density before asking the cached path
     // for everything beyond it. Keep the sample spacing when extending.
