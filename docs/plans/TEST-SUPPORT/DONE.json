@@ -92,8 +92,8 @@
           "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device. The support package's stand-in is gone, and a test's device is the recipe's, by profile and restriction.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates examples",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
@@ -103,8 +103,8 @@
           "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
           "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition, and is that shown by a compile for a target that is not macOS? Does any GPU test still return early without asking the gate, so that no skip line is written?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
@@ -113,8 +113,8 @@
           "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`. The includes of game source went with `GAME-SPLIT` M2.",
           "check": "python3 scripts/shape_rules.py check --rule path-attribute --zero crates",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },

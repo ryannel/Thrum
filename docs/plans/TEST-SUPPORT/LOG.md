@@ -1,5 +1,11 @@
 # TEST-SUPPORT log
 
+- 2026-11-20 Fixed M2's review findings. Diagnostic device adjustments respect the limits and features
+  selected by the recipe and registry. CPU tests stay in their harnesses, Metal tests report unavailable
+  prerequisites through the GPU gate, and the sprite fixtures use declared modules. Verified the repaired
+  cases on Mac Metal, the three shape checks, and graph compilation for iOS Simulator and Wasm.
+  [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md).
+
 - 2026-11-20 Routed workspace GPU tests and benches through the gate and HOST's device recipe.
   The three shape rules reached zero in their milestone scopes, and the 13 CPU graph cases compiled
   for iOS Simulator and Wasm. The Mac comparison matched every baseline pass with the GPU required.
