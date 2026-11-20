@@ -478,6 +478,35 @@
         "by": "plan",
         "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
         "at": "2026-11-17T23:05:22Z"
+      },
+      "ready_for_review": {
+        "commit": "ebedfa644d44cd6093be858b6e761cf56934b784",
+        "checked": "efe3deb01cbb4aec5d007be100bef7f635e070d8",
+        "at": "2026-11-20T07:24:47Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.1",
+        "path": "headless",
+        "usage": {
+          "input": 481012,
+          "cached": 90261376,
+          "output": 116495,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 481012,
+          "cached": 90261376,
+          "output": 116495,
+          "turns": 1
+        }
       }
     },
     "M6": {
