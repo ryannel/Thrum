@@ -1,27 +1,27 @@
 {
   "module": "TEST-SUPPORT",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/TEST-SUPPORT/design-review.md",
-    "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
-    "hash": "4f54ade3024d9add839e5284cfcd9ab04103891bca0c9effab4266250d74425c",
+    "commit": "fd4db4ae62c7b604cc9ebd93f3c21444b5d2cb73",
+    "hash": "aac0dcaacf23b156bb764f1a974bc685a51ff485889c83ef2d8bd6e6f574bb7d",
     "by": "review",
-    "host": "codex",
-    "model": "gpt-6-astra",
+    "host": "claude",
+    "model": "claude-opus-5-5",
     "effort": "high",
     "observed": {
-      "model": "gpt-6-astra",
-      "effort": "high"
+      "model": "claude-opus-5-5"
     },
-    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "cli": "2.1.319 (Claude Code)",
     "path": "headless",
     "usage": {
-      "input": 92294,
-      "cached": 930304,
-      "output": 5969,
+      "input": 116586,
+      "cached": 3032965,
+      "output": 36810,
+      "cost_usd": 2.275161,
       "turns": 1
     },
-    "at": "2026-11-14T23:30:29Z"
+    "at": "2026-11-20T11:46:58Z"
   },
   "milestones": {
     "M1": {
@@ -270,6 +270,29 @@
         "turns": 1
       },
       "at": "2026-11-14T22:41:04Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/TEST-SUPPORT/design-review-2.md",
+      "commit": "e5377f7e75424fbf6bc672180c7f272344af52da",
+      "hash": "4f54ade3024d9add839e5284cfcd9ab04103891bca0c9effab4266250d74425c",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 92294,
+        "cached": 930304,
+        "output": 5969,
+        "turns": 1
+      },
+      "at": "2026-11-14T23:30:29Z"
     }
   ]
 }
