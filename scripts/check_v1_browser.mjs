@@ -1249,7 +1249,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const onDestroy = () => { intentionalDestroys++; };
   const url = exitCase
     ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
-    : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+    : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}&route-check` : routeDiagnostic ? `${origin}/?route-check` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   const cullingQuery = movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
@@ -1778,6 +1778,10 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
   if (exit && (exit.row_generation !== 1 || exit.active !== 10000 || exit.culling !== 'Frustum' || exit.in_view < 1)) {
     throw new Error(`${mode}: exit scene did not draw the cooked rows: ${JSON.stringify(exit)}`);
   }
+  const backing = await game.invoke("const canvas = document.querySelector('#scene'); return [canvas.width, canvas.height];");
+  if (backing[0] !== 1280 || backing[1] !== 720 || !settled.report.includes('extent=1280x720;')) {
+    throw new Error(`${mode}: expected a 1280x720 route check backing and render extent, got ${backing.join('x')} and ${settled.report}`);
+  }
   const clip = await game.invoke(`const r=document.querySelector('canvas').getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};`);
   if (![clip.x, clip.y, clip.width, clip.height].every(Number.isFinite) || clip.width <= 0 || clip.height <= 0) throw new Error(`${mode}: canvas screenshot clip unavailable`);
   const image = await screenshot(cdp, sessionId, output, mode, { file: `${mode}.png`, clip });
@@ -1814,7 +1818,7 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
     await fs.writeFile(path.join(output, name), pixels);
     submitted = { file: name, sha256: sha(pixels), mode: 'fixed', width: frame.width, height: frame.height, ...frame.metadata };
   }
-  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, startup, exit, submitted, image: { ...image, clip },
+  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, startup, exit, submitted, backing, image: { ...image, clip },
     scope: 'Fresh page launched with ?assets and ?params; preset applied with nothing refused, world paused at one tick and the cooked valley drawn before a canvas capture; startup records a polled bracket for navigation to the first cooked draw, not first-paint latency; no frame-time claim' };
 }
 

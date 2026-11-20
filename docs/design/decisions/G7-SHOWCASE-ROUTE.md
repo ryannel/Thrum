@@ -176,6 +176,7 @@ Pixel parity is a regression tripwire. It is not visual review. Each milestone r
 
 The route is repeatable when two consecutive `check` runs from clean scratch produce stop frames that agree with
 each other under the same metric, on both targets.
+The Chrome stop checks hold the original 1280 × 720 render backing at the calibrated viewport.
 - **Baseline.** The accepted run's stop frames stay as raw files in its run directory under `tmp/g7-showcase/runs/`,
   and as one compact contact sheet in the evidence page. `tmp/` is not checked in, so the per-stop 32×18 grids are
   checked in at `examples/v1-game/tests/fixtures/showcase/valley-baseline.json`. Its identity is the comparator

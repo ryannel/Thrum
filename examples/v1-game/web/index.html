@@ -84,7 +84,8 @@
             canvas.height = height;
           }
         }
-        const fixedGrid = sprites || (exit && probe.has("measure")) || probe.has("resize-probe");
+        // The route comparison uses the canvas's authored backing size at the calibrated viewport.
+        const fixedGrid = sprites || (exit && probe.has("measure")) || probe.has("resize-probe") || probe.has("route-check");
         let backingDirty = true;
         let lastDpr;
         if (!fixedGrid) {
