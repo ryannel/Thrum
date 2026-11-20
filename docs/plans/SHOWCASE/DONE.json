@@ -227,10 +227,10 @@
           "statement": "On the Mac, from the lookout at the sunset-clear-sun stop, in views 20 degrees either side of it, and with that view held from 17.2 to 17.8 h, no band of brighter ground lies along the rim of the lookout's ground. Where the ground ends, the valley beyond reads as distant ground past the lookout's edge.",
           "inspect": "Capture with the Mac's fixed engine capture, TAAU on: the stop's preset, the same hour at yaw -70 and -110, and the stop's view at 17.2, 17.3, 17.5, 17.6, 17.7 and 17.8 h. Judge each frame whole and in a native-size crop of the rim, beside the same crop taken from the commit this milestone started from. Two things in these frames are not the band: a lit lookout in front of a valley floor already in shadow, which is a depth edge, and the edge of the west ridge's shadow where it lies across the lookout after 17.4 h, whose quality `ATMOSPHERE` owns and this item does not judge.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/inspection-list.md",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.2",
@@ -238,20 +238,20 @@
           "inspect": "Capture the sunrise preset with the Mac's fixed engine capture, TAAU on. Judge the frame whole and in a native-size crop of the two props and their shadows.",
           "ask": "Does the route decision's table give the hour that `examples/v1-game/params/showcase-sunrise.params.json` holds, and is that the only stop preset whose values changed since the commit this milestone started from?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/README.md",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.3",
           "statement": "The layout, regenerated on the changed terrain, holds exactly 10,000 entities, between 1,000 and 2,000 of them movers. Every still prop rests on the shipped terrain's surface, and none stands inside the lookout or the camera's swept path on the exit flythrough. Every mover's whole loop stays inside the valley and clear of the ground. The generator reproduces the layout byte for byte.",
           "check": "python3 scripts/run_v1_showcase.py layout",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/layout.log",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.4",
@@ -260,10 +260,10 @@
           "lock": "chrome",
           "ask": "Read the bare valley's check in `scripts/run_v1_showcase.py` and the record of a canonical run at the claimed commit. Does the canonical check fail when the baseline file is absent, and when its identity differs in any one part, the frame-source version included? Does the record show the baseline `compared`, with all six stops on each target under the thresholds? Does it show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/valley-canonical/run.json",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.5",
@@ -272,10 +272,10 @@
           "lock": "chrome",
           "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files, and the record of an exit check at the claimed commit. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the record show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's? Does the log give each baseline file's old and new SHA-256 and the cause?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/exit-canonical/run.json",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.6",
@@ -285,8 +285,8 @@
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.7",
@@ -294,10 +294,10 @@
           "check": "! grep -rlE '70d2baf823d09d85|3083a794f8379630' examples/v1-game/routes",
           "ask": "List the files in `examples/v1-game/routes/` at the commit this milestone started from, with each one's `cooked_root`. The old valley root is the one `moving-v1.json` named there and the old exit root the one `exit-flythrough.json` named there; the check greps for the two known at planning. Then read this milestone's diff of that folder against that commit with `git diff`. Does every file that named the old valley root now name the root `moving-v1.json` names, and every file that named the old exit root, `exit-fast-yaw.json` among them, the root `exit-flythrough.json` names? In each of those files, does the diff change only `cooked_root`, and `cooked_generation` where the generation moved?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/route-pins.json",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.8",
@@ -306,10 +306,10 @@
           "lock": "gpu",
           "ask": "Does this milestone's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Do the receipts M6 retained, the ones M6's review cites, still name the exit root that `exit-flythrough.json` pinned at the commit this milestone started from?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/culling-metal/run.json",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M9.9",
@@ -317,25 +317,18 @@
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/culling-chrome/run.json",
-          "builder_result": "pass",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         }
       ],
-      "failed_reviews": 1,
+      "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "diagnoses": 0,
-      "status": "in_progress",
+      "diagnoses": 1,
+      "status": "not_started",
       "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome.",
-      "findings": [
-        {
-          "name": "Fixture relocation changes protected registry fields and a comparison file",
-          "item": "M9.6",
-          "planner": "The required fixture relocation changes the registered input locations. M9.6 freezes those fields and the native comparison driver that resolves the old location. Reconcile the permitted path-only migration with the protection of comparison behavior.",
-          "repeat": false
-        }
-      ]
+      "diagnosed_for_planner_finding": true
     },
     {
       "id": "M7",

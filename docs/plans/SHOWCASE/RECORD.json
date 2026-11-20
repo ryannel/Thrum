@@ -276,7 +276,7 @@
       }
     },
     "M9": {
-      "definitions": "0d4261b79be87bcf5e816704edf9c566c337717a1c5c44e8ead02036f555c7b9",
+      "definitions": "bdb952366a86c5803162e3d6fa68644d3c44644ee3cf0b915f25c7148e8520dd",
       "reviews": [
         {
           "verdict": "fail",
@@ -321,37 +321,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix",
-        "at": "2026-11-19T11:03:50Z"
-      },
-      "ready_for_review": {
-        "commit": "cd0c011e5cb66884b6c67a7ae96ed43efbffd204",
-        "checked": "c9c13d132b966f3ab651b7bda426192a527ed785",
-        "at": "2026-11-20T05:48:05Z",
-        "reused": [
-          "Test command"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.1",
-        "path": "headless",
-        "usage": {
-          "input": 786651,
-          "cached": 90954752,
-          "output": 134083,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 786651,
-          "cached": 90954752,
-          "output": 134083,
-          "turns": 2
-        }
+        "task": "Diagnose SHOWCASE M9. Its only review failed one finding on M9.6: the fixture relocation changed registered input locati",
+        "at": "2026-11-20T07:58:48Z"
       }
     }
   },
@@ -395,11 +366,15 @@
     {
       "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why. This is the last of 2 design review rounds: the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-19T11:03:50Z"
+    },
+    {
+      "task": "Diagnose SHOWCASE M9. Its only review failed one finding on M9.6: the fixture relocation changed registered input locations in .config/exact-baselines.json (reference and covered_paths) and the BASELINE path in scripts/apple_tile_m1.py, which M9.6 freezes. Review: .orchestrate/evidence/SHOWCASE/M9-review.md. Context from the lead: the relocation was the lead's ruling, not builder drift. The orchestrate merge guard refuses commits that change files under docs/evidence, and files a check reads are test data, so the 36 tracked baselines moved out of docs/evidence with identical bytes. M9.6 was written before that ruling. Its intent is that comparison behaviour and inputs stay fixed, and a path-only move keeps that. The reviewer found the bytes and the comparison logic unchanged apart from the path. Amend whatever in the plan is at fault so a path-only relocation with identical bytes passes, while still protecting comparison behaviour. Write each changed item again from what it claims, and end with PLANNED. If you judge the plan sound, end with the KEEP form naming who must act.",
+      "at": "2026-11-20T07:58:48Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-19T11:03:50Z"
+    "at": "2026-11-20T07:58:48Z"
   },
   "design_history": [
     {
