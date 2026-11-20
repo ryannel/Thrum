@@ -42,3 +42,8 @@
   shared shader constants from Rust. The Mac tests rejected a type change and a copied declaration and exercised
   the changed renderer paths on Metal. Registered images use the shared main-branch proof.
   [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md).
+- 2026-11-20 Addressed the M2 review. Cluster vacancies use whole records, and allocations and binding spans
+  use record sizes. The generated WGSL covers dispatch dimensions, display and exposure selectors, and the Sun
+  disc tangent. The frozen SDR shader is byte-identical to the pre-M2 file and compiles independently.
+  Verified the scoped renderer tests on Mac, including the retained SDR pixels and scene source fingerprints.
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md).
