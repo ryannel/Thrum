@@ -220,7 +220,9 @@ impl Volume {
 #[test]
 #[ignore = "one-time recording on the unchanged pass before M9; retained bytes are checked below"]
 fn above_ground_bytes_record() {
-    let Some(test_gpu) = thrum_test_support::gpu("above_ground_bytes_record", Some(wgpu::Backend::Metal)) else {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("above_ground_bytes_record", Some(wgpu::Backend::Metal))
+    else {
         return;
     };
     pollster::block_on(async {
@@ -245,7 +247,9 @@ fn above_ground_bytes_record() {
 
 #[test]
 fn above_ground_bytes_preserved() {
-    let Some(test_gpu) = thrum_test_support::gpu("above_ground_bytes_preserved", Some(wgpu::Backend::Metal)) else {
+    let Some(test_gpu) =
+        thrum_test_support::gpu("above_ground_bytes_preserved", Some(wgpu::Backend::Metal))
+    else {
         return;
     };
     pollster::block_on(async {
@@ -342,8 +346,10 @@ fn cases() -> Vec<(f64, f64, f64, bool)> {
 
 #[test]
 fn near_ground_reads_match_their_own_column() {
-    let Some(test_gpu) = thrum_test_support::gpu("near_ground_reads_match_their_own_column", Some(wgpu::Backend::Metal))
-    else {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "near_ground_reads_match_their_own_column",
+        Some(wgpu::Backend::Metal),
+    ) else {
         return;
     };
     pollster::block_on(async {

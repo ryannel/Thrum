@@ -61,9 +61,10 @@ fn transmission(point: [f64; 3], sun: [f64; 3]) -> [f64; 3] {
 #[test]
 fn metal_h1_lent_sun_meets_low_altitude_f64_quadrature() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("metal_h1_lent_sun_meets_low_altitude_f64_quadrature", Some(wgpu::Backend::Metal))
-        else {
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_h1_lent_sun_meets_low_altitude_f64_quadrature",
+            Some(wgpu::Backend::Metal),
+        ) else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
@@ -147,9 +148,10 @@ fn metal_h1_lent_sun_meets_low_altitude_f64_quadrature() {
 #[test]
 fn metal_h1_lent_receiver_matrix_at_two_camera_origins() {
     pollster::block_on(async {
-        let Some(test_gpu) =
-            thrum_test_support::gpu("metal_h1_lent_receiver_matrix_at_two_camera_origins", Some(wgpu::Backend::Metal))
-        else {
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_h1_lent_receiver_matrix_at_two_camera_origins",
+            Some(wgpu::Backend::Metal),
+        ) else {
             return;
         };
         let adapter = test_gpu.adapter.clone();
