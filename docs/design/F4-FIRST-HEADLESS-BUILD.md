@@ -1,5 +1,7 @@
 # First headless build from admitted source
 
+Retired: the headless release-trust toolchain this describes, its scripts, their suites and the `rustc_receipt` binary, left the tree in DEAD-TOOLS M1; main `7e30ba7e4` is the last commit that holds it.
+
 2 November 2026. **Selected narrow native build profile; implementation and
 qualification progress are recorded separately.** This resolves the first
 source-to-build handoff under [C01, C05 and C10](CONTRACTS.md), the
@@ -158,7 +160,7 @@ gate.
 The [first-profile release trust proposal](T2-NATIVE-RELEASE-TRUST.md) makes
 the origin and manifest choice reviewable before a local root can be promoted.
 
-The first [native preparation tool](../../scripts/prepare_headless_cargo_home.py)
+The first native preparation tool (`scripts/prepare_headless_cargo_home.py`)
 now copies and SHA-checks every lockfile archive and exact index records from
 a local host cache before Cargo resolves in the private home. It prunes
 unselected archives, rechecks offline resolution and records a
@@ -241,7 +243,7 @@ Xcode linker toolchain and SDK took about 5.95 and 5.66 seconds respectively
 for 2.88 GB and 0.95 GB of logical bytes. These are cold release-preparation
 candidates, not per-edit verification costs or authenticated roots; the
 system libraries still need a closed provenance policy.
-The [cold inventory helper](../../scripts/inventory_headless_tool_roots.py)
+The cold inventory helper (`scripts/inventory_headless_tool_roots.py`)
 now defines a candidate digest over three named roots: installed Rust,
 selected native linker toolchain and selected SDK. It streams each regular
 file, records directory membership and symlink target bytes, and refuses

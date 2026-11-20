@@ -396,6 +396,10 @@ def done_when_checks(root):
     return checks
 
 
+XTASK_MAIN = "tools/xtask/src/main.rs"
+EXCLUDED_SUITES = re.compile(r'const EXCLUDED_SCRIPT_SUITES\b.*?\];', re.S)
+
+
 def uncalled_scripts(root, paths):
     """Files under scripts/ that nothing names, as the rule `script-caller` defines it.
 
@@ -404,7 +408,8 @@ def uncalled_scripts(root, paths):
     tracked documents outside the plans and evidence folders (ORCHESTRATE.md's
     `Main-branch check` lines among them), and a script that is itself named. A suite
     `test_X` lives and is counted with a script `X` beside it; one named for no script
-    is not counted.
+    is not counted. `./dev check` runs every suite directly under scripts/ but those
+    its EXCLUDED_SCRIPT_SUITES names, so such a suite it runs is a caller of what it imports.
     """
     scripts = [p for p in paths if p.startswith("scripts/") and not p.endswith(".md")]
     if not scripts:
@@ -429,6 +434,10 @@ def uncalled_scripts(root, paths):
             return None
         beside = [s for s in scripts if Path(s).parent == path.parent and Path(s).stem == path.stem[5:]]
         return beside[0] if beside else None
+    lone = {s for s in scripts if Path(s).stem.startswith("test_") and script_for(s) is None}
+    exclusions = EXCLUDED_SUITES.search(read(root, XTASK_MAIN))
+    excluded = set(re.findall(r'"(test_\w+)"', exclusions.group(0))) if exclusions else set()
+    live |= {s for s in lone if Path(s).parent == Path("scripts") and Path(s).stem not in excluded}
     changed = True
     while changed:
         changed = False
@@ -439,7 +448,6 @@ def uncalled_scripts(root, paths):
             if (target in live) or any(named(script, *script_names[c]) for c in live if c != script):
                 live.add(script)
                 changed = True
-    lone = {s for s in scripts if Path(s).stem.startswith("test_") and script_for(s) is None}
     return sorted(s for s in scripts if s not in live and s not in lone)
 
 

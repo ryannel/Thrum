@@ -1,5 +1,7 @@
 # Prepared native compiler environment
 
+Retired: the headless release-trust toolchain this describes, its scripts, their suites and the `rustc_receipt` binary, left the tree in DEAD-TOOLS M1; main `7e30ba7e4` is the last commit that holds it.
+
 3 November 2026. **Selected first macOS ARM64 development adapter design;
 implementation and qualification are separate.** This refines the
 [first headless build](F4-FIRST-HEADLESS-BUILD.md), [release-input policy](T2-NATIVE-RELEASE-TRUST.md)
@@ -69,7 +71,7 @@ checks. The first macOS development profile trusts the local user account; it
 does not defend against a deliberately hostile same-user process. The existing
 Cargo origin and Rust
 component receipts remain adjacent evidence, not a substitute for a reviewed
-preparation job. The current wrapper and [receipt verifier](../../scripts/verify_rustc_receipts.py)
+preparation job. The current wrapper and receipt verifier (`scripts/verify_rustc_receipts.py`)
 observe invocation inputs and Cargo-reported units; they do not trace implicit
 compiler or linker reads. A verified retained root can safely cover all bytes
 within a deliberately permitted subtree, but the policy must name every

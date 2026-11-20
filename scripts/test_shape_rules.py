@@ -300,6 +300,23 @@ test_role="fixtures"
         self.write("scripts/test_shared_fixtures.py", "")
         self.assertEqual(self.counted("script-caller"),
                          ["scripts/stray_helper.py", "scripts/stray_tool.py", "scripts/test_stray_tool.py"])
+        # ./dev check runs every suite directly under scripts/, so a suite named for no script
+        # keeps what it imports; one in a subfolder does not.
+        self.write("scripts/suite_helper.py", "")
+        self.write("scripts/test_suite_only.py", "import suite_helper\n")
+        self.write("scripts/nested/nested_helper.py", "")
+        self.write("scripts/nested/test_nested_only.py", "import nested_helper\n")
+        self.assertEqual(self.counted("script-caller"),
+                         ["scripts/nested/nested_helper.py", "scripts/stray_helper.py",
+                          "scripts/stray_tool.py", "scripts/test_stray_tool.py"])
+        # A suite the check excludes by name runs nowhere, so it keeps nothing.
+        self.write("tools/xtask/src/main.rs",
+                   'const EXCLUDED_SCRIPT_SUITES: &[(&str, &str)] = &[("test_suite_only", "fails")];\n')
+        self.assertIn("scripts/suite_helper.py", self.counted("script-caller"))
+        (self.root / "tools/xtask/src/main.rs").unlink()
+        for path in ("scripts/suite_helper.py", "scripts/test_suite_only.py",
+                     "scripts/nested/nested_helper.py", "scripts/nested/test_nested_only.py"):
+            (self.root / path).unlink()
         # Removing the last caller orphans the chain behind it.
         self.write("dev", "")
         self.assertEqual(len(self.counted("script-caller")), 8)

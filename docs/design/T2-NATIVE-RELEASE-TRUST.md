@@ -1,5 +1,7 @@
 # Release trust for the first native headless builder
 
+Retired: the headless release-trust toolchain this describes, its scripts, their suites and the `rustc_receipt` binary, left the tree in DEAD-TOOLS M1; main `7e30ba7e4` is the last commit that holds it.
+
 Status: **selected policy**, 2 November 2026. The user selected a reviewed
 exact-hash manifest from official HTTPS origins for the first CPU-only macOS
 ARM64 development profile. This does not approve a particular manifest or mark
@@ -90,7 +92,7 @@ containment and does not authorize arbitrary build-time processes.
 
 ### First exact-input matcher
 
-The first [release-input verifier](../../scripts/verify_headless_release_inputs.py)
+The first release-input verifier (`scripts/verify_headless_release_inputs.py`)
 accepts a caller-selected, canonical JSON manifest outside the admitted game
 source and private Cargo home. The trusted engine release loader, not game
 source or this verifier, must choose that manifest. The version-one manifest
@@ -139,7 +141,7 @@ cache's 67.8 MB local rehash remains in the per-edit path until a sealed-root
 mechanism proves equivalent retention. Do not charge the cold tool scan to
 every world update or silently omit it from first selection latency.
 
-The first [Rust component archive verifier](../../scripts/verify_rust_component_archive.py)
+The first Rust component archive verifier (`scripts/verify_rust_component_archive.py`)
 accepts caller-supplied channel manifest, SHA-256 sidecar, component archive
 and installed toolchain. It checks the selected official HTTPS URL/hash pair,
 then streams the checksum-verified archive once and compares every file in its
@@ -157,7 +159,7 @@ the release preparation job and complete tool/SDK/dependency closure. The
 [local Cargo/Rustc/host-standard-library component proof](../../.orchestrate/evidence/i2a/T2-RELEASE-ORIGIN-CANDIDATE.md)
 is one host's partial origin candidate.
 
-The cold [crates.io archive comparator](../../scripts/verify_crates_io_archive_origin.py)
+The cold crates.io archive comparator (`scripts/verify_crates_io_archive_origin.py`)
 streams each archive listed by a selected private-cache candidate from its
 official HTTPS CDN URL, refuses redirects, and compares fetched bytes with the
 candidate, private cache and selected lockfile checksum. The complete private
@@ -166,7 +168,7 @@ is still an origin candidate: cached sparse-index records, extracted source,
 selected build-unit closure and the release preparation environment are not
 authenticated by archive matching. It also reports `buildReady:false`.
 
-The separate [sparse-index comparator](../../scripts/verify_crates_io_index_origin.py)
+The separate sparse-index comparator (`scripts/verify_crates_io_index_origin.py`)
 parses only the pinned Cargo 1.99.1 cache layout and compares every cached
 version JSON line with the corresponding official `index.crates.io` HTTPS
 record. The [212-name local comparison](../../.orchestrate/evidence/i2a/T2-CRATES-INDEX-ORIGIN-CANDIDATE.md)
@@ -176,7 +178,7 @@ upstream version, extracted source is archive-identical, or a particular
 selected build and environment are fully closed. It reports
 `buildReady:false`.
 
-The cold [crate extraction comparator](../../scripts/verify_crate_extraction.py)
+The cold crate extraction comparator (`scripts/verify_crate_extraction.py`)
 compares each selected locked archive's regular tar payload with the matching
 private Cargo source tree, including complete file and directory membership.
 The [37-package local pass](../../.orchestrate/evidence/i2a/T2-CRATE-EXTRACTION-CANDIDATE.md)

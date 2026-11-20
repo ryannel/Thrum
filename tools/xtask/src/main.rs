@@ -49,6 +49,86 @@ fn python(args: &[&str]) -> TaskResult {
     )
 }
 
+/// Script suites that `./dev check` leaves out, each with the reason. Every other
+/// `scripts/test_*.py`, and every `scripts/test_*.mjs` where node is installed, runs.
+/// Each is named by its stem, without `.py`, so the shape rule `script-caller` does
+/// not take an exclusion for a caller of the suite or of the script it tests.
+const EXCLUDED_SCRIPT_SUITES: &[(&str, &str)] = &[
+    (
+        "test_mac_m2_presented",
+        "fails at DEAD-TOOLS M1's starting commit 7e30ba7e4 with six errors, each a missing \
+         traced-window record of its 11 November capture; its script is \
+         PLATFORM-RUNTIME-MAC's, and the cleanup review found it dead (P1-02, P2-04, L5-03)",
+    ),
+    (
+        "test_mac_m3_commission",
+        "tests a PLATFORM-RUNTIME-MAC qualification script the cleanup review found dead \
+         (P1-02, P2-04, L5-03), left for a second DEAD-TOOLS landing",
+    ),
+    (
+        "test_qualify_macos_display",
+        "tests a PLATFORM-RUNTIME-MAC qualification script the cleanup review found dead \
+         (P1-02, P2-04, L5-03), left for a second DEAD-TOOLS landing",
+    ),
+];
+
+/// Runs every script suite under `scripts/` that is not excluded by name above.
+fn script_suites() -> TaskResult {
+    let mut suites = Vec::new();
+    for entry in std::fs::read_dir("scripts")? {
+        let name = entry?.file_name().to_string_lossy().into_owned();
+        let extension = Path::new(&name).extension().and_then(|e| e.to_str());
+        if name.starts_with("test_") && matches!(extension, Some("py" | "mjs")) {
+            suites.push(name);
+        }
+    }
+    suites.sort();
+    let stem = |name: &str| {
+        Path::new(name)
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+    };
+    for (name, _) in EXCLUDED_SCRIPT_SUITES {
+        if !suites
+            .iter()
+            .any(|suite| stem(suite).as_deref() == Some(*name))
+        {
+            return Err(format!(
+                "excluded script suite {name} no longer exists; drop its exclusion"
+            )
+            .into());
+        }
+    }
+    let node = Command::new("node")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success());
+    for name in &suites {
+        if let Some((_, reason)) = EXCLUDED_SCRIPT_SUITES
+            .iter()
+            .find(|(excluded, _)| stem(name).as_deref() == Some(*excluded))
+        {
+            writeln!(
+                std::io::stdout().lock(),
+                "script suite {name} excluded: {reason}"
+            )?;
+            continue;
+        }
+        let path = format!("scripts/{name}");
+        if Path::new(name).extension().and_then(|e| e.to_str()) == Some("py") {
+            python(&[&path])?;
+        } else if node {
+            run("node", &["--test", &path])?;
+        } else {
+            writeln!(
+                std::io::stdout().lock(),
+                "script suite {name} skipped: node is not installed"
+            )?;
+        }
+    }
+    Ok(())
+}
+
 fn check_web() -> TaskResult {
     cargo(&[
         "clippy",
@@ -446,56 +526,8 @@ fn main() -> TaskResult {
             python(&["scripts/sim2d_profile.py", "check"])?;
             python(&["scripts/sim2d_profile.py", "controls"])?;
             python(&["scripts/exact_baselines.py", "guard"])?;
-            python(&["scripts/test_exact_baselines.py"])?;
             python(&["scripts/repo_check.py"])?;
-            python(&["scripts/test_evidence_store.py"])?;
-            python(&["scripts/test_render2d.py"])?;
-            python(&["scripts/test_apple_presentation.py"])?;
-            python(&[
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "scripts",
-                "-p",
-                "test_repo_check.py",
-            ])?;
-            python(&[
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "scripts",
-                "-p",
-                "test_scene_package.py",
-            ])?;
-            python(&[
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "scripts",
-                "-p",
-                "test_t2_capture.py",
-            ])?;
-            python(&[
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "scripts",
-                "-p",
-                "test_capture_unjudged.py",
-            ])?;
-            python(&[
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "scripts",
-                "-p",
-                "test_mac_m2_window.py",
-            ])?;
+            script_suites()?;
             cargo(&["fmt", "--all", "--", "--check"])?;
             cargo(&[
                 "clippy",

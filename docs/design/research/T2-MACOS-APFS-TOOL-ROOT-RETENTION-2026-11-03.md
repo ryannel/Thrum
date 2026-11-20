@@ -1,5 +1,7 @@
 # APFS tool-root retention feasibility
 
+Retired: the headless release-trust toolchain this note used and tested beside, its scripts, their suites and the `rustc_receipt` binary, left the tree in DEAD-TOOLS M1; main `7e30ba7e4` is the last commit that holds it.
+
 3 November 2026. Scoped T2 research for the first CPU-only macOS ARM64
 development builder. The governing [prepared-environment design](../T2-PREPARED-NATIVE-ENVIRONMENT.md)
 and [release trust policy](../T2-NATIVE-RELEASE-TRUST.md) still require a reviewed
@@ -14,7 +16,7 @@ ARM64 Apple toolchain. An ignored experiment under `tmp/native-tool-root-clone/`
 called `clonefile(2)` directly for each regular file into new directories on
 the same volume, recreated each relative symlink, and created directories.
 It did not use `cp -c`, which may fall back to a physical copy. The
-[existing descriptor-bound inventory](../../../scripts/inventory_headless_tool_roots.py)
+existing descriptor-bound inventory (`scripts/inventory_headless_tool_roots.py`)
 then checked each clone and its installed source against the previously
 recorded [tool-root digest](../../../.orchestrate/evidence/i2a/F4-TOOL-ROOT-INVENTORY.md).
 The experiment removed each clone in a `finally` block after its checks.
