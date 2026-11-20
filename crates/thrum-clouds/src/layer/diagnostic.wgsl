@@ -9,7 +9,7 @@ fn observe() {
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
     let sun=atmosphere.sun_lux.xyz;
     let phase=cloud_phases(ray,sun);
-    let plane_cosines=cloud_plane_cosines(-ray);
+    let light_angles=cloud_light_angles(-ray);
     observation[0]=vec4(camera,environment_storage_scale());
     observation[1]=vec4(ray,atmosphere.sun_lux.w);
     observation[2]=vec4(sun,cloud.erosion.z);
@@ -32,7 +32,7 @@ fn observe() {
             let world=camera+ray*at;
             let sun_depths=cloud_local_sun(point,world,at,at/f32(textureDimensions(transport).y));
             let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-            let source=cloud_source(solar,phase,sun_depths,column.yz,plane_cosines,at,transmission);
+            let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,transmission);
             let segment=cloud_beer(sigma,sigma*source,step);
             let air=environment_aerial(world,vec2(0.5));
             let offset=8u+count*8u;
