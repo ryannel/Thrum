@@ -227,8 +227,8 @@
           "statement": "On the Mac, from the lookout at the sunset-clear-sun stop, in views 20 degrees either side of it, and with that view held from 17.2 to 17.8 h, no band of brighter ground lies along the rim of the lookout's ground. Where the ground ends, the valley beyond reads as distant ground past the lookout's edge.",
           "inspect": "Capture with the Mac's fixed engine capture, TAAU on: the stop's preset, the same hour at yaw -70 and -110, and the stop's view at 17.2, 17.3, 17.5, 17.6, 17.7 and 17.8 h. Judge each frame whole and in a native-size crop of the rim, beside the same crop taken from the commit this milestone started from. Two things in these frames are not the band: a lit lookout in front of a valley floor already in shadow, which is a depth edge, and the edge of the west ridge's shadow where it lies across the lookout after 17.4 h, whose quality `ATMOSPHERE` owns and this item does not judge.",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/inspection-list.md",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -238,8 +238,8 @@
           "inspect": "Capture the sunrise preset with the Mac's fixed engine capture, TAAU on. Judge the frame whole and in a native-size crop of the two props and their shadows.",
           "ask": "Does the route decision's table give the hour that `examples/v1-game/params/showcase-sunrise.params.json` holds, and is that the only stop preset whose values changed since the commit this milestone started from?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/README.md",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -248,8 +248,8 @@
           "statement": "The layout, regenerated on the changed terrain, holds exactly 10,000 entities, between 1,000 and 2,000 of them movers. Every still prop rests on the shipped terrain's surface, and none stands inside the lookout or the camera's swept path on the exit flythrough. Every mover's whole loop stays inside the valley and clear of the ground. The generator reproduces the layout byte for byte.",
           "check": "python3 scripts/run_v1_showcase.py layout",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/layout.log",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -260,8 +260,8 @@
           "lock": "chrome",
           "ask": "Read the bare valley's check in `scripts/run_v1_showcase.py` and the record of a canonical run at the claimed commit. Does the canonical check fail when the baseline file is absent, and when its identity differs in any one part, the frame-source version included? Does the record show the baseline `compared`, with all six stops on each target under the thresholds? Does it show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/valley-canonical/run.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -272,8 +272,8 @@
           "lock": "chrome",
           "ask": "Read this milestone's diff of `scripts/run_v1_showcase.py` and of the two baseline files, and the record of an exit check at the claimed commit. Does each baseline's identity name its new cooked root and the changed sunrise preset? Did each set of thresholds come from the calibration rule in one run that passed every control, with no value edited afterwards? Does the record show the sunrise control's applied hour, yaw and pitch equal to the sunrise preset's? Does the log give each baseline file's old and new SHA-256 and the cause?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/exit-canonical/run.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -283,8 +283,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Read this milestone's diff yourself with `git diff`. Regenerated reference images and manifests under a registered `reference`, the registry's `pin` and `refresh` fields and a new entry in `APPLE-TILE`'s log are the refresh this item requires, and are expected in the diff. In `.config/exact-baselines.json`, does the diff change only the `pin` and the `refresh` of baselines whose references moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`? Is every file the registry lists under `comparisons` or `comparison_files` unchanged? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/exact-verifier.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -294,8 +294,8 @@
           "check": "! grep -rlE '70d2baf823d09d85|3083a794f8379630' examples/v1-game/routes",
           "ask": "List the files in `examples/v1-game/routes/` at the commit this milestone started from, with each one's `cooked_root`. The old valley root is the one `moving-v1.json` named there and the old exit root the one `exit-flythrough.json` named there; the check greps for the two known at planning. Then read this milestone's diff of that folder against that commit with `git diff`. Does every file that named the old valley root now name the root `moving-v1.json` names, and every file that named the old exit root, `exit-fast-yaw.json` among them, the root `exit-flythrough.json` names? In each of those files, does the diff change only `cooked_root`, and `cooked_generation` where the generation moved?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/route-pins.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -306,8 +306,8 @@
           "lock": "gpu",
           "ask": "Does this milestone's retained Mac receipt name the exit root that `exit-flythrough.json` now pins, and its Chrome receipt that route file's SHA-256? Do the receipts M6 retained, the ones M6's review cites, still name the exit root that `exit-flythrough.json` pinned at the commit this milestone started from?",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/culling-metal/run.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -317,8 +317,8 @@
           "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/M9/culling-chrome/run.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         }
