@@ -180,8 +180,92 @@ class RepositoryChecks(unittest.TestCase):
             self.assertEqual(len(mixed), 1)
             self.assertIn("ignored test timing is in core soak", mixed[0])
             malformed = check(root, metadata, "core soak fast\ncore gone debug\n")
-            self.assertIn(".config/long-tests.txt:1: expected `<package> <test binary> release|debug`", malformed)
+            self.assertTrue(any(e.startswith(".config/long-tests.txt:1: expected `<package> <test binary> release|debug`") for e in malformed))
             self.assertIn(".config/long-tests.txt: core has no test binary gone", malformed)
+
+    def test_feature_gated_test_must_be_covered_by_the_main_tier_list(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            render, game = root / "crates" / "render", root / "examples" / "game"
+            (render / "tests").mkdir(parents=True)
+            (render / "src" / "tests").mkdir(parents=True)
+            (game / "tests" / "stage").mkdir(parents=True)
+            seam = render / "tests" / "seam.rs"
+            seam.write_text("#![cfg(feature = \"counters\")]\n#[test]\nfn seam() {}\n")
+            unit = render / "src" / "tests" / "device.rs"
+            unit.write_text("#[cfg(all(test, feature = \"counters\"))]\nfn probe() {}\n")
+            stage = game / "tests" / "stage" / "main.rs"
+            stage.write_text("#[cfg(\n    feature = \"probe\",\n)]\nmod gated;\n")
+            (game / "tests" / "stage" / "gated.rs").write_text("#[test]\nfn gated() {}\n")
+            fault = game / "tests" / "fault.rs"
+            fault.write_text("#[test]\nfn fault() {}\n")
+            plain = game / "tests" / "plain.rs"
+            plain.write_text("#[test]\nfn plain() { assert!(cfg!(test)); }\n")
+            on = game / "tests" / "on.rs"
+            on.write_text("#[cfg(feature = \"always\")]\n#[test]\nfn on() {}\n")
+
+            def target(name, path, required=()):
+                return {"kind": ["test"], "name": name, "src_path": str(path), "required-features": list(required)}
+
+            metadata = {"workspace_members": ["render", "game"], "packages": [
+                {"id": "render", "name": "render", "manifest_path": str(render / "Cargo.toml"),
+                 "features": {"counters": []}, "dependencies": [],
+                 "targets": [{"kind": ["lib"], "name": "render", "src_path": str(render / "src" / "lib.rs")},
+                             target("seam", seam)]},
+                {"id": "game", "name": "game", "manifest_path": str(game / "Cargo.toml"),
+                 "features": {"probe": [], "always": [], "default": ["always"]}, "dependencies": [
+                     {"name": "render", "features": [], "optional": False, "target": None}],
+                 "targets": [target("stage", stage), target("fault", fault, ["render/fault"]),
+                             target("plain", plain), target("on", on)]}]}
+            check = repo_check.check_feature_tests
+            listed = ("render features=counters\n"
+                      "game features=probe stage\n"
+                      "game features=render/fault fault\n")
+            self.assertEqual(check(root, metadata, listed), [])
+            # A new gated file in a package listed whole is covered with no edit to the list.
+            (render / "tests" / "zz_probe_gpu.rs").write_text("#[cfg(feature = \"counters\")]\n#[test]\nfn z() {}\n")
+            metadata["packages"][0]["targets"].append(target("zz_probe_gpu", render / "tests" / "zz_probe_gpu.rs"))
+            self.assertEqual(check(root, metadata, listed), [])
+            # A new gated file in a package listed by binary names the file, the feature and the list.
+            newer = game / "tests" / "newer.rs"
+            newer.write_text("#[test]\n#[cfg(feature = \"probe\")]\nfn newer() {}\n")
+            metadata["packages"][1]["targets"].append(target("newer", newer))
+            errors = check(root, metadata, listed)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("examples/game/tests/newer.rs:2", errors[0])
+            self.assertIn("feature probe", errors[0])
+            self.assertIn(".config/long-tests.txt", errors[0])
+            self.assertEqual(check(root, metadata, listed.replace("probe stage", "probe stage newer")), [])
+            # A required feature the list lacks fails; so does every gated file once its line goes.
+            metadata["packages"][1]["targets"][2]["required-features"] = ["probe"]
+            errors = check(root, metadata, listed.replace("probe stage", "probe stage newer"))
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[[test]] plain: requires feature probe", errors[0])
+            # Cargo builds a target only with all its required features, so one line must give them all.
+            metadata["packages"][1]["targets"][2]["required-features"] = ["probe", "render/fault"]
+            split = listed.replace("probe stage", "probe stage newer plain").replace("fault fault", "fault fault plain")
+            self.assertEqual(len(check(root, metadata, split)), 1)
+            self.assertEqual(check(root, metadata, split + "game features=probe,render/fault plain\n"), [])
+            metadata["packages"][1]["targets"][2]["required-features"] = []
+            bare = check(root, metadata, "")
+            self.assertEqual(sorted(e.split(":")[0] for e in bare), sorted([
+                "crates/render/src/tests/device.rs", "crates/render/tests/seam.rs",
+                "crates/render/tests/zz_probe_gpu.rs", "examples/game/Cargo.toml [[test]] fault",
+                "examples/game/tests/newer.rs", "examples/game/tests/stage/main.rs"]))
+            # A library test module is covered only by a whole entry.
+            self.assertTrue(any("src/tests/device.rs" in e
+                                for e in check(root, metadata, "render features=counters seam zz_probe_gpu\n")))
+            # A binary listed as not run, with its owner and failure, is accounted for; without them it is not.
+            not_run = listed.replace("probe stage", "probe stage newer").replace("game features=render/fault fault\n", "")
+            self.assertEqual(check(root, metadata, not_run + "game not-run fault features=render/fault owner=X # fails\n"), [])
+            self.assertEqual(len(check(root, metadata, not_run + "game not-run fault features=render/fault owner=X\n")), 1)
+            self.assertIn(".config/long-tests.txt:3: expected `<package> not-run",
+                          repo_check.parse_main_tier_list(not_run + "game not-run fault features=render/fault\n")[2][0])
+            # The list's own lines are checked against the workspace.
+            wrong = check(root, metadata, listed + "game features=nothing stage\nnone features=x\ngame features=probe gone\n")
+            self.assertIn(".config/long-tests.txt:4: game has no feature nothing", wrong)
+            self.assertIn(".config/long-tests.txt:5: no workspace package none", wrong)
+            self.assertIn(".config/long-tests.txt:6: game has no test binary gone", wrong)
 
     def test_ios_runtime_closure_rejects_authoring_and_sqlite(self):
         tree = "v1-game-ios v0.1.0\nv1-game v0.1.0\nthrum-cook v0.1.0\nthrum-source v0.1.0\nrusqlite v0.40.2\nlibsqlite3-sys v0.38.0\n"

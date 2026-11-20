@@ -1,9 +1,11 @@
-# The main-tier list: every test binary whose ignored tests are long tests.
-# `./dev long-tests` runs the ignored tests of each binary named here, and nothing else; the
-# main-branch check `long-tests` in ORCHESTRATE.md runs it on main after merges. A long test is
-# `#[ignore = "long: ..."]` and sits in a binary listed here: `./dev check-docs` fails otherwise, and
-# fails when a listed binary holds an ignored test whose reason does not start `long:`.
+# The main-tier list: every test binary whose ignored tests are long tests, and every package whose
+# tests sit behind a Cargo feature, with those features. `./dev long-tests` runs what is named here,
+# and nothing else; the main-branch check `long-tests` in ORCHESTRATE.md runs it on main after merges.
 # See docs/plans/GATE-TIME/DESIGN.md#mechanisms and ORCHESTRATE.md#test-tiers.
+#
+# Long tests. A long test is `#[ignore = "long: ..."]` and sits in a binary listed here: `./dev
+# check-docs` fails otherwise, and fails when a listed binary holds an ignored test whose reason does
+# not start `long:`. `./dev long-tests` runs the ignored tests of each binary.
 #
 # <package> <test binary> <build>
 #   release  release with overflow checks on (debug assertions off)
@@ -15,3 +17,23 @@ v1-game exit_scene release
 v1-game field_gpu release
 v1-game field_occlusion_gpu release
 thrum-water-model shore_blend release
+
+# Tests behind a Cargo feature. `./dev check` builds and lints the tests of each package named here
+# with these features on; `./dev long-tests` runs its tests that are not ignored, in the debug build,
+# with the features on and a GPU required (an ignored test there is a measurement a cost script runs).
+# With no binary named, a line covers every test binary of the package, the library's own tests
+# included, so a new gated file runs with no edit here. `./dev check-docs` fails when a test target's
+# `required-features`, or a `cfg` in a test file, names a feature no line covers for that file's package,
+# whole or by the binary the file builds into. A feature the workspace's own build turns on needs no line.
+#
+# <package> features=<feature>[,<feature>...] [<test binary> ...]
+thrum-render features=creation-counters
+thrum-asset-gpu features=draw-probe error_types
+v1-game features=draw-probe ray_tracing_gpu cooked_assets_gpu
+v1-game features=thrum-asset-gpu/fault-probe cooked_fault_gpu
+
+# Not run: a binary behind a feature that failed when it was listed. It runs in no tier until the
+# module that owns it fixes it and moves it to a feature line above; `./dev check` still lints it.
+#
+# <package> not-run <test binary> features=<feature>[,...] owner=<MODULE> # <its failure>
+v1-game not-run mesh_stage_gpu features=draw-probe owner=MESH-SHADING # 2026-11-20 at 8d3180963: run whole, 4 to 6 of its 10 metal:: tests fail each time (a buffer or pipeline "is invalid", or WrongSubmissionIndex in support.rs read_buffer); all pass with --test-threads=1, and scripts/mesh_stage_proof.py runs one case at a time

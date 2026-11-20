@@ -366,25 +366,65 @@ struct LongTestBinary {
     release: bool,
 }
 
-fn long_test_list(text: &str) -> Result<Vec<LongTestBinary>, String> {
-    let mut list = Vec::new();
+/// One feature line of the main-tier list: `<package> features=<feature>[,...] [<test binary>...]`.
+/// With no binary named it covers every test binary of the package.
+struct FeatureTests {
+    package: String,
+    features: Vec<String>,
+    binaries: Vec<String>,
+}
+
+/// The main-tier list, `.config/long-tests.txt`.
+struct MainTierList {
+    long: Vec<LongTestBinary>,
+    features: Vec<FeatureTests>,
+    /// `<package> <test binary>` of each not-run line: it runs in no tier until its owner fixes it.
+    not_run: Vec<String>,
+}
+
+fn main_tier_list(text: &str) -> Result<MainTierList, String> {
+    let mut list = MainTierList {
+        long: Vec::new(),
+        features: Vec::new(),
+        not_run: Vec::new(),
+    };
     for (index, line) in text.lines().enumerate() {
         let line = line.split('#').next().unwrap_or_default().trim();
         if line.is_empty() {
             continue;
         }
         let fields: Vec<&str> = line.split_whitespace().collect();
+        // A binary that failed when it was listed; `./dev check-docs` checks the line's shape.
+        if let [package, "not-run", binary, ..] = fields.as_slice() {
+            list.not_run.push(format!("{package} {binary}"));
+            continue;
+        }
+        if let [package, features, binaries @ ..] = fields.as_slice()
+            && let Some(features) = features.strip_prefix("features=")
+        {
+            list.features.push(FeatureTests {
+                package: (*package).into(),
+                features: features
+                    .split(',')
+                    .filter(|feature| !feature.is_empty())
+                    .map(Into::into)
+                    .collect(),
+                binaries: binaries.iter().map(|&binary| binary.into()).collect(),
+            });
+            continue;
+        }
         let release = match fields.as_slice() {
             [_, _, "release"] => true,
             [_, _, "debug"] => false,
             _ => {
                 return Err(format!(
-                    ".config/long-tests.txt:{}: expected `<package> <test binary> release|debug`",
+                    ".config/long-tests.txt:{}: expected `<package> <test binary> release|debug` \
+                     or `<package> features=<feature>[,...] [<test binary>...]`",
                     index + 1
                 ));
             }
         };
-        list.push(LongTestBinary {
+        list.long.push(LongTestBinary {
             package: fields[0].into(),
             binary: fields[1].into(),
             release,
@@ -393,12 +433,65 @@ fn long_test_list(text: &str) -> Result<Vec<LongTestBinary>, String> {
     Ok(list)
 }
 
-/// Runs the ignored tests of every binary on the main-tier list, each binary once, and fails
-/// if any fails. A GPU is required, so a test that finds no adapter fails rather than skips.
+fn read_main_tier_list() -> Result<MainTierList, Box<dyn Error>> {
+    Ok(main_tier_list(&std::fs::read_to_string(
+        ".config/long-tests.txt",
+    )?)?)
+}
+
+/// Builds and lints every target of each package the list's feature lines name, with all their
+/// features on at once, under the workspace's lints. One invocation, so the dependency graph is
+/// resolved once and an unchanged crate's build is reused from the last run.
+fn lint_feature_tests() -> TaskResult {
+    let list = read_main_tier_list()?;
+    let mut args: Vec<String> = ["clippy", "--locked", "--offline", "--all-targets"]
+        .map(Into::into)
+        .into();
+    let mut features = Vec::new();
+    for entry in &list.features {
+        if !args.contains(&entry.package) {
+            args.extend(["--package".into(), entry.package.clone()]);
+        }
+        // With several packages selected, a feature is named through its package.
+        features.extend(entry.features.iter().map(|feature| {
+            if feature.contains('/') {
+                feature.clone()
+            } else {
+                format!("{}/{feature}", entry.package)
+            }
+        }));
+    }
+    if features.is_empty() {
+        return Ok(());
+    }
+    args.extend(["--features".into(), features.join(",")]);
+    args.extend(["--", "-D", "warnings"].map(Into::into));
+    cargo(&args.iter().map(String::as_str).collect::<Vec<_>>())
+}
+
+fn main_tier_cargo(args: &[&str]) -> Result<std::process::ExitStatus, std::io::Error> {
+    Command::new(env!("CARGO"))
+        .args(args)
+        .env("THRUM_REQUIRE_GPU", "1")
+        .env("CARGO_INCREMENTAL", "0")
+        // Release keeps overflow checks; debug assertions stay off, as the flythroughs
+        // choose their length by them.
+        .env("CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS", "true")
+        .status()
+}
+
+/// Runs the main tier: the ignored tests of every long-test binary on the list, each binary once,
+/// then the tests that are not ignored behind each feature line, in the debug build with its
+/// features on. Fails if any fails. A GPU is required, so a test that finds no adapter fails
+/// rather than skips.
+#[expect(
+    clippy::print_stderr,
+    reason = "the main-branch check's log names each binary listed as not run"
+)]
 fn long_tests() -> TaskResult {
-    let list = long_test_list(&std::fs::read_to_string(".config/long-tests.txt")?)?;
+    let list = read_main_tier_list()?;
     let mut failed = Vec::new();
-    for entry in &list {
+    for entry in &list.long {
         let mut args = vec!["test", "--locked", "--offline"];
         if entry.release {
             args.push("--release");
@@ -411,17 +504,36 @@ fn long_tests() -> TaskResult {
             "--",
             "--ignored",
         ]);
-        let status = Command::new(env!("CARGO"))
-            .args(&args)
-            .env("THRUM_REQUIRE_GPU", "1")
-            .env("CARGO_INCREMENTAL", "0")
-            // Release keeps overflow checks; debug assertions stay off, as the flythroughs
-            // choose their length by them.
-            .env("CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS", "true")
-            .status()?;
-        if !status.success() {
+        if !main_tier_cargo(&args)?.success() {
             failed.push(format!("{} {}", entry.package, entry.binary));
         }
+    }
+    for entry in &list.features {
+        let features = entry.features.join(",");
+        let mut args = vec![
+            "test",
+            "--locked",
+            "--offline",
+            "-p",
+            &entry.package,
+            "--features",
+            &features,
+        ];
+        if entry.binaries.is_empty() {
+            // Every test binary, the library's own tests included.
+            args.push("--tests");
+        }
+        for binary in &entry.binaries {
+            args.extend(["--test", binary]);
+        }
+        if !main_tier_cargo(&args)?.success() {
+            failed.push(format!("{} with {features}", entry.package));
+        }
+    }
+    for binary in &list.not_run {
+        eprintln!(
+            "not run: {binary}, listed as not run in .config/long-tests.txt with its failure"
+        );
     }
     if !failed.is_empty() {
         return Err(format!("long tests failed: {}", failed.join(", ")).into());
@@ -435,7 +547,7 @@ const HELP: &[&str] = &[
     "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy",
     "  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it",
     "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
-    "  long-tests             The main tier's long tests from .config/long-tests.txt, a GPU required; the main-branch check long-tests runs it",
+    "  long-tests             The main tier from .config/long-tests.txt (long tests, and tests behind a Cargo feature), a GPU required; the main-branch check long-tests runs it",
     "  check-docs             Links, metadata, design hashes and crate policy",
     "  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac",
     "  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown",
@@ -540,19 +652,8 @@ fn main() -> TaskResult {
                 "warnings",
             ])?;
             check_web()?;
-            cargo(&[
-                "clippy",
-                "--locked",
-                "--offline",
-                "-p",
-                "v1-game",
-                "--all-targets",
-                "--features",
-                "draw-probe",
-                "--",
-                "-D",
-                "warnings",
-            ])?;
+            // Tests behind a Cargo feature, from the main-tier list; `./dev long-tests` runs them.
+            lint_feature_tests()?;
             cargo(&["test", "--locked", "--offline", "--workspace"])?;
             // Qualification-only observations inspect the real bound buffers and commands.
             cargo(&[
@@ -570,4 +671,48 @@ fn main() -> TaskResult {
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::main_tier_list;
+
+    #[test]
+    fn main_tier_list_reads_long_tests_and_feature_lines() {
+        let list = main_tier_list(
+            "# comment\nwater floating_gpu release\ngame field_gpu debug # why\n\
+             render features=counters\ngame features=probe,asset/fault one two\n\
+             game not-run three features=probe owner=OWNER # fails\n",
+        )
+        .unwrap();
+        let long: Vec<_> = list
+            .long
+            .iter()
+            .map(|entry| (entry.package.as_str(), entry.binary.as_str(), entry.release))
+            .collect();
+        assert_eq!(
+            long,
+            [
+                ("water", "floating_gpu", true),
+                ("game", "field_gpu", false)
+            ]
+        );
+        let features: Vec<_> = list
+            .features
+            .iter()
+            .map(|entry| (entry.package.as_str(), &entry.features, &entry.binaries))
+            .collect();
+        assert_eq!(features.len(), 2);
+        assert_eq!(features[0], ("render", &vec!["counters".into()], &vec![]));
+        assert_eq!(
+            features[1],
+            (
+                "game",
+                &vec!["probe".into(), "asset/fault".into()],
+                &vec!["one".into(), "two".into()]
+            )
+        );
+        assert_eq!(list.not_run, ["game three"]);
+        assert!(main_tier_list("water floating_gpu fast\n").is_err());
+    }
 }

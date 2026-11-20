@@ -115,7 +115,7 @@ fn read_layers(gpu: &Gpu, scene: &SyntheticScene) -> Vec<u8> {
         },
     );
     encoder.map_buffer_on_submit(&staging, wgpu::MapMode::Read, .., |result| {
-        result.expect("map")
+        result.expect("map");
     });
     let submission = gpu.queue.submit([encoder.finish()]);
     gpu.device
@@ -137,8 +137,10 @@ fn aloft_casters_draw_into_both_cascades_only() {
     let Some(admitted) = thrum_test_support::gpu("aloft casters", backend) else {
         return;
     };
-    let (device, queue) =
-        admitted.device(thrum_test_support::Profile::Portable, &Default::default());
+    let (device, queue) = admitted.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
     let gpu = Gpu {
         capabilities: DeviceCapabilities::capture(&admitted.adapter, &device, 41),
         device,
@@ -159,9 +161,11 @@ fn aloft_casters_draw_into_both_cascades_only() {
         scene.instances[2].ids[3] = 0;
         let absent = read_layers(&gpu, &scene);
         for (layer, ((marked, unmarked), absent)) in marked
-            .chunks_exact(LAYER_BYTES)
-            .zip(unmarked.chunks_exact(LAYER_BYTES))
-            .zip(absent.chunks_exact(LAYER_BYTES))
+            .as_chunks::<LAYER_BYTES>()
+            .0
+            .iter()
+            .zip(unmarked.as_chunks::<LAYER_BYTES>().0)
+            .zip(absent.as_chunks::<LAYER_BYTES>().0)
             .enumerate()
         {
             let control_changes = super::differing(unmarked, absent);

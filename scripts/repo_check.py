@@ -324,17 +324,50 @@ REASONED_IGNORE = re.compile(r'#\[ignore\s*=\s*"((?:[^"\\]|\\.)*)"\s*\]')
 MOD_DECLARATION = re.compile(r'((?:#\[path\s*=\s*"([^"]+)"\]\s*)?)(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*;')
 
 
-def long_test_list(text):
-    """Parse the main-tier list into ({(package, binary)}, errors)."""
-    listed, errors = set(), []
+def parse_main_tier_list(text):
+    """Parse the main-tier list into its long-test binaries, its feature entries and its errors.
+
+    A long-test line is `<package> <test binary> release|debug`. A feature line is
+    `<package> features=<feature>[,<feature>...] [<test binary>...]`: with no binary it covers every test
+    binary of the package. A not-run line, `<package> not-run <test binary> features=<feature>[,...]
+    owner=<MODULE> # <its failure>`, records a binary behind a feature that failed when it was listed: it
+    runs in no tier until its owner fixes it, and the line accounts for it. Returns
+    ({(package, binary)}, [(package, {feature}, {binary} or None, line)], errors); a not-run line joins the
+    feature entries as covering its one binary, so the coverage guard accepts it.
+    """
+    listed, features, errors = set(), [], []
     for number, line in enumerate(text.splitlines(), 1):
         fields = line.split("#", 1)[0].split()
         if not fields:
             continue
+        if len(fields) >= 2 and fields[1] == "not-run":
+            parts = dict(field.split("=", 1) for field in fields[3:] if "=" in field)
+            failure = line.split("#", 1)[1].strip() if "#" in line else ""
+            names = frozenset(name for name in parts.get("features", "").split(",") if name)
+            if len(fields) != 5 or not names or not parts.get("owner") or not failure:
+                errors.append(f"{LONG_TESTS}:{number}: expected `<package> not-run <test binary> "
+                              "features=<feature>[,...] owner=<MODULE> # <its failure>`")
+                continue
+            features.append((fields[0], names, frozenset([fields[2]]), number))
+            continue
+        if len(fields) >= 2 and fields[1].startswith("features="):
+            names = frozenset(name for name in fields[1].removeprefix("features=").split(",") if name)
+            if not names:
+                errors.append(f"{LONG_TESTS}:{number}: `features=` names no feature")
+                continue
+            features.append((fields[0], names, frozenset(fields[2:]) or None, number))
+            continue
         if len(fields) != 3 or fields[2] not in {"release", "debug"}:
-            errors.append(f"{LONG_TESTS}:{number}: expected `<package> <test binary> release|debug`")
+            errors.append(f"{LONG_TESTS}:{number}: expected `<package> <test binary> release|debug` "
+                          "or `<package> features=<feature>[,...] [<test binary>...]`")
             continue
         listed.add((fields[0], fields[1]))
+    return listed, features, errors
+
+
+def long_test_list(text):
+    """Parse the main-tier list's long-test binaries into ({(package, binary)}, errors)."""
+    listed, _, errors = parse_main_tier_list(text)
     return listed, errors
 
 
@@ -400,6 +433,128 @@ def check_long_tests(root, metadata, list_text):
     return errors
 
 
+CFG_START = re.compile(r"\bcfg(?:_attr)?!?\s*\(")
+CFG_FEATURE = re.compile(r'\bfeature\s*=\s*"([^"]+)"')
+
+
+def cfg_features(text):
+    """Every Cargo feature a `cfg`, `cfg_attr` or `cfg!` in the text names, with its line."""
+    found = []
+    for match in CFG_START.finditer(text):
+        depth, end = 1, match.end()
+        while end < len(text) and depth:
+            depth += {"(": 1, ")": -1}.get(text[end], 0)
+            end += 1
+        line = text.count("\n", 0, match.start()) + 1
+        found += [(line, name) for name in CFG_FEATURE.findall(text[match.end():end])]
+    return found
+
+
+def workspace_features(packages):
+    """The features `cargo test --workspace` turns on for each package on this Mac.
+
+    A package's default features, and those another member turns on through a dependency that is not
+    optional and not only for wasm32, with what each of them turns on in turn. A test those gate runs in
+    the merge tier already.
+    """
+    names = {package["name"]: package for package in packages}
+    enabled = {name: set(package["features"].get("default", [])) for name, package in names.items()}
+    for package in packages:
+        for dependency in package["dependencies"]:
+            target = dependency.get("target") or ""
+            if dependency["name"] not in names or dependency["optional"] or (
+                    "wasm32" in target and not target.startswith("cfg(not(")):
+                continue
+            enabled[dependency["name"]].update(dependency["features"])
+    for name, features in enabled.items():
+        pending = list(features)
+        while pending:
+            for implied in names[name]["features"].get(pending.pop(), []):
+                if implied not in features and implied in names[name]["features"]:
+                    features.add(implied)
+                    pending.append(implied)
+    return enabled
+
+
+def check_feature_tests(root, metadata, list_text):
+    """No Cargo feature takes a test out of every tier unnoticed.
+
+    A test target's `required-features`, and every feature a `cfg` in a test file names, must be covered by a
+    feature line of the main-tier list for that file's package: whole, or by the test binary the file builds
+    into. A file several binaries share, or a test module of the library, is covered only by a whole entry.
+    `./dev check` lints the listed packages' tests with those features and `./dev long-tests` runs them.
+    """
+    _, entries, _ = parse_main_tier_list(list_text)
+    members = set(metadata["workspace_members"])
+    packages = [p for p in metadata["packages"] if p["id"] in members]
+    names = {p["name"]: p for p in packages}
+    errors = []
+    for package, features, binaries, number in entries:
+        if package not in names:
+            errors.append(f"{LONG_TESTS}:{number}: no workspace package {package}")
+            continue
+        targets = {t["name"] for t in names[package]["targets"] if "test" in t["kind"]}
+        for binary in sorted((binaries or set()) - targets):
+            errors.append(f"{LONG_TESTS}:{number}: {package} has no test binary {binary}")
+        known = set(names[package].get("features", {}))
+        for feature in sorted(f for f in features if "/" not in f and f not in known):
+            errors.append(f"{LONG_TESTS}:{number}: {package} has no feature {feature}")
+
+    always = workspace_features(packages)
+
+    def covered(package, feature, holders):
+        """One line turns on `feature` (a name or a set that must all be on together) for these holders."""
+        wanted = ({feature} if isinstance(feature, str) else set(feature)) - always.get(package, set())
+        if not wanted:
+            return True
+        for listed, features, binaries, _ in entries:
+            if listed != package or not wanted <= features:
+                continue
+            if binaries is None or (len(holders) == 1 and holders <= binaries):
+                return True
+        return False
+
+    def missing(where, package, feature, how):
+        return (f"{where}: {how} feature {feature}, and no line of {LONG_TESTS} covers {package} with it, so "
+                f"its tests run in no tier; add `{package} features={feature}` there, whole or with the test "
+                "binary")
+
+    binaries, owners = {}, []  # file -> {binary}; (package directory, package name)
+    for package in packages:
+        directory = Path(package["manifest_path"]).resolve().parent
+        owners.append((directory, package["name"]))
+        for target in package["targets"]:
+            if "test" not in target["kind"]:
+                continue
+            source = Path(target["src_path"]).resolve()
+            required = target.get("required-features", [])
+            if required and not covered(package["name"], required, {target["name"]}):
+                # Cargo builds the target only when every one is on, so one line must give them all.
+                where = Path(package["manifest_path"]).resolve().relative_to(root).as_posix()
+                errors.append(missing(f"{where} [[test]] {target['name']}", package["name"], ",".join(required),
+                                      "requires"))
+            for path in module_files(source):
+                binaries.setdefault(path, set()).add(target["name"])
+    owners.sort(key=lambda owner: len(owner[0].parts), reverse=True)
+    for path in rust_files(root):
+        resolved = path.resolve()
+        relative = path.relative_to(root).as_posix()
+        if resolved not in binaries and not (is_test_file(relative) or "/tests/" in f"/{relative}"):
+            continue
+        text = path.read_text(encoding="utf-8")
+        if "feature" not in text:
+            continue
+        package = next((name for directory, name in owners if resolved.is_relative_to(directory)), None)
+        if package is None:
+            continue
+        holders, reported = binaries.get(resolved, set()), set()
+        for line, feature in cfg_features(text):
+            if feature not in reported and not covered(package, feature, holders):
+                reported.add(feature)
+                errors.append(missing(f"{relative}:{line}", package, feature, "a `cfg` names"))
+    return errors
+
+
 def markdown_files(root):
     result = []
     for directory, names, files in os.walk(root):
@@ -438,7 +593,9 @@ def main():
     errors += check_ios_runtime_closure(ROOT, channel)
     errors += check_unused_direct_dependencies(metadata, policy)
     errors += check_manifest_inventory(ROOT, metadata)
-    errors += check_long_tests(ROOT, metadata, (ROOT / LONG_TESTS).read_text(encoding="utf-8"))
+    main_tier = (ROOT / LONG_TESTS).read_text(encoding="utf-8")
+    errors += check_long_tests(ROOT, metadata, main_tier)
+    errors += check_feature_tests(ROOT, metadata, main_tier)
     if errors:
         print("\n".join(sorted(set(errors))), file=sys.stderr)
         return 1
