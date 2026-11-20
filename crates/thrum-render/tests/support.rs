@@ -571,7 +571,8 @@ impl SceneContribution for Observer {
         })))
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.prepare_observer(surface)
+        self.prepare_observer(surface);
+        Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         let mut control = self.control.lock().expect("control");
@@ -642,7 +643,7 @@ fn observer_graph(outputs: &[wgpu::Buffer]) -> EffectGraph {
 }
 
 impl Observer {
-    fn prepare_observer(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+    fn prepare_observer(&mut self, surface: &SceneSurface<'_>) {
         assert!(
             surface.secondary_surfaces.is_empty(),
             "an observer has not opted its geometry into views"
@@ -656,7 +657,7 @@ impl Observer {
             "only owned slots are lent"
         );
         if self.slots == 0 {
-            return Ok(());
+            return;
         }
         let device = surface.device;
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -730,7 +731,6 @@ impl Observer {
         let (outputs, groups) = Self::bindings(device, &layout, surface.secondary_views);
         self.pipeline = Some(((**device).clone(), layout, pipeline));
         self.install_bindings(surface.secondary_views.to_vec(), outputs, groups);
-        Ok(())
     }
 }
 

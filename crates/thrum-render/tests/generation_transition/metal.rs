@@ -269,6 +269,12 @@ fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_compari
                 old_frame.history_identity[0]
             );
             assert!(!first_frame_matches_reset(&first_new, &reset));
+            eprintln!(
+                "kept history: first new predecessor {}, reset predecessor {}, pixels equal {}",
+                first_new.sample.history_identity[1],
+                reset.sample.history_identity[1],
+                first_new.rgba == reset.rgba,
+            );
         } else {
             assert!(first_frame_matches_reset(&first_new, &reset));
         }
@@ -476,6 +482,7 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
         SurfaceSwitchOutcome::Taken
     );
     assert!(host.publish_extent(candidate));
+    assert_eq!(transition.surface.record().configure_calls, 1);
     assert_eq!(transition.surface.record().generations_taken, 1);
     assert_eq!(transition.surface.record().deferrals, 1);
     assert_eq!(
@@ -550,6 +557,11 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     let wrong_thread = render_created_nothing().expect_err("synchronous build escaped detection");
     assert!(wrong_thread.contains(&"Device::create_texture"));
     assert!(wrong_thread.contains(&"Device::create_bind_group"));
+    eprintln!(
+        "preparation thread created {} objects; render owner created zero until controls; single view detected; synchronous build detected {} objects",
+        worker.len(),
+        wrong_thread.len() - 1,
+    );
     drop(control);
 }
 
