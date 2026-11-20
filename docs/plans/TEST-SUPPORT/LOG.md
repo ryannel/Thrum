@@ -1,5 +1,13 @@
 # TEST-SUPPORT log
 
+- 2026-11-20 Built M5, the kit: readback of a buffer, a texture mip or layer, or a byte range, on its own
+  submission or appended to the caller's encoder, with one 120 s wait; `open` (gate, then recipe) in the kit and
+  in `thrum-render`'s `test_device`; `wait::until`, `Scratch`, `ppm::write` and `CountingAllocator`. Each has a
+  test, all passing on Mac Metal with the GPU required. No existing test was converted. `test-readback` entered
+  at 80 sites in 73 files (it also counts `map_buffer_on_submit`), `test-deadline` at 145 in 61; one more fails
+  `./dev check-docs`, verified by a probe. Exact images rely on the shared main-branch check.
+  [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M5/README.md).
+
 - 2026-11-20 Fixed the second review's M2.2 findings. The parent-condition finding repeated because the
   last round fixed named sites and widened the rule only to test modules; `whole-file-gpu-gate` now follows any
   OS-conditioned module's declared subtree, with a stated `platform-only tests:` reason as the one exception.

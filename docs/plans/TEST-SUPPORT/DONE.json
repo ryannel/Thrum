@@ -174,7 +174,7 @@
     {
       "id": "M5",
       "name": "The test kit's readback, device call and wait exist, and the check refuses a new hand-written readback or deadline loop in a test",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -187,8 +187,8 @@
           "ask": "Read the kit's tests: would each fail if its job misbehaved, such as a readback that returned the wrong mip or layer, a wait that outlived its deadline, or an allocator that missed a thread's allocations? Does the gate half of the one call deal only in wgpu types, with the recipe reached through the `render` feature or, inside `thrum-render`, through its own `test_device`? Was any existing test changed?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M5/README.md#m51-the-kits-jobs; .orchestrate/evidence/TEST-SUPPORT/M5/kit-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -198,8 +198,8 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback && python3 scripts/shape_rules.py check --rule test-deadline && python3 scripts/test_shape_rules.py'",
           "ask": "Read the two rules' fixtures: does each refuse one more of its shape in a test file, and pass the kit's own readback and wait and the same code in a file that is not a test? In a scratch copy, add a `map_async` readback to a test file: does `./dev check-docs` fail and name the kit's function?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M5/README.md#m52-the-rules; .orchestrate/evidence/TEST-SUPPORT/M5/probe-check-docs.log",
           "verdict": "",
           "review": ""
         },
@@ -208,8 +208,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
