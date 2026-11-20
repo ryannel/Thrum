@@ -988,7 +988,81 @@
     },
     "M7": {
       "definitions": "2bea36130145b8a3cd654d9becbb9e7887ff783dd6c934df23aada5860f97ceb",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "390b89d2aa9c1e9880762c8a959e0be05e00e054",
+          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "items": {
+            "M7.2": "pass",
+            "M7.3": "fail",
+            "M7.4": "pass",
+            "M7.5": "fail",
+            "M7.6": "pass",
+            "M7.7": "pass",
+            "M7.8": "fail",
+            "M7.9": "fail",
+            "M7.10": "pass",
+            "M7.11": "pass",
+            "M7.12": "pass",
+            "M7.13": "fail",
+            "M7.14": "pass",
+            "M7.15": "fail"
+          },
+          "findings": [
+            {
+              "name": "Shore births on dry columns",
+              "item": "M7.5",
+              "repeat": false
+            },
+            {
+              "name": "Stranded stocks drift on exposed sand",
+              "item": "M7.3",
+              "repeat": false
+            },
+            {
+              "name": "Gale film ends in a hard line across exposed sand",
+              "item": "M7.9",
+              "repeat": false
+            },
+            {
+              "name": "Powered stern foam obscures aerated water at 6 m/s",
+              "item": "M7.8",
+              "repeat": false
+            },
+            {
+              "name": "Submerged air cancels fresh-to-aged film transfer",
+              "item": "M7.13",
+              "repeat": false
+            },
+            {
+              "name": "Film weight varies at the still waterline",
+              "item": "M7.15",
+              "repeat": false
+            },
+            {
+              "name": "Stranded foam supplies no reactive coverage",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 247617,
+            "cached": 13989248,
+            "output": 29164,
+            "turns": 1
+          },
+          "at": "2026-11-20T08:14:35Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md (review commit 8de6cef92) asked for changes. Resolv",
