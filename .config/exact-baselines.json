@@ -35,11 +35,11 @@
         "scripts/compare_v1_pixels.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-culling-m3",
-        "module": "CULLING",
-        "milestone": "M3"
+        "anchor": "ruling-on-the-valley-fix",
+        "module": "SHOWCASE",
+        "milestone": "M9"
       },
-      "pin": "1c195dd0a335d6d5b4355fd8cb96fd955067f1c2a37a2f6557805b3086526546"
+      "pin": "49b106fef6520e6b6b04551fef1dd8c770f632ca988e97f25990890d4fe2a9f7"
     },
     {
       "id": "chrome-day-sdr",
@@ -55,11 +55,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-culling-m3",
-        "module": "CULLING",
-        "milestone": "M3"
+        "anchor": "ruling-on-the-valley-fix",
+        "module": "SHOWCASE",
+        "milestone": "M9"
       },
-      "pin": "93924d130f96bdb38ceb8138421ed8550dd0bc54693093bd83e04afd220348d6"
+      "pin": "5f344effa816dda1172eb4dbeaf0af98d08173c5e1fbf6852619bebe2befa136"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -75,11 +75,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-culling-m3",
-        "module": "CULLING",
-        "milestone": "M3"
+        "anchor": "ruling-on-the-valley-fix",
+        "module": "SHOWCASE",
+        "milestone": "M9"
       },
-      "pin": "4362295d13c88c59f24ccee95635c6690ea5762446eccbb6b99b60956ad87c37"
+      "pin": "025054bf8b1a6773f28d672fd32ab5a94cfdc3841f76c353b55249e296865d60"
     },
     {
       "id": "chrome-night-sdr",
@@ -95,11 +95,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-culling-m3",
-        "module": "CULLING",
-        "milestone": "M3"
+        "anchor": "ruling-on-the-valley-fix",
+        "module": "SHOWCASE",
+        "milestone": "M9"
       },
-      "pin": "b08132f3b9a5fca8985c6fb57ff4620325b7c927772927449da36d1afaaf74bd"
+      "pin": "1fa741dcb764063defe6895e68c7eb9cb58df0609634e6484071ea6b45c6d8b9"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -115,11 +115,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-culling-m3",
-        "module": "CULLING",
-        "milestone": "M3"
+        "anchor": "ruling-on-the-valley-fix",
+        "module": "SHOWCASE",
+        "milestone": "M9"
       },
-      "pin": "4fecc3cefac22b3f8e680a37b4be5fc8dd024d317f1a389c405aba9981c52857"
+      "pin": "7dcc563b68a8c847201a6278ef0cfd7c8279832f78101ae6dd0c95619c44d57f"
     }
   ],
   "retired": []

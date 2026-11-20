@@ -7,7 +7,7 @@
   "showcase_m9": {
     "scope": "The authored lookout rim and sunrise stop",
     "implementation": "The terrain resolves the lookout top and face on separate normals. The sunrise preset holds 6.32 h. The regenerated exit layout and the seven route pins follow the new terrain.",
-    "functional_validation": "The shipped terrain passes deterministic layout and footing checks for 10,000 entities. Metal culling matches Direct at 1,351 submitted frames per recipe with Sun caster culling.",
+    "functional_validation": "The shipped terrain passes deterministic layout and footing checks for 10,000 entities. Metal culling matches Direct at 1,351 submitted frames per recipe with Sun caster culling. Chrome culling matches Direct at all six submitted checkpoints. The full exact verifier passes for the refreshed Metal and Chrome references.",
     "experienced_quality": "Fixed Metal TAAU captures show the lookout edge at the nine sunset views and direct light with long prop shadows at sunrise. The west ridge shadow crossing and far crest remain in ATMOSPHERE M6's scope.",
     "platform_cost_baselines": {},
     "evidence": ".orchestrate/evidence/SHOWCASE/M9/README.md"
