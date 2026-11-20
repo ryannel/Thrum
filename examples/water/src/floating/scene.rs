@@ -45,6 +45,8 @@ pub struct WakeDemo {
     pub body_capacity: Option<u32>,
     /// Whitewater route and its ranked pattern source.
     pub whitewater: WhitewaterDemo,
+    /// Use the whitewater course's Sun placement in paired cost arms.
+    pub whitewater_lighting: bool,
 }
 
 /// Asset route for the example's optional whitewater.
@@ -338,7 +340,11 @@ fn build_scene(
         })
         .transpose()?;
     let (elevation, azimuth) = match demo.map(|demo| demo.view) {
-        Some(WakeView::Chase | WakeView::Overhead) if whitewater => (49.0, 76.0),
+        Some(WakeView::Chase | WakeView::Overhead)
+            if whitewater || demo.is_some_and(|demo| demo.whitewater_lighting) =>
+        {
+            (49.0, 76.0)
+        }
         Some(WakeView::Overhead) => (79.0, 269.0),
         Some(WakeView::Shore) if demo.is_some_and(|demo| demo.stone) => (15.0, 23.0),
         Some(WakeView::Shore) => (14.0, 43.0),

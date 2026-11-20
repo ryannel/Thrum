@@ -70,6 +70,7 @@ fn floating_game(
                     (true, false) => WhitewaterDemo::Procedural,
                     (true, true) => WhitewaterDemo::Cooked,
                 },
+                whitewater_lighting: foam_wind().is_some(),
             },
             water,
         )
