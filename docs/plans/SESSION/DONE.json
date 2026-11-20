@@ -428,10 +428,10 @@
           "check": "python3 scripts/session_match.py memory prediction",
           "ask": "Does the record give the cause of each correction, with none unexplained? After a reconnect, is the old epoch's history discarded before the new baseline is used?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/prediction-recovery.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/M4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.3",
@@ -471,7 +471,7 @@
           "check": "python3 scripts/session_match.py memory prediction-costs",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/M4/prediction-costs.json",
+          "evidence": ".orchestrate/evidence/SESSION/M4/prediction-recovery-costs.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/M4-review.md",
           "builder_result": "pass"

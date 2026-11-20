@@ -148,3 +148,7 @@
   The Mac reproduced both retained SIM-2D traces. The landed implementation's four release cost runs recorded the machine load.
   The shared exact-image check passed both targets on a main revision that contains the implementation.
   [M4 evidence](../../../.orchestrate/evidence/SESSION/M4/README.md)
+- 2026-11-20 Kept the confirmed controller through a post-stall skip and through gaps between recovery batches.
+  A committed digest disagreement now refreshes the fallback on the same poll. A refused step keeps the prior endpoint.
+  Both 36,000-tick Mac release runs verified the public controller throughout recovery. Four release cost runs
+  refreshed the measurements under load. [M4 evidence](../../../.orchestrate/evidence/SESSION/M4/README.md)
