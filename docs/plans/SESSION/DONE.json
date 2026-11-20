@@ -490,18 +490,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause.",
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "The queued evidence merge must land after the active batch clears the merge queue.",
-        "work": {
-          "commit": "c19dfd573340446dc6ab9c8af275cf290eb270cc",
-          "branch": "build/session",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/SESSION/M4-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause."
     },
     {
       "id": "M5",
