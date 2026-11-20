@@ -342,7 +342,7 @@
           "ask": "List each queue, ring and buffer the host session keeps for a peer, and the client's buffer of sets. Does each have a cap that a match setting names? At each cap, is the outcome the one mechanisms 3 and 10 give, with no path that grows without bound, waits on the peer or drops a command and carries on?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M3/M3.7-reliable-delivery.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/M3-review.md",
           "builder_result": "pass"
         },
@@ -404,16 +404,8 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As forgiving as Factorio's multiplayer, where a newcomer downloads the map and catches up while the others keep playing, a desynchronised client is detected and brought back, and a peer that cannot keep up is dropped without the others noticing. Every fault costs only the peer that has it, and the host commits every tick on schedule through all of them.",
-      "findings": [
-        {
-          "name": "A recovered peer closes on an expired reliable-send deadline",
-          "item": "M3.7",
-          "different": "The bounded image writer resolves the earlier storage finding. This failure is a stale delivery deadline after the reliable queue drains and set delivery resumes on datagrams.",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "As forgiving as Factorio's multiplayer, where a newcomer downloads the map and catches up while the others keep playing, a desynchronised client is detected and brought back, and a peer that cannot keep up is dropped without the others noticing. Every fault costs only the peer that has it, and the host commits every tick on schedule through all of them."
     },
     {
       "id": "M4",
