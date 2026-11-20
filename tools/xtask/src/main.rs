@@ -22,26 +22,6 @@ fn cargo(args: &[&str]) -> TaskResult {
     run(env!("CARGO"), args)
 }
 
-fn cargo_verified(args: &[&str], markers: &[(&str, usize)]) -> TaskResult {
-    let output = Command::new(env!("CARGO")).args(args).output()?;
-    std::io::stdout().lock().write_all(&output.stdout)?;
-    std::io::stderr().lock().write_all(&output.stderr)?;
-    if !output.status.success() {
-        return Err(format!("cargo {} failed ({})", args.join(" "), output.status).into());
-    }
-    let combined = format!(
-        "{}{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    for &(marker, minimum) in markers {
-        if combined.matches(marker).count() < minimum {
-            return Err(format!("cargo bench omitted required row {marker:?}").into());
-        }
-    }
-    Ok(())
-}
-
 fn python(args: &[&str]) -> TaskResult {
     run(
         &env::var("THRUM_PYTHON").unwrap_or_else(|_| "python3".into()),
@@ -187,82 +167,6 @@ fn check_web() -> TaskResult {
     ])
 }
 
-fn baseline_inventory() -> TaskResult {
-    if !cfg!(target_os = "macos") {
-        return Err("G0 baseline inventory requires the named M-series Mac".into());
-    }
-    python(&["scripts/repo_check.py"])?;
-    for (row, marker, count) in [
-        ("--g0-s1", "\"G0,S1,", 6),
-        ("--g0-s1-paired", "\"G0,S1_paired,", 8),
-        ("--g0-s2", "\"G0,S2,", 1),
-        (
-            "--g0-burst",
-            "\"G0,S1,10000,Serial,shuffled,damage1,sethealth1,spawn200\"",
-            1,
-        ),
-    ] {
-        cargo_verified(
-            &[
-                "bench",
-                "--locked",
-                "--offline",
-                "--package",
-                "v1-game",
-                "--bench",
-                "g2r",
-                "--",
-                row,
-            ],
-            &[(marker, count)],
-        )?;
-    }
-    cargo_verified(
-        &[
-            "bench",
-            "--locked",
-            "--offline",
-            "--package",
-            "v1-game",
-            "--bench",
-            "frame",
-            "--",
-            "assembled_frame_1080p_late_surface",
-            "g0_120hz_callbacks_at_1080p",
-            "--sample-count",
-            "600",
-            "--sample-size",
-            "1",
-        ],
-        &[
-            ("assembled_frame_1080p_late_surface", 1),
-            ("g0_120hz_callbacks_at_1080p", 1),
-            ("V1 offscreen frame CPU submitted=600 callbacks=600", 2),
-            ("V1 scene GPU pass-sum", 2),
-        ],
-    )?;
-    cargo_verified(
-        &[
-            "bench",
-            "--locked",
-            "--offline",
-            "--package",
-            "v1-game",
-            "--bench",
-            "frame",
-            "--",
-            "--g0-inventory",
-        ],
-        &[
-            ("fixed_row,baseline_state", 1),
-            ("G7 remaining iPhone CPU/GPU proxy rows", 1),
-        ],
-    )?;
-    Ok(())
-}
-
-/// The workspace package and window binary for a scene folder, as Cargo's own metadata reads
-/// them (`scripts/scene_package.py`, which `./dev` also runs before touching the lockfile).
 fn scene_package(folder: &str) -> Result<(String, String), Box<dyn Error>> {
     let output = Command::new(env::var("THRUM_PYTHON").unwrap_or_else(|_| "python3".into()))
         .args(["scripts/scene_package.py", folder])
@@ -556,7 +460,6 @@ const HELP: &[&str] = &[
     "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
     "  long-tests             The main tier from .config/long-tests.txt (long tests, and tests behind a Cargo feature), a GPU required; the main-branch check long-tests runs it",
     "  check-docs             Links, metadata, design hashes and crate policy",
-    "  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac",
     "  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown",
     "  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android",
     "  fmt                    Apply rustfmt",
@@ -594,7 +497,6 @@ fn main() -> TaskResult {
         "help" | "--help" | "-h" => println!("{}", HELP.join("\n")),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "long-tests" => long_tests()?,
-        "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
         "fmt" => cargo(&["fmt", "--all"])?,
         "starter" if args.get(1).map(String::as_str) == Some("--web") => {

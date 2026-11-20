@@ -3263,7 +3263,6 @@ name = "thrum-render"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
- "divan",
  "glam",
  "half",
  "objc2 0.6.5",
@@ -3609,7 +3608,6 @@ checksum = "3a3b425286980a367278453f3b6d28cdcb134b574e5a35824a6ff5eebad50bb6"
 name = "v1-game"
 version = "0.1.0"
 dependencies = [
- "divan",
  "glam",
  "half",
  "js-sys",

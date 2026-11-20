@@ -5,9 +5,7 @@
       "version": 1,
       "files": {
         "crates/thrum-core/Cargo.toml": 1,
-        "crates/thrum-render/Cargo.toml": 7,
-        "crates/thrum-water-model/Cargo.toml": 1,
-        "examples/v1-game/Cargo.toml": 2
+        "crates/thrum-water-model/Cargo.toml": 1
       }
     },
     "device-request": {
@@ -67,10 +65,7 @@
         "crates/thrum-render/src/atmosphere/gpu/tests/reference/gpu.rs": 3,
         "crates/thrum-render/src/atmosphere/gpu/tests/reference/multiple.rs": 3,
         "crates/thrum-render/src/atmosphere/tests.rs": 1,
-        "examples/v1-game/Cargo.toml": 1,
         "examples/v1-game/benches/cooked_edit.rs": 2,
-        "examples/v1-game/benches/g2r.rs": 1,
-        "examples/v1-game/benches/material_reload.rs": 1,
         "examples/v1-game/src/bin/window/capture.rs": 3,
         "examples/v1-game/src/host/scene_source.rs": 2,
         "examples/v1-game/tests/cooked_assets_gpu.rs": 2,
@@ -226,8 +221,6 @@
         "examples/link-proof/benches/allocations.rs": 4,
         "examples/mirror/tests/pool_gpu/retire.rs": 1,
         "examples/mirror/tests/view_knobs_gpu.rs": 1,
-        "examples/v1-game/benches/frame.rs": 1,
-        "examples/v1-game/benches/material_reload.rs": 2,
         "examples/v1-game/src/host/tests/gpu_support.rs": 3,
         "examples/v1-game/src/host/tests/lifecycle_gpu.rs": 1,
         "examples/v1-game/src/host/tests/reconstruction_gpu.rs": 1,

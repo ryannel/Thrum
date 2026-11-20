@@ -42,38 +42,9 @@ profiling = { version = "=1.0.18", default-features = false, features = ["profil
 thrum-fixtures = { path = "../thrum-fixtures" }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 serde_json = "=1.0.154"
-divan = "=0.1.21"
 pollster = "=1.0.1"
 tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
-
-[[bench]]
-name = "extract"
-harness = false
-
-[[bench]]
-name = "clustered"
-harness = false
-
-[[bench]]
-name = "visibility"
-harness = false
-
-[[bench]]
-name = "frame_target"
-harness = false
-
-[[bench]]
-name = "camera_culling"
-harness = false
-
-[[bench]]
-name = "camera_culling_encode"
-harness = false
-
-[[bench]]
-name = "occlusion_passes"
-harness = false
 
 [[test]]
 name = "graph_kinds"
