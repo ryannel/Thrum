@@ -58,7 +58,7 @@
     {
       "id": "M1",
       "name": "Scripts that nothing runs are gone in one landing, and the check finds the script suites that are left by itself",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -72,7 +72,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md (deletions, document lines, ledger rows incl. the three the first review found, shape counts)",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
         },
         {
@@ -93,7 +93,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md; .orchestrate/evidence/DEAD-TOOLS/M1/suites/discover-counts.txt; .orchestrate/evidence/DEAD-TOOLS/M1/probe-check-2.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
         },
         {
@@ -105,18 +105,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Discovered suites run as plain scripts, so six test_t2_capture tests no longer run",
-          "item": "M1.3",
-          "repeat": false
-        },
-        {
-          "name": "Three maturity rows still describe the toolchain as present or candidate",
-          "item": "M1.1",
-          "repeat": false
         }
       ]
     },
