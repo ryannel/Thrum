@@ -118,6 +118,13 @@ fn open_view(hosts: &mut [FrameHost], tick: u64) {
     }
 }
 
+async fn benchmark_device(gpu: &thrum_test_support::Gpu) -> OpenedDevice {
+    DeviceRecipe::default()
+        .open_admitted(&gpu.instance, &gpu.adapter)
+        .await
+        .expect("device")
+}
+
 #[expect(
     clippy::print_stdout,
     reason = "the explicit device benchmark reports paired GPU rows"
@@ -133,10 +140,7 @@ fn main() {
             queue,
             capabilities,
             ..
-        } = DeviceRecipe::default()
-            .open_admitted(&gpu.instance, &gpu.adapter)
-            .await
-            .expect("device");
+        } = benchmark_device(&gpu).await;
         let field_meshes = std::env::var("THRUM_FIELD_MESHES").is_ok_and(|value| value == "on");
         let modes: &[CullMode] = &[CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
         let occlusion = modes.len() == 3;
