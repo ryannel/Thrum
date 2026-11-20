@@ -134,7 +134,33 @@
     },
     "M6": {
       "definitions": "4e6c6339cad720b15ac1d29a7ce3738d7566f57ce3cec3d993f973a4b7244a12",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "068fab487825d630017d5ad148521e1db72e44f4",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 96954,
+            "cached": 2461323,
+            "output": 25592,
+            "cost_usd": 1.779441,
+            "turns": 1
+          },
+          "at": "2026-11-20T19:08:06Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the GATE-TIME and DEAD-TOOLS module plans only, to resolve the Must Fix findings in their third design reviews: .",
@@ -169,6 +195,13 @@
           "cost_usd": 2.708747,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "068fab487825d630017d5ad148521e1db72e44f4",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/M6-review.md",
+        "checked": "30bf39522cd241c02127dbef336f3801d045ee61",
+        "at": "2026-11-20T19:08:06Z"
       }
     }
   },
