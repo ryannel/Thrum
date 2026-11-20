@@ -77,8 +77,8 @@
     {
       "id": "M2",
       "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -92,18 +92,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m21-reflected-host-layouts",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },
         {
           "id": "M2.2",
           "statement": "Each such record is written whole from its struct. No uniform or storage record in the scene renderer, the atmosphere or visibility is packed by byte offsets, and the atmosphere reads the view record through its struct, not through offsets into another module's bytes.",
           "ask": "Search the three modules for `to_le_bytes` and `copy_from_slice` on record bytes: is any record a shader reads still assembled that way? Does one flag still have two writers, as `has_local_lights` did?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m22-whole-record-writes",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -112,18 +112,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m23-shared-wgsl-declarations",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },
         {
           "id": "M2.4",
           "statement": "A constant used on both sides is generated into the shader from the Rust value: the scene renderer's and the atmosphere's shared constants appear as literals in no `.wgsl` file.",
           "ask": "Take the constants the review lists under M23 and M29: is each now generated? Is any number still typed into both a `.rs` and a `.wgsl` file?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-generated-constants",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -132,8 +132,24 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Frozen display oracle imports the production exposure declaration",
+          "repeat": false
+        },
+        {
+          "name": "Vacated cluster records are written as literal byte arrays",
+          "item": "M2.2",
+          "repeat": false
+        },
+        {
+          "name": "Compute dispatch dimensions and other shared constants still have independent shader literals",
+          "item": "M2.4",
+          "repeat": false
         }
       ]
     },
