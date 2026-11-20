@@ -109,12 +109,12 @@
       }
     },
     "M3": {
-      "definitions": "e4251ce4ecf7c91c06e33ac30f6756ece5bded72b13eae9c73eff97ea72ad058",
+      "definitions": "0a9c50e8a84c5526c5c019771877231894477a3d20cef248a7b9038f1fed4a4b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
-        "at": "2026-11-20T12:18:24Z"
+        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
+        "at": "2026-11-20T22:57:57Z"
       }
     },
     "M4": {
@@ -127,12 +127,12 @@
       }
     },
     "M5": {
-      "definitions": "db5cc4279d95714e195b1374a23f81012eddb5cf44f1fbe37f274419bd2fea35",
+      "definitions": "f2eb6fbe3f309eece00020cc35ac4935aafd2c956e9219a757a7c2c509b99af6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
-        "at": "2026-11-20T12:18:24Z"
+        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
+        "at": "2026-11-20T22:57:57Z"
       }
     },
     "M6": {
@@ -249,12 +249,30 @@
       }
     },
     "M7": {
-      "definitions": "2a7d6d6df0b6ec2092161355620bc1b79cd58a9e183f02754fc7175c9e408b09",
+      "definitions": "38bfe5570318813c7f7c9da1dbda4d00d9639af62232c60e2d833936e534d32b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GATE-TIME and DEAD-TOOLS module plans only, to resolve the Must Fix findings in their third design reviews: .",
-        "at": "2026-11-20T12:56:45Z"
+        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
+        "at": "2026-11-20T22:57:57Z"
+      }
+    },
+    "M8": {
+      "definitions": "55ba9745440d50b5d587887a8cea691290d026fc8ba6ff6d33a95d884e52d08e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
+        "at": "2026-11-20T22:57:57Z"
+      }
+    },
+    "M9": {
+      "definitions": "0bd826c6985682fa5da94dff23d924310278f45af371091804229a893a24f5e8",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
+        "at": "2026-11-20T22:57:57Z"
       }
     }
   },
@@ -274,11 +292,15 @@
     {
       "task": "Revise the GATE-TIME and DEAD-TOOLS module plans only, to resolve the Must Fix findings in their third design reviews: .orchestrate/evidence/GATE-TIME/design-review.md (three: the cross-package run-time guard edge, tests gated by cfg(feature) inside the file escaping every tier, and the accepted-risk text leaving out the Ready for Review run) and .orchestrate/evidence/DEAD-TOOLS/design-review.md (two, both on script-caller). Apply each review's proposed fix or an equivalent that resolves the same finding, and weigh their Suggestions. Keep to the owner's rules already in the plans: no long tests in any merge check, test-tier risks written down, files a check reads are test data, not evidence. If a fix changes an interface another cleanup module (DEAD-CODE, TEST-SUPPORT) relies on, update that consumer's reference too and say so. Done when both plans resolve every Must Fix and are committed on this branch.",
       "at": "2026-11-20T12:56:45Z"
+    },
+    {
+      "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. The owner, 20 Nov: \"A 20min merge check still sounds crazy. Tests are meant to be fast.\" The design today projects the merge check at roughly 9 minutes of selected tests plus about 5 of lints once M7 lands. That is still far from fast.\nSet the merge check's goal at a few minutes for a typical landing (about 5 minutes wall clock, the assumption to write down for the owner, who may change it), and plan how GATE-TIME reaches it. Start from measurement, not estimates: where a merge's check spends its time today, split into compile and link, lints, test run per binary, waits on the GPU or other locks, and anything run twice. The merge-check logs and timings under .git/orchestrate and the latest ./dev check output are the sources. Then choose the approach that best gets there. Every test that remains in the merge tier should be fast. A slow behaviour test belongs in the main tier, with its risk written down. Test speed itself is in scope: a test that is slow because of how it was written can be made fast. Keep the owner's rules: no long tests in any merge check, test tiers with written accepted risk, and the main tier runs on main after merges.\nGATE-TIME M6 is building now and M1 is done. Don't change either. Amend the not-started milestones (M7, M2, M3, M4, M5) or add new ones, and keep DEAD-CODE and TEST-SUPPORT dependencies valid; if a consumer changes, update its reference and say so. Done when GATE-TIME's design and milestones name the merge-check time goal, are grounded in the measured breakdown, and are committed.",
+      "at": "2026-11-20T22:57:57Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T12:56:45Z"
+    "at": "2026-11-20T22:57:57Z"
   },
   "design_history": [
     {
