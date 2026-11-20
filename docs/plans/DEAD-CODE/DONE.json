@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -19,8 +19,8 @@
           "check": "sh -c '! git grep -qE \"ChangeFrame|invalidate_change_frames|visit_changes_since|visit_structural_since|visit_changes_with_ticks3\" -- crates examples && git grep -q \"fn finalize_activity\" -- crates && cargo test --locked --offline -p thrum-core'",
           "ask": "Does a write or a spawn still record anything that nothing reads? Did publication, `finalize_activity` or any per-slot tick change? Was any test deleted that covered code that is kept?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check run by agent_loop.py check on the M1 branch; thrum-core tests pass; absence greps empty. LOG.md entry of 2026-11-20.",
           "verdict": "",
           "review": ""
         },
@@ -30,8 +30,8 @@
           "check": "cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network",
           "ask": "Read the milestone's diff of test files with `git diff` from the commit it started from: is any expected digest, hash, count or state literal changed? Is any test of kept behaviour removed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check run by agent_loop.py check on the M1 branch; core, sim2d and network tests pass; no test expected value edited (git diff of tests: one removed assertion on a deleted query in g2_runtime).",
           "verdict": "",
           "review": ""
         },
@@ -42,8 +42,8 @@
           "ask": "Does the sea still compute anything each frame that only a test reads? Which test now fails if a filtered-texture mip lost its slope or Jacobian moments, and does it check all five planes of every mip? Did any assertion about the filtered textures or the wave field change?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check run by agent_loop.py check on the M1 branch under gpu; sea and water tests pass with THRUM_REQUIRE_GPU=1; forward_cache_gpu unchanged.",
           "verdict": "",
           "review": ""
         },
@@ -52,8 +52,8 @@
           "statement": "The long tests that run what this milestone changed pass on main with its commit in, in the main-branch check `long-tests`: the exit scene's stepped hour, which steps the simulation through the tick path the ring was written on, and the ten-minute gale, which renders the sea's graph every frame.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests; before merge the stepped hour and the gale passed in release on the branch, as ./dev long-tests runs them.",
           "verdict": "",
           "review": ""
         },
@@ -62,8 +62,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
