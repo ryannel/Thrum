@@ -154,7 +154,7 @@
     {
       "id": "M3",
       "name": "The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -166,8 +166,8 @@
           "check": "sh -c 'test \"$(git ls-files docs/evidence | wc -l)\" -le 33 && ./dev check-docs'",
           "ask": "List the deleted files whose working copy differs from the bytes at the starting commit, with `git show` against the working folder: is each one's committed content there under a second name? Pick ten other deleted files across modules: does each working copy match the bytes Git held? For five files still tracked under `docs/evidence`, what reads each?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m31-the-373-unread-records, deleted-records.json and deleted.txt beside it",
           "verdict": "",
           "review": ""
         },
@@ -178,8 +178,8 @@
           "ask": "Compare each moved file's Git blob with the starting commit: are the bytes the same? Does `python3 scripts/render2d.py costs` read the same receipts it read before?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m32-test-data-in-fixtures",
           "verdict": "",
           "review": ""
         },
@@ -189,8 +189,8 @@
           "check": "sh -c 'test -z \"$(git ls-files docs/evidence/BULK.json docs/evidence/.gitignore)\" && python3 scripts/evidence_store.py check && python3 scripts/test_evidence_store.py'",
           "ask": "Does `evidence_store.py check` report the same number of history, local and relocated entries as at the starting commit? Restore one history entry in a scratch checkout: is its hash the manifest's?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m33-one-manifest, store-check-before.txt and store-check-after.txt beside it",
           "verdict": "",
           "review": ""
         },
@@ -200,8 +200,8 @@
           "check": "./dev check-docs",
           "ask": "Read the evidence text of each of the five documents and the message of the evidence-size rule: does any still send a record to `docs/evidence`, or describe a step the merge would refuse?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m34-documents",
           "verdict": "",
           "review": ""
         },
@@ -210,8 +210,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
