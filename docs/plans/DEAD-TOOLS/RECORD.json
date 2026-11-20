@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "7ee510c4ffa1490ecce7ef37731c7f8d955d9a42898cff141f3c2bfec0645481",
+      "definitions": "d0ef97245e4369422c04a576877293ab19cf9c591e0cc74f0fd5bedd19b363c0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:46Z"
+        "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
+        "at": "2026-11-20T10:47:17Z"
       }
     },
     "M2": {
-      "definitions": "a8c87ef5fadabc1d63dbcb22f88cfe106ff72ee7c8c6b7b56f4c45257c813623",
+      "definitions": "052bfec82e9783bdd40773b609c6e94277862336065b7e81a394ff7f3d3308e0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:46Z"
+        "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
+        "at": "2026-11-20T10:47:17Z"
       }
     },
     "M3": {
-      "definitions": "89ec1f37435e1af7d8450a8cbb2763c3788ec18794fb512b5b4c4f82beb5f8ef",
+      "definitions": "95f46e8c751ddca5856aa889bc307cf481183ed6415e5878cd2b9952ac054a8d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:46Z"
+        "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
+        "at": "2026-11-20T10:47:17Z"
       }
     },
     "M4": {
@@ -59,16 +59,29 @@
         "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
         "at": "2026-11-20T10:12:46Z"
       }
+    },
+    "M5": {
+      "definitions": "fba43e4ec0749d405981d3df76bd78ac6f09e49e81705bf69ea027ffc53c9354",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
+        "at": "2026-11-20T10:47:17Z"
+      }
     }
   },
   "briefs": [
     {
       "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and consolidation for Thrum.\" The purpose is to make Thrum cheaper to change: a shorter merge gate, no tools, records or code that nothing uses, and no proof heavier than the fault it guards. It must not change what the engine draws, simulates or sends.\n\nStart from /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/REPORT.md. Read it in place; don't copy it or edit it. Beside it, results.json holds every finding, findings/<reviewer>.md holds the full write-ups, and verified/<reviewer>-<n>.md holds the second agents' corrections. Where a verifier corrected a finding, the verifier is right.\n\nIn scope: the report's sections 1 to 4 (gate time, dead tools and records, dead engine code, and small API changes that delete stubs). Also in scope: the parts of section 6 that are code or files, meaning the fixtures and record writers that still use docs/evidence, and the water settings that are parsed twice. Section 5, the test kit, belongs to TEST-SUPPORT as a milestone after its M2, so plan it there. Section 7 needs designs of its own: list each part as not planned, with one line each.\n\nSection 6's plan and settings text belongs to the lead and the planners:\n- L8-01: no rule says a Done item's check is history, so about 770 path mentions are treated as frozen.\n- L8-05: `! grep` and `test ! -e` checks pass when their path is missing (HOST M4.5, CLOUDS M14.13, SHOWCASE M9.7, HOST M3.2).\n- L8-07: ten open items ask for new tracked files under docs/evidence, which the merge guard refuses.\nFix those in the open done-when items and in ORCHESTRATE.md where it's within planner authority. Name any change that only the orchestrate skill can make, and keep that out of this plan.\n\nWhat the plan must respect:\n- A done-when item names a behaviour, not a file location. SHOWCASE M9.6 failed review over a byte-identical fixture move because its items named paths.\n- Up to three Claude builders (Opus 5.5 medium) can work at once. Shape the work so that milestones with disjoint files can run side by side, as separate modules if that's what it takes, and say which ones can.\n- Other builders are live, on Codex, in APPLE-PRESENTATION, HOST, RAY-TRACING, REVIEW-RENDER, SESSION, TEST-SUPPORT and RENDER-2D. The findings' verifier notes say which files are busy and which open done-when items name them. Declare each milestone's files, so the lead can confirm them before a builder starts.\n- A deletion that drops a capability or a proof is the owner's call. Carry each one as an assumption, with the other choice stated. That covers the headless release-trust toolchain (8,500 lines), the nine benches nothing runs, the ten-minute gale soak (actual_gale_keeps_the_fleet_in_contact_on_metal) moving from the gate to a main-branch check with a 60-second run left in the gate, and the reference tests that the 17 November bar may retire. The state-delta codec stays unless SESSION's design changes, because that design says keep.\n- scripts/ is a covered path for exact baselines, so script deletions land together.\n- Changes to the gate's machinery (the test profile, nextest) are measured before they're switched on.\n- Order by payoff. Gate time comes first, because every merge pays it.\n\nDone when the design has passed its review and the plan is merged.",
       "at": "2026-11-20T10:12:46Z"
+    },
+    {
+      "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's decisions of 20 Nov.\n\n1. Resolve every Must Fix finding in .orchestrate/evidence/GATE-TIME/design-review.md, DEAD-TOOLS/design-review.md and DEAD-CODE/design-review.md. Their Suggestions are yours to take or leave; say which you took and why.\n\n2. Owner decisions, which replace the matching Assumption: lines:\n- Decision 1 (gale soak), in the owner's words: \"we can't have tests that run for this long in the regular test suite. We need to think carefully about what risks we're willing to take and when we run everything vs when our tests can be more targeted. I think it has to stay off every merge check.\" So no long soak runs in any merge's check, not even a 60-second slice, unless you show that a short run catches a fault class that nothing else catches. Give GATE-TIME a written test-tier policy, owned in ORCHESTRATE.md or the design library. It should say what runs on every merge (fast, targeted at the files and behaviours a change touches), what runs on main after merges, and what runs at milestone or release points. It should also say which risk each tier accepts and how quickly a fault found later gets back to its cause. Apply that policy to the gale, the stepped hour, the foam and any other test over about a minute.\n- Decision 6 (benches): delete all nine. The owner sees no need to keep any.\n- Decision 9 (provenance): provenance records are tracked in git. Choose their location under the test-data versus evidence rule (evidence is never committed; files a check or a person must read are not evidence), and make sure the merge guard accepts it. Land it before CLOUDS M6 copies its first library.\nThe other assumptions (2, 3, 4, 5, 7, 8, 10, 11) stand as written.\n\n3. Keep each milestone's files table current, so the lead can confirm files before a builder starts.\n\nEnd with PLANNED.",
+      "at": "2026-11-20T10:47:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T10:12:46Z"
+    "at": "2026-11-20T10:47:17Z"
   }
 }
