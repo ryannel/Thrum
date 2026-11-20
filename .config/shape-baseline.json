@@ -111,7 +111,6 @@
         "scripts/check_g5_browser_dev_client.sh": 1,
         "scripts/check_g5_tripwires.sh": 1,
         "scripts/check_g5_wasm_dev_client.sh": 1,
-        "scripts/check_v1_browser.mjs": 1,
         "scripts/g5_shipping_links.py": 1,
         "scripts/mac_m2_capture_launcher.swift": 1,
         "scripts/mac_m2_presented.py": 1,
