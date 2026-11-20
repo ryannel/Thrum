@@ -8,6 +8,9 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
+      "depends_on": [
+        "GATE-TIME:M1"
+      ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
@@ -39,6 +42,16 @@
           "ask": "Does the sea still compute anything each frame that only a test reads? Which test now fails if a filtered-texture mip lost its slope or Jacobian moments, and does it check all five planes of every mip? Did any assertion about the filtered textures or the wave field change?",
           "target": "mac-metal",
           "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "The long tests that run what this milestone changed pass on main with its commit in, in the main-branch check `long-tests`: the exit scene's stepped hour, which steps the simulation through the tick path the ring was written on, and the ten-minute gale, which renders the sea's graph every frame.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
@@ -81,8 +94,8 @@
         },
         {
           "id": "M2.2",
-          "statement": "The list of contributions, `SceneContributions`, is the one wrapper that stands in front of other contributions outside tests, and it forwards every hook: a test puts a probe behind it and sees all eight hooks reach it, the five with defaults among them. The ray-tracing replacement, a test's own fixture, still writes all eight forwards out. The other test fixtures that forward keep the hooks their tests need, and get no probe.",
-          "check": "sh -c 'out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib contribution 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
+          "statement": "The list of contributions, `SceneContributions`, is the one wrapper that stands in front of other contributions outside tests, and it forwards every hook: a test in the list's own module, `contribution::list`, puts a probe behind it and sees all eight hooks reach it, the five with defaults among them. The ray-tracing replacement, a test's own fixture, still writes all eight forwards out. The other test fixtures that forward keep the hooks their tests need, and get no probe.",
+          "check": "sh -c 'out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib contribution::list 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Name the test that fails if `SceneContributions` does not forward one hook, and try it: remove one forward in a scratch copy. Does its probe count all eight hooks, the five with defaults among them? Does the ray-tracing replacement still forward all eight itself, with none left to a default? Is there any other wrapper outside tests that holds a contribution and forwards to it?",
           "target": "mac-metal",
           "lock": "gpu",
@@ -93,7 +106,7 @@
         },
         {
           "id": "M2.4",
-          "statement": "The tests behind a Cargo feature whose contributions this milestone edited pass on main with its commit in, in the main-branch check `long-tests`.",
+          "statement": "The tests that no merge check runs and whose contributions this milestone edited pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "open",
@@ -289,7 +302,7 @@
         },
         {
           "id": "M6.4",
-          "statement": "The tests behind a Cargo feature that build layouts through the converted code pass on main with this milestone's commit in, in the main-branch check `long-tests`.",
+          "statement": "The tests that no merge check runs and that build layouts or graphs through the converted code pass on main with this milestone's commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature, and the long tests that render through a converted file, the ten-minute gale and the field flythroughs among them.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
           "builder_result": "open",

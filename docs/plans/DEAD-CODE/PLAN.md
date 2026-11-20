@@ -29,7 +29,11 @@ stays. `crates/thrum-water/src/records/tests.rs` checks the sea's `Moments` layo
 `surface.wgsl` that nothing binds, so it fails if only the sea changes. Two functions are called
 `surface_accesses`: the dead one is `Sea::surface_accesses`, and `Filtered::surface_accesses`, which water uses
 every frame through `filtered_accesses`, stays. The cost priors in `examples/water/tests/fixtures/` and under
-`docs/evidence/WATERS/` keep their "sea moments mip" rows: don't edit them.
+`docs/evidence/WATERS/` keep their "sea moments mip" rows: don't edit them. The stepped hour
+(`examples/v1-game/tests/exit_scene.rs`) and the gale (`examples/water/tests/floating_gpu.rs`) are ignored long
+tests by the time this starts, so `./dev check` runs neither. M1.5 passes from the shared run on main, where a
+failure takes hours to trace to its commit, so run both yourself before you merge, as `./dev long-tests` runs
+them.
 
 ## M2 A scene contribution writes only the hooks it uses
 
@@ -39,7 +43,8 @@ in `contribution/list.rs`. `LentDiagnostic` in `examples/v1-game/src/lent.rs` ho
 the game's ray-tracing proof tests, `Observed` in `crates/thrum-clouds/src/shade/tests.rs` and `PoolWitness` in
 the mirror's `view_knobs_gpu` tests. `crates/thrum-render/tests/ray_instances_seam.rs` and the game's ray-tracing
 and mesh-stage tests are behind a Cargo feature: `./dev check` compiles them from `GATE-TIME` M6 on, and M2.4
-passes from the shared run on main. `RAY-TRACING` M3 is building in `contribution.rs`: tell its builder before the
+passes from the shared run on main. The probe's test goes in `contribution::list`, which has no test today: M2.2's
+check runs that module's tests. `RAY-TRACING` M3 is building in `contribution.rs`: tell its builder before the
 trait change lands.
 
 ## M3 The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach
@@ -54,7 +59,9 @@ layout: rewrite those with a full capture. `PUDDLES` M1.1 is Done and says "the 
 The two parsers are `examples/water/src/main.rs` and the proof tests' support. The proof also hard-codes
 `lake = false` for its bodies scene: decide it as the design decides the others, and write each decision in the
 log. The window reads its variables through a helper, `option(key, "THRUM_WATER_X")`, and the tests read theirs
-with `std::env::var`. This milestone comes before M5 and M6 because `WATERS` M7, which it waits for, is the
+with `std::env::var`. Leave `Fixture` in `tests/support.rs` as it is: the gale and the foam's moored run build
+their hosts through it, and they run only on main. If the parse cannot land without changing it, write the
+proposal in the log and end `BLOCKED`, because the milestone would then need the `long-tests` item. This milestone comes before M5 and M6 because `WATERS` M7, which it waits for, is the
 nearest of the three waits to clearing; if that changes, the lead asks a planner to reorder them.
 
 ## M5 The game's unread state projection and the content crate with no producer are gone
