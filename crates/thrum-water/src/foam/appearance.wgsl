@@ -29,9 +29,11 @@ fn pattern_rank(point: vec2<f32>, footprint: f32) -> f32 {
     let tile = floor(point / 3.2);
     let f = fract(point / 3.2);
     let w = smoothstep(vec2(0.30), vec2(0.70), f);
+    let warp = vec2(foam_noise(point * 3.7), foam_noise(point * 4.9 + 23.0)) - 0.5;
+    let warped = point + 0.19 * warp;
     return mix(
-        mix(pattern_patch(point, tile, footprint), pattern_patch(point, tile + vec2(1.0, 0.0), footprint), w.x),
-        mix(pattern_patch(point, tile + vec2(0.0, 1.0), footprint), pattern_patch(point, tile + 1.0, footprint), w.x),
+        mix(pattern_patch(warped, tile, footprint), pattern_patch(warped, tile + vec2(1.0, 0.0), footprint), w.x),
+        mix(pattern_patch(warped, tile + vec2(0.0, 1.0), footprint), pattern_patch(warped, tile + 1.0, footprint), w.x),
         w.y);
 }
 fn ranked_cover(stocks: vec4<f32>, point: vec2<f32>, footprint: f32) -> f32 {
@@ -40,7 +42,13 @@ fn ranked_cover(stocks: vec4<f32>, point: vec2<f32>, footprint: f32) -> f32 {
     let rank = pattern_rank(point, footprint);
     let varied = mix(0.72, 1.20, foam_noise(point * vec2(0.69, 1.27)));
     let lace = smoothstep(rank - 0.10, rank + 0.10, varied * (0.70 * cover + 0.49 * stocks.y));
-    let feather = sqrt(cover) * min(1.0, 1.8 * lace + 0.30 * cover);
+    let wind = foam_settings.time_wind.zw;
+    let speed = length(wind);
+    let along = select(vec2(1.0, 0.0), wind / max(0.001, speed), speed > 0.001);
+    let streak_coords = vec2(dot(point, along), dot(point, vec2(-along.y, along.x)));
+    let streak = smoothstep(0.22, 0.72, foam_noise(streak_coords * vec2(0.78, 3.60)));
+    let broken = mix(0.16 + 0.84 * streak, 1.0, smoothstep(0.04, 0.22, stocks.y));
+    let feather = sqrt(cover) * min(1.0, 1.55 * lace + 0.22 * cover) * broken;
     let core = smoothstep(0.19, 0.59, stocks.y);
     let near = max(feather, core);
     return mix(near, max(cover, core), smoothstep(0.16, 1.0, footprint)) * smoothstep(0.008, 0.028, cover);
@@ -53,7 +61,7 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let variance = max(0.001, dot(row.gains * row.gains, foam_settings.jacobian_variance));
     let wind = smoothstep(5.0, 18.0, length(foam_settings.time_wind.zw));
     let caps = wind * gaussian_lower_tail((0.82 - mix(jacobian, 1.0, smoothstep(1.0, 9.0, footprint))) / sqrt(variance));
-    let shore = 1.0 - exp(-6.72 * row.loss);
+    let shore = 1.0 - exp(-1.65 * row.loss);
     let far = vec4(0.04 * caps, 0.08 * caps, 0.10 * caps + 0.34 * shore, 0.0);
     let stocks = foam_at(point.xz, far);
     return vec4(stocks.x, ranked_cover(stocks, point.xz, footprint), stocks.zw);

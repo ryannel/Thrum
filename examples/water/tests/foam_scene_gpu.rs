@@ -272,7 +272,7 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
                         assert!(rate == 0.0, "birth at {point:?} beyond wave support");
                     }
                     if rate > 0.0 {
-                        reported_loss += rate / 1.76;
+                        reported_loss += rate / 0.39;
                         wet_loss += lost;
                     }
                     deposited += f64::from(stock[1] + stock[2]);
@@ -337,6 +337,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     let mut fixture = Fixture::from_game(gpu, extent, game, report);
     fixture.parameters(r#"{"camera.island":0}"#);
     fixture.warm_cooked();
+    let before = probes.foam.latest().expect("submitted foam source window");
     let matrix = support::island::view_proj(0);
     let mut candidates = Vec::new();
     let mut points = Vec::new();
@@ -367,6 +368,43 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
         }
     }
     assert!(!points.is_empty(), "visible dry beach margin");
+    let sample_start = points.len();
+    let [ox, oz] = before.origins[1][0].map(f64::from);
+    let side = before.side;
+    let cell = f64::from(before.spacing[0]);
+    let map = map.lock().expect("shore map");
+    let mut parcel_indices = Vec::new();
+    'rows: for j in 0..side {
+        for i in 0..side {
+            if (i + 3 * j) % 7 != 0 {
+                continue;
+            }
+            let position = [
+                ox + (f64::from(i) + 0.5) * cell,
+                oz + (f64::from(j) + 0.5) * cell,
+            ];
+            if map
+                .sample(position)
+                .is_some_and(|column| column.body == 0 && (-0.30..=-0.07).contains(&column.depth))
+            {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "the sampled beach lattice fits the query's metre records"
+                )]
+                let position = position.map(|metres| metres as f32);
+                points.push(QueryPoint {
+                    position,
+                    radius: 0.0,
+                    use_tick: 476,
+                });
+                parcel_indices.push((j * side + i) as usize);
+                if points.len() == 512 {
+                    break 'rows;
+                }
+            }
+        }
+    }
+    drop(map);
     probes.query.post(
         479,
         vec![BodyQuery {
@@ -383,7 +421,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     let image = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
     assert_eq!(answer.len(), 1, "submitted public shoreline query");
     let mut dry_film = 0;
-    for (&pixel, query) in candidates.iter().zip(&answer[0].points) {
+    for (&pixel, query) in candidates.iter().zip(&answer[0].points[..sample_start]) {
         if query.surface.wet {
             continue;
         }
@@ -397,7 +435,29 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
         dry_film > 0,
         "dry film must colour pixels at unchanged opaque depth"
     );
+    let witness = probes.foam.latest().expect("submitted foam parcels");
+    assert_eq!(before.origins[1], witness.origins[0]);
+    let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(&fixture, &witness.parcels);
+    let mut dry_births = 0;
+    for (&index, query) in parcel_indices.iter().zip(&answer[0].points[sample_start..]) {
+        if !query.surface.wet
+            && query
+                .bed
+                .is_some_and(|bed| f64::from(bed) > query.surface.sample.height + 0.04)
+        {
+            assert_eq!(
+                parcels[index][1][3], 0.0,
+                "dry column reports a shore birth at {:?}",
+                query.point.position
+            );
+            dry_births += 1;
+        }
+    }
+    assert!(
+        dry_births > 0,
+        "the public query must identify dry source cells"
+    );
     eprintln!(
-        "Metal shore film: {dry_film} changed samples with unchanged ground depth and dry public query"
+        "Metal shore film: {dry_film} changed samples with unchanged ground depth and dry public query. {dry_births} queried dry source cells had zero shore birth."
     );
 }

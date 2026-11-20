@@ -71,15 +71,6 @@ At zero speed the launch is held horizontally so the waterline shows pitch and r
 The panel controls speed, camera and Sun and shows refused requests, late points, unavailable
 uses and blocking reads.
 
-## Whitewater
-
-`THRUM_WATER_FOAM=gale THRUM_WATER_VIEW=vista ./dev scene examples/water` opens the sea from
-40 m. Choose `waterline` for 2 m, or `chase` and `overhead` to see the craft's trail.
-`THRUM_WATER_SPEED=6` sets its initial speed in metres per second. Use **Craft present** to remove
-the craft and watch the water carry its remaining trail. Choose `THRUM_WATER_LOCATION=beach`
-for the island's sand, aerial and lake views. The Chrome options use the same names, for
-example `?foam=gale&location=beach`. The browser proof is `node scripts/check_water_browser.mjs --case foam`.
-
 The game publishes six columns per body at each fixed tick. The water contribution uses the
 world map, analytic long waves and the existing cascade mips, then copies a single dispatch's
 results into a nonblocking staging ring. The game drains the mailbox at the start of its tick,
@@ -93,3 +84,12 @@ THRUM_WATER_WAKE=calm THRUM_WATER_SPEED=3 THRUM_WATER_VIEW=overhead ./dev scene 
 ```
 
 Use `THRUM_WATER_LOCATION=lake`, `THRUM_WATER_STONE=1`, and `THRUM_WATER_VIEW=shore` for the lake impact. The craft speed and course can be changed while the scene runs. In the web scene the same options are `?wake=calm&speed=3&view=overhead` and `?wake=calm&location=lake&stone=1&view=shore`.
+
+## Whitewater
+
+`THRUM_WATER_FOAM=gale THRUM_WATER_VIEW=vista ./dev scene examples/water` opens the sea from
+40 m. Choose `waterline` for 2 m, or `chase` and `overhead` to see the craft's trail.
+`THRUM_WATER_SPEED=6` sets its initial speed in metres per second. Use **Craft present** to remove
+the craft and watch the water carry its remaining trail. Choose `THRUM_WATER_LOCATION=beach`
+for the island's sand, aerial and lake views. The Chrome options use the same names, for
+example `?foam=gale&location=beach`. The browser proof is `node scripts/check_water_browser.mjs --case foam`.

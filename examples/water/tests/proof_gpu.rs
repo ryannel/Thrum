@@ -255,10 +255,6 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             result["arms"] = json!(arms);
         }
         "fixed" => {
-            fixture
-                .host
-                .enable_submitted_capture_with_limits(2, limits())
-                .expect("tap");
             let mut images = Vec::new();
             let views = [
                 ("noon-2-along", 2, 90, 60),
@@ -312,7 +308,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                     10.0,
                 )).collect()
             };
-            for (name, params, time) in checkpoints {
+            for (session, (name, params, time)) in (2_u64..).zip(checkpoints) {
                 fixture.parameters(&params);
                 if foam_wind().is_some() {
                     let steps = if name.ends_with("-0") { 72 } else { 7 };
@@ -320,6 +316,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                         fixture.frame_without_timings(time - f64::from(index) * 0.10);
                     }
                 }
+                fixture
+                    .host
+                    .enable_submitted_capture_with_limits(session, limits())
+                    .expect("fixed checkpoint tap");
                 let sample = fixture.frame(time);
                 let eye = fixture
                     .host
@@ -334,10 +334,13 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                     .view
                     .camera_position();
                 let image = take_image(&mut fixture);
+                assert_eq!(image.sample.submission_order, sample.submission_order);
+                assert_eq!(image.sample.tick, sample.tick);
                 let file = format!("{name}.rgba");
                 std::fs::write(directory.join(&file), &image.rgba).expect("fixed image");
                 images.push(json!({"name":name,"file":file,"camera":eye,"sample":sample_json(&sample),"exposure_words":image.exposure_gpu_words,"submitted_elapsed":image.submitted_elapsed.as_secs_f64()}));
                 fixture.host.recycle_submitted_image(image);
+                fixture.host.disable_submitted_capture();
             }
             result["images"] = json!(images);
         }
