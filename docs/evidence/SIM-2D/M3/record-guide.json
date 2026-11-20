@@ -1,9 +1,0 @@
-{
-  "commit": "186947f331e1d787b645c2be07162b28b376e060",
-  "target": "mac-metal",
-  "command": "python3 scripts/sim2d_conformance.py record --package crowd-2d --trace crowd --output tmp/sim2d/new-crowd-candidate.txt",
-  "result": "pass",
-  "comparison": "All sizes, folds, checkpoints and slice entries equal the immutable Crowd reference. Candidate headers differ by build identity.",
-  "candidate_sha256": "37d6a09ddde44caf86db43f18f5a2b49e9c0573d3a1f1c445d3b2ac1a27474fa",
-  "retained_sha256": "3878dbd394cb5b2e3e8538496032fd1cab1d5d0242e8debc7d8cfc595af573a0"
-}

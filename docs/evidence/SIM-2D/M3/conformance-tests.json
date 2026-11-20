@@ -1,8 +1,0 @@
-{
-  "commit": "186947f331e1d787b645c2be07162b28b376e060",
-  "target": "mac-metal",
-  "command": "python3 -m unittest discover -s scripts -p test_sim2d_conformance.py",
-  "tests": 15,
-  "result": "pass",
-  "output": "docs/evidence/SIM-2D/M3/conformance-tests.log"
-}

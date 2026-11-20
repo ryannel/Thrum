@@ -1,9 +1,0 @@
-# Reviewer's own runs, release build of crowd-2d-run at 2aa357818 (clean checkout), Mac M3 Max, 16 Nov 2026.
-# Columns: args, fold, rewinds, changed_rewinds, reused, hits, neighbours (summed over forward ticks)
-2000 3600 --straight 87496bd96b8c5be4 0 0 600 599 104832380
-2000 3600 87496bd96b8c5be4 30 30 600 599 104832382
-5000 3600 --straight 290bd104cb7a0409 0 0 600 599 232294702
-# Retained folds (examples/crowd-2d/retained/crowd.txt): 2000 87496bd96b8c5be4, 5000 290bd104cb7a0409
-# Prior Mac cost records (git history of docs/evidence/SIM-2D/M1/costs-mac-metal.json), 5,000 bodies, tick median ms at 65,407 neighbours/tick:
-# a3f4c2236 (bf07e76eb): run1 1.21, run2 1.19
-# 050f996b9 (371450716, current): run1 1.751 (+47% over 1.19), run2 1.257; current record flags quarter_slower_tripwire false on both

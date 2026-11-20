@@ -1,1 +1,0 @@
-start_us=482500 resume_us=685000 observed_hold_us=202500 position=24 last_draw=24 resumed_position=24 reported_stall_us=2500 skip=None

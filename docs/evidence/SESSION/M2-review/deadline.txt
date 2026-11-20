@@ -1,2 +1,0 @@
-deadline_ms=4000 hello_ms=3999 state=Synchronizing slot=Some(0)
-deadline_ms=4000 hello_ms=4001 state=Synchronizing slot=Some(0)

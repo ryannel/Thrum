@@ -1,8 +1,0 @@
-{
-  "command": "python3 scripts/sim2d_profile.py controls",
-  "exit": 0,
-  "at": "2026-11-17T15:21:11Z",
-  "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/8d8976084fe8decb5818c6b7-3ec469731e651013.stdout",
-  "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/8d8976084fe8decb5818c6b7-3ec469731e651013.stderr",
-  "role": "build"
-}

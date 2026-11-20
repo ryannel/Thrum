@@ -1,6 +1,0 @@
-   Compiling sim2d-review-resource-probe v0.0.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/SIM-2D/docs/evidence/SIM-2D/M3-review)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.26s
-     Running `tmp/sim2d-m3-review-target/debug/resource-probe`
-infinity: step=Ok(1) tick=1 resource_finite=false digest_changed=true
-nan: step=Ok(1) tick=1 resource_finite=false digest_changed=true
-finite: step=Ok(1) tick=1 resource_finite=true digest_changed=true
