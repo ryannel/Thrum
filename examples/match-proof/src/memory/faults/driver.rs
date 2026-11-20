@@ -1,4 +1,8 @@
-use std::{cell::RefCell, rc::Rc, time::Instant};
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+    time::Instant,
+};
 
 use serde_json::{Value, json};
 use thrum_core::sim::InputFrame;
@@ -13,12 +17,15 @@ use thrum_transport::{
     memory::{Conditioner, DatagramEvent, Memory},
 };
 
-use super::super::world::{
-    CrowdWorld, Time,
-    fault_world::{FaultWire, Shared, Witness},
+use super::{
+    super::world::{
+        CrowdWorld, Time,
+        fault_world::{CrowdController, FaultWire, PlayerRule, Shared, Witness},
+    },
+    prediction::Trace,
 };
 
-pub(super) type Replica = Client<Shared, FaultWire>;
+pub(super) type Replica = Client<Shared, FaultWire, CrowdController>;
 pub(super) type Authority = Host<Shared, FaultWire>;
 
 pub(super) struct Player {
@@ -45,6 +52,7 @@ pub(super) struct Player {
     pub catchup_steps: u64,
     pub catchup_engine_ns: u64,
     pub restored_at: Vec<u64>,
+    pub prediction: Option<Trace>,
 }
 
 impl Player {
@@ -73,6 +81,7 @@ pub(super) struct Match {
     pub images: Vec<Value>,
     pub diagnostics: Vec<thrum_network::session::Divergence>,
     pub finished: Option<u64>,
+    pub admitted: Option<Vec<[bool; 4]>>,
 }
 
 impl Match {
@@ -94,21 +103,36 @@ impl Match {
             images: Vec::new(),
             diagnostics: Vec::new(),
             finished: None,
+            admitted: None,
         }
     }
 
     pub(super) fn add(&mut self, profile: Profile, token: Option<PlayerToken>) -> usize {
-        let index = self.players.len();
-        let mut carrier = Memory::new(
+        self.add_conditioned(
             profile,
+            token,
             Conditioner {
-                seed: 29_721 + index as u64,
+                seed: 29_721 + self.players.len() as u64,
                 // Preserve exact bytes for the stale-epoch carrier control.
                 duplicate: true,
                 ..Conditioner::default()
             },
+            None,
+            None,
         )
-        .expect("valid conditioned match fixture");
+    }
+
+    pub(super) fn add_conditioned(
+        &mut self,
+        profile: Profile,
+        token: Option<PlayerToken>,
+        conditioner: Conditioner,
+        lead: Option<u16>,
+        prediction: Option<Trace>,
+    ) -> usize {
+        let index = self.players.len();
+        let mut carrier =
+            Memory::new(profile, conditioner).expect("valid conditioned match fixture");
         carrier.advance(self.now / 1_000);
         let links = carrier.connect().expect("valid conditioned match fixture");
         self.host
@@ -121,7 +145,15 @@ impl Match {
             self.measured,
         ));
         let world = Rc::clone(&shared.0);
-        let mut client = Client::adaptive(shared, FaultWire, links[0].clone(), self.now);
+        let rules = prediction
+            .as_ref()
+            .filter(|trace| trace.enabled)
+            .map(|trace| PlayerRule {
+                movement: crowd_2d::PlayerMovement::default(),
+                timing: trace.timing.as_ref().map(Rc::<Cell<Time>>::clone),
+            });
+        let mut client =
+            Client::with_controller(shared, FaultWire, links[0].clone(), self.now, lead, rules);
         if let Some(token) = token {
             client = client.with_token(token);
         }
@@ -149,6 +181,7 @@ impl Match {
             catchup_steps: 0,
             catchup_engine_ns: 0,
             restored_at: Vec::new(),
+            prediction,
         });
         index
     }
@@ -164,6 +197,11 @@ impl Match {
             player
                 .carrier
                 .advance_observed(self.now / 1_000, |direction, event, bytes| {
+                    if direction == 0
+                        && let Some(trace) = &mut player.prediction
+                    {
+                        trace.datagram(event, bytes);
+                    }
                     if event != DatagramEvent::Delivered {
                         return;
                     }
@@ -181,6 +219,12 @@ impl Match {
         self.host
             .advance(self.now, self.finished.unwrap_or(u64::MAX));
         let after = self.tick();
+        if let Some(admitted) = &mut self.admitted
+            && after > 0
+            && after > admitted.len() as u64
+        {
+            admitted.push(self.host.admissions());
+        }
         assert_eq!(
             after,
             (self.now / period).min(self.finished.unwrap_or(u64::MAX)),
@@ -254,19 +298,47 @@ impl Match {
             let before = player.client.world().tick();
             let engine_before = player.world.borrow().crowd.engine.total;
             let start = player.measure_catchup.then(Instant::now);
+            let trace = &mut player.prediction;
+            let prediction_run = trace.is_some();
+            let slot = player.client.slot().unwrap_or(0);
+            let timing = trace
+                .as_ref()
+                .and_then(|trace| trace.timing.as_ref())
+                .map(|_| Instant::now());
             player
                 .client
-                .advance_with_step_budget(self.now, player.budget, |target| {
-                    // Keep motion on one axis during shorter recovery controls.
-                    // Alternate before the hero would reach the arena wall.
-                    let sign = if (target / 300).is_multiple_of(2) {
-                        1.0
-                    } else {
-                        -1.0
-                    };
-                    Controls::axes([sign * 0.7, 0.1, 0.0])
-                })
+                .advance_with_prediction_events(
+                    self.now,
+                    player.budget,
+                    |target| {
+                        if prediction_run {
+                            return Controls::axes(super::super::axes(29_721, slot, target * 11));
+                        }
+                        // Keep motion on one axis during shorter recovery controls.
+                        // Alternate before the hero would reach the arena wall.
+                        let sign = if (target / 300).is_multiple_of(2) {
+                            1.0
+                        } else {
+                            -1.0
+                        };
+                        Controls::axes([sign * 0.7, 0.1, 0.0])
+                    },
+                    |event| {
+                        if let Some(trace) = trace {
+                            trace.events.push(event);
+                        }
+                    },
+                )
                 .expect("valid conditioned match fixture");
+            if let Some(trace) = trace {
+                trace.sample(
+                    &player.client,
+                    &player.world.borrow(),
+                    after,
+                    self.now,
+                    timing,
+                );
+            }
             {
                 let world = player.world.borrow();
                 if world.restores.len() > player.restored_at.len() {

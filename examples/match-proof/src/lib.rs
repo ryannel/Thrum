@@ -6,7 +6,7 @@ pub use image::{capture, restore};
 #[cfg(not(target_arch = "wasm32"))]
 mod memory;
 #[cfg(not(target_arch = "wasm32"))]
-pub use memory::{MemoryProofError, MemoryRun, run_fault, run_memory};
+pub use memory::{MemoryProofError, MemoryRun, run_fault, run_memory, run_prediction};
 
 use thrum_core::sim::RuleSetIdentity;
 

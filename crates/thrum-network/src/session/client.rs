@@ -1,16 +1,19 @@
 use std::collections::VecDeque;
 
 use super::{
-    DigestPart, Disposition, EndReason, Input, MAX_PENDING, PROTOCOL, PlayerToken, Refusal,
-    ResultEvent, Roster, SLOTS, SessionError, Settings, World,
+    ControllerView, DigestPart, Disposition, EndReason, Input, MAX_PENDING, NoPrediction, PROTOCOL,
+    PlayerToken, PredictedController, PredictionEvent, Refusal, ResultEvent, Roster, SLOTS,
+    SessionError, Settings, World,
     clock::{Clock, INITIAL_BUFFER, Lead, Playout, Skip, Stall},
     frame,
+    prediction::Prediction,
     wire::{self, Connection, INPUT_PREFIX, Read},
 };
 use crate::{
     envelope::{self, HEADER_BYTES, Kind, Message},
     input_batch::{self, ActionWire, EncodeRecord, MAX_ACTIONS, MAX_RECORDS},
 };
+use thrum_core::sim::InputFrame;
 use thrum_transport::{CloseReason, DATAGRAM_LIMIT, Event, Lane, Link};
 
 /// State a game can present for its connection.
@@ -75,8 +78,9 @@ struct Stored<A> {
 
 /// One replica. Its world only changes by restoring a link baseline or
 /// committing the next contiguous admitted set received from that link.
-pub struct Client<W: World, Codec> {
+pub struct Client<W: World, Codec, P: PredictedController<W> = NoPrediction> {
     replica: Replica<W, Codec>,
+    prediction: Option<Box<Prediction<W, P>>>,
     link: Link,
     state: ClientState,
     settings: Option<Settings>,
@@ -104,7 +108,7 @@ pub struct Client<W: World, Codec> {
     baseline_tick: u64,
     packet: Vec<u8>,
     scratch: Box<[u8]>,
-    recent: VecDeque<thrum_core::sim::InputFrame<W::Action>>,
+    recent: VecDeque<InputFrame<W::Action>>,
     repeat_limit: u8,
     commands: VecDeque<(u64, Vec<u8>)>,
     frame_sequence: u64,
@@ -142,7 +146,40 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         protocol: u16,
         pinned: Option<u16>,
     ) -> Self {
+        Self::connect(world, codec, link, now, protocol, pinned, None)
+    }
+
+    /// A replica using this build's protocol and automatic lead.
+    pub fn adaptive(world: W, codec: Codec, link: Link, now: u64) -> Self {
+        Self::new(world, codec, link, now, PROTOCOL, None)
+    }
+}
+
+impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W, Codec, P> {
+    /// Create a replica with an optional game-declared controller. Passing no
+    /// rule constants leaves prediction disabled for this connection.
+    pub fn with_controller(
+        world: W,
+        codec: Codec,
+        link: Link,
+        now: u64,
+        pinned: Option<u16>,
+        rules: Option<P::Rules>,
+    ) -> Self {
+        Self::connect(world, codec, link, now, PROTOCOL, pinned, rules)
+    }
+
+    fn connect(
+        world: W,
+        codec: Codec,
+        link: Link,
+        now: u64,
+        protocol: u16,
+        pinned: Option<u16>,
+        rules: Option<P::Rules>,
+    ) -> Self {
         Self {
+            prediction: rules.map(|rules| Box::new(Prediction::new(rules))),
             replica: Replica {
                 world,
                 codec,
@@ -194,11 +231,6 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             report_at: now,
             obsolete: 0,
         }
-    }
-
-    /// A replica using this build's protocol and automatic lead.
-    pub fn adaptive(world: W, codec: Codec, link: Link, now: u64) -> Self {
-        Self::new(world, codec, link, now, PROTOCOL, None)
     }
 
     /// Map a virtual carrier's time zero to this client's local clock.
@@ -262,6 +294,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             }
         })?;
         self.leaving = true;
+        if let Some(prediction) = &mut self.prediction {
+            prediction.suspend(true);
+        }
         Ok(())
     }
 
@@ -318,6 +353,20 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                 .as_ref()?
                 .sample(now, self.world().tick(), self.settings?),
         )
+    }
+
+    /// Sample the local character's adjacent endpoints with the confirmed
+    /// playout fraction. After a drop these are the confirmed endpoints.
+    pub fn controller(&self, now: u64) -> Option<ControllerView<P::State>> {
+        let prediction = self.prediction.as_ref()?;
+        let interpolation = self
+            .clock
+            .as_ref()
+            .zip(self.settings)
+            .map_or(1.0, |(clock, settings)| {
+                clock.interpolation(now, self.world().tick(), settings)
+            });
+        prediction.view(interpolation)
     }
 
     /// Take the stall that just ended.
@@ -431,7 +480,22 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         &mut self,
         now: u64,
         budget: u8,
+        sample: impl FnMut(u64) -> Controls<W::Action>,
+    ) -> Result<(), SessionError> {
+        self.advance_with_prediction_events(now, budget, sample, |_| {})
+    }
+
+    /// Advance as usual and report each bit comparison and correction
+    /// synchronously. A game can use corrected endpoints to smooth presentation.
+    ///
+    /// # Errors
+    /// Locally sampled controls are unencodable in a single timed frame.
+    pub fn advance_with_prediction_events(
+        &mut self,
+        now: u64,
+        budget: u8,
         mut sample: impl FnMut(u64) -> Controls<W::Action>,
+        mut observe: impl FnMut(PredictionEvent<P::State>),
     ) -> Result<(), SessionError> {
         if !self.active() {
             return Ok(());
@@ -478,7 +542,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             self.send_commands(send_time);
         }
         if self.baseline.is_none() && !self.awaiting_repair {
-            self.step(now, prior, settings, budget);
+            self.step(now, prior, settings, budget, &mut observe);
         }
         if self.lead.is_none() && self.newest > self.baseline_tick {
             self.lead = Some(Lead::new(now, self.newest, self.rtt, settings, self.pinned));
@@ -537,6 +601,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         self.awaiting_repair = true;
         self.pending_fault = Some(fault);
         self.clock = None;
+        if let Some(prediction) = &mut self.prediction {
+            prediction.suspend(false);
+        }
     }
 
     fn terminate(&mut self, state: ClientState, disposition: Disposition) {
@@ -568,6 +635,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         self.baseline = None;
         self.pending_fault = None;
         self.clock = None;
+        if let Some(prediction) = &mut self.prediction {
+            prediction.suspend(true);
+        }
     }
 
     fn receive(&mut self, now: u64) {
@@ -744,6 +814,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         self.slot = slot;
         self.seed = Some(seed);
         self.settings = Some(settings);
+        if let Some(prediction) = &mut self.prediction {
+            prediction.suspend(self.connection.epoch != header.connection_epoch);
+        }
         self.connection = Connection {
             id: header.match_id,
             epoch: header.connection_epoch,
@@ -802,6 +875,13 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             } else {
                 self.installed_generation = self.generation;
                 self.replica.roster = baseline.roster;
+                if let Some(prediction) = &mut self.prediction {
+                    prediction.install(
+                        baseline.tick,
+                        P::read(&self.replica.world, self.slot),
+                        self.replica.axes[self.slot],
+                    );
+                }
                 if self.generation > 1 {
                     let roster = baseline.roster;
                     self.replica.own_present =
@@ -890,10 +970,28 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         Some(())
     }
 
-    fn step(&mut self, now: u64, prior: u64, settings: Settings, mut budget: u8) {
+    fn step(
+        &mut self,
+        now: u64,
+        prior: u64,
+        settings: Settings,
+        mut budget: u8,
+        observe: &mut impl FnMut(PredictionEvent<P::State>),
+    ) {
         let stepped = self.world().tick();
         let replica = &mut self.replica;
         let slot = self.slot;
+        let mut committed = |world: &W, frame: &InputFrame<W::Action>, result| {
+            if let Some(prediction) = &mut self.prediction {
+                prediction.confirm(
+                    frame.tick,
+                    P::read(world, slot),
+                    frame.axes,
+                    result,
+                    observe,
+                );
+            }
+        };
         if let Some(clock) = &mut self.clock {
             if self.held > prior {
                 clock.observe(self.held, now, settings);
@@ -903,7 +1001,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
                     return false;
                 }
                 budget -= 1;
-                replica.commit(slot)
+                replica.commit(slot, &mut committed)
             });
             self.state = if clock.skip.is_some() {
                 ClientState::Behind
@@ -912,13 +1010,16 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             };
         } else if self.held - stepped > u64::from(settings.behind) {
             for _ in 0..settings.catch_up.min(budget) {
-                if !replica.commit(slot) {
+                if !replica.commit(slot, &mut committed) {
                     break;
                 }
             }
         } else if self.held - stepped >= INITIAL_BUFFER || self.ending.is_some() {
             self.clock = Some(Clock::new(stepped, now));
             self.state = ClientState::Playing;
+            if let Some(prediction) = &mut self.prediction {
+                prediction.resume();
+            }
         }
     }
 
@@ -942,7 +1043,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
         authored.actions.extend(sample.actions);
         // Prove at authoring time that the newest frame can enter a datagram on its own.
         let mut storage = [0; DATAGRAM_LIMIT - HEADER_BYTES - INPUT_PREFIX];
-        input_batch::encode(
+        let bytes = input_batch::encode(
             &[EncodeRecord {
                 frame: &authored,
                 actor_wire_id: self.slot as u64 + 1,
@@ -951,6 +1052,12 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
             &mut storage,
         )
         .map_err(|_| SessionError::Input)?;
+        if let Some(prediction) = &mut self.prediction
+            && let Some(predicted) =
+                prediction_frame(&authored, &self.replica.codec, &storage[..bytes])
+        {
+            prediction.author(predicted);
+        }
         if self.recent.len() == usize::from(settings.repeats.min(self.repeat_limit)) {
             self.recent.pop_front();
         }
@@ -1037,6 +1144,22 @@ impl<W: World, Codec: ActionWire<W::Action>> Client<W, Codec> {
     }
 }
 
+fn prediction_frame<A>(
+    authored: &InputFrame<A>,
+    codec: &impl ActionWire<A>,
+    bytes: &[u8],
+) -> Option<InputFrame<A>> {
+    let axes = input_batch::canonical_axes(authored.axes).ok()?;
+    let mut frame = InputFrame::new(authored.origin, authored.actor, authored.tick, axes);
+    if !authored.actions.is_empty() {
+        let decoded = input_batch::decode(bytes).ok()?;
+        for action in decoded.records().next()?.actions() {
+            frame.actions.push(codec.decode(action).ok()?);
+        }
+    }
+    Some(frame)
+}
+
 impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
     // Validate the whole newly contiguous run, including sets already buffered
     // past a gap, before publishing progress or consuming any input receipts.
@@ -1118,7 +1241,11 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
         }
     }
 
-    fn commit(&mut self, slot: usize) -> bool {
+    fn commit(
+        &mut self,
+        slot: usize,
+        committed: &mut impl FnMut(&W, &InputFrame<W::Action>, wire::SlotResult),
+    ) -> bool {
         let tick = self.world.tick() + 1;
         let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
         if self.sets[index]
@@ -1144,6 +1271,9 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
             None
         };
         let agrees = stepped && actual == set.digest;
+        if agrees {
+            committed(&self.world, &set.frames[slot], set.results[slot]);
+        }
         self.spare.push(set);
         if !agrees {
             self.fault = Some(Fault {

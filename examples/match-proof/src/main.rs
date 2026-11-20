@@ -30,6 +30,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })?,
         #[cfg(not(target_arch = "wasm32"))]
         ["fault", scenario, bodies] => match_proof::run_fault(scenario, bodies.parse()?)?,
+        #[cfg(not(target_arch = "wasm32"))]
+        ["prediction", scenario, profile, ticks, bodies, seed] => match_proof::run_prediction(
+            scenario,
+            profile,
+            ticks.parse()?,
+            bodies.parse()?,
+            seed.parse()?,
+        )?,
         ["identity"] => serde_json::json!({
             "crowd": match_proof::identity(false),
             "mixed": match_proof::identity(true),

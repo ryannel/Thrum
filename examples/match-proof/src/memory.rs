@@ -1,6 +1,6 @@
 mod allocation;
 mod faults;
-pub use faults::run_fault;
+pub use faults::{run_fault, run_prediction};
 mod world;
 
 use std::time::Instant;

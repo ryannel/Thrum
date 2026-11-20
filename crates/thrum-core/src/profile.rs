@@ -38,6 +38,10 @@ impl Number {
         let quantized = (f64::from(axis.clamp(-1.0, 1.0)) * 32767.0).round() as i16;
         Self(f32::from(quantized) / 32767.0)
     }
+    /// Stored binary32 bits, including the sign of zero.
+    pub fn to_bits(self) -> u32 {
+        self.0.to_bits()
+    }
     /// Square root, rounded once.
     pub fn sqrt(self) -> Self {
         Self(self.0.sqrt())

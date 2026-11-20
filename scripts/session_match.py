@@ -371,7 +371,9 @@ def identity(scratch):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["image", "identity", "image-costs", "memory"])
-    parser.add_argument("scenario", nargs="?", choices=["steady", "lead", "costs", *session_faults.SCENARIOS])
+    parser.add_argument("scenario", nargs="?", choices=[
+        "steady", "lead", "costs", "prediction", "prediction-costs", *session_faults.SCENARIOS,
+    ])
     parser.add_argument("--target", choices=TARGETS, default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -380,6 +382,10 @@ def main():
             parser.error("memory needs a scenario on mac-metal")
         if args.scenario in session_faults.SCENARIOS:
             session_faults.proof(args.scenario, args.output, build)
+            return
+        if args.scenario in ("prediction", "prediction-costs"):
+            from session_prediction import proof
+            proof(args.scenario, args.output, build)
             return
         from session_memory import proof
         proof(args.scenario, args.output, build)

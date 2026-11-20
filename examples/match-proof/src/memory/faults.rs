@@ -1,4 +1,7 @@
 mod driver;
+mod prediction;
+
+pub use prediction::run_prediction;
 
 use driver::Match;
 use serde_json::{Value, json};

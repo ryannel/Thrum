@@ -86,8 +86,7 @@ impl Clock {
 
     // Interpolation cannot cross the committed endpoint between polls.
     pub(super) fn sample(&self, now: u64, committed: u64, settings: Settings) -> Playout {
-        let elapsed = now.saturating_sub(self.at) as f64 / f64::from(settings.tick_us);
-        let wanted = self.position + elapsed * self.rate;
+        let wanted = self.wanted(now, settings);
         let position = wanted.min(committed as f64);
         if wanted > position && self.drawn_edge.get().is_none_or(|(at, _)| now >= at) {
             self.drawn_edge.set(Some((now, position)));
@@ -96,6 +95,15 @@ impl Clock {
             position,
             rate: self.rate,
         }
+    }
+
+    pub(super) fn interpolation(&self, now: u64, committed: u64, settings: Settings) -> f64 {
+        (self.wanted(now, settings) - committed.saturating_sub(1) as f64).clamp(0.0, 1.0)
+    }
+
+    fn wanted(&self, now: u64, settings: Settings) -> f64 {
+        let elapsed = now.saturating_sub(self.at) as f64 / f64::from(settings.tick_us);
+        self.position + elapsed * self.rate
     }
 
     pub(super) fn advance(

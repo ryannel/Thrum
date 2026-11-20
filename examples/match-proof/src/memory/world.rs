@@ -24,7 +24,7 @@ impl ActionWire<()> for NoActions {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 pub(super) struct Time {
     pub(super) count: u64,
     pub(super) total: u64,
@@ -185,12 +185,64 @@ pub(super) mod fault_world {
         ActionView, ActionWire, CrowdWorld, InputCodecError, InputFrame, RefCell, RosterEvents,
         RuleSetIdentity, SLOTS, World,
     };
-    use std::rc::Rc;
+    use crowd_2d::{Body, PlayerController, PlayerMovement};
+    use std::{cell::Cell, rc::Rc, time::Instant};
     use thrum_core::{
-        profile::{Digest, StateBytes, StateEncode, Vector},
+        profile::{Digest, Number, StateBytes, StateEncode, Vector},
         sim::SystemId,
     };
-    use thrum_network::session::DigestPart;
+    use thrum_network::session::{ControllerInput, DigestPart, PredictedController};
+
+    pub(crate) struct PlayerRule {
+        pub(crate) movement: PlayerMovement,
+        pub(in crate::memory) timing: Option<Rc<Cell<super::Time>>>,
+    }
+
+    pub(crate) struct CrowdController;
+
+    pub(crate) fn controller_bits(state: PlayerController) -> [u32; 4] {
+        [
+            state.position.x,
+            state.position.y,
+            state.velocity.x,
+            state.velocity.y,
+        ]
+        .map(Number::to_bits)
+    }
+
+    impl PredictedController<Shared> for CrowdController {
+        type State = PlayerController;
+        type Rules = PlayerRule;
+
+        fn read(world: &Shared, slot: usize) -> Option<PlayerController> {
+            world.0.borrow().controller(slot)
+        }
+
+        fn step(
+            state: PlayerController,
+            frame: ControllerInput<'_, u8>,
+            rules: &PlayerRule,
+        ) -> PlayerController {
+            let start = rules.timing.as_ref().map(|_| Instant::now());
+            let next = rules.movement.step(
+                state,
+                [
+                    Number::from_axis(frame.axes[0]),
+                    Number::from_axis(frame.axes[1]),
+                ],
+            );
+            if let Some((start, time)) = start.zip(rules.timing.as_ref()) {
+                let mut samples = time.get();
+                samples.add(super::elapsed(start));
+                time.set(samples);
+            }
+            next
+        }
+
+        fn same_bits(first: PlayerController, second: PlayerController) -> bool {
+            controller_bits(first) == controller_bits(second)
+        }
+    }
 
     pub(crate) struct FaultWire;
 
@@ -259,17 +311,50 @@ pub(super) mod fault_world {
 
     impl Witness {
         pub(crate) fn position(&self, slot: usize) -> Vector {
+            self.controller(slot)
+                .expect("valid registered crowd witness")
+                .position
+        }
+
+        pub(crate) fn controller(&self, slot: usize) -> Option<PlayerController> {
             let read = self.crowd.runtime.read();
             let permit = self
                 .crowd
                 .runtime
-                .read_permit::<crowd_2d::Body>(SystemId(1))
+                .read_permit::<Body>(SystemId(1))
                 .expect("valid registered crowd witness");
-            read.column(&permit)
-                .expect("valid registered crowd witness")
-                .at_slot(u32::try_from(slot).expect("valid registered crowd witness"))
-                .expect("valid registered crowd witness")
-                .position
+            let column = read
+                .column(&permit)
+                .expect("valid registered crowd witness");
+            column
+                .at_slot(u32::try_from(slot).ok()?)
+                .map(Body::controller)
+        }
+
+        pub(crate) fn page(&self) -> Option<(u64, u64)> {
+            let page = self.crowd.runtime.latest()?;
+            let mut fingerprint = Digest::default();
+            page.timeline().encode(&mut fingerprint);
+            page.previous_id()
+                .map_or(u64::MAX, |id| id.tick)
+                .encode(&mut fingerprint);
+            u32::from(page.is_baseline()).encode(&mut fingerprint);
+            for &slot in page.dirty().structural() {
+                slot.encode(&mut fingerprint);
+            }
+            page.visit(|handle, id| {
+                handle.slot.encode(&mut fingerprint);
+                handle.generation.encode(&mut fingerprint);
+                id.0.encode(&mut fingerprint);
+                u32::from(page.pair_valid(handle.slot)).encode(&mut fingerprint);
+                if let Some(body) = page.component::<Body>(handle) {
+                    body.encode(&mut fingerprint);
+                }
+                if let Some(previous) = page.previous_component::<Body>(handle) {
+                    previous.encode(&mut fingerprint);
+                }
+            });
+            Some((page.id().tick, fingerprint.finish()))
         }
 
         pub(crate) fn change(&mut self, fault: Fault) -> Result<(), String> {

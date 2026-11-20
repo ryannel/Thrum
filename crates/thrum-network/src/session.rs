@@ -3,11 +3,16 @@
 mod client;
 mod clock;
 mod host;
+mod prediction;
 mod wire;
 
 pub use client::{Client, ClientState, Controls};
 pub use clock::{Playout, Skip, Stall};
 pub use host::{Host, HostState, PeerStream};
+pub use prediction::{
+    ControllerInput, ControllerView, Correction, CorrectionCause, NoPrediction, PREDICTION_TICKS,
+    PredictedController, PredictionEvent,
+};
 
 use thrum_core::{
     ActorId, Origin, PeerId,

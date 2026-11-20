@@ -71,6 +71,60 @@ impl StateDecode for Body {
     }
 }
 
+/// The portion of the player that moves in response to timed controls.
+#[derive(Clone, Copy, Debug)]
+pub struct PlayerController {
+    /// Planar position.
+    pub position: Vector,
+    /// Per-tick displacement.
+    pub velocity: Vector,
+}
+
+/// Immutable constants of the reference crowd's player movement.
+#[derive(Clone, Copy)]
+pub struct PlayerMovement {
+    divisor: N,
+    low: N,
+    high: N,
+}
+
+impl Default for PlayerMovement {
+    fn default() -> Self {
+        Self {
+            divisor: N::from_i32(12),
+            low: N::from_i32(-120),
+            high: N::from_i32(120),
+        }
+    }
+}
+
+impl PlayerMovement {
+    /// Advance the player from its prior state and this frame's canonical controls.
+    pub fn step(self, state: PlayerController, controls: [N; 2]) -> PlayerController {
+        let velocity = Vector {
+            x: controls[0] / self.divisor,
+            y: controls[1] / self.divisor,
+        };
+        PlayerController {
+            position: Vector {
+                x: (state.position.x + velocity.x).clamp(self.low, self.high),
+                y: (state.position.y + velocity.y).clamp(self.low, self.high),
+            },
+            velocity,
+        }
+    }
+}
+
+impl Body {
+    /// Extract the self-contained player movement state.
+    pub fn controller(&self) -> PlayerController {
+        PlayerController {
+            position: self.position,
+            velocity: self.velocity,
+        }
+    }
+}
+
 /// Authority resources restored with world history.
 #[derive(Clone, Default)]
 pub struct Resources {
@@ -364,10 +418,6 @@ impl Crowd {
             match body.kind {
                 0 => {
                     let controls = candidate.resources.controls[body.player as usize];
-                    body.velocity = Vector {
-                        x: controls[0] / N::from_i32(12),
-                        y: controls[1] / N::from_i32(12),
-                    };
                     if tick % 24 == u64::from(body.player) * 6 {
                         candidate
                             .index
@@ -397,6 +447,9 @@ impl Crowd {
                             });
                         }
                     }
+                    let controller = PlayerMovement::default().step(body.controller(), controls);
+                    body.position = controller.position;
+                    body.velocity = controller.velocity;
                 }
                 1 => {
                     let (_, steered, visited) = candidate.steering[row / 256][row % 256];
@@ -407,10 +460,12 @@ impl Crowd {
                     body.health -= 1;
                 }
             }
-            body.position.x =
-                (body.position.x + body.velocity.x).clamp(N::from_i32(-120), N::from_i32(120));
-            body.position.y =
-                (body.position.y + body.velocity.y).clamp(N::from_i32(-120), N::from_i32(120));
+            if body.kind != 0 {
+                body.position.x =
+                    (body.position.x + body.velocity.x).clamp(N::from_i32(-120), N::from_i32(120));
+                body.position.y =
+                    (body.position.y + body.velocity.y).clamp(N::from_i32(-120), N::from_i32(120));
+            }
             candidate.batch.push((handle, body));
         }
         edits.push(Edit::replace_batch(&self.write, batch));
