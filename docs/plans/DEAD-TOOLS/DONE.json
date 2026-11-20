@@ -58,8 +58,8 @@
     {
       "id": "M1",
       "name": "Scripts that nothing runs are gone in one landing, and the check finds the script suites that are left by itself",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "quality_bar": "As clean as a prune in a well-kept repository such as ripgrep's or wgpu's: everything left is run or read by something, what was removed is found in history from the document that described it, and no document points at a file that is gone.",
@@ -70,10 +70,10 @@
           "check": "sh -c 'test -z \"$(git ls-files | grep -E \"(^|/)(test_)?(prepare_headless_cargo_home|prepare_macos_tool_root_clone|inventory_headless_tool_roots|run_bounded_native_build|qualify_held_macos_native_ab|release_cargo_selection|hold_macos_private_cargo_cache|hold_macos_release_records|hold_macos_tool_root_clone|verify_crate_extraction|verify_crates_io_archive_origin|verify_crates_io_index_origin|verify_headless_release_inputs|verify_rust_component_archive|verify_rustc_receipts|rustc_receipt)\\.(py|rs)$\")\" && ! git grep -qE \"prepare_headless_cargo_home|prepare_macos_tool_root_clone|inventory_headless_tool_roots|run_bounded_native_build|qualify_held_macos_native_ab|release_cargo_selection|hold_macos_private_cargo_cache|hold_macos_release_records|hold_macos_tool_root_clone|verify_crate_extraction|verify_crates_io_archive_origin|verify_crates_io_index_origin|verify_headless_release_inputs|verify_rust_component_archive|verify_rustc_receipts|rustc_receipt\" -- scripts tools crates examples .config && ./dev check-docs'",
           "ask": "Does each of the three headless-build designs, and each research note that linked the toolchain, name the last commit that held it? Does any row of the maturity ledger still describe the toolchain as present, candidate or selected?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md (deletions, document lines, ledger rows, shape counts)",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -83,18 +83,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md (deletions and callers searched; script-caller 36 to 25, tightened)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
         },
         {
           "id": "M1.3",
           "statement": "`./dev check` finds the script suites itself: every `scripts/test_*.py` runs, and every `scripts/test_*.mjs` where node is installed, with no list to keep, so a suite added later runs without an edit to the check. A suite is excluded only by name with its reason: one the check cannot run, one that fails at the starting commit, one that tests a script the review found dead and this module leaves, or one that takes over about a minute, with its measured time. The record gives the time the newly run suites add to a check.",
           "ask": "In a scratch copy, add a `scripts/test_zz_probe.py` that fails and run the check's script step: does it fail on the probe? Is each excluded suite one of the four kinds the design names, with its reason, and for a failing one its failure and the module that owns its script? Run each suite excluded as failing on the starting commit: does it fail there? Was any failing suite edited to make it pass? Does the record give the time each newly run suite takes, measured, and is any suite over about a minute still in the check?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M1/NOTES.md; .orchestrate/evidence/DEAD-TOOLS/M1/probe-check.log; .orchestrate/evidence/DEAD-TOOLS/M1/suites/",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -103,8 +103,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Discovered suites run as plain scripts, so six test_t2_capture tests no longer run",
+          "item": "M1.3",
+          "repeat": false
+        },
+        {
+          "name": "Three maturity rows still describe the toolchain as present or candidate",
+          "item": "M1.1",
+          "repeat": false
         }
       ]
     },

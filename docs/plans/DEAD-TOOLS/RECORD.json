@@ -26,7 +26,47 @@
   "milestones": {
     "M1": {
       "definitions": "35f4ecf665b2506181d3cea1ea865298fb31dcc7a98fda28fc4e96c67af0d4e4",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "8e400661a763260bb8ac8278d773f2fdc6047dd3",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M1-review.md",
+          "items": {
+            "M1.1": "fail",
+            "M1.2": "pass",
+            "M1.3": "fail",
+            "M1.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Discovered suites run as plain scripts, so six test_t2_capture tests no longer run",
+              "item": "M1.3",
+              "repeat": false
+            },
+            {
+              "name": "Three maturity rows still describe the toolchain as present or candidate",
+              "item": "M1.1",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 126734,
+            "cached": 4402706,
+            "output": 27841,
+            "cost_usd": 2.450865,
+            "turns": 1
+          },
+          "at": "2026-11-20T20:15:09Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the GATE-TIME and DEAD-TOOLS module plans only, to resolve the Must Fix findings in their third design reviews: .",
