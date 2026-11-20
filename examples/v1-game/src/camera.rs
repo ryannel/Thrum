@@ -77,6 +77,17 @@ impl SceneCamera {
         [self.pitch, self.yaw]
     }
 
+    // Route parsing has already checked the angles and eye. Keep the exact
+    // opening angles so check_start sees the same authored pose as playback.
+    #[cfg(target_os = "macos")]
+    pub(crate) fn at_route_key(self, key: RouteKey) -> Result<Self, String> {
+        Ok(Self {
+            pitch: key.pitch,
+            yaw: key.yaw,
+            ..self.at(key.eye)?
+        })
+    }
+
     pub(crate) fn view(
         self,
         extent: [u32; 2],

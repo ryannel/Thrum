@@ -19,6 +19,20 @@ fn native_cloud_capture_admits_ten_second_motion_without_widening_the_browser_ro
     assert!(CameraRoute::parse_long_capture(&invalid_cut, camera(), 60).is_err());
 }
 
+#[test]
+#[cfg(target_os = "macos")]
+fn native_cloud_capture_prepares_an_opening_pose_outside_the_interactive_limits() {
+    let mut first = key(0, 20.0, 270.0);
+    first["pitch_degrees"] = serde_json::json!(45.0);
+    let text = file(&[first], &[], &[]);
+    let route = CameraRoute::parse_long_capture(&text, camera(), 60).expect("valid route");
+    let camera = camera().at_route_key(route.keys[0]).expect("opening camera");
+    let [pitch, yaw] = camera.orientation();
+    route
+        .check_start(camera, pitch, yaw)
+        .expect("opening camera agrees with the route");
+}
+
 fn camera() -> SceneCamera {
     SceneCamera::perspective(
         EYE,

@@ -1088,10 +1088,7 @@ pub(super) fn prepare_route(
         return Err("runtime route extent differs from the prepared game grid".to_owned());
     }
     if cloud_capture && crate::selected_setup()?.clouds != crate::CloudSelection::Off {
-        let start = route.keys[0];
-        host.set_scene_camera(camera.at(start.eye)?)?;
-        host.set_camera_yaw(start.yaw)?;
-        host.set_camera_pitch(start.pitch)?;
+        host.set_scene_camera(camera.at_route_key(route.keys[0])?)?;
     }
     let stats = content.ok_or("routed capture needs cooked content")?;
     // The native provider retains the ordinary presentation contract during
