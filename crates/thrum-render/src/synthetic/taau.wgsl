@@ -97,7 +97,7 @@ fn history_round(value: f32, seed: u32) -> f32 {
     let random = f32(hash >> 8u)*(1.0/16777216.0);
     return select(lower,upper,random < (bounded_value-lower)/(upper-lower));
 }
-@compute @workgroup_size(8,8)
+@compute @workgroup_size(RECONSTRUCTION_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE)
 fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let extent = textureDimensions(colour);
     if any(id.xy >= extent) { return; }

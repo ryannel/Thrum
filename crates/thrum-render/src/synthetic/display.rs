@@ -6,6 +6,10 @@ use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
     PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::shader_constants::{
+    DISPLAY_OVERLAY_SHIFT, OVERLAY_EXPOSURE_ZONES, OVERLAY_MOTION, OVERLAY_TEMPORAL_INPUTS,
+    TONE_MAP_NEUTRAL_HIGHLIGHTS,
+};
 use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
@@ -18,7 +22,7 @@ pub enum SdrToneMap {
     Reinhard = 0,
     /// Smooth highlight compression/desaturation without a material shadow toe.
     /// This is not a reproduction of the standard Khronos PBR Neutral operator.
-    NeutralHighlights = 1,
+    NeutralHighlights = TONE_MAP_NEUTRAL_HIGHLIGHTS,
 }
 
 /// Per-view diagnostic drawn by the display pass in place of the tone-mapped scene.
@@ -32,12 +36,12 @@ pub enum DisplayOverlay {
     Off = 0,
     /// Exposed luminance in one-stop false-colour bands, from -6 to +6 stops relative to
     /// an 18% grey Lambertian card lit at the metered illuminance with zero compensation.
-    ExposureZones = 1,
+    ExposureZones = OVERLAY_EXPOSURE_ZONES,
     /// Motion in render pixels: red is right, green is down, blue is magnitude.
     /// Magenta marks invalid correspondence; olive is stationary.
-    Motion = 2,
+    Motion = OVERLAY_MOTION,
     /// Actual reactive/depth/motion inputs. Requires temporal inputs at preparation.
-    TemporalInputs = 3,
+    TemporalInputs = OVERLAY_TEMPORAL_INPUTS,
     /// Opaque geometry as seen by camera rays. Select at preparation on a
     /// ray-capable scene to prepare the traced view.
     TracedGeometry = 4,
@@ -46,7 +50,7 @@ pub enum DisplayOverlay {
 /// Word 7 of the exposure policy and sample: the tone map in bits 0–7 and the
 /// overlay in bits 8–15. With the overlay off the word equals the tone-map value.
 pub(super) fn display_selectors(tone_map: SdrToneMap, overlay: DisplayOverlay) -> u32 {
-    tone_map as u32 | (overlay as u32) << 8
+    tone_map as u32 | (overlay as u32) << DISPLAY_OVERLAY_SHIFT
 }
 
 pub(crate) const SHADER: &str = concat!(

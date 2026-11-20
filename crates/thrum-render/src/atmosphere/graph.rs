@@ -7,7 +7,7 @@ use crate::graph::{
 
 use super::{
     STAGE_NAMES,
-    gpu::{AERIAL_EXTENT, AtmospherePrepared, UNIFORM_BYTES},
+    gpu::{AERIAL_EXTENT, AtmospherePrepared, SKY_MOTION_BYTES, UNIFORM_BYTES},
     reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
 };
 
@@ -286,11 +286,15 @@ fn append_motion_read(
 ) -> Result<(), GraphError> {
     let motion = graph.resource(
         ResourceDescriptor::Buffer {
-            bytes: 208,
+            bytes: SKY_MOTION_BYTES,
             usage: wgpu::BufferUsages::UNIFORM,
         },
         ResourceScope::Imported { initialized: true },
     )?;
-    forward_accesses.push(Access::new(motion, 0..208, AccessKind::UniformRead));
+    forward_accesses.push(Access::new(
+        motion,
+        0..SKY_MOTION_BYTES,
+        AccessKind::UniformRead,
+    ));
     Ok(())
 }

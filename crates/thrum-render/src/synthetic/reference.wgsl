@@ -5,7 +5,7 @@
 @group(0) @binding(6) var output: texture_storage_2d<rgba16float,write>;
 @group(0) @binding(7) var sum: texture_storage_2d<rgba32float,write>;
 @group(0) @binding(9) var<uniform> params: ReconstructionParams;
-@compute @workgroup_size(8,8)
+@compute @workgroup_size(RECONSTRUCTION_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE)
 fn accumulate(@builtin(global_invocation_id) id: vec3<u32>) {
     if any(id.xy >= textureDimensions(colour)) { return; }
     let at = vec2<i32>(id.xy);

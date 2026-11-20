@@ -6,11 +6,7 @@ use std::path::PathBuf;
 mod constants {
     include!("src/shader_constants.rs");
 }
-use constants::{
-    AERIAL_EXTENT, AIR_SHADOW_SIZE, ATMOSPHERE_EXTENTS, ATMOSPHERE_PLANES, ATMOSPHERE_TOP,
-    CLUSTER_WORKGROUP, CLUSTER_X, CLUSTER_Y, CLUSTER_Z, MAX_BUCKETS, MEMBER_PADDING, PHASE_FINAL,
-    PHASE_FRUSTUM, PHASE_PREPASS, PLANET_RADIUS, SUN_ANGULAR_RADIUS, VISIBILITY_WORKGROUP,
-};
+use constants::*;
 
 fn emit(out: &std::path::Path, name: &str, integers: &[(&str, u32)], floats: &[(&str, f32)]) {
     let mut prelude = String::new();
@@ -42,8 +38,61 @@ fn main() {
     emit(
         &out,
         "air_shadow.wgsl",
-        &[("AIR_SHADOW_SIZE", AIR_SHADOW_SIZE)],
+        &[
+            ("AIR_SHADOW_SIZE", AIR_SHADOW_SIZE),
+            ("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER),
+        ],
         &[],
+    );
+    // Preserve the original shader's rounding to nine decimal places before
+    // conversion to f32. The CPU shadow fit uses the unrounded tangent.
+    let sun_tangent = f64::from(SUN_ANGULAR_RADIUS).tan();
+    let shader_tangent = ((sun_tangent * 1e9).round() / 1e9) as f32;
+    emit(
+        &out,
+        "scene_shadows.wgsl",
+        &[("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER)],
+        &[("SUN_TAN_RADIUS", shader_tangent)],
+    );
+    for (file, name, size) in [
+        ("history.wgsl", "HISTORY_WORKGROUP", HISTORY_WORKGROUP),
+        (
+            "reconstruction.wgsl",
+            "RECONSTRUCTION_WORKGROUP_EDGE",
+            RECONSTRUCTION_WORKGROUP_EDGE,
+        ),
+        (
+            "pyramid.wgsl",
+            "PYRAMID_WORKGROUP_EDGE",
+            PYRAMID_WORKGROUP_EDGE,
+        ),
+    ] {
+        emit(&out, file, &[(name, size)], &[]);
+    }
+    emit(
+        &out,
+        "display_selectors.wgsl",
+        &[
+            ("DISPLAY_OVERLAY_SHIFT", DISPLAY_OVERLAY_SHIFT),
+            ("TONE_MAP_MASK", (1 << DISPLAY_OVERLAY_SHIFT) - 1),
+            ("TONE_MAP_NEUTRAL_HIGHLIGHTS", TONE_MAP_NEUTRAL_HIGHLIGHTS),
+            ("OVERLAY_EXPOSURE_ZONES", OVERLAY_EXPOSURE_ZONES),
+            ("OVERLAY_MOTION", OVERLAY_MOTION),
+            ("OVERLAY_TEMPORAL_INPUTS", OVERLAY_TEMPORAL_INPUTS),
+        ],
+        &[],
+    );
+    emit(
+        &out,
+        "exposure_modes.wgsl",
+        &[
+            ("EXPOSURE_INCIDENT", EXPOSURE_INCIDENT),
+            ("EXPOSURE_LOW_LIGHT", EXPOSURE_LOW_LIGHT),
+        ],
+        &[(
+            "CAMERA_EXPOSURE_NORMALIZATION",
+            CAMERA_EXPOSURE_NORMALIZATION as f32,
+        )],
     );
     emit(
         &out,
@@ -79,6 +128,8 @@ fn main() {
         &[
             ("GROUND_SUN_ENTRIES", ATMOSPHERE_EXTENTS[3][0]),
             ("SKY_HALF_ROWS", ATMOSPHERE_EXTENTS[2][1] / 2),
+            ("AERIAL_WORKGROUP_EDGE", AERIAL_WORKGROUP_EDGE),
+            ("LUT_WORKGROUP_EDGE", LUT_WORKGROUP_EDGE),
         ],
         &[
             ("MULTIPLE_LUT_GAIN", 65536.0),

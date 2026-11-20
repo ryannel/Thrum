@@ -54,7 +54,7 @@ const NONE: f32 = -1e30;
         let sample_uv = vec2(c.x * 0.5 + 0.5, 0.5 - c.y * 0.5);
         if any(sample_uv < vec2(0.0)) || any(sample_uv > vec2(1.0)) { break; }
         let index = clamp(vec2<i32>(sample_uv * extent), vec2(0), vec2<i32>(extent) - 1);
-        let depth = textureLoad(shadow_maps, index, 2, 0);
+        let depth = textureLoad(shadow_maps, index, i32(SHADOW_HEIGHT_LAYER), 0);
         if depth > 0.0 {
             let candidate = (depth - horizon.y) / horizon.x - distance * slope;
             if candidate > best {

@@ -94,6 +94,21 @@ pub(super) fn before_record_composition(text: &str) -> String {
         ),
     );
     restore_aerial(&mut source);
+    replace_once(
+        &mut source,
+        "const SHADOW_HEIGHT_LAYER: u32 = 2u;\nconst SUN_TAN_RADIUS: f32 = 0.004654244;\n",
+        "",
+    );
+    replace_once(
+        &mut source,
+        "// A continuous surface inside the filter footprint",
+        "const SUN_TAN_RADIUS: f32 = 0.004654244;\n// A continuous surface inside the filter footprint",
+    );
+    replace_once(
+        &mut source,
+        "textureLoad(shadow_maps,texel_index,i32(SHADOW_HEIGHT_LAYER),0)",
+        "textureLoad(shadow_maps,texel_index,2,0)",
+    );
     for (current, previous) in [
         (
             r"    output.normal = mat3x3(instance.normal[0].xyz,instance.normal[1].xyz,instance.normal[2].xyz) * n;

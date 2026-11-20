@@ -16,6 +16,7 @@ use super::{
 use crate::abi::AbiError;
 use crate::atmosphere::{AtmospherePrepared, CloudPrepared};
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BINDING, ENVIRONMENT_BYTES};
+use crate::records::{CloudField, ClusterHead, LocalSource};
 use std::sync::Arc;
 
 impl PreparedSynthetic {
@@ -276,9 +277,17 @@ impl PreparedSynthetic {
                 },
                 count: None,
             },
-            storage_layout(1, wgpu::ShaderStages::FRAGMENT, 32),
-            storage_layout(2, wgpu::ShaderStages::FRAGMENT, 8),
-            storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
+            storage_layout(
+                1,
+                wgpu::ShaderStages::FRAGMENT,
+                size_of::<LocalSource>() as u64,
+            ),
+            storage_layout(
+                2,
+                wgpu::ShaderStages::FRAGMENT,
+                size_of::<ClusterHead>() as u64,
+            ),
+            storage_layout(3, wgpu::ShaderStages::FRAGMENT, size_of::<u32>() as u64),
             uniform_layout(
                 ENVIRONMENT_BINDING,
                 ENVIRONMENT_BYTES,
@@ -312,9 +321,17 @@ impl PreparedSynthetic {
                     count: None,
                 });
             }
-            light_entries.push(uniform_layout(7, 128, wgpu::ShaderStages::FRAGMENT));
+            light_entries.push(uniform_layout(
+                7,
+                size_of::<crate::records::Atmosphere>() as u64,
+                wgpu::ShaderStages::FRAGMENT,
+            ));
         }
-        light_entries.push(uniform_layout(12, 16, wgpu::ShaderStages::FRAGMENT));
+        light_entries.push(uniform_layout(
+            12,
+            size_of::<[f32; 4]>() as u64,
+            wgpu::ShaderStages::FRAGMENT,
+        ));
         if cloud.is_some() {
             light_entries.push(wgpu::BindGroupLayoutEntry {
                 binding: 13,
@@ -335,7 +352,7 @@ impl PreparedSynthetic {
                 {
                     size_of::<crate::atmosphere::GpuSunMapping>() as u64
                 } else {
-                    48
+                    size_of::<CloudField>() as u64
                 },
                 wgpu::ShaderStages::FRAGMENT,
             ));

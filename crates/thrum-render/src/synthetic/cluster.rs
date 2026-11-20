@@ -4,6 +4,7 @@
 use super::RenderError;
 use super::view::{Projection, SyntheticView};
 use crate::records::{Bounds, ClusterHead, LocalSource};
+use bytemuck::{Zeroable, bytes_of};
 use glam::Vec3;
 use std::cmp::Ordering;
 
@@ -114,9 +115,9 @@ pub(super) struct ClusterTable {
 impl ClusterTable {
     fn empty() -> Self {
         Self {
-            lights: vec![0; size_of::<LocalSource>()],
-            heads: vec![0; size_of::<ClusterHead>()],
-            indices: vec![0; 4],
+            lights: bytes_of(&LocalSource::zeroed()).to_vec(),
+            heads: bytes_of(&ClusterHead::zeroed()).to_vec(),
+            indices: bytes_of(&0_u32).to_vec(),
             bounds: Vec::new(),
             dropped_references: 0,
             dropped_sources: 0,
@@ -137,11 +138,10 @@ impl ClusterTable {
         table.max_lights = lights.len();
         if table.max_lights != 0 {
             table.slots.resize(COUNT, Slot::default());
-            table.lights.reserve(table.max_lights * 32);
-            table.heads.reserve(COUNT * 8);
-            table
-                .indices
-                .reserve(COUNT * table.max_lights.min(CAPACITY) * 4);
+            let [lights, heads, indices] = table.byte_capacities();
+            table.lights.reserve(lights);
+            table.heads.reserve(heads);
+            table.indices.reserve(indices);
         }
         table.rebuild(lights, view)?;
         Ok(table)
@@ -156,8 +156,10 @@ impl ClusterTable {
         }
         let mut table = Self::empty();
         table.max_lights = lights.len();
-        table.lights.reserve(table.max_lights * 32);
-        table.bounds.reserve(table.max_lights * 32);
+        table
+            .lights
+            .reserve(table.max_lights * size_of::<LocalSource>());
+        table.bounds.reserve(table.max_lights * size_of::<Bounds>());
         table.repack_gpu(lights, view)?;
         Ok(table)
     }
@@ -185,7 +187,8 @@ impl ClusterTable {
             pack_bounds(cell_bounds, &mut self.bounds);
         }
         for _ in retained.len()..self.max_lights {
-            self.lights.extend_from_slice(&[0; 32]);
+            self.lights
+                .extend_from_slice(bytes_of(&LocalSource::zeroed()));
             pack_bounds(None, &mut self.bounds);
         }
         self.active = retained
@@ -197,13 +200,15 @@ impl ClusterTable {
     }
 
     pub(super) fn capacities(&self) -> [u64; 3] {
-        if self.max_lights == 0 {
-            return [32, 8, 4];
-        }
+        self.byte_capacities().map(|bytes| bytes as u64)
+    }
+
+    fn byte_capacities(&self) -> [usize; 3] {
+        let heads = if self.max_lights == 0 { 1 } else { COUNT };
         [
-            (self.max_lights * 32) as u64,
-            (COUNT * 8) as u64,
-            (COUNT * self.max_lights.min(CAPACITY) * 4) as u64,
+            self.max_lights.max(1) * size_of::<LocalSource>(),
+            heads * size_of::<ClusterHead>(),
+            (COUNT * self.max_lights.min(CAPACITY)).max(1) * size_of::<u32>(),
         ]
     }
 
@@ -225,11 +230,13 @@ impl ClusterTable {
             // The shader's uniform off-state returns before reading clusters.
             // Keep valid minimal bindings without preparing a dead 3D grid.
             self.lights.clear();
-            self.lights.resize(size_of::<LocalSource>(), 0);
+            self.lights
+                .extend_from_slice(bytes_of(&LocalSource::zeroed()));
             self.heads.clear();
-            self.heads.resize(8, 0);
+            self.heads
+                .extend_from_slice(bytes_of(&ClusterHead::zeroed()));
             self.indices.clear();
-            self.indices.resize(4, 0);
+            self.indices.extend_from_slice(bytes_of(&0_u32));
             self.dropped_references = 0;
             self.active = false;
             return Ok(());
@@ -243,12 +250,8 @@ impl ClusterTable {
         }
         let score_geometry = ScoreGeometry::new(view);
         self.lights.clear();
-        self.lights.reserve(self.max_lights * 32);
         self.heads.clear();
-        self.heads.reserve(COUNT * 8);
         self.indices.clear();
-        self.indices
-            .reserve(COUNT * self.max_lights.min(CAPACITY) * 4);
         let mut dropped = 0;
         for (index, light) in lights.iter().copied().enumerate() {
             pack_light(light, &mut self.lights);
@@ -299,25 +302,24 @@ impl ClusterTable {
             }
         }
         if self.lights.is_empty() {
-            self.lights.resize(size_of::<LocalSource>(), 0);
+            self.lights
+                .extend_from_slice(bytes_of(&LocalSource::zeroed()));
         }
         for slot in &mut self.slots {
             let len = usize::from(slot.len);
             slot.candidates[..len].sort_unstable_by_key(|candidate| candidate.index);
-            let offset =
-                u32::try_from(self.indices.len() / 4).map_err(|_| RenderError::SceneCapacity)?;
-            self.heads
-                .extend_from_slice(bytemuck::bytes_of(&ClusterHead {
-                    offset,
-                    count: u32::from(slot.len),
-                }));
+            let offset = u32::try_from(self.indices.len() / size_of::<u32>())
+                .map_err(|_| RenderError::SceneCapacity)?;
+            self.heads.extend_from_slice(bytes_of(&ClusterHead {
+                offset,
+                count: u32::from(slot.len),
+            }));
             for candidate in &slot.candidates[..len] {
-                self.indices
-                    .extend_from_slice(bytemuck::bytes_of(&candidate.index));
+                self.indices.extend_from_slice(bytes_of(&candidate.index));
             }
         }
         if self.indices.is_empty() {
-            self.indices.resize(4, 0);
+            self.indices.extend_from_slice(bytes_of(&0_u32));
             self.active = false;
         } else {
             self.active = true;
@@ -349,7 +351,7 @@ fn pack_light(light: SyntheticPointLight, out: &mut Vec<u8>) {
             .to_array(),
         candela: Vec3::from_array(light.candela).extend(0.0).to_array(),
     };
-    out.extend_from_slice(bytemuck::bytes_of(&record));
+    out.extend_from_slice(bytes_of(&record));
 }
 
 fn pack_bounds(bounds: Option<([usize; 3], [usize; 3])>, out: &mut Vec<u8>) {
@@ -358,7 +360,7 @@ fn pack_bounds(bounds: Option<([usize; 3], [usize; 3])>, out: &mut Vec<u8>) {
         let [x, y, z] = v.map(|value| u32::try_from(value).unwrap_or(u32::MAX));
         [x, y, z, 0]
     };
-    out.extend_from_slice(bytemuck::bytes_of(&Bounds {
+    out.extend_from_slice(bytes_of(&Bounds {
         lo: pad(lo),
         hi: pad(hi),
     }));
@@ -669,6 +671,27 @@ mod tests {
         assert_eq!(table.lights.len(), 32);
         assert_eq!(table.bounds.len(), 32);
         assert_ne!(table.bounds[..4], u32::MAX.to_le_bytes());
+    }
+
+    #[test]
+    fn shrinking_gpu_table_keeps_a_zero_source_and_invalid_bounds_in_the_vacated_slot() {
+        let view = SyntheticView::default();
+        let light = SyntheticPointLight {
+            position: [0.0, 0.0, 0.5],
+            radius: 0.5,
+            candela: [2.0; 3],
+        };
+        let mut table = ClusterTable::build_gpu(&[light, light], &view).expect("two sources");
+        table.repack_gpu(&[light], &view).expect("one source");
+        assert_eq!(table.lights.len(), 2 * size_of::<LocalSource>());
+        assert_eq!(table.bounds.len(), 2 * size_of::<Bounds>());
+        assert_eq!(
+            &table.lights[size_of::<LocalSource>()..],
+            bytes_of(&LocalSource::zeroed())
+        );
+        let bounds = bytemuck::pod_read_unaligned::<Bounds>(&table.bounds[size_of::<Bounds>()..]);
+        assert_eq!(bounds.lo, [u32::MAX, u32::MAX, u32::MAX, 0]);
+        assert_eq!(bounds.hi, [0; 4]);
     }
 
     #[test]

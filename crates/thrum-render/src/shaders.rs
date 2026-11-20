@@ -33,6 +33,7 @@ macro_rules! wgsl {
     ("synthetic.wgsl") => {
         concat!(
             include_str!(concat!(env!("OUT_DIR"), "/cluster.wgsl")),
+            include_str!(concat!(env!("OUT_DIR"), "/scene_shadows.wgsl")),
             $crate::shaders::wgsl!(@file "records/view.wgsl"),
             $crate::shaders::wgsl!(@file "records/view_aux.wgsl"),
             $crate::shaders::wgsl!(@file "records/instance.wgsl"),
@@ -58,14 +59,9 @@ macro_rules! wgsl {
             $crate::shaders::wgsl!(@file "synthetic/cluster.wgsl"),
         )
     };
-    ("synthetic/display/legacy_display.wgsl") => {
-        concat!(
-            $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
-            $crate::shaders::wgsl!(@file "synthetic/display/legacy_display.wgsl"),
-        )
-    };
     ("synthetic/exposure.wgsl") => {
         concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/exposure_modes.wgsl")),
             $crate::shaders::wgsl!(@file "records/serials.wgsl"),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic/exposure.wgsl"),
@@ -73,6 +69,7 @@ macro_rules! wgsl {
     };
     ("synthetic/history_gpu.wgsl") => {
         concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/history.wgsl")),
             $crate::shaders::wgsl!(@file "records/instance.wgsl"),
             $crate::shaders::wgsl!(@file "records/history.wgsl"),
             $crate::shaders::wgsl!(@file "records/serials.wgsl"),
@@ -87,6 +84,7 @@ macro_rules! wgsl {
     };
     ("synthetic/reference.wgsl") => {
         concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/reconstruction.wgsl")),
             $crate::shaders::wgsl!(@file "records/reconstruction.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic/reference.wgsl"),
         )
@@ -109,6 +107,7 @@ macro_rules! wgsl {
     };
     ("synthetic/taau.wgsl") => {
         concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/reconstruction.wgsl")),
             $crate::shaders::wgsl!(@file "records/reconstruction.wgsl"),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic/taau.wgsl"),
@@ -128,6 +127,7 @@ macro_rules! wgsl {
     };
     ("synthetic_display.wgsl") => {
         concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/display_selectors.wgsl")),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic_display.wgsl"),
         )
@@ -249,13 +249,20 @@ shader_catalog! {
     History => wgsl!("synthetic/history_gpu.wgsl");
     NativeWitness => wgsl!("synthetic/native_witness.wgsl");
     Shadow => wgsl!("synthetic/shadow.wgsl");
-    ClusterProbe => wgsl!("synthetic/cluster_probe.wgsl");
+    ClusterProbe => format!(
+        "const CLUSTER_PROBE_WORKGROUP: u32 = {}u;\n{}",
+        crate::shader_constants::CLUSTER_PROBE_WORKGROUP,
+        wgsl!("synthetic/cluster_probe.wgsl")
+    );
     Cluster => wgsl!("synthetic/cluster.wgsl");
     RayBuild => wgsl!("synthetic/raytrace/build_probe.wgsl");
     RayView => wgsl!("synthetic/raytrace/view.wgsl");
     CopyMarker => wgsl!("synthetic/readback/copy_marker.wgsl");
     Visibility => visibility_source();
-    Pyramid => wgsl!("visibility/pyramid.wgsl");
+    Pyramid => concat!(
+        include_str!(concat!(env!("OUT_DIR"), "/pyramid.wgsl")),
+        wgsl!("visibility/pyramid.wgsl")
+    );
     Casters => casters_source();
     SecondaryVisibility => secondary_visibility_source();
     AirShadow => concat!(
@@ -419,4 +426,62 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
         }
     }
     sources
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Shader;
+    use crate::shader_constants::{
+        AERIAL_WORKGROUP_EDGE, CLUSTER_PROBE_WORKGROUP, HISTORY_WORKGROUP, LUT_WORKGROUP_EDGE,
+        PYRAMID_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE,
+    };
+
+    #[test]
+    fn composed_compute_entries_match_host_dispatch_dimensions() {
+        let square = |edge| [edge, edge, 1];
+        for (shader, names, workgroup) in [
+            (Shader::History, &["publish"][..], [HISTORY_WORKGROUP, 1, 1]),
+            (
+                Shader::ClusterProbe,
+                &["copy_lists"][..],
+                [CLUSTER_PROBE_WORKGROUP, 1, 1],
+            ),
+            (
+                Shader::AtmosphereAerial,
+                &["aerial_main"][..],
+                square(AERIAL_WORKGROUP_EDGE),
+            ),
+            (
+                Shader::AtmosphereLuts,
+                &["transmittance_main", "multiple_main", "sky_main"][..],
+                square(LUT_WORKGROUP_EDGE),
+            ),
+            (
+                Shader::Pyramid,
+                &["pyramid_mip0", "pyramid_down"][..],
+                square(PYRAMID_WORKGROUP_EDGE),
+            ),
+            (
+                Shader::Reconstruction,
+                &["reconstruct"][..],
+                square(RECONSTRUCTION_WORKGROUP_EDGE),
+            ),
+            (
+                Shader::Reference,
+                &["accumulate"][..],
+                square(RECONSTRUCTION_WORKGROUP_EDGE),
+            ),
+        ] {
+            let module =
+                wgpu::naga::front::wgsl::parse_str(&shader.source()).expect("production WGSL");
+            for name in names {
+                let entry = module
+                    .entry_points
+                    .iter()
+                    .find(|entry| entry.name == *name)
+                    .expect(name);
+                assert_eq!(entry.workgroup_size, workgroup, "{name}");
+            }
+        }
+    }
 }

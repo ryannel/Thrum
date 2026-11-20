@@ -105,7 +105,12 @@ impl LightListProbe {
             });
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.group, &[]);
-            pass.dispatch_workgroups(self.words.div_ceil(64), 1, 1);
+            pass.dispatch_workgroups(
+                self.words
+                    .div_ceil(crate::shader_constants::CLUSTER_PROBE_WORKGROUP),
+                1,
+                1,
+            );
         }
         encoder.copy_buffer_to_buffer(&self.output, 0, &self.staging, 0, self.output.size());
         let (send, receive) = mpsc::channel();

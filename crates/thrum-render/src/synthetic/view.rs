@@ -263,7 +263,11 @@ impl SyntheticView {
         }
     }
 
-    pub(super) fn exposure_policy(&self, fallback: f32, atmosphere: bool) -> [u8; 32] {
+    pub(super) fn exposure_policy(
+        &self,
+        fallback: f32,
+        atmosphere: bool,
+    ) -> [u8; size_of::<crate::records::Policy>()] {
         self.exposure
             .unwrap_or(ExposurePolicy::Fixed {
                 inverse: 1.0 / fallback,
@@ -295,7 +299,9 @@ impl SyntheticView {
         // atmosphere inputs. Their bright incident meter branch has no key.
         // The EV ceiling may still increase camera gain.
         let direct = 0.48 * f64::from(direct_lux) * (-f64::from(compensation_ev)).exp2();
-        Some(direct.min(1.2 * f64::from(max_ev100).exp2()))
+        Some(direct.min(
+            crate::shader_constants::CAMERA_EXPOSURE_NORMALIZATION * f64::from(max_ev100).exp2(),
+        ))
     }
 
     /// Select the SDR display transform independently of the camera exposure.

@@ -8,6 +8,7 @@ use crate::{
         Access, AccessKind, CompiledPass, FrameGraph, Pass, PassScope, PipelineKey,
         ResourceDescriptor, ResourceScope,
     },
+    shader_constants::AERIAL_WORKGROUP_EDGE,
     synthetic::{RenderError, SyntheticView},
 };
 use std::collections::BTreeSet;
@@ -238,8 +239,8 @@ impl SecondaryAerial {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.group, &[]);
         pass.dispatch_workgroups(
-            AERIAL_EXTENT[0].div_ceil(8),
-            AERIAL_EXTENT[1].div_ceil(8),
+            AERIAL_EXTENT[0].div_ceil(AERIAL_WORKGROUP_EDGE),
+            AERIAL_EXTENT[1].div_ceil(AERIAL_WORKGROUP_EDGE),
             1,
         );
         Ok(())

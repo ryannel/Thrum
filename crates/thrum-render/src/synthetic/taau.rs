@@ -5,6 +5,7 @@ use crate::graph::{
     Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
     ResourceScope,
 };
+use crate::shader_constants::RECONSTRUCTION_WORKGROUP_EDGE;
 use std::collections::BTreeSet;
 
 const PARAM_BYTES: u64 = size_of::<crate::records::ReconstructionParams>() as u64;
@@ -443,8 +444,8 @@ impl SceneContext<'_> {
         pass.set_pipeline(&taau.pipeline);
         pass.set_bind_group(0, &target.groups[self.exposure_side], &[]);
         pass.dispatch_workgroups(
-            self.target.width.div_ceil(8),
-            self.target.height.div_ceil(8),
+            self.target.width.div_ceil(RECONSTRUCTION_WORKGROUP_EDGE),
+            self.target.height.div_ceil(RECONSTRUCTION_WORKGROUP_EDGE),
             1,
         );
         Ok(())

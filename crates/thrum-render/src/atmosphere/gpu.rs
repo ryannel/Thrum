@@ -20,8 +20,10 @@ pub(crate) use aerial_view::SecondaryAerial;
 #[cfg(all(test, not(target_arch = "wasm32")))]
 pub(in crate::atmosphere) mod tests;
 
-use crate::shader_constants::ATMOSPHERE_PLANES as LUT_PLANES;
 pub(super) use crate::shader_constants::{AERIAL_EXTENT, ATMOSPHERE_EXTENTS as EXTENTS};
+use crate::shader_constants::{
+    AERIAL_WORKGROUP_EDGE, ATMOSPHERE_PLANES as LUT_PLANES, LUT_WORKGROUP_EDGE,
+};
 const LUT_SHADER: &str = concat!(
     concat!(
         wgsl!("atmosphere/storage.wgsl"),
@@ -42,7 +44,7 @@ const LUT_SHADER: &str = concat!(
     wgsl!("atmosphere/ground.wgsl")
 );
 const UNIFORM_LEN: usize = size_of::<AtmosphereUniform>();
-const SKY_MOTION_BYTES: u64 = size_of::<crate::records::SkyMotion>() as u64;
+pub(super) const SKY_MOTION_BYTES: u64 = size_of::<crate::records::SkyMotion>() as u64;
 pub(super) const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const TRANSPORT_VALID: u8 = 1;
 const SKY_VALID: u8 = 2;
@@ -395,8 +397,8 @@ impl AtmospherePrepared {
             compute.set_pipeline(&self.aerial_pipeline);
             compute.set_bind_group(0, &self.aerial_group, &[]);
             compute.dispatch_workgroups(
-                AERIAL_EXTENT[0].div_ceil(8),
-                AERIAL_EXTENT[1].div_ceil(8),
+                AERIAL_EXTENT[0].div_ceil(AERIAL_WORKGROUP_EDGE),
+                AERIAL_EXTENT[1].div_ceil(AERIAL_WORKGROUP_EDGE),
                 1,
             );
             return Ok(());
@@ -410,7 +412,11 @@ impl AtmospherePrepared {
         compute.set_pipeline(&self.compute[index]);
         compute.set_bind_group(0, &self.groups[index], &[]);
         let [width, height] = EXTENTS[index];
-        compute.dispatch_workgroups(width.div_ceil(8), height.div_ceil(8), 1);
+        compute.dispatch_workgroups(
+            width.div_ceil(LUT_WORKGROUP_EDGE),
+            height.div_ceil(LUT_WORKGROUP_EDGE),
+            1,
+        );
         Ok(())
     }
 

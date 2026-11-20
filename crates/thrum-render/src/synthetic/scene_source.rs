@@ -216,8 +216,8 @@ pub(super) fn secondary(
         format!(
             "{}\n@group(0) @binding(7) var scene_height_maps: texture_depth_2d_array;",
             source.replace(
-                "textureLoad(shadow_maps,texel_index,2,0)",
-                "textureLoad(scene_height_maps,texel_index,2,0)",
+                "textureLoad(shadow_maps,texel_index,",
+                "textureLoad(scene_height_maps,texel_index,"
             )
         )
     } else {

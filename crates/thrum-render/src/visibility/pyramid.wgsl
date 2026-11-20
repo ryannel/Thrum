@@ -8,7 +8,7 @@
 @group(0) @binding(0) var depth_source: texture_depth_2d;
 @group(0) @binding(1) var mip0: texture_storage_2d<r32float, write>;
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(PYRAMID_WORKGROUP_EDGE, PYRAMID_WORKGROUP_EDGE)
 fn pyramid_mip0(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(mip0);
     if id.x >= size.x || id.y >= size.y {
@@ -29,7 +29,7 @@ fn pyramid_mip0(@builtin(global_invocation_id) id: vec3<u32>) {
 @group(0) @binding(0) var previous: texture_2d<f32>;
 @group(0) @binding(1) var next: texture_storage_2d<r32float, write>;
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(PYRAMID_WORKGROUP_EDGE, PYRAMID_WORKGROUP_EDGE)
 fn pyramid_down(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(next);
     if id.x >= size.x || id.y >= size.y {

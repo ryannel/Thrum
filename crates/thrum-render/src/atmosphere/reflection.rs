@@ -13,6 +13,8 @@ pub(super) const DFG_SIZE: u32 = 65;
 const PREFILTER_COUNTS: [u32; MIP_COUNT as usize] = [8, 512, 1024, 512, 512, 512, 512];
 const PREFILTER_CAPACITY: u32 = 1024;
 const CUBE_TEXELS_PER_GROUP: u32 = 16;
+const DFG_WORKGROUP_EDGE: u32 = 8;
+const PREFILTER_WORKGROUP: u32 = 64;
 pub(super) const DFG_SAMPLES: u32 = 1024;
 pub(super) const SAMPLE_BYTES: u64 = prefilter_sample_count() as u64 * 16;
 
@@ -171,10 +173,15 @@ impl ReflectionPrepared {
         if stage == 0 {
             pass.set_pipeline(&self.dfg_pipeline);
             pass.set_bind_group(0, &self.dfg_group, &[]);
-            pass.dispatch_workgroups(DFG_SIZE.div_ceil(8), DFG_SIZE.div_ceil(8), 1);
+            let groups = DFG_SIZE.div_ceil(DFG_WORKGROUP_EDGE);
+            pass.dispatch_workgroups(groups, groups, 1);
             pass.set_pipeline(&self.samples_pipeline);
             pass.set_bind_group(0, &self.samples_group, &[]);
-            pass.dispatch_workgroups(PREFILTER_CAPACITY.div_ceil(64), MIP_COUNT, 1);
+            pass.dispatch_workgroups(
+                PREFILTER_CAPACITY.div_ceil(PREFILTER_WORKGROUP),
+                MIP_COUNT,
+                1,
+            );
         } else {
             let mip = stage - 1;
             let group = self
@@ -258,7 +265,9 @@ pub(crate) fn cube_source() -> String {
 
 pub(crate) fn dfg_source() -> String {
     format!(
-        "{}
+        "const DFG_WORKGROUP_EDGE: u32 = {DFG_WORKGROUP_EDGE}u;
+const PREFILTER_WORKGROUP: u32 = {PREFILTER_WORKGROUP}u;
+{}
 {}
 {}",
         shader_constants(),

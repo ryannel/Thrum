@@ -2,7 +2,7 @@
 @group(0) @binding(1) var<storage,read_write> prefilter_output: array<vec4<f32>>;
 
 // Prepare each mip's BRDF-only samples once per device.
-@compute @workgroup_size(64)
+@compute @workgroup_size(PREFILTER_WORKGROUP)
 fn prefilter_samples_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let mip=id.y;
     let span=PREFILTER_SPANS[mip];
@@ -14,7 +14,7 @@ fn prefilter_samples_main(@builtin(global_invocation_id) id: vec3<u32>) {
     prefilter_output[span.x+sample]=vec4(light,max(0.0,light.z));
 }
 
-@compute @workgroup_size(8,8)
+@compute @workgroup_size(DFG_WORKGROUP_EDGE, DFG_WORKGROUP_EDGE)
 fn dfg_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size=textureDimensions(dfg_output);
     if any(id.xy>=size) { return; }

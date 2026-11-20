@@ -36,11 +36,11 @@ fn valid_rgb(value: vec3<f32>) -> bool {
 fn resolve() {
     let parameters = policy.inverse_compensation_min_max;
     var inverse = parameters.x; // Fixed mode preserves the CPU reciprocal bits.
-    var ev = log2(inverse / 1.2);
+    var ev = log2(inverse / CAMERA_EXPOSURE_NORMALIZATION);
     var lux = 0.0;
     var flags = NOT_METERED;
     var storage_scale = policy.pre_exposure;
-    if policy.mode == 1u || policy.mode == 2u {
+    if policy.mode == EXPOSURE_INCIDENT || policy.mode == EXPOSURE_LOW_LIGHT {
         flags = INVALID | NOT_METERED;
         if policy.atmosphere != 0u && finite(directional.direction_to_light.y)
             && valid_rgb(directional.irradiance.rgb) && valid_rgb(environment_light.horizontal_irradiance.rgb) {
@@ -50,20 +50,20 @@ fn resolve() {
                 lux = measured;
                 // Key the real illuminance. The positive guard only protects log2.
                 var raw_ev = log2(max(measured * 0.4, 1e-20)) - parameters.y;
-                if policy.mode == 2u {
+                if policy.mode == EXPOSURE_LOW_LIGHT {
                     raw_ev -= min(0.0, log2(key_value(measured) / key_value(ADAPTED_LUX)));
                 }
                 let storage_ev = clamp(raw_ev, parameters.z, parameters.w);
-                let storage_inverse = 1.2 * exp2(storage_ev);
+                let storage_inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(storage_ev);
                 storage_scale = clamp(0.25 / storage_inverse, policy.pre_exposure, 64.0);
-                if policy.mode == 2u {
+                if policy.mode == EXPOSURE_LOW_LIGHT {
                     // Compress the camera's gain at very low scene keys while
                     // preserving the pre-grade scale for dim HDR storage.
                     let depth = max(0.0, 1.5 - (raw_ev + parameters.y));
                     raw_ev += 0.125 * depth * (depth / (1.0 + depth));
                 }
                 ev = clamp(raw_ev, parameters.z, parameters.w);
-                inverse = 1.2 * exp2(ev);
+                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);
                 flags = 0u;
                 if raw_ev < parameters.z { flags |= FLOOR | CLAMP; }
                 if raw_ev > parameters.w { flags |= CLAMP; }

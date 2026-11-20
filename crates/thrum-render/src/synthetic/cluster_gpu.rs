@@ -3,6 +3,7 @@
 use super::RenderError;
 use super::cluster::{X, Y, Z};
 use crate::graph::CompiledPass;
+use crate::records::{Bounds, ClusterHead};
 use crate::timing::GpuTimings;
 
 pub(super) struct ClusterCompute {
@@ -25,7 +26,7 @@ impl ClusterCompute {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage { read_only: true },
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(32),
+                    min_binding_size: wgpu::BufferSize::new(size_of::<Bounds>() as u64),
                 },
                 count: None,
             },
@@ -35,7 +36,7 @@ impl ClusterCompute {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage { read_only: false },
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(8),
+                    min_binding_size: wgpu::BufferSize::new(size_of::<ClusterHead>() as u64),
                 },
                 count: None,
             },
@@ -45,7 +46,7 @@ impl ClusterCompute {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage { read_only: false },
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(4),
+                    min_binding_size: wgpu::BufferSize::new(size_of::<u32>() as u64),
                 },
                 count: None,
             },

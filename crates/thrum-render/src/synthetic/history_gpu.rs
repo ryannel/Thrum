@@ -11,7 +11,7 @@ use super::{RenderError, abi, storage_layout, uniform_layout};
 pub(super) const ENTRY_BYTES: u64 = size_of::<HistoryRecord>() as u64;
 pub(super) const SERIAL_BYTES: u64 = size_of::<Serials>() as u64;
 pub(super) const PASS_NAME: &str = "synthetic transform history";
-const WORKGROUP: u32 = 64;
+use crate::shader_constants::HISTORY_WORKGROUP;
 
 pub(super) struct TransformHistory {
     read_layout: wgpu::BindGroupLayout,
@@ -237,7 +237,7 @@ impl TransformHistory {
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.write_groups[self.write_side()], &[]);
-        pass.dispatch_workgroups(active_count.div_ceil(WORKGROUP), 1, 1);
+        pass.dispatch_workgroups(active_count.div_ceil(HISTORY_WORKGROUP), 1, 1);
         Ok(())
     }
 

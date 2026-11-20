@@ -6,7 +6,7 @@
 pub(crate) const PYRAMID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R32Float;
 /// Graph and timing pass name.
 pub(crate) const PASS: &str = "camera depth pyramid";
-const GROUP: u32 = 8;
+use crate::shader_constants::PYRAMID_WORKGROUP_EDGE;
 
 /// Compute pipelines and layouts; independent of target size.
 #[derive(Clone)]
@@ -153,7 +153,11 @@ impl PyramidPrepared {
         for (level, (group, [width, height])) in target.dispatches.iter().enumerate() {
             pass.set_pipeline(if level == 0 { &self.first } else { &self.down });
             pass.set_bind_group(0, group, &[]);
-            pass.dispatch_workgroups(width.div_ceil(GROUP), height.div_ceil(GROUP), 1);
+            pass.dispatch_workgroups(
+                width.div_ceil(PYRAMID_WORKGROUP_EDGE),
+                height.div_ceil(PYRAMID_WORKGROUP_EDGE),
+                1,
+            );
         }
     }
 }

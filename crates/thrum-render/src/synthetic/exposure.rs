@@ -10,6 +10,7 @@ use crate::graph::{
     ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BYTES};
+use crate::shader_constants::{EXPOSURE_INCIDENT, EXPOSURE_LOW_LIGHT};
 use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
@@ -67,7 +68,7 @@ impl ExposurePolicy {
         atmosphere: bool,
         tone_map: SdrToneMap,
         overlay: DisplayOverlay,
-    ) -> [u8; 32] {
+    ) -> [u8; size_of::<crate::records::Policy>()] {
         let (inverse, compensation, min, max, mode) = match self {
             Self::Fixed { inverse } => (inverse, 0.0, 0.0, 0.0, 0),
             Self::IncidentHorizontal {
@@ -80,7 +81,11 @@ impl ExposurePolicy {
                 compensation_ev,
                 min_ev100,
                 max_ev100,
-                1 + u32::from(low_light_key),
+                if low_light_key {
+                    EXPOSURE_LOW_LIGHT
+                } else {
+                    EXPOSURE_INCIDENT
+                },
             ),
         };
         bytemuck::cast(crate::records::Policy {
@@ -198,7 +203,11 @@ impl ExposureResolve {
         }
     }
 
-    pub(super) fn update(&self, queue: &wgpu::Queue, policy: [u8; 32]) {
+    pub(super) fn update(
+        &self,
+        queue: &wgpu::Queue,
+        policy: [u8; size_of::<crate::records::Policy>()],
+    ) {
         queue.write_buffer(&self.policy, 0, &policy);
     }
 

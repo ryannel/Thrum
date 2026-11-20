@@ -14,7 +14,7 @@ use crate::contribution::{
 };
 use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 use crate::records::{ShadowCascades, ShadowView};
-use crate::shader_constants::SUN_ANGULAR_RADIUS;
+use crate::shader_constants::{SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -23,11 +23,10 @@ const CASTER_VIEW_BYTES: usize = size_of::<ShadowView>();
 /// The caster view uniform's bytes, for graph ranges.
 pub(super) const CASTER_VIEW_RANGE: u64 = CASTER_VIEW_BYTES as u64;
 /// Two Sun cascades, then the top-down caster height map.
-pub(super) const MAPS: usize = 3;
-pub(super) const HEIGHT_LAYER: usize = MAPS - 1;
+pub(super) const MAPS: usize = LAYERS as usize;
+pub(super) const HEIGHT_LAYER: usize = SHADOW_HEIGHT_LAYER as usize;
 /// The same layer count for graph ranges and pipeline roles.
-pub(super) const LAYERS: u32 = 3;
-const _: () = assert!(LAYERS as usize == MAPS);
+pub(super) use crate::shader_constants::SHADOW_MAP_LAYERS as LAYERS;
 /// Half-extent of the height map around the camera. At 1024 texels this keeps
 /// 32 m terrain texels while covering peaks more than 12 km upstream.
 const HORIZON_RADIUS: f32 = 16384.0;

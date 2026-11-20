@@ -191,7 +191,6 @@ const SHADOW_DISK = array<vec2<f32>,32>(
     vec2<f32>(0.536595808,-0.834529771)
 );
 
-const SUN_TAN_RADIUS: f32 = 0.004654244;
 // A continuous surface inside the filter footprint occludes only if it rises
 // relative to the receiver plane faster than the Sun's elevation above it,
 // tan(e)=1/g for receiver depth slope g. Accept 90% of that, capped.
@@ -400,7 +399,7 @@ fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
         let uv = vec2(clip.x*0.5+0.5,0.5-clip.y*0.5);
         if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { break; }
         let texel_index = clamp(vec2<i32>(uv*extent),vec2(0),vec2<i32>(extent)-1);
-        let depth = textureLoad(shadow_maps,texel_index,2,0);
+        let depth = textureLoad(shadow_maps,texel_index,i32(SHADOW_HEIGHT_LAYER),0);
         if depth > 0.0 {
             let height = (depth-horizon.y)/horizon.x;
             steepest = max(steepest,(height-receiver.position.y-0.5*texel*0.25)/distance);

@@ -60,7 +60,7 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     return palette[zone] / 255.0;
 }
 @fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
-    if (exposure.metadata.w >> 8u) == 2u {
+    if (exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_MOTION {
         let velocity = textureLoad(motion, vec2<i32>(position.xy), 0).xy;
         if any(abs(velocity) >= vec2(65504.0)) { return vec4(1.0, 0.0, 1.0, 1.0); }
         return vec4(clamp(vec2(0.5) + velocity / 16.0, vec2(0.0), vec2(1.0)),
@@ -68,13 +68,13 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     }
     let stored = textureLoad(scene,vec2<i32>(position.xy),0).rgb;
     let selectors = exposure.metadata.w;
-    if (selectors >> 8u) == 3u { return vec4(stored, 1.0); }
+    if (selectors >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_TEMPORAL_INPUTS { return vec4(stored, 1.0); }
     // The overlay reads the exposed scene before any tone scale and is written undithered.
-    if (selectors >> 8u) == 1u {
+    if (selectors >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_EXPOSURE_ZONES {
         return vec4(exposure_zone(stored, exposure.values.x * exposure.values.y), 1.0);
     }
     var mapped: vec3<f32>;
-    if (selectors & 0xffu) == 1u {
+    if (selectors & TONE_MAP_MASK) == TONE_MAP_NEUTRAL_HIGHLIGHTS {
         mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y);
     } else {
         mapped = reinhard(stored);

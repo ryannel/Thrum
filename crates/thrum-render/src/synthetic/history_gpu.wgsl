@@ -3,7 +3,7 @@
 @group(0) @binding(1) var<storage, read_write> history: array<HistoryRecord>;
 @group(0) @binding(2) var<uniform> serials: Serials;
 
-@compute @workgroup_size(64)
+@compute @workgroup_size(HISTORY_WORKGROUP)
 fn publish(@builtin(global_invocation_id) invocation: vec3<u32>) {
     let physical = invocation.x;
     if physical >= arrayLength(&instances) { return; }

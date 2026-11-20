@@ -3,7 +3,7 @@
 @group(0) @binding(3) var output_lut: texture_storage_2d<rgba16float,write>;
 @group(0) @binding(4) var lut_sampler: sampler;
 @group(0) @binding(5) var ground_irradiance: texture_2d<f32>;
-@compute @workgroup_size(8,8)
+@compute @workgroup_size(LUT_WORKGROUP_EDGE, LUT_WORKGROUP_EDGE)
 fn transmittance_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = plane_size(textureDimensions(output_lut),TRANS_PLANES);
     if any(id.xy>=size) { return; }
@@ -57,7 +57,7 @@ fn multiple_at(h: f32, sun: vec3<f32>, bank: u32) -> vec4<f32> {
     }
     return luminance/max(vec4(0.001),vec4(1.0)-feedback);
 }
-@compute @workgroup_size(8,8)
+@compute @workgroup_size(LUT_WORKGROUP_EDGE, LUT_WORKGROUP_EDGE)
 fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = plane_size(textureDimensions(output_lut),SPECTRAL_PLANES);
     if any(id.xy>=size) { return; }
@@ -94,7 +94,7 @@ fn ground_radiance(h: f32, mu: f32, bank: u32) -> vec4<f32> {
     return (direct+indirect)*(0.1/PI);
 }
 
-@compute @workgroup_size(8,8)
+@compute @workgroup_size(LUT_WORKGROUP_EDGE, LUT_WORKGROUP_EDGE)
 fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size=textureDimensions(output_lut);
     if any(id.xy>=size) { return; }

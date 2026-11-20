@@ -35,7 +35,7 @@ fn single_step(
     return SpectralRay(extend_ray(ray.lo,lo),extend_ray(ray.hi,hi));
 }
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(AERIAL_WORKGROUP_EDGE, AERIAL_WORKGROUP_EDGE)
 fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(scatter_out);
     if any(id.xy >= size) { return; }
