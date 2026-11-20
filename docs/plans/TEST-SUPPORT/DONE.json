@@ -72,7 +72,7 @@
     {
       "id": "M2",
       "name": "Every GPU test in the engine goes through the gate, the workspace's tests build for Linux and Windows with no CPU test hidden, and no test shares code by `#[path]`",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -94,8 +94,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (shape check passes at 677f643e4)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -105,8 +105,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md; cross-target-iter.log; cross-target-linux-error-probe.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -116,8 +116,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (rule at zero; audit section)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -126,8 +126,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (audit section)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -136,8 +136,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "ORCHESTRATE.md Rules: Main-branch check cross-target; .orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -146,8 +146,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (shape check passes at 677f643e4)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -156,8 +156,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/README.md (recorded comparison); cross-target.md (M2.4 section)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -166,22 +166,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images on the merged tip (verify answers NOT_ON_MAIN before merge)",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "Un-gated Metal draw tests need an Apple-only dev-dependency",
-          "item": "M2.2",
-          "different": "Not a hidden test, a missing admission or an OS condition: un-gating thrum-asset-gpu's draw test module left it using serde_json, which Cargo.toml declares only for macOS and iOS, so the crate's lib tests no longer compile on Linux or Windows.",
-          "repeat": false
-        },
-        {
-          "name": "Water scene tests do not compile off macOS",
-          "item": "M2.2",
-          "different": "Not a hidden test, a missing admission or an OS condition: the water example's 11 GPU test targets import thrum-app APIs that exist only on macOS, so they fail to compile on Linux and Windows.",
-          "repeat": false
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         }
       ]
     },
