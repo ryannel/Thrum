@@ -13,7 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_render::{
-    capabilities::{DeviceWatch, configure_surface},
+    capabilities::{DeviceWatch, configure_surface, configure_surface_once},
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{
@@ -519,7 +519,7 @@ impl<G: Game> Actor<G> {
                             attempt.width = self.gpu.device.limits().max_texture_dimension_2d + 1;
                         }
                     }
-                    configure_once(&self.recipe.surface, &self.gpu.device, &attempt)
+                    configure_surface_once(&self.recipe.surface, &self.gpu.device, &attempt)
                 },
             );
             if let Some(proof) = &mut self.transition_proof {
@@ -594,7 +594,7 @@ impl<G: Game> Actor<G> {
             self.transition
                 .surface
                 .take(false, false, &config, &self.gpu.config, |attempt| {
-                    configure_once(&self.recipe.surface, &self.gpu.device, attempt)
+                    configure_surface_once(&self.recipe.surface, &self.gpu.device, attempt)
                 });
         if let Some(proof) = &mut self.transition_proof {
             proof.switch(request, self.transition.surface.record(), configure_started);
@@ -744,24 +744,6 @@ impl<G: Game> Actor<G> {
         }
     }
 }
-fn configure_once(
-    surface: &wgpu::Surface<'_>,
-    device: &wgpu::Device,
-    config: &wgpu::SurfaceConfiguration,
-) -> Result<(), wgpu::Error> {
-    let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
-    let allocation = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
-    let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
-    surface.configure(device, config);
-    let validation_error = pollster::block_on(validation.pop());
-    let allocation_error = pollster::block_on(allocation.pop());
-    let internal_error = pollster::block_on(internal.pop());
-    validation_error
-        .or(allocation_error)
-        .or(internal_error)
-        .map_or(Ok(()), Err)
-}
-
 fn drain_wait(
     result: Result<wgpu::PollStatus, wgpu::PollError>,
     lost: bool,

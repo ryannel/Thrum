@@ -293,7 +293,7 @@ impl Trace {
 
     fn observe_overload<G: Game>(
         &mut self,
-        driver: &Offscreen<G>,
+        driver: &mut Offscreen<G>,
         origin: Instant,
         observed: Duration,
     ) -> Result<(), String> {
@@ -722,7 +722,7 @@ async fn record(
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
         if (elapsed_observation || sprite_cost) && running && report.overload.is_some() {
-            trace.observe_overload(&driver, origin, returned)?;
+            trace.observe_overload(&mut driver, origin, returned)?;
         }
         if observer_only && report.submitted {
             trace.observe_route_end(report.tick, returned);

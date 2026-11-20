@@ -64,6 +64,7 @@ struct Replacement {
     gpu: GraphicsDevice,
     prepared: PreparedDevice,
     configured_extent: Option<[u32; 2]>,
+    retry_extent: Option<[u32; 2]>,
 }
 
 impl Replacement {
@@ -90,6 +91,7 @@ impl Replacement {
             gpu,
             prepared,
             configured_extent: None,
+            retry_extent: None,
         }))
     }
 
@@ -129,15 +131,16 @@ impl Replacement {
                 reconfigure
             }
             SurfaceAction::Skip { .. } => return Ok(None),
-            SurfaceAction::Reconfigure { validation: true } => {
+            SurfaceAction::Reconfigure { validation } => {
+                // WebGPU uses Lost for exceptions in either configure or
+                // acquire. Reconfigure the same candidate once before
+                // reporting a persistent activation failure to Restore.
+                if !validation && self.retry_extent == Some(extent) {
+                    return Err("replacement canvas configuration did not become usable".to_owned());
+                }
+                self.retry_extent = (!validation).then_some(extent);
                 self.configured_extent = None;
                 return Ok(None);
-            }
-            SurfaceAction::Reconfigure { validation: false } => {
-                // WebGPU signals a thrown configure as Lost. This candidate
-                // has never presented, so report its failed activation and
-                // leave the explicit retry available.
-                return Err("replacement canvas configuration did not become usable".to_owned());
             }
         };
         host.publish_device(&mut self.prepared)

@@ -5,7 +5,7 @@
 
 use std::time::{Duration, Instant};
 
-use thrum_core::sim::{WorldLaneFault, WorldLifecycle};
+use thrum_core::sim::{WorldLaneFault, WorldLifecyclePolicy};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
@@ -16,7 +16,7 @@ use thrum_render::{
     synthetic::{CaptureSource, OUTPUT_FORMAT},
 };
 
-use crate::{Game, Gpu};
+use crate::{Game, Gpu, WorldLink};
 
 pub mod clock;
 pub mod thread_policy;
@@ -32,6 +32,7 @@ pub struct Offscreen<G: Game> {
     view: wgpu::TextureView,
     extent: [u32; 2],
     origin: Instant,
+    lifecycle: WorldLifecyclePolicy,
 }
 
 /// Explicit boundary diagnostic, never enabled by the ordinary game loop.
@@ -182,6 +183,7 @@ impl<G: Game> Offscreen<G> {
             view,
             extent,
             origin: prepared.origin,
+            lifecycle: WorldLifecyclePolicy::default(),
         })
     }
 
@@ -211,58 +213,30 @@ impl<G: Game> Offscreen<G> {
         let (edits, paused) = self.game.take_edits();
         G::apply(&mut self.host, edits)?;
         if let Some(paused) = paused {
-            let request = if paused {
-                WorldLifecycle::Pause
-            } else {
-                WorldLifecycle::Resume
-            };
-            self.world_transition(request)?;
+            let world = self.game.world().ok_or("game has no world lifecycle")?;
+            self.lifecycle.request(paused);
+            settle_world_lifecycle(world, &mut self.lifecycle)?;
             self.game.observe_paused(paused);
         }
         Ok(())
     }
 
-    /// Recover a currently overloaded running world through its drain and resume barriers.
+    /// Reconcile a current overload through the world lifecycle policy and report its refused ticks.
     /// A render report can outlive an overload, so the current world status decides.
     /// # Errors
     /// Returns a world fault, refused transition or acknowledgement timeout.
-    pub fn recover_world_overload(&self) -> Result<Option<u64>, FrameError> {
+    pub fn recover_world_overload(&mut self) -> Result<Option<u64>, FrameError> {
         let world = self
             .game
             .world()
             .ok_or(FrameError::InvalidState("game has no world lifecycle"))?;
-        match world.check_health() {
-            Ok(_) => Ok(None),
-            Err(WorldLaneFault::Overload(refused_ticks)) => {
-                self.world_transition(WorldLifecycle::Pause)
-                    .map_err(FrameError::World)?;
-                self.world_transition(WorldLifecycle::Resume)
-                    .map_err(FrameError::World)?;
-                Ok(Some(refused_ticks))
-            }
-            Err(error) => Err(FrameError::World(error.to_string())),
-        }
-    }
-
-    fn world_transition(&self, request: WorldLifecycle) -> Result<(), String> {
-        let world = self.game.world().ok_or("game has no world lifecycle")?;
-        world
-            .request_lifecycle(request)
-            .map_err(|e| format!("lifecycle request: {e:?}"))?;
-        let deadline = Instant::now() + Duration::from_secs(5);
-        loop {
-            if world
-                .poll_lifecycle_reply()
-                .map_err(|e| format!("lifecycle reply: {e:?}"))?
-                .is_some_and(|reply| reply.request == request)
-            {
-                return Ok(());
-            }
-            if Instant::now() >= deadline {
-                return Err("world lifecycle timeout".to_owned());
-            }
-            std::thread::sleep(Duration::from_millis(1));
-        }
+        let (episodes, refused) = (
+            self.lifecycle.overload_count(),
+            self.lifecycle.refused_ticks(),
+        );
+        settle_world_lifecycle(world, &mut self.lifecycle).map_err(FrameError::World)?;
+        Ok((self.lifecycle.overload_count() != episodes)
+            .then_some(self.lifecycle.refused_ticks() - refused))
     }
 
     /// Enable the renderer's three-slot tap without creating another GPU owner.
@@ -421,6 +395,48 @@ impl<G: Game> Offscreen<G> {
     pub fn set_timing_requested(&mut self, requested: bool) {
         self.host.set_timing_requested(requested);
     }
+}
+
+fn settle_world_lifecycle(
+    world: &dyn WorldLink,
+    lifecycle: &mut WorldLifecyclePolicy,
+) -> Result<(), String> {
+    wait_for_lifecycle(world, lifecycle)?;
+    match world.check_health() {
+        Ok(_) => {}
+        Err(WorldLaneFault::Overload(refused)) => lifecycle.overloaded(refused),
+        Err(error) => return Err(error.to_string()),
+    }
+    while let Some(request) = lifecycle.next_request() {
+        world
+            .request_lifecycle(request)
+            .map_err(|error| error.to_string())?;
+        lifecycle.accepted(request);
+        wait_for_lifecycle(world, lifecycle)?;
+    }
+    Ok(())
+}
+
+fn wait_for_lifecycle(
+    world: &dyn WorldLink,
+    lifecycle: &mut WorldLifecyclePolicy,
+) -> Result<(), String> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while lifecycle.needs_reply() {
+        if let Some(reply) = world
+            .poll_lifecycle_reply()
+            .map_err(|error| error.to_string())?
+        {
+            return lifecycle
+                .acknowledge(reply.request)
+                .map_err(|error| error.to_string());
+        }
+        if Instant::now() >= deadline {
+            return Err("world lifecycle timeout".to_owned());
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    Ok(())
 }
 
 fn presenter_output(

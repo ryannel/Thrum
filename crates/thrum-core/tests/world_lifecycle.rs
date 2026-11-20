@@ -203,21 +203,23 @@ fn threaded_overload_round_trip_through_the_lane() {
 #[test]
 fn pending_resume_defers_racing_health_to_the_next_fresh_observation() {
     let mut policy = WorldLifecyclePolicy::default();
-    policy.overloaded(12);
+    policy.request(true);
     // A busy slot leaves the same pause due and a mismatched reply leaves it pending.
     assert_eq!(policy.next_request(), Some(Pause));
     assert_eq!(policy.next_request(), Some(Pause));
     policy.accepted(Pause);
     assert!(policy.acknowledge(Resume).is_err());
     policy.acknowledge(Pause).expect("drained");
-    policy.overloaded(12);
+    policy.request(false);
+    assert_eq!(policy.next_request(), Some(Resume));
     policy.accepted(Resume);
+    // The first overload arrives while the Resume reply is still in the slot.
     policy.overloaded(11);
-    assert_eq!((policy.overload_count(), policy.refused_ticks()), (1, 12));
+    assert_eq!((policy.overload_count(), policy.refused_ticks()), (0, 0));
     assert_eq!(policy.next_request(), None);
     policy.acknowledge(Resume).expect("restart completed");
     policy.overloaded(11);
     policy.overloaded(11);
     assert_eq!(policy.next_request(), Some(Pause));
-    assert_eq!((policy.overload_count(), policy.refused_ticks()), (2, 23));
+    assert_eq!((policy.overload_count(), policy.refused_ticks()), (1, 11));
 }

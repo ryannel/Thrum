@@ -249,34 +249,61 @@ pub fn sdr_surface_config(
     Some(config)
 }
 
-/// Validation failures from both attempts to configure a native surface.
+/// A native surface configuration failure, including a failed retry if attempted.
 #[derive(Debug)]
 pub struct SurfaceConfigError {
     first: wgpu::Error,
-    retry: wgpu::Error,
+    retry: Option<wgpu::Error>,
 }
 
 impl std::fmt::Display for SurfaceConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "surface configuration: {}; retry: {}",
-            self.first, self.retry
-        )
+        write!(f, "surface configuration: {}", self.first)?;
+        if let Some(retry) = &self.retry {
+            write!(f, "; retry: {retry}")?;
+        }
+        Ok(())
     }
 }
 
 impl std::error::Error for SurfaceConfigError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.retry)
+        Some(self.retry.as_ref().unwrap_or(&self.first))
     }
+}
+
+/// Configure one native surface attempt with scoped errors.
+///
+/// Extent switches use this to try a candidate and restore the committed
+/// configuration on failure. For a same-configuration retry use
+/// [`configure_surface`].
+///
+/// # Errors
+/// Returns validation, allocation or internal errors from the attempt.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn configure_surface_once(
+    surface: &wgpu::Surface<'_>,
+    device: &wgpu::Device,
+    config: &wgpu::SurfaceConfiguration,
+) -> Result<(), wgpu::Error> {
+    let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
+    let allocation = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+    let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
+    surface.configure(device, config);
+    let validation_error = pollster::block_on(validation.pop());
+    let allocation_error = pollster::block_on(allocation.pop());
+    let internal_error = pollster::block_on(internal.pop());
+    validation_error
+        .or(allocation_error)
+        .or(internal_error)
+        .map_or(Ok(()), Err)
 }
 
 /// Configure and retry once if native validation rejects a stale drawable.
 /// WebGPU configure returns void and the shell checks the next drawable.
 ///
 /// # Errors
-/// Reports both native validation failures when the retry also fails.
+/// Returns a native configuration failure and any failed retry.
 #[cfg_attr(
     target_arch = "wasm32",
     expect(
@@ -291,17 +318,18 @@ pub fn configure_surface(
 ) -> Result<(), SurfaceConfigError> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let configure = || {
-            let errors = device.push_error_scope(wgpu::ErrorFilter::Validation);
-            surface.configure(device, config);
-            pollster::block_on(errors.pop())
-        };
         // wgpu retires the stale presentation on the first configure even
         // when it reports an outstanding drawable left by a lost device.
-        if let Some(first) = configure()
-            && let Some(retry) = configure()
-        {
-            return Err(SurfaceConfigError { first, retry });
+        if let Err(first) = configure_surface_once(surface, device, config) {
+            if !matches!(first, wgpu::Error::Validation { .. }) {
+                return Err(SurfaceConfigError { first, retry: None });
+            }
+            if let Err(retry) = configure_surface_once(surface, device, config) {
+                return Err(SurfaceConfigError {
+                    first,
+                    retry: Some(retry),
+                });
+            }
         }
     }
     #[cfg(target_arch = "wasm32")]
