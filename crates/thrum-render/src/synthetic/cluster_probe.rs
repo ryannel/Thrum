@@ -106,8 +106,7 @@ impl LightListProbe {
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.group, &[]);
             pass.dispatch_workgroups(
-                self.words
-                    .div_ceil(crate::shader_constants::CLUSTER_PROBE_WORKGROUP),
+                self.words.div_ceil(crate::shaders::CLUSTER_PROBE_WORKGROUP),
                 1,
                 1,
             );

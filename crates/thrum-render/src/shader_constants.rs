@@ -8,7 +8,6 @@ pub(crate) const AIR_SHADOW_SIZE: u32 = 512;
 pub(crate) const SHADOW_MAP_LAYERS: u32 = 3;
 pub(crate) const SHADOW_HEIGHT_LAYER: u32 = SHADOW_MAP_LAYERS - 1;
 pub(crate) const HISTORY_WORKGROUP: u32 = 64;
-pub(crate) const CLUSTER_PROBE_WORKGROUP: u32 = 64;
 pub(crate) const RECONSTRUCTION_WORKGROUP_EDGE: u32 = 8;
 pub(crate) const PYRAMID_WORKGROUP_EDGE: u32 = 8;
 

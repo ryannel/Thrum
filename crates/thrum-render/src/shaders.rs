@@ -3,6 +3,8 @@ use std::borrow::Cow;
 
 use crate::{capabilities::SunShadowMethod, synthetic::scene_source::SunShadows};
 
+pub(crate) const CLUSTER_PROBE_WORKGROUP: u32 = 64;
+
 /// A source marker gives reflected declarations a file identity across compositions.
 macro_rules! wgsl {
     ("atmosphere/common.wgsl") => {
@@ -251,7 +253,7 @@ shader_catalog! {
     Shadow => wgsl!("synthetic/shadow.wgsl");
     ClusterProbe => format!(
         "const CLUSTER_PROBE_WORKGROUP: u32 = {}u;\n{}",
-        crate::shader_constants::CLUSTER_PROBE_WORKGROUP,
+        CLUSTER_PROBE_WORKGROUP,
         wgsl!("synthetic/cluster_probe.wgsl")
     );
     Cluster => wgsl!("synthetic/cluster.wgsl");
@@ -430,10 +432,10 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
 
 #[cfg(test)]
 mod tests {
-    use super::Shader;
+    use super::{CLUSTER_PROBE_WORKGROUP, Shader};
     use crate::shader_constants::{
-        AERIAL_WORKGROUP_EDGE, CLUSTER_PROBE_WORKGROUP, HISTORY_WORKGROUP, LUT_WORKGROUP_EDGE,
-        PYRAMID_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE,
+        AERIAL_WORKGROUP_EDGE, HISTORY_WORKGROUP, LUT_WORKGROUP_EDGE, PYRAMID_WORKGROUP_EDGE,
+        RECONSTRUCTION_WORKGROUP_EDGE,
     };
 
     #[test]

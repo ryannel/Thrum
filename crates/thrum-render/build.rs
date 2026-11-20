@@ -6,7 +6,15 @@ use std::path::PathBuf;
 mod constants {
     include!("src/shader_constants.rs");
 }
-use constants::*;
+use constants::{
+    AERIAL_EXTENT, AERIAL_WORKGROUP_EDGE, AIR_SHADOW_SIZE, ATMOSPHERE_EXTENTS, ATMOSPHERE_PLANES,
+    ATMOSPHERE_TOP, CAMERA_EXPOSURE_NORMALIZATION, CLUSTER_WORKGROUP, CLUSTER_X, CLUSTER_Y,
+    CLUSTER_Z, DISPLAY_OVERLAY_SHIFT, EXPOSURE_INCIDENT, EXPOSURE_LOW_LIGHT, HISTORY_WORKGROUP,
+    LUT_WORKGROUP_EDGE, MAX_BUCKETS, MEMBER_PADDING, OVERLAY_EXPOSURE_ZONES, OVERLAY_MOTION,
+    OVERLAY_TEMPORAL_INPUTS, PHASE_FINAL, PHASE_FRUSTUM, PHASE_PREPASS, PLANET_RADIUS,
+    PYRAMID_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE, SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS,
+    TONE_MAP_NEUTRAL_HIGHLIGHTS, VISIBILITY_WORKGROUP,
+};
 
 fn emit(out: &std::path::Path, name: &str, integers: &[(&str, u32)], floats: &[(&str, f32)]) {
     let mut prelude = String::new();
@@ -47,6 +55,10 @@ fn main() {
     // Preserve the original shader's rounding to nine decimal places before
     // conversion to f32. The CPU shadow fit uses the unrounded tangent.
     let sun_tangent = f64::from(SUN_ANGULAR_RADIUS).tan();
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "The shader constant is f32"
+    )]
     let shader_tangent = ((sun_tangent * 1e9).round() / 1e9) as f32;
     emit(
         &out,
@@ -82,6 +94,11 @@ fn main() {
         ],
         &[],
     );
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "The camera normalization is f32 in WGSL"
+    )]
+    let shader_camera_normalization = CAMERA_EXPOSURE_NORMALIZATION as f32;
     emit(
         &out,
         "exposure_modes.wgsl",
@@ -89,10 +106,7 @@ fn main() {
             ("EXPOSURE_INCIDENT", EXPOSURE_INCIDENT),
             ("EXPOSURE_LOW_LIGHT", EXPOSURE_LOW_LIGHT),
         ],
-        &[(
-            "CAMERA_EXPOSURE_NORMALIZATION",
-            CAMERA_EXPOSURE_NORMALIZATION as f32,
-        )],
+        &[("CAMERA_EXPOSURE_NORMALIZATION", shader_camera_normalization)],
     );
     emit(
         &out,
