@@ -44,7 +44,10 @@ but no general engine runtime exists yet; future SDK commands in design document
 ## Repository hygiene
 
 - Work only in this repository and preserve unrelated changes.
-- Keep experiments in `tmp/<task>/` and selected evidence in `docs/evidence/`. Follow
+- Keep experiments in `tmp/<task>/`. Run records and review captures go in the working folder,
+  `.orchestrate/evidence/<MODULE>/`, which Git does not hold; data a check reads is test data in
+  `tests/fixtures/<module>/` or beside the crate's tests; a provenance record is tracked at
+  `docs/provenance/<MODULE>.md`. The merge refuses a new or changed file under `docs/evidence/`. Follow
   [the storage rules](docs/ASSET-LIFECYCLE.md) for bulk outputs, profiling and temporary Python environments, and clean
   up owned recordings and environments at closeout, including tool-created scratch outside the repository.
 

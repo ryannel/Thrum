@@ -11,7 +11,7 @@ import tomllib
 
 RULES = {
     "test-crate-edges": (1, "tests", "use support only in dev-dependencies and fixtures normally only in the proving ground"),
-    "evidence-size": (1, "evidence", "keep bulk captures in tmp/<task>/ with a reproduction record, or run python3 scripts/evidence_store.py put SOURCE --path docs/evidence/<module>/<capture>; read docs/ASSET-LIFECYCLE.md (local store only, no remote backup)"),
+    "evidence-size": (1, "evidence", "the merge refuses any new or changed file under the tracked evidence folder: write run records to the working folder, .orchestrate/evidence/<MODULE>/, keep bulk captures in tmp/<task>/, or keep the bytes in the local store with python3 scripts/evidence_store.py put SOURCE --path <logical path> and commit only .config/evidence-manifest.json; read docs/ASSET-LIFECYCLE.md (local store only, no remote backup)"),
     "string-errors": (4, "errors", "return a boundary error enum implementing Display and Error"),
     "package-reach": (1, "crossing-crate-boundaries", "use a public package API or registered shared fixture package"),
     "path-attribute": (1, "tests", "use the normal module tree (foo.rs and foo/)"),

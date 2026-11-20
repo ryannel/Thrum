@@ -7,7 +7,7 @@ Each section covers one recurring job:
 - the older shapes you will meet and should not copy;
 - what to do where no shared helper exists yet.
 
-The 14 Nov 2026 code review (`docs/evidence/code-review-2026-11-14/CODE-REVIEW.md`) found each split this file
+The 14 Nov 2026 code review (`.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md`, in the working folder) found each split this file
 describes. Its finding IDs are given so you can see the evidence. `./dev check` holds the mechanical shapes by rule
 (`scripts/shape_rules.py`); `docs/plans/ARCHITECTURE.md` says which module fixes each
 finding.
@@ -229,11 +229,14 @@ their own. The copies have drifted (H15, M02, M03).
 
 ## Evidence
 
-Keep evidence files at most 2 MiB, except registered exact-baseline references. `evidence-size` refuses
-oversized tracked files. Keep captures in `tmp/<task>/` with a committed reproduction record and small stills;
-if a reviewer needs the bytes, use `python3 scripts/evidence_store.py put SOURCE --path docs/evidence/MODULE/FILE`
-and commit the generated manifest and ignore list. The store is shared across worktrees on this Mac, with no
-remote backup. Restore with `python3 scripts/evidence_store.py restore docs/evidence/MODULE/FILE`.
+Evidence is not committed. Run records, review captures and logs go to the working folder,
+`.orchestrate/evidence/<MODULE>/`; data a check reads is test data, tracked in `tests/fixtures/<module>/` or
+beside the crate's tests; a provenance record is tracked at `docs/provenance/<MODULE>.md`. The merge refuses a
+new or changed file under `docs/evidence/`. Keep large captures in `tmp/<task>/`; if a reviewer needs the bytes,
+`python3 scripts/evidence_store.py put SOURCE --path docs/evidence/MODULE/FILE` keeps them in the local store
+under that logical name and records them in `.config/evidence-manifest.json`, the only file to commit. The store
+is shared across worktrees on this Mac, with no remote backup. Restore an ignored copy with
+`python3 scripts/evidence_store.py restore docs/evidence/MODULE/FILE`.
 See [the storage rules](../../../../docs/ASSET-LIFECYCLE.md#bulk-review-evidence).
 
 Rule: `evidence-path` counts lines of source under `crates`, `examples`, `scripts` and `tools` that name the

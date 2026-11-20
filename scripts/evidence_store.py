@@ -2,6 +2,8 @@
 
 restore PATH writes an ignored copy; put SOURCE [--path PATH] retains new bytes.
 archive moves tracked oversized evidence to the history manifest without rewriting Git.
+The one manifest is tracked under .config/; nothing is written under docs/evidence except restored copies,
+which the root .gitignore keeps untracked.
 """
 import argparse
 from datetime import datetime, timezone
@@ -15,8 +17,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = "docs/evidence/BULK.json"
-RELOCATED = ".config/relocated-evidence.json"
+MANIFEST = ".config/evidence-manifest.json"
 CAP = 2 * 1024 * 1024
 
 
@@ -28,8 +29,6 @@ def evidence_path(value):
     path = Path(value)
     if path.is_absolute() or ".." in path.parts or not value.startswith("docs/evidence/") or path.as_posix() != value:
         raise ValueError(f"invalid evidence path: {value}")
-    if value == MANIFEST:
-        raise ValueError("the manifest cannot list itself")
     return value
 
 
@@ -55,6 +54,8 @@ def load(root, manifest=MANIFEST):
         seen.add(name)
         if not isinstance(entry["size"], int) or entry["size"] < 0 or not re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]):
             raise ValueError(f"invalid bulk size/hash: {name}")
+        if "relocated" in entry and (entry["kind"] != "history" or entry["relocated"] is not True):
+            raise ValueError(f"invalid relocated mark: {name}")
         if entry["kind"] == "history":
             if not all(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", entry[key]) for key in ("blob", "commit")):
                 raise ValueError(f"invalid Git identity: {name}")
@@ -67,8 +68,8 @@ def load(root, manifest=MANIFEST):
 
 
 def entries(root):
-    """Include historical link targets for evidence that became test data."""
-    return load(root)["entries"] + load(root, RELOCATED)["entries"]
+    """History and local entries, including the historical link targets of evidence that became test data."""
+    return load(root)["entries"]
 
 
 def save(root, data):
@@ -76,12 +77,6 @@ def save(root, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     data["entries"].sort(key=lambda entry: entry["path"])
     path.write_text(json.dumps(data, indent=2) + "\n")
-    # Exact paths leave compact evidence trackable. Escape Git's pattern syntax.
-    def ignore_pattern(value):
-        return "/" + re.sub(r"([\\*?\[\] ])", r"\\\1", value.removeprefix("docs/evidence/"))
-    (path.parent / ".gitignore").write_text(
-        "# Generated from BULK.json by evidence_store.py; restored copies stay untracked.\n"
-        + "\n".join(ignore_pattern(entry["path"]) for entry in data["entries"]) + "\n")
 
 
 def store(root):
@@ -170,7 +165,7 @@ def put(root, source, value):
     destination(root, value)
     if value in tracked(root):
         raise ValueError(f"{value}: already tracked; new bulk captures must stay out of Git")
-    if any(entry["path"] == value for entry in load(root, RELOCATED)["entries"]):
+    if any(entry["path"] == value and entry.get("relocated") for entry in load(root)["entries"]):
         raise ValueError(f"{value}: reserved for historical evidence; choose a new path")
     data = Path(source).read_bytes()
     digest = hashlib.sha256(data).hexdigest()

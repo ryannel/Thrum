@@ -33,6 +33,7 @@ class EvidenceStore(unittest.TestCase):
         command(self.root, "config", "user.name", "Evidence fixture")
         command(self.root, "config", "user.email", "fixture@example.invalid")
         (self.root / "README.md").write_text("fixture\n")
+        (self.root / ".gitignore").write_text("/docs/evidence/\n")
         command(self.root, "add", ".")
         command(self.root, "commit", "-qm", "fixture")
 
@@ -52,7 +53,9 @@ class EvidenceStore(unittest.TestCase):
         logical = "docs/evidence/example/capture.mp4"
         with patch.dict(os.environ, {}, clear=True):
             store.put(first, source, logical)
-            command(first, "add", store.MANIFEST, "docs/evidence/.gitignore")
+            self.assertFalse((first / "docs/evidence").exists())
+            self.assertEqual(command(first, "status", "--porcelain", "-uall"), f"?? {store.MANIFEST}")
+            command(first, "add", store.MANIFEST)
             command(first, "commit", "-qm", "local manifest")
             command(second, "checkout", "--detach", command(first, "rev-parse", "HEAD"))
             store.restore(second, logical)
@@ -80,7 +83,7 @@ class EvidenceStore(unittest.TestCase):
     def test_size_rule_refuses_staged_capture_and_exempts_only_registered_reference(self):
         name = "docs/evidence/example/large.mp4"
         self.write(name, b"x" * (store.CAP + 1))
-        command(self.root, "add", name)
+        command(self.root, "add", "-f", name)
         errors = shape_rules.check(self.root, "evidence-size", ["docs/evidence"])
         self.assertIn("evidence-size", "\n".join(errors))
         self.assertIn("evidence_store.py put", "\n".join(errors))
@@ -96,7 +99,7 @@ class EvidenceStore(unittest.TestCase):
         original = b"v" * (store.CAP + 1)
         self.write(name, original)
         page = self.write("review.md", f"[video]({name})\n".encode())
-        command(self.root, "add", ".")
+        command(self.root, "add", "-f", ".")
         command(self.root, "commit", "-qm", "history")
         store.archive(self.root)
         self.assertFalse((self.root / name).exists())
@@ -115,6 +118,29 @@ class EvidenceStore(unittest.TestCase):
         manifest["entries"][0]["sha256"] = "0" * 64
         store.save(self.root, manifest)
         self.assertTrue(store.check(self.root))
+
+    def test_one_manifest_under_config_keeps_relocated_paths_reserved(self):
+        self.assertTrue(store.MANIFEST.startswith(".config/"))
+        name = "docs/evidence/example/relocated.json"
+        self.write(name, b"historical bytes")
+        command(self.root, "add", "-f", name)
+        command(self.root, "commit", "-qm", "relocated")
+        commit = command(self.root, "rev-parse", "HEAD")
+        entry = {"kind": "history", "path": name, "size": 16, "sha256": hashlib.sha256(b"historical bytes").hexdigest(),
+                 "blob": command(self.root, "rev-parse", f"HEAD:{name}"), "commit": commit, "relocated": True}
+        command(self.root, "rm", "-q", name)
+        store.save(self.root, {"schema": 1, "entries": [entry]})
+        self.assertEqual(store.check(self.root), [])
+        source = self.write("scratch", b"new bytes")
+        with self.assertRaisesRegex(ValueError, "reserved for historical evidence"):
+            store.put(self.root, source, name)
+        store.restore(self.root, name)
+        self.assertEqual((self.root / name).read_bytes(), b"historical bytes")
+        self.assertEqual(command(self.root, "status", "--porcelain", "--", "docs"), "D  " + name)
+        store.save(self.root, {"schema": 1, "entries": [dict(entry, kind="local", relocated=True)]})
+        with self.assertRaisesRegex(ValueError, "invalid relocated mark"):
+            store.load(self.root)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

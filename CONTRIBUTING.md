@@ -90,16 +90,21 @@ integrated workload and unchanged quality/correctness constraints in [AI perform
 
 ## Review and evidence
 
-Evidence files under `docs/evidence/` have a 2 MiB cap, except registered exact-baseline references. Keep large
-captures in `tmp/<task>/` and commit their reproduction record (command, revision, tool versions, SHA-256)
-with small selected stills. If the reviewer must watch a 60 MB capture, run
-`python3 scripts/evidence_store.py put tmp/<task>/capture.mp4 --path docs/evidence/MODULE/capture.mp4`, then
-commit `docs/evidence/BULK.json` and `docs/evidence/.gitignore` with that record. Link its logical evidence path;
-the reviewer runs `python3 scripts/evidence_store.py restore docs/evidence/MODULE/capture.mp4` from any worktree
-on this Mac. Verify recovery before cleaning your scratch source. The shared local store beside the main
-checkout has no remote backup; a lost disk loses new local captures. Historical entries restore from Git in
-any full clone. [Bulk review evidence](docs/ASSET-LIFECYCLE.md#bulk-review-evidence) explains missing local
-files, overrides and hash verification. The `evidence-size` refusal directs builders to the same workflow.
+Evidence is never committed. A run record, a review capture or a log goes in the working folder,
+`.orchestrate/evidence/<MODULE>/`, which every worktree on this Mac shares and Git does not hold; keep its
+reproduction record (command, revision, tool versions, SHA-256) beside it. Data a check reads is test data,
+tracked in `tests/fixtures/<module>/` or beside the crate's tests. A module's record of what it copied, from
+where and under what licence is tracked at `docs/provenance/<MODULE>.md`. The merge refuses a new or changed
+file under `docs/evidence/`. Large captures stay in `tmp/<task>/`. If a reviewer on another worktree must watch
+a 60 MB capture that cannot sit in the working folder, run
+`python3 scripts/evidence_store.py put tmp/<task>/capture.mp4 --path docs/evidence/MODULE/capture.mp4`: the
+logical path is a name, never a tracked file, and the bytes go to the local store. Commit only the manifest it
+updates, `.config/evidence-manifest.json`; the reviewer runs
+`python3 scripts/evidence_store.py restore docs/evidence/MODULE/capture.mp4` for an ignored copy. Verify
+recovery before cleaning your scratch source. The shared local store beside the main checkout has no remote
+backup; a lost disk loses new local captures. Historical entries restore from Git in any full clone.
+[Bulk review evidence](docs/ASSET-LIFECYCLE.md#bulk-review-evidence) explains missing local files, overrides
+and hash verification.
 
 For unattended submitted-output images and elapsed-time motion on Mac, use the [capture runbook](docs/CAPTURE.md).
 
@@ -110,7 +115,7 @@ and maturity entry when behavior or evidence changes. Visible output is captured
 reviewing the diff; this does not update historical review hashes or promote any maturity status.
 Documentation-only changes need `./dev check-docs`, not an unrelated engine test campaign.
 
-Keep compact reproducible evidence with exact source/build/fixture identity. Do not commit generated
+Keep compact reproducible evidence, in the working folder, with exact source/build/fixture identity. Do not commit generated
 build trees, transcripts, every rejected asset or bulk captures. [Storage rules](docs/ASSET-LIFECYCLE.md)
 cover promotion and closeout. There is no remote or release configuration implied by this scaffold;
 package publication is disabled pending a deliberate distribution and licensing decision.
