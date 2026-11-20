@@ -90,7 +90,7 @@
     {
       "id": "M2",
       "name": "Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -138,7 +138,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/HOST/M2/README.md#m24-preserve-restore-after-one-configure-exception",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
         {
@@ -150,13 +150,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The inherited Chrome configure-failure check fails after one exception",
-          "item": "M2.4",
-          "repeat": false
         }
       ]
     },
