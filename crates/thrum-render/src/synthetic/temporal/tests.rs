@@ -284,10 +284,6 @@ fn metal_sky_and_star_reactive_edit_then_steady_w4_w5() {
     });
 }
 
-#[expect(
-    clippy::print_stdout,
-    reason = "the M2 proof log records GPU storage-domain conversion"
-)]
 pub(in crate::synthetic) fn assert_history_rescale(
     device: &wgpu::Device,
     queue: &wgpu::Queue,

@@ -269,10 +269,6 @@ fn texture(
     })
 }
 
-#[expect(
-    clippy::print_stdout,
-    reason = "the M2 proof log records cooked alpha and actual reactive bytes"
-)]
 fn draw(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
