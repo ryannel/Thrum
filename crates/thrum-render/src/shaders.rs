@@ -455,9 +455,37 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
 mod tests {
     use super::{CLUSTER_PROBE_WORKGROUP, Shader};
     use crate::shader_constants::{
-        AERIAL_WORKGROUP_EDGE, HISTORY_WORKGROUP, LUT_WORKGROUP_EDGE, PYRAMID_WORKGROUP_EDGE,
-        RECONSTRUCTION_WORKGROUP_EDGE,
+        AERIAL_WORKGROUP_EDGE, ATMOSPHERE_EXTENTS, HISTORY_WORKGROUP, LUT_WORKGROUP_EDGE,
+        PYRAMID_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE,
     };
+
+    #[test]
+    fn sky_view_ray_reads_zenith_row_from_host_extent() {
+        use wgpu::naga::{Expression, Literal};
+
+        let module = wgpu::naga::front::wgsl::parse_str(&Shader::AtmosphereLuts.source())
+            .expect("production sky LUT WGSL");
+        let (zenith, constant) = module
+            .constants
+            .iter()
+            .find(|(_, constant)| constant.name.as_deref() == Some("SKY_ZENITH_ROW"))
+            .expect("zenith row derived from the sky LUT height");
+        assert!(matches!(
+            module.global_expressions[constant.init],
+            Expression::Literal(Literal::U32(row)) if row == ATMOSPHERE_EXTENTS[2][1] - 1
+        ));
+        let (_, ray) = module
+            .functions
+            .iter()
+            .find(|(_, function)| function.name.as_deref() == Some("sky_view_ray"))
+            .expect("sky LUT ray mapping");
+        assert!(
+            ray.expressions
+                .iter()
+                .any(|(_, expression)| matches!(*expression, Expression::Constant(handle) if handle == zenith)),
+            "sky_view_ray must use the derived zenith row"
+        );
+    }
 
     #[test]
     fn lighting_and_display_functions_read_generated_parameters() {

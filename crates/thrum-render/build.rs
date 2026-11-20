@@ -176,7 +176,7 @@ fn main() {
         "atmosphere_luts.wgsl",
         &[
             ("GROUND_SUN_ENTRIES", ATMOSPHERE_EXTENTS[3][0]),
-            ("SKY_HALF_ROWS", ATMOSPHERE_EXTENTS[2][1] / 2),
+            ("SKY_ROW_COUNT", ATMOSPHERE_EXTENTS[2][1]),
             ("AERIAL_WORKGROUP_EDGE", AERIAL_WORKGROUP_EDGE),
             ("LUT_WORKGROUP_EDGE", LUT_WORKGROUP_EDGE),
         ],

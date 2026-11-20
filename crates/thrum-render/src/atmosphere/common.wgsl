@@ -1,4 +1,6 @@
-const SKY_ROWS: f32 = 2.0 * f32(SKY_HALF_ROWS);
+const SKY_ROWS: f32 = f32(SKY_ROW_COUNT);
+const SKY_HALF_ROWS: u32 = SKY_ROW_COUNT / 2u;
+const SKY_ZENITH_ROW: u32 = SKY_ROW_COUNT - 1u;
 const SKY_HALF_INTERVALS: f32 = f32(SKY_HALF_ROWS - 1u);
 const SKY_GROUND_EDGE: f32 = f32(SKY_HALF_ROWS) - 0.5;
 const SKY_UPPER_EDGE: f32 = f32(SKY_HALF_ROWS) + 0.5;
@@ -47,11 +49,9 @@ fn ground_distance(h: f32, mu: f32) -> f32 {
     let c = h*(2.0*R+h);
     return c/max(0.001,-b+sqrt(max(0.0,b*b-c)));
 }
-// Two disjoint 54-row angular-square halves. The two horizon rows store
-// distinct one-sided limits at the same direction, at texel centres 53.5/108
-// and 54.5/108. Lookups choose the sky side at exact tangency; neither half's
-// filtering footprint crosses the discontinuity. Keep this fixed profile in
-// step with gpu::EXTENTS[2].
+// Two disjoint angular-square halves. The rows on either side of the chart
+// midpoint store distinct one-sided limits at the horizon. Lookups choose
+// the sky side at exact tangency, and filtering stays within each half.
 fn sun_azimuth(sun: vec3<f32>) -> f32 {
     if dot(sun.xz,sun.xz)<=1e-10 { return 0.0; }
     return atan2(sun.z,sun.x);
@@ -106,7 +106,7 @@ fn sky_view_ray(uv: vec2<f32>, row: u32) -> SkyViewRay {
     let horizon=row==SKY_HALF_ROWS-1u || row==SKY_HALF_ROWS;
     var mu=sin(angles.y);
     if row==0u { mu=-1.0; }
-    else if row==107u { mu=1.0; }
+    else if row==SKY_ZENITH_ROW { mu=1.0; }
     else if horizon { mu=atmosphere.sky_mapping.x; }
     let radial=sqrt(max(0.0,1.0-mu*mu));
     let direction=vec3(radial*cos(azimuth),mu,radial*sin(azimuth));
