@@ -67,7 +67,7 @@
     {
       "id": "M6",
       "name": "A change that breaks a test behind a Cargo feature fails its merge's check, and those tests run on main after each merge",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
