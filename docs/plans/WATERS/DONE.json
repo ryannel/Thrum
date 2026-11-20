@@ -2136,7 +2136,7 @@
         },
         {
           "id": "M11.10",
-          "statement": "The maturity ledger's `E1.water` row and the module's provenance record, `PROVENANCE.md` in its evidence folder, are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
+          "statement": "The maturity ledger's `E1.water` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
           "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the water's packages, and is any listed material GPL or share-alike?",
           "target": "mac-metal",
           "builder_result": "open",

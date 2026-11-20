@@ -18,7 +18,7 @@
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
-| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes, and DEAD-TOOLS M5 for the record of the library it copies; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | |
@@ -35,8 +35,8 @@
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close |
-| 34 | GATE-TIME | A merge's check takes far less time: each proof runs once, and the ten-minute soaks run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the foam soak; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the check's machinery |
-| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone, and no tool writes into `docs/evidence` | Nothing to start; TEST-SUPPORT M2 for its last milestone |
+| 34 | GATE-TIME | A merge's check takes far less time: it runs only fast tests, each once, and the long tests run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the foam's long test; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the check's machinery |
+| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | Nothing to start; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 for the two helpers |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
@@ -2308,22 +2308,22 @@ every merge pays it.
 
 | Module | Takes from the review | Owns | Builds inside |
 |---|---|---|---|
-| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The soak pattern and the main-branch check `soak` ([design](GATE-TIME/DESIGN.md)) | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; the test step of `./dev check` |
-| `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rule `evidence-path`, and where the evidence manifest is kept ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `REPO-RULES`' evidence store |
+| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The long tests: which tests they are, `./dev long-tests` and the main-branch check `long-tests` ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers) | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; the test step of `./dev check` |
+| `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rule `evidence-path`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
 | `DEAD-CODE` | Sections 3 and 4, and the water settings that are parsed twice | `thrum_render::binding`, and the five defaults of `SceneContribution` ([design](DEAD-CODE/DESIGN.md)) | `thrum-core`, `thrum-sea`, `thrum-water`, `thrum-render`, `thrum-rain-model`, the water scene, the game's host |
 | `TEST-SUPPORT` M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support` ([design](TEST-SUPPORT/DESIGN.md#the-kit)) | Every crate's tests |
 
 ### What can run side by side
 
 Each design lists the files each milestone touches, under "Files each milestone touches", and the lead confirms
-them against the builders at work before it starts one. The first milestones of the three modules touch
-disjoint files and can start together:
+them against the builders at work before it starts one. The first milestones of the three modules can start
+together. `DEAD-TOOLS` builds M5 first, a small milestone that `CLOUDS` M6 waits for, and then M1 to M4:
 
 | Wave | `GATE-TIME` | `DEAD-TOOLS` | `DEAD-CODE` | Share no file because |
 |---|---|---|---|---|
-| 1, at once | M1: two test files and one settings line | M1: `scripts/`, `tools/xtask`, three designs, ledger rows | M1: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | Tests, scripts and engine source |
+| 1, at once | M1: five test files, a new `./dev` command and one settings line | M5: five new files under `docs/provenance`. Then M1: `scripts/`, `tools/xtask`, three designs, ledger rows | M1: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | Tests, scripts and engine source. `GATE-TIME` M1 and `DEAD-TOOLS` M1 both edit `tools/xtask/src/main.rs`, one adding a command and one the script-suite step: whichever lands second rebases |
 | 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere | M2: benches and the `baseline-inventory` command | M2: `contribution.rs` and every implementation | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables: whichever lands second rebases |
-| 3 | M3, after `WATERS` M7: the foam test | M3: `docs/evidence`, the evidence store, five documents | M3: `thrum-core`'s runtime, three small deletions | Nothing shared |
+| 3 | M3, after `WATERS` M7: the foam test | M3: `docs/evidence`, the evidence store, five documents | M3: `thrum-core`'s runtime, three small deletions | `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares |
 | 4 | M4, after `REVIEW-RENDER` M2; M5, after `DEAD-TOOLS` M2 | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7; M5, after `HOST` M3; M6, after `REVIEW-RENDER` M3 | `GATE-TIME` M5 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables |
 
 Two files are everyone's: `.config/shape-baseline.json`, which each landing that lowers a rule's count rewrites,
@@ -2337,12 +2337,14 @@ and the stubs are gone, and `REPO-RULES` M3, the one rename, now waits for all o
    plan on. Track 6 moves, merges and deletes tests and scripts that only Done items name, and edits no Done
    item. An owning module's design that names a proof this track moved or retired is corrected at that
    module's next re-plan, as after [the ruling of 15 November](#proofs-run-once-on-main).
-2. **Soaks** (`GATE-TIME` M1 and M3; `WATERS`, `SHOWCASE`). The ten-minute gale, the moored foam's ten minutes
-   and the exit scene's stepped hour still run, with the assertions they had, in the main-branch check `soak`
-   after each merge; `./dev check` keeps a short run of the same test body. `WATERS`' and `SHOWCASE`'s designs
-   and Done items stand, because the proof they name still runs. A failure on main is fixed by the module whose
-   commit caused it, as for exact images. The builder of `GATE-TIME` M1 writes the one settings line, in its
-   design's words.
+2. **Long tests** (`GATE-TIME` M1 and M3; `WATERS`, `SHOWCASE`, `CULLING`). By the owner's decision of 20
+   November, kept as [the test tiers](../../ORCHESTRATE.md#test-tiers), no test over about a minute runs in a
+   merge's check, and no short run of one stays there. The ten-minute gale, the moored foam's ten minutes, the
+   exit scene's stepped hour, the field flythroughs and the shore-blend solve still run, whole and with the
+   assertions they had, in release in the main-branch check `long-tests` after merges. `WATERS`', `SHOWCASE`'s
+   and `CULLING`'s designs and Done items stand, because the proof they name still runs. A failure on main is
+   fixed by the module whose commit caused it, as for exact images. The builder of `GATE-TIME` M1 writes the one
+   settings line, in its design's words.
 3. **References retired under the 17 November bar** (`GATE-TIME` M2 and M4; `ATMOSPHERE`, `SCENE-VIEWS`,
    `CONTENT-LOOP`). The atmosphere's guards P3, P4 and P11 stay. Nothing an open item of `ATMOSPHERE` M6 reads
    changes: its referee and `products/tests/` are untouched. Each retirement is the owner's call and an
@@ -2356,7 +2358,16 @@ and the stubs are gone, and `REPO-RULES` M3, the one rename, now waits for all o
 6. **`thrum_render::binding`** (`DEAD-CODE` M6). New public API in `thrum-render`, accepted because five crates
    and the examples already write these entries by hand. Every layout stays what it was.
 7. **Exact baselines.** No track 6 milestone may move a retained image. Each that touches a covered path carries
-   the verifier, and none edits a file the registry pins or a script those files import.
+   the verifier, and none edits a file the registry pins. A script a pinned file imports, directly or through
+   another script, is not pinned: a milestone may edit it, and it keeps its name and everything the pinned files
+   use from it. `DEAD-TOOLS` M3 and M4 edit three such scripts, as
+   [their design](DEAD-TOOLS/DESIGN.md#mechanisms) lists.
+8. **Provenance records** (`DEAD-TOOLS` M5; `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS`). By the owner's
+   decision of 20 November, a module's record of what it copied, from where and under what licence is tracked at
+   `docs/provenance/<MODULE>.md`. It is not evidence, because a person must read it to publish the code. Each
+   module still owns what its record says. `CLOUDS` M6, the first milestone that copies a library, waits for
+   `DEAD-TOOLS` M5. The five designs still name the working-folder file; [the settings](../../ORCHESTRATE.md#starting-from-a-clean-clone)
+   say that means the tracked record, and each design is corrected at its module's next re-plan.
 
 <a id="not-planned-in-track-6"></a>
 
@@ -2376,8 +2387,13 @@ Each of these needs a design of its own, or a decision, before it is planned.
 - **Three Mac window proofs** threaded through the production render owner (S1-08).
 - **The state-delta and state-ack codecs** (N1-01, L4-01) stay, because `SESSION`'s design says keep.
 - **One test binary for each water model crate** (W2-01): nine open items run those binaries by name.
+- **Selecting a merge's tests by the files it changed** (L1-12): an assumption in
+  [GATE-TIME's plan](GATE-TIME/PLAN.md), which keeps the whole fast suite in every merge's check.
+- **Three benches the review did not look at**: `thrum-core`'s `v1_workload`, `thrum-water-model`'s `surf` and
+  the game's `recipe_cost`.
 - **The grid-parity and CIEDE2000 gates of `run_v1_showcase.py`** (P1-10): `SHOWCASE`'s and `APPLE-PRESENTATION`'s.
-- **The frozen pre-sprite graph snapshot** (G2-09): a guard; retiring it is the owner's or `RENDER-2D`'s call.
+- **The frozen pre-sprite graph snapshot** (G2-09): a guard, kept under an assumption in
+  [DEAD-TOOLS' plan](DEAD-TOOLS/PLAN.md).
 - **Dead scripts the review confirmed at low payoff** (L5-02, P2-04, P1-02, P2-05, L2-07), about 4,700 lines.
 - **Plan text left for the modules' planners**: `GAME-SPLIT` M5 does not wait for `REVIEW-RENDER` M5 or `SWARM`
   M8, whose checks name the package it renames (L8-09); `ATMOSPHERE` M6.4 and M6.9 name folders where they could
@@ -2387,7 +2403,8 @@ Each of these needs a design of its own, or a decision, before it is planned.
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Soak**: one test body, a short call in `./dev check` and an ignored full-length test that the main-branch check `soak` runs in release | `GATE-TIME:M1` → any module with a test that needs minutes of simulated time | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
+| **Long test**: a test over about a minute, marked ignored with a reason that starts `long:`, in a binary that `./dev long-tests` lists; the main-branch check `long-tests` runs it in release | `GATE-TIME:M1` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:M5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:M3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Contribution defaults**: five hooks of `SceneContribution` need not be written | `DEAD-CODE:M2` → every contribution | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
 | **Layout entries**: `thrum_render::binding`, and a graph resource declared from a texture | `DEAD-CODE:M6` → every crate that creates a bind-group layout or declares a graph texture | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
@@ -2966,3 +2983,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `WATERS`, `ATMOSPHERE`, `SWARM` and `PUDDLES` were reworded where a check passed on a missing path or an item
   asked for a file under `docs/evidence`; each module's log says which. `REPO-RULES` M3 now waits for track 6.
   No Done item, exact baseline, comparison or contract changed.
+- 2026-11-20 Track 6 revised after its first design reviews and three owner decisions of that day. The gale and
+  every other test over about a minute leave the merge's check whole, under
+  [the test tiers](../../ORCHESTRATE.md#test-tiers) now in the project settings, and run in release on main
+  (seam ruling 2). All nine benches go. Provenance records are tracked under `docs/provenance` (seam ruling 8):
+  `DEAD-TOOLS` gained M5, built first, and `CLOUDS` M6 waits for it. Seam ruling 7 now says what the designs
+  say: a pinned comparison file is never edited, and a script it imports keeps its name and what the pinned
+  files use. Open items of `CLOUDS` and `WATERS` that named the working-folder provenance file were reworded.

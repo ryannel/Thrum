@@ -14,7 +14,9 @@ write-ups, with every file list in full. Where a verifier corrected a finding, t
 
 The owner, 20 November 2026: "We want to do a code cleanup and consolidation for Thrum." The lead's task for the
 plan: make Thrum cheaper to change, with "no tools, records or code that nothing uses", and without changing
-"what the engine draws, simulates or sends".
+"what the engine draws, simulates or sends". The owner's decisions of the same day, as the lead gave them: all
+nine benches that nothing runs are deleted, and provenance records are tracked in Git, in place before `CLOUDS` M6
+copies its first library.
 
 ## Purpose and who it is for
 
@@ -39,36 +41,48 @@ deleted files go, because the link check refuses a link to a missing file. A row
 [the maturity ledger](../../design/maturity.json) that describes a deleted tool says it is retired and names that
 commit, and claims nothing as present.
 
-**3. Script deletions land once.** `scripts/` is a covered path of the exact baselines, so each landing there
-asks the main-branch check `exact-images` for a run. M1 deletes every dead script in one landing. The seven
-comparison files the registry pins by content are never touched: `exact_baselines.py`,
-`exact_baselines_native.py`, `apple_tile_m0.py`, `apple_tile_m1.py`, `apple_tile_m2.py`, `compare_v1_pixels.py`
-and `apple_tile_m1_compare_browser.py`. The six scripts they import keep their names and everything the pinned
-files use from them: `run_v1_showcase.py`, `t2_writer_probe.py`, `capture_spool.py`, `capture_v1_runtime.py`,
-`capture_result.py` and `repo_check.py`.
+**3. Script deletions land once, and the pinned comparison files are never touched.** `scripts/` is a covered
+path of the exact baselines, so each landing there asks the main-branch check `exact-images` for a run. M1 deletes
+every dead script in one landing. The registry pins seven comparison files by content, and no milestone edits
+one: `exact_baselines.py`, `exact_baselines_native.py`, `apple_tile_m0.py`, `apple_tile_m1.py`,
+`apple_tile_m2.py`, `compare_v1_pixels.py` and `apple_tile_m1_compare_browser.py`. A script one of them imports,
+directly or through another script, is not pinned and may be edited, but it keeps its name and everything the
+pinned files use from it. Imported directly: `run_v1_showcase.py`, `t2_writer_probe.py`, `capture_spool.py`,
+`capture_v1_runtime.py`, `capture_result.py` and `repo_check.py`. Imported through `repo_check.py`:
+`evidence_store.py` and `shape_rules.py`. M3 and M4 edit three of these, in the lines their rows name.
 
 What M1 deletes, each the owner's call where the plan says so:
 
 | What | Finding | Size |
 |---|---|---|
-| The headless release-trust toolchain: 15 scripts that prepare and verify a sealed release build, their suites, and the binary `tools/xtask/src/bin/rustc_receipt.rs`. Written 1 to 3 November for an example since deleted, run by nothing, compiled by every check | P1-01, P2-01, L5-01 | 8,500 lines |
-| Thirteen one-shot milestone proof scripts and `creator_profile_probe.rs`, each written for one milestone of `APPLE-TILE`, `APPLE-PRESENTATION`, `COOKED-DRAW`, `CREATOR` or `TRANSPORT` | P1-03 | 1,650 lines |
+| The headless release-trust toolchain, written 1 to 3 November to prepare and verify a sealed release build for an example since deleted, run by nothing, compiled by every check. Fifteen scripts: `prepare_headless_cargo_home`, `prepare_macos_tool_root_clone`, `inventory_headless_tool_roots`, `run_bounded_native_build`, `qualify_held_macos_native_ab`, `release_cargo_selection`, the three `hold_macos_*` and the six `verify_*`. Their thirteen `test_*` suites, and the binary `tools/xtask/src/bin/rustc_receipt.rs` | P1-01, P2-01, L5-01 | 8,500 lines |
+| Thirteen one-shot milestone proof scripts and `creator_profile_probe.rs`, each written for one milestone of `APPLE-TILE`, `APPLE-PRESENTATION`, `COOKED-DRAW`, `CREATOR` or `TRANSPORT`. M1.2's check lists them | P1-03 | 1,650 lines |
 | `culling_campaign.py` and its suite. `CULLING` is Done and its plan says no loaded campaign repeats | G2-05 | 350 lines with M4's half |
 
 **4. The check finds script suites itself.** Today `./dev check` runs 8 of 29 `scripts/test_*.py` suites from a
 hand-kept list, and the suites of the shape rules the check enforces run nowhere. After the dead suites are
 gone, the check discovers every `scripts/test_*.py`, and every `scripts/test_*.mjs` where node is installed. A
-suite the check cannot run is excluded by name with its reason. The added time is recorded.
+suite the check cannot run is excluded by name with its reason. So is a suite that takes over about a minute,
+which [the test tiers](../../../ORCHESTRATE.md#test-tiers) keep out of a merge's check: it is excluded with its
+measured time, and the log says where it should run. The added time is recorded.
 
 **5. A bench is kept when something runs it.** Nine benches are named by no script, command or check, and
 Clippy compiles them on every check: seven in `thrum-render` and `field_culling` and `material_reload` in the
-game (L5-05). They go, and `thrum-render` drops the bench harness dependency only they used. `./dev
-baseline-inventory` ran the fixed budgets of gate G0, which closed on 5 November; it goes with the one bench
-only it drove and the inventory printer and batch modes in the frame bench (L5-15, G2-03). The benches that the
-cost scripts and the content tripwire run stay as they are.
+game (L5-05). All nine go, by the owner's decision, and `thrum-render` drops the bench harness dependency only
+they used. `./dev baseline-inventory` ran the fixed budgets of gate G0, which closed on 5 November; it goes with
+the two benches only it ran, `g2r` and `frame` (L5-15, G2-03). The frame bench's two timing rows could build
+without the command, but nothing else runs them, so the bench goes whole. Four benches stay, each run by a
+script that is kept:
 
-**6. Evidence has three homes, and `docs/evidence` is none of them.** The merge refuses a new or changed file
-there, yet scripts, benches and tests still write and read there.
+| Bench | Run by |
+|---|---|
+| The game's `valley_culling` | `scripts/culling_cost.py` and `scripts/render2d.py` |
+| The game's `cooked_edit` and the cooker's `edit_to_visible` | `scripts/check_g5_tripwires.sh` |
+| `link-proof`'s `allocations` | `scripts/transport_link.py` |
+
+**6. Evidence has three homes, a provenance record has a fourth, and `docs/evidence` is none of them.** The
+merge refuses a new or changed file under `docs/evidence`, yet scripts, benches and tests still write and read
+there.
 
 - A **record of a run** is written to the working folder, `.orchestrate/evidence/<MODULE>/`, which every
   worktree shares and Git does not hold. Every cost script and tripwire bench writes there by default.
@@ -79,10 +93,18 @@ there, yet scripts, benches and tests still write and read there.
 - The **list of what left the tree** is one manifest under `.config/`, where today there are two with one schema,
   one of them inside the frozen folder beside a generated ignore file of 1,100 lines. `evidence_store.py`
   keeps its commands and reports the same entries.
+- A **provenance record** lists each file a module copied or translated from elsewhere, with its source and its
+  licence. A person has to read it to publish the code, so it is not evidence, and a clone has to get it, so it
+  is tracked: `docs/provenance/<MODULE>.md`, beside the record of the 1 November import that Git already holds
+  there. The merge accepts it, because its guard covers only the two evidence folders. Five modules have one
+  today, in the working folder only: `SEA`, `WATERS`, `CLOUDS`, `PUDDLES` and `RIVERS` (L8-08). Each says nothing
+  has been copied yet. M5 tracks them, and `CLOUDS` M6, the first milestone that copies a library, waits for it.
 
-The 373 unread records are deleted in one commit that only deletes. Each has a copy in the working folder; five
-`RENDER-2D` M1 files differ there because a later run rewrote them, so their committed bytes are saved to the
-working folder under a second name first. A rule added through [REPO-RULES](../REPO-RULES/DESIGN.md)' rule
+The 373 unread records are deleted in one commit that only deletes. Each has a copy in the working folder. For
+some the copy differs from the bytes Git holds, because a later run rewrote it or its links were rewritten when
+evidence moved: the review counted 14 such files among the 373. Before the deletion, the committed bytes of every
+file whose working copy differs are saved to the working folder under a second name, measured on the commit the
+builder starts from. A rule added through [REPO-RULES](../REPO-RULES/DESIGN.md)' rule
 engine, `evidence-path`, then holds the shape: no source file under `crates`, `examples`, `scripts` or `tools`
 names a path under `docs/evidence`, except the evidence store's own code that restores history. Data files are
 not source, so the exact-image fixtures that record old paths are untouched.
@@ -97,6 +119,7 @@ run them.
 | Interface | For |
 |---|---|
 | Where evidence goes: run records in the working folder, test data in fixtures, and the rule `evidence-path` | Every builder and planner |
+| A module's provenance record, tracked at `docs/provenance/<MODULE>.md` | Every module that copies or translates a file from elsewhere, and whoever publishes the code |
 | The evidence manifest under `.config/`, with `evidence_store.py check` and `restore` as they were | Every builder and reviewer. It changes [REPO-RULES](../REPO-RULES/DESIGN.md) M2's interface only in where the manifest is kept |
 
 ## Files each milestone touches
@@ -104,13 +127,15 @@ run them.
 The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`.
 `.config/shape-baseline.json` and `docs/design/maturity.json` are shared by every module: a landing that
-lowers a count or retires a row rebases and makes the same edit again.
+lowers a count or retires a row rebases and makes the same edit again. The rows are in build order, so M5 is
+first.
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
-| M1 | The deleted files under `scripts/`; `tools/xtask/src/bin/rustc_receipt.rs`; the script-suite step of `tools/xtask/src/main.rs`; the three F4 and T2 headless-build designs under `docs/design/` and the research notes that link the toolchain; the toolchain's rows of `docs/design/maturity.json` | Nothing | No builder is in these scripts. `CLOUDS` works in `scripts/reference/cloud/`, which is not touched |
+| M5 | Five new files, `docs/provenance/SEA.md`, `WATERS.md`, `CLOUDS.md`, `PUDDLES.md` and `RIVERS.md`; the `docs/provenance/` row of `docs/REPOSITORY.md`; one line at the head of each module's `PROVENANCE.md` in the working folder, which Git does not hold | Nothing | `CLOUDS` M6 waits for this milestone. Nobody else writes under `docs/provenance` |
+| M1 | The deleted files under `scripts/`; `tools/xtask/src/bin/rustc_receipt.rs`; the script-suite step of `tools/xtask/src/main.rs`; the three F4 and T2 headless-build designs under `docs/design/` and the research notes that link the toolchain; the toolchain's rows of `docs/design/maturity.json`, and its entries in `.config/shape-baseline.json` and `.config/architecture.toml` | Nothing | No builder is in these scripts. `CLOUDS` works in `scripts/reference/cloud/`, which is not touched. `GATE-TIME` M1 adds a command to the same `main.rs` |
 | M2 | `crates/thrum-render/benches/` and the `[[bench]]` tables and bench dependency of `crates/thrum-render/Cargo.toml`; `examples/v1-game/benches/field_culling.rs`, `material_reload.rs`, `g2r.rs` and `frame.rs`, and the `[[bench]]` tables of `examples/v1-game/Cargo.toml`; the `baseline-inventory` command in `tools/xtask/src/main.rs`; its row in `CONTRIBUTING.md` | Nothing | `HOST` edited `field_culling.rs` seven times in three days and its M3.2 asks about benches, so deleting first saves it work: tell its builder. `GATE-TIME` M2 edits the `[[test]]` tables of the same game manifest |
-| M3 | The deletions under `docs/evidence/`; one link in `docs/design/decisions/G7-SHOWCASE-ROUTE.md`; `scripts/render2d.py`, `test_render2d.py` and the receipts they read; `crates/thrum-render/src/atmosphere/gpu/tests/aerial_ground.rs` and its volumes; `scripts/evidence_store.py`, its suite and the two manifests; `.gitignore`; the evidence text of `AGENTS.md`, `CONTRIBUTING.md`, `docs/ASSET-LIFECYCLE.md`, `docs/REPOSITORY.md`, the engineering patterns and `scripts/shape_matchers.py` | Nothing | `RENDER-2D` edits `render2d.py`, and its open M2.10, M2.11, M5.4 and M5.5 run `render2d.py costs`, which must read the same receipts after the move |
+| M3 | The deletions under `docs/evidence/`; one link in `docs/design/decisions/G7-SHOWCASE-ROUTE.md`; `scripts/render2d.py`, `test_render2d.py` and the receipts they read; `crates/thrum-render/src/atmosphere/gpu/tests/aerial_ground.rs` and its volumes; `scripts/evidence_store.py`, its suite and the two manifests; `.gitignore`; the evidence text of `AGENTS.md`, `CONTRIBUTING.md`, `docs/ASSET-LIFECYCLE.md`, `docs/REPOSITORY.md`, the engineering patterns and `scripts/shape_matchers.py` | Nothing | `RENDER-2D` edits `render2d.py`, and its open M2.10, M2.11, M5.4 and M5.5 run `render2d.py costs`, which must read the same receipts after the move. `GATE-TIME` M2 edits `atmosphere/gpu/tests.rs`, which declares `aerial_ground` |
 | M4 | The cost and proof scripts that name `docs/evidence` (`cloud_cost.py`, `water_cost.py`, `river_cost.py`, `rain_cost.py`, `scene_view_cost.py`, `sim2d_conformance.py`, `session_memory.py`, `session_prediction.py`, `ray_tracing_proof.py`, `transport_link.py`, `environment_products.py`, `cache_reconstruction.py`, `check_g5_tripwires.sh`, one line of `run_v1_showcase.py`); the tests and benches that do (`thrum-cloud-model`'s optics test, three `thrum-river-model` tests, the cooker's edit-to-visible bench, the game's `cooked_edit` bench, one line of the game's `host.rs`); the records they read, moved to fixtures; the rule in `scripts/shape_rules.py` with its fixtures; `examples/v1-game/tests/valley_route_support/` | `TEST-SUPPORT` M2, which is rewriting `valley_route_support` | The busiest set here. Open checks of `CLOUDS`, `WATERS`, `RENDER-2D`, `SESSION` and `RAY-TRACING` run these scripts, and their builders edit them: each command must run as it did and read the same prior record |
 
 ## Not built here
@@ -118,22 +143,27 @@ lowers a count or retires a row rebases and makes the same edit again.
 - **The other dead scripts the review confirmed at low payoff** (L5-02, P2-04, P1-02, P2-05, L2-07: about 4,700
   lines). They are outside the review's ranked sections. A second landing can take them, or REPO-RULES M4.1 moves
   them.
+- **Three benches the review did not look at**: `thrum-core`'s `v1_workload`, `thrum-water-model`'s `surf`, and
+  the game's `recipe_cost`, which `scripts/recipe_cost.py` runs from a binary built by hand. No script or check
+  names the first two. They wait for a second landing, with the scripts above.
 - **The frozen pre-sprite graph snapshot** (G2-09). It is a guard, not a dead tool: it is the only graph check
-  driven by the game's own exit and valley setups. Retiring it is the owner's or `RENDER-2D`'s call.
+  driven by the game's own exit and valley setups. Keeping it is an assumption in the plan.
 - **One harness for the eleven cost scripts and for the browser scripts** (P1-05, P1-04, P2-02, P2-08), which
   need a design of their own.
 - **Retiring `evidence_store.py`'s `put` and `archive`** (L2-10), which the review did not verify.
-- **A tracked home for provenance records** (L8-08), which is the owner's call and an assumption in the plan.
 
 ## What it must not do
 
-Change what the engine draws, simulates or sends. Edit or delete a file the exact-baseline registry pins, or delete, rename or
-change the behaviour of a script those files import. Change what a kept script's command does, prints or exits with, beyond where it
-writes a record by default. Edit a Done item, a review or a module's design. Delete a record that has no copy.
+Change what the engine draws, simulates or sends. Edit or delete a file the exact-baseline registry pins. Delete
+or rename a script a pinned file imports, directly or through another script, or change anything the pinned files
+use from it. Change what a kept script's command does, prints or exits with, beyond where it writes a record by
+default. Edit a Done item, a review or a module's design. Delete a record that has no copy. Change what a
+provenance record says was copied, from where, or under what licence.
 
 ## Proof
 
 A deletion is proved by the name's absence from everything that is left, by `./dev check` and `./dev check-docs`
 passing, and by a reviewer applying mechanism 1 to what was deleted and to what was kept. A move of test data is
 proved by Git blobs that match and by the tests that read it. The manifest is proved by the store's own check
-and suite, with the counts it reported before. The rule is proved by its fixtures and by its zero.
+and suite, with the counts it reported before. The rule is proved by its fixtures and by its zero. A tracked
+provenance record is proved by a reviewer reading it against the working-folder record it came from.

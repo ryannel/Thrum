@@ -12,8 +12,8 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "`thrum-core` keeps no per-tick ring of change bitsets: the ring, the code that maintained it on every write and spawn, its readers and the step that only wrote it are gone. The per-slot change ticks and the structural tick that publication reads are as they were, and the simulation design no longer says the core keeps a change journal.",
-          "check": "sh -c '! git grep -qE \"ChangeFrame|invalidate_change_frames|change_ticks3_at\" -- crates examples && cargo test --locked --offline -p thrum-core'",
+          "statement": "`thrum-core` keeps no per-tick ring of change bitsets: the ring, the code that maintained it on every write and spawn, the queries that read it and the step that only wrote it are gone. The per-slot change ticks and the structural tick that publication reads are as they were, and the simulation decision no longer says the core keeps a change journal.",
+          "check": "sh -c '! git grep -qE \"ChangeFrame|invalidate_change_frames|visit_changes_since|visit_structural_since|visit_changes_with_ticks3\" -- crates examples && git grep -q \"fn finalize_activity\" -- crates && cargo test --locked --offline -p thrum-core'",
           "ask": "Does a write or a spawn still record anything that nothing reads? Did publication, `finalize_activity` or any per-slot tick change? Was any test deleted that covered code that is kept?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -35,7 +35,7 @@
         {
           "id": "M1.3",
           "statement": "The sea computes no moment ladder: the moments and mip-parameter buffers, the reduce pipeline, their bind group and records, and the write that fed them are gone, and the sea's graph declares the passes that are left. Water samples the filtered textures as it did. The forward-cache test holds that every mip of the filtered textures carries the moments on all five planes, and water's record test checks no record that nothing binds.",
-          "check": "sh -c '! git grep -qE \"moments_buffer|surface_accesses|check_moments\" -- crates examples && cargo test --locked --offline -p thrum-sea -p thrum-water'",
+          "check": "sh -c '! git grep -qE \"moments_buffer|check_moments|BufferKey::Moments\" -- crates examples && git grep -q \"fn filtered_accesses\" -- crates && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-sea -p thrum-water'",
           "ask": "Does the sea still compute anything each frame that only a test reads? Which test now fails if a filtered-texture mip lost its slope or Jacobian moments, and does it check all five planes of every mip? Did any assertion about the filtered textures or the wave field change?",
           "target": "mac-metal",
           "lock": "gpu",
@@ -78,9 +78,9 @@
         },
         {
           "id": "M2.2",
-          "statement": "Each wrapper that stands in front of other contributions, the list, the lent one and the ray-tracing replacement, forwards every hook: a test puts a probe behind each wrapper and sees every hook reach it.",
-          "check": "cargo test --locked --offline -p thrum-render --lib contribution",
-          "ask": "For each of the three wrappers, name the test that fails if one hook is not forwarded, and try it: remove one forward in a scratch copy. Does the probe count all eight hooks, the defaulted five among them?",
+          "statement": "Each wrapper that stands in front of other contributions in the engine and the game, the list of contributions and the lent one, forwards every hook: a test puts a probe behind each and sees every hook reach it. The ray-tracing replacement, a test's own fixture, still writes every forward out.",
+          "check": "sh -c 'THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib contribution && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --lib lent'",
+          "ask": "For the list and for the lent wrapper, name the test that fails if one hook is not forwarded, and try it: remove one forward in a scratch copy. Does each probe count all eight hooks, the defaulted five among them? Does the ray-tracing replacement still forward every hook itself, with none left to a default?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -111,8 +111,8 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "`thrum-core` offers no runtime method, serial transaction visit or incremental capture that only its own tests reached: the seven uncalled runtime methods, the serial visits and `RuntimeDelta` with what served only it are gone. A full capture and undo behave as they did. The property that a visit which refuses a row still refreshes the written row's active bit is held on the chunked visit, with the written column indexed.",
-          "check": "sh -c '! git grep -qE \"RuntimeDelta|WorldDelta|restore_through|visit_if_indexed|visit_with_changes|matches_capture\" -- crates examples && cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network'",
+          "statement": "`thrum-core` offers no runtime method, change query, serial transaction visit or incremental capture that only its own tests reached: the seven uncalled runtime methods, the query that read each slot's change ticks, the serial visits and `RuntimeDelta` with what served only it are gone. A full capture and undo behave as they did. The property that a visit which refuses a row still refreshes the written row's active bit is held on the chunked visit, with the written column indexed.",
+          "check": "sh -c '! git grep -qE \"RuntimeDelta|WorldDelta|restore_through|visit_if_indexed|visit_with_changes|change_ticks3_at|matches_capture\" -- crates examples && git grep -q \"fn write_read2_indexed\" -- crates && cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network'",
           "ask": "Read the test that carries the refused-row property now: does it index the written column, run the chunked visit, and fail if the active bit were left stale? Were the capture, restore and undo assertions that used a delta kept, on a full capture? Is any expected digest or state edited?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -178,8 +178,8 @@
       "items": [
         {
           "id": "M4.1",
-          "statement": "The water scene's `THRUM_WATER_*` variables and its page query are parsed by one typed settings parse, which the window, the page and the proof tests all use. Where the two parsers disagreed the window's reading stands: a floating scene's heading, `THRUM_WATER_STONE` on only when it is `1`, and `THRUM_WATER_WAKE_BODIES` honoured. A meaning only a test needs has a variable of its own.",
-          "check": "sh -c 'test \"$(git grep -lE \"var(_os)?\\(\\\"THRUM_WATER_\" -- examples | wc -l)\" -eq 1 && cargo test --locked --offline -p water-scene --lib'",
+          "statement": "The settings that choose the water scene, which are its `THRUM_WATER_*` variables other than the proof harness's own and its page query, are parsed by one typed settings parse, which the window, the page and the proof tests all use. Where the two parsers disagreed the window's reading stands: a floating scene's heading, `THRUM_WATER_STONE` on only when it is `1`, and `THRUM_WATER_WAKE_BODIES` honoured. A meaning only a test needs has a variable of its own. The harness's variables, which say where a proof writes and which commit, route and recipe it records, stay with the tests.",
+          "check": "sh -c 'git grep -q \"THRUM_WATER_\" -- examples/water/tests && ! git grep -qE \"var(_os)?\\(\\\"THRUM_WATER_(FOAM|LOCATION|WAKE|BODIES|SPEED|HEADING|VIEW|STONE|WAKE_BODIES|ISLAND)\\\"\" -- examples/water/tests && cargo test --locked --offline -p water-scene --lib'",
           "ask": "List each setting either parser read at the starting commit, with the reading each gave: does the one parse give the window's reading for every one, and does the log record each decision? Does `scripts/water_cost.py` or `scripts/check_water_browser.mjs` set a variable whose meaning changed?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -252,7 +252,7 @@
         {
           "id": "M6.1",
           "statement": "`thrum_render::binding` gives a bind-group layout entry for each standard kind: uniform buffer, storage buffer read-only or not, sampled texture, sampler, storage texture and acceleration structure. Outside tests and outside that module, no file under `crates` or `examples` writes a `BindGroupLayoutEntry` literal, except an entry with a count or a dynamic offset, and the local helper sets in the renderer, the asset crate and the clouds are gone. Every layout is what it was.",
-          "check": "sh -c 'git grep -q \"pub mod binding\" -- crates/thrum-render/src && cargo test --locked --offline -p thrum-render --lib binding'",
+          "check": "sh -c 'git grep -q \"pub mod binding\" -- crates/thrum-render/src && test \"$(git grep -h \"BindGroupLayoutEntry {\" -- crates examples \":!*/tests/*\" \":!*tests.rs\" \":!*/benches/*\" \":!crates/thrum-render/src/binding*\" | wc -l)\" -le 10 && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib binding'",
           "ask": "List every `BindGroupLayoutEntry` literal left outside tests and outside the binding module: does each have a count or a dynamic offset? Pick ten converted entries across five crates and compare each with its literal at the starting commit: same visibility, type, read-only flag, sample type, dimension and minimum size?",
           "target": "mac-metal",
           "lock": "gpu",
@@ -264,7 +264,7 @@
         {
           "id": "M6.2",
           "statement": "A graph access that stores with no view is written with `Access::new`, and a graph resource that mirrors a `wgpu` texture is declared from the texture by one function, which declares a 2D texture with the texture's own layers, mips and samples. Every compiled graph is what it was: no graph snapshot was edited.",
-          "check": "sh -c 'git grep -q \"fn of_texture\" -- crates/thrum-render/src && cargo test --locked --offline -p thrum-render --test graph_kinds'",
+          "check": "sh -c 'git grep -q \"fn of_texture\" -- crates/thrum-render/src && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --test graph_kinds --test scene_2d'",
           "ask": "Does the function ever declare a cube or a 3D texture? Read the milestone's diff of snapshot and expected-graph files with `git diff` from the starting commit: is any changed?",
           "target": "mac-metal",
           "lock": "gpu",

@@ -2,6 +2,28 @@
   "module": "DEAD-TOOLS",
   "milestones": [
     {
+      "id": "M5",
+      "name": "Each module's record of what it copied, from where and under what licence is tracked in Git, where a clone gets it",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As dependable as the third-party notices of a well-kept open-source project such as wgpu or Bevy: anyone with a clone can read what was copied, from where and under what licence, and the record is the one that gets updated.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "The provenance records of `SEA`, `WATERS`, `CLOUDS`, `PUDDLES` and `RIVERS` are tracked in Git as `docs/provenance/<MODULE>.md`. Each says what its working-folder record said about what was copied or translated, from where and under what licence. Every link in one resolves in a clone: a link to a file only the working folder holds becomes that file's name in plain text. The repository map says the folder holds these records.",
+          "check": "sh -c 'test \"$(git ls-files docs/provenance/SEA.md docs/provenance/WATERS.md docs/provenance/CLOUDS.md docs/provenance/PUDDLES.md docs/provenance/RIVERS.md | wc -l)\" -eq 5 && ! git grep -qE \"\\]\\([^)]*orchestrate/evidence\" -- docs/provenance/SEA.md docs/provenance/WATERS.md docs/provenance/CLOUDS.md docs/provenance/PUDDLES.md docs/provenance/RIVERS.md && ./dev check-docs'",
+          "ask": "Compare each tracked record with the working-folder record it came from: is any statement about what was copied, its source or its licence lost or changed? Does each working-folder record now open with a line that names the tracked record as the one to keep current?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M1",
       "name": "Scripts that nothing runs are gone in one landing, and the check finds the script suites that are left by itself",
       "status": "not_started",
@@ -12,8 +34,8 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "The headless release-trust toolchain is out of the tree: its 15 scripts, their suites and the `rustc_receipt` binary. Nothing left under `scripts`, `tools`, `crates`, `examples` or `.config` names one of them. The designs and research notes that describe it each say in one line which commit last held it and link no file that is gone, and the maturity ledger's rows for it say retired at that commit.",
-          "check": "sh -c '! git grep -qE \"prepare_headless_cargo_home|verify_rustc_receipts|hold_macos_private_cargo_cache|verify_headless_release_inputs|run_bounded_native_build|qualify_held_macos_native_ab|rustc_receipt\" -- scripts tools crates examples .config && ./dev check-docs'",
+          "statement": "The headless release-trust toolchain is out of the tree: the 15 scripts the design names, their 13 suites and the `rustc_receipt` binary. Nothing left under `scripts`, `tools`, `crates`, `examples` or `.config` names one of them. The designs and research notes that describe it each say in one line which commit last held it and link no file that is gone, and the maturity ledger's rows for it say retired at that commit.",
+          "check": "sh -c 'test -z \"$(git ls-files | grep -E \"(^|/)(test_)?(prepare_headless_cargo_home|prepare_macos_tool_root_clone|inventory_headless_tool_roots|run_bounded_native_build|qualify_held_macos_native_ab|release_cargo_selection|hold_macos_private_cargo_cache|hold_macos_release_records|hold_macos_tool_root_clone|verify_crate_extraction|verify_crates_io_archive_origin|verify_crates_io_index_origin|verify_headless_release_inputs|verify_rust_component_archive|verify_rustc_receipts|rustc_receipt)\\.(py|rs)$\")\" && ! git grep -qE \"prepare_headless_cargo_home|prepare_macos_tool_root_clone|inventory_headless_tool_roots|run_bounded_native_build|qualify_held_macos_native_ab|release_cargo_selection|hold_macos_private_cargo_cache|hold_macos_release_records|hold_macos_tool_root_clone|verify_crate_extraction|verify_crates_io_archive_origin|verify_crates_io_index_origin|verify_headless_release_inputs|verify_rust_component_archive|verify_rustc_receipts|rustc_receipt\" -- scripts tools crates examples .config && ./dev check-docs'",
           "ask": "Does each of the three headless-build designs, and each research note that linked the toolchain, name the last commit that held it? Does any row of the maturity ledger still describe the toolchain as present, candidate or selected?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -34,8 +56,8 @@
         },
         {
           "id": "M1.3",
-          "statement": "`./dev check` finds the script suites itself: every `scripts/test_*.py` runs, and every `scripts/test_*.mjs` where node is installed, with no list to keep, so a suite added later runs without an edit to the check. A suite the check cannot run is excluded by name with its reason. The record gives the time the newly run suites add to a check.",
-          "ask": "In a scratch copy, add a `scripts/test_zz_probe.py` that fails and run the check's script step: does it fail on the probe? Is any suite excluded, and would its reason satisfy someone who wanted it run? Does the record give the added time, measured?",
+          "statement": "`./dev check` finds the script suites itself: every `scripts/test_*.py` runs, and every `scripts/test_*.mjs` where node is installed, with no list to keep, so a suite added later runs without an edit to the check. A suite the check cannot run, or one that takes over about a minute, is excluded by name with its reason, and for the slow one its measured time. The record gives the time the newly run suites add to a check.",
+          "ask": "In a scratch copy, add a `scripts/test_zz_probe.py` that fails and run the check's script step: does it fail on the probe? Is any suite excluded, and would its reason satisfy someone who wanted it run? Does the record give the time each newly run suite takes, measured, and is any that takes over about a minute still in the check?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -56,7 +78,7 @@
     },
     {
       "id": "M2",
-      "name": "Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the bench only it drove",
+      "name": "Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -65,9 +87,9 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "`thrum-render` builds no bench, and no longer depends on the bench harness only its benches used. The game's `field_culling` and `material_reload` benches are gone. Every bench left in the workspace is run by a script, a `./dev` command or an open item's check.",
-          "check": "sh -c 'test -z \"$(git ls-files crates/thrum-render/benches examples/v1-game/benches/field_culling.rs examples/v1-game/benches/material_reload.rs)\" && ! git grep -q \"^divan\" -- crates/thrum-render/Cargo.toml && cargo check --locked --offline -p thrum-render -p v1-game --all-targets'",
-          "ask": "List each bench target left in the workspace and what runs it. Is there one that nothing runs?",
+          "statement": "`thrum-render` builds no bench, and no longer depends on the bench harness only its benches used. The game's `field_culling` and `material_reload` benches are gone. The benches the design lists as kept are untouched.",
+          "check": "sh -c 'test -z \"$(git ls-files | grep -E \"(^|/)benches/(extract|clustered|visibility|frame_target|camera_culling|camera_culling_encode|occlusion_passes|field_culling|material_reload)\\.rs$\")\" && ! git grep -q \"^divan\" -- crates/thrum-render/Cargo.toml && cargo check --locked --offline -p thrum-render -p v1-game --all-targets'",
+          "ask": "For each of the four benches the design lists as kept, does the script it names still run it, and does its command still name a bench that exists?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -76,8 +98,8 @@
         },
         {
           "id": "M2.2",
-          "statement": "`./dev baseline-inventory` is gone, with the bench only it drove and the inventory printer and batch modes in the frame bench. `./dev help` and `CONTRIBUTING.md` no longer offer it, and the frame bench's two timing rows still build.",
-          "check": "sh -c './dev help >/dev/null && ! ./dev help | grep -q baseline-inventory && test -z \"$(git ls-files examples/v1-game/benches/g2r.rs)\" && cargo check --locked --offline -p v1-game --benches'",
+          "statement": "`./dev baseline-inventory` is gone, with the two benches only it ran: the one that held the G0 and G2 modes, and the game's frame bench with its inventory printer and batch modes. `./dev help` and `CONTRIBUTING.md` no longer offer the command.",
+          "check": "sh -c './dev help >/dev/null && ! ./dev help | grep -q baseline-inventory && test -z \"$(git ls-files | grep -E \"(^|/)benches/(g2r|frame)\\.rs$\")\" && cargo check --locked --offline -p v1-game --benches'",
           "ask": "Does anything left print the G0 gate table or read a `--g0` or `--g3b` flag? Is the maturity ledger's mention of the inventory still worded as history?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -108,9 +130,9 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "The records under `docs/evidence` that nothing reads are out of the tree: 373 of the 406 tracked there on 20 November. Each has a copy in the working folder, byte for byte; the five `RENDER-2D` M1 files whose working copies a later run rewrote were saved there first under a second name. No tracked document links a file that is gone.",
+          "statement": "The records under `docs/evidence` that nothing reads are out of the tree: 373 of the 406 tracked there on 20 November. Each has a copy in the working folder. Where that copy differs from the bytes Git held, those bytes were saved there first under a second name, so the bytes Git held of every deleted record are in the working folder. No tracked document links a file that is gone.",
           "check": "sh -c 'test \"$(git ls-files docs/evidence | wc -l)\" -le 33 && ./dev check-docs'",
-          "ask": "Pick ten deleted files across modules: is each in the working folder with the bytes Git held? Are the committed bytes of the five `RENDER-2D` M1 files that differed there, under a second name? For five files still tracked under `docs/evidence`, what reads each?",
+          "ask": "List the deleted files whose working copy differs from the bytes at the starting commit, with `git show` against the working folder: is each one's committed content there under a second name? Pick ten other deleted files across modules: does each working copy match the bytes Git held? For five files still tracked under `docs/evidence`, what reads each?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -120,7 +142,7 @@
         {
           "id": "M3.2",
           "statement": "The test data `./dev check` reads is not under `docs/evidence`: the `RENDER-2D` cost receipts and the atmosphere's aerial volumes are read from test fixtures, with the bytes they had, and the tests that read them pass.",
-          "check": "sh -c 'test -z \"$(git ls-files docs/evidence/RENDER-2D/M1 docs/evidence/ATMOSPHERE/M9-volumes)\" && python3 scripts/test_render2d.py && cargo test --locked --offline -p thrum-render --lib aerial_ground'",
+          "check": "sh -c 'test -z \"$(git ls-files docs/evidence/RENDER-2D/M1 docs/evidence/ATMOSPHERE/M9-volumes)\" && python3 scripts/test_render2d.py && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib aerial_ground'",
           "ask": "Compare each moved file's Git blob with the starting commit: are the bytes the same? Does `python3 scripts/render2d.py costs` read the same receipts it read before?",
           "target": "mac-metal",
           "lock": "gpu",
@@ -142,7 +164,7 @@
         },
         {
           "id": "M3.4",
-          "statement": "`AGENTS.md`, `CONTRIBUTING.md`, the storage rules, the repository map and the engineering patterns say where evidence goes as the project settings do: run records in the working folder, test data in fixtures. None tells a reader to add or commit a file under `docs/evidence`.",
+          "statement": "`AGENTS.md`, `CONTRIBUTING.md`, the storage rules, the repository map and the engineering patterns say where evidence goes as the project settings do: run records in the working folder, test data in fixtures, and a provenance record tracked under `docs/provenance`. None tells a reader to add or commit a file under `docs/evidence`.",
           "check": "./dev check-docs",
           "ask": "Read the evidence text of each of the five documents and the message of the evidence-size rule: does any still send a record to `docs/evidence`, or describe a step the merge would refuse?",
           "target": "mac-metal",

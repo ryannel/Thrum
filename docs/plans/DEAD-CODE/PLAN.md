@@ -13,21 +13,29 @@ the path the design gives. Main moves, so search for callers again on the commit
 ## Open for the human
 
 - Assumption: the simulation's incremental capture is deleted, about 330 lines: one-tick deltas that roll a saved capture forward. Nothing outside `thrum-core`'s own tests creates or applies one, and `SESSION`'s design rules out whole-world rollback. Full capture and undo stay. The other choice keeps it for a later rollback or replay feature.
+- Assumption: the simulation keeps no public query for what changed. M1 removes the three that read the four-tick change history, and M3 the one that reads each slot's change tick. Nothing calls any of them, but the simulation decision lists a change journal among the core's responsibilities. The other choice keeps the per-slot query, `visit_with_changes`, as the engine's change detection, which costs nothing per tick, and removes only the history.
+- Assumption: the serial transaction visits are deleted, about 190 lines. They are not copies of the chunked visit: they give a callback a mutable context in slot order and can visit a query that is not indexed. Nothing uses either ability. The other choice keeps one ordered mutable visit.
 - Assumption: the game's state projection, about 650 lines, and the crate `thrum-content-runtime`, about 180, are deleted once `HOST` M3 has removed the host they sit in. The projection copies every committed page's changes for a reader that was never built, and the crate has no producer. The other choice keeps either for a reader you still expect.
 
 ## M1 The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist
 
 In `thrum-core`, `finish_tick` only writes the ring, so it goes with its calls, and `begin_tick` loses the
-parameter that fed it, at about ten call sites. `visit_with_changes` and half of `visit_changes_with_ticks3` read
-the per-slot ticks, not the ring, but have no caller either: they are M3's. In the sea, `forward_cache_gpu`, which
+parameter that fed it, at about ten call sites. `visit_changes_with_ticks3` reads the ring and goes here.
+`visit_with_changes` reads the per-slot ticks, not the ring, through `change_ticks3_at`: both have no other
+caller and are M3's, so leave them. The maturity ledger's row `bounded_structural_growth` speaks of a "stable-ID
+change journal": find out whether that is this ring, and reword the row as retired only if it is. In the sea, `forward_cache_gpu`, which
 `WATERS` M2.10 ran, already checks all five planes of every filtered-texture mip; `SEA` M2.3 is Done and its text
 stays. `crates/thrum-water/src/records/tests.rs` checks the sea's `Moments` layout against a struct in
-`surface.wgsl` that nothing binds, so it fails if only the sea changes.
+`surface.wgsl` that nothing binds, so it fails if only the sea changes. Two functions are called
+`surface_accesses`: the dead one is `Sea::surface_accesses`, and `Filtered::surface_accesses`, which water uses
+every frame through `filtered_accesses`, stays. The cost priors in `examples/water/tests/fixtures/` and under
+`docs/evidence/WATERS/` keep their "sea moments mip" rows: don't edit them.
 
 ## M2 A scene contribution writes only the hooks it uses
 
 The trait is in `crates/thrum-render/src/contribution.rs`. The wrappers that forward to other contributions are
-the list of contributions, the lent one and the ray-tracing replacement. `RAY-TRACING` M3 is building in
+`SceneContributions` in `contribution/list.rs` and `LentDiagnostic` in `examples/v1-game/src/lent.rs`. `Fault`,
+in the game's ray-tracing proof tests, is the test fixture that gets no probe. `RAY-TRACING` M3 is building in
 `contribution.rs`: tell its builder before the trait change lands.
 
 ## M3 The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach
@@ -41,7 +49,9 @@ layout: rewrite those with a full capture. `PUDDLES` M1.1 is Done and says "the 
 
 The two parsers are `examples/water/src/main.rs` and the proof tests' support. The proof also hard-codes
 `lake = false` for its bodies scene: decide it as the design decides the others, and write each decision in the
-log.
+log. The window reads its variables through a helper, `option(key, "THRUM_WATER_X")`, and the tests read theirs
+with `std::env::var`. This milestone comes before M5 and M6 because `WATERS` M7, which it waits for, is the
+nearest of the three waits to clearing; if that changes, the lead asks a planner to reorder them.
 
 ## M5 The game's unread state projection and the content crate with no producer are gone
 

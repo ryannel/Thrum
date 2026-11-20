@@ -40,30 +40,39 @@ kept is rewritten to keep covering it, and the design names those below.
   snapshot ring. The ring, its maintenance, its readers and the step that only wrote it go. The per-slot change
   ticks and the structural tick stay, because publication reads them, and so does everything `finalize_activity`
   reads. No state, digest or published page changes: the simulation's determinism tests are the proof, with no
-  expected value edited.
+  expected value edited. With the ring go the public queries that answer what changed over an interval, and M3
+  removes the last change query, which reads the per-slot ticks. The simulation decision names a change journal
+  as the core's, so removing every change query takes away something a design offers: it is the owner's call,
+  and an assumption in [the plan](PLAN.md).
 - *The sea's moment ladder* (E1-01). The sea writes a moments buffer and runs eight reduce passes into a
   nine-level chain of about 8.4 MB each frame. Water samples the filtered textures, which carry their own moments
   plane and mips; only one test oracle reads the buffers. The buffers, the reduce pipeline, their bind group and
   records, and the write that feeds them go, so the sea's graph declares fewer passes. That every mip of the
   filtered textures carries the slope and Jacobian moments on all five planes is already held by the forward-cache
-  test, which carries the proof the oracle gave. Water's record test stops checking the dead record. The cost
-  records lose their "sea moments mip" rows. No pixel changes.
+  test, which carries the proof the oracle gave. Water's record test stops checking the dead record. The recorded
+  cost priors keep their "sea moments mip" rows, because a prior is the record of the run that made it and the
+  comparison does not fail on a row that is gone; the sea's README stops describing the ladder. No pixel changes.
 
 **3. A scene contribution writes only the hooks it uses** (M2; L7-01, X1-01, R2-02). `SceneContribution` gives
 default bodies to five hooks: `computes` (false), `encode_compute`, `encode_after_compute`, `draw` and
 `submitted` (nothing). Every stub equal to its default is deleted, about 140 bodies in about 29 files. `passes`,
 `rebuild` and `encode_upload` stay required: most implementations give them real bodies, and a default for
 `passes` would let a contribution compile while declaring nothing. Defaults hide two faults, so the trait's
-documentation states both and a test holds the first. A wrapper that stands in front of other contributions (the
-list, the lent one, the ray-tracing replacement) must forward every hook, and a default lets one forget; a probe
-behind each wrapper sees every hook arrive. And `computes` returning false means `encode_compute` is never
-called, while `submitted` is where work staged by `encode_upload` is committed.
+documentation states both and a test holds the first. A wrapper that stands in front of other contributions must
+forward every hook, and a default lets one forget. The engine and the game each have one, the list of
+contributions and the lent one, and a probe behind each sees every hook arrive. The ray-tracing replacement is a
+third, but it is a test's own fixture: it keeps every forward written out and gets no probe. And `computes`
+returning false means `encode_compute` is never called, while `submitted` is where work staged by
+`encode_upload` is committed.
 
 **4. API that only its own tests reach goes** (M3).
 
 - In `thrum-core` (L5-07, C1-02, C1-03): seven runtime methods with no caller; the serial transaction visits,
   where every consumer uses the chunked visit; and the incremental capture (`RuntimeDelta` and what serves only
-  it), a third rollback shape that nothing outside the crate creates or applies. [SESSION](../SESSION/DESIGN.md)'s
+  it), a third rollback shape that nothing outside the crate creates or applies. The serial visits are not
+  copies of the chunked one: they hand a callback a mutable context in slot order, and can visit a query that is
+  not indexed. Nothing uses either ability, and both go with them, which is the owner's call and an assumption
+  in the plan. [SESSION](../SESSION/DESIGN.md)'s
   design rules out whole-world rollback, so no caller is planned. One property is covered only by a serial
   visit's test: a visit that refuses a row still refreshes the written row's active bit. It is moved to the
   chunked visit, with the written column indexed. `RuntimeError::NoCommittedTick` stays, because the game matches
@@ -79,9 +88,11 @@ called, while `submitted` is where work staged by `encode_upload` is committed.
   view's shader source and risk a pixel.
 
 **5. The water scene's settings are parsed once** (M4; L3-09). The window and the proof tests each build the
-scene from about thirteen `THRUM_WATER_*` variables, and they have drifted, so a proof can capture a scene a
+scene from the `THRUM_WATER_*` variables that choose it, and they have drifted, so a proof can capture a scene a
 person cannot open. One typed settings value is parsed from the environment or from a page's query, and the
-window, the page and the proof tests all use it. The scene builders stay separate, because the proofs build
+window, the page and the proof tests all use it. The proof harness's own variables are not scene settings and
+stay with the tests: where a proof writes, and the commit, route and recipe it records (`THRUM_WATER_PROOF`,
+`_OUTPUT`, `_COMMIT`, `_ROUTE` and `_RECIPE`). The scene builders stay separate, because the proofs build
 paired arms the window never does. Where the two parsers disagree, the window's reading stands: a floating
 scene's heading is beam, `THRUM_WATER_STONE` is on only when it is `1`, and `THRUM_WATER_WAKE_BODIES` is
 honoured. A meaning only a test needs, such as the island camera index that reuses `THRUM_WATER_VIEW`, gets a
@@ -118,8 +129,9 @@ own environment API on the same numbers. A recovered page is still republished.
 | `thrum_render::binding`: a layout entry for each standard kind | Every crate and example that creates a bind-group layout |
 | Declaring a graph resource from a texture | Every graph contribution in `thrum-render`, and `RENDER-2D`'s sprite graph |
 
-Nothing is removed that a module's design offers to another module. Each deletion removes API that no design
-names as an interface.
+Nothing is removed that a module's design offers to another module, and no deletion removes API that a design
+names as an interface, with one exception the plan carries to the owner: the change queries, which the simulation
+decision counts among the core's responsibilities.
 
 ## Files each milestone touches
 
@@ -130,11 +142,11 @@ lowers a count or changes a row rebases and makes the same edit again.
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
-| M1 | `crates/thrum-core/src/sim/` (`registered_world.rs`, `registered_world/image.rs`, `runtime.rs`, `transaction.rs`, `publication/page_tests.rs`) and `crates/thrum-core/tests/g2_runtime.rs`; one line of `docs/design/G2-GENERIC-SIMULATION.md`; `crates/thrum-sea/src/` (`spec.rs`, `ambient.wgsl`, `prepare.rs`, `records.rs`, `lib.rs`), `crates/thrum-sea/tests/support.rs` and the sea's README; `crates/thrum-water/src/surface.wgsl` and `src/records/tests.rs` | Nothing | `SESSION` builds in `thrum-core`'s runtime files: land the ring as small commits and tell its builder. `WATERS` builds in `thrum-water` |
+| M1 | `crates/thrum-core/src/sim/` (`registered_world.rs`, `registered_world/image.rs`, `runtime.rs`, `transaction.rs`, `publication/page_tests.rs`) and `crates/thrum-core/tests/g2_runtime.rs`; one line of `docs/design/decisions/G2-GENERIC-SIMULATION.md`, and the row `bounded_structural_growth` of `docs/design/maturity.json` if it describes this ring; `crates/thrum-sea/src/` (`spec.rs`, `ambient.wgsl`, `prepare.rs`, `records.rs`, `lib.rs`), `crates/thrum-sea/tests/support.rs` and the sea's README; `crates/thrum-water/src/surface.wgsl` and `src/records/tests.rs` | Nothing | `SESSION` builds in `thrum-core`'s runtime files: land the ring as small commits and tell its builder. `WATERS` builds in `thrum-water` |
 | M2 | `crates/thrum-render/src/contribution.rs` and each file with an `impl SceneContribution`, about 32 across `crates` and `examples`, tests among them | Nothing | The busiest file in the renderer: `RAY-TRACING`, `WATERS`, `CLOUDS`, `HOST` and `RENDER-2D` all implement the trait. Land the trait's defaults alone first, then the stubs, in one quick pass |
 | M3 | `crates/thrum-core/src/sim/` (`runtime.rs`, `registered_world.rs`, `schedule.rs`) and `src/sim.rs`, with `tests/g2_runtime.rs`, `g2s_chunked_kernel.rs` and `profile_resources.rs`; `crates/thrum-render/src/capabilities/hardware.rs`; `crates/thrum-rain-model/src/tree.rs`, `tree/encode.rs`, `tree/catchment.rs` and `tests/tree.rs`; the shadowed aerial shader copy in `crates/thrum-render/src/` with `atmosphere/model/tests.rs` and `synthetic/secondary/tests.rs` | Nothing | `SESSION` in `thrum-core`. `REPO-RULES` M3 later splits these runtime files, so this lands before it |
 | M4 | `examples/water/src/main.rs` and `lib.rs`; `examples/water/tests/proof_gpu.rs`, `realtime.rs` and `support.rs`; the water example's README | `WATERS` M7, which is building in these files | `PUDDLES` M3 and `RIVERS` M4 add scenes through the parse afterwards. `GATE-TIME` M1 and M3 edit other tests of the same package |
-| M5 | `examples/v1-game/src/projection.rs`, `host/world.rs`, `host.rs`, `host/scene_source.rs`, `lib.rs`; `examples/v1-game/tests/host_gpu.rs` and `cooked_rows_gpu.rs`; `crates/thrum-content-runtime/`; the workspace list in the root `Cargo.toml`, the game's manifest and `.config/architecture.toml`; one row of `docs/design/maturity.json` | `HOST` M3, which removes the game's forwarding host | `HOST` M4 follows in the same files. `GATE-TIME` M5 edits the `[profile]` tables of the same root manifest |
+| M5 | `examples/v1-game/src/projection.rs`, `host/world.rs`, `host.rs`, `host/scene_source.rs`, `lib.rs`; `examples/v1-game/tests/host_gpu.rs` and `cooked_rows_gpu.rs`; `crates/thrum-content-runtime/`; the workspace list in the root `Cargo.toml`, `Cargo.lock`, the game's manifest and `.config/architecture.toml`; one row of `docs/design/maturity.json` | `HOST` M3, which removes the game's forwarding host | `HOST` M4 follows in the same files. `GATE-TIME` M5 edits the `[profile]` tables of the same root manifest |
 | M6 | A new `binding` module and `graph.rs` in `crates/thrum-render/src/`; every non-test file that writes a `BindGroupLayoutEntry`, in `thrum-render`, `thrum-asset-gpu`, `thrum-clouds`, `thrum-water`, `thrum-sea`, `examples/mirror` and `examples/v1-game`; `visibility.rs`, `visibility/casters.rs`, the atmosphere's `night.rs`, `cloud.rs`, `graph.rs` and `gpu/aerial_view.rs`, `synthetic/secondary.rs` and `sprite/graph.rs` | `REVIEW-RENDER` M3, which rewrites the atmosphere's graph accesses | The widest set in the module: `synthetic.rs` had 24 commits in three days. `CLOUDS`, `WATERS`, `RAY-TRACING`, `REVIEW-RENDER` and `RENDER-2D` are in these files |
 
 ## Not built here
