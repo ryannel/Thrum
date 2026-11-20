@@ -429,7 +429,7 @@
           "ask": "Does the record give the cause of each correction, with none unexplained? After a reconnect, is the old epoch's history discarded before the new baseline is used?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/M4/prediction-recovery.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/M4-review.md",
           "builder_result": "pass"
         },
@@ -490,20 +490,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause.",
-      "findings": [
-        {
-          "name": "Prediction resumes during the post-stall skip",
-          "item": "M4.2",
-          "repeat": false
-        },
-        {
-          "name": "Repair fallback trails the committed controller by one tick",
-          "item": "M4.2",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause."
     },
     {
       "id": "M5",
