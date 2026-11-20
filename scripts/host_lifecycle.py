@@ -21,7 +21,7 @@ ASSETS = ROOT / 'examples/v1-game/assets/showcase'
 PRESET = ROOT / 'examples/v1-game/params/showcase-noon.params.json'
 WEB_CHECK = ROOT / 'scripts/check_v1_browser.mjs'
 WEB_CASES = ('normal', 'controls', 'overload', 'device-loss', 'late-device-loss', 'device-recovery',
-             'device-recovery-retry', 'valley-recovery', 'valley-late-attach')
+             'device-recovery-retry', 'device-recovery-acquire', 'valley-recovery', 'valley-late-attach')
 COOKER = ROOT / 'target/debug/thrum-cook'
 BUILD_INPUTS = ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo',
                 'crates', 'examples', 'tools')

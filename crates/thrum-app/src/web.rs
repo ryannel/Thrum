@@ -246,7 +246,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         );
         self.profile.callback(now);
         let extent = [self.canvas.width(), self.canvas.height()];
-        if let Some((gpu, reconfigure)) = self.recovery.poll(&mut self.host, extent) {
+        if let Some((gpu, reconfigure)) = self.recovery.poll(&self.canvas, &mut self.host, extent) {
             self.adapter_name = gpu.adapter_name;
             self.config = gpu.config;
             self.device = gpu.device;

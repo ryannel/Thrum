@@ -3,6 +3,9 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use wasm_bindgen::{JsCast, JsValue, prelude::wasm_bindgen};
+use web_sys::HtmlCanvasElement;
+
 use crate::surface::{SurfaceAction, surface_action};
 
 use thrum_render::{
@@ -13,6 +16,18 @@ use thrum_render::{
     present::SurfaceProfile,
     runtime::{DevicePrepareInputs, FrameHost, FrameWorld, PreparedDevice, SceneSource},
 };
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_name = GPUCanvasContext)]
+    type CanvasContext;
+
+    #[wasm_bindgen(method)]
+    fn unconfigure(this: &CanvasContext);
+
+    #[wasm_bindgen(catch, method, js_name = getConfiguration)]
+    fn configuration(this: &CanvasContext) -> Result<Option<js_sys::Object>, JsValue>;
+}
 
 pub(super) struct GraphicsDevice {
     pub(super) device: wgpu::Device,
@@ -98,6 +113,7 @@ impl Replacement {
     fn try_publish<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
         surface: &wgpu::Surface<'static>,
+        canvas: &HtmlCanvasElement,
         host: &mut FrameHost<W, V>,
         extent: [u32; 2],
     ) -> Result<Option<bool>, String> {
@@ -115,12 +131,25 @@ impl Replacement {
                 .map_err(|error| error.to_string())?;
             self.gpu.config.width = extent[0];
             self.gpu.config.height = extent[1];
+            let context = canvas
+                .get_context("webgpu")
+                .ok()
+                .flatten()
+                .and_then(|context| context.dyn_into::<CanvasContext>().ok())
+                .ok_or("replacement canvas context is unavailable")?;
+            // The retired device has no drawable in use. Clear the last
+            // configuration so a thrown configure cannot leave it looking
+            // like this attempt succeeded, even on the same candidate.
+            context.unconfigure();
             configure_surface(surface, &self.gpu.device, &self.gpu.config)
                 .map_err(|error| error.to_string())?;
+            if matches!(context.configuration(), Ok(None)) {
+                return Err("replacement canvas configuration did not become usable".to_owned());
+            }
             self.configured_extent = Some(extent);
         }
-        // WebGPU configure returns void and can defer failure until acquire.
-        // Check a real candidate lease; dropping it does not submit/present.
+        // Check a real candidate lease before publishing. Dropping the
+        // lease does not submit or present.
         let action = surface_action(surface.get_current_texture());
         if self.gpu.fault.is_lost() {
             return Err("replacement graphics device was lost during activation".to_owned());
@@ -132,9 +161,9 @@ impl Replacement {
             }
             SurfaceAction::Skip { .. } => return Ok(None),
             SurfaceAction::Reconfigure { validation } => {
-                // WebGPU uses Lost for exceptions in either configure or
-                // acquire. Reconfigure the same candidate once before
-                // reporting a persistent activation failure to Restore.
+                // Reconfigure the same candidate after a transient drawable
+                // loss. Bound repeated Lost/Outdated outcomes even when the
+                // browser does not expose getConfiguration.
                 if !validation && self.retry_extent == Some(extent) {
                     return Err("replacement canvas configuration did not become usable".to_owned());
                 }
@@ -221,12 +250,13 @@ impl Recovery {
 
     pub(super) fn poll<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
+        canvas: &HtmlCanvasElement,
         host: &mut FrameHost<W, V>,
         extent: [u32; 2],
     ) -> Option<(GraphicsDevice, bool)> {
         let result = self.pending.as_ref()?.borrow_mut().take()?;
         match result.and_then(|mut replacement| {
-            let ready = replacement.try_publish(&self.surface, host, extent)?;
+            let ready = replacement.try_publish(&self.surface, canvas, host, extent)?;
             Ok((replacement, ready))
         }) {
             Ok((replacement, Some(reconfigure))) => {

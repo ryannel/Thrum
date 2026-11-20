@@ -17,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['temporal', 'effect-state', 'environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
+const cases = ['temporal', 'effect-state', 'environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'device-recovery-acquire', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
 const configureFailureSentinel = 'THRUM_CONFIGURE_FAILURE';
 const acquireFailureSentinel = 'THRUM_ACQUIRE_ONCE';
 cases.push('lent-products');
@@ -276,7 +276,7 @@ async function gameView(game) {
     return {yaw:yaw.value,hours:game.time_of_day()*24};`);
 }
 
-async function injectCanvasFailure(cdp, sessionId, method, attempts, sentinel) {
+async function injectCanvasFailure(cdp, sessionId, method, sentinel) {
   const result = await cdp.call('Runtime.evaluate', { expression: `(()=>{
     const prototype=GPUCanvasContext.prototype;
     const method=${JSON.stringify(method)};
@@ -297,7 +297,7 @@ async function injectCanvasFailure(cdp, sessionId, method, attempts, sentinel) {
     const wrapper=function(...args){
       if(this.canvas!==canvas)return Reflect.apply(descriptor.value,this,args);
       state.hits++;
-      if(state.hits===${attempts})Object.defineProperty(prototype,method,descriptor);
+      Object.defineProperty(prototype,method,descriptor);
       throw new Error(${JSON.stringify(sentinel)});
     };
     Object.defineProperty(prototype,method,{...descriptor,value:wrapper});
@@ -829,6 +829,7 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
 
 async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, onDestroy, mode, capturePhase) {
   const failFirst = mode === 'device-recovery-retry';
+  const loseDrawable = mode === 'device-recovery-acquire';
   const deadline = Date.now() + timeout;
   const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
   await until(async () => /^Running/.test((await poll()).status ?? ''), 'recovery demo startup');
@@ -917,7 +918,7 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
     return result;
   };
   await until(async () => field((await read('initial')).report, 'presented') >= 12, 'healthy views before recovery');
-  for (let round = 1; round <= (failFirst ? 1 : 2); round++) {
+  for (let round = 1; round <= (failFirst || loseDrawable ? 1 : 2); round++) {
     const before = await read(`beforeLoss${round}`);
     const extent = await poll();
     if (!(extent.width > 0 && extent.height > 0)) throw new Error('Healthy canvas has no extent');
@@ -951,10 +952,10 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
     const paused = await pauseAndSettle(`paused${round}`); assertUnavailable(paused);
     let injection;
     if (failFirst) {
-      injection = await injectCanvasFailure(cdp, sessionId, 'configure', 2, configureFailureSentinel);
+      injection = await injectCanvasFailure(cdp, sessionId, 'configure', configureFailureSentinel);
       expectedRecoveryFailure = true;
-    } else if (mode === 'device-recovery' && round === 1) {
-      injection = await injectCanvasFailure(cdp, sessionId, 'getCurrentTexture', 1, acquireFailureSentinel);
+    } else if (loseDrawable) {
+      injection = await injectCanvasFailure(cdp, sessionId, 'getCurrentTexture', acquireFailureSentinel);
     }
     // First replacement also covers a zero-extent ready-candidate deferral.
     // Batch edits immediately after the REAL button click, before detached
@@ -987,7 +988,7 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
         return value;
       }, 'injected configure failure ends the first attempt');
       evidence.configureInjection = await readCanvasInjection(cdp, sessionId, injection);
-      if (evidence.configureInjection.hits !== 2 || !evidence.configureInjection.restored) throw new Error('Configure wrapper did not reject both configure calls and restore itself');
+      if (evidence.configureInjection.hits !== 1 || !evidence.configureInjection.restored) throw new Error('Configure wrapper did not throw once and restore itself');
       if (!await game.invoke('const button=document.querySelector("#restore-graphics");return !button.hidden&&!button.disabled;')) throw new Error('Failed attempt did not offer an enabled retry button');
       await capturePhase('failed');
       await until(async () => {
@@ -1029,7 +1030,7 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
       if (value.recovering) return undefined; // Published generation awaits its first actual present call.
       return field(value.report, 'presented') >= field(lost.report, 'presented') + 12 && field(value.report, 'samples') >= 12 && /^Running/.test((await poll()).status ?? '') ? value : undefined;
     }, `new generation${targetGeneration} presents and collects fresh samples`);
-    if (!failFirst && injection) {
+    if (loseDrawable) {
       evidence.acquireInjection = await readCanvasInjection(cdp, sessionId, injection);
       if (evidence.acquireInjection.hits !== 1 || !evidence.acquireInjection.restored || evidence.acquireInjection.configures !== 2) throw new Error('Expected one acquire exception bounded by the first configure and one reconfigure on the same candidate');
     }
@@ -1057,8 +1058,10 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
   }
   evidence.snapshots.final = await read('final');
   evidence.scope = failFirst
-    ? 'Actual GPUDevice.destroy; both canvas configure calls fail for one candidate, then a real-button retry publishes generation3 on the same world. Fresh GPU samples after recovery.'
-    : 'Two actual GPUDevice.destroy/button replacements on the same BrowserGame; generations1→2→3, CPU controls/lifecycle during pending zero extent, fresh GPU samples. Old-device re-destroy is not callback replay or display/cadence qualification.';
+    ? 'Actual GPUDevice.destroy; one canvas configure exception leaves Restore available, then a real-button retry publishes generation 3 on the same world with fresh GPU samples.'
+    : loseDrawable
+      ? 'One drawable acquire exception after successful candidate configuration. The first Restore attempt reconfigures and presents generation 2 with fresh GPU samples.'
+      : 'Two actual GPUDevice.destroy/button replacements on the same BrowserGame; generations1→2→3, CPU controls/lifecycle during pending zero extent, fresh GPU samples. Old-device re-destroy is not callback replay or display/cadence qualification.';
 }
 
 // The cooked valley arrives after the device is lost: its requests are held until the loss is
@@ -1223,9 +1226,10 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   let failed = false;
   const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
   const retryCase = mode === 'device-recovery-retry';
+  const acquireCase = mode === 'device-recovery-acquire';
   const valleyRecovery = mode === 'valley-recovery';
   const lateAttach = mode === 'valley-late-attach';
-  const recoveryCase = mode === 'device-recovery' || retryCase || valleyRecovery;
+  const recoveryCase = mode === 'device-recovery' || retryCase || acquireCase || valleyRecovery;
   const cloudCase = cloudCases.includes(mode);
   const destroyCase = lossCase || recoveryCase || lateAttach || mode === 'clouds-state';
   // valley-late-attach holds the cooked valley's requests until the device is lost.
@@ -1261,7 +1265,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         const messages = packet.params.args.map(arg => arg.value ?? arg.description);
         const expectedDestroyed = (destroyCase || materialCase || oracleCase) && intentionalDestroys > 0 && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? '');
         const expectedConfigure = retryCase && intentionalDestroys > 0 && messages.length === 1 && /^Surface configuration failed:/.test(messages[0] ?? '') && messages[0].includes(configureFailureSentinel) && messages[0].includes('The surface will report as lost until it is successfully reconfigured.');
-        const expectedAcquire = mode === 'device-recovery' && intentionalDestroys === 1 && messages.length === 1 && /^`getCurrentTexture` failed:/.test(messages[0] ?? '') && messages[0].includes(acquireFailureSentinel);
+        const expectedAcquire = acquireCase && intentionalDestroys === 1 && messages.length === 1 && /^`getCurrentTexture` failed:/.test(messages[0] ?? '') && messages[0].includes(acquireFailureSentinel);
         if (!expectedDestroyed && !expectedConfigure && !expectedAcquire) faults.push(messages);
       }
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
@@ -2102,7 +2106,7 @@ async function qualifyExtent(cdp, origin, output, timeout, wasm) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|clouds-first-frame|clouds-state] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button and injects one transient drawable acquire failure. The retry case rejects the first candidate’s configure and reconfigure, then checks that Restore admits a new candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|clouds-first-frame|clouds-state] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   if (args.case === 'effect-after-opaque' || args.case === 'all') {
     execFileSync(process.execPath, ['--test', 'scripts/test_browser_capture_upload.mjs'], { cwd: repo, stdio: 'inherit' });
