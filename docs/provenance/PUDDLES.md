@@ -1,0 +1,19 @@
+# PUDDLES provenance
+
+This is PUDDLES's record of what it copied or translated, from where and under what licence, and the one to
+keep current. It was first copied from `PROVENANCE.md` in PUDDLES's working folder,
+`.orchestrate/evidence/PUDDLES/`. The proof sketch it names at `docs/evidence/PUDDLES/design-proof` is kept in
+that working folder, at `.orchestrate/evidence/PUDDLES/design-proof/`, and a clone does not have it.
+
+Milestone M1 copies or translates nothing. Every file below was written in this repository for PUDDLES:
+
+- `crates/thrum-rain-model/` (sources, tests, example)
+- `crates/thrum-water-model/src/hollows.rs`, plus the hollows edits to `map.rs` and `lib.rs`
+- `scripts/rain_cost.py`
+
+The tree of hollows follows the method in the PUDDLES design and its proof sketch
+(`docs/evidence/PUDDLES/design-proof`): a priority flood from the edges and pits, outlets between
+labels, then joins in pass order. It is written from that description. Barnes's papers on the
+depression hierarchy were not consulted while building, and none of Barnes's code (or any other
+code) was read or copied. No GPL or share-alike material is included. Broadsides was neither read
+nor changed for this milestone.
