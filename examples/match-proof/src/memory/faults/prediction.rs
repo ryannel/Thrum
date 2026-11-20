@@ -482,8 +482,7 @@ fn reconnect(
 fn recover_stall(game: &mut Match, hero: usize, stall_at: u64, release_at: u64) -> Value {
     game.players[hero].carrier.stall(false);
     let mut skipped = Vec::new();
-    let mut fallback_polls = 0;
-    for _ in 0..180 {
+    for fallback_polls in 0..180 {
         game.advance();
         let host_tick = game.tick();
         let client = &mut game.players[hero].client;
@@ -513,7 +512,6 @@ fn recover_stall(game: &mut Match, hero: usize, stall_at: u64, release_at: u64) 
                 "fallback_polls_after_release": fallback_polls, "skip": skipped,
                 "resumed_at_confirmed_tick": client.world().tick(), "resumed_view_tick": view.tick});
         }
-        fallback_polls += 1;
     }
     panic!("controller prediction did not resume after the stall");
 }
