@@ -67,7 +67,7 @@
     {
       "id": "M6",
       "name": "A change that breaks a test behind a Cargo feature fails its merge's check, and those tests run on main after each merge",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -91,7 +91,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests; .orchestrate/evidence/GATE-TIME/M6/record-round2.md#m62-the-search-for-every-test-behind-a-feature-feature-listinglog",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
         },
         {
@@ -101,7 +101,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M6/record-round2.md#m63-probes-scratch-lib-inlinelog-the-suite",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
         },
         {
@@ -113,18 +113,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "gated game-library test runs in no tier",
-          "item": "M6.2",
-          "repeat": false
-        },
-        {
-          "name": "check-docs misses feature-gated inline library tests",
-          "item": "M6.3",
-          "repeat": false
         }
       ]
     },
