@@ -317,10 +317,10 @@
           "lock": "gpu",
           "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path, which reconfigures at every step?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/missed-display-intervals/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D4.7",
