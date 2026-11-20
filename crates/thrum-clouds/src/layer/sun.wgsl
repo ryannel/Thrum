@@ -39,7 +39,16 @@ fn cloud_path_above(field:texture_2d_array<f32>,lo:vec2<i32>,f:vec2<f32>,height:
     let b=cloud_path_nodes(field,lo+vec2(1,0),first);
     let c=cloud_path_nodes(field,lo+vec2(0,1),first);
     let d=cloud_path_nodes(field,lo+vec2(1),first);
-    return cloud_path_cubic(mix(mix(a,b,f.x),mix(c,d,f.x),f.y),fract(q));
+    let nodes=mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+    let t=fract(q);
+    let grazing=1.0-smoothstep(0.18,0.35,mapping.path_border.y);
+    let interior=smoothstep(0.0,1.0,min(q,f32(count-1u)-q));
+    // One height interval spans more of the ray at low Sun. Use the same
+    // four depths to average over that interval without creating extrema.
+    let s=1.0-t;
+    let weights=vec4(s*s*s,4.0-t*t*(6.0-3.0*t),4.0-s*s*(6.0-3.0*s),t*t*t);
+    let filtered=dot(nodes,weights)/6.0;
+    return mix(cloud_path_cubic(nodes,t),filtered,grazing*interior);
 }
 
 // Both heights lie on the same Sun ray. Reuse its horizontal lookup and
