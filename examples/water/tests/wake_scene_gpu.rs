@@ -100,10 +100,16 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
 
 #[test]
 fn moored_craft_keeps_its_draft_when_only_one_level_admits_pressure() {
-    let baseline = moored_strip_draft([1, 0], false);
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "moored_craft_keeps_its_draft_when_only_one_level_admits_pressure",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    let baseline = moored_strip_draft(&test_gpu, [1, 0], false);
     eprintln!("Metal moored strip, pressure off: draft offset {baseline:.5} m");
     for solves in [[1, 0], [0, 1]] {
-        let draft = moored_strip_draft(solves, true);
+        let draft = moored_strip_draft(&test_gpu, solves, true);
         eprintln!("Metal moored strip, fine/coarse solves {solves:?}: draft offset {draft:.5} m");
         assert!(
             (draft - baseline).abs() < 0.03,
@@ -117,7 +123,11 @@ fn moored_craft_keeps_its_draft_when_only_one_level_admits_pressure() {
     clippy::cast_possible_truncation,
     reason = "the public GPU query takes station coordinates in its float format"
 )]
-fn moored_strip_draft(expected_solves: [u32; 2], active: bool) -> f64 {
+fn moored_strip_draft(
+    gpu: &thrum_test_support::Gpu,
+    expected_solves: [u32; 2],
+    active: bool,
+) -> f64 {
     // At 10 m the fine level needs one depth operator and the coarse level
     // needs two. In the other strip, only the fine grid sees the shallower
     // column at x=9 m and needs a second operator.
@@ -181,7 +191,7 @@ fn moored_strip_draft(expected_solves: [u32; 2], active: bool) -> f64 {
     let sources = water.interaction_mailbox().expect("wake sources");
     let queries = water.query_mailbox().expect("water query");
     let report = water.report();
-    let mut fixture = support::Fixture::paired([96, 64], false);
+    let mut fixture = support::Fixture::paired(gpu, [96, 64], false);
     fixture
         .host
         .set_scene_contribution(Box::new(water))
