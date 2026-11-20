@@ -87,7 +87,16 @@ mod tests {
         let compiled = graph
             .compile(1, &std::collections::BTreeSet::new())
             .expect("complete producers");
-        assert_eq!(compiled.pass_names().count(), 13);
+        assert_eq!(
+            compiled.pass_names().collect::<Vec<_>>(),
+            [
+                "sea long waves",
+                "sea cascade evolve",
+                "sea cascade rows",
+                "sea cascade columns",
+                "sea cascade unpack",
+            ]
+        );
     }
     #[test]
     fn portable_shader_validates_without_a_device() {
