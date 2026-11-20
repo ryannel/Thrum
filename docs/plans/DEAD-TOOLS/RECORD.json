@@ -1,6 +1,28 @@
 {
   "module": "DEAD-TOOLS",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/DEAD-TOOLS/design-review.md",
+    "commit": "9009699b322a46f15196526adf8d67923370c27d",
+    "hash": "46bcdc10cbaad65cd5e20397f1408e1f8b432bbf59035cc707309c571eed44e1",
+    "by": "review",
+    "host": "claude",
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "observed": {
+      "model": "claude-opus-5-5"
+    },
+    "cli": "2.1.319 (Claude Code)",
+    "path": "headless",
+    "usage": {
+      "input": 115866,
+      "cached": 2759243,
+      "output": 34878,
+      "cost_usd": 2.176049,
+      "turns": 1
+    },
+    "at": "2026-11-20T10:20:14Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "7ee510c4ffa1490ecce7ef37731c7f8d955d9a42898cff141f3c2bfec0645481",
