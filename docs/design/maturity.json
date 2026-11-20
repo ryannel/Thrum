@@ -2894,11 +2894,11 @@
         "record": "../../.orchestrate/evidence/CLOUDS/M4/README.md"
       },
       "day_light_evidence": {
-        "implementation": "CLOUDS M5 tunes the heaped diffuse plane and resolves more of the full density in the local Sun march at grazing angles. The V1 Sun-path windows have finer height nodes.",
-        "correctness": "Fixed and realtime T2 source hashes verified on both targets. A shared held-solar route fixes the Sun at 30 degrees as weather and the camera advance. The paired 1440p cost check validated both arms, named passes, ray counts and resource inventories.",
-        "visuals": "Builder inspection observed shaded bases and relief at noon, warm low-Sun flanks and cast shade, a last-lit pink top, and dark star-occluding clouds. The Metal and Chrome aureole samples showed no distinct ring or crawl. Some spatial shading terraces remain and the dusk motion takes have submission gaps under load.",
-        "device": "Apple M3 Max Metal and Chrome WebGPU. The paired Metal record measured 113.16 ms mean with Sky and 10.24 ms with clouds off under load. Denser Sun-path windows add 32 MiB. Captures qualify sampled engine output.",
-        "record": "../../.orchestrate/evidence/CLOUDS/M5/README.md"
+        "implementation": "CLOUDS M5 filters grazing Sun paths, directly resolves nearby backlit rims, and tunes diffuse escape and forward scattering for heaped clouds. Native capture preparation selects the authored opening camera.",
+        "correctness": "Fixed and realtime T2 source hashes verified on Metal and Chrome. A held route keeps the Sun at 30 degrees while weather and the camera advance. Both valid opening-angle controls reached their first submitted Metal frame. The paired 1440p record validates both arms, named passes, ray counts and resource inventories.",
+        "visuals": "Builder and independent target inspections observed noon relief, warm low-Sun flanks and cast shade, localized bright rims around darker cores, the last pink tops, and star occlusion. Both aureole pans retain smooth falloff. Foreground aerial light softens distant 4-degree cores and the loaded Metal twilight capture has long submission gaps.",
+        "device": "Apple M3 Max Metal and Chrome WebGPU. Loaded 1440p Metal means were 149.31 ms with Sky and 5.69 ms with clouds off. Sky used 116.51 MiB, the same inventory as the prior paired record. Captures qualify submitted engine output.",
+        "record": "../../.orchestrate/evidence/CLOUDS/M5/continued/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",

@@ -552,3 +552,10 @@
   The shared exact-image check supplies the verdict on the merged work.
 - 2026-11-20 Planner, from the cleanup review (L8-05, L8-07): M14.13's check searched two crate folders with `! grep`, which passes if either is renamed; it now searches all of `crates` and `examples`. M6.6, M12.4 and M12.9 named files under `docs/evidence`, which the merge refuses; they now name this milestone's evidence and the provenance record in the module's evidence folder. Where provenance records are kept in Git is an open assumption in [DEAD-TOOLS' plan](../DEAD-TOOLS/PLAN.md). All four milestones were Not Started.
 - 2026-11-20 Planner, on the owner's decision of that day as the lead gave it: provenance records are tracked in Git. M6.6 and M12.9 now name the module's provenance record tracked under `docs/provenance`, and M6 waits for `DEAD-TOOLS` M5, which puts it there, so the first copied library is recorded where a clone gets it. The design still names the working-folder file; `ORCHESTRATE.md` says that means the tracked record, and the design is corrected at this module's next re-plan.
+
+- 2026-11-20 M5 filters the cached Sun depths at grazing elevations and resolves the closest backlit rims with a bounded direct march.
+  Metal and Chrome inspection found warm flanks, cast shade, bright rims around darker cores, and steady held 30° pans.
+  The 4° valley view retains foreground aerial warmth. The closer views separate the dark cores from the rims.
+  The native route prepares at the authored angle. The 45° pitch and 270° yaw routes reached their first Metal submission.
+  [Target captures and diagnostics](../../../.orchestrate/evidence/CLOUDS/M5/continued/README.md) record the corrections.
+  The [loaded 1440p pair](../../../tests/fixtures/clouds/low-sun-cost.json) records first fill, trace and compose tripwires.

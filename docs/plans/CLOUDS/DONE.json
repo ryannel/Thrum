@@ -691,7 +691,7 @@
           "inspect": "Capture `fixed` stills at noon of one near cloud from its Sun side, its flank and its far side. Judge each whole and in native-size crops of the lit side, the terminator and the base.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m52-noon-on-metal",
+          "evidence": ".orchestrate/evidence/CLOUDS/M5/continued/README.md#selected-noon-twilight-and-aureole-on-metal",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
@@ -700,8 +700,8 @@
           "statement": "At a 10\u00b0 and a 4\u00b0 Sun, Sun-facing sides take warm light, clouds shade each other across the field, edges toward the Sun carry a silver lining that is a bright rim close to the Sun and not a glow across the sky, against the Sun thin edges are brighter than thick cores, and clouds seen with the Sun behind the viewer are bright.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 and a 4\u00b0 Sun, looking toward, across and away from it. Judge each whole and in native-size crops of a backlit edge, a lit flank and a cloud in another's shade.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M5/continued/README.md#m53-selected-grazing-light-on-metal",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
@@ -711,7 +711,7 @@
           "inspect": "Capture `fixed` stills at Sun elevations +3\u00b0, 0\u00b0, \u22123\u00b0, \u22126\u00b0, \u221212\u00b0 and \u221218\u00b0, and a `realtime` sweep across them. Judge the stills as a contact sheet and in native-size crops of one tall cloud, and consecutive frames of the sweep.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m54-sunset-and-night-on-metal",
+          "evidence": ".orchestrate/evidence/CLOUDS/M5/continued/README.md#selected-noon-twilight-and-aureole-on-metal",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
@@ -720,8 +720,8 @@
           "statement": "In Chrome, at noon, at a 10\u00b0 Sun, at 0\u00b0 and at \u22126\u00b0, the sky passes M5.2's, M5.3's and M5.4's lists, and a pan across the Sun passes M5.8's.",
           "inspect": "Capture the same `fixed` stills in Chrome at those four Sun elevations. Judge them by those lists, then compare native-size crops with the Mac's. Capture the `realtime` pan of M5.8 in Chrome and judge it the same way.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/M5/continued/README.md#m56-selected-daylight-and-pan-on-chrome",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
@@ -732,7 +732,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m57-paired-metal-cost",
+          "evidence": ".orchestrate/evidence/CLOUDS/M5/continued/README.md#m57-selected-paired-metal-cost",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
@@ -742,7 +742,7 @@
           "inspect": "Capture a `realtime` sequence of 20 seconds at a 30\u00b0 Sun with thin cloud over it, panning slowly across the Sun. Judge consecutive frames in native-size crops around the Sun.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m58-held-30-aureole-on-metal",
+          "evidence": ".orchestrate/evidence/CLOUDS/M5/continued/README.md#selected-noon-twilight-and-aureole-on-metal",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
