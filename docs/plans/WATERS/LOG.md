@@ -518,3 +518,9 @@
   The body used all six public query replies on each step. The existing Metal tests also passed for the float,
   the island's isolated waters and the settled waterlines around the moored craft.
   [Target evidence](../../../.orchestrate/evidence/WATERS/M6/README.md).
+
+- 2026-11-20 Built M7's transported foam stocks, shore film and cooked pattern lease.
+  Metal verified endpoint rollover, drift, ageing, dry ground depth and pattern editing through device
+  replacement. Hardware Chrome measured whitecaps and the trail after craft removal.
+  The paired 1440p cost record retains the sea timestamp fault and completion brackets.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/M7/README.md).
