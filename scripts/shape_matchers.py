@@ -136,47 +136,86 @@ def path_attributes(comments, code):
             yield match.start(), match.group(2) if match.group(2) is not None else match.group(3)
 
 
-def os_test_module_sites(root, relative, code):
-    """Find OS conditions on dedicated test modules, including separate attributes."""
+TEST_DECLARATION = re.compile(r'#\s*\[\s*(?:\w+\s*::\s*)*test\s*\]|\bmacos_gpu_test\s*!')
+PLATFORM = re.compile(r'\b(?:target_os\s*=|target_family\s*=|target_vendor\s*=|(?:unix|windows)\b)')
+# A platform shell's own tests may share its condition when the comment directly
+# above the declaration says why, e.g. `// platform-only tests: drive the AppKit shell`.
+PLATFORM_ONLY = re.compile(r'//[ \t]*platform-only tests:[ \t]*\S[^\n]*\n\s*$')
+
+
+def platform_condition(cfg):
+    """True when `cfg(...)` removes the item on some OS even in a test build."""
+    # A top-level `test` alternative keeps the module in every test harness.
+    alternatives = re.fullmatch(r'\s*any\s*\((.*)\)\s*', cfg, re.S)
+    if alternatives and "test" in (part.strip() for part in re.sub(r'\([^()]*\)', '', alternatives[1]).split(",")):
+        return False
+    return bool(PLATFORM.search(cfg))
+
+
+DECLARED_MODULE = re.compile(r'\bmod\s+(\w+)\s*;')
+
+
+def child_dir(path):
+    return path.parent if path.stem in {"lib", "main", "mod"} else path.with_suffix("")
+
+
+def module_files(path, name):
+    """Files of `mod name;` declared in `path`, then their declared children."""
+    found, pending = {}, []
+    # Crate roots under tests/, benches/ and src/bin/ resolve beside themselves; try both.
+    for base in dict.fromkeys((child_dir(path), path.parent)):
+        pending += [child for child in (base / f"{name}.rs", base / name / "mod.rs") if child.is_file()]
+    while pending:
+        child = pending.pop()
+        if child in found:
+            continue
+        found[child] = mask(child.read_text(errors="ignore"), strings=True)
+        for declared in DECLARED_MODULE.finditer(found[child]):
+            base = child_dir(child)
+            pending += [c for c in (base / f"{declared[1]}.rs", base / declared[1] / "mod.rs") if c.is_file()]
+    return found
+
+
+def has_tests(files):
+    return any(TEST_DECLARATION.search(code) for code in files.values())
+
+
+def os_test_module_sites(root, relative, code, text):
+    """Find OS conditions that remove tests: on a test module, or on any module or file holding tests."""
     attributes = re.compile(r'(?P<attrs>(?:\#\s*\[[^\]]*\]\s*)+)'
                             r'(?:pub(?:\([^)]*\))?\s+)?mod\s+(?P<name>\w+)\s*(?P<end>[;{])')
-    platform = re.compile(r'\b(?:target_os\s*=|target_family\s*=|(?:unix|windows)\b)')
     test_only = re.compile(r'^\s*(?:test\s*$|all\s*\([^\]]*\btest\b)')
-    test_declaration = re.compile(r'#\s*\[\s*test\s*\]|\bmacos_gpu_test\s*!')
     path = root / relative
-    module_dir = path.parent if path.stem in {"lib", "main", "mod"} else path.with_suffix("")
     for match in attributes.finditer(code):
         conditions = list(re.finditer(r'\#\s*\[\s*cfg\s*\(([^\]]*)\)\s*\]', match["attrs"]))
-        for condition in conditions:
-            cfg = condition[1]
-            # A top-level `test` alternative keeps the module in every test harness.
-            unconditional_in_tests = re.fullmatch(r'\s*any\s*\((.*)\)\s*', cfg, re.S)
-            if unconditional_in_tests:
-                alternatives = re.sub(r'\([^()]*\)', '', unconditional_in_tests[1])
-                if "test" in (part.strip() for part in alternatives.split(",")):
-                    continue
-            if not platform.search(cfg):
-                continue
-            name = match["name"]
-            if any(test_only.search(attribute[1]) for attribute in conditions) or name in {"test", "tests"}:
-                yield match.start() + condition.start()
-            elif test_file(relative):
-                if match["end"] == "{":
-                    end, depth = match.end(), 1
-                    while end < len(code) and depth:
-                        depth += (code[end] == "{") - (code[end] == "}")
-                        end += 1
-                    if test_declaration.search(code, match.end(), end):
-                        yield match.start() + condition.start()
-                else:
-                    for sibling in (path.parent, module_dir):
-                        for child in (sibling / f"{name}.rs", sibling / name / "mod.rs"):
-                            if child.is_file() and test_declaration.search(mask(child.read_text(), strings=True)):
-                                yield match.start() + condition.start()
-                                break
-                        else:
-                            continue
-                        break
+        platform = [condition for condition in conditions if platform_condition(condition[1])]
+        if not platform:
+            continue
+        site = match.start() + platform[0].start()
+        name = match["name"]
+        if any(test_only.search(attribute[1]) for attribute in conditions) or name in {"test", "tests"}:
+            yield site
+            continue
+        if PLATFORM_ONLY.search(text, 0, match.start()):
+            continue
+        if match["end"] == "{":
+            end, depth = match.end(), 1
+            while end < len(code) and depth:
+                depth += (code[end] == "{") - (code[end] == "}")
+                end += 1
+            if TEST_DECLARATION.search(code, match.end(), end):
+                yield site
+        elif has_tests(module_files(path, name)):
+            yield site
+    # A file-level condition hides the file's tests and its child modules'.
+    if not test_file(relative):
+        for match in re.finditer(r'#!\s*\[\s*cfg\s*\(([^\]]*)\)\s*\]', code):
+            if platform_condition(match[1]) and not PLATFORM_ONLY.search(text, 0, match.start()):
+                children = {}
+                for declared in DECLARED_MODULE.finditer(code):
+                    children |= module_files(path, declared[1])
+                if TEST_DECLARATION.search(code) or has_tests(children):
+                    yield match.start()
 
 
 def rust_sites(root, relative, text, package, manifest, registry):
@@ -230,7 +269,7 @@ def rust_sites(root, relative, text, package, manifest, registry):
             yield "path-attribute", match.start()
         for match in re.finditer(r'#!\s*\[\s*cfg\s*\([^\]]*\b(?:target_(?:os|family)\s*=|(?:unix|windows)\b)', code):
             yield "whole-file-gpu-gate", match.start()
-    for offset in os_test_module_sites(root, relative, code):
+    for offset in os_test_module_sites(root, relative, code, text):
         yield "whole-file-gpu-gate", offset
 
 

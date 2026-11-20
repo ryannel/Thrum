@@ -160,6 +160,27 @@ test_role="fixtures"
                   '#[cfg(target_os = "macos")] mod helpers { fn prepare() {} }\n#[test] fn gpu() {}',
                   "crates/engine/tests/render.rs")
 
+    def test_os_condition_on_a_product_module_with_tests(self):
+        # The condition sits on a product module whose declared subtree holds a CPU test.
+        self.write("crates/engine/src/watch.rs", "#[cfg(test)]\nmod tests;")
+        self.write("crates/engine/src/watch/tests.rs", "#[test] fn cpu() {}")
+        self.pair("whole-file-gpu-gate", '#[cfg(target_os = "macos")]\nmod watch;',
+                  '#[cfg(any(test, target_os = "macos"))]\nmod watch;')
+        self.write("crates/engine/src/shell.rs", "mod inner;")
+        self.write("crates/engine/src/shell/inner.rs", "#[tokio::test] async fn cpu() {}")
+        self.pair("whole-file-gpu-gate", '#[cfg(target_vendor = "apple")]\npub mod shell;',
+                  '// platform-only tests: they drive the AppKit shell\n#[cfg(target_vendor = "apple")]\npub mod shell;')
+        self.write("crates/engine/src/lib.rs", '//platform-only tests:\n#[cfg(windows)]\nmod shell;')
+        self.assertTrue(self.sites("whole-file-gpu-gate"))
+        self.pair("whole-file-gpu-gate", '#![cfg(unix)]\n#[cfg(test)]\nmod tests;', "#[cfg(test)]\nmod tests;",
+                  "crates/engine/src/watch.rs")
+        # A Cargo target that only shares a directory is not part of the module.
+        self.write("crates/engine/tests/support.rs", "pub fn device() {}")
+        self.write("crates/engine/tests/support/field_gpu.rs", "#[test] fn gpu() {}")
+        self.write("crates/engine/src/lib.rs", "")
+        self.write("crates/engine/tests/clouds.rs", '#[cfg(target_os = "macos")]\npub mod support;')
+        self.assertEqual(self.sites("whole-file-gpu-gate"), [])
+
     def test_history_names_all_surfaces(self):
         self.write("crates/engine/tests/g2s_runtime.rs", "")
         self.assertIn(("crates/engine/tests/g2s_runtime.rs", 1), self.sites("history-names"))

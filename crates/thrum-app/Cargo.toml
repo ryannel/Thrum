@@ -40,6 +40,9 @@ cc = "=1.10.0"
 
 [dev-dependencies]
 pollster = "=1.0.1"
+# The capture writer's tests build on every platform; its native builds take the tuned features above.
+sha2 = "=0.10.9"
+zstd = { version = "=0.13.3", default-features = false, features = ["zstdmt"] }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 
 [lints]

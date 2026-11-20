@@ -12,12 +12,15 @@
 //! page keeps its animation-frame loop, DOM events and input, and calls the shell; a game keeps
 //! its report text, controls and authored scene. Mobile shells own their own loops.
 
+// platform-only tests: they drive the winit and AppKit shell, which exists only on macOS.
 #[cfg(target_os = "macos")]
 mod app;
 /// Bounded submitted-image sink shared by native platform adapters.
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(any(test, target_os = "macos", target_os = "ios"))]
 pub mod capture_writer;
-#[cfg(target_os = "macos")]
+// Its tests are portable; only the macOS shell uses it.
+#[cfg(any(test, target_os = "macos"))]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 mod file_watch;
 #[cfg(target_os = "macos")]
 mod game;
