@@ -14,7 +14,8 @@ import sys
 import tomllib
 import evidence_store
 
-from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, path_attributes, rust_sites, test_edge_sites
+from shape_matchers import (CODE, RULES, dependency_sites, evidence_path_lines, mask, package_for, path_attributes,
+                            rust_sites, test_edge_sites, uncalled_scripts, unrun_benches)
 
 BASELINE = ".config/shape-baseline.json"
 PATTERNS = ".agents/skills/thrum-engineering/references/patterns.md"
@@ -77,13 +78,18 @@ def inventory(root, honor_pins=False):
     sites = {name: [] for name in RULES}
     evidence_paths = evidence_store.tracked(root) if owns_history(root) else paths
     sites["evidence-size"] = [(p, 1) for p in evidence_store.oversized(root, evidence_paths)]
+    sites["script-caller"] = [(p, 1) for p in uncalled_scripts(root, paths)]
+    sites["bench-runner"] = list(unrun_benches(root, paths, manifests))
     for relative in paths:
         path = Path(relative)
         if not path.parts or path.parts[0] not in {"crates", "examples", "tools", "scripts"}:
             continue
+        if path.suffix != ".rs":
+            sites["evidence-path"] += [(relative, line) for line in evidence_path_lines(relative, (root / path).read_text(errors="ignore"))]
         package = package_for(path, manifests)
         if path.suffix == ".rs":
             text = (root / path).read_text()
+            sites["evidence-path"] += [(relative, line) for line in evidence_path_lines(relative, text)]
             # Matchers resolve relative includes from the repository root.
             for rule, offset in rust_sites(root, relative, text, package, manifests.get(package), registry):
                 sites[rule].append((relative, text.count("\n", 0, offset) + 1))

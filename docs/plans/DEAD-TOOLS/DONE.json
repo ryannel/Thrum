@@ -26,7 +26,7 @@
     {
       "id": "M6",
       "name": "The check refuses a new script or bench that nothing runs, a new source file that names `docs/evidence`, and a new shader text edit: each count is frozen where it stands",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -38,8 +38,8 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path && python3 scripts/shape_rules.py check --rule script-caller && python3 scripts/shape_rules.py check --rule bench-runner && python3 scripts/shape_rules.py check --rule shader-text-edit && python3 scripts/test_shape_rules.py'",
           "ask": "Read each rule's fixtures: does each refuse one more of its shape and pass the cases the design leaves out (the evidence store's restore code; a script that `dev`, a tracked document outside the plans or a done-when item's check names, for an open milestone and for a Done one; a suite named for no script; a bench a script runs; a `.replace(` in a test file)? Is a script or bench that only a file under `docs/evidence` names counted? In a scratch copy, add a script nothing names, and a `.replace(` to a non-test Rust file that mentions WGSL: does `./dev check` fail on each and say what to do? Count `shader-text-edit` by hand with `git grep`, and pick three scripts the rule counts and three it does not: do the log's counts and the rule agree with what you find?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M6/NOTES.md",
           "verdict": "",
           "review": ""
         },
@@ -48,8 +48,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

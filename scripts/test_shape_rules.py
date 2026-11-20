@@ -234,6 +234,117 @@ test_role="fixtures"
         self.assertEqual(shapes.inventory(archive)[0]["rules"]["string-errors"]["files"],
                          {"crates/engine/src/lib.rs": 1})
 
+    # The evidence folder's name is built in parts so this suite does not name it.
+    EVIDENCE = "docs/" + "evidence"
+
+    def counted(self, rule):
+        return sorted({path for path, _ in self.sites(rule)})
+
+    def test_evidence_path(self):
+        self.pair("evidence-path", f'const RECORD: &str = "../../{self.EVIDENCE}/CLOUDS/cost.json";',
+                  'const RECORD: &str = "tests/fixtures/clouds/cost.json";')
+        self.pair("evidence-path", f"RECORD = ROOT / '{self.EVIDENCE}/WATERS/M2-cost.json'\n",
+                  "RECORD = ROOT / '.orchestrate/evidence/WATERS/M2-cost.json'\n", "scripts/cost_record.py")
+        # The evidence store restores history, and data files are not source.
+        self.write("scripts/evidence_store.py", f'MANIFEST = "{self.EVIDENCE}/BULK.json"\n')
+        self.write("scripts/test_evidence_store.py", f'NAME = "{self.EVIDENCE}/example/large.mp4"\n')
+        self.write("examples/game/tests/fixtures/controls.json", f'["{self.EVIDENCE}/render/a.png"]')
+        self.write(f"{self.EVIDENCE}/notes.py", f'"{self.EVIDENCE}/x"')
+        self.assertEqual(self.sites("evidence-path"), [])
+
+    def script_plan(self, check, status):
+        plan = {"milestones": [{"id": "M1", "status": status, "items": [{"id": "M1.1", "check": check}]}]}
+        self.write("docs/plans/OTHER/DONE.json", json.dumps(plan))
+
+    def test_script_caller_refuses_a_script_nothing_names(self):
+        self.write("scripts/orphan_tool.py", "print('orphan')\n")
+        with contextlib.redirect_stdout(io.StringIO()):
+            errors = shapes.check(self.root, "script-caller", ["scripts"])
+        self.assertIn("scripts/orphan_tool.py:1: script-caller: name the script from what runs it", "\n".join(errors))
+        self.assertIn("patterns.md#scripts-and-benches", "\n".join(errors))
+        # Each caller the design names keeps it out of the count.
+        callers = {
+            "dev": "python3 scripts/orphan_tool.py\n",
+            "tools/xtask/src/main.rs": 'python(&["scripts/orphan_tool.py"])?;',
+            ".github/workflows/ci.yml": "run: python3 scripts/orphan_tool.py\n",
+            "crates/engine/tests/route.rs": 'const TOOL: &str = "../../scripts/orphan_tool.py";',
+            "ORCHESTRATE.md": "- **Main-branch check tool:** `python3 scripts/orphan_tool.py`; every 1h\n",
+            "docs/TOOLS.md": "Run `python3 scripts/orphan_tool.py` to rebuild the table.\n",
+        }
+        for caller, text in callers.items():
+            with self.subTest(caller=caller):
+                self.write(caller, text)
+                self.assertEqual(self.counted("script-caller"), [])
+                (self.root / caller).unlink()
+        for status in ("in_progress", "done"):
+            with self.subTest(status=status):
+                self.script_plan("python3 scripts/orphan_tool.py --check", status)
+                self.assertEqual(self.counted("script-caller"), [])
+        (self.root / "docs/plans/OTHER/DONE.json").unlink()
+        # Plans prose and records are not callers.
+        for record in ("docs/plans/OTHER/PLAN.md", f"{self.EVIDENCE}/OTHER/M1.md"):
+            self.write(record, "Ran `python3 scripts/orphan_tool.py`.\n")
+        self.assertEqual(self.counted("script-caller"), ["scripts/orphan_tool.py"])
+
+    def test_script_caller_follows_scripts_and_suites(self):
+        self.write("dev", "python3 scripts/kept_entry.py\n")
+        self.write("scripts/kept_entry.py", "import kept_helper\nfrom kept_pkg.inner import thing\n")
+        self.write("scripts/kept_helper.py", "subprocess.run(['node', 'scripts/kept_page.mjs'])\n")
+        self.write("scripts/kept_page.mjs", "")
+        self.write("scripts/kept_pkg/inner.py", "")
+        self.write("scripts/test_kept_entry.py", "import kept_entry\n")
+        # A suite counts with its script; one named for no script is not counted.
+        self.write("scripts/stray_tool.py", "import stray_helper\n")
+        self.write("scripts/stray_helper.py", "")
+        self.write("scripts/test_stray_tool.py", "import stray_tool\n")
+        self.write("scripts/test_shared_fixtures.py", "")
+        self.assertEqual(self.counted("script-caller"),
+                         ["scripts/stray_helper.py", "scripts/stray_tool.py", "scripts/test_stray_tool.py"])
+        # Removing the last caller orphans the chain behind it.
+        self.write("dev", "")
+        self.assertEqual(len(self.counted("script-caller")), 8)
+
+    def bench_manifest(self):
+        self.write("crates/engine/Cargo.toml", '[package]\nname="engine"\n[[bench]]\nname="frame"\nharness=false\n'
+                   '[[bench]]\nname="valley_culling"\nharness=false\n')
+
+    def test_bench_runner(self):
+        self.bench_manifest()
+        with contextlib.redirect_stdout(io.StringIO()):
+            errors = shapes.check(self.root, "bench-runner", ["crates/engine/Cargo.toml"])
+        self.assertIn("crates/engine/Cargo.toml:4: bench-runner: name the bench from what runs it", "\n".join(errors))
+        self.assertIn("crates/engine/Cargo.toml:7: bench-runner:", "\n".join(errors))
+        # A plain word counts as a name only beside the word bench; a compound name anywhere.
+        self.write("scripts/frame_report.py", "frame = 1\nprint('valley_culling done')\n")
+        self.assertEqual(self.sites("bench-runner"), [("crates/engine/Cargo.toml", 4)])
+        self.write("scripts/frame_report.py", "run(['cargo', 'bench',\n     '--bench', 'frame'])\n")
+        self.assertEqual(self.sites("bench-runner"), [("crates/engine/Cargo.toml", 7)])
+        for runner in ("dev", "tools/xtask/src/main.rs", ".github/workflows/ci.yml", "docs/TIMING.md"):
+            with self.subTest(runner=runner):
+                self.write(runner, "cargo bench -p engine --bench valley_culling\n")
+                self.assertEqual(self.sites("bench-runner"), [])
+                (self.root / runner).unlink()
+        for record in ("docs/plans/OTHER/PLAN.md", f"{self.EVIDENCE}/OTHER/M1.md"):
+            self.write(record, "cargo bench -p engine --bench valley_culling\n")
+        self.assertEqual(self.sites("bench-runner"), [("crates/engine/Cargo.toml", 7)])
+
+    def test_shader_text_edit(self):
+        bad = 'const SHADER: &str = include_str!("lit.wgsl");\nfn variant() -> String { SHADER.replace("LIGHTS", "4") }'
+        good = 'const SHADER: &str = include_str!("lit.wgsl");\nfn variant() -> String { format!("const LIGHTS = 4u;\\n{SHADER}") }'
+        self.write("crates/engine/src/lit.rs", bad)
+        with contextlib.redirect_stdout(io.StringIO()):
+            errors = shapes.check(self.root, "shader-text-edit", ["crates/engine/src/lit.rs"])
+        self.assertIn("crates/engine/src/lit.rs:2: shader-text-edit: make the variant a separate entry point", "\n".join(errors))
+        self.write("crates/engine/src/lit.rs", good)
+        self.assertEqual(self.sites("shader-text-edit"), [])
+        self.write("crates/engine/src/lit.rs", "// WGSL\nfn edit(s: &str) -> String { s.replacen(\n 'a', \"b\", 1) }")
+        self.assertEqual(len(self.sites("shader-text-edit")), 1)
+        # Coarse but bounded: test files, test modules, strings and files without WGSL are left out.
+        self.write("crates/engine/src/lit.rs", "fn edit(s: &str) -> String { s.replace('a', \"b\") }")
+        self.write("crates/engine/tests/lit.rs", bad)
+        self.write("crates/engine/src/doc.rs", 'const WGSL: &str = "x.replace(a)";\n#[cfg(test)]\nmod tests { fn t(s: &str) { s.replace("a", "b"); } }')
+        self.assertEqual(self.sites("shader-text-edit"), [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,10 +1,52 @@
 {
   "schema": 1,
   "rules": {
+    "bench-runner": {
+      "version": 1,
+      "files": {
+        "crates/thrum-core/Cargo.toml": 1,
+        "crates/thrum-render/Cargo.toml": 7,
+        "crates/thrum-water-model/Cargo.toml": 1,
+        "examples/v1-game/Cargo.toml": 2
+      }
+    },
     "device-request": {
       "version": 1,
       "files": {
         "scripts/creator_profile_probe.rs": 2
+      }
+    },
+    "evidence-path": {
+      "version": 1,
+      "files": {
+        "crates/thrum-cloud-model/tests/optics.rs": 1,
+        "crates/thrum-cook/tests/edit_to_visible/bench.rs": 1,
+        "crates/thrum-render/src/atmosphere/gpu/tests/aerial_ground.rs": 1,
+        "crates/thrum-river-model/tests/closed_forms.rs": 1,
+        "crates/thrum-river-model/tests/falls.rs": 1,
+        "crates/thrum-river-model/tests/sheet.rs": 1,
+        "examples/v1-game/benches/cooked_edit.rs": 1,
+        "examples/v1-game/src/host.rs": 1,
+        "scripts/check_g5_tripwires.sh": 1,
+        "scripts/cloud_cost.py": 2,
+        "scripts/cooked_draw_seed_history.py": 5,
+        "scripts/environment_products.py": 2,
+        "scripts/evidence_inventory.py": 1,
+        "scripts/rain_cost.py": 1,
+        "scripts/ray_tracing_proof.py": 1,
+        "scripts/reference/cloud/cache_reconstruction.py": 1,
+        "scripts/render2d.py": 1,
+        "scripts/river_cost.py": 3,
+        "scripts/run_v1_showcase.py": 1,
+        "scripts/scene_view_cost.py": 1,
+        "scripts/session_memory.py": 1,
+        "scripts/session_prediction.py": 1,
+        "scripts/shape_matchers.py": 1,
+        "scripts/sim2d_conformance.py": 4,
+        "scripts/test_mac_m2_presented.py": 1,
+        "scripts/test_sim2d_conformance.py": 1,
+        "scripts/transport_link.py": 1,
+        "scripts/water_cost.py": 2
       }
     },
     "evidence-size": {
@@ -92,6 +134,61 @@
       "files": {
         "examples/v1-game/src/bin/window/capture.rs": 2,
         "examples/v1-game/src/main.rs": 1
+      }
+    },
+    "script-caller": {
+      "version": 1,
+      "files": {
+        "scripts/check_content_edits_native.py": 1,
+        "scripts/check_valley_culling_defaults.mjs": 1,
+        "scripts/cloud_lighting_reference.py": 1,
+        "scripts/content_loop_proof.py": 1,
+        "scripts/cooked_draw_cost.py": 1,
+        "scripts/culling_cost.py": 1,
+        "scripts/effect_graph_limits.mjs": 1,
+        "scripts/evidence_inventory.py": 1,
+        "scripts/generate_earth_night.c": 1,
+        "scripts/hold_macos_private_cargo_cache.py": 1,
+        "scripts/hold_macos_release_records.py": 1,
+        "scripts/hold_macos_tool_root_clone.py": 1,
+        "scripts/light_lists_browser.mjs": 1,
+        "scripts/mac_m2_presented.py": 1,
+        "scripts/package_content_edits.py": 1,
+        "scripts/prepare_macos_tool_root_clone.py": 1,
+        "scripts/qualify_held_macos_native_ab.py": 1,
+        "scripts/qualify_mac_m2.py": 1,
+        "scripts/qualify_macos_display.py": 1,
+        "scripts/recipe_cost.py": 1,
+        "scripts/reference/cloud/air_reference.py": 1,
+        "scripts/reference/cloud/cache_reconstruction.py": 1,
+        "scripts/reference/cloud/far_air_fixture.py": 1,
+        "scripts/reference/cloud/multiple_scatter_reference.py": 1,
+        "scripts/reference/cloud/test_air_reference.py": 1,
+        "scripts/reference/cloud/transport_fixture.py": 1,
+        "scripts/run_bounded_native_build.py": 1,
+        "scripts/sim2d_browser_profile.mjs": 1,
+        "scripts/sweep_v1_exit.py": 1,
+        "scripts/test_hold_macos_private_cargo_cache.py": 1,
+        "scripts/test_hold_macos_release_records.py": 1,
+        "scripts/test_hold_macos_tool_root_clone.py": 1,
+        "scripts/test_mac_m2_presented.py": 1,
+        "scripts/test_prepare_macos_tool_root_clone.py": 1,
+        "scripts/test_qualify_macos_display.py": 1,
+        "scripts/test_run_bounded_native_build.py": 1
+      }
+    },
+    "shader-text-edit": {
+      "version": 1,
+      "files": {
+        "crates/thrum-asset-gpu/src/draw.rs": 2,
+        "crates/thrum-asset-gpu/src/material.rs": 3,
+        "crates/thrum-asset-gpu/src/mesh_stages.rs": 1,
+        "crates/thrum-render/src/atmosphere/products.rs": 2,
+        "crates/thrum-render/src/shaders.rs": 1,
+        "crates/thrum-render/src/synthetic/scene_source.rs": 11,
+        "crates/thrum-water/src/foam/gpu.rs": 2,
+        "crates/thrum-water/src/prepare.rs": 1,
+        "examples/mirror/src/pool.rs": 1
       }
     },
     "string-errors": {

@@ -89,6 +89,9 @@ offsets. These are in `thrum-sea/src/upload.rs`, `synthetic/`, `atmosphere/` and
 
 A text edit fails at run time, on the device, the first time anyone renames the text it matched.
 
+Rule: `shader-text-edit` counts `.replace(` and `.replacen(` in non-test Rust files that mention WGSL. It is coarse
+on purpose, and its count only falls.
+
 ## Naming GPU work
 
 **Shape.**
@@ -216,6 +219,25 @@ if a reviewer needs the bytes, use `python3 scripts/evidence_store.py put SOURCE
 and commit the generated manifest and ignore list. The store is shared across worktrees on this Mac, with no
 remote backup. Restore with `python3 scripts/evidence_store.py restore docs/evidence/MODULE/FILE`.
 See [the storage rules](../../../../docs/ASSET-LIFECYCLE.md#bulk-review-evidence).
+
+Rule: `evidence-path` counts lines of source under `crates`, `examples`, `scripts` and `tools` that name the
+tracked evidence folder, except the evidence store and its suite. Run records go to the working folder,
+`.orchestrate/evidence/<MODULE>/`, and data a test reads goes in `tests/fixtures/<module>/` or beside the
+crate's tests.
+
+## Scripts and benches
+
+Rules: `script-caller` counts files under `scripts/` that nothing names, and `bench-runner` counts `[[bench]]`
+targets that nothing runs. Each count only falls.
+
+- **A new script** is named by what runs it: `./dev` or `tools/xtask`, a CI workflow, a `Main-branch check` line,
+  Rust source, another named script, or a tracked document outside the plans folder. A proof tool is named by the
+  done-when item whose check runs it, whether that milestone is open or Done. A suite `test_X` lives with the
+  script `X` beside it.
+- **A new bench** is run by a script, a `./dev` command, a CI workflow or a document, with its name spelled out,
+  as in `cargo bench --bench NAME`.
+- **A landing that removes a last caller** deletes what it orphans, or names it elsewhere, in the same landing.
+- Plans prose and records under the evidence folder never count as callers.
 
 ## Names
 
