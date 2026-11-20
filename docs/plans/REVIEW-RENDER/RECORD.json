@@ -227,7 +227,7 @@
         {
           "verdict": "fail",
           "commit": "9563a37c3e0920c64ea8e6df76bae0ac6f14eb52",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review-2.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -259,6 +259,42 @@
             "turns": 1
           },
           "at": "2026-11-20T06:24:29Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "015ced3d29b88e1dee5754d935d70ea391e161fe",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "fail",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sky LUT zenith row is hard-coded in the production shader",
+              "item": "M2.4",
+              "different": "The reported Earth density, night altitude, luminance, dispatch, selector, solar tangent and binding-span sites are repaired. This defect is the sky LUT producer\u2019s last-row index, which still embeds the Rust-owned texture height minus one.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 94517,
+            "cached": 1067648,
+            "output": 4390,
+            "turns": 1
+          },
+          "at": "2026-11-20T11:43:29Z"
         }
       ],
       "authorised": {

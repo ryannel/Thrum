@@ -77,8 +77,8 @@
     {
       "id": "M2",
       "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -120,8 +120,8 @@
           "statement": "A constant used on both sides is generated into the shader from the Rust value: the scene renderer's and the atmosphere's shared constants appear as literals in no `.wgsl` file.",
           "ask": "Take the constants the review lists under M23 and M29: is each now generated? Is any number still typed into both a `.rs` and a `.wgsl` file?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-lighting-and-display-parameters",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },
@@ -138,9 +138,9 @@
       ],
       "findings": [
         {
-          "name": "Earth profile and luminance parameters remain literal in production shaders",
+          "name": "Sky LUT zenith row is hard-coded in the production shader",
           "item": "M2.4",
-          "different": "The earlier dispatch, selector, solar tangent and binding-span sites are fixed. This concerns the Earth density law, night chart altitude and luminance weights used by independent CPU and GPU lighting paths.",
+          "different": "The reported Earth density, night altitude, luminance, dispatch, selector, solar tangent and binding-span sites are repaired. This defect is the sky LUT producer\u2019s last-row index, which still embeds the Rust-owned texture height minus one.",
           "repeat": false
         }
       ]
