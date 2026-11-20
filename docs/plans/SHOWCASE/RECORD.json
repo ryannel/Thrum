@@ -336,6 +336,35 @@
         "by": "plan",
         "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
         "at": "2026-11-20T10:12:47Z"
+      },
+      "ready_for_review": {
+        "commit": "fd4db4ae62c7b604cc9ebd93f3c21444b5d2cb73",
+        "checked": "fd4db4ae62c7b604cc9ebd93f3c21444b5d2cb73",
+        "at": "2026-11-20T12:15:21Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.1",
+        "path": "headless",
+        "usage": {
+          "input": 356236,
+          "cached": 50829696,
+          "output": 29131,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 1142887,
+          "cached": 141784448,
+          "output": 163214,
+          "turns": 3
+        }
       }
     }
   },
