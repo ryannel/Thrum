@@ -66,27 +66,28 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32)->f32 {
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
     return cloud_erode(sigma,cloud.physical.x,cloud.physical.y,cloud_billow(point,footprint),detail);
 }
-fn cloud_sun_depths(world:vec3<f32>)->vec2<f32> {
+fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
+    let heights=vec2(world.y,start_height);
     let near=(point-mapping.near.xy)/mapping.near.z;
     let nw=cloud_smooth(min(min(near.x,near.y),min(1.0-near.x,1.0-near.y))/0.15);
-    if nw==1.0 {return cloud_path_sample(sun_near,near,world.y);}
+    if nw==1.0 {return cloud_path_sample(sun_near,near,heights);}
     let middle=(point-mapping.middle.xy)/mapping.middle.z;
     let mw=cloud_smooth(min(min(middle.x,middle.y),min(1.0-middle.x,1.0-middle.y))/0.15);
-    var tau=vec2(0.0);
-    if mw==1.0 {tau=cloud_path_sample(sun_middle,middle,world.y);}
+    var tau=vec3(0.0);
+    if mw==1.0 {tau=cloud_path_sample(sun_middle,middle,heights);}
     else {
         let region=vec4(mapping.region.xy,mapping.region.z-mapping.region.x,0.0);
-        tau=cloud_path_sample(sun_far,clamp((point-region.xy)/region.z,vec2(0.0),vec2(1.0)),world.y);
-        if mw>0.0 {tau=mix(tau,cloud_path_sample(sun_middle,middle,world.y),mw);}
+        tau=cloud_path_sample(sun_far,clamp((point-region.xy)/region.z,vec2(0.0),vec2(1.0)),heights);
+        if mw>0.0 {tau=mix(tau,cloud_path_sample(sun_middle,middle,heights),mw);}
     }
-    if nw>0.0 {tau=mix(tau,cloud_path_sample(sun_near,near,world.y),nw);}
+    if nw>0.0 {tau=mix(tau,cloud_path_sample(sun_near,near,heights),nw);}
     return tau;
 }
 
-fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,footprint:f32)->vec2<f32> {
+fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->vec2<f32> {
     let samples = cloud.settings.y;
-    if samples == 0u { return cloud_sun_depths(world); }
+    if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
     let path = mapping.path_border.xyz;
     // A grazing ray can stay inside the same lobe for hundreds of metres.
     // Resolve that relief in the full density before asking the cached path
@@ -94,16 +95,32 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,footprint:f32)->vec2<f32> {
     let grazing = 1.0 - smoothstep(0.18, 0.35, path.y);
     let reach = min(mix(120.0, 720.0, grazing), (cloud.heights.y - point.y) / path.y);
     let step = min(reach, 120.0) / f32(samples);
+    let tangent = vec3(path.z, 0.0, -path.x);
     var local = 0.0;
     for (var j = 0u; j < samples * 6u; j++) {
         let start = f32(j) * step;
         let width = min(step, reach - start);
         if width <= 0.0 { break; }
-        local += cloud_density(point + path * (start + 0.5 * width), footprint) * width;
+        // Average across the grazing footprint with the existing taps.
+        // The spread grows from the shaded point and vanishes at higher Sun.
+        let solar_footprint = max(footprint, 2.0 * width * grazing);
+        let distance = start + 0.5 * width;
+        let lane = f32(j % 3u) - 1.0;
+        let spread = tangent * (lane * min(95.0, distance * 0.3) * grazing);
+        local += cloud_density(point + path * distance + spread, solar_footprint) * width;
     }
-    let depths = cloud_sun_depths(world + path * reach);
+    // In the distance the coarse path drives the complete diffuse column.
+    // Replacing part of that column would expose the product's height nodes.
+    let near = 1.0 - smoothstep(0.46, 0.59, distance / mapping.near.z);
+    let refinement = grazing * near;
+    let handoff = world + path * reach;
+    let start_height = select(handoff.y,world.y,refinement > 0.0);
+    let depths = cloud_sun_depths(handoff,start_height);
     let toward_sun = local + depths.x;
-    return vec2(toward_sun, max(toward_sun, depths.y));
+    // At low Sun the removed cached interval can span the whole lobe. Keep
+    // the cached depth behind the sample and add it to the refined depth ahead.
+    let below = max(0.0, depths.y - depths.z);
+    return vec2(toward_sun, mix(max(toward_sun, depths.y), toward_sun + below, refinement));
 }
 
 fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray:vec3<f32>,uv:vec2<f32>)->CloudTransport {
@@ -155,7 +172,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let world=camera+ray*at;
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 var sun_depths = vec2(0.0);
-                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,footprint); }
+                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint); }
                 let source=cloud_source(solar,phase,sun_depths,column.yz,plane_cosines,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;

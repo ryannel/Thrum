@@ -20,8 +20,10 @@ fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec2<f32> {
 }
 fn cloud_plane_cosines(viewer:vec3<f32>)->vec2<f32> {
     let path=mapping.path_border.xyz;
-    // The resolved type gives every sample the same turn toward the Sun path.
-    let normal=normalize(mix(vec3(0.0,1.0,0.0),path,cloud.scattering.w));
+    // The plane is shared by the whole cloud. Turn it less toward the Sun
+    // at the lowest elevations to retain contrast on the warm flank.
+    let turn=cloud.scattering.w*mix(0.48,1.0,smoothstep(0.07,0.17,path.y));
+    let normal=normalize(mix(vec3(0.0,1.0,0.0),path,turn));
     return vec2(dot(normal,path),dot(normal,viewer));
 }
 fn cloud_source(solar:vec3<f32>,phases:vec2<f32>,sun_depths:vec2<f32>,
