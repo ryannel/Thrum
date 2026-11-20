@@ -12,16 +12,41 @@ M5 was added after M3 and M4 and is built before them.
 
 - Assumption: on Linux and Windows, where nothing is qualified, a machine with no GPU skips GPU tests with a visible reason and still passes. On this Mac a missing GPU fails the run.
 - Assumption: test files are not all moved to one layout. New tests follow the adopted layout, and an old file moves when a task already touches it.
+- Assumption: nothing runs the tests on Linux or Windows, so M2 proves from this Mac that they build there, by a type-check, and proves by reading that no CPU test is hidden and no GPU test fails for want of Metal. Linking, the C and C++ build scripts, doc tests and GPU tests on another backend stay unproved. The other choice is a real run, in a Linux container on this Mac or on GitHub's Ubuntu and Windows runners, which builds the whole workspace each time and, on GitHub, spends runner minutes.
+- Assumption: that type-check allows warnings. Off macOS the test code has about 139, mostly helpers that only macOS-gated tests use, so a Linux or Windows `./dev check` still stops at Clippy before it runs a test. The other choice clears them and fails the check on a new one, which every module that writes a macOS-gated test then pays for.
 
 ## M1 A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required: done
 
 [review](../../../.orchestrate/evidence/TEST-SUPPORT/M1-review.md)
 
-## M2 Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]`
+## M2 Every GPU test in the engine goes through the gate, the workspace's tests build for Linux and Windows with no CPU test hidden, and no test shares code by `#[path]`
 
-This waits for `HOST` M1, so that the device is the recipe's, for the milestones other builders hold in the
-renderer's tests, and for `GAME-SPLIT` M2, which removes the `#[path]` includes of game source; what is left is
-sharing inside a crate. Record `cargo test --workspace`'s results before you start.
+[The log](LOG.md) says why this milestone's items changed, and [the design](DESIGN.md#other-platforms) says what
+is proved for Linux and Windows and what is not. The gate, the recipe's device and the declared modules are in
+the tree; what is left is the type-check and what it finds. The third review left a working one in this
+milestone's evidence, `M2-review/cross-target-check.sh` with its stand-in compilers in `M2-review/c-shims/`: start
+from it. It returns only the Windows run's exit code, writes links into its own folder and uses one fixed folder
+under `/tmp`. Both std targets are installed on this Mac, and a cold run of both took about a minute, so run it
+after every change rather than compiling named targets.
+
+The type-check belongs to the main tier, not to `./dev check`: nothing builds or runs on Linux or Windows, so a
+break there stops no builder, and it costs its own module a fix. M2.8 declares it, and the design has the line.
+`GATE-TIME` owns the tiers: its main-tier list, `.config/long-tests.txt`, needs no entry, because this is not a
+test binary, and its next re-plan names the check in the Main row of the settings' test tiers and in the
+`CONTRIBUTING.md` text its M5.5 asks for.
+
+It fails in two packages today. `thrum-asset-gpu`'s `draw/tests.rs` uses `serde_json`, which the manifest gives
+only Apple targets. The water scene's 11 test targets reach `thrum-app`'s macOS shell (`Game`, `Gpu`,
+`offscreen`, and `SkyGame`'s methods) through `tests/support.rs` and `tests/realtime.rs`. That shell is macOS-only
+on purpose and is not this module's: gate the water tests one by one, as `macos_gpu_test!` does, and leave
+`thrum-app`'s exports alone. `GATE-TIME` M1 marks the gale in `floating_gpu.rs` `#[ignore]` with a `long:` reason
+and adds a `Main-branch check` line beside yours: whichever lands second rebases, and the gale keeps its
+attribute and reason.
+
+A review shows what one reviewer tried, so the earlier reviews' lists are not the job: the items are. The workspace
+comparison M2.4 names is in this milestone's evidence (`M2/README.md`) and three reviews reproduced it, so don't
+make it again. M2.5 passes from the shared run. Tell the lead when you merge, because the script reads the
+settings from the main checkout.
 
 ## M5 The test kit's readback, device call and wait exist, and the check refuses a new hand-written readback or deadline loop in a test
 

@@ -71,7 +71,7 @@
     },
     {
       "id": "M2",
-      "name": "Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]`",
+      "name": "Every GPU test in the engine goes through the gate, the workspace's tests build for Linux and Windows with no CPU test hidden, and no test shares code by `#[path]`",
       "status": "in_progress",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
@@ -85,7 +85,7 @@
         "EFFECT-GRAPH:M3",
         "CULLING:M3"
       ],
-      "quality_bar": "As dependable as wgpu's own `gpu_test` harness, across the whole workspace: the same answer to 'does this test need a GPU' in every file, and a Linux or Windows run that neither fails for want of an adapter nor hides a CPU test.",
+      "quality_bar": "As dependable as wgpu's own `gpu_test` harness, across the whole workspace: the same answer to 'does this test need a GPU' in every file, and tests that build for Linux and Windows, with no CPU test hidden there and no GPU test that would fail there for want of an adapter or of Metal. Nothing is run on Linux or Windows, so what is proved there is what a type-check and a read of the tests can show: linking, a lint-clean build and GPU tests on another backend are not claimed.",
       "items": [
         {
           "id": "M2.1",
@@ -99,14 +99,45 @@
         },
         {
           "id": "M2.2",
-          "statement": "No test file is gated as a whole on an operating system: `whole-file-gpu-gate` is at zero, the CPU-only graph validation tests build on every platform, and a Metal-only test is gated on the test, with its reason.",
-          "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
-          "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition, and is that shown by a compile for a target that is not macOS? Does any GPU test still return early without asking the gate, so that no skip line is written?",
+          "statement": "Every library, binary, example, test and bench target in the workspace type-checks for Linux and for Windows from this Mac, with default features. One tracked command, `scripts/check_cross_target.sh`, checks `x86_64-unknown-linux-gnu` and `x86_64-pc-windows-msvc`, leaves no package or target out, and fails when either has an error. It links nothing and stands in for the C and C++ compilers. Warnings do not fail it.",
+          "check": "sh -c 'test -f scripts/check_cross_target.sh && bash scripts/check_cross_target.sh'",
+          "ask": "Read the command: does it check every target of every workspace package for both platforms, with none excluded by name? Would an error on the Linux target alone make it exit non-zero? Does a run leave the checkout clean?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "No OS condition keeps a test that needs no GPU and no host API of that OS out of a Linux or Windows build. `whole-file-gpu-gate` is at zero across `crates/` and `examples/`: no file or module that holds tests is conditioned on an OS as a whole, except a module of tests of that OS's own shell or system calls, which says so in a `platform-only tests:` comment. A test may carry an OS condition of its own where it needs that OS's GPU or host APIs, and need not write a skip line elsewhere.",
+          "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
+          "ask": "List the tests that carry an OS condition of their own, and the modules marked `platform-only tests:`. Is any of them a test that touches no GPU and no API of that OS, so that it would run on Linux or Windows?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "A GPU test asks the gate before it opens a device, and one that needs Metal asks the gate for Metal. So where there is no adapter, or none on Metal, it writes the skip line and returns: no test opens the recipe's device unasked, returns without asking, or admits any backend and then requires Metal.",
+          "ask": "Search the tests under `crates/` and `examples/`. Does any open the recipe's device, or return early, before it asks the gate? Does any admit any backend and then assert Metal, or open a recipe only Metal offers, outside a macOS condition?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.8",
+          "statement": "The type-check keeps running after this milestone, on main and in no merge's check: `ORCHESTRATE.md` declares the main-branch check `cross-target` in the design's words.",
+          "check": "grep -q 'Main-branch check cross-target:.*scripts/check_cross_target.sh' ORCHESTRATE.md",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.3",
@@ -120,13 +151,13 @@
         },
         {
           "id": "M2.4",
-          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
-          "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
+          "statement": "This milestone took no test out of a Mac run. Every test that passed before it passed at its first candidate with a GPU required and no skip line, which the recorded comparison of `cargo test --workspace` shows, and no change made since that candidate removes a test, empties one on macOS or lets one skip there.",
+          "ask": "Does the recorded comparison map every test that reported `ok` before to one that reported `ok` at the first candidate, test by test, with no `thrum-gpu-skip:` line in the later run? In the milestone's commits after that candidate, is any test removed, or its body left empty on macOS, without the same test declared again? The proof that none skips now is the merged tree's `./dev check`, which requires a GPU on this Mac.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/README.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.5",

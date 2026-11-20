@@ -2,8 +2,9 @@
 
 14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/TEST-SUPPORT/design-review.md),
 and on 20 November, when [the kit](#the-kit) and M3 and M4 were added from the cleanup review, and again that day
-after the kit's design review and the hardening pass, when M5 was added ahead of them. Nothing M1 or M2 is held to
-changed.
+after the kit's design review and the hardening pass, when M5 was added ahead of them. Revised once more that day
+after M2's third failed review: [other platforms](#other-platforms) is new, and M2's items changed with it. Nothing
+M1 is held to changed.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
@@ -152,6 +153,36 @@ converts what is already there.
   test that ran beside others now waits for one: the cleanup's purpose is a shorter check. The cooked fault
   test, which is behind a Cargo feature, is left as it is.
 
+<a id="other-platforms"></a>
+
+**7. Linux and Windows are checked from this Mac, by type.** Nothing runs Thrum's tests on Linux or Windows: no
+target in the project settings is there, and CI is started by hand. But taking an OS condition off a test hands its file
+to those platforms' compilers, and a compile of a few named targets, or one for another Apple target, does not
+show what they will make of it: an Apple-only dependency or a macOS-only import is found only by compiling
+everything for them. So the claim is made checkable here. One tracked command, `scripts/check_cross_target.sh`, type-checks every target
+of every workspace package (libraries, binaries, examples, tests and benches, with default features) for
+`x86_64-unknown-linux-gnu` and `x86_64-pc-windows-msvc`, and fails on an error in either. It links nothing. The
+workspace's C and C++ build scripts cannot cross-compile from a Mac, so they get stand-in compilers that write
+empty outputs, and the one binding generator among them gets the SDK's own headers.
+
+It shows that the tests build on those platforms: each `cfg`, import and dependency resolves. It does not show
+that they link, that the C and C++ build there, that doc tests build, or that anything passes when run. Warnings
+do not fail it: helpers that only macOS-gated tests use are unused elsewhere, and a lint-clean build there is not
+claimed. The two things a type-check cannot see are held by reading: that no OS condition hides a test that
+needs no GPU, which `whole-file-gpu-gate` covers for files and modules, and that every GPU test asks the gate
+first and asks for Metal where it needs Metal. A GPU test passing on another backend is not claimed anywhere,
+because nothing is qualified there.
+
+The check takes about a minute for both targets from cold, with no lock. It belongs to the main tier of
+[the test tiers](../../../ORCHESTRATE.md#test-tiers) all the same. The merge tier holds what would stop every
+builder, and a break here stops none: nobody builds for these platforms. The risk accepted is that a change which
+breaks the Linux or Windows build of a test reaches main and sits there for up to an hour and one run, until the
+lead gives its module the fix. M2 adds this line under the settings' Rules, in these words:
+
+```text
+- **Main-branch check cross-target:** `bash scripts/check_cross_target.sh`; every 1h; timeout 15m  *(planner, 20 Nov 2026: the Linux and Windows type-check of the tests runs on main, not in a merge's check)*
+```
+
 ## Interfaces
 
 | Interface | For |
@@ -162,6 +193,7 @@ converts what is already there.
 | `test_role` and `proving_ground` in `.config/architecture.toml`, and the `test-crate-edges` rule | `REPO-RULES`' `library-env`, `GAME-SPLIT`'s boundary |
 | The kit: readback, the prologue, the wait, scratch folders, the PPM writer and the counting allocator type; the record reflection check through the `render` feature | Every GPU test under `crates/` and in the kit scenes |
 | The rules `test-readback` and `test-deadline`, each a count that can only fall | Every builder who writes a GPU test: read back and wait through the kit |
+| The cross-target type-check, `scripts/check_cross_target.sh`, and the main-branch check `cross-target` that runs it | Every module that writes a test: a change that breaks the Linux or Windows build of one is its module's to fix. `GATE-TIME`, which owns the tiers, names the check with the main tier's others |
 
 ## Files each milestone touches
 
@@ -172,6 +204,7 @@ landing moves them, whatever your row says. The rows are in build order: M5 is b
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
+| M2 | Besides the conversion, which is in the tree: the type-check's script and its stand-in compilers, under `scripts/`; the test files and dev-dependencies of whichever package the type-check or M2's questions name, which today are `crates/thrum-asset-gpu` and `examples/water/tests/`; one line of `ORCHESTRATE.md` | Nothing more | `GATE-TIME` M1 edits `examples/water/tests/floating_gpu.rs` and the same list in `ORCHESTRATE.md`, and `WATERS` builds in the water scene's tests: whichever lands second rebases |
 | M5 | `crates/thrum-test-support/` (the kit's functions, their tests, the manifest); `crates/thrum-render/src/test_device.rs`; the two rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`; the Tests section of the engineering patterns | Nothing outside this module | It converts no test, so it can run beside any milestone. `DEAD-TOOLS` M6 adds four rules to the same rule files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
 | M3 | Test files only: the integration tests and unit-test modules of every crate under `crates/`, and the `tests/` folders of the kit scenes (`examples/water`, `mirror`, `starter`, `lighthouse` and `stones`); `crates/thrum-test-support/` and `crates/thrum-render/src/test_device.rs` where a conversion needs the kit extended; the exemptions of `test-readback` in `scripts/shape_matchers.py` with their fixtures | `GATE-TIME` M2 and `DEAD-CODE` M2, which delete tests and stubs in these files; `GATE-TIME` M6, because some of these files hold tests behind a Cargo feature that no merge compiled before it | The widest set in track 6, so it runs beside milestones that touch no test file (`DEAD-TOOLS` M1, M2 and M4, `DEAD-CODE` M5, `GATE-TIME` M5 and M7) and not, where the lead can choose, beside one whose row names test files: `GATE-TIME` M3 (`foam_scene_gpu.rs`, `support/island.rs`) and M4 (the mirror's pool tests, `draw/tests.rs`, `scene_view_absent_gpu.rs`), `DEAD-TOOLS` M3 (`atmosphere/gpu/tests/aerial_ground.rs`, a readback site), `DEAD-CODE` M3 (two renderer test files), M4 (the water scene's proof tests) and M6. Where one of those is building anyway, whichever lands second rebases. `REVIEW-RENDER` and `HOST` build in the renderer's tests |
 | M4 | The reflection check in `crates/thrum-test-support/`; `crates/thrum-render/tests/wgsl_records.rs`; the `wgsl_records` tests and bound-struct walks of `thrum-sea`, `thrum-asset-gpu`, `thrum-water` and `thrum-clouds`; `examples/v1-game/tests/cooked_assets_gpu.rs`, `cooked_material_gpu.rs` and the test support they share | `REVIEW-RENDER` M2, which owns the renderer's checker | `GATE-TIME` M5 narrows the draw-probe pass that runs `cooked_assets_gpu`, in the check command only. `DEAD-CODE` M5 edits `cooked_rows_gpu.rs`, which this leaves alone |
@@ -194,6 +227,9 @@ after with a GPU required, and by a reviewer reading that no assertion, bound or
 test. The kit's own functions have tests in the support package. `cargo test --workspace` does not run a long
 test or a test behind a Cargo feature, so for those the proof is the main-branch check `long-tests`: its run
 that covers M3's commit, compared test by test with its last run before M3 started.
+
+Linux and Windows are proved as [mechanism 7](#other-platforms) says: the type-check passing for both targets,
+and two questions a reviewer answers by reading. No item claims a run there.
 
 The gate is proved from outside: its tests run a child test process with the adapter forced absent and read the
 child's exit code and output, in both modes. Adoption is proved by the rules at zero, and by what ran: the tests'
