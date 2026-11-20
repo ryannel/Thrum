@@ -291,7 +291,7 @@
         {
           "id": "M9.7",
           "statement": "Every file in `examples/v1-game/routes/` that pinned the old valley root or the old exit root at the commit this milestone started from names the new one, and its generation where that moved, whichever module or milestone added the file. When this was planned those were `moving-v1.json`, `culling-fast-yaw.json`, `effect-state.json`, `effect-after-opaque.json`, `exit-flythrough.json` and `exit-held.json`, and M6 adds `exit-fast-yaw.json`, pinned to the exit root. In each such file the landing changed the pin and nothing else, so every route's keys, phase and checkpoints are as they were, and no route file names an old root.",
-          "check": "! grep -rlE '70d2baf823d09d85|3083a794f8379630' examples/v1-game/routes",
+          "check": "sh -c 'test -n \"$(git ls-files \":(glob)examples/**/routes/*.json\")\" && ! git grep -qE \"70d2baf823d09d85|3083a794f8379630\" -- \":(glob)examples/**/routes/*.json\"'",
           "ask": "List the files in `examples/v1-game/routes/` at the commit this milestone started from, with each one's `cooked_root`. The old valley root is the one `moving-v1.json` named there and the old exit root the one `exit-flythrough.json` named there; the check greps for the two known at planning. Then read this milestone's diff of that folder against that commit with `git diff`. Does every file that named the old valley root now name the root `moving-v1.json` names, and every file that named the old exit root, `exit-fast-yaw.json` among them, the root `exit-flythrough.json` names? In each of those files, does the diff change only `cooked_root`, and `cooked_generation` where the generation moved?",
           "target": "mac-metal",
           "evidence": "",

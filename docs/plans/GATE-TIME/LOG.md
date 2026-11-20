@@ -1,0 +1,3 @@
+# GATE-TIME log
+
+- 2026-11-20 Planned from the owner's request of that day, "We want to do a code cleanup and consolidation for Thrum", and the cleanup review at main `99f8033a0`. This module takes the review's section 1 and the reference tests the 17 November bar may retire. The gale, stepped-hour and foam soaks move to a main-branch check and keep a short run in `./dev check`; the reference tests are deleted or replaced. Each is the owner's call and stands as an assumption in the plan. One test binary for each water model crate (W2-01) is left out: nine open items run those binaries by name.

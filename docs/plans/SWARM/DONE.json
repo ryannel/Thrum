@@ -15,7 +15,7 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "At least three concepts each have a name, a paragraph of premise, one hero sprite, two enemy sprites, a palette, and a mock arena of 1920\u00d71080 pixels in which 2,000 enemies surround the hero, a common enemy's body being no more than a fiftieth of the image's height. Every sprite's source, a script or an image file, is in `examples/swarm/concepts/`. One image, `docs/evidence/SWARM/concepts.png`, lays the concepts side by side with each sprite at game size and enlarged.",
+          "statement": "At least three concepts each have a name, a paragraph of premise, one hero sprite, two enemy sprites, a palette, and a mock arena of 1920\u00d71080 pixels in which 2,000 enemies surround the hero, a common enemy's body being no more than a fiftieth of the image's height. Every sprite's source, a script or an image file, is in `examples/swarm/concepts/`. One image in this milestone's evidence lays the concepts side by side with each sprite at game size and enlarged.",
           "check": "python3 examples/swarm/concepts/check.py",
           "ask": "Read the check and the script that composes the mocks. Is the count of enemies taken from the placements the composer drew, and the body size from the sprites it used? Is each mock composed with premultiplied alpha in linear light, as the design says the engine draws?",
           "target": "stand_in:mac-metal",
@@ -27,7 +27,7 @@
         {
           "id": "M1.2",
           "statement": "The concepts differ in kind: each has its own premise and its own way of drawing, and no two are one idea in other colours. In each mock arena the hero can be found among the 2,000 and the two enemies can be told apart at the size shown.",
-          "inspect": "Open `docs/evidence/SWARM/concepts.png` and each mock arena at 1920\u00d71080. Judge each mock whole, at the size it is shown, and in native-size crops around the hero and of a patch of crowd. Judge only whether the concepts differ in kind and whether each reads at game size; which is best is the owner's.",
+          "inspect": "Open the side-by-side image in this milestone's evidence and each mock arena at 1920\u00d71080. Judge each mock whole, at the size it is shown, and in native-size crops around the hero and of a patch of crowd. Judge only whether the concepts differ in kind and whether each reads at game size; which is best is the owner's.",
           "target": "stand_in:mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1065,7 +1065,7 @@
         },
         {
           "id": "M8.10",
-          "statement": "`docs/evidence/SWARM/TRACK-3-RECORD.md` closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, it lists what was not run, and it says track 3 is closed by quoting the owner's acceptance.",
+          "statement": "A closing record in this milestone's evidence closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, it lists what was not run, and it says track 3 is closed by quoting the owner's acceptance.",
           "ask": "Does the record name as not run: a second machine or an internet path, a public host, a physical iPhone, motion on the built-in panel itself, the game's look on an EDR panel, Safari and Firefox, key and pointer events delivered by the system to the Mac window, sound and a gamepad? Does each claim it makes link to evidence from the claimed commit or name the milestone that recorded it? Is the acceptance it quotes in the script's record of the owner's words?",
           "target": "mac-metal",
           "builder_result": "open",

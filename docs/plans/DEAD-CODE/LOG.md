@@ -1,0 +1,3 @@
+# DEAD-CODE log
+
+- 2026-11-20 Planned from the owner's request of that day, "We want to do a code cleanup and consolidation for Thrum", and the cleanup review at main `99f8033a0`. This module takes the review's sections 3 and 4 and the water settings that are parsed twice (L3-09). The state-delta codec stays, because `SESSION`'s design says keep. `SceneContribution` gets five defaults, not six: `encode_upload` stays required, as the verifier of R2-02 found. The incremental capture, the game's projection and the content crate are deletions of something offered and stand as assumptions in the plan.

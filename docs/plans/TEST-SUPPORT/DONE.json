@@ -166,6 +166,131 @@
           "repeat": false
         }
       ]
+    },
+    {
+      "id": "M3",
+      "name": "A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "GATE-TIME:M2",
+        "DEAD-CODE:M2"
+      ],
+      "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "A test under `crates/` or in a kit scene (the water, mirror, starter, lighthouse and stones examples) reads a buffer or a texture back through the kit: `test-readback` is at zero there, outside the sites the rule exempts by name with a reason. The kit reads a buffer, one mip and layer of a texture, or a byte range, with one bounded wait, on its own submission or on the caller's encoder.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback --zero crates examples/water examples/mirror examples/starter examples/lighthouse examples/stones && python3 scripts/test_shape_rules.py && cargo test --locked --offline -p thrum-test-support'",
+          "ask": "Read the rule's exemptions: is each one a site that does a different job, as the design lists them, and not a readback that was awkward to convert? In ten converted tests across five crates, is every assertion, bound and expected value as it was at the starting commit?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "A GPU test under `crates/` asks for its GPU and its device in one call to the kit, by backend, profile and restriction. A local wrapper is left only where it does something the call does not, and a test that needed Metal still fails without it on this Mac.",
+          "ask": "List the local gate-and-device wrappers left under `crates/`: what does each do that the kit's call does not? Did any test that asserted Metal become one that skips on this Mac? Did any test's profile, restriction or generation change?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "Frame waits, scratch folders, PPM writing and the counting allocator type come from the kit: no test file under `crates/` or in a kit scene defines its own copy of one. Each binary that counts allocations declares its own static of the kit's type, and no recorded tripwire's percentile rule changed.",
+          "ask": "Search the test files under `crates/` and the kit scenes for a local frame-wait loop, scratch folder type, PPM writer and `GlobalAlloc` implementation: is any left, and why? Did any wait's deadline get shorter, or any tripwire's percentile rule change?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
+          "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "Each crate's WGSL records are held to its Rust structs by one shared check, and the game's cooked tests build their game through one fixture",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "REVIEW-RENDER:M2"
+      ],
+      "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "The sea, the asset crate, water and clouds hold their WGSL records to their Rust structs through the kit's one reflection check, in member offset, size and scalar kind. No crate keeps its own walk of a shader's bound structs or a second layout type, each `wgsl_records` test target keeps its name, and the checks that did more than reflect are as they were.",
+          "check": "sh -c 'git grep -q \"wgsl\" -- crates/thrum-test-support/src && cargo test --locked --offline -p thrum-render -p thrum-sea -p thrum-asset-gpu --test wgsl_records && cargo test --locked --offline -p thrum-water -p thrum-clouds'",
+          "ask": "How many walks of a parsed shader's bound structs are there under `crates/` outside the kit? Do the sea's and the asset crate's records now get the size and scalar-kind checks, and did any record fail them? Are the view record's literal offsets and the cloud and weather shaders' naga validation still asserted? Would a member moved in one crate's WGSL fail that crate's test?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "The game's cooked tests make their scratch store, cook, device and host through one fixture in the game's test support. Each case asserts what it asserted, on the device it had: the generation it gave the recipe and its assertion on the execution path.",
+          "check": "cargo test --locked --offline -p v1-game --test cooked_assets_gpu --test cooked_material_gpu",
+          "ask": "Compare five cases from each of the two files with the starting commit: same assertions, same draw path, same generation, same execution assertion? Does the log say what the fixture did to the two binaries' run time?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
+          "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }

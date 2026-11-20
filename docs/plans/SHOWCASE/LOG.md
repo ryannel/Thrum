@@ -126,3 +126,4 @@
   kept every file's name and bytes and changed only the paths that say where the references are.
   [The module list](../ARCHITECTURE.md#ruling-on-relocated-references) now rules on a relocation, M9.6 is
   written again from its claim, and the design says which paths follow the files. No other item changed.
+- 2026-11-20 Planner, from the cleanup review (L8-05): M9.7's check passed when the routes folder was missing. It now fails unless a game's route files exist, and searches them wherever the folder is. The statement and the ask are unchanged. M9 was Not Started.

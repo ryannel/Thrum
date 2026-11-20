@@ -93,3 +93,4 @@
   game gate. No item changed. This design and its checks still say `examples/swarm`, and ruling 1 is overtaken;
   a re-plan onto the gate is owed before M2 starts ([module list](../ARCHITECTURE.md#the-proving-ground-and-where-a-game-lives)).
 
+- 2026-11-20 Planner, from the cleanup review (L8-07): M1.1, M1.2 and M8.10 named files under `docs/evidence`, which the merge refuses; they now name this milestone's evidence. Nothing else changed, and the re-plan onto the games repository is still owed.

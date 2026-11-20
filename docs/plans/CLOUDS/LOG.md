@@ -550,3 +550,4 @@
   Fine shading terraces remain in some native crops. The dusk evidence records gaps between submitted frames.
   The [paired 1440p fixture](../../../tests/fixtures/clouds/low-sun-cost.json) records the loaded timing tripwires and the 32 MiB increase.
   The shared exact-image check supplies the verdict on the merged work.
+- 2026-11-20 Planner, from the cleanup review (L8-05, L8-07): M14.13's check searched two crate folders with `! grep`, which passes if either is renamed; it now searches all of `crates` and `examples`. M6.6, M12.4 and M12.9 named files under `docs/evidence`, which the merge refuses; they now name this milestone's evidence and the provenance record in the module's evidence folder. Where provenance records are kept in Git is an open assumption in [DEAD-TOOLS' plan](../DEAD-TOOLS/PLAN.md). All four milestones were Not Started.

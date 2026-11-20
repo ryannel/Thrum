@@ -30,3 +30,4 @@
   with `HOST`, so the sea's reduced-limit tests keep their inputs. Fixtures move to a second package,
   `thrum-fixtures`, which the proving ground may take as a normal dependency; the rule is `test-crate-edges`,
   settled with `GAME-SPLIT`. M2 now waits for `GAME-SPLIT:M2`.
+- 2026-11-20 Planner, from the owner's request "We want to do a code cleanup and consolidation for Thrum" and section 5 of the cleanup review: the design gained mechanism 6, the kit, and the plan gained M3 (readback, the prologue, waits and scratch through the kit) and M4 (one record reflection check, one cooked-game fixture). M3 waits for `GATE-TIME` M2 and `DEAD-CODE` M2, which delete tests and stubs in the same files, and M4 for `REVIEW-RENDER` M2. No item of M1 or M2 changed. The design is owed a review because its text changed.

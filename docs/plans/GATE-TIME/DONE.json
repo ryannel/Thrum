@@ -1,0 +1,310 @@
+{
+  "module": "GATE-TIME",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "A merge's check runs 60 seconds of gale and one turn of every authored loop, and the ten-minute gale and the stepped hour pass on main after each merge",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "`./dev check` runs the gale for 60 simulated seconds with the craft at rest, at 5 m/s and at 15 m/s, and makes every assertion the ten-minute run makes: no body leaves the surface, sinks, capsizes, or gains energy that the waves and its thrust did not give it. Its speed baseline is taken after the craft has spun up. The ten-minute run is an ignored test in the same binary, and it calls the same body.",
+          "check": "sh -c 'cargo test --locked --offline -p water-scene --test floating_gpu -- --list --ignored | grep -q \": test$\" && cargo test --locked --offline -p water-scene --test floating_gpu'",
+          "ask": "Read the test. Do the 60-second run and the ten-minute run call one body that differs only in its length? Is any assertion made over ten minutes not made over 60 seconds? Is the speed baseline taken after spin-up, with the tolerance as it was?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "`./dev check` steps the exit scene's 10,000 entities past the end of the longest authored loop, tick by tick through the game's own rules, so every mover has wrapped at least once, and makes every assertion the stepped hour makes, the count of static entities that moved among them. The hour is an ignored test in the same binary, and it calls the same body.",
+          "check": "sh -c 'cargo test --locked --offline -p v1-game --test exit_scene -- --list --ignored | grep -q \": test$\" && cargo test --locked --offline -p v1-game --test exit_scene'",
+          "ask": "Read the test. Is the short length worked out from the authored periods, so that a longer loop added later is still wrapped? Does the short run assert everything the hour asserts, through the same body?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "The ten-minute gale and the stepped hour run in a release build as the main-branch check `soak`, declared in `ORCHESTRATE.md` in the design's words, and pass on main at the claimed commit.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check soak",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "TEST-SUPPORT:M2"
+      ],
+      "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "`thrum-water`'s swash test runs in one test binary, where it ran in two.",
+          "check": "sh -c 'test \"$(cargo test --locked --offline -p thrum-water -- --list 2>/dev/null | grep -c \"submitted_depth_waterline_matches_the_cpu_wave_at_display_time: test\")\" -eq 1'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "`thrum-clouds`' GPU conformance runs once on the native device and once on WebGPU's default limits, where four test binaries made those two runs between them. Every assertion the four made is made by one of the two.",
+          "check": "sh -c 'test \"$(cargo test --locked --offline -p thrum-clouds -- --list 2>/dev/null | grep -cE \"(coarse_sun_paths_match_the_cpu_reference|broken_sky_factor_has_no_floor_or_border_switch|columns_and_integer_cells_match_the_cpu_at_their_written_tick|weather_and_sun_path_work_with_default_limits): test\")\" -le 2 && cargo test --locked --offline -p thrum-clouds'",
+          "ask": "How many times does `cargo test -p thrum-clouds` now run the weather loop and the Sun-path checks: once on the native device and once on default limits? Take the weather-map, Sun-path and continuity assertions of the four old files: is each still made in one of the two runs?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "The mixed-mesh field's frustum-only flythrough is gone, because the occlusion flythrough builds the same direct and frustum hosts and makes the same frustum assertions. The two flythroughs that are left run from one test binary.",
+          "check": "sh -c '! git grep -q \"fn mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough\" -- crates examples && git grep -q \"fn mixed_mesh_occlusion_matches_bucket_direct_through_first_cut\" -- examples && git grep -q \"fn field_culling_matches_direct_along_the_flythrough\" -- examples'",
+          "ask": "Does the occlusion flythrough still run the frustum host and assert on it exactly as the deleted test did? Do the two tests left build into one binary?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "The older copy of the cloud display-phase test is gone, and the display-phase test that `CLOUDS` M2.11 replaced it with is unchanged.",
+          "check": "sh -c 'test -z \"$(git ls-files \":(glob)examples/**/clouds_display_time_gpu.rs\")\" && test -n \"$(git ls-files \":(glob)examples/**/clouds_display_phase_gpu.rs\")\"'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "The atmosphere's Monte Carlo reference is not built or run by `./dev check`: the f64 path tracer, the quadrature, the random walks, their 198-case run and the tests of the reference itself are out of the tree. The night checks still run as they did. The twilight guard still runs and fails when the twilight product moves; its expected value is the one the reference gave at the starting commit, written in the test and in the log.",
+          "check": "sh -c '! git grep -q \"fn adaptive_refinement_and_direct_first_order_monte_carlo_agree\" -- crates && git grep -q \"fn night_profile_survives_sky_sampling_and_the_incident_reduction\" -- crates && cargo test --locked --offline -p thrum-render --lib atmosphere::gpu'",
+          "ask": "Is any f64 path tracer, quadrature or random-walk reference still compiled by `./dev check`? Does the night test assert what it asserted at the starting commit? Is the twilight guard's expected value the number the reference produced at the starting commit, with the log saying how it was taken, and is its bound as it was?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "The foam's ten-minute moored run passes on main after each merge, and a short window of it stays in the check",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M7"
+      ],
+      "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "`./dev check` runs the moored foam scenes, on the sea and on the lake, for a short window with every assertion the ten-minute run makes, and runs the wind sweep whole. The ten-minute run is an ignored test in the same binary, and it calls the same body.",
+          "check": "sh -c 'cargo test --locked --offline -p water-scene --test foam_scene_gpu -- --list --ignored | grep -q \": test$\" && cargo test --locked --offline -p water-scene --test foam_scene_gpu'",
+          "ask": "Read the test. Do the short window and the ten minutes call one body that differs only in its length? Does the log say why the window is long enough for a stock to leave zero if it is going to? Does mean foam cover still rise with wind across the three winds, in the check?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "The ten-minute moored run passes in a release build in the main-branch check `soak`, on main at the claimed commit.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check soak",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "Three tests that held GPU output to a reference are replaced by short tests of the behaviour: the mirror pool, the cooked cloud march and the scene-view shader text",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "REVIEW-RENDER:M2"
+      ],
+      "quality_bar": "As careful as a test-suite reduction in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "The mirror pool's test no longer holds the pool's composition to computed half-float bounds, and the air and panel witnesses that served only that proof are gone. A test still prepares and draws the pool on Metal and fails if the pool draws nothing.",
+          "check": "sh -c '! git grep -q \"fn the_pool_composes_both_stretches_once\" -- examples && cargo test --locked --offline -p mirror-scene --test pool_gpu'",
+          "ask": "Would the test that is left fail if the pool's contribution drew nothing, or was never prepared? Is anything still compared with a bound worked out from a model?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "In Chrome a secondary view still equals the main view, with no validation error: the fixture and its script case assert what they asserted.",
+          "check": "node scripts/check_mirror_browser.mjs --case view",
+          "ask": "Compare the view fixture and the script's `view` case with the starting commit: is every comparison and bound as it was?",
+          "target": "chrome-webgpu",
+          "lock": "chrome",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "The cooked cloud march is no longer held to an f64 transport sum. A short test draws through the real cooked contribution, with the cloud-factor shader variant: zero density leaves the sky as it was, density darkens it, and the test fails if the variant's text replacement did not match.",
+          "check": "sh -c '! git grep -q \"fn metal_cooked_march_uses_each_world_sample_and_preserves_sky\" -- crates && cargo test --locked --offline -p thrum-asset-gpu --lib'",
+          "ask": "Does the new test reach the cloud-factor variant of the cooked shader through the contribution a game uses, with no slicing of shader text in the test? Would it fail if the replacement that makes the variant matched nothing?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "With default features, `./dev check` compares, at one commit, the shader text composed with no view declared against the text composed with an empty observer, for each of the four air and shadow variants, and they are equal. The test that patched later shader edits back to a 16 November commit's hashes, and its patch table, are gone.",
+          "check": "sh -c '! git grep -q \"fn every_main_shader_variant_retains_its_pre_view_bytes\" -- crates && cargo test --locked --offline -p thrum-render --test scene_view_absent_gpu -- --list | grep -q \": test$\" && cargo test --locked --offline -p thrum-render --test scene_view_absent_gpu'",
+          "ask": "Does a test in this file run with default features, and does it cover all four variants? Would a view record or binding that reached the default shader fail it?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "The check builds and runs its tests the fastest way a measurement supports, and the record says how long a merge's check takes now",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "DEAD-TOOLS:M2"
+      ],
+      "quality_bar": "As measured as a build-profile change in a well-kept Rust workspace such as Bevy's or wgpu's: timed both ways on one commit before it is switched on, with the same tests passing after as before.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "The record times `./dev check` on one commit three ways: as it is; with dependencies optimised in test builds; and with test binaries run by nextest, GPU tests held to two at once. Each way is run twice, alternating, and each run has its wall time, the load average and what else was running.",
+          "ask": "Does the record hold two runs of each of the three arrangements on one commit, alternated and not grouped, each with its load? Is the build time of a changed profile counted in its runs or stated beside them?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "An arrangement is on in `./dev check` only if both of its runs were shorter than both runs of the check as it was. One that did not win is left out, and the record says so. Test builds keep debug assertions and overflow checks. Where nextest is on, a machine without it still runs every test through `cargo test`, doc tests still run, and tests that share a device through an in-process lock run one at a time.",
+          "ask": "Read the record and the diff. Is each arrangement that is on one that won both ways? Do test builds keep debug assertions and overflow checks? If nextest is on: what runs where it is not installed, do doc tests run, and are the files that guard GPU residency or device loss with a mutex held to one test at a time?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "Every test that ran and passed in `./dev check` before this milestone runs and passes now on this Mac, and none is skipped: the record holds the test results before and after, the later run made with `THRUM_REQUIRE_GPU=1`.",
+          "ask": "Compare the two recorded runs test by test, not their totals: does every test that reported ok before report ok after? Does the later run hold any `thrum-gpu-skip:` line?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "The record gives a merge's check time at this module's start, 33 to 38 minutes on 20 November, and now, on this Mac with the load recorded, and `CONTRIBUTING.md` says what `./dev check` runs and what the main-branch check `soak` runs after the merge.",
+          "ask": "Does the record's time for the check now come from a run of `./dev check` at the claimed commit, with its load? Does `CONTRIBUTING.md` name the soaks and how to run one by hand?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

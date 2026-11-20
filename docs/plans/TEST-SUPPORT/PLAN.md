@@ -26,3 +26,20 @@ change anything: M1.4 compares against them.
 This waits for `HOST` M1, so that the device is the recipe's, for the milestones other builders hold in the
 renderer's tests, and for `GAME-SPLIT` M2, which removes the `#[path]` includes of game source; what is left is
 sharing inside a crate. Record `cargo test --workspace`'s results before you start.
+
+## M3 A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file
+
+This is [the kit](DESIGN.md#the-kit), from section 5 of the cleanup review of 20 November; each finding's sites
+are in that review's `results.json` and `verified/` folder, at the path the design gives. It waits for `GATE-TIME`
+M2 and `DEAD-CODE` M2, which delete duplicate tests and about 140 stub methods in the same files, so there is
+less to convert. Record the test results before you start, as M2 did. `REVIEW-RENDER` M5.1 and `HOST` M3.2 run
+`frame_alloc`, which is the game's and is left alone. `HOST` M3 reworks frame capture, so keep any capture helper
+thin.
+
+## M4 Each crate's WGSL records are held to its Rust structs by one shared check, and the game's cooked tests build their game through one fixture
+
+`REVIEW-RENDER` M2 owns the renderer's checker in `crates/thrum-render/tests/wgsl_records.rs` and its plan
+already asks for one shape shared with the sea, so this waits for it and starts from what it left. The cooked
+tests are `cooked_assets_gpu.rs` and `cooked_material_gpu.rs` in the game: their two device openers differ on
+purpose, and serialising the material tests adds wall time, so say in the log what the fixture did to the run's
+length.

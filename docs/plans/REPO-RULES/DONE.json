@@ -162,8 +162,11 @@
         "REVIEW-RENDER:M5",
         "REVIEW-ENGINE:M5",
         "HOST:M5",
-        "TEST-SUPPORT:M2",
-        "GAME-SPLIT:M3"
+        "TEST-SUPPORT:M4",
+        "GAME-SPLIT:M3",
+        "GATE-TIME:M5",
+        "DEAD-TOOLS:M4",
+        "DEAD-CODE:M6"
       ],
       "quality_bar": "A reorganisation as clean as rust-lang's or Bevy's crate renames: one landing, no change of behaviour, history follows each file, nothing is left with two names, and an agent landing cold can guess where a thing lives.",
       "items": [

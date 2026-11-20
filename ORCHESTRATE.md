@@ -32,7 +32,10 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 ## Starting from a clean clone
 `./dev help` lists the commands; `./dev check` builds and tests the workspace. Builders work in their own worktree on
 a `build/<module>` branch and push `HEAD:main`. Large captures and recordings go in `tmp/<task>/` under
-[the storage rules](docs/ASSET-LIFECYCLE.md); only selected evidence is committed.
+[the storage rules](docs/ASSET-LIFECYCLE.md). Evidence is never committed: run records, reviews and captures go in
+the working folder, `.orchestrate/evidence/<MODULE>/`, and the merge refuses a new or changed file under
+`docs/evidence`. Data that a check reads is test data, kept in `tests/fixtures/<module>/` or beside the crate's
+tests.
 
 ## Targets
 
@@ -83,6 +86,15 @@ Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on
   Ready for Review. *(lead, 18 Nov 2026, on the owner's bar of 17 Nov; from 15 Nov every last milestone asked
   for a paused sitting, and `CULLING` M3 and `SCENE-VIEWS` M3 each stopped on it)*
 
+- **A Done item's check is its record.** Nothing runs a Done milestone's item checks again: the script compares
+  only what the item asks for, and `./dev check` never reads a done-when file. So later work may move, rename,
+  merge or delete a file, a test target or a script that only Done items name, and it leaves the Done item's
+  text as it was. Nobody edits a Done item to follow a move, because a changed item un-Dones its milestone.
+  Three things still bind: a name an open item's check uses, a registered exact baseline with its comparison
+  files, and what `./dev check` runs. A test that `./dev check` runs is still a proof, so deleting or
+  shortening one is planned as an item that says what guards the behaviour afterwards. *(planner, 20 Nov 2026,
+  from the cleanup review: about 770 path mentions in Done items were being treated as frozen)*
+
 Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
 
 ## What is proved, and how hard
@@ -112,6 +124,18 @@ reviewers judge by them.
   the last review found and what the fix touched. A tripwire record passes on its check alone, with a reviewer's
   question only in a module's last milestone. An evidence item that costs
   more than the fault it would catch is not written.
+
+Three rules for how a planner words an item *(planner, 20 Nov 2026, from the cleanup review)*:
+
+- **An item names a behaviour, not a place.** It says what must be true of the engine, a tool or a record, and
+  names a file only where that file is the thing delivered. `SHOWCASE` M9.6 failed review over a move that kept
+  every byte, because its items named folders.
+- **A check that asserts absence fails when its subject is missing.** `! grep X path` and `test ! -e path` pass
+  when `path` has moved, so the check proves nothing from then on. Search the whole of `crates` and `examples`
+  with `git grep`, count what must exist exactly once, or test first that the thing searched is there.
+- **No item asks for a tracked file under `docs/evidence`.** The merge refuses one. A record a reviewer reads is
+  "this milestone's evidence", in the working folder. A file that a later check reads is test data, and the
+  item says so.
 
 A milestone that was In Progress or Ready for Review on 17 November 2026 keeps the items it was approved with.
 

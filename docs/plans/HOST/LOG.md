@@ -29,3 +29,4 @@
   reconfigures a lost drawable before reporting persistent failure, and offscreen uses the shared lifecycle policy.
   On Mac Metal the offscreen driver recorded one overload, resumed and submitted later frames. The Mac extent
   switch and recovery use the same scoped configure operation. [Evidence](../../../.orchestrate/evidence/HOST/M2/README.md#review-fixes)
+- 2026-11-20 Planner, from the cleanup review (L8-05): the checks of M3.2 and M4.5 used `! grep` on one path, which passes when that path has moved. Each now counts across `crates` and `examples` and passes only when exactly one definition is left (the engine's `FrameHost`; `thrum-app`'s `SAMPLE_SLOTS`). Neither statement changed. Both milestones were Not Started.

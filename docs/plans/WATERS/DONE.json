@@ -2071,7 +2071,7 @@
         {
           "id": "M11.4",
           "statement": "Each Apple-tile variant of a water or wave kernel that was tried is on record as a paired run against the portable kernel, with stills of the same views that show no visible difference and the body query's tests still passing. One is in use only if its win is beyond the spread of repeated runs.",
-          "ask": "Does `docs/evidence/WATERS/M11-recipes.md` give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
+          "ask": "Does this milestone's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2136,8 +2136,8 @@
         },
         {
           "id": "M11.10",
-          "statement": "The maturity ledger's `E1.water` row and `docs/evidence/WATERS/PROVENANCE.md` are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
-          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance file match the files in the water's packages, and is any listed material GPL or share-alike?",
+          "statement": "The maturity ledger's `E1.water` row and the module's provenance record, `PROVENANCE.md` in its evidence folder, are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
+          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the water's packages, and is any listed material GPL or share-alike?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

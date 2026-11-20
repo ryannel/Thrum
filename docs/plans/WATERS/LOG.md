@@ -524,3 +524,4 @@
   replacement. Hardware Chrome measured whitecaps and the trail after craft removal.
   The paired 1440p cost record retains the sea timestamp fault and completion brackets.
   [Target evidence](../../../.orchestrate/evidence/WATERS/M7/README.md).
+- 2026-11-20 Planner, from the cleanup review (L8-07): M11.4 and M11.10 named files under `docs/evidence`, which the merge refuses; they now name this milestone's evidence and the provenance record in the module's evidence folder. Where provenance records are kept in Git is an open assumption in [DEAD-TOOLS' plan](../DEAD-TOOLS/PLAN.md). M11 was Not Started. [Track 6](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) moves the ten-minute gale and foam runs out of `./dev check`; no item of this module changed for it.

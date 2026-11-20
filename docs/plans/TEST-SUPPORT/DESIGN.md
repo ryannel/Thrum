@@ -1,6 +1,8 @@
 # Test support: one GPU gate, one test device, shared fixtures
 
-14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/TEST-SUPPORT/design-review.md).
+14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/TEST-SUPPORT/design-review.md),
+and on 20 November, when [the kit](#the-kit) and M3 and M4 were added from the cleanup review. Nothing M1 or M2
+is held to changed.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
@@ -88,6 +90,49 @@ fixture, because the visibility tests are held until then; after it, the field's
 `whole-file-gpu-gate` and `path-attribute` are [REPO-RULES](../REPO-RULES/DESIGN.md)' ratchets. This module brings
 them to zero: first in the crates no builder is working in, then across the renderer and the examples.
 
+<a id="the-kit"></a>
+
+**6. The kit: a job every GPU test repeats is written once.** Added 20 November 2026 from section 5 of the
+cleanup review, which is kept in the main checkout at `/Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/`
+(`REPORT.md`, with each finding and its verifier's note in `results.json`). After M2 every GPU test goes through
+the gate, but each file still writes the same jobs by hand: about 44 staging readbacks, a gate-and-device
+prologue in 160 tests, five reflection tests of WGSL records, and its own frame waits, scratch folders and image
+writers. The kit is in `thrum-test-support`, which every engine test already depends on. It covers tests under
+`crates/` and the kit scenes; the game's own tests keep their helpers, because they leave with the game and may
+use only the public API.
+
+- **Readback** (R4-01, L7-06, L3-01, R5-08), in wgpu types only: read a buffer, or one mip and layer of a
+  texture, or a byte range of either, with one bounded wait. It has two forms, because some tests must read
+  inside the encoder under test: one submits its own copy, and one appends the copy to the caller's encoder and
+  waits on that submission. A site that does a different job keeps its code and is exempted by name in the rule,
+  with its reason: a test that yields to a browser timer on wasm, one that maps a range the engine copied into
+  itself inside the host's retirement loop, and those that poll the host between submissions on purpose. The
+  rule `test-readback`, a [REPO-RULES](../REPO-RULES/DESIGN.md) ratchet, finds a buffer mapped for reading in a
+  test file outside the kit.
+- **The prologue** (R4-03, R5-06): one call asks the gate for a GPU, on Metal where the test says so, opens the
+  recipe's device by profile and restriction, and returns the device and queue, with the capabilities through
+  the `render` feature. By mechanism 3 a value typed by `thrum-render` cannot reach `thrum-render`'s own unit
+  tests, so those keep calling the recipe, and a local wrapper that differs for a real reason (a fresh adapter,
+  a hardware override, a generation) shrinks to a call and stays. A test that asserted Metal keeps failing
+  without it on this Mac: the prologue never turns that failure into a skip here.
+- **Waiting, scratch and images** (G2-06, L1-08): one wait with a deadline, for a frame's completion and for
+  the deadline loops tests write by hand; one scratch folder that removes itself; one PPM writer; and a counting
+  allocator type. A `#[global_allocator]` cannot live in a crate every test links, so each binary that counts
+  declares its own static of the kit's type. Quantiles are not shared, because one rule would move recorded
+  tripwire percentiles by a rank. A test that fails because the clock refuses under overload is not made to
+  pass by a longer deadline, and is left as it is.
+- **Record reflection** (L6-01, L3-02): one check that a crate's WGSL records match its Rust structs in member
+  offset, size and scalar kind, built from the renderer's checker. It takes a declarations-only source and
+  member aliases, because water's and the asset crate's shaders do not parse alone and name members differently.
+  The sea, the asset crate, water and clouds call it, and the three copies of the bound-struct walk and the
+  sea's second layout type go. Each crate's `wgsl_records` test target keeps its name, which open and Done
+  checks run. A check that does more stays: the view record's literal offsets, and naga validation of the cloud
+  and weather shaders.
+- **The cooked game** (G2-07): the game's cooked tests build the same cooked game about twenty times, in two
+  shapes. One fixture in the game's test support makes the scratch store, the cook, the device for a draw path
+  and the host. Each case keeps its assertions and the device it had: the generation it passed to the recipe
+  and its assertion on the execution path.
+
 ## Interfaces
 
 | Interface | For |
@@ -96,6 +141,7 @@ them to zero: first in the crates no builder is working in, then across the rend
 | The test device, from the recipe, by profile and optional restriction | Every GPU test outside `thrum-render` |
 | `thrum-fixtures`: fixtures as plain data, one definition each | `thrum-render`'s tests (dev-dependency), the proving ground (normal dependency) |
 | `test_role` and `proving_ground` in `.config/architecture.toml`, and the `test-crate-edges` rule | `REPO-RULES`' `library-env`, `GAME-SPLIT`'s boundary |
+| The kit: readback, the prologue, the wait, scratch folders, the PPM writer and the counting allocator type; the record reflection check through the `render` feature | Every GPU test under `crates/` and in the kit scenes |
 
 ## Not built here
 
@@ -109,6 +155,10 @@ Change an assertion, a bound or a reference in any test; remove a test; turn a t
 that skips; edit a registered baseline.
 
 ## Proof
+
+The kit is proved as adoption was: by its rule's count, by the tests' results from the same command before and
+after with a GPU required, and by a reviewer reading that no assertion, bound or device changed in a converted
+test. The kit's own functions have tests in the support package.
 
 The gate is proved from outside: its tests run a child test process with the adapter forced absent and read the
 child's exit code and output, in both modes. Adoption is proved by the rules at zero, and by what ran: the tests'

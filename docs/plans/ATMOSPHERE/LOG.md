@@ -640,3 +640,4 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   gains M6.9, the verifier, with leave to refresh `APPLE-TILE`'s sets once for a change to the look. The design says what a
   brightness step and a warm ridge mean, so that a depth edge and a sunlit crest pass. M6.1 to M6.8 are unchanged. M10's
   note in the plan shrank to its review link. The design has not been reviewed since this change.
+- 2026-11-20 Planner, from the cleanup review (L8-07): M8.8's ask named a file under `docs/evidence`, which the merge refuses; it now names this milestone's evidence. M8 was Not Started.

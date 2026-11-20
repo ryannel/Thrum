@@ -170,3 +170,4 @@
   1 m, by wavelength wherever the source lies, so a source outside the fine window raises no wave under 1 m). Suggestion taken:
   the module handoff and ruling 2 now name `WATERS:M6`'s GPU interaction step, not a CPU reference. M2's note left the plan, as
   M2 is Done.
+- 2026-11-20 Planner, from the cleanup review (L8-07): M7.12's ask named the design proof under `docs/evidence`, a path that no longer exists; it now names the copy in the module's evidence folder. M7 was Not Started.

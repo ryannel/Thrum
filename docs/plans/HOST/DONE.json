@@ -185,7 +185,7 @@
         {
           "id": "M3.2",
           "statement": "The game, the iPhone app and the benches hold `thrum_render`'s frame host. The game's forwarding host is gone, and what stands in its place is the game's scene, its world and its own controls.",
-          "check": "sh -c '! grep -rq \"pub struct FrameHost\" examples/v1-game/src && cargo test --locked --offline -p v1-game --test host_gpu --test frame_alloc'",
+          "check": "sh -c 'test \"$(git grep -h \"pub struct FrameHost\" -- crates examples | wc -l)\" -eq 1 && cargo test --locked --offline -p v1-game --test host_gpu --test frame_alloc'",
           "lock": "gpu",
           "ask": "List the public items of the game's library that only forward to the engine runtime: are there any? Does the iPhone app or any bench reach the engine through a type of the game's?",
           "target": "mac-metal",
@@ -272,7 +272,7 @@
         {
           "id": "M4.5",
           "statement": "The render owner's frame job and reply are one pair of platform-neutral types in `thrum-app`, used by the Mac render actor and by the iPhone app's render owner. What `examples/v1-game-ios` still holds that `thrum-app` also holds is on the design's list of what `GAME-UI` M6 moves, and nothing else.",
-          "check": "sh -c '! grep -q \"SAMPLE_SLOTS: usize\" examples/v1-game-ios/src/ios/render.rs && python3 scripts/host_lifecycle.py check --target ios-sim'",
+          "check": "sh -c 'test \"$(git grep -h \"const SAMPLE_SLOTS: usize\" -- crates examples | wc -l)\" -eq 1 && python3 scripts/host_lifecycle.py check --target ios-sim'",
           "lock": "simulator",
           "ask": "List what the iPhone app's render owner and `thrum-app`'s render actor both still define. Is each entry the owner thread, the UIKit lifecycle, the surface lease, touch or the command table, which the design leaves to `GAME-UI` M6? Is the device request, the lifecycle policy, the outcome mapping, the frame host or the frame job and reply defined twice anywhere?",
           "target": "ios-sim",

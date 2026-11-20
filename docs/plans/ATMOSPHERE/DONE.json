@@ -607,7 +607,7 @@
         {
           "id": "M8.8",
           "statement": "The number of sampled textures each forward pipeline and the view volume's passes bind, with a ground band and a medium provider registered, is on record against the capability record and WebGPU's default limits, and every count is within its limit.",
-          "ask": "Does `docs/evidence/ATMOSPHERE/M8-bindings.md` give the count for each pipeline and the limit it was checked against?",
+          "ask": "Does this milestone's evidence give the count for each pipeline and the limit it was checked against?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

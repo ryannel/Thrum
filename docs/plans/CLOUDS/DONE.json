@@ -843,9 +843,9 @@
         },
         {
           "id": "M6.6",
-          "statement": "The example's library is the accepted one: the six fair, three mediocris and three congestus volumes and the eleven keys of the congestus growth track are in the game as stacked volume products, cooked by a committed tool from files copied unchanged, with footprints derived by the model's function. Each slab's voxels hash to the value recorded for it at the source, the library's licence record is beside it, and `docs/evidence/CLOUDS/PROVENANCE.md` lists every copied file with its source commit and path.",
+          "statement": "The example's library is the accepted one: the six fair, three mediocris and three congestus volumes and the eleven keys of the congestus growth track are in the game as stacked volume products, cooked by a committed tool from files copied unchanged, with footprints derived by the model's function. Each slab's voxels hash to the value recorded for it at the source, the library's licence record is beside it, and the module's provenance record, `PROVENANCE.md` in its evidence folder, lists every copied file with its source commit and path.",
           "check": "cargo test --locked --offline -p v1-game --test clouds_library",
-          "ask": "Does the provenance file match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides records the design names, and not from the cooked products?",
+          "ask": "Does the provenance record match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides records the design names, and not from the cooked products?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1472,7 +1472,7 @@
         {
           "id": "M14.13",
           "statement": "Cloud light has one Sun term and one read of the depths it takes. The medium-coefficient pass and the trace call one shader function for the term and one for the depths at a world point, and the solar kernel is that term without the Sun. The boundary weight is the design's function of distance from the camera, 0 to the end of the ramp, so the pass gives the term no view depth. The four fixed orders are gone from the model, its tests and the renderer.",
-          "check": "! grep -rnw Orders crates/thrum-cloud-model crates/thrum-clouds",
+          "check": "sh -c '! git grep -qw Orders -- crates examples'",
           "ask": "Do the medium-coefficient pass and the trace call one Sun-term function and one depth function, with no second copy of either? Is the boundary weight 0 wherever the near weight is above 0? Do `thrum-cloud-model`'s tests still pass with no source that comes from `Orders`?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1966,7 +1966,7 @@
         {
           "id": "M12.4",
           "statement": "Each Apple-tile variant of a cloud kernel that was tried is on record as a paired run against the portable kernel, with stills of the same views that show no visible difference. One is in use only if its win is beyond the spread of repeated runs.",
-          "ask": "Does `docs/evidence/CLOUDS/M12-recipes.md` give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
+          "ask": "Does this milestone's evidence give each variant's paired rows and the decision, and does the Apple recipe report which kernels it resolved?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2021,8 +2021,8 @@
         },
         {
           "id": "M12.9",
-          "statement": "The maturity ledger's `E1.clouds` row and `docs/evidence/CLOUDS/PROVENANCE.md` are current: implementation, correctness, visuals and device kept apart, what is not built and the device runs owed are listed, and every lifted file is named with its source commit, path and licence.",
-          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance file match the files in the two crates and the two games?",
+          "statement": "The maturity ledger's `E1.clouds` row and the module's provenance record, `PROVENANCE.md` in its evidence folder, are current: implementation, correctness, visuals and device kept apart, what is not built and the device runs owed are listed, and every lifted file is named with its source commit, path and licence.",
+          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the two crates and the two games?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

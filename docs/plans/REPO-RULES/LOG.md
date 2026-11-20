@@ -78,3 +78,4 @@
   [The record](../../../.orchestrate/evidence/REPO-RULES/M1-native-capture-failure-record.json) and compressed runtime/manifest
   retain the diagnosis. CPU/inventory evidence was refreshed independently. Retrying the full verifier
   unchanged tests whether the capture pressure is transient; no capacity, comparison or reference changes.
+- 2026-11-20 Planner, for [track 6](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november): M3 now also waits for `GATE-TIME` M5, `DEAD-TOOLS` M4, `DEAD-CODE` M6 and `TEST-SUPPORT` M4, in place of `TEST-SUPPORT` M2. The cleanup deletes and converts code in the files M3 renames and splits, so the one rename lands after it and carries no dead code through. No item changed. M3 was Not Started.
