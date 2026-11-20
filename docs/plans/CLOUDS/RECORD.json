@@ -473,7 +473,54 @@
     },
     "M5": {
       "definitions": "380248ecd97dfddcd48caa17c62644815f8901d6b084116deb200c8899a473d0",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "8f53f1d2b475ad24eb6127fa56a147df74fc7118",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md",
+          "items": {
+            "M5.2": "pass",
+            "M5.3": "fail",
+            "M5.4": "pass",
+            "M5.6": "fail",
+            "M5.7": "pass",
+            "M5.8": "pass",
+            "M5.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Low-Sun receiving cloud breaks into horizontal shadow bands",
+              "item": "M5.3",
+              "repeat": false
+            },
+            {
+              "name": "Chrome reproduces striped shading across the 10-degree Sun",
+              "item": "M5.6",
+              "repeat": false
+            },
+            {
+              "name": "Metal cloud route preparation rejects valid opening camera angles",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 123714,
+            "cached": 4267904,
+            "output": 12303,
+            "turns": 1
+          },
+          "at": "2026-11-20T08:02:09Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",

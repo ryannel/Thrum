@@ -678,8 +678,8 @@
     {
       "id": "M5",
       "name": "Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -692,18 +692,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m52-noon-on-metal",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
         {
           "id": "M5.3",
           "statement": "At a 10\u00b0 and a 4\u00b0 Sun, Sun-facing sides take warm light, clouds shade each other across the field, edges toward the Sun carry a silver lining that is a bright rim close to the Sun and not a glow across the sky, against the Sun thin edges are brighter than thick cores, and clouds seen with the Sun behind the viewer are bright.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 and a 4\u00b0 Sun, looking toward, across and away from it. Judge each whole and in native-size crops of a backlit edge, a lit flank and a cloud in another's shade.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m53-grazing-sun-on-metal",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -712,18 +712,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m54-sunset-and-night-on-metal",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
         {
           "id": "M5.6",
           "statement": "In Chrome, at noon, at a 10\u00b0 Sun, at 0\u00b0 and at \u22126\u00b0, the sky passes M5.2's, M5.3's and M5.4's lists, and a pan across the Sun passes M5.8's.",
           "inspect": "Capture the same `fixed` stills in Chrome at those four Sun elevations. Judge them by those lists, then compare native-size crops with the Mac's. Capture the `realtime` pan of M5.8 in Chrome and judge it the same way.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m56-chrome-webgpu",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
         {
           "id": "M5.7",
@@ -733,8 +733,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m57-paired-metal-cost",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
         {
           "id": "M5.8",
@@ -743,8 +743,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M5/README.md#m58-held-30-aureole-on-metal",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
         },
         {
           "id": "M5.9",
@@ -753,8 +753,24 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Low-Sun receiving cloud breaks into horizontal shadow bands",
+          "item": "M5.3",
+          "repeat": false
+        },
+        {
+          "name": "Chrome reproduces striped shading across the 10-degree Sun",
+          "item": "M5.6",
+          "repeat": false
+        },
+        {
+          "name": "Metal cloud route preparation rejects valid opening camera angles",
+          "repeat": false
         }
       ]
     },
