@@ -282,8 +282,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 - From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows (SHOWCASE M9): Not Started · [plan](SHOWCASE/PLAN.md)
 - The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore (WATERS M6): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/M6-review.md)
 - The same sky and the same shade draw in Chrome (CLOUDS M4): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M4-review.md)
-- Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still (RENDER-2D M2): Not Started · [plan](RENDER-2D/PLAN.md)
-- A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up (SESSION M3): Ready for Review · [plan](SESSION/PLAN.md) · [latest review](../../.orchestrate/evidence/SESSION/M3-review.md)
+- Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still (RENDER-2D M2): In Progress · [plan](RENDER-2D/PLAN.md)
+- A player's own character answers at once, while the crowd stays exact (SESSION M4): Not Started · [plan](SESSION/PLAN.md)
 - Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]` (TEST-SUPPORT M2): Not Started · [plan](TEST-SUPPORT/PLAN.md)
 - Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test (REVIEW-RENDER M2): Ready for Review · [plan](REVIEW-RENDER/PLAN.md)
 - Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app (HOST M2): In Progress · [plan](HOST/PLAN.md) · [latest review](../../.orchestrate/evidence/HOST/M2-review.md)
@@ -291,6 +291,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up (SESSION M3), 20 Nov · [review](../../.orchestrate/evidence/SESSION/M3-review.md)
 - The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome (SHOWCASE M6), 19 Nov · [review](../../.orchestrate/evidence/SHOWCASE/M6-review.md)
 - A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome (RENDER-2D M1), 19 Nov · [review](../../.orchestrate/evidence/RENDER-2D/M1-review.md)
 - One device recipe: the Mac window, the browser page, the iPhone app, captures and benches ask for their device the same way and answer a GPU fault the same way (HOST M1), 19 Nov · [review](../../.orchestrate/evidence/HOST/M1-review.md)
@@ -386,8 +387,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M2 of 5 · Not Started |
-| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M3 of 7 · Ready for Review |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M2 of 5 · In Progress |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M4 of 7 · Not Started |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, TEST-SUPPORT:M2, GAME-SPLIT:M3 |
