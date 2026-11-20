@@ -151,6 +151,33 @@ impl TargetPreparation {
         &self.capabilities
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn resize_secondary(
+        &mut self,
+        extents: &[[u32; 2]],
+        job: crate::contribution::SecondaryResizeJob,
+    ) -> Result<
+        (
+            crate::synthetic::secondary::SecondarySet,
+            crate::contribution::SecondaryResize,
+        ),
+        FrameError,
+    > {
+        let TargetInputs::ThreeD(inputs) = &mut self.inputs else {
+            unreachable!("secondary views belong to 3D scenes");
+        };
+        let views = inputs.resize_secondary(extents);
+        let replacement = job(views.handles())?;
+        replacement.graph.validate().map_err(FrameError::Scene)?;
+        let pass_count = |graph: &crate::contribution::EffectGraph| {
+            u32::try_from(graph.passes.len() + graph.after_opaque.len()).expect("validated graph")
+        };
+        self.passes =
+            self.passes - pass_count(&inputs.effect_graph) + pass_count(&replacement.graph);
+        inputs.effect_graph.clone_from(&replacement.graph);
+        Ok((views, replacement))
+    }
+
     pub(super) fn new(prepared: &PreparedRenderer) -> Self {
         let (inputs, timing) = match prepared {
             PreparedRenderer::ThreeD(scene) => (

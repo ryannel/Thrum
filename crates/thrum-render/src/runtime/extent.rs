@@ -10,8 +10,9 @@ use {
         submitted_capture::{Tap, TapSpec},
     },
     crate::{
+        contribution::{SecondaryResize, SecondaryResizeJob, SecondaryViewSlot},
         present::{PresenterInputs, SurfacePresenter},
-        synthetic::CaptureSource,
+        synthetic::{CaptureSource, secondary::SecondarySet},
     },
     std::sync::atomic::{AtomicBool, Ordering},
 };
@@ -31,12 +32,16 @@ pub struct ExtentPrepareInputs {
     generation: u64,
     source: CaptureSource,
     capture: Option<TapSpec>,
+    capture_owner: Option<Arc<()>>,
+    secondary: Option<(Vec<[u32; 2]>, SecondaryResizeJob)>,
 }
 
 /// A fully bound generation that can be taken after the surface configures.
 #[cfg(not(target_arch = "wasm32"))]
 pub struct PreparedExtent {
     capture: Option<Tap>,
+    capture_owner: Option<Arc<()>>,
+    secondary: Option<(SecondarySet, SecondaryResize)>,
     extent: [u32; 2],
     slots: Vec<FrameSlot>,
     presenter: SurfacePresenter,
@@ -50,7 +55,7 @@ impl ExtentPrepareInputs {
     /// detached resources there while the host may keep presenting.
     /// # Errors
     /// Returns a preparation, allocation or validation fault for this request.
-    pub fn build(self, cancel: &AtomicBool) -> Result<Option<PreparedExtent>, FrameError> {
+    pub fn build(mut self, cancel: &AtomicBool) -> Result<Option<PreparedExtent>, FrameError> {
         if cancel.load(Ordering::Acquire) {
             return Ok(None);
         }
@@ -60,6 +65,10 @@ impl ExtentPrepareInputs {
         let allocation = self.device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
         let validation = self.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let result = (|| {
+            let secondary = self
+                .secondary
+                .map(|(extents, job)| self.targets.resize_secondary(&extents, job))
+                .transpose()?;
             let presenter = self
                 .presenter
                 .prepare(self.extent, self.extent)
@@ -91,6 +100,8 @@ impl ExtentPrepareInputs {
                 .transpose()?;
             Ok(Some(PreparedExtent {
                 capture,
+                capture_owner: self.capture_owner,
+                secondary,
                 extent: self.extent,
                 slots,
                 presenter,
@@ -148,6 +159,21 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .presenter
             .as_ref()
             .ok_or(FrameError::InvalidState("host has no surface presenter"))?;
+        let mut secondary = None;
+        if let (Some(scene), Some(contribution)) = (self.prepared.three_d(), &self.contribution) {
+            let slots = contribution.secondary_view_slots();
+            SecondaryViewSlot::validate(&slots, extent, self.prepared.capabilities().limits())
+                .map_err(|error| FrameError::Scene(error.to_string()))?;
+            let extents: Vec<_> = slots.iter().map(|slot| slot.extent(extent)).collect();
+            if extents.iter().copied().ne(scene.secondary_extents()) {
+                let job = contribution
+                    .secondary_resize_job()?
+                    .ok_or(FrameError::InvalidState(
+                        "missing secondary view resize job",
+                    ))?;
+                secondary = Some((extents, job));
+            }
+        }
         Ok(ExtentPrepareInputs {
             extent,
             device: self.device.clone(),
@@ -159,13 +185,21 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             generation: self.generation,
             source: self.slots[0].target.capture_source(),
             capture: self.submitted_capture.as_ref().map(|tap| tap.spec),
+            capture_owner: self.submitted_capture.as_ref().map(|tap| tap.owner()),
+            secondary,
         })
     }
 
     /// Validate a finished generation before the platform enters configure.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn admits_extent(&self, candidate: &PreparedExtent) -> bool {
-        candidate.generation == self.generation && Arc::ptr_eq(&self.visual_owner, &candidate.owner)
+        candidate.generation == self.generation
+            && Arc::ptr_eq(&self.visual_owner, &candidate.owner)
+            && match (&self.submitted_capture, &candidate.capture_owner) {
+                (Some(tap), Some(owner)) => tap.owns(owner),
+                (None, None) => true,
+                _ => false,
+            }
     }
 
     /// Take a generation after the matching configure succeeds. The old
@@ -173,6 +207,33 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Returns false for a stale device or scene preparation.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn publish_extent(&mut self, candidate: PreparedExtent) -> bool {
+        self.take_extent(candidate, true)
+    }
+
+    /// Adverse control for the generation transition proof. At the same output
+    /// grid, carry both the old reconstruction textures and submitted history
+    /// state into the replacement generation.
+    #[doc(hidden)]
+    #[cfg(all(target_os = "macos", feature = "creation-counters"))]
+    pub fn publish_extent_keeping_history_for_test(
+        &mut self,
+        mut candidate: PreparedExtent,
+    ) -> bool {
+        if candidate.extent != self.render_extent || !self.admits_extent(&candidate) {
+            return false;
+        }
+        if let Some(prepared) = self.prepared.three_d() {
+            let inputs = prepared.target_inputs();
+            for slot in &mut candidate.slots {
+                slot.target
+                    .share_reconstruction_history(&inputs, &self.slots[0].target);
+            }
+        }
+        self.take_extent(candidate, false)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn take_extent(&mut self, candidate: PreparedExtent, reset_history: bool) -> bool {
         if !self.admits_extent(&candidate) {
             return false;
         }
@@ -183,11 +244,22 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .filter(|slot| !matches!(slot.state, SlotState::Free)),
         );
         self.presenter = Some(candidate.presenter);
+        if let Some((views, replacement)) = candidate.secondary {
+            self.prepared.publish_secondary_extent(views);
+            let graph = replacement.publish(
+                self.contribution
+                    .as_deref_mut()
+                    .expect("secondary view owner"),
+            );
+            self.prepared.set_effect_graph(graph);
+        }
         self.switch_capture_extent(candidate.capture);
         self.render_extent = candidate.extent;
         self.presenter_generation += 1;
         self.visual_owner = Arc::new(());
-        self.reset_replacement_history();
+        if reset_history {
+            self.reset_replacement_history();
+        }
         true
     }
 

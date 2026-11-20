@@ -53,7 +53,7 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) air_shadow: Option<AirShadowPrepared>,
     pub(super) atmosphere: Option<AtmospherePrepared>,
     pub(super) contribution_passes: ContributionPasses,
-    pub(super) effect_graph: crate::contribution::EffectGraph,
+    pub(crate) effect_graph: crate::contribution::EffectGraph,
     pub(super) visibility: Option<VisibilityPrepared>,
     pub(super) stars: Option<StarPrepared>,
     pub(super) secondary: Vec<secondary::SecondaryPrepared>,

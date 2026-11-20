@@ -44,6 +44,15 @@ struct Prepared {
     environment: EnvironmentProducts,
     group: wgpu::BindGroup,
     pipeline: wgpu::RenderPipeline,
+    bindings: PoolBindings,
+}
+
+#[derive(Clone)]
+struct PoolBindings {
+    device: wgpu::Device,
+    layout: wgpu::BindGroupLayout,
+    params: wgpu::Buffer,
+    sampler: wgpu::Sampler,
 }
 
 impl Pool {
@@ -156,6 +165,40 @@ impl SceneContribution for Pool {
             SecondaryViewSlot::new(1.0).expect("full extent");
             1 + usize::from(self.cost_requests.is_some())
         ]
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn secondary_resize_job(
+        &self,
+    ) -> Result<
+        Option<thrum_render::contribution::SecondaryResizeJob>,
+        thrum_render::runtime::FrameError,
+    > {
+        use thrum_render::runtime::FrameError;
+        let bindings = self
+            .prepared
+            .as_ref()
+            .ok_or(FrameError::InvalidState("mirror not prepared"))?
+            .bindings
+            .clone();
+        let graph = self.effect_graph();
+        Ok(Some(Box::new(move |slots| {
+            let slot = slots
+                .first()
+                .ok_or(FrameError::InvalidState("missing mirror view slot"))?
+                .clone();
+            let second = slots.get(1).cloned();
+            let group = bindings.bind(&slot);
+            Ok(thrum_render::contribution::SecondaryResize::new(
+                graph,
+                move |owner: &mut Self| {
+                    let prepared = owner.prepared.as_mut().expect("mirror prepared");
+                    prepared.group = group;
+                    prepared.slot = slot;
+                    prepared.second = second;
+                },
+            ))
+        })))
     }
 
     fn effect_graph(&self) -> EffectGraph {
@@ -327,13 +370,34 @@ impl Prepared {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
-        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let pipeline = pipeline(surface, &environment, &layout);
+        let bindings = PoolBindings {
+            device: (**device).clone(),
+            layout,
+            params,
+            sampler,
+        };
+        let group = bindings.bind(&slot);
+        Ok(Self {
+            slot,
+            second: surface.secondary_views.get(1).cloned(),
+            environment,
+            group,
+            pipeline,
+            bindings,
+        })
+    }
+}
+
+impl PoolBindings {
+    fn bind(&self, slot: &SecondaryView) -> wgpu::BindGroup {
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(PASS),
-            layout: &layout,
+            layout: &self.layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: params.as_entire_binding(),
+                    resource: self.params.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
@@ -345,17 +409,9 @@ impl Prepared {
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
                 },
             ],
-        });
-        let pipeline = pipeline(surface, &environment, &layout);
-        Ok(Self {
-            slot,
-            second: surface.secondary_views.get(1).cloned(),
-            environment,
-            group,
-            pipeline,
         })
     }
 }

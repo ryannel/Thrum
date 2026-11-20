@@ -66,6 +66,43 @@ pub use views::{
     SecondaryViewRecord, SecondaryViewRequest, SecondaryViewSlot, ViewAir, ViewClipPlane,
 };
 
+/// Worker-side binding of replacement secondary view attachments, in slot order.
+#[cfg(not(target_arch = "wasm32"))]
+pub type SecondaryResizeJob =
+    Box<dyn FnOnce(&[SecondaryView]) -> Result<SecondaryResize, crate::runtime::FrameError> + Send>;
+
+#[cfg(not(target_arch = "wasm32"))]
+type PublishSecondary = Box<dyn FnOnce(&mut dyn std::any::Any) + Send>;
+
+/// Prepared contribution bindings and the graph they will record into.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct SecondaryResize {
+    pub(crate) graph: EffectGraph,
+    publish: PublishSecondary,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl SecondaryResize {
+    /// Pair the replacement graph with the pointer swaps that install its
+    /// bindings in the contribution. Publication must not create GPU resources.
+    pub fn new<T: SceneContribution>(
+        graph: EffectGraph,
+        publish: impl FnOnce(&mut T) + Send + 'static,
+    ) -> Self {
+        Self {
+            graph,
+            publish: Box::new(move |owner| {
+                publish(owner.downcast_mut::<T>().expect("secondary view owner"));
+            }),
+        }
+    }
+
+    pub(crate) fn publish(self, owner: &mut dyn SceneContribution) -> EffectGraph {
+        (self.publish)(owner);
+        self.graph
+    }
+}
+
 /// The scene forward shader's material hook point: the fragment's one read of its material
 /// record, inside the scene's `shade(input: VertexOutput, ..)` body before any texture sample.
 /// A wrapper `fn(MaterialRecord, VertexOutput) -> MaterialRecord` may replace it. The renderer
@@ -338,7 +375,7 @@ pub struct SpriteContributionSurface<'a> {
 }
 
 /// An engine module drawing into the prepared scene. See the module documentation.
-pub trait SceneContribution: wgpu::WasmNotSend {
+pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// Legacy drawing stages this contribution needs. Pure upload/simulate
     /// contributions declare an empty list and implement [Self::rebuild_2d].
     fn draw_stages(&self) -> Vec<SceneDrawStage> {
@@ -393,6 +430,24 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     /// Returning no slots retains the original shaders, resources and graph.
     fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
         Vec::new()
+    }
+
+    /// Snapshot the inputs for rebinding owned secondary views on a preparation
+    /// thread. Only slot owners need a job. The old bindings stay live until
+    /// the host publishes the candidate on the render owner.
+    /// # Errors
+    /// Refuses a contribution that owns slots but cannot prepare replacements.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn secondary_resize_job(
+        &self,
+    ) -> Result<Option<SecondaryResizeJob>, crate::runtime::FrameError> {
+        if self.secondary_view_slots().is_empty() {
+            Ok(None)
+        } else {
+            Err(crate::runtime::FrameError::InvalidState(
+                "contribution has no detached secondary view preparation",
+            ))
+        }
     }
     /// Whether a declared late compute pass runs, asked after upload. Render composition
     /// always runs because it loads the scene attachments.

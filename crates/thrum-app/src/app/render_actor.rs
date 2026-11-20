@@ -2,6 +2,7 @@
 use super::{
     UserEvent,
     device::{PlatformGpu, WindowDevice},
+    qualification::TransitionProof,
 };
 use crate::Game;
 use objc2_quartz_core::CACurrentMediaTime;
@@ -13,7 +14,7 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_render::{
-    capabilities::{DeviceWatch, configure_surface, configure_surface_once},
+    capabilities::{DeviceWatch, retry_surface_configuration},
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{
@@ -71,7 +72,14 @@ pub(super) enum SurfaceStatus {
     #[default]
     NotAttempted,
     Presented,
-    Unavailable,
+    FrameSlotsOccupied,
+    WorldOverloaded,
+    WorldPageUnavailable,
+    SceneFrameUnavailable,
+    DrawableTimeout,
+    SurfaceUnavailable,
+    SurfacePreparationBusy,
+    SubmissionSkipped,
     Occluded,
     NeedsReconfigure,
     ConfigurationRefused(String),
@@ -152,7 +160,7 @@ struct Actor<G: Game> {
     needs_reconfigure: bool,
     current_extent: ExtentRequest,
     transition: ExtentTransition,
-    transition_proof: Option<super::qualification::TransitionProof>,
+    transition_proof: Option<TransitionProof>,
     refused_surface_generation: Option<u64>,
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
@@ -194,9 +202,7 @@ pub(super) fn start<G: Game + 'static>(
         format: gpu.config.format,
         device: gpu.watch.generation,
     };
-    let transition_proof = proof
-        .map(super::qualification::TransitionProof::start)
-        .transpose()?;
+    let transition_proof = proof.map(TransitionProof::start).transpose()?;
     let mut actor = Actor::<G> {
         transition: ExtentTransition::new(current_extent),
         transition_proof,
@@ -248,8 +254,15 @@ impl<G: Game> Actor<G> {
         reply.outcome = match job {
             RenderJob::Frame(request) => {
                 reply.sequence = request.sequence;
+                if let Some(proof) = &mut self.transition_proof {
+                    proof.begin_frame(request.sequence);
+                }
                 backing = Some((request.extent, request.backing_scale));
-                match self.frame(&request, &mut reply) {
+                let frame = self.frame(&request, &mut reply);
+                if let Some(proof) = &mut self.transition_proof {
+                    proof.stage("collecting frame completions and reply");
+                }
+                match frame {
                     Ok(report) => {
                         let mut failure = None;
                         if !self.gpu.watch.is_lost() {
@@ -358,21 +371,40 @@ impl<G: Game> Actor<G> {
         if !ready {
             if matches!(reply.surface_status, SurfaceStatus::NotAttempted) {
                 reply.surface_status = if current {
-                    SurfaceStatus::Unavailable
+                    if self.needs_reconfigure && self.transition.busy() {
+                        SurfaceStatus::SurfacePreparationBusy
+                    } else if self.needs_reconfigure && self.host.pending_frames() != 0 {
+                        SurfaceStatus::FrameSlotsOccupied
+                    } else {
+                        SurfaceStatus::SurfaceUnavailable
+                    }
                 } else {
                     SurfaceStatus::NeedsReconfigure
                 };
             }
             return self.host.drive(now, None);
         }
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("advancing the world and polling GPU completions");
+        }
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
-            reply.surface_status = SurfaceStatus::Unavailable;
-            return advanced.submit(None);
+            let report = advanced.submit(None)?;
+            reply.surface_status = if report.overload.is_some() {
+                SurfaceStatus::WorldOverloaded
+            } else if !self.host.world().has_current_page() {
+                SurfaceStatus::WorldPageUnavailable
+            } else {
+                SurfaceStatus::FrameSlotsOccupied
+            };
+            return Ok(report);
+        }
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("encoding the scene");
         }
         let encoded = check_encoded_device(&self.gpu.watch, advanced.encode_scene()?)?;
         if !encoded.can_acquire_surface() {
-            reply.surface_status = SurfaceStatus::Unavailable;
+            reply.surface_status = SurfaceStatus::SceneFrameUnavailable;
             return Ok(encoded.skip());
         }
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
@@ -382,8 +414,14 @@ impl<G: Game> Actor<G> {
         }
         ensure_running(&self.stopped)?;
         let acquire = Instant::now();
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("acquiring a drawable");
+        }
         let acquired = self.recipe.surface.get_current_texture();
         reply.acquire_wall = Some(acquire.elapsed());
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("handling drawable acquisition");
+        }
         let encoded = check_encoded_device(&self.gpu.watch, encoded)?;
         let frame = match surface_action(acquired) {
             SurfaceAction::Draw { frame, reconfigure } => {
@@ -394,7 +432,7 @@ impl<G: Game> Actor<G> {
                 reply.surface_status = if occluded {
                     SurfaceStatus::Occluded
                 } else {
-                    SurfaceStatus::Unavailable
+                    SurfaceStatus::DrawableTimeout
                 };
                 return Ok(encoded.skip());
             }
@@ -428,10 +466,16 @@ impl<G: Game> Actor<G> {
             view: &view,
             extent: [self.gpu.config.width, self.gpu.config.height],
         };
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("submitting the scene and presenting the drawable");
+        }
         let report = encoded.submit(Some(&output))?;
         ensure_device(&self.gpu.watch)?;
         if report.surface_presented {
             self.gpu.queue.present(frame);
+            if let Some(proof) = &mut self.transition_proof {
+                proof.presented();
+            }
             reply.surface_status = SurfaceStatus::Presented;
             if let Some((extent, drawable)) = extent_witness
                 && let Some(capture) = &mut self.extent_capture
@@ -439,7 +483,7 @@ impl<G: Game> Actor<G> {
                 capture.frame(extent, drawable);
             }
         } else {
-            reply.surface_status = SurfaceStatus::Unavailable;
+            reply.surface_status = SurfaceStatus::SubmissionSkipped;
         }
         if report.submitted
             && let Some(observer) = &mut self.observer
@@ -479,7 +523,7 @@ impl<G: Game> Actor<G> {
         if self
             .transition_proof
             .as_ref()
-            .is_some_and(super::qualification::TransitionProof::synchronous)
+            .is_some_and(TransitionProof::synchronous)
         {
             return self.synchronous_extent(frame, request);
         }
@@ -519,7 +563,13 @@ impl<G: Game> Actor<G> {
                             attempt.width = self.gpu.device.limits().max_texture_dimension_2d + 1;
                         }
                     }
-                    configure_surface_once(&self.recipe.surface, &self.gpu.device, &attempt)
+                    TransitionProof::configure(
+                        self.transition_proof.as_mut(),
+                        if calls == 1 { "switch" } else { "restore" },
+                        &self.recipe.surface,
+                        &self.gpu.device,
+                        &attempt,
+                    )
                 },
             );
             if let Some(proof) = &mut self.transition_proof {
@@ -553,7 +603,15 @@ impl<G: Game> Actor<G> {
             && self.host.pending_frames() == 0
             && self.refused_surface_generation != Some(frame.surface_generation)
         {
-            match configure_surface(&self.recipe.surface, &self.gpu.device, &self.gpu.config) {
+            match retry_surface_configuration(|| {
+                TransitionProof::configure(
+                    self.transition_proof.as_mut(),
+                    "platform",
+                    &self.recipe.surface,
+                    &self.gpu.device,
+                    &self.gpu.config,
+                )
+            }) {
                 Ok(()) => {
                     self.transition.surface.platform_configured();
                     self.needs_reconfigure = false;
@@ -579,6 +637,9 @@ impl<G: Game> Actor<G> {
         if self.current_extent == request && !self.needs_reconfigure {
             return Ok(());
         }
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("synchronous extent build");
+        }
         let candidate = self
             .host
             .extent_prepare_inputs(frame.extent)?
@@ -586,6 +647,9 @@ impl<G: Game> Actor<G> {
             .ok_or(FrameError::InvalidState(
                 "synchronous extent control cancelled",
             ))?;
+        if let Some(proof) = &mut self.transition_proof {
+            proof.stage("switching the synchronous extent");
+        }
         let mut config = self.gpu.config.clone();
         [config.width, config.height] = frame.extent;
         self.transition.surface.begin();
@@ -594,7 +658,13 @@ impl<G: Game> Actor<G> {
             self.transition
                 .surface
                 .take(false, false, &config, &self.gpu.config, |attempt| {
-                    configure_surface_once(&self.recipe.surface, &self.gpu.device, attempt)
+                    TransitionProof::configure(
+                        self.transition_proof.as_mut(),
+                        "synchronous control",
+                        &self.recipe.surface,
+                        &self.gpu.device,
+                        attempt,
+                    )
                 });
         if let Some(proof) = &mut self.transition_proof {
             proof.switch(request, self.transition.surface.record(), configure_started);
@@ -650,11 +720,15 @@ impl<G: Game> Actor<G> {
         ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
         ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
         if !needs_reconfigure
-            && let Err(error) = configure_surface(
-                &self.recipe.surface,
-                &replacement.device,
-                &replacement.config,
-            )
+            && let Err(error) = retry_surface_configuration(|| {
+                TransitionProof::configure(
+                    self.transition_proof.as_mut(),
+                    "recovery",
+                    &self.recipe.surface,
+                    &replacement.device,
+                    &replacement.config,
+                )
+            })
             && self.surface_generation.load(Ordering::Acquire) == surface_generation
         {
             return Err(RecoveryFailure::Unavailable(error.to_string()));

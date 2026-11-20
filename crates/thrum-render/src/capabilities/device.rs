@@ -373,6 +373,28 @@ pub fn configure_surface_once(
         .map_or(Ok(()), Err)
 }
 
+/// Apply the native stale-drawable retry policy to individually observed calls.
+///
+/// # Errors
+/// Returns the first failure and any failed retry.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn retry_surface_configuration(
+    mut configure: impl FnMut() -> Result<(), wgpu::Error>,
+) -> Result<(), SurfaceConfigError> {
+    if let Err(first) = configure() {
+        if !matches!(first, wgpu::Error::Validation { .. }) {
+            return Err(SurfaceConfigError { first, retry: None });
+        }
+        if let Err(retry) = configure() {
+            return Err(SurfaceConfigError {
+                first,
+                retry: Some(retry),
+            });
+        }
+    }
+    Ok(())
+}
+
 /// Configure and retry once if native validation rejects a stale drawable.
 /// WebGPU configure returns void and the shell checks the next drawable.
 ///
@@ -391,22 +413,12 @@ pub fn configure_surface(
     config: &wgpu::SurfaceConfiguration,
 ) -> Result<(), SurfaceConfigError> {
     #[cfg(not(target_arch = "wasm32"))]
-    {
-        // wgpu retires the stale presentation on the first configure even
-        // when it reports an outstanding drawable left by a lost device.
-        if let Err(first) = configure_surface_once(surface, device, config) {
-            if !matches!(first, wgpu::Error::Validation { .. }) {
-                return Err(SurfaceConfigError { first, retry: None });
-            }
-            if let Err(retry) = configure_surface_once(surface, device, config) {
-                return Err(SurfaceConfigError {
-                    first,
-                    retry: Some(retry),
-                });
-            }
-        }
-    }
+    // wgpu retires the stale presentation on the first configure even when
+    // it reports an outstanding drawable left by a lost device.
+    return retry_surface_configuration(|| configure_surface_once(surface, device, config));
     #[cfg(target_arch = "wasm32")]
-    surface.configure(device, config);
-    Ok(())
+    {
+        surface.configure(device, config);
+        Ok(())
+    }
 }

@@ -50,6 +50,46 @@ impl SceneContributions {
         }
         Ok(())
     }
+
+    fn combined_graph(
+        declarations: impl IntoIterator<Item = super::EffectGraph>,
+    ) -> super::EffectGraph {
+        let mut graph = super::EffectGraph::default();
+        for (member, mut declaration) in declarations.into_iter().enumerate() {
+            let offset = graph.resources.len();
+            for pass in &mut declaration.passes {
+                pass.name = format!("effect {member}: {}", pass.name);
+                for access in &mut pass.accesses {
+                    access.resource += offset;
+                }
+            }
+            for access in declaration.opaque_reads.iter_mut().chain(
+                declaration
+                    .after_opaque
+                    .iter_mut()
+                    .flat_map(|pass| pass.accesses.iter_mut()),
+            ) {
+                access.resource += offset;
+            }
+            let mut owners = std::collections::BTreeMap::new();
+            for (_, scope) in &mut declaration.resources {
+                if let crate::graph::ResourceScope::Persistent { owner, .. }
+                | crate::graph::ResourceScope::History { owner, .. } = scope
+                {
+                    let next = (offset + owners.len()) as u64;
+                    *owner = *owners.entry(*owner).or_insert(next);
+                }
+            }
+            graph.resources.extend(declaration.resources);
+            graph.opaque_reads.extend(declaration.opaque_reads);
+            graph.passes.extend(declaration.passes);
+            for pass in &mut declaration.after_opaque {
+                pass.name = format!("effect {member}: {}", pass.name);
+            }
+            graph.after_opaque.extend(declaration.after_opaque);
+        }
+        graph
+    }
 }
 
 impl SceneContribution for SceneContributions {
@@ -101,6 +141,51 @@ impl SceneContribution for SceneContributions {
             .flat_map(|entry| entry.secondary_view_slots())
             .collect()
     }
+    #[cfg(not(target_arch = "wasm32"))]
+    fn secondary_resize_job(&self) -> Result<Option<super::SecondaryResizeJob>, FrameError> {
+        let mut first = 0;
+        let mut members = Vec::with_capacity(self.entries.len());
+        for entry in &self.entries {
+            let end = first + entry.secondary_view_slots().len();
+            members.push((
+                first..end,
+                entry.secondary_resize_job()?,
+                entry.effect_graph(),
+            ));
+            first = end;
+        }
+        if first == 0 {
+            return Ok(None);
+        }
+        Ok(Some(Box::new(move |slots| {
+            let mut replacements = Vec::with_capacity(members.len());
+            let mut graphs = Vec::with_capacity(members.len());
+            for (range, job, graph) in members {
+                let member_slots = slots.get(range).ok_or(FrameError::InvalidState(
+                    "secondary view declaration changed during preparation",
+                ))?;
+                let replacement = job.map(|job| job(member_slots)).transpose()?;
+                graphs.push(
+                    replacement
+                        .as_ref()
+                        .map_or(graph, |next| next.graph.clone()),
+                );
+                replacements.push(replacement);
+            }
+            Ok(super::SecondaryResize::new(
+                Self::combined_graph(graphs),
+                move |owner: &mut Self| {
+                    for (index, replacement) in replacements.into_iter().enumerate() {
+                        if let Some(next) = replacement {
+                            owner.pass_counts[index] = next.graph.passes.len();
+                            owner.after_counts[index] = next.graph.after_opaque.len();
+                            next.publish(owner.entries[index].as_mut());
+                        }
+                    }
+                },
+            ))
+        })))
+    }
     fn quality_knobs(&self) -> Vec<super::QualityKnob> {
         self.entries
             .iter()
@@ -130,42 +215,7 @@ impl SceneContribution for SceneContributions {
             .unwrap_or_default()
     }
     fn effect_graph(&self) -> super::EffectGraph {
-        let mut graph = super::EffectGraph::default();
-        for (member, entry) in self.entries.iter().enumerate() {
-            let mut declaration = entry.effect_graph();
-            let offset = graph.resources.len();
-            for pass in &mut declaration.passes {
-                pass.name = format!("effect {member}: {}", pass.name);
-                for access in &mut pass.accesses {
-                    access.resource += offset;
-                }
-            }
-            for access in declaration.opaque_reads.iter_mut().chain(
-                declaration
-                    .after_opaque
-                    .iter_mut()
-                    .flat_map(|pass| pass.accesses.iter_mut()),
-            ) {
-                access.resource += offset;
-            }
-            let mut owners = std::collections::BTreeMap::new();
-            for (_, scope) in &mut declaration.resources {
-                if let crate::graph::ResourceScope::Persistent { owner, .. }
-                | crate::graph::ResourceScope::History { owner, .. } = scope
-                {
-                    let next = (offset + owners.len()) as u64;
-                    *owner = *owners.entry(*owner).or_insert(next);
-                }
-            }
-            graph.resources.extend(declaration.resources);
-            graph.opaque_reads.extend(declaration.opaque_reads);
-            graph.passes.extend(declaration.passes);
-            for pass in &mut declaration.after_opaque {
-                pass.name = format!("effect {member}: {}", pass.name);
-            }
-            graph.after_opaque.extend(declaration.after_opaque);
-        }
-        graph
+        Self::combined_graph(self.entries.iter().map(|entry| entry.effect_graph()))
     }
     fn effect_runs(&self, mut index: usize, frame: &ContributionFrame) -> bool {
         for (entry, count) in self.entries.iter().zip(self.pass_counts.iter().copied()) {

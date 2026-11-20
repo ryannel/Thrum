@@ -67,6 +67,7 @@ enum UserEvent {
     DisplayTarget {
         target: f64,
         callback: f64,
+        number: u64,
     },
     RenderDone,
     DeviceLost(u64),
@@ -687,7 +688,14 @@ impl<G: Game + 'static> App<G> {
                 }
             }
             SurfaceStatus::NotAttempted => {}
-            SurfaceStatus::Unavailable => self.unavailable += 1,
+            SurfaceStatus::FrameSlotsOccupied
+            | SurfaceStatus::WorldOverloaded
+            | SurfaceStatus::WorldPageUnavailable
+            | SurfaceStatus::SceneFrameUnavailable
+            | SurfaceStatus::DrawableTimeout
+            | SurfaceStatus::SurfaceUnavailable
+            | SurfaceStatus::SurfacePreparationBusy
+            | SurfaceStatus::SubmissionSkipped => self.unavailable += 1,
             SurfaceStatus::Occluded => {
                 self.unavailable += 1;
                 self.occluded += 1;
@@ -1214,7 +1222,11 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                     return;
                 }
             }
-            UserEvent::DisplayTarget { target, callback } => {
+            UserEvent::DisplayTarget {
+                target,
+                callback,
+                number,
+            } => {
                 self.profile.set_available(self.recovery.ready());
                 if let Ok(timestamp) = Duration::try_from_secs_f64(callback) {
                     self.profile.callback(timestamp);
@@ -1258,7 +1270,9 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 if let Some(ticks) = &mut self.transition_ticks
                     && let Err(error) = ticks.record(
                         self.target_sequence,
+                        number,
                         callback,
+                        target,
                         self.render_in_flight.is_some(),
                     )
                 {

@@ -75,6 +75,43 @@ pub(crate) struct SecondarySet {
     sources: Vec<super::SyntheticPointLight>,
 }
 
+impl SecondarySet {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn handles(&self) -> &[SecondaryView] {
+        &self.handles
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl super::SyntheticTargetInputs {
+    pub(crate) fn resize_secondary(&mut self, extents: &[[u32; 2]]) -> SecondarySet {
+        assert_eq!(self.secondary.len(), extents.len());
+        for (slot, &extent) in self.secondary.iter_mut().zip(extents) {
+            if slot.handle.maximum_extent() != extent {
+                let device = self.capabilities.device();
+                slot.handle.colour = secondary_texture(device, extent, SCENE_FORMAT);
+                slot.handle.depth = secondary_texture(device, extent, DEPTH_FORMAT);
+                slot.handle.colour_view = slot.handle.colour.create_view(&Default::default());
+                slot.handle.depth_view = slot.handle.depth.create_view(&Default::default());
+                slot.handle.maximum_extent = extent;
+                slot.handle.request = Arc::new(Mutex::new(crate::contribution::ViewRequestState {
+                    camera: self.view_sample.camera_position(),
+                    asked: None,
+                }));
+            }
+        }
+        SecondarySet {
+            prepared: self.secondary.clone(),
+            handles: self
+                .secondary
+                .iter()
+                .map(|slot| slot.handle.clone())
+                .collect(),
+            sources: Vec::new(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub(super) struct SecondaryPrepared {
     handle: SecondaryView,
@@ -113,6 +150,19 @@ impl PreparedSynthetic {
         self.secondary = set.prepared;
         self.secondary_handles = set.handles;
         self.secondary_sources = set.sources;
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn publish_secondary_extent(&mut self, mut set: SecondarySet) {
+        set.sources = std::mem::take(&mut self.secondary_sources);
+        self.restore_secondary(set);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn secondary_extents(&self) -> impl Iterator<Item = [u32; 2]> + '_ {
+        self.secondary_handles
+            .iter()
+            .map(SecondaryView::maximum_extent)
     }
 
     pub(crate) fn secondary_view_count(&self) -> usize {
@@ -230,6 +280,29 @@ impl super::SyntheticTargetInputs {
     }
 }
 
+fn secondary_texture(
+    device: &wgpu::Device,
+    extent: [u32; 2],
+    format: wgpu::TextureFormat,
+) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some(PASS),
+        size: wgpu::Extent3d {
+            width: extent[0],
+            height: extent[1],
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+            | wgpu::TextureUsages::TEXTURE_BINDING
+            | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    })
+}
+
 impl SecondaryPrepared {
     fn new(
         prepared: &PreparedSynthetic,
@@ -247,26 +320,8 @@ impl SecondaryPrepared {
                 mapped_at_creation: false,
             })
         };
-        let texture = |format| {
-            device.create_texture(&wgpu::TextureDescriptor {
-                label: Some(PASS),
-                size: wgpu::Extent3d {
-                    width: extent[0],
-                    height: extent[1],
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING
-                    | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            })
-        };
-        let colour = texture(SCENE_FORMAT);
-        let depth = texture(DEPTH_FORMAT);
+        let colour = secondary_texture(device, extent, SCENE_FORMAT);
+        let depth = secondary_texture(device, extent, DEPTH_FORMAT);
         let view = buffer("secondary raster view", super::VIEW_BYTES as u64);
         let handle = SecondaryView {
             colour_view: colour.create_view(&wgpu::TextureViewDescriptor::default()),

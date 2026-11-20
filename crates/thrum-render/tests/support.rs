@@ -444,7 +444,8 @@ pub(crate) struct Control {
 pub(crate) struct Observer {
     pub(crate) control: Arc<Mutex<Control>>,
     pub(crate) slots: usize,
-    prepared: Vec<(wgpu::ComputePipeline, wgpu::BindGroup, [u32; 2])>,
+    pipeline: Option<(wgpu::Device, wgpu::BindGroupLayout, wgpu::ComputePipeline)>,
+    prepared: Vec<wgpu::BindGroup>,
 }
 impl Observer {
     pub(crate) fn new(slots: usize) -> (Self, Arc<Mutex<Control>>) {
@@ -458,10 +459,66 @@ impl Observer {
             Self {
                 control: Arc::clone(&control),
                 slots,
+                pipeline: None,
                 prepared: Vec::new(),
             },
             control,
         )
+    }
+
+    fn bindings(
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        slots: &[SecondaryView],
+    ) -> (Vec<wgpu::Buffer>, Vec<wgpu::BindGroup>) {
+        slots
+            .iter()
+            .map(|slot| {
+                let extent = slot.maximum_extent();
+                let bytes = RECORD_BYTES as u64 + u64::from(extent[0]) * u64::from(extent[1]) * 32;
+                let output = device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("view observer output"),
+                    size: bytes,
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                    mapped_at_creation: false,
+                });
+                let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("view observer"),
+                    layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(slot.colour()),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::TextureView(slot.depth()),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 2,
+                            resource: slot.record().as_entire_binding(),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 3,
+                            resource: output.as_entire_binding(),
+                        },
+                    ],
+                });
+                (output, group)
+            })
+            .unzip()
+    }
+
+    fn install_bindings(
+        &mut self,
+        handles: Vec<SecondaryView>,
+        outputs: Vec<wgpu::Buffer>,
+        groups: Vec<wgpu::BindGroup>,
+    ) {
+        let mut control = self.control.lock().expect("control");
+        control.handles = handles;
+        control.outputs = outputs;
+        self.prepared = groups;
     }
 }
 fn late(index: usize, bytes: u64) -> AfterOpaquePass {
@@ -492,36 +549,100 @@ impl SceneContribution for Observer {
         }
     }
     fn effect_graph(&self) -> EffectGraph {
-        let control = self.control.lock().expect("control");
-        EffectGraph {
-            resources: control
-                .outputs
-                .iter()
-                .enumerate()
-                .map(|(index, output)| {
-                    (
-                        ResourceDescriptor::Buffer {
-                            bytes: output.size(),
-                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                        },
-                        ResourceScope::Persistent {
-                            owner: 500 + index as u64,
-                            epoch: 1,
-                            initialized: false,
-                        },
-                    )
-                })
-                .collect(),
-            after_opaque: control
-                .outputs
-                .iter()
-                .enumerate()
-                .map(|(index, output)| late(index, output.size()))
-                .collect(),
-            ..EffectGraph::default()
-        }
+        observer_graph(&self.control.lock().expect("control").outputs)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    fn secondary_resize_job(
+        &self,
+    ) -> Result<
+        Option<thrum_render::contribution::SecondaryResizeJob>,
+        thrum_render::runtime::FrameError,
+    > {
+        let Some((device, layout, _)) = self.pipeline.clone() else {
+            return Ok(None);
+        };
+        Ok(Some(Box::new(move |slots| {
+            let (outputs, groups) = Self::bindings(&device, &layout, slots);
+            let slots = slots.to_vec();
+            Ok(thrum_render::contribution::SecondaryResize::new(
+                observer_graph(&outputs),
+                move |owner: &mut Self| owner.install_bindings(slots, outputs, groups),
+            ))
+        })))
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        self.prepare_observer(surface)
+    }
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
+        let mut control = self.control.lock().expect("control");
+        control.main_frame = Some(*frame);
+        control.results.clear();
+        control.admitted.fill(false);
+        for index in control.order.clone() {
+            if let Some(request) = control.requests[index] {
+                let result = control.handles[index].request(&request);
+                if !control.allow_refusal {
+                    result.expect("public ask");
+                }
+                control.admitted[index] = result.is_ok();
+                control.results.push(result);
+            }
+        }
+    }
+    fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
+        self.control.lock().expect("control").admitted[index]
+    }
+    fn encode_after_opaque(
+        &mut self,
+        index: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        _: &ContributionFrame,
+    ) {
+        let (_, _, pipeline) = self.pipeline.as_ref().expect("observer pipeline");
+        let extent = self.control.lock().expect("control").handles[index].maximum_extent();
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(2, &self.prepared[index], &[]);
+        pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
+    }
+    fn computes(&self, _: &ContributionFrame) -> bool {
+        false
+    }
+    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
+    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
+    fn submitted(&mut self, _: bool) {}
+}
+
+fn observer_graph(outputs: &[wgpu::Buffer]) -> EffectGraph {
+    EffectGraph {
+        resources: outputs
+            .iter()
+            .enumerate()
+            .map(|(index, output)| {
+                (
+                    ResourceDescriptor::Buffer {
+                        bytes: output.size(),
+                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                    },
+                    ResourceScope::Persistent {
+                        owner: 500 + index as u64,
+                        epoch: 1,
+                        initialized: false,
+                    },
+                )
+            })
+            .collect(),
+        after_opaque: outputs
+            .iter()
+            .enumerate()
+            .map(|(index, output)| late(index, output.size()))
+            .collect(),
+        ..EffectGraph::default()
+    }
+}
+
+impl Observer {
+    fn prepare_observer(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
         assert!(
             surface.secondary_surfaces.is_empty(),
             "an observer has not opted its geometry into views"
@@ -606,83 +727,11 @@ impl SceneContribution for Observer {
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
-        let mut control = self.control.lock().expect("control");
-        control.handles = surface.secondary_views.to_vec();
-        control.outputs.clear();
-        self.prepared.clear();
-        for slot in surface.secondary_views {
-            let extent = slot.maximum_extent();
-            let bytes = RECORD_BYTES as u64 + u64::from(extent[0]) * u64::from(extent[1]) * 32;
-            let output = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("view observer output"),
-                size: bytes,
-                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                mapped_at_creation: false,
-            });
-            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("view observer"),
-                layout: &layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(slot.colour()),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::TextureView(slot.depth()),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: slot.record().as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: output.as_entire_binding(),
-                    },
-                ],
-            });
-            self.prepared.push((pipeline.clone(), group, extent));
-            control.outputs.push(output);
-        }
+        let (outputs, groups) = Self::bindings(device, &layout, surface.secondary_views);
+        self.pipeline = Some(((**device).clone(), layout, pipeline));
+        self.install_bindings(surface.secondary_views.to_vec(), outputs, groups);
         Ok(())
     }
-    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
-        let mut control = self.control.lock().expect("control");
-        control.main_frame = Some(*frame);
-        control.results.clear();
-        control.admitted.fill(false);
-        for index in control.order.clone() {
-            if let Some(request) = control.requests[index] {
-                let result = control.handles[index].request(&request);
-                if !control.allow_refusal {
-                    result.expect("public ask");
-                }
-                control.admitted[index] = result.is_ok();
-                control.results.push(result);
-            }
-        }
-    }
-    fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
-        self.control.lock().expect("control").admitted[index]
-    }
-    fn encode_after_opaque(
-        &mut self,
-        index: usize,
-        pass: &mut wgpu::ComputePass<'_>,
-        _: &ContributionFrame,
-    ) {
-        let (pipeline, group, extent) = &self.prepared[index];
-        pass.set_pipeline(pipeline);
-        pass.set_bind_group(2, group, &[]);
-        pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
-    }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 pub(crate) fn output(device: &wgpu::Device, queue: &wgpu::Queue, buffer: &wgpu::Buffer) -> Vec<u8> {

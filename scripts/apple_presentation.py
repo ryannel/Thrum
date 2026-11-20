@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 
@@ -100,47 +101,93 @@ def mac_arm(output, binary, env, recipe, name, frames=165, expected_conflict=Fal
             raise ValueError(f"restore control did not see the descriptor mismatch in {arm}")
     else:
         result.check_returncode()
-    rows = [json.loads(line) for line in (arm / "frames.jsonl").read_text().splitlines()]
-    if (arm / "display.jsonl").exists():
-        annotate_display_ticks(arm, rows)
+    rows = read_rows(arm / "frames.jsonl")
+    calls = read_rows(arm / "configure.jsonl")
+    ticks = annotate_display_ticks(arm, rows, calls, expected_conflict)
     if not rows or not any(row["presented"] for row in rows):
         raise ValueError(f"no presenting window frames in {arm}")
-    return rows
+    return rows, calls, ticks
 
 
-def annotate_display_ticks(arm, rows):
+def read_rows(path):
+    return [json.loads(line) for line in path.read_text().splitlines()]
+
+
+def annotate_display_ticks(arm, rows, calls, expected_conflict):
     by_sequence = {}
     for row in rows:
         by_sequence.setdefault(row["sequence"], []).append(row)
-    switches = [row["switch"] for row in rows if row["switch"] and row["switch"]["configure_calls"]]
-    ticks = [json.loads(line) for line in (arm / "display.jsonl").read_text().splitlines()]
-    for tick in ticks:
-        render = by_sequence.get(tick["sequence"], [])
-        configure = next((switch for switch in switches
-                          if switch["configure_started"] <= tick["media"] <= switch["configure_ended"]), None)
-        if any(row["presented"] for row in render):
+    ticks = read_rows(arm / "display.jsonl")
+    expected_numbers = list(range(1, len(ticks) + 1))
+    if (not ticks or [tick["callback"] for tick in ticks] != expected_numbers
+            or [tick["sequence"] for tick in ticks] != expected_numbers
+            or not set(by_sequence).issubset(expected_numbers)):
+        raise ValueError(f"display callback coverage is incomplete in {arm}")
+    game_log = (arm / "game.log").read_text()
+    if not expected_conflict:
+        summary = re.search(r"; presented=(\d+); callbacks=(\d+); display_link_callbacks=(\d+);", game_log)
+        counts = (sum(row["presented"] for row in rows), len(rows), len(ticks))
+        if not summary or tuple(map(int, summary.groups())) != counts:
+            raise ValueError(f"frame and callback logs disagree with the host's counts in {arm}: {counts}")
+    presents = [row for row in rows if row["present_media"] is not None]
+    if len(presents) != sum(row["presented"] for row in rows):
+        raise ValueError(f"present timestamps disagree with the frame records in {arm}")
+    work = [stage for row in rows for stage in row["work"]]
+    for index, tick in enumerate(ticks):
+        start = tick["media"]
+        end = ticks[index + 1]["media"] if index + 1 < len(ticks) else float("inf")
+        if not start < min(end, tick["target"]) or tick["dispatched"] < start:
+            raise ValueError(f"invalid display timestamp in {arm}: {tick}")
+        # The last callback owns the remainder of the run. Match actual host
+        # presents against the clock, independently of the intended target.
+        presented = [row for row in presents if start <= row["present_media"] < end]
+        configure = [call for call in calls if call["started"] < end and start < call["ended"]]
+        missed = [row["status"] for row in by_sequence.get(tick["sequence"], [])
+                  if not row["presented"]]
+        active = [(stage, min(end, ended) - max(start, started))
+                  for stage, started, ended in work
+                  if started < end and start < ended]
+        if presented:
             tick["outcome"] = "presented"
+            tick["presented_submissions"] = [row["submission"] for row in presented]
         elif configure:
             tick["outcome"] = "configure"
-            tick["configure_ms"] = configure["configure_ms"]
-        elif render:
-            tick["outcome"] = render[-1]["status"]
+            tick["configure_calls"] = configure
+        elif missed:
+            tick["outcome"] = missed[-1]
+            tick["frame_deferrals"] = missed
+        elif active:
+            tick["outcome"] = max(active, key=lambda phase: phase[1])[0]
+            tick["active_stages"] = [stage for stage, _ in active]
         else:
-            tick["outcome"] = "render worker busy" if tick["render_busy"] else "display target coalesced"
+            tick["outcome"] = ("awaiting the in-flight frame reply" if tick["render_busy"]
+                               else "display target coalesced before dispatch")
+    if sum(len(tick.get("presented_submissions", [])) for tick in ticks) != len(presents):
+        raise ValueError(f"not every present belongs to a recorded display interval in {arm}")
     (arm / "display-receipt.json").write_text(json.dumps(ticks, indent=2) + "\n")
+    return ticks
 
 
-def transition_receipt(rows):
-    switches = [row for row in rows if row["switch"] and row["switch"]["configure_calls"]]
+def transition_receipt(rows, calls, ticks):
+    switches = [row for row in rows if row["switch"] and row["switch"]["taken"]]
     window_sizes = {tuple(row["window"]) for row in rows}
-    if len(switches) != 2:
-        raise ValueError(f"expected extent and scale switches, observed {len(switches)} configure calls")
+    if len(switches) != 2 or len(calls) != len(switches):
+        raise ValueError(f"expected two switches and two configure calls, observed {len(switches)} and {len(calls)}")
+    for row, call in zip(switches, calls):
+        if (call["path"] != "switch" or not call["succeeded"]
+                or (call["sequence"], call["extent"]) != (row["sequence"], row["switch"]["extent"])
+                or not row["switch"]["configure_started"] <= call["started"] <= call["ended"]
+                <= row["switch"]["configure_ended"]):
+            raise ValueError(f"configure did not belong to its successful generation switch: {call}")
     if len(window_sizes) < 10 or len({row["scale"] for row in rows}) != 2:
         raise ValueError("the sweep did not change the window and display record")
+    if any(tick["outcome"] in ("NotAttempted", "SurfacePreparationBusy", "synchronous extent build")
+           for tick in ticks):
+        raise ValueError("unexplained display tick or frame waiting for extent preparation")
     previous = rows[0]["surface"]
     held = 0
     for row in rows:
-        if row["switch"]:
+        if row["switch"] and row["switch"]["configure_calls"]:
             switch = row["switch"]
             if (switch["configure_calls"], switch["taken"], switch["restores"]) != (1, 1, 0):
                 raise ValueError(f"unexpected surface calls during sweep: {row}")
@@ -153,12 +200,14 @@ def transition_receipt(rows):
             if row["drawable"] != [previous, previous]:
                 raise ValueError(f"drawable does not match the active generation: {row}")
             held += row["window"] != previous
-        elif row["status"] == "NotAttempted":
+        elif row["status"] in ("NotAttempted", "SurfacePreparationBusy"):
             raise ValueError(f"unexplained frame without a present: {row}")
     if held < 5 or rows[-1]["surface"] != rows[-1]["window"]:
         raise ValueError("no held presentation through resize, or no settled surface")
     return dict(held_presents=held, distinct_window_grids=len(window_sizes),
-                switches=[row["switch"] for row in switches])
+                switches=[row["switch"] for row in switches], configure_attempts=calls,
+                display_callbacks=len(ticks), ticks_without_present=sum(
+                    tick["outcome"] != "presented" for tick in ticks))
 
 
 def wall_tripwire(rows):
@@ -172,20 +221,22 @@ def mac_transition(output):
     console = subprocess.check_output(["/usr/sbin/ioreg", "-n", "Root", "-d1"], text=True)
     report = {}
     for recipe in RECIPE:
-        baseline = mac_arm(output, binary, env, recipe, "baseline")
+        baseline, baseline_calls, _ = mac_arm(output, binary, env, recipe, "baseline")
+        if baseline_calls:
+            raise ValueError(f"the baseline made unexpected configure calls: {baseline_calls}")
         sweep = mac_arm(output, binary, env, recipe, "sweep")
         control = mac_arm(output, binary, env, recipe, "synchronous", frames=75)
-        synchronous_calls = sum(bool(row["switch"]) for row in control)
+        synchronous_calls = len(control[1])
         if synchronous_calls < 10:
             raise ValueError("synchronous control did not repeatedly configure")
         try:
-            transition_receipt(control)
+            transition_receipt(*control)
         except ValueError as error:
             rejection = str(error)
         else:
             raise ValueError("synchronous control passed the sweep checks")
-        baseline_wall, sweep_wall = wall_tripwire(baseline), wall_tripwire(sweep)
-        report[recipe] = dict(**transition_receipt(sweep), control_calls=synchronous_calls,
+        baseline_wall, sweep_wall = wall_tripwire(baseline), wall_tripwire(sweep[0])
+        report[recipe] = dict(**transition_receipt(*sweep), control_calls=synchronous_calls,
                               control_rejection=rejection, baseline_wall=baseline_wall,
                               sweep_wall=sweep_wall,
                               wall_tripwire=sweep_wall["worst_ms"] > 2 * baseline_wall["p95_ms"])
@@ -203,7 +254,7 @@ def mac_transition_capture(output):
             raise ValueError("transition capture needs THRUM_ASSET_STORE with the cooked valley")
         env.update(THRUM_ASSET_STORE=str(Path(assets).resolve()), THRUM_SCENE="valley")
     return dict(target="mac-metal", mode="realtime", scene="grid" if pattern else "valley",
-                recipes={recipe: transition_receipt(mac_arm(output, binary, env, recipe, "sweep", capture=True))
+                recipes={recipe: transition_receipt(*mac_arm(output, binary, env, recipe, "sweep", capture=True))
                          for recipe in RECIPE})
 
 
@@ -211,8 +262,8 @@ def mac_configure_fault(output):
     binary, env = mac_binary()
     report = {}
     for name in ("restore", "skip-restore"):
-        rows = mac_arm(output, binary, env, "portable", name, frames=125,
-                       expected_conflict=name == "skip-restore")
+        rows, calls, _ = mac_arm(output, binary, env, "portable", name, frames=125,
+                                 expected_conflict=name == "skip-restore")
         index = next(i for i, row in enumerate(rows) if row["switch"])
         switch = rows[index]["switch"]
         old = rows[index - 1]["surface"]
@@ -220,12 +271,18 @@ def mac_configure_fault(output):
         descriptor, metal = acquired["drawable"]
         if not switch["configure_error"] or switch["taken"] or metal != old:
             raise ValueError(f"configure did not refuse and keep its former Metal drawable: {acquired}")
+        if not calls or calls[0]["path"] != "switch" or calls[0]["succeeded"]:
+            raise ValueError(f"the native configuration did not report the refused call: {calls}")
         if name == "restore":
-            if switch["restores"] != 1 or not switch["restored"] or descriptor != old or not acquired["presented"]:
+            restore = calls[1:2]
+            if (switch["restores"] != 1 or not switch["restored"] or descriptor != old
+                    or not acquired["presented"] or not restore or restore[0]["path"] != "restore"
+                    or not restore[0]["succeeded"] or restore[0]["extent"] != old):
                 raise ValueError(f"restore did not return to coherent presentation: {acquired}")
-        elif descriptor == metal or acquired["presented"]:
+        elif descriptor == metal or acquired["presented"] or len(calls) != 1:
             raise ValueError(f"control did not reveal a mismatch: {acquired}")
-        report[name] = dict(switch=switch, first_acquire=acquired, previous_extent=old)
+        report[name] = dict(switch=switch, first_acquire=acquired, previous_extent=old,
+                            configure_attempts=calls)
     return dict(target="mac-metal", arms=report)
 
 

@@ -1,6 +1,7 @@
 use crate::support;
 use std::{
     sync::{
+        Arc, Mutex,
         atomic::{AtomicBool, Ordering},
         mpsc,
     },
@@ -15,11 +16,53 @@ use thrum_render::{
     },
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
 };
+use tracing::{Dispatch, Subscriber, span};
+use tracing_subscriber::{Layer, layer::Context, prelude::*};
 
 const OLD: [u32; 2] = [64, 64];
 const STALE: [u32; 2] = [80, 64];
 const NEW: [u32; 2] = [96, 64];
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
+
+#[derive(Clone, Default)]
+struct Creations(Arc<Mutex<Vec<(std::thread::ThreadId, &'static str)>>>);
+
+impl<S: Subscriber> Layer<S> for Creations {
+    fn on_new_span(&self, attributes: &span::Attributes<'_>, _: &span::Id, _: Context<'_, S>) {
+        let metadata = attributes.metadata();
+        if metadata.target().starts_with("wgpu_core::")
+            && matches!(
+                metadata.name(),
+                "Device::create_texture"
+                    | "Device::create_texture_from_hal"
+                    | "Texture::create_view"
+                    | "Device::create_bind_group"
+                    | "Device::create_general_render_pipeline"
+                    | "Device::create_compute_pipeline"
+            )
+        {
+            self.0
+                .lock()
+                .expect("creation event")
+                .push((std::thread::current().id(), metadata.name()));
+        }
+    }
+}
+
+impl Creations {
+    fn on(&self, thread: std::thread::ThreadId) -> Vec<&'static str> {
+        self.0
+            .lock()
+            .expect("creation events")
+            .iter()
+            .filter_map(|&(creator, kind)| (creator == thread).then_some(kind))
+            .collect()
+    }
+
+    fn dispatch(&self) -> Dispatch {
+        Dispatch::new(tracing_subscriber::registry().with(self.clone()))
+    }
+}
 
 fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
     ExtentRequest {
@@ -31,10 +74,12 @@ fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
 }
 
 fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue, extent: [u32; 2]) -> support::Host {
+    let mut scene = SyntheticScene::grid(1).expect("test scene");
+    scene.view = scene.view.with_reconstruction(true);
     let mut host = pollster::block_on(support::host_with_config(
         capabilities,
         queue,
-        SyntheticScene::grid(1).expect("test scene"),
+        scene,
         FrameLighting::Diagnostic(SyntheticLight::default()),
         FrameConfig {
             render_extent: extent,
@@ -97,11 +142,12 @@ fn unexpected_build() -> Result<ExtentJob, FrameError> {
 fn prepare(
     host: &support::Host,
     extent: [u32; 2],
+    dispatch: Dispatch,
 ) -> impl FnOnce(&AtomicBool) -> Result<Option<PreparedExtent>, FrameError> + Send + use<> {
     let inputs = host
         .extent_prepare_inputs(extent)
         .expect("transition fixture");
-    move |cancel| inputs.build(cancel)
+    move |cancel| tracing::dispatcher::with_default(&dispatch, || inputs.build(cancel))
 }
 
 fn captured(host: &mut support::Host, device: &wgpu::Device) -> SubmittedImage {
@@ -117,6 +163,178 @@ fn captured(host: &mut support::Host, device: &wgpu::Device) -> SubmittedImage {
         );
         std::thread::yield_now();
     }
+}
+
+fn first_frame_matches_reset(actual: &SubmittedImage, reset: &SubmittedImage) -> bool {
+    actual.extent == reset.extent
+        && actual.sample.history_identity[1] == reset.sample.history_identity[1]
+        && actual.rgba == reset.rgba
+}
+
+fn independent_reset(
+    cap: &DeviceCapabilities,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    output: &wgpu::TextureView,
+    extent: [u32; 2],
+    jitter_phase: usize,
+) -> SubmittedImage {
+    let mut independent = host(cap, queue, extent);
+    for _ in 0..jitter_phase {
+        submit(&mut independent, output, extent);
+        complete(&mut independent, device);
+    }
+    independent
+        .enable_submitted_capture_with_limits(1, CaptureLimits::default())
+        .expect("independent reset tap");
+    independent.invalidate_history();
+    submit(&mut independent, output, extent);
+    complete(&mut independent, device);
+    captured(&mut independent, device)
+}
+
+#[test]
+fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_comparison() {
+    let Some(gpu) =
+        thrum_test_support::gpu("kept extent history control", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    let output = view(&device, OLD);
+    let reset = independent_reset(&cap, &device, &queue, &output, OLD, 1);
+
+    // Hold pixel dimensions fixed as the backing scale changes, so the
+    // output-size validity key cannot mask a missing transition reset.
+    for keep_history in [false, true] {
+        let mut host = host(&cap, &queue, OLD);
+        submit(&mut host, &output, OLD);
+        let old_frame = complete(&mut host, &device);
+        host.enable_submitted_capture_with_limits(7, CaptureLimits::default())
+            .expect("switch tap");
+        let old = request(OLD, 1);
+        let scale_changed = ExtentRequest {
+            backing_scale: 1_f64.to_bits(),
+            ..old
+        };
+        let mut transition = ExtentTransition::new(old);
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let candidate = loop {
+            transition
+                .advance(scale_changed, old, Duration::ZERO, || {
+                    Ok(prepare(&host, OLD, Dispatch::none()))
+                })
+                .expect("scale build");
+            if let Some(candidate) = transition.ready() {
+                break candidate;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "scale change did not build immediately"
+            );
+            std::thread::yield_now();
+        };
+        assert_eq!(
+            transition
+                .surface
+                .take(false, transition.busy(), &OLD, &OLD, |_| Ok::<_, &str>(())),
+            SurfaceSwitchOutcome::Taken
+        );
+        if keep_history {
+            assert!(host.publish_extent_keeping_history_for_test(candidate));
+        } else {
+            assert!(host.publish_extent(candidate));
+        }
+        submit(&mut host, &output, OLD);
+        complete(&mut host, &device);
+        let first_new = captured(&mut host, &device);
+        assert_eq!(
+            first_new.sample.submission_order,
+            old_frame.submission_order + 1
+        );
+        if keep_history {
+            assert_eq!(
+                first_new.sample.history_identity[1],
+                old_frame.history_identity[0]
+            );
+            assert!(!first_frame_matches_reset(&first_new, &reset));
+        } else {
+            assert!(first_frame_matches_reset(&first_new, &reset));
+        }
+    }
+}
+
+#[test]
+fn a_detached_extent_preserves_current_capture_admission() {
+    let Some(gpu) = thrum_test_support::gpu("extent capture admission", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let cap = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    let old_output = view(&device, OLD);
+    let new_output = view(&device, NEW);
+    let build = |host: &support::Host| {
+        let job = prepare(host, NEW, Dispatch::none());
+        std::thread::spawn(move || {
+            job(&AtomicBool::new(false))
+                .expect("capture extent")
+                .expect("candidate")
+        })
+        .join()
+        .expect("preparation thread")
+    };
+
+    let mut stopped = host(&cap, &queue, OLD);
+    stopped
+        .enable_submitted_capture_with_limits(7, CaptureLimits::default())
+        .expect("tap");
+    submit(&mut stopped, &old_output, OLD);
+    let old = complete(&mut stopped, &device);
+    let candidate = build(&stopped);
+    stopped.stop_submitted_capture();
+    assert!(stopped.publish_extent(candidate));
+    submit(&mut stopped, &new_output, NEW);
+    complete(&mut stopped, &device);
+    assert_eq!(stopped.submitted_capture_usage(), Some((0, 0)));
+    let image = captured(&mut stopped, &device);
+    assert_eq!(
+        (image.session, image.extent, image.sample.submission_order),
+        (7, OLD, old.submission_order)
+    );
+    stopped.recycle_submitted_image(image);
+    assert!(
+        stopped
+            .try_submitted_image()
+            .expect("stopped tap drained")
+            .is_none()
+    );
+
+    let mut replaced = host(&cap, &queue, OLD);
+    replaced
+        .enable_submitted_capture_with_limits(7, CaptureLimits::default())
+        .expect("tap");
+    let obsolete = build(&replaced);
+    replaced.disable_submitted_capture();
+    assert!(!replaced.admits_extent(&obsolete));
+    let disabled = build(&replaced);
+    replaced
+        .enable_submitted_capture_with_limits(7, CaptureLimits::default())
+        .expect("replacement with reused session number");
+    assert!(!replaced.admits_extent(&disabled));
+    assert!(!replaced.publish_extent(obsolete));
+    let current = build(&replaced);
+    assert!(replaced.publish_extent(current));
+    submit(&mut replaced, &new_output, NEW);
+    complete(&mut replaced, &device);
+    assert_eq!(captured(&mut replaced, &device).extent, NEW);
 }
 
 #[test]
@@ -136,6 +354,25 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
         .expect("transition fixture");
     let old_output = view(&device, OLD);
     let new_output = view(&device, NEW);
+    let reset_image = independent_reset(&cap, &device, &queue, &new_output, NEW, 3);
+    let single_view_texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("one-view creation control"),
+        size: wgpu::Extent3d {
+            width: 1,
+            height: 1,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: FORMAT,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING,
+        view_formats: &[],
+    });
+    let creations = Creations::default();
+    let dispatch = creations.dispatch();
+    let _render_events = tracing::dispatcher::set_default(&dispatch);
+    let render_thread = std::thread::current().id();
     let old = request(OLD, 1);
     let stale = request(STALE, 1);
     let new = request(NEW, 1);
@@ -149,13 +386,15 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
         .expect("transition fixture");
     let (release, blocked) = mpsc::channel();
     let (built, observed_build) = mpsc::channel();
-    let first_build = prepare(&host, STALE);
+    let first_build = prepare(&host, STALE, dispatch.clone());
     transition
         .advance(stale, old, ms(100), || {
             Ok(move |cancel: &AtomicBool| {
                 // Hold a finished result on the preparation thread until it is superseded.
                 let ready = first_build(cancel)?.expect("superseded candidate resources");
-                built.send(()).expect("notify completed preparation");
+                built
+                    .send(std::thread::current().id())
+                    .expect("notify completed preparation");
                 blocked
                     .recv_timeout(Duration::from_secs(10))
                     .expect("transition fixture");
@@ -167,7 +406,7 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
 
     submit(&mut host, &old_output, OLD);
     let first = complete(&mut host, &device);
-    observed_build
+    let worker_thread = observed_build
         .recv_timeout(Duration::from_secs(5))
         .expect("observe completed preparation");
     transition
@@ -184,7 +423,9 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     let deadline = Instant::now() + Duration::from_secs(10);
     let candidate = loop {
         transition
-            .advance(new, old, ms(202), || Ok(prepare(&host, NEW)))
+            .advance(new, old, ms(202), || {
+                Ok(prepare(&host, NEW, dispatch.clone()))
+            })
             .expect("transition fixture");
         if let Some(ready) = transition.ready() {
             break ready;
@@ -236,27 +477,25 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     submit(&mut host, &new_output, NEW);
     let switched = complete(&mut host, &device);
     assert_eq!(switched.render_extent, NEW);
-    let mut independent = self::host(&cap, &queue, NEW);
-    independent
-        .enable_submitted_capture_with_limits(1, CaptureLimits::default())
-        .expect("independent reset tap");
-    independent.invalidate_history();
-    submit(&mut independent, &new_output, NEW);
-    let reset = complete(&mut independent, &device);
-    assert_eq!(switched.history_identity[1], reset.history_identity[1]);
-    let reset_image = captured(&mut independent, &device);
+    assert_eq!(
+        switched.history_identity[1],
+        reset_image.sample.history_identity[1]
+    );
     submit(&mut host, &new_output, NEW);
     let resumed = complete(&mut host, &device);
     assert_eq!(resumed.history_identity[1], switched.history_identity[0]);
-    assert_ne!(resumed.history_identity[1], reset.history_identity[1]);
+    assert_ne!(
+        resumed.history_identity[1],
+        reset_image.sample.history_identity[1]
+    );
 
     let switched_submission = switched.submission_order;
     let expected = [first, held, last_old, switched, resumed];
     for expected in expected {
         let image = captured(&mut host, &device);
         if image.sample.submission_order == switched_submission {
-            assert_eq!(
-                image.rgba, reset_image.rgba,
+            assert!(
+                first_frame_matches_reset(&image, &reset_image),
                 "first new image differs from the independent reset"
             );
         }
@@ -268,30 +507,36 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     }
     assert_eq!(host.submitted_capture_omissions(), 0);
 
-    let report = host.creation_report();
-    let build_label = "prepare scene extent";
-    let target_resources = |row: &thrum_render::runtime::CreationRow| {
-        row.counts.textures > 0 && row.counts.texture_views > 0 && row.counts.bind_groups > 0
+    assert_ne!(worker_thread, render_thread);
+    let worker = creations.on(worker_thread);
+    for kind in [
+        "Device::create_texture",
+        "Texture::create_view",
+        "Device::create_bind_group",
+    ] {
+        assert!(
+            worker.contains(&kind),
+            "missing worker event {kind}: {worker:?}"
+        );
+    }
+    // The surface double lends pre-existing drawable views, so it needs no
+    // exception for the window host's ordinary drawable view creation.
+    let render_created_nothing = || {
+        let events = creations.on(render_thread);
+        if events.is_empty() {
+            Ok(())
+        } else {
+            Err(events)
+        }
     };
-    assert!(
-        report
-            .rows
-            .iter()
-            .any(|row| row.label == build_label && target_resources(row))
-    );
-    let wrong_thread = std::thread::current().name().unwrap_or_default().to_owned();
-    assert!(!report.rows.iter().any(|row| row.label == build_label
-        && row.thread == wrong_thread
-        && target_resources(row)));
-    let control = prepare(&host, STALE)(&AtomicBool::new(false)).expect("transition fixture");
-    let report = host.creation_report();
-    assert!(
-        report.rows.iter().any(|row| row.label == build_label
-            && row.thread == wrong_thread
-            && target_resources(row)),
-        "creation accounting failed to detect the render-thread control: {:?}",
-        report.rows
-    );
+    assert_eq!(render_created_nothing(), Ok(()));
+    drop(single_view_texture.create_view(&wgpu::TextureViewDescriptor::default()));
+    assert_eq!(render_created_nothing(), Err(vec!["Texture::create_view"]));
+    let control = prepare(&host, STALE, dispatch.clone())(&AtomicBool::new(false))
+        .expect("transition fixture");
+    let wrong_thread = render_created_nothing().expect_err("synchronous build escaped detection");
+    assert!(wrong_thread.contains(&"Device::create_texture"));
+    assert!(wrong_thread.contains(&"Device::create_bind_group"));
     drop(control);
 }
 
@@ -336,7 +581,7 @@ fn failed_and_lost_builds_never_take_the_surface() {
     assert_eq!(complete(&mut host, &device).render_extent, OLD);
 
     let inputs = host.device_prepare_inputs().expect("transition fixture");
-    let job = prepare(&host, NEW);
+    let job = prepare(&host, NEW, Dispatch::none());
     let (finished, pending) = mpsc::channel();
     let (release, blocked) = mpsc::channel();
     transition.observe(new, old, ms(1000));
@@ -379,7 +624,9 @@ fn failed_and_lost_builds_never_take_the_surface() {
     let deadline = Instant::now() + Duration::from_secs(5);
     let ready = loop {
         transition
-            .advance(new, old, ms(1300), || Ok(prepare(&host, NEW)))
+            .advance(new, old, ms(1300), || {
+                Ok(prepare(&host, NEW, Dispatch::none()))
+            })
             .expect("transition fixture");
         if let Some(ready) = transition.ready() {
             break ready;

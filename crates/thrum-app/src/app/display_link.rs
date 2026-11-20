@@ -8,6 +8,7 @@ use objc2_foundation::{
     MainThreadMarker, NSObject, NSObjectProtocol, NSRunLoop, NSRunLoopCommonModes,
 };
 use objc2_quartz_core::{CADisplayLink, CAFrameRateRange};
+use std::cell::Cell;
 use winit::{
     event_loop::EventLoopProxy,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
@@ -18,6 +19,7 @@ use super::UserEvent;
 
 struct LinkIvars {
     wake: EventLoopProxy<UserEvent>,
+    callbacks: Cell<u64>,
 }
 
 define_class!(
@@ -37,7 +39,9 @@ define_class!(
         #[unsafe(method(displayFrame:))]
         fn display_frame(&self, link: &CADisplayLink) {
             let target = link.targetTimestamp();
-            let _ = self.ivars().wake.send_event(UserEvent::DisplayTarget { target, callback: link.timestamp() });
+            let number = self.ivars().callbacks.get() + 1;
+            self.ivars().callbacks.set(number);
+            let _ = self.ivars().wake.send_event(UserEvent::DisplayTarget { target, callback: link.timestamp(), number });
         }
     }
 );
@@ -48,7 +52,10 @@ impl LinkTarget {
         reason = "the NSObject initializer is the narrow AppKit callback owner bridge"
     )]
     fn new(wake: EventLoopProxy<UserEvent>, mtm: MainThreadMarker) -> Retained<Self> {
-        let this = Self::alloc(mtm).set_ivars(LinkIvars { wake });
+        let this = Self::alloc(mtm).set_ivars(LinkIvars {
+            wake,
+            callbacks: Cell::new(0),
+        });
         // SAFETY: NSObject's initializer accepts this allocated subclass.
         unsafe { msg_send![super(this), init] }
     }

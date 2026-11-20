@@ -9,7 +9,7 @@ use std::{
     path::PathBuf,
 };
 use thrum_render::{
-    capabilities::drawable_extent,
+    capabilities::{configure_surface_once, drawable_extent},
     runtime::{ExtentRequest, SurfaceSwitchRecord},
 };
 
@@ -65,13 +65,18 @@ impl TransitionTicks {
     pub(in crate::app) fn record(
         &mut self,
         sequence: u64,
+        callback: u64,
         media: f64,
+        target: f64,
         render_busy: bool,
     ) -> io::Result<()> {
         writeln!(
             self.0,
             "{}",
-            json!({"sequence": sequence, "media": media, "render_busy": render_busy})
+            json!({
+                "sequence": sequence, "callback": callback, "media": media, "target": target,
+                "dispatched": CACurrentMediaTime(), "render_busy": render_busy,
+            })
         )?;
         self.0.flush()
     }
@@ -79,6 +84,12 @@ impl TransitionTicks {
 
 pub(in crate::app) struct TransitionProof {
     output: BufWriter<File>,
+    configure_log: BufWriter<File>,
+    configure_error: Option<io::Error>,
+    sequence: Option<u64>,
+    work: Vec<(&'static str, f64, f64)>,
+    stage: (&'static str, f64),
+    present_media: Option<f64>,
     arm: TransitionArm,
     faulted: bool,
     drawable: Option<([u32; 2], [u32; 2])>,
@@ -89,13 +100,65 @@ impl TransitionProof {
     pub(in crate::app) fn start(options: &WindowTransitionProof) -> Result<Self, String> {
         let file =
             File::create(options.output.join("frames.jsonl")).map_err(|error| error.to_string())?;
+        let configure = File::create(options.output.join("configure.jsonl"))
+            .map_err(|error| error.to_string())?;
         Ok(Self {
             output: BufWriter::new(file),
+            configure_log: BufWriter::new(configure),
+            configure_error: None,
+            sequence: None,
+            work: Vec::new(),
+            stage: ("idle", 0.0),
+            present_media: None,
             arm: options.arm,
             faulted: false,
             drawable: None,
             switch: None,
         })
+    }
+
+    pub(in crate::app) fn begin_frame(&mut self, sequence: u64) {
+        self.sequence = Some(sequence);
+        self.stage = ("frame policy and extent coordination", CACurrentMediaTime());
+    }
+
+    pub(in crate::app) fn stage(&mut self, next: &'static str) {
+        let now = CACurrentMediaTime();
+        self.work.push((self.stage.0, self.stage.1, now));
+        self.stage = (next, now);
+    }
+
+    pub(in crate::app) fn presented(&mut self) {
+        self.present_media = Some(CACurrentMediaTime());
+    }
+
+    pub(in crate::app) fn configure(
+        proof: Option<&mut Self>,
+        path: &'static str,
+        surface: &wgpu::Surface<'_>,
+        device: &wgpu::Device,
+        config: &wgpu::SurfaceConfiguration,
+    ) -> Result<(), wgpu::Error> {
+        let Some(proof) = proof else {
+            return configure_surface_once(surface, device, config);
+        };
+        let started = CACurrentMediaTime();
+        let result = configure_surface_once(surface, device, config);
+        let ended = CACurrentMediaTime();
+        let write = writeln!(
+            proof.configure_log,
+            "{}",
+            json!({
+                "sequence": proof.sequence, "path": path, "extent": [config.width, config.height],
+                "started": started, "ended": ended, "wall_ms": (ended - started) * 1000.0,
+                "succeeded": result.is_ok(),
+            })
+        )
+        .and_then(|()| proof.configure_log.flush());
+        if let Err(error) = write {
+            proof.configure_error = Some(error);
+        }
+        result
     }
 
     pub(in crate::app) fn synchronous(&self) -> bool {
@@ -161,6 +224,11 @@ impl TransitionProof {
         scale: u64,
         submission: Option<u64>,
     ) -> io::Result<()> {
+        if let Some(error) = self.configure_error.take() {
+            return Err(error);
+        }
+        self.stage("idle");
+        self.sequence = None;
         let presented =
             matches!(&reply.outcome, RenderOutcome::Frame(Ok(report)) if report.surface_presented);
         writeln!(
@@ -172,10 +240,12 @@ impl TransitionProof {
                 "scale": f64::from_bits(scale),
                 "surface": reply.surface_extent,
                 "presented": presented,
+                "present_media": self.present_media.take(),
                 "status": format!("{:?}", reply.surface_status),
-            "transition_error": reply.transition_error,
+                "transition_error": reply.transition_error,
                 "submission": submission,
                 "wall_ms": reply.worker_wall.as_secs_f64() * 1000.0,
+                "work": std::mem::take(&mut self.work),
                 "drawable": self.drawable.take(),
                 "switch": self.switch.take(),
             })

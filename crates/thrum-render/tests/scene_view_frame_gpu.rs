@@ -349,7 +349,21 @@ fn the_first_asked_frame_is_whole_after_discard_capture_cut_resize_and_device_re
         submit(&mut host, &device, &target, [64, 64]);
         let storage_gain = 1024.0 * (0.25 / (1.2 * 64.0));
         observed(&host, &device, &queue, &control, [64, 64], storage_gain);
-        assert!(host.resize_scene_surface([96, 48]).expect("resize"));
+        let inputs = host.extent_prepare_inputs([96, 48]).expect("resize inputs");
+        let candidate = std::thread::spawn(move || {
+            inputs
+                .build(&std::sync::atomic::AtomicBool::new(false))
+                .expect("resize preparation")
+                .expect("replacement extent")
+        })
+        .join()
+        .expect("preparation thread");
+        assert_eq!(
+            control.lock().expect("control").handles[0].maximum_extent(),
+            [64, 64],
+            "preparation leaves the old view bound"
+        );
+        assert!(host.publish_extent(candidate));
         assert!(host.contribution_error().is_none());
         assert_eq!(
             control.lock().expect("control").handles[0].maximum_extent(),

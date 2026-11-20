@@ -7,13 +7,13 @@ mod hardware;
 mod recipe;
 #[cfg(target_os = "macos")]
 pub use apple::drawable_extent;
-#[cfg(not(target_arch = "wasm32"))]
-pub use device::configure_surface_once;
 pub use device::{
     DeviceProfile, DeviceRecipe, DeviceRestriction, DeviceWatch, FIRST_DEVICE_GENERATION,
     OpenedDevice, PREFERRED_SDR_FORMAT, SurfaceConfigError, configure_surface, sdr_surface_config,
     sdr_surface_format,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use device::{configure_surface_once, retry_surface_configuration};
 pub use hardware::{HardwareFeature, HardwareLaunchError, HardwareRequest, HardwareSelection};
 pub use recipe::{Recipe, RecipeError};
 

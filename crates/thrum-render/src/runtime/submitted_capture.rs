@@ -124,6 +124,16 @@ pub(super) fn reserve(
 }
 
 impl Tap {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn owner(&self) -> std::sync::Arc<()> {
+        self.owner.clone()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn owns(&self, owner: &std::sync::Arc<()>) -> bool {
+        std::sync::Arc::ptr_eq(&self.owner, owner)
+    }
+
     pub(super) fn pending(&self) -> bool {
         self.slots.iter().any(|slot| slot.reserved)
     }
@@ -369,6 +379,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn switch_capture_extent(&mut self, mut capture: Option<Tap>) {
         if let (Some(next), Some(previous)) = (&mut capture, self.submitted_capture.take()) {
+            next.accepting = previous.accepting;
             next.omitted = previous.omitted;
             if previous.pending() {
                 self.retired_capture.push_back(previous);
