@@ -338,6 +338,7 @@ fn build_scene(
         })
         .transpose()?;
     let (elevation, azimuth) = match demo.map(|demo| demo.view) {
+        Some(WakeView::Chase | WakeView::Overhead) if whitewater => (49.0, 76.0),
         Some(WakeView::Overhead) => (79.0, 269.0),
         Some(WakeView::Shore) if demo.is_some_and(|demo| demo.stone) => (15.0, 23.0),
         Some(WakeView::Shore) => (14.0, 43.0),
