@@ -358,7 +358,7 @@
         {
           "verdict": "fail",
           "commit": "9fa6860363e020e9cc144ea50027d48999201cd2",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-3.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -398,6 +398,50 @@
             "turns": 1
           },
           "at": "2026-11-20T01:11:56Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "dc3118ad82c5a494667d504171c1e03f8389fed5",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "fail",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass",
+            "M3.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "Same-device Maps fallback drops a resident cooked receiver from the first submitted frame",
+              "item": "M3.6",
+              "different": "Initial attachment and visual republication now retry with Maps and keep the contribution attached. The new failure occurs after a successful visual publication: previously resident geometry disappears while its cooked buffers upload again, so the first submitted image differs from the no-request control.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 160444,
+            "cached": 6440192,
+            "output": 15336,
+            "turns": 1
+          },
+          "at": "2026-11-20T06:30:09Z"
         }
       ],
       "authorised": {

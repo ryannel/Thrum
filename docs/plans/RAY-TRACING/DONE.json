@@ -197,8 +197,8 @@
     {
       "id": "M3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "ready_for_review",
-      "failed_reviews": 3,
+      "status": "in_progress",
+      "failed_reviews": 4,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "ATMOSPHERE:M5",
@@ -268,8 +268,8 @@
           "ask": "Is each request resolved from the registry's facts before anything is allocated, is the report the resolved value with its reason and not an echo of the request, and is the preparation failure injected by the test and not assumed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#preparation-fallback",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
@@ -354,9 +354,9 @@
       ],
       "findings": [
         {
-          "name": "Cooked scene preparation misses Maps fallback on initial attachment and visual republication",
+          "name": "Same-device Maps fallback drops a resident cooked receiver from the first submitted frame",
           "item": "M3.6",
-          "different": "Generation-2 device replacement now retains the cooked receiver and matches Maps. On generation 1 the initial attachment returns an error, and publishing a visual on the same device drops an already drawn contribution.",
+          "different": "Initial attachment and visual republication now retry with Maps and keep the contribution attached. The new failure occurs after a successful visual publication: previously resident geometry disappears while its cooked buffers upload again, so the first submitted image differs from the no-request control.",
           "repeat": false
         }
       ]
