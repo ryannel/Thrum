@@ -74,6 +74,16 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         let cover = stocks.yz * mix(1.0, porous, shore_mix);
         stocks = vec4(stocks.x, cover, stocks.w);
     }
+    // The stern ribbon carries submerged air alongside fresh film. In
+    // the densest part, water shows between pockets of surface churn.
+    let churn = smoothstep(0.06, 0.32, stocks.w);
+    if churn > 0.0 {
+        let bubbles = point.xz * vec2(1.20, 2.45) + vec2(1.8 * stocks.x, 2.3 * stocks.w);
+        let pockets = 0.74 * foam_noise(bubbles) + 0.26 * foam_noise(bubbles * 2.63 + 17.0);
+        let porous = mix(0.34, 0.91, smoothstep(0.24, 0.80, pockets));
+        stocks = vec4(stocks.x, stocks.y * mix(1.0, porous, churn),
+            stocks.z * mix(1.0, 0.78, churn), stocks.w);
+    }
     return vec4(stocks.x, ranked_cover(stocks, point.xz, footprint), stocks.zw);
 }
 
