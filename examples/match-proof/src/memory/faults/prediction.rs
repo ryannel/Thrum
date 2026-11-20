@@ -126,6 +126,7 @@ impl Trace {
         if view.predicted != self.live {
             self.transitions
                 .push(json!({"host_tick": host_tick, "confirmed": confirmed,
+                "held": client.held(), "newest": client.newest(),
                 "authored": target, "span": span, "predicted": view.predicted,
                 "view_tick": view.tick, "state": format!("{:?}", client.state())}));
             self.live = view.predicted;
@@ -480,6 +481,7 @@ fn reconnect(
 }
 
 fn recover_stall(game: &mut Match, hero: usize, stall_at: u64, release_at: u64) -> Value {
+    let authored_during_stall = game.players[hero].client.last_frame().0;
     game.players[hero].carrier.stall(false);
     let mut skipped = Vec::new();
     for fallback_polls in 0..180 {
@@ -505,11 +507,16 @@ fn recover_stall(game: &mut Match, hero: usize, stall_at: u64, release_at: u64) 
                 "prediction resumed during a skip"
             );
             assert!(
+                client.world().tick() >= authored_during_stall,
+                "prediction resumed before the stalled stream caught up at host tick {host_tick}"
+            );
+            assert!(
                 !skipped.is_empty(),
                 "expected to exercise the post-stall skip"
             );
             return json!({"from": stall_at, "through": release_at, "resumed": host_tick,
                 "fallback_polls_after_release": fallback_polls, "skip": skipped,
+                "authored_through_release": authored_during_stall,
                 "resumed_at_confirmed_tick": client.world().tick(), "resumed_view_tick": view.tick});
         }
     }

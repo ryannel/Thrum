@@ -125,6 +125,7 @@ pub(super) struct Prediction<W: World, P: PredictedController<W>> {
     entries: VecDeque<Entry<W::Action, P::State>>,
     confirmed: Option<ControllerView<P::State>>,
     confirmed_axes: [f32; 3],
+    recover_through: u64,
     live: bool,
 }
 
@@ -135,12 +136,14 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
             entries: VecDeque::with_capacity(PREDICTION_TICKS),
             confirmed: None,
             confirmed_axes: [0.0; 3],
+            recover_through: 0,
             live: false,
         }
     }
 
     pub(super) fn suspend(&mut self, discard: bool) {
         self.live = false;
+        self.recover_through = 0;
         if discard {
             self.entries.clear();
         }
@@ -148,6 +151,7 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
 
     pub(super) fn install(&mut self, tick: u64, state: Option<P::State>, axes: [f32; 3]) {
         self.live = false;
+        self.recover_through = 0;
         self.confirmed = state.map(|state| ControllerView {
             tick,
             previous: state,
@@ -187,7 +191,7 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
         Some(view)
     }
 
-    pub(super) fn author(&mut self, authored: InputFrame<W::Action>) {
+    pub(super) fn author(&mut self, authored: InputFrame<W::Action>, stalled: bool) {
         let target = authored.tick;
         let Some(last) = self
             .entries
@@ -203,6 +207,11 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
         let first_retained = target.saturating_sub(PREDICTION_TICKS as u64 - 1);
         if first_retained > self.entries.front().map_or(last + 1, |entry| entry.tick) {
             self.live = false;
+            if stalled {
+                // A burst can drain to the buffer edge before the rest arrives.
+                // Wait until the world has crossed the input authored in the stall.
+                self.recover_through = target;
+            }
             while self
                 .entries
                 .front()
@@ -260,9 +269,11 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
 
     fn replay(&mut self) {
         let Some(confirmed) = self.confirmed.filter(|confirmed| {
-            self.entries
-                .front()
-                .is_none_or(|entry| entry.tick == confirmed.tick + 1)
+            confirmed.tick >= self.recover_through
+                && self
+                    .entries
+                    .front()
+                    .is_none_or(|entry| entry.tick == confirmed.tick + 1)
         }) else {
             self.live = false;
             return;

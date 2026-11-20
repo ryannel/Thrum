@@ -1059,7 +1059,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
             && let Some(predicted) =
                 prediction_frame(&authored, &self.replica.codec, &storage[..bytes])
         {
-            prediction.author(predicted);
+            prediction.author(predicted, self.clock.as_ref().is_some_and(Clock::stalled));
         }
         if self.recent.len() == usize::from(settings.repeats.min(self.repeat_limit)) {
             self.recent.pop_front();

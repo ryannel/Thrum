@@ -105,6 +105,10 @@ impl Clock {
         self.skipping || self.skip.is_some()
     }
 
+    pub(super) fn stalled(&self) -> bool {
+        self.stall.is_some()
+    }
+
     fn wanted(&self, now: u64, settings: Settings) -> f64 {
         let elapsed = now.saturating_sub(self.at) as f64 / f64::from(settings.tick_us);
         self.position + elapsed * self.rate
