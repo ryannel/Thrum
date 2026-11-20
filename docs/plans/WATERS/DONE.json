@@ -723,7 +723,7 @@
     {
       "id": "M6",
       "name": "The craft leaves a wake that spreads behind it, outlives it and lifts a float it crosses, and a stone dropped in the lake sends rings that slow in the shallows and die at the shore",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -773,7 +773,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M6/moored-bands-metal.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
         },
         {
@@ -873,14 +873,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M6-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "A moored craft sinks into its own wake when only the fine level admits its pressure",
-          "item": "M6.6",
-          "different": "The previous finding concerned missing observations of outgoing waves around a settled hull. The check now measures those waves. This is a measured draft error when just one level admits the source.",
-          "repeat": false
         }
       ]
     },
