@@ -92,8 +92,8 @@
           "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device. The support package's stand-in is gone, and a test's device is the recipe's, by profile and restriction.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates examples",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (shape check passes at 677f643e4)",
           "verdict": "",
           "review": ""
         },
@@ -103,8 +103,8 @@
           "check": "sh -c 'test -f scripts/check_cross_target.sh && bash scripts/check_cross_target.sh'",
           "ask": "Read the command: does it check every target of every workspace package for both platforms, with none excluded by name? Would an error on the Linux target alone make it exit non-zero? Does a run leave the checkout clean?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md; cross-target-iter.log; cross-target-linux-error-probe.log",
           "verdict": "",
           "review": ""
         },
@@ -114,8 +114,8 @@
           "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
           "ask": "List the tests that carry an OS condition of their own, and the modules marked `platform-only tests:`. Is any of them a test that touches no GPU and no API of that OS, so that it would run on Linux or Windows?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (rule at zero; audit section)",
           "verdict": "",
           "review": ""
         },
@@ -124,8 +124,8 @@
           "statement": "A GPU test asks the gate before it opens a device, and one that needs Metal asks the gate for Metal. So where there is no adapter, or none on Metal, it writes the skip line and returns: no test opens the recipe's device unasked, returns without asking, or admits any backend and then requires Metal.",
           "ask": "Search the tests under `crates/` and `examples/`. Does any open the recipe's device, or return early, before it asks the gate? Does any admit any backend and then assert Metal, or open a recipe only Metal offers, outside a macOS condition?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (audit section)",
           "verdict": "",
           "review": ""
         },
@@ -134,8 +134,8 @@
           "statement": "The type-check keeps running after this milestone, on main and in no merge's check: `ORCHESTRATE.md` declares the main-branch check `cross-target` in the design's words.",
           "check": "grep -q 'Main-branch check cross-target:.*scripts/check_cross_target.sh' ORCHESTRATE.md",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "ORCHESTRATE.md Rules: Main-branch check cross-target; .orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md",
           "verdict": "",
           "review": ""
         },
@@ -144,8 +144,8 @@
           "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`. The includes of game source went with `GAME-SPLIT` M2.",
           "check": "python3 scripts/shape_rules.py check --rule path-attribute --zero crates",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md (shape check passes at 677f643e4)",
           "verdict": "",
           "review": ""
         },
@@ -154,8 +154,8 @@
           "statement": "This milestone took no test out of a Mac run. Every test that passed before it passed at its first candidate with a GPU required and no skip line, which the recorded comparison of `cargo test --workspace` shows, and no change made since that candidate removes a test, empties one on macOS or lets one skip there.",
           "ask": "Does the recorded comparison map every test that reported `ok` before to one that reported `ok` at the first candidate, test by test, with no `thrum-gpu-skip:` line in the later run? In the milestone's commits after that candidate, is any test removed, or its body left empty on macOS, without the same test declared again? The proof that none skips now is the merged tree's `./dev check`, which requires a GPU on this Mac.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/README.md (recorded comparison); cross-target.md (M2.4 section)",
           "verdict": "",
           "review": ""
         },
@@ -164,8 +164,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images on the merged tip (verify answers NOT_ON_MAIN before merge)",
           "verdict": "",
           "review": ""
         }

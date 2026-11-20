@@ -7,6 +7,14 @@
   watcher and capture writer tests compile for iOS Simulator; the camera route test is unconditional.
   Not run: Linux or Windows. [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M2/review-fix-2.md).
 
+- 2026-11-20 Built M2's re-planned items. `scripts/check_cross_target.sh` type-checks every workspace target for
+  Linux and Windows with temporary stand-in compilers, and `ORCHESTRATE.md` declares it as the main-branch check
+  `cross-target`. Fixed its two failures (the asset draw tests' `serde_json`, the water scene's tests gated one by
+  one) and one CPU route test in `v1-game` hidden by a macOS condition. Verified: both targets pass, a Linux-only
+  error fails it, the shape checks pass, clippy is clean on Mac. Judged by reading, with the third review's
+  probes: every Metal assertion sits behind a Metal admission or a macOS condition; the probe is keyword-based.
+  [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M2/cross-target.md).
+
 - 2026-11-20 Fixed M2's review findings. Diagnostic device adjustments respect the limits and features
   selected by the recipe and registry. CPU tests stay in their harnesses, Metal tests report unavailable
   prerequisites through the GPU gate, and the sprite fixtures use declared modules. Verified the repaired
