@@ -992,7 +992,7 @@
         {
           "verdict": "fail",
           "commit": "390b89d2aa9c1e9880762c8a959e0be05e00e054",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "review": ".orchestrate/evidence/WATERS/M7-review-1.md",
           "items": {
             "M7.2": "pass",
             "M7.3": "fail",
@@ -1061,6 +1061,51 @@
             "turns": 1
           },
           "at": "2026-11-20T08:14:35Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "712a58c49a83a8e00e36f7a6d261c62261c24587",
+          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "items": {
+            "M7.2": "pass",
+            "M7.3": "pass",
+            "M7.4": "pass",
+            "M7.5": "pass",
+            "M7.6": "pass",
+            "M7.7": "pass",
+            "M7.8": "fail",
+            "M7.9": "pass",
+            "M7.10": "pass",
+            "M7.11": "pass",
+            "M7.12": "pass",
+            "M7.13": "pass",
+            "M7.14": "pass",
+            "M7.15": "pass"
+          },
+          "findings": [
+            {
+              "name": "Squared turquoise halo around the moving craft",
+              "item": "M7.8",
+              "different": "The earlier M7.8 finding was a solid white powered trail hiding the aerated water; that is fixed. This is a new box-shaped, straight-edged turquoise tint around the hull and ahead of the bow, absent with foam off.",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 214208,
+            "cached": 11983506,
+            "output": 46543,
+            "cost_usd": 5.040521,
+            "turns": 1
+          },
+          "at": "2026-11-20T16:40:04Z"
         }
       ],
       "authorised": {
