@@ -47,3 +47,7 @@
   disc tangent. The frozen SDR shader is byte-identical to the pre-M2 file and compiles independently.
   Verified the scoped renderer tests on Mac, including the retained SDR pixels and scene source fingerprints.
   [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md).
+- 2026-11-20 Addressed the second M2 review. The Earth profile supplies both density paths. Rust owns the night
+  chart limit, Rec.709 weights, exposure thresholds, sRGB transfer values, FP16 limit and visibility word width.
+  On Metal the transmittance, night, exposure and SDR tests passed, including the retained display and scene
+  source comparisons. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-lighting-and-display-parameters).
