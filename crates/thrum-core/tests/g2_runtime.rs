@@ -666,5 +666,4 @@ fn test_candidate(runtime: &GameRuntime<Rules>) -> Candidate {
 
 fn assert_invalid_journal_access(runtime: &GameRuntime<Rules>) {
     assert!(runtime.read().live_at_slot(u32::MAX).is_none());
-    assert!(!runtime.read().visit_changes_since(0, 99, |_| {}));
 }

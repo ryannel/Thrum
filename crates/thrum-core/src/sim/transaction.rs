@@ -608,7 +608,7 @@ impl EditScratch {
             undo.reserve_for(&self.undo_counts, structural, despawns);
         }
         journal.clear();
-        world.begin_tick(Some(tick));
+        world.begin_tick();
         if let Some(undo) = undo.as_ref() {
             undo.visit_changed_components(|component, slot| {
                 world.mark_changed(component, world.handle_at(slot), tick);
@@ -671,6 +671,5 @@ impl EditScratch {
                 spawn += 1;
             }
         }
-        world.finish_tick(tick);
     }
 }

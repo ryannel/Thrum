@@ -759,7 +759,7 @@ impl<G: TickGame> GameRuntime<G> {
         self.timeline = following_timeline;
         self.revision = capture.revision;
         self.delta_ready = false;
-        self.world.begin_tick(None);
+        self.world.begin_tick();
         self.structural_journal.clear();
         self.initial_published = false;
         self.pages = SnapshotRing::new(
@@ -847,7 +847,7 @@ impl<G: TickGame> GameRuntime<G> {
                     .iter()
                     .any(|step| step.world.has_component_rows(component))
                 {
-                    self.world.begin_tick(None);
+                    self.world.begin_tick();
                     for step in steps.iter_mut() {
                         let undo = Arc::get_mut(&mut step.world).expect("rewind owns preimages");
                         self.world.restore_first_seen(undo, component);
@@ -857,8 +857,7 @@ impl<G: TickGame> GameRuntime<G> {
             for step in steps.iter_mut() {
                 step.spent = true;
             }
-            self.world.begin_tick(None);
-            self.world.invalidate_change_frames();
+            self.world.begin_tick();
         } else {
             for step in steps.iter_mut().rev() {
                 let undo = Arc::get_mut(&mut step.world).expect("rewind owns preimages");
@@ -2066,112 +2065,6 @@ impl WorldRead<'_> {
     /// Number of logical slots, including vacant and retired slots.
     pub fn capacity(&self) -> usize {
         self.world.capacity()
-    }
-
-    /// Whether a page's changed-slot interval is still in the bounded journal.
-    pub fn has_changes_since(&self, since: u64, current: u64) -> bool {
-        self.world.has_changes_since(since, current)
-    }
-
-    /// Visit the union of changed slots once each, in physical slot order.
-    /// Returns false and visits nothing if the interval is no longer retained.
-    pub fn visit_changes_since(&self, since: u64, current: u64, visit: impl FnMut(u32)) -> bool {
-        self.world.visit_changes_since(since, current, visit)
-    }
-
-    /// Visit changed slots with a live row and three component stamps. Permit
-    /// checks happen once before the scan rather than once per changed row.
-    /// Returns false without visiting when the interval has expired.
-    ///
-    /// # Panics
-    ///
-    /// A permit belongs to another runtime or system callback.
-    pub fn visit_changes_with_ticks3<
-        A: Send + Sync + 'static,
-        B: Send + Sync + 'static,
-        C: Send + Sync + 'static,
-    >(
-        &self,
-        since: u64,
-        current: u64,
-        permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
-        mut visit: impl FnMut(u32, Option<(LiveSlot<'_>, [u64; 4])>),
-    ) -> bool {
-        for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
-            assert_eq!(
-                permit, self.nonce,
-                "change permit belongs to another runtime"
-            );
-        }
-        assert!(self.system.is_none_or(|system| {
-            system == permits.0.system && system == permits.1.system && system == permits.2.system
-        }));
-        let components = [
-            permits.0.component,
-            permits.1.component,
-            permits.2.component,
-        ];
-        self.world.visit_changes_since(since, current, |key| {
-            let live = self.world.live_at_slot(key).map(|(handle, id)| {
-                (
-                    LiveSlot {
-                        handle,
-                        id,
-                        nonce: self.nonce,
-                        guard: PhantomData,
-                    },
-                    self.world.change_ticks3_at(key, components),
-                )
-            });
-            visit(key, live);
-        })
-    }
-
-    /// Visit slots with structural changes in a retained interval once each,
-    /// in physical slot order. Returns false if the interval is not retained.
-    pub fn visit_structural_since(&self, since: u64, current: u64, visit: impl FnMut(u32)) -> bool {
-        self.world.visit_structural_since(since, current, visit)
-    }
-
-    /// Whether every earlier changed slot in a retained interval also changed
-    /// in its last tick. This lets a game refresh a leased page from its
-    /// current validated edit batch when that batch covers the whole interval.
-    /// Structural slots may be omitted if the caller refreshes them separately.
-    pub fn prior_changes_covered_by_current(
-        &self,
-        since: u64,
-        current: u64,
-        ignore_structural: bool,
-    ) -> bool {
-        self.world
-            .prior_changes_covered_by_current(since, current, ignore_structural)
-    }
-
-    /// Whether a retained interval contains only writes to one declared
-    /// component, optionally including structural edits.
-    ///
-    /// # Errors
-    ///
-    /// The read permit belongs to another runtime or callback.
-    pub fn only_component_changes_since<T: Send + Sync + 'static>(
-        &self,
-        permit: &ReadPermit<T>,
-        since: u64,
-        current: u64,
-        include_structural: bool,
-    ) -> Result<bool, RegisteredWorldError> {
-        if permit.nonce != self.nonce {
-            return Err(RegisteredWorldError::WrongRuntime);
-        }
-        if self.system.is_some_and(|system| system != permit.system) {
-            return Err(RegisteredWorldError::WrongSystem);
-        }
-        Ok(self.world.only_component_changes_since(
-            since,
-            current,
-            permit.component,
-            include_structural,
-        ))
     }
 
     /// Resolve one live physical slot without exposing its storage row.

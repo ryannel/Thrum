@@ -138,8 +138,7 @@ impl RegisteredWorld {
         self.directory = decoded.directory;
         self.columns = decoded.columns;
         self.change_ticks = decoded.change_ticks;
-        self.begin_tick(None);
-        self.invalidate_change_frames();
+        self.begin_tick();
     }
 }
 

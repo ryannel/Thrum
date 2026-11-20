@@ -335,7 +335,7 @@ fn change_partitioned(
     tick: u64,
     changes: &[(u32, u64, u32)],
 ) -> WorldUndo {
-    world.begin_tick(Some(tick));
+    world.begin_tick();
     let mut undo = world.empty_undo();
     for &(slot, active, position) in changes {
         let handle = world.live_at_slot(slot).expect("changed live identity").0;
@@ -349,7 +349,6 @@ fn change_partitioned(
         pages.mark_component(0, slot);
     }
     world.finalize_activity(&[], &mut undo);
-    world.finish_tick(tick);
     undo
 }
 

@@ -4,7 +4,7 @@
 
 ## Ownership and public composition
 
-`thrum-core` owns checked slots/IDs, columns, schedule, atomic edits, change journal, page leases and undo. Games own types, callbacks, input/actions/rules and schema/quantization IDs. V1 separates movers/statics and keeps four controlled actors velocity-capable while idle. Engine APIs name no V1 field. Registrations freeze before tick one; changing them starts a new run until migration exists. A second game compiles without V1.
+`thrum-core` owns checked slots/IDs, columns, schedule, atomic edits, per-slot change ticks, page leases and undo. Games own types, callbacks, input/actions/rules and schema/quantization IDs. V1 separates movers/statics and keeps four controlled actors velocity-capable while idle. Engine APIs name no V1 field. Registrations freeze before tick one; changing them starts a new run until migration exists. A second game compiles without V1.
 
 Registration binds process `TypeId` to stable schema ID and snapshot/undo operations; systems declare stage, ID, dependencies and typed accesses. The engine validates the access union and compiles conflict-free waves; structural edits and external resources need explicit capability. Callbacks see scoped queries and typed batches, never raw storage; sparse lookup checks `Handle`. Independent kernels use deterministic storage order; order-sensitive rules and published lists use canonical slot order. Measure after archetype row moves.
 
