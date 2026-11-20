@@ -22,7 +22,7 @@ fn cloud_plane_cosines(viewer:vec3<f32>)->vec2<f32> {
     let path=mapping.path_border.xyz;
     // The plane is shared by the whole cloud. Turn it less toward the Sun
     // at the lowest elevations to retain contrast on the warm flank.
-    let turn=cloud.scattering.w*mix(0.42,1.0,smoothstep(0.17,0.38,path.y));
+    let turn=cloud.scattering.w*mix(0.50,1.0,smoothstep(0.04,0.32,path.y));
     let normal=normalize(mix(vec3(0.0,1.0,0.0),path,turn));
     return vec2(dot(normal,path),dot(normal,viewer));
 }

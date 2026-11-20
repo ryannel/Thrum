@@ -85,6 +85,12 @@ fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     return tau;
 }
 
+// Six balanced offsets in the plane across the Sun ray.
+const SUN_FOOTPRINT = array(
+    vec2(1.0,0.0), vec2(-0.5,0.8660254), vec2(-0.5,-0.8660254),
+    vec2(-1.0,0.0), vec2(0.5,-0.8660254), vec2(0.5,0.8660254),
+);
+
 fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->vec2<f32> {
     let samples = cloud.settings.y;
     if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
@@ -96,20 +102,21 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->
     let reach = min(mix(120.0, 720.0, grazing), (cloud.heights.y - point.y) / path.y);
     let step = min(reach, 120.0) / f32(samples);
     let tangent = vec3(path.z, 0.0, -path.x);
-    let across = normalize(tangent);
+    let across = tangent * inverseSqrt(max(dot(tangent,tangent),1e-6));
     let up = cross(path, across);
     var local = 0.0;
     for (var j = 0u; j < samples * 6u; j++) {
         let start = f32(j) * step;
         let width = min(step, reach - start);
         if width <= 0.0 { break; }
-        // Average across the grazing footprint with the existing taps.
-        // The spread grows from the shaded point and vanishes at higher Sun.
+        // Average across a grazing footprint with the existing taps.
+        // Spread less along the ray so nearby gaps stay visible.
         let solar_footprint = max(footprint, 2.0 * width * grazing);
         let distance = start + 0.5 * width;
-        let angle = f32(j % 6u) * (PI / 3.0);
-        let spread = (across * cos(angle) + up * sin(angle))
-            * min(390.0, 130.0 + distance * 0.50) * grazing;
+        let offset = SUN_FOOTPRINT[j % 6u];
+        let along = select(-0.23,0.23,j % 2u == 0u);
+        let spread = (across * offset.x + up * offset.y + path * along)
+            * min(430.0, 175.0 + distance * 0.46) * grazing;
         local += cloud_density(point + path * distance + spread, solar_footprint) * width;
     }
     // In the distance the coarse path drives the complete diffuse column.
