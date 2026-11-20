@@ -295,7 +295,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M4-review.md)
+- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/M4-review.md)
 - From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows (SHOWCASE M9): Not Started · [plan](SHOWCASE/PLAN.md) · [latest review](../../.orchestrate/evidence/SHOWCASE/M9-review.md)
 - Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach (WATERS M7): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/M7-review.md)
 - Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars (CLOUDS M5): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M5-review.md)
@@ -393,7 +393,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Done 17 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · In Progress |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M4 of 12 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 and SHOWCASE M9 for its M6 | Waiting: On Dependency, SHOWCASE:M9 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
