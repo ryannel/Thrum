@@ -16,7 +16,7 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-EVIDENCE = ROOT / "docs/evidence/RENDER-2D/M1"
+FIXTURES = ROOT / "tests/fixtures/render-2d"
 STARTING = "4392b652fb63994e6ca9090e9b5d20602777337d"
 TARGETS = ("mac-metal", "chrome-webgpu")
 BUILDS = {
@@ -479,7 +479,7 @@ def main():
     for name in ("before", "before-load", "base-binary", "binary", "route", "store"):
         parser.add_argument(f"--valley-{name}", type=Path)
     args = parser.parse_args()
-    retained = EVIDENCE / f"cost-{args.target}.json.gz"
+    retained = FIXTURES / f"cost-{args.target}.json.gz"
     if args.action in ("field", "costs"):
         if args.action == "costs":
             with gzip.open(retained, "rt") as data:

@@ -6,7 +6,7 @@ use std::{io::Write as _, path::Path, sync::mpsc, time::Duration};
 
 const ROOT: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../docs/evidence/ATMOSPHERE/M9-volumes"
+    "/src/atmosphere/gpu/tests/fixtures/aerial-ground"
 );
 const SIDE: usize = 32;
 const CELLS: usize = SIDE * SIDE;

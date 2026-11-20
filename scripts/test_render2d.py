@@ -6,11 +6,11 @@ from io import StringIO
 import json
 import unittest
 
-from render2d import EVIDENCE, TARGETS, validate
+from render2d import FIXTURES, TARGETS, validate
 
 
 def retained(target):
-    with gzip.open(EVIDENCE / f"cost-{target}.json.gz", "rt") as receipt:
+    with gzip.open(FIXTURES / f"cost-{target}.json.gz", "rt") as receipt:
         return json.load(receipt)
 
 
