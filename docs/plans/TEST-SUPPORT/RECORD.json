@@ -207,21 +207,30 @@
       }
     },
     "M3": {
-      "definitions": "41a083e80acbe530e98750a08c54ff5f360da7541861d20905605ba9bbbb1bca",
+      "definitions": "78850e1081b90ccd76aa19f264fecf771a0d1a77598ccc89b8c5f02628eb0a25",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:47Z"
+        "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
+        "at": "2026-11-20T12:18:24Z"
       }
     },
     "M4": {
-      "definitions": "7bedbf2f1453e3c171117aa6d6388f2c6df2d8e0361d909b19b56e87c232ec9c",
+      "definitions": "65ae8f51dc92c3451e1558b9486e5157bb4f7a493d51b46dd1ddafc55cab1925",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",
-        "at": "2026-11-20T10:12:47Z"
+        "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
+        "at": "2026-11-20T12:18:24Z"
+      }
+    },
+    "M5": {
+      "definitions": "c7c083825925f2b259572eddba2008eb37b1884d0be96b38e7a9bdf4e5783c35",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
+        "at": "2026-11-20T12:18:24Z"
       }
     }
   },
@@ -241,11 +250,15 @@
     {
       "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and consolidation for Thrum.\" The purpose is to make Thrum cheaper to change: a shorter merge gate, no tools, records or code that nothing uses, and no proof heavier than the fault it guards. It must not change what the engine draws, simulates or sends.\n\nStart from /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/REPORT.md. Read it in place; don't copy it or edit it. Beside it, results.json holds every finding, findings/<reviewer>.md holds the full write-ups, and verified/<reviewer>-<n>.md holds the second agents' corrections. Where a verifier corrected a finding, the verifier is right.\n\nIn scope: the report's sections 1 to 4 (gate time, dead tools and records, dead engine code, and small API changes that delete stubs). Also in scope: the parts of section 6 that are code or files, meaning the fixtures and record writers that still use docs/evidence, and the water settings that are parsed twice. Section 5, the test kit, belongs to TEST-SUPPORT as a milestone after its M2, so plan it there. Section 7 needs designs of its own: list each part as not planned, with one line each.\n\nSection 6's plan and settings text belongs to the lead and the planners:\n- L8-01: no rule says a Done item's check is history, so about 770 path mentions are treated as frozen.\n- L8-05: `! grep` and `test ! -e` checks pass when their path is missing (HOST M4.5, CLOUDS M14.13, SHOWCASE M9.7, HOST M3.2).\n- L8-07: ten open items ask for new tracked files under docs/evidence, which the merge guard refuses.\nFix those in the open done-when items and in ORCHESTRATE.md where it's within planner authority. Name any change that only the orchestrate skill can make, and keep that out of this plan.\n\nWhat the plan must respect:\n- A done-when item names a behaviour, not a file location. SHOWCASE M9.6 failed review over a byte-identical fixture move because its items named paths.\n- Up to three Claude builders (Opus 5.5 medium) can work at once. Shape the work so that milestones with disjoint files can run side by side, as separate modules if that's what it takes, and say which ones can.\n- Other builders are live, on Codex, in APPLE-PRESENTATION, HOST, RAY-TRACING, REVIEW-RENDER, SESSION, TEST-SUPPORT and RENDER-2D. The findings' verifier notes say which files are busy and which open done-when items name them. Declare each milestone's files, so the lead can confirm them before a builder starts.\n- A deletion that drops a capability or a proof is the owner's call. Carry each one as an assumption, with the other choice stated. That covers the headless release-trust toolchain (8,500 lines), the nine benches nothing runs, the ten-minute gale soak (actual_gale_keeps_the_fleet_in_contact_on_metal) moving from the gate to a main-branch check with a 60-second run left in the gate, and the reference tests that the 17 November bar may retire. The state-delta codec stays unless SESSION's design changes, because that design says keep.\n- scripts/ is a covered path for exact baselines, so script deletions land together.\n- Changes to the gate's machinery (the test profile, nextest) are measured before they're switched on.\n- Order by payoff. Gate time comes first, because every merge pays it.\n\nDone when the design has passed its review and the plan is merged.",
       "at": "2026-11-20T10:12:47Z"
+    },
+    {
+      "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass so the designs can pass review together.\n\n1. Resolve every Must Fix in the latest design reviews: .orchestrate/evidence/GATE-TIME/design-review.md, DEAD-CODE/design-review.md and TEST-SUPPORT/design-review.md. For example, DEAD-CODE M2.2 asks for a probe behind the lent contribution, which forwards nothing. Suggestions are yours to take or leave; say which you took. DEAD-TOOLS passed its review, so change its rows only where something below requires it.\n\n2. Apply the hardening pass at /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/HARDENING.md. Read it in place; it was written at 07339e923, so check each point against today's text.\n- A1: GATE-TIME M1 merges first in wave 1, after one release-build run of its tests, with the debug-on-main fallback the file describes.\n- A2: give the feature-gated tests a tier. That's thrum-render's creation counters, cooked_fault_gpu, ray_tracing_gpu and mesh_stage_gpu. Add a milestone (A2 calls it GATE-TIME M1a) that compiles them on every merge and runs them on main, and make the milestones that edit those files depend on it.\n- A3: stop the next slow test entering the merge tier.\n- A4: TEST-SUPPORT M3 needs a main-check long-tests item.\n- A5-A7: fix the four wrong file rows (DEAD-TOOLS M2's Cargo.lock, DEAD-CODE M5's package table, the shared xtask help string, the shape baseline), and stop DEAD-TOOLS M1.3 from running suites for deleted scripts.\n- Proposal 6: add each ratchet rule now at today's count, before its consolidation lands, rather than after.\n\n3. The owner's decision of 20 Nov: the merge tier is targeted. Every merge runs only the tests for what the change touches, and the full workspace runs on main. Replace the whole-workspace merge check. The design must say:\n- how the selection is computed from a change, at package level or finer;\n- what a change to shared inputs selects (root manifest, lockfile, toolchain, xtask, shared scripts);\n- that a selection it can't compute falls back to the whole workspace;\n- the accepted risk, written into the tier policy: a missed dependency edge reaches main and sits there until the next full run.\nMeasure the saving before the switch is turned on.\n\n4. Not yet answered by the owner, so carry these as Assumption: lines with the other choice stated: a hard stop when a test binary in the merge tier runs over three minutes, and hourly runs of the feature-gated tests on main.\n\n5. Keep each milestone's files table and the wave table current, because the lead confirms files before each builder starts. Feature builders are held until this programme lands (owner: \"Cleanup first\"), so ordering can assume a quiet machine once the live Codex milestones finish.\n\nEnd with PLANNED.",
+      "at": "2026-11-20T12:18:24Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T10:12:47Z"
+    "at": "2026-11-20T12:18:24Z"
   },
   "design_history": [
     {
