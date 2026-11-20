@@ -26,7 +26,9 @@ fn native_cloud_capture_prepares_an_opening_pose_outside_the_interactive_limits(
     first["pitch_degrees"] = serde_json::json!(45.0);
     let text = file(&[first], &[], &[]);
     let route = CameraRoute::parse_long_capture(&text, camera(), 60).expect("valid route");
-    let camera = camera().at_route_key(route.keys[0]).expect("opening camera");
+    let camera = camera()
+        .at_route_key(route.keys[0])
+        .expect("opening camera");
     let [pitch, yaw] = camera.orientation();
     route
         .check_start(camera, pitch, yaw)
