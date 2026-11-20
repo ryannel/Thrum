@@ -614,7 +614,7 @@
     {
       "id": "M4",
       "name": "The same sky and the same shade draw in Chrome",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -640,7 +640,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/M4/README.md#m42-ground-field-review-correction",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
         },
         {
@@ -672,13 +672,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/M4-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Ground-field lifecycle check accepts a constant Sun-path depth",
-          "item": "M4.2",
-          "repeat": false
         }
       ]
     },
