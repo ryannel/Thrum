@@ -120,8 +120,8 @@
           "statement": "A constant used on both sides is generated into the shader from the Rust value: the scene renderer's and the atmosphere's shared constants appear as literals in no `.wgsl` file.",
           "ask": "Take the constants the review lists under M23 and M29: is each now generated? Is any number still typed into both a `.rs` and a `.wgsl` file?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-sky-lut-zenith-row",
           "verdict": "fail",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },

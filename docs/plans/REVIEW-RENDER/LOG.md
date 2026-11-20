@@ -51,3 +51,7 @@
   chart limit, Rec.709 weights, exposure thresholds, sRGB transfer values, FP16 limit and visibility word width.
   On Metal the transmittance, night, exposure and SDR tests passed, including the retained display and scene
   source comparisons. [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-lighting-and-display-parameters).
+- 2026-11-20 Addressed the third M2 review. The sky LUT shader derives its half sizes and zenith
+  row from the generated Rust texture height. The production shader regression passed on Mac.
+  A source probe at height 110 derived row 109, and the shipping height still derives row 107.
+  [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-sky-lut-zenith-row).
