@@ -33,7 +33,7 @@ fn reinhard(stored: vec3<f32>) -> vec3<f32> {
     let peak = max(1.0,max(stored.r,max(stored.g,stored.b)));
     let scaled = stored/peak;
     let reciprocal_scale = (exposure.values.x*exposure.values.y)/peak;
-    let denominator = max(reciprocal_scale+dot(scaled,vec3(0.2126,0.7152,0.0722)),max(scaled.r,max(scaled.g,scaled.b)));
+    let denominator = max(reciprocal_scale+dot(scaled,REC709_LUMA),max(scaled.r,max(scaled.g,scaled.b)));
     // A black scene has zero denominator only when a subnormal reciprocal flushes.
     return scaled/max(denominator,1e-30);
 }
@@ -50,7 +50,7 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
         vec3(190.0, 220.0, 70.0), vec3(250.0, 220.0, 40.0), vec3(250.0, 140.0, 20.0),
         vec3(230.0, 40.0, 30.0), vec3(250.0, 110.0, 200.0), vec3(255.0, 255.0, 255.0),
     );
-    let luminance = dot(stored, vec3(0.2126, 0.7152, 0.0722));
+    let luminance = dot(stored, REC709_LUMA);
     var zone = 0;
     if luminance > 0.0 {
         // Two divisions keep a tiny gain from underflowing a product; overflow saturates.
@@ -62,7 +62,7 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
 @fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
     if (exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_MOTION {
         let velocity = textureLoad(motion, vec2<i32>(position.xy), 0).xy;
-        if any(abs(velocity) >= vec2(65504.0)) { return vec4(1.0, 0.0, 1.0, 1.0); }
+        if any(abs(velocity) >= vec2(MAX_FINITE_HALF)) { return vec4(1.0, 0.0, 1.0, 1.0); }
         return vec4(clamp(vec2(0.5) + velocity / 16.0, vec2(0.0), vec2(1.0)),
             clamp(length(velocity) / 16.0, 0.0, 1.0), 1.0);
     }

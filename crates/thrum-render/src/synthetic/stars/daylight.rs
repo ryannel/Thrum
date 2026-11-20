@@ -26,7 +26,8 @@ impl DaylightBound {
         // Round-to-nearest additive fp16 can double a positive increment.
         // Neutral Highlights has a 1.15 bound for positive RGB changes.
         // sRGB adds at most 12.92, with 1% slack for shader arithmetic.
-        let inverse_at_one_code = peak * 1.5 * 2.0 * 1.15 * 12.92 * 255.0 * 1.01;
+        let inverse_at_one_code =
+            peak * 1.5 * 2.0 * 1.15 * crate::shader_constants::SRGB_SLOPE * 255.0 * 1.01;
         Self {
             inverse_at_one_code,
             direct_lux: direct_horizontal_lux(light),
@@ -59,7 +60,7 @@ impl DaylightBound {
 fn direct_horizontal_lux(light: &DirectionalLight) -> f32 {
     let vertical = light.direction_to_light[1].max(0.0);
     let rgb = glam::Vec4::from_array(light.irradiance).truncate();
-    vertical * rgb.dot(glam::Vec3::new(0.2126, 0.7152, 0.0722))
+    vertical * rgb.dot(crate::light::LUMA)
 }
 
 #[expect(

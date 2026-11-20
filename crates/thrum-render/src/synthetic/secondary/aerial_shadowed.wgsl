@@ -10,7 +10,7 @@ fn aerial_colour(colour: vec3<f32>, world_position: vec3<f32>, screen_position: 
         let interval_end = ray.distance * fraction * fraction;
         let current = select(aerial_sample(interval_end, uv).scatter, end.scatter, i == AIR_INTERVALS);
         let delta = current - previous;
-        let luminance = dot(delta.rgb, vec3(0.2126, 0.7152, 0.0722));
+        let luminance = dot(delta.rgb, REC709_LUMA);
         let single = clamp(delta.a / max(luminance, 1e-20), 0.0, 1.0);
         let middle = ray.origin + ray.direction * (0.5 * (previous_distance + interval_end));
         let visibility = air_sun_visibility(middle);

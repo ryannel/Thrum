@@ -61,7 +61,7 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let scale = transmission * (source.w * view.catalogue_zenith_and_strength.w * exposure.values.x / omega);
     let delta = view.delta_clip_from_catalogue * vec4(source.xyz, 0.0);
     let previous_w = clip.w + delta.w;
-    var motion = vec2(65504.0);
+    var motion = vec2(MAX_FINITE_HALF);
     if previous_w > 0.0 {
         motion = (delta.xy * clip.w - clip.xy * delta.w) / (clip.w * previous_w)
             * vec2(0.5, -0.5) * extent;

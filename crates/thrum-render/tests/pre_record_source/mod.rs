@@ -96,6 +96,28 @@ pub(super) fn before_record_composition(text: &str) -> String {
     restore_aerial(&mut source);
     replace_once(
         &mut source,
+        "const REC709_LUMA = vec3<f32>(0.2126,0.7152,0.0722);\nconst MAX_FINITE_HALF: f32 = 65504.0;\n",
+        "",
+    );
+    for (current, previous) in [
+        ("vec3(MAX_FINITE_HALF)", "vec3(65504.0)"),
+        ("return vec2(MAX_FINITE_HALF);", "return vec2(65504.0);"),
+        (
+            "vec2(-MAX_FINITE_HALF), vec2(MAX_FINITE_HALF)",
+            "vec2(-65504.0), vec2(65504.0)",
+        ),
+    ] {
+        replace_once(&mut source, current, previous);
+    }
+    if source.contains("fn air_sun_visibility(") {
+        replace_once(
+            &mut source,
+            "dot(delta.rgb, REC709_LUMA)",
+            "dot(delta.rgb, vec3(0.2126, 0.7152, 0.0722))",
+        );
+    }
+    replace_once(
+        &mut source,
         "const SHADOW_HEIGHT_LAYER: u32 = 2u;\nconst SUN_TAN_RADIUS: f32 = 0.004654244;\n",
         "",
     );

@@ -27,9 +27,9 @@ pub(super) fn sun_transmittance(height: f32, mu: f32) -> [f32; 3] {
         let numerator = height * (2.0 * RADIUS + height) + t * (2.0 * r * mu + t);
         let h = numerator / ((RADIUS * RADIUS + numerator).sqrt() + RADIUS);
         columns += Vec3::new(
-            (-h / 8_000.0).exp(),
-            (-h / 1_200.0).exp(),
-            (1.0 - (h - 25_000.0).abs() / 15_000.0).max(0.0),
+            (-h / EARTH.rayleigh_scale_height).exp(),
+            (-h / EARTH.mie_scale_height).exp(),
+            (1.0 - (h - EARTH.ozone_centre).abs() / EARTH.ozone_half_width).max(0.0),
         ) * step;
     }
     EARTH.project(std::array::from_fn(|i| {

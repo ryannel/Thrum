@@ -10,6 +10,9 @@ use crate::{
     graph::{CompiledPass, GraphColorAttachment, PipelineKey, ResourceId},
     records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView},
     runtime::Instant,
+    shader_constants::{
+        SRGB_ENCODED_KNEE, SRGB_GAMMA_F32, SRGB_OFFSET, SRGB_SCALE, SRGB_SLOPE_F32,
+    },
     synthetic::{RenderError, SCENE_FORMAT},
     timing::GpuTimings,
 };
@@ -604,10 +607,10 @@ fn upload_sheet(
             let mut values = [alpha; 4];
             for (dest, &code) in values[..3].iter_mut().zip(rgba) {
                 let srgb = f32::from(code) / 255.0;
-                let linear = if srgb <= 0.04045 {
-                    srgb / 12.92
+                let linear = if srgb <= SRGB_ENCODED_KNEE {
+                    srgb / SRGB_SLOPE_F32
                 } else {
-                    ((srgb + 0.055) / 1.055).powf(2.4)
+                    ((srgb + SRGB_OFFSET) / SRGB_SCALE).powf(SRGB_GAMMA_F32)
                 };
                 *dest = linear * alpha;
             }

@@ -8,12 +8,12 @@ fn project_spectrum(lo: vec4<f32>, hi: vec4<f32>) -> vec3<f32> {
     );
     let low=min(rgb.r,min(rgb.g,rgb.b));
     if low>=0.0 { return rgb; }
-    let y=max(0.0,dot(rgb,SPECTRUM_LUMA));
+    let y=max(0.0,dot(rgb,REC709_LUMA));
     return max(vec3(0.0),mix(vec3(y),rgb,y/(y-low)));
 }
 
 fn medium_densities(h: f32) -> vec3<f32> {
-    return vec3(exp(-h/8000.0),exp(-h/1200.0),max(0.0,1.0-abs(h-25000.0)/15000.0));
+    return vec3(exp(-h/RAYLEIGH_SCALE_HEIGHT),exp(-h/MIE_SCALE_HEIGHT),max(0.0,1.0-abs(h-OZONE_CENTRE)/OZONE_HALF_WIDTH));
 }
 fn extinction(densities: vec3<f32>, bank: u32) -> vec4<f32> {
     return RAYLEIGH_BETA[bank]*densities.x+MIE_EXTINCTION*densities.y+OZONE_BETA[bank]*densities.z;

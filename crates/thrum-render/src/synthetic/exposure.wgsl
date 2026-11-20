@@ -25,7 +25,6 @@ fn key_value(lux: f32) -> f32 {
     let luminance = 0.18 * lux / 3.14159265;
     return 1.03 - 2.0 / (2.0 + log2(luminance + 1.0) * 0.30103);
 }
-const ADAPTED_LUX: f32 = 1000.0;
 fn finite(value: f32) -> bool {
     return (bitcast<u32>(value) & 0x7f800000u) != 0x7f800000u;
 }
@@ -45,11 +44,11 @@ fn resolve() {
         if policy.atmosphere != 0u && finite(directional.direction_to_light.y)
             && valid_rgb(directional.irradiance.rgb) && valid_rgb(environment_light.horizontal_irradiance.rgb) {
             let incident = environment_light.horizontal_irradiance.rgb + directional.irradiance.rgb * max(directional.direction_to_light.y, 0.0);
-            let measured = dot(incident, vec3(0.2126,0.7152,0.0722));
+            let measured = dot(incident, REC709_LUMA);
             if finite(measured) && measured >= 0.0 {
                 lux = measured;
                 // Key the real illuminance. The positive guard only protects log2.
-                var raw_ev = log2(max(measured * 0.4, 1e-20)) - parameters.y;
+                var raw_ev = log2(max(measured * INCIDENT_METER_LUX_SCALE, 1e-20)) - parameters.y;
                 if policy.mode == EXPOSURE_LOW_LIGHT {
                     raw_ev -= min(0.0, log2(key_value(measured) / key_value(ADAPTED_LUX)));
                 }

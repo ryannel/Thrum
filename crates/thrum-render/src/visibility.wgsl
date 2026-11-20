@@ -27,7 +27,7 @@ struct VisibilityParams {
 }
 
 
-const WORDS: u32 = WORKGROUP / 32u;
+const WORDS: u32 = WORKGROUP / MASK_WORD_BITS;
 
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<storage, read> instances: array<InstanceRecord>;
@@ -148,7 +148,7 @@ fn hidden_by_depth(slot: u32, mesh: MeshRecord) -> bool {
 }
 
 fn drawn_last(index: u32) -> bool {
-    return ((bits[index / 32u] >> (index % 32u)) & 1u) == 1u;
+    return ((bits[index / MASK_WORD_BITS] >> (index % MASK_WORD_BITS)) & 1u) == 1u;
 }
 
 // Whether this phase lists `slot`, whose history bit is at `index`.
@@ -205,7 +205,7 @@ fn count_members(@builtin(global_invocation_id) global: vec3<u32>,
     }
     if draw && params.phase == PHASE_FINAL {
         let logical = instances[slot].ids.x;
-        atomicOr(&next_bits[logical / 32u], 1u << (logical % 32u));
+        atomicOr(&next_bits[logical / MASK_WORD_BITS], 1u << (logical % MASK_WORD_BITS));
     }
     let word = count_word(draw, local.x, group.x);
     if local.x < WORDS {
@@ -236,12 +236,12 @@ fn count_word(draw: bool, local: u32, group: u32) -> u32 {
     // Recover each slot's flag from the inclusive scan and pack 32 per word.
     var word = 0u;
     if local < WORDS {
-        let base = local * 32u;
+        let base = local * MASK_WORD_BITS;
         var before = 0u;
         if base > 0u {
             before = scan[base - 1u];
         }
-        for (var bit = 0u; bit < 32u; bit = bit + 1u) {
+        for (var bit = 0u; bit < MASK_WORD_BITS; bit = bit + 1u) {
             let at = scan[base + bit];
             word = word | ((at - before) << bit);
             before = at;
@@ -307,8 +307,8 @@ fn write_args(record: u32, mesh: MeshRecord, instances: u32) {
 fn scatter(@builtin(global_invocation_id) global: vec3<u32>,
            @builtin(local_invocation_id) local: vec3<u32>,
            @builtin(workgroup_id) group: vec3<u32>) {
-    let word_index = local.x / 32u;
-    let lane = local.x % 32u;
+    let word_index = local.x / MASK_WORD_BITS;
+    let lane = local.x % MASK_WORD_BITS;
     let word = masks[group.x * WORDS + word_index];
     if ((word >> lane) & 1u) == 0u {
         return;
@@ -325,8 +325,8 @@ fn scatter_members(@builtin(global_invocation_id) global: vec3<u32>,
                    @builtin(local_invocation_id) local: vec3<u32>,
                    @builtin(workgroup_id) group: vec3<u32>) {
     let first = buckets.mask_base + group.x * WORDS;
-    let word_index = local.x / 32u;
-    let lane = local.x % 32u;
+    let word_index = local.x / MASK_WORD_BITS;
+    let lane = local.x % MASK_WORD_BITS;
     let word = group_offsets[first + word_index];
     if ((word >> lane) & 1u) == 0u {
         return;

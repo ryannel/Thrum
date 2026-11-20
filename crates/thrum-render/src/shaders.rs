@@ -7,6 +7,21 @@ pub(crate) const CLUSTER_PROBE_WORKGROUP: u32 = 64;
 
 /// A source marker gives reflected declarations a file identity across compositions.
 macro_rules! wgsl {
+    (@lighting_constants) => {
+        include_str!(concat!(env!("OUT_DIR"), "/lighting_constants.wgsl"))
+    };
+    ("present.wgsl") => {
+        concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/srgb.wgsl")),
+            $crate::shaders::wgsl!(@file "present.wgsl"),
+        )
+    };
+    ("synthetic/display/srgb.wgsl") => {
+        concat!(
+            include_str!(concat!(env!("OUT_DIR"), "/srgb.wgsl")),
+            $crate::shaders::wgsl!(@file "synthetic/display/srgb.wgsl"),
+        )
+    };
     ("atmosphere/common.wgsl") => {
         concat!(
             include_str!(concat!(env!("OUT_DIR"), "/atmosphere_luts.wgsl")),
@@ -22,6 +37,7 @@ macro_rules! wgsl {
     };
     ("atmosphere/sky.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/sun.wgsl")),
             $crate::shaders::wgsl!(@file "atmosphere/sky.wgsl"),
         )
@@ -34,6 +50,7 @@ macro_rules! wgsl {
     };
     ("synthetic.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/cluster.wgsl")),
             include_str!(concat!(env!("OUT_DIR"), "/scene_shadows.wgsl")),
             $crate::shaders::wgsl!(@file "records/view.wgsl"),
@@ -63,6 +80,7 @@ macro_rules! wgsl {
     };
     ("synthetic/exposure.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/exposure_modes.wgsl")),
             $crate::shaders::wgsl!(@file "records/serials.wgsl"),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
@@ -102,6 +120,7 @@ macro_rules! wgsl {
     };
     ("synthetic/stars.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
             $crate::shaders::wgsl!(@file "records/observer.wgsl"),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic/stars.wgsl"),
@@ -109,6 +128,7 @@ macro_rules! wgsl {
     };
     ("synthetic/taau.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/reconstruction.wgsl")),
             $crate::shaders::wgsl!(@file "records/reconstruction.wgsl"),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
@@ -129,6 +149,7 @@ macro_rules! wgsl {
     };
     ("synthetic_display.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/display_selectors.wgsl")),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
             $crate::shaders::wgsl!(@file "synthetic_display.wgsl"),
@@ -437,6 +458,58 @@ mod tests {
         AERIAL_WORKGROUP_EDGE, HISTORY_WORKGROUP, LUT_WORKGROUP_EDGE, PYRAMID_WORKGROUP_EDGE,
         RECONSTRUCTION_WORKGROUP_EDGE,
     };
+
+    #[test]
+    fn lighting_and_display_functions_read_generated_parameters() {
+        for (shader, function, expected) in [
+            (
+                Shader::AtmosphereLuts,
+                "medium_densities",
+                &[
+                    "RAYLEIGH_SCALE_HEIGHT",
+                    "MIE_SCALE_HEIGHT",
+                    "OZONE_CENTRE",
+                    "OZONE_HALF_WIDTH",
+                ][..],
+            ),
+            (
+                Shader::AtmosphereLuts,
+                "night_terminal",
+                &["NIGHT_TERMINAL_MAX_ALTITUDE"][..],
+            ),
+            (
+                Shader::AtmosphereAerial,
+                "project_spectrum",
+                &["REC709_LUMA"][..],
+            ),
+            (Shader::Display, "exposure_zone", &["REC709_LUMA"][..]),
+            (Shader::Display, "srgb_encode", &["SRGB_SLOPE"][..]),
+            (
+                Shader::Exposure,
+                "resolve",
+                &["REC709_LUMA", "INCIDENT_METER_LUX_SCALE", "ADAPTED_LUX"][..],
+            ),
+        ] {
+            let module =
+                wgpu::naga::front::wgsl::parse_str(&shader.source()).expect("production WGSL");
+            let body = module
+                .functions
+                .iter()
+                .map(|(_, body)| body)
+                .chain(module.entry_points.iter().map(|entry| &entry.function))
+                .find(|body| body.name.as_deref() == Some(function))
+                .expect(function);
+            for name in expected {
+                assert!(
+                    body.expressions.iter().any(|(_, expression)| {
+                        matches!(*expression, wgpu::naga::Expression::Constant(handle)
+                        if module.constants[handle].name.as_deref() == Some(name))
+                    }),
+                    "{function} must read {name}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn composed_compute_entries_match_host_dispatch_dimensions() {

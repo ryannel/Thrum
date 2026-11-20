@@ -29,7 +29,7 @@ const PARAMS_LEN: usize = size_of::<crate::records::VisibilityParams>();
 const PARAMS_STRIDE: u32 = 256;
 const PHASES: u32 = PHASE_FINAL + 1;
 /// Last-visible bits per workgroup of slots.
-const WORDS: u32 = WORKGROUP / 32;
+const WORDS: u32 = WORKGROUP / u32::BITS;
 /// Graph owner of the last-visible history pair.
 const HISTORY_OWNER: u64 = 0x5649_4849;
 const VIEW_BYTES: u64 = size_of::<crate::records::ViewRecord>() as u64;

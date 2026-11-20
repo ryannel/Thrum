@@ -13,6 +13,10 @@ use crate::synthetic::SyntheticView;
 // The independent CPU reference integrates these original representative bands.
 // Run that comparison through the same GPU kernels with an identity projection.
 const MATCHED_MEDIUM: Profile = Profile {
+    rayleigh_scale_height: 8_000.0,
+    mie_scale_height: 1_200.0,
+    ozone_centre: 25_000.0,
+    ozone_half_width: 15_000.0,
     mie_extinction: 4.4e-6,
     mie_scattering: 3.996e-6,
     rayleigh: [

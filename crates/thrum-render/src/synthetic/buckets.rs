@@ -83,7 +83,7 @@ pub(super) enum BucketError {
 /// The shader's bucket-table length (`MAX_BUCKETS` in `visibility.wgsl`).
 pub(crate) use crate::shader_constants::MAX_BUCKETS;
 /// Mask words per workgroup, stored after the counts in the scratch buffer.
-const WORDS: u64 = SEGMENT_ALIGN as u64 / 32;
+const WORDS: u64 = (SEGMENT_ALIGN / u32::BITS) as u64;
 
 /// The device limits a bucket layout must fit, checked at prepare.
 #[derive(Clone, Copy, Debug)]

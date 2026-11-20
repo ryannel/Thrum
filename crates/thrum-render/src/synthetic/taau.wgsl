@@ -83,7 +83,7 @@ fn depth_confidence(old: vec4<f32>, expected: f32, sky: bool) -> f32 {
 fn history_round(value: f32, seed: u32) -> f32 {
     // Unbiased quantisation keeps a long temporal average from sticking one
     // half-float ULP away from its mean. Exactly representable values stay exact.
-    let bounded_value = clamp(value,0.0,65504.0);
+    let bounded_value = clamp(value,0.0,MAX_FINITE_HALF);
     let nearest_bits = pack2x16float(vec2(bounded_value,0.0)) & 65535u;
     let nearest_value = unpack2x16float(nearest_bits).x;
     if nearest_value == bounded_value { return nearest_value; }

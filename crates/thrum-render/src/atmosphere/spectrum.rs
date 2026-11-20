@@ -5,10 +5,13 @@
 
 use std::fmt::Write;
 
+use crate::light::LUMA;
 use glam::Vec3;
-
-pub(super) const LUMA: Vec3 = Vec3::new(0.2126, 0.7152, 0.0722);
 pub(crate) struct Profile {
+    pub(super) rayleigh_scale_height: f32,
+    pub(super) mie_scale_height: f32,
+    pub(super) ozone_centre: f32,
+    pub(super) ozone_half_width: f32,
     pub(super) rayleigh: [f32; 8],
     pub(super) ozone: [f32; 8],
     pub(super) rgb: [[f32; 8]; 3],
@@ -17,6 +20,10 @@ pub(crate) struct Profile {
 }
 
 pub(crate) const EARTH: Profile = Profile {
+    rayleigh_scale_height: 8_000.0,
+    mie_scale_height: 1_200.0,
+    ozone_centre: 25_000.0,
+    ozone_half_width: 15_000.0,
     mie_extinction: 4.4e-6,
     mie_scattering: 3.996e-6,
     // 428.84, 450.21, 471.18, 514.23, 550.21, 574.75, 597.70, 630.96 nm.
@@ -95,6 +102,20 @@ impl Profile {
 
     pub(crate) fn shader(&self, body: &str) -> String {
         let mut source = String::with_capacity(body.len() + 1024);
+        source.push_str(crate::shaders::wgsl!(@lighting_constants));
+        source.push_str(include_str!(concat!(
+            env!("OUT_DIR"),
+            "/night_profile.wgsl"
+        )));
+        for (name, value) in [
+            ("RAYLEIGH_SCALE_HEIGHT", self.rayleigh_scale_height),
+            ("MIE_SCALE_HEIGHT", self.mie_scale_height),
+            ("OZONE_CENTRE", self.ozone_centre),
+            ("OZONE_HALF_WIDTH", self.ozone_half_width),
+        ] {
+            writeln!(source, "const {name}: f32 = {value:?};")
+                .expect("formatting into String cannot fail");
+        }
         for (name, values) in [
             ("RAYLEIGH_BETA", self.rayleigh),
             ("OZONE_BETA", self.ozone),
@@ -106,9 +127,12 @@ impl Profile {
             writeln!(source, "const {name} = array(vec4<f32>({a:e},{b:e},{c:e},{d:e}),vec4<f32>({e:e},{f:e},{g:e},{h:e}));")
                 .expect("formatting into String cannot fail");
         }
-        let [r, g, b] = LUMA.to_array();
-        writeln!(source, "const SPECTRUM_LUMA = vec3<f32>({r},{g},{b});\nconst MIE_EXTINCTION = {:e};\nconst MIE_SCATTERING = {:e};", self.mie_extinction, self.mie_scattering)
-            .expect("formatting into String cannot fail");
+        writeln!(
+            source,
+            "const MIE_EXTINCTION = {:e};\nconst MIE_SCATTERING = {:e};",
+            self.mie_extinction, self.mie_scattering
+        )
+        .expect("formatting into String cannot fail");
         source.push_str(body);
         source
     }

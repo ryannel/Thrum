@@ -10,7 +10,7 @@ fn night_terminal(h: f32, mu: f32, tangent: f32, ground: bool, sampler_linear: s
     let fraction = select((mu - tangent) / (1.0 - tangent),
                           (tangent - mu) / (1.0 + tangent), ground);
     let column = select(side, 0.0, ground) + sqrt(clamp(fraction, 0.0, 1.0)) * (side - 1.0);
-    let row = sqrt(clamp(h / 15000.0, 0.0, 1.0)) * (size.y - 1.0);
+    let row = sqrt(clamp(h / NIGHT_TERMINAL_MAX_ALTITUDE, 0.0, 1.0)) * (size.y - 1.0);
     let uv = (vec2(column, row) + 0.5) / size;
     return textureSampleLevel(night_profile, sampler_linear, uv, 0.0).r;
 }

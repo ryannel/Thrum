@@ -374,7 +374,8 @@ fn pack_frame_lighting(
             // apparent solar solid angle. Count channels whose direct disk
             // term alone exceeds the current fp16 scene envelope. G3t's
             // coordinated pre-exposure/EDR path must remove this repair.
-            let stored_lux_limit = 65_504.0 * SOLAR_DISK_SOLID_ANGLE / PRE_EXPOSURE;
+            let stored_lux_limit =
+                crate::shader_constants::MAX_FINITE_HALF * SOLAR_DISK_SOLID_ANGLE / PRE_EXPOSURE;
             let disk_clamps = illuminance
                 .iter()
                 .filter(|&&lux| lux > stored_lux_limit)
@@ -396,8 +397,8 @@ impl PhotometricEnvironment {
     fn pack(self) -> Result<(DirectionalLight, wgpu::Color, usize), RenderError> {
         const MAX_PRESENTATION_LIGHT: f64 = 10_000_000.0;
         // Retain F3's exact accepted predicate at this boundary.
-        let luminance =
-            0.2126 * self.sun_colour[0] + 0.7152 * self.sun_colour[1] + 0.0722 * self.sun_colour[2];
+        let [r, g, b] = crate::shader_constants::REC709_LUMA;
+        let luminance = r * self.sun_colour[0] + g * self.sun_colour[1] + b * self.sun_colour[2];
         if !self.sun_lux.is_finite()
             || self.sun_lux < 0.0
             || !self.sun_colour.iter().all(|x| x.is_finite() && *x >= 0.0)

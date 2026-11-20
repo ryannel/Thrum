@@ -12,7 +12,7 @@ fn infinity_motion(direction: vec3<f32>, disk: f32) -> vec2<f32> {
     let delta = select(sky_motion.camera_delta * vec4(direction, 0.0),
         sky_motion.solar_delta * vec4(direction, 0.0), disk > 0.0);
     let previous_w = current.w + delta.w;
-    if current.w <= 0.0 || previous_w <= 0.0 { return vec2(65504.0); }
+    if current.w <= 0.0 || previous_w <= 0.0 { return vec2(MAX_FINITE_HALF); }
     let difference = (delta.xy * current.w - current.xy * delta.w)
         / (current.w * previous_w);
     return difference * vec2(0.5, -0.5) * sky_motion.extent.xy;
@@ -47,5 +47,5 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
     let radiance=(encoded.rgb/SKY_LUT_GAIN+beam)*solar+vec3(encoded.a/NIGHT_LUT_GAIN);
     let stored=radiance*sky_exposure.x;
-    return SkyOutput(vec4(clamp(stored,vec3(0.0),vec3(65504.0)),1.0),infinity_motion(direction,disk), sky_motion.extent.z);
+    return SkyOutput(vec4(clamp(stored,vec3(0.0),vec3(MAX_FINITE_HALF)),1.0),infinity_motion(direction,disk), sky_motion.extent.z);
 }

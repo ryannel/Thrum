@@ -91,7 +91,7 @@ impl AtmosphereFrame {
     ) -> Result<Self, RenderError> {
         let direction = Vec3::from_array(toward_sun);
         let scale = direction.abs().max_element();
-        let y = Vec3::from_array(solar_colour).dot(spectrum::LUMA);
+        let y = Vec3::from_array(solar_colour).dot(crate::light::LUMA);
         if !direction.is_finite()
             || scale <= 0.0
             || !solar_illuminance_lux.is_finite()
@@ -143,7 +143,8 @@ impl AtmosphereFrame {
     /// Whether the night profile can contribute for this view.
     #[must_use]
     pub fn nightglow_active(self) -> bool {
-        self.nightglow && self.camera_altitude_m <= 15_000.0
+        self.nightglow
+            && self.camera_altitude_m <= crate::shader_constants::NIGHT_TERMINAL_MAX_ALTITUDE
     }
 
     /// Unit world-space receiver-to-Sun direction.

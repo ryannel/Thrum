@@ -102,7 +102,7 @@ pub(super) fn describe(
             .tint
             .into_iter()
             .chain(row.flash)
-            .all(|value| (0.0..=65_504.0).contains(&value))
+            .all(|value| (0.0..=crate::shader_constants::MAX_FINITE_HALF).contains(&value))
         || row.tint[3] > 1.0
         || row.flash[3] > 1.0
         || !(0.0..=1.0).contains(&row.additive)

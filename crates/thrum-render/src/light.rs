@@ -1,5 +1,14 @@
 //! Shared ABI for CPU-authored direct light and the atmosphere's diffuse output.
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "The same Rec.709 weights serve f64 validation and f32 rendering"
+)]
+pub(crate) const LUMA: glam::Vec3 = {
+    let [r, g, b] = crate::shader_constants::REC709_LUMA;
+    glam::Vec3::new(r as f32, g as f32, b as f32)
+};
+
 #[repr(C, align(16))]
 #[derive(Clone, Copy, Default, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct DirectionalLight {

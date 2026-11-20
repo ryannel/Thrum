@@ -88,7 +88,7 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
             }
         }
         let radiance = project_spectrum(ray.lo.radiance,ray.hi.radiance);
-        let single_luminance = dot(project_spectrum(single.lo.radiance,single.hi.radiance), SPECTRUM_LUMA);
+        let single_luminance = dot(project_spectrum(single.lo.radiance,single.hi.radiance), REC709_LUMA);
         textureStore(scatter_out, vec2<i32>(id.xy), i32(layer), vec4(radiance * SKY_LUT_GAIN, single_luminance * SKY_LUT_GAIN));
         textureStore(trans_out, vec2<i32>(id.xy), i32(layer), vec4(throughput, night));
     }

@@ -156,9 +156,9 @@ impl SunOpticalDepth {
             || !minimum_sun_sine.is_finite()
             || !(0.0..1.0).contains(&minimum_sun_sine)
             || minimum_sun_sine == 0.0
-            || optical_depth
-                .iter()
-                .any(|x| !x.is_finite() || !(0.0..=65_504.0).contains(x))
+            || optical_depth.iter().any(|x| {
+                !x.is_finite() || !(0.0..=crate::shader_constants::MAX_FINITE_HALF).contains(x)
+            })
         {
             return Err(RenderError::InvalidLighting);
         }

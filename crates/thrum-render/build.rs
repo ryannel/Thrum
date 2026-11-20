@@ -7,13 +7,14 @@ mod constants {
     include!("src/shader_constants.rs");
 }
 use constants::{
-    AERIAL_EXTENT, AERIAL_WORKGROUP_EDGE, AIR_SHADOW_SIZE, ATMOSPHERE_EXTENTS, ATMOSPHERE_PLANES,
-    ATMOSPHERE_TOP, CAMERA_EXPOSURE_NORMALIZATION, CLUSTER_WORKGROUP, CLUSTER_X, CLUSTER_Y,
-    CLUSTER_Z, DISPLAY_OVERLAY_SHIFT, EXPOSURE_INCIDENT, EXPOSURE_LOW_LIGHT, HISTORY_WORKGROUP,
-    LUT_WORKGROUP_EDGE, MAX_BUCKETS, MEMBER_PADDING, OVERLAY_EXPOSURE_ZONES, OVERLAY_MOTION,
+    ADAPTED_LUX, AERIAL_EXTENT, AERIAL_WORKGROUP_EDGE, AIR_SHADOW_SIZE, ATMOSPHERE_EXTENTS,
+    ATMOSPHERE_PLANES, ATMOSPHERE_TOP, CAMERA_EXPOSURE_NORMALIZATION, CLUSTER_WORKGROUP, CLUSTER_X,
+    CLUSTER_Y, CLUSTER_Z, DISPLAY_OVERLAY_SHIFT, EXPOSURE_INCIDENT, EXPOSURE_LOW_LIGHT,
+    HISTORY_WORKGROUP, INCIDENT_METER_LUX_SCALE, LUT_WORKGROUP_EDGE, MAX_BUCKETS, MAX_FINITE_HALF,
+    MEMBER_PADDING, NIGHT_TERMINAL_MAX_ALTITUDE, OVERLAY_EXPOSURE_ZONES, OVERLAY_MOTION,
     OVERLAY_TEMPORAL_INPUTS, PHASE_FINAL, PHASE_FRUSTUM, PHASE_PREPASS, PLANET_RADIUS,
-    PYRAMID_WORKGROUP_EDGE, RECONSTRUCTION_WORKGROUP_EDGE, SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS,
-    TONE_MAP_NEUTRAL_HIGHLIGHTS, VISIBILITY_WORKGROUP,
+    PYRAMID_WORKGROUP_EDGE, REC709_LUMA, RECONSTRUCTION_WORKGROUP_EDGE, SHADOW_HEIGHT_LAYER,
+    SUN_ANGULAR_RADIUS, TONE_MAP_NEUTRAL_HIGHLIGHTS, VISIBILITY_WORKGROUP,
 };
 
 fn emit(out: &std::path::Path, name: &str, integers: &[(&str, u32)], floats: &[(&str, f32)]) {
@@ -31,6 +32,30 @@ fn main() {
     println!("cargo:rerun-if-changed=src/shader_constants.rs");
     println!("cargo:rerun-if-changed=build.rs");
     let out = PathBuf::from(std::env::var_os("OUT_DIR").expect("Cargo output directory"));
+    // WGSL's original 1.0 / 2.4 rounded to f32 only after abstract division.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "Round after dividing in f64"
+    )]
+    let encode_exponent = constants::SRGB_GAMMA.recip() as f32;
+    emit(
+        &out,
+        "srgb.wgsl",
+        &[],
+        &[
+            ("SRGB_ENCODED_KNEE", constants::SRGB_ENCODED_KNEE),
+            ("SRGB_OFFSET", constants::SRGB_OFFSET),
+            ("SRGB_SCALE", constants::SRGB_SCALE),
+            ("SRGB_GAMMA", constants::SRGB_GAMMA_F32),
+            ("SRGB_SLOPE", constants::SRGB_SLOPE_F32),
+            ("SRGB_ENCODE_EXPONENT", encode_exponent),
+        ],
+    );
+    let [r, g, b] = REC709_LUMA;
+    std::fs::write(
+        out.join("lighting_constants.wgsl"),
+        format!("const REC709_LUMA = vec3<f32>({r},{g},{b});\nconst MAX_FINITE_HALF: f32 = {MAX_FINITE_HALF:?};\n"),
+    ).expect("write WGSL lighting constants");
     let dim = |size| u32::try_from(size).expect("shader dimension fits u32");
     emit(
         &out,
@@ -99,6 +124,11 @@ fn main() {
         reason = "The camera normalization is f32 in WGSL"
     )]
     let shader_camera_normalization = CAMERA_EXPOSURE_NORMALIZATION as f32;
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "The incident meter is f32 in WGSL"
+    )]
+    let shader_incident_meter_scale = INCIDENT_METER_LUX_SCALE as f32;
     emit(
         &out,
         "exposure_modes.wgsl",
@@ -106,7 +136,11 @@ fn main() {
             ("EXPOSURE_INCIDENT", EXPOSURE_INCIDENT),
             ("EXPOSURE_LOW_LIGHT", EXPOSURE_LOW_LIGHT),
         ],
-        &[("CAMERA_EXPOSURE_NORMALIZATION", shader_camera_normalization)],
+        &[
+            ("CAMERA_EXPOSURE_NORMALIZATION", shader_camera_normalization),
+            ("INCIDENT_METER_LUX_SCALE", shader_incident_meter_scale),
+            ("ADAPTED_LUX", ADAPTED_LUX),
+        ],
     );
     emit(
         &out,
@@ -118,6 +152,7 @@ fn main() {
             ("PHASE_FRUSTUM", PHASE_FRUSTUM),
             ("PHASE_PREPASS", PHASE_PREPASS),
             ("PHASE_FINAL", PHASE_FINAL),
+            ("MASK_WORD_BITS", u32::BITS),
         ],
         &[],
     );
@@ -155,5 +190,11 @@ fn main() {
         "sun.wgsl",
         &[],
         &[("SUN_ANGULAR_RADIUS", SUN_ANGULAR_RADIUS)],
+    );
+    emit(
+        &out,
+        "night_profile.wgsl",
+        &[],
+        &[("NIGHT_TERMINAL_MAX_ALTITUDE", NIGHT_TERMINAL_MAX_ALTITUDE)],
     );
 }

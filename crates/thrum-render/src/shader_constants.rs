@@ -19,9 +19,30 @@ pub(crate) const OVERLAY_TEMPORAL_INPUTS: u32 = 3;
 pub(crate) const EXPOSURE_INCIDENT: u32 = 1;
 pub(crate) const EXPOSURE_LOW_LIGHT: u32 = 2;
 pub(crate) const CAMERA_EXPOSURE_NORMALIZATION: f64 = 1.2;
+pub(crate) const INCIDENT_METER_LUX_SCALE: f64 = 0.4;
+pub(crate) const ADAPTED_LUX: f32 = 1_000.0;
+pub(crate) const REC709_LUMA: [f64; 3] = [0.2126, 0.7152, 0.0722];
+pub(crate) const MAX_FINITE_HALF: f32 = 65_504.0;
+pub(crate) const SRGB_ENCODED_KNEE: f32 = 0.04045;
+pub(crate) const SRGB_OFFSET: f32 = 0.055;
+pub(crate) const SRGB_SCALE: f32 = 1.055;
+pub(crate) const SRGB_GAMMA: f64 = 2.4;
+pub(crate) const SRGB_SLOPE: f64 = 12.92;
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "The transfer function also has f32 consumers"
+)]
+pub(crate) const SRGB_GAMMA_F32: f32 = SRGB_GAMMA as f32;
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "The transfer function also has f32 consumers"
+)]
+pub(crate) const SRGB_SLOPE_F32: f32 = SRGB_SLOPE as f32;
 
 pub(crate) const PLANET_RADIUS: f32 = 6_371_000.0;
 pub(crate) const ATMOSPHERE_TOP: f32 = 100_000.0;
+pub(crate) const NIGHT_TERMINAL_MAX_ALTITUDE: f32 = 15_000.0;
 pub(crate) const SUN_ANGULAR_RADIUS: f32 = 0.004_654_21;
 pub(crate) const ATMOSPHERE_EXTENTS: [[u32; 2]; 4] = [[256, 64], [512, 32], [192, 108], [128, 1]];
 const SPECTRAL_PLANES: u32 = 2;

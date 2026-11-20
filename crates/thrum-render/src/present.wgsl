@@ -29,8 +29,8 @@ fn stored(uv: vec2<f32>) -> vec4<f32> {
 
 @fragment fn srgb_surface(in: VertexOut) -> @location(0) vec4<f32> {
     let encoded = stored(in.uv);
-    let low = encoded.rgb / 12.92;
-    let high = pow((encoded.rgb + vec3(0.055)) / 1.055, vec3(2.4));
-    let linear = select(high, low, encoded.rgb <= vec3(0.04045));
+    let low = encoded.rgb / SRGB_SLOPE;
+    let high = pow((encoded.rgb + vec3(SRGB_OFFSET)) / SRGB_SCALE, vec3(SRGB_GAMMA));
+    let linear = select(high, low, encoded.rgb <= vec3(SRGB_ENCODED_KNEE));
     return vec4(linear, encoded.a);
 }
