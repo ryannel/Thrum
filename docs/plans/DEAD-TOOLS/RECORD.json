@@ -62,7 +62,32 @@
     },
     "M5": {
       "definitions": "fba43e4ec0749d405981d3df76bd78ac6f09e49e81705bf69ea027ffc53c9354",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "b575d2b436834083f17d609c069995af922dcc6f",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M5-review.md",
+          "items": {
+            "M5.1": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 60684,
+            "cached": 1111526,
+            "output": 11266,
+            "cost_usd": 0.932921,
+            "turns": 1
+          },
+          "at": "2026-11-20T18:01:53Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the GATE-TIME, DEAD-TOOLS and DEAD-CODE designs and plans after their first design reviews, and apply the owner's",
@@ -98,6 +123,13 @@
           "cost_usd": 2.313054,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "b575d2b436834083f17d609c069995af922dcc6f",
+        "review": ".orchestrate/evidence/DEAD-TOOLS/M5-review.md",
+        "checked": "33190fc8c88c1d37b8538bc5a70225a0288186fd",
+        "at": "2026-11-20T18:01:53Z"
       }
     },
     "M6": {
