@@ -72,9 +72,9 @@
     {
       "id": "M2",
       "name": "Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]`",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "HOST:M1",
@@ -94,7 +94,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
@@ -103,8 +103,8 @@
           "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
           "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition, and is that shown by a compile for a target that is not macOS? Does any GPU test still return early without asking the gate, so that no skip line is written?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
@@ -115,7 +115,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
         {
@@ -141,28 +141,20 @@
       ],
       "findings": [
         {
+          "name": "Metal-only tests admit any backend and assert Metal",
+          "item": "M2.2",
+          "different": "Not a skipped or missing admission: these tests ask the gate for any backend and then require Metal, so on a Linux or Windows machine with a non-Metal adapter they fail instead of reporting a skip; the fix round's removal of macOS module gates exposed most of them.",
+          "repeat": false
+        },
+        {
           "name": "Parent OS conditions hide whole test files and CPU tests",
           "item": "M2.2",
-          "repeat": false
+          "repeat": true
         },
         {
-          "name": "Cooked exit-scene test silently passes outside macOS",
+          "name": "A CPU camera-route test is gated on macOS",
           "item": "M2.2",
-          "repeat": false
-        },
-        {
-          "name": "Sky rendering test opens Metal without admission",
-          "item": "M2.2",
-          "repeat": false
-        },
-        {
-          "name": "Descriptor adjustment can override a validated storage cap",
-          "item": "M2.1",
-          "repeat": false
-        },
-        {
-          "name": "Sprite tests share their fixture through textual inclusion",
-          "item": "M2.3",
+          "different": "An OS condition on a single CPU-only test whose subject builds on every platform, not a parent module condition or a GPU admission.",
           "repeat": false
         }
       ]

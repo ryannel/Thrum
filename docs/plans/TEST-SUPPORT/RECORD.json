@@ -111,7 +111,7 @@
         {
           "verdict": "fail",
           "commit": "ed19162adf909e3e940ec58f4669307d1e4a5fd9",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review-1.md",
           "items": {
             "M2.1": "fail",
             "M2.2": "fail",
@@ -162,6 +162,53 @@
             "turns": 1
           },
           "at": "2026-11-20T06:28:17Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "fbf7290c04d2799a4f84caa1049d331f089d4163",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "fail",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Metal-only tests admit any backend and assert Metal",
+              "item": "M2.2",
+              "different": "Not a skipped or missing admission: these tests ask the gate for any backend and then require Metal, so on a Linux or Windows machine with a non-Metal adapter they fail instead of reporting a skip; the fix round's removal of macOS module gates exposed most of them.",
+              "repeat": false
+            },
+            {
+              "name": "Parent OS conditions hide whole test files and CPU tests",
+              "item": "M2.2",
+              "repeat": true
+            },
+            {
+              "name": "A CPU camera-route test is gated on macOS",
+              "item": "M2.2",
+              "different": "An OS condition on a single CPU-only test whose subject builds on every platform, not a parent module condition or a GPU admission.",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 206656,
+            "cached": 12655587,
+            "output": 58209,
+            "cost_usd": 5.347753,
+            "turns": 1
+          },
+          "at": "2026-11-20T13:15:15Z"
         }
       ],
       "authorised": {
