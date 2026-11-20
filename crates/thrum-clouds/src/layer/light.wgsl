@@ -20,7 +20,7 @@ fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec3<f32> {
     let middle=mix(cloud.erosion.z*cloud.scattering.z,cloud.erosion.z,0.65);
     return vec3(first,cloud_hg_phase(s2,mix(middle,0.96,grazing)),grazing);
 }
-fn cloud_light_angles(viewer:vec3<f32>)->vec3<f32> {
+fn cloud_light_angles(viewer:vec3<f32>)->vec4<f32> {
     let path=mapping.path_border.xyz;
     // The plane is shared by the whole cloud. Turn it less toward the Sun
     // at the lowest elevations to retain contrast on the warm flank.
@@ -28,12 +28,13 @@ fn cloud_light_angles(viewer:vec3<f32>)->vec3<f32> {
     let normal=normalize(mix(vec3(0.0,1.0,0.0),path,turn));
     // At grazing angles a view into the Sun exposes the back boundary of
     // a heap even where the Sun column continues into neighbouring lobes.
-    let back=cloud.scattering.w*(1.0-smoothstep(0.18,0.35,path.y))
+    let back=clamp(2.5*cloud.scattering.w,0.0,1.0)*(1.0-smoothstep(0.18,0.35,path.y))
         *smoothstep(0.74,0.96,-dot(viewer,path));
-    return vec3(dot(normal,path),dot(normal,viewer),min(1.0,2.5*back));
+    let escape_depth=mix(8.0,4.0,smoothstep(0.07,0.17,path.y));
+    return vec4(dot(normal,path),dot(normal,viewer),back,mix(1.0,escape_depth,back));
 }
 fn cloud_source(solar:vec3<f32>,phases:vec3<f32>,sun_depths:vec2<f32>,
-                vertical_depths:vec2<f32>,light_angles:vec3<f32>,distance:f32,transmission:f32)->vec3<f32> {
+                vertical_depths:vec2<f32>,light_angles:vec4<f32>,distance:f32,transmission:f32)->vec3<f32> {
     // The first profile's near/far medium handover ends at 500 m.
     let boundary=cloud_smooth((distance-500.0)/500.0);
     let g=cloud.erosion.z;
