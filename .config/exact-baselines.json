@@ -39,7 +39,7 @@
         "module": "SHOWCASE",
         "milestone": "M9"
       },
-      "pin": "49b106fef6520e6b6b04551fef1dd8c770f632ca988e97f25990890d4fe2a9f7"
+      "pin": "da21cbcf64477126e4861df9eb6ffbaab6339b085f4a408087e2f7bb77867ec7"
     },
     {
       "id": "chrome-day-sdr",
@@ -59,7 +59,7 @@
         "module": "SHOWCASE",
         "milestone": "M9"
       },
-      "pin": "5f344effa816dda1172eb4dbeaf0af98d08173c5e1fbf6852619bebe2befa136"
+      "pin": "beccc039562319da1224b687eea801043e87bcbab9ecb2c6fa638f691315769a"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -79,7 +79,7 @@
         "module": "SHOWCASE",
         "milestone": "M9"
       },
-      "pin": "025054bf8b1a6773f28d672fd32ab5a94cfdc3841f76c353b55249e296865d60"
+      "pin": "0bce4b2929d1aeb77ef0ffadc23f3a913c6adc20f9fe8c7772cf97c618986a80"
     },
     {
       "id": "chrome-night-sdr",
@@ -99,7 +99,7 @@
         "module": "SHOWCASE",
         "milestone": "M9"
       },
-      "pin": "1fa741dcb764063defe6895e68c7eb9cb58df0609634e6484071ea6b45c6d8b9"
+      "pin": "61b122e28722b5af5971c47d397698102f2c9039344d67ced7e2069258c106ec"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -119,7 +119,7 @@
         "module": "SHOWCASE",
         "milestone": "M9"
       },
-      "pin": "7dcc563b68a8c847201a6278ef0cfd7c8279832f78101ae6dd0c95619c44d57f"
+      "pin": "c89adab026974675aeefeb8c5c65858c005d3e71c7f676013353b6ad0173edca"
     }
   ],
   "retired": []
