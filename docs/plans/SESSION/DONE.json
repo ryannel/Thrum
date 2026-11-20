@@ -450,10 +450,10 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Does the crowd's rule call the same function the predictor does, with no second copy of the arithmetic? Does its signature let it read anything of the crowd? Are SIM-2D's retained files unchanged in git, and does the rule package still pass SIM-2D's guard with nothing suppressed?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/sim2d-mac.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.5",
