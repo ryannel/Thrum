@@ -116,7 +116,9 @@ fn script_suites() -> TaskResult {
         }
         let path = format!("scripts/{name}");
         if Path::new(name).extension().and_then(|e| e.to_str()) == Some("py") {
-            python(&[&path])?;
+            // Discovery imports the module and collects every test case in it, so a test
+            // defined after a `__main__` guard, or a suite with no guard, still runs.
+            python(&["-m", "unittest", "discover", "-s", "scripts", "-p", name])?;
         } else if node {
             run("node", &["--test", &path])?;
         } else {

@@ -10,6 +10,9 @@ import unittest
 import shape_rules as shapes
 
 
+# The real tools/xtask/src/main.rs always defines the suites ./dev check excludes.
+XTASK_EXCLUSIONS = "const EXCLUDED_SCRIPT_SUITES: &[(&str, &str)] = &[];\n"
+
 class Fixture(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -265,7 +268,7 @@ test_role="fixtures"
         # Each caller the design names keeps it out of the count.
         callers = {
             "dev": "python3 scripts/orphan_tool.py\n",
-            "tools/xtask/src/main.rs": 'python(&["scripts/orphan_tool.py"])?;',
+            "tools/xtask/src/main.rs": XTASK_EXCLUSIONS + 'python(&["scripts/orphan_tool.py"])?;',
             ".github/workflows/ci.yml": "run: python3 scripts/orphan_tool.py\n",
             "crates/engine/tests/route.rs": 'const TOOL: &str = "../../scripts/orphan_tool.py";',
             "ORCHESTRATE.md": "- **Main-branch check tool:** `python3 scripts/orphan_tool.py`; every 1h\n",
@@ -313,6 +316,10 @@ test_role="fixtures"
         self.write("tools/xtask/src/main.rs",
                    'const EXCLUDED_SCRIPT_SUITES: &[(&str, &str)] = &[("test_suite_only", "fails")];\n')
         self.assertIn("scripts/suite_helper.py", self.counted("script-caller"))
+        # A main.rs that lost the list fails loudly rather than counting excluded suites as run.
+        self.write("tools/xtask/src/main.rs", "fn main() {}\n")
+        with self.assertRaisesRegex(ValueError, "EXCLUDED_SCRIPT_SUITES"):
+            self.counted("script-caller")
         (self.root / "tools/xtask/src/main.rs").unlink()
         for path in ("scripts/suite_helper.py", "scripts/test_suite_only.py",
                      "scripts/nested/nested_helper.py", "scripts/nested/test_nested_only.py"):
@@ -338,7 +345,8 @@ test_role="fixtures"
         self.assertEqual(self.sites("bench-runner"), [("crates/engine/Cargo.toml", 7)])
         for runner in ("dev", "tools/xtask/src/main.rs", ".github/workflows/ci.yml", "docs/TIMING.md"):
             with self.subTest(runner=runner):
-                self.write(runner, "cargo bench -p engine --bench valley_culling\n")
+                head = XTASK_EXCLUSIONS if runner == "tools/xtask/src/main.rs" else ""
+                self.write(runner, head + "cargo bench -p engine --bench valley_culling\n")
                 self.assertEqual(self.sites("bench-runner"), [])
                 (self.root / runner).unlink()
         for record in ("docs/plans/OTHER/PLAN.md", f"{self.EVIDENCE}/OTHER/M1.md"):

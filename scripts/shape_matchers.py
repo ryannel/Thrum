@@ -465,7 +465,12 @@ def uncalled_scripts(root, paths):
         beside = [s for s in scripts if Path(s).parent == path.parent and Path(s).stem == path.stem[5:]]
         return beside[0] if beside else None
     lone = {s for s in scripts if Path(s).stem.startswith("test_") and script_for(s) is None}
-    exclusions = EXCLUDED_SUITES.search(read(root, XTASK_MAIN))
+    xtask = read(root, XTASK_MAIN)
+    exclusions = EXCLUDED_SUITES.search(xtask)
+    if xtask and not exclusions:
+        # Without the list, every excluded suite would count as run and hide the scripts it tests.
+        raise ValueError(f"{XTASK_MAIN} no longer defines EXCLUDED_SCRIPT_SUITES; "
+                         "script-caller reads the suites ./dev check excludes from it")
     excluded = set(re.findall(r'"(test_\w+)"', exclusions.group(0))) if exclusions else set()
     live |= {s for s in lone if Path(s).parent == Path("scripts") and Path(s).stem not in excluded}
     changed = True
