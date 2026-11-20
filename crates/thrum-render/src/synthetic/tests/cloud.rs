@@ -220,7 +220,7 @@ fn metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support() {
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -330,7 +330,7 @@ fn metal_production_surface_shade_dims_only_direct_sun_once_at_each_receiver() {
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_production_surface_shade_dims_only_direct_sun_once_at_each_receiver",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

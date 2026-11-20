@@ -34,7 +34,7 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

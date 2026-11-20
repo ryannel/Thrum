@@ -121,8 +121,11 @@ records each creation.
 
 ## Tests
 
-Rules: `path-attribute` refuses `#[path]` (use normal modules); `whole-file-gpu-gate` refuses a file-level
-`#![cfg(...target_os...)]` on a test file (gate the individual GPU tests).
+Rules: `path-attribute` refuses `#[path]` (use normal modules); `whole-file-gpu-gate` refuses an OS condition
+that removes tests from a harness: a file-level `#![cfg(...target_os...)]` on a test file, or an OS condition on any
+module, product or test, whose declared subtree holds a test (gate the individual GPU tests). Use
+`cfg(any(test, target_os = "..."))` to keep a portable module's tests everywhere. A platform shell whose tests drive
+its own platform APIs may keep its condition with a `// platform-only tests: <reason>` comment directly above.
 
 **Shape.**
 - Unit tests go in `#[cfg(test)] mod tests;`, with the body in `foo/tests.rs` once it passes a screen or two.
@@ -137,7 +140,10 @@ the gate writes a visible reason to stderr, and fails instead under `THRUM_REQUI
 Use only a dev-dependency on this package. `test-crate-edges` enforces that boundary, and permits
 normal dependencies on a registered fixtures package only from the registered proving ground.
 
-Gate only the tests that need a GPU, and pass the specific backend for a backend-bound test. The CPU graph
+Gate only the tests that need a GPU, and pass the specific backend for a backend-bound test. A test that asks for
+any backend and then asserts Metal, or opens the `apple-tile` recipe, fails on a Linux or Windows adapter instead of
+skipping; admit `Some(wgpu::Backend::Metal)`. A test that runs on any backend may assert Metal only under
+`#[cfg(target_os = "macos")]`. The CPU graph
 validation cases use portable limits and feature facts and compile on every target.
 
 **Test devices.** Integration tests can enable the support package's `render` feature and open the admitted

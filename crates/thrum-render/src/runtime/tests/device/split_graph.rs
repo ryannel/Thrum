@@ -3,10 +3,9 @@ use super::*;
 #[test]
 fn metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

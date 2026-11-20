@@ -11,7 +11,7 @@ fn metal_lent_night_sky_diffuse_and_finite_aerial_preserve_absolute_units() {
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_lent_night_sky_diffuse_and_finite_aerial_preserve_absolute_units",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

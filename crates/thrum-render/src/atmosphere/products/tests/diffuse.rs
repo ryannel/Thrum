@@ -11,7 +11,7 @@ fn metal_h3_lent_diffuse_meets_independent_hemisphere_integral() {
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_h3_lent_diffuse_meets_independent_hemisphere_integral",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

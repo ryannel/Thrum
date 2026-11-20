@@ -238,7 +238,7 @@ fn metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -436,7 +436,7 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -625,7 +625,7 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
 #[test]
 fn metal_h2_sampler_precision_report() {
     pollster::block_on(async {
-        let Some(test_gpu) = thrum_test_support::gpu("metal_h2_sampler_precision_report", None)
+        let Some(test_gpu) = thrum_test_support::gpu("metal_h2_sampler_precision_report", Some(wgpu::Backend::Metal))
         else {
             return;
         };

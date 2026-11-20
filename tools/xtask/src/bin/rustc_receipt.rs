@@ -29,6 +29,7 @@ fn main() {
     std::process::exit(125);
 }
 
+// platform-only tests: the candidate drives Unix process, signal and file APIs.
 #[cfg(any(target_os = "macos", all(test, unix)))]
 mod candidate {
     use std::{

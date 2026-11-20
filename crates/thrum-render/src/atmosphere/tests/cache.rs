@@ -69,7 +69,7 @@ fn metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work(
         crate::timestamp_permit::hold();
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

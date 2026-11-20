@@ -16,7 +16,7 @@ fn metal_h5_lent_reflection_direction_roughness_source_night_and_exposure() {
     pollster::block_on(async {
         let Some(test_gpu) = thrum_test_support::gpu(
             "metal_h5_lent_reflection_direction_roughness_source_night_and_exposure",
-            None,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
