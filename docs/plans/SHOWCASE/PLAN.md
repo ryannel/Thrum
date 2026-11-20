@@ -38,7 +38,7 @@ The launcher gains three things. `ticks` drives the native route recorder for M5
 held route, with the windows and the phase its caller names, so that a reviewer takes its own.
 `scripts/capture_v1_runtime.py --mode fixed` cannot give that sequence, and
 `scripts/capture_v1_browser.mjs --mode fixed` with the exit route already gives Chrome's. `motion` takes M5.11's
-six arms and writes `.orchestrate/evidence/SHOWCASE/M5-motion-record.json`; `motion --check` reads that file, computes
+six arms and writes `tests/fixtures/showcase/motion-record.json`; `motion --check` reads that file, computes
 the input digest and starts nothing. That digest covers `scripts/` and `.cargo/` as well as the build paths, so
 finish the launcher first. Take the arms last, on a branch that holds main, and land the record with nothing
 else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames, then add and

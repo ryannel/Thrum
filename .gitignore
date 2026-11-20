@@ -42,3 +42,10 @@ local.properties
 .env
 .env.*
 !.env.example
+
+# Historical copies restored from .config/relocated-evidence.json.
+/docs/evidence/SHOWCASE/M5-exit-baseline.json
+/docs/evidence/SHOWCASE/M5-motion-diagnostics.json
+/docs/evidence/SHOWCASE/M5-motion-record.json
+/docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png
+/docs/evidence/v1-workload/g7-showcase-baseline.json

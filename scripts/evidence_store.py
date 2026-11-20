@@ -16,6 +16,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = "docs/evidence/BULK.json"
+RELOCATED = ".config/relocated-evidence.json"
 CAP = 2 * 1024 * 1024
 
 
@@ -39,8 +40,8 @@ def destination(root, value):
     return path
 
 
-def load(root):
-    path = root / MANIFEST
+def load(root, manifest=MANIFEST):
+    path = root / manifest
     if not path.exists():
         return {"schema": 1, "entries": []}
     data = json.loads(path.read_text())
@@ -63,6 +64,11 @@ def load(root):
         else:
             raise ValueError(f"unknown bulk kind: {name}")
     return data
+
+
+def entries(root):
+    """Include historical link targets for evidence that became test data."""
+    return load(root)["entries"] + load(root, RELOCATED)["entries"]
 
 
 def save(root, data):
@@ -125,7 +131,7 @@ def content(root, entry):
 def check(root):
     errors = [f"{p}: evidence-size: over 2 MiB; keep captures in tmp/<task>/ with reproduction record or use evidence_store.py put SOURCE --path {p}"
               for p in oversized(root, tracked(root))]
-    for entry in load(root)["entries"]:
+    for entry in entries(root):
         try:
             content(root, entry)
         except FileNotFoundError as error:
@@ -148,7 +154,7 @@ def atomic_write(path, data):
 
 def restore(root, value):
     path = destination(root, value)
-    entry = next((entry for entry in load(root)["entries"] if entry["path"] == value), None)
+    entry = next((entry for entry in entries(root) if entry["path"] == value), None)
     if entry is None:
         raise ValueError(f"{value}: not listed in history or local store manifest")
     data = content(root, entry)
@@ -164,6 +170,8 @@ def put(root, source, value):
     destination(root, value)
     if value in tracked(root):
         raise ValueError(f"{value}: already tracked; new bulk captures must stay out of Git")
+    if any(entry["path"] == value for entry in load(root, RELOCATED)["entries"]):
+        raise ValueError(f"{value}: reserved for historical evidence; choose a new path")
     data = Path(source).read_bytes()
     digest = hashlib.sha256(data).hexdigest()
     manifest = load(root)

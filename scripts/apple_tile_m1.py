@@ -16,7 +16,7 @@ from apple_tile_m0 import ROOT, ROUTE, digest, run_native, run_t2, finish_t2, sa
 from compare_v1_pixels import compare, load_pixels
 from capture_result import CaptureUnjudged
 
-BASELINE = ROOT / 'docs/evidence/render/apple-tile-m0/native-baseline'
+BASELINE = ROOT / 'examples/v1-game/tests/fixtures/exact-images/native'
 
 
 def retained_comparison(directory, candidate, reference, encoding, extent, name):

@@ -4,6 +4,8 @@
 | --- | --- |
 | `crates/` | Engine libraries with explicit ownership; currently provisional simulation, content runtime, render and network modules |
 | `examples/` | `v1-game`, the V1 test game, and its iOS shell `v1-game-ios` |
+| `examples/v1-game/tests/fixtures/` | Retained inputs to the V1 game's automated checks |
+| `tests/fixtures/showcase/` | Repository-level motion check inputs, outside the recorded build inputs |
 | `tools/xtask/` | Host-only contributor command runner, never an engine runtime dependency |
 | `scripts/` | Small repository/document validation tools |
 | `.config/architecture.toml` | Registered workspace packages and allowed dependency edges |

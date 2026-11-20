@@ -31,8 +31,9 @@ asset CLI, leases, automatic GC or restore guarantees are implemented.
 
 ## Bulk review evidence
 
-Tracked files under `docs/evidence/` must be at most 2 MiB each. Only exact-baseline references registered in
-`.config/exact-baselines.json` are exempt. The `evidence-size` refusal enforces this cap. Keep new captures in
+Tracked files under `docs/evidence/` must be at most 2 MiB each. The `evidence-size` refusal enforces this cap.
+The V1 game's checks read their baselines from [test fixtures](../examples/v1-game/tests/fixtures/).
+The exact image sets are listed in [the registry](../.config/exact-baselines.json). Keep new captures in
 `tmp/<task>/`, with a small committed reproduction record naming the command, revision, tool versions and
 SHA-256 hashes, plus selected small stills. Do not split a capture into pieces to evade the cap.
 
@@ -55,6 +56,8 @@ new local evidence. `check` names missing local entries without failing; `restor
 file was originally put. Arrange a separate authorised transfer if a reviewer uses another machine.
 
 Older bulk evidence removed from HEAD is listed as history entries in [the manifest](evidence/BULK.json).
+Past reviews' evidence paths for relocated fixtures are listed in
+[the relocation manifest](../.config/relocated-evidence.json).
 The same restore command recovers those bytes from Git's object store in any full clone, with no history
 rewrite. `python3 scripts/evidence_store.py check` verifies all history entries and all available local bytes.
 Do not re-add restored files: their exact paths are ignored, and the manifest keeps existing links valid.

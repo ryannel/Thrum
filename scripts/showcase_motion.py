@@ -10,9 +10,9 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = ROOT / 'docs/evidence/SHOWCASE'
-RECORD = EVIDENCE / 'M5-motion-record.json'
-DIAGNOSTICS = EVIDENCE / 'M5-motion-diagnostics.json'
+FIXTURES = ROOT / 'tests/fixtures/showcase'
+RECORD = FIXTURES / 'motion-record.json'
+DIAGNOSTICS = FIXTURES / 'motion-diagnostics.json'
 INPUTS = ('crates/', 'examples/v1-game/', 'scripts/', '.cargo/',
           'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml')
 COMPARISONS = {'mac-route': 'elapsed-exit-route', 'mac-held': 'elapsed-exit-drift',

@@ -178,8 +178,8 @@ The route is repeatable when two consecutive `check` runs from clean scratch pro
 each other under the same metric, on both targets.
 - **Baseline.** The accepted run's stop frames stay as raw files in its run directory under `tmp/g7-showcase/runs/`,
   and as one compact contact sheet in the evidence page. `tmp/` is not checked in, so the per-stop 32×18 grids are
-  checked in at `docs/evidence/v1-workload/g7-showcase-baseline.json`, the path root approved. Its identity is the
-  comparator version, the frame-source version, the source root and the preset hashes. A run compares against it
+  checked in at `examples/v1-game/tests/fixtures/showcase/valley-baseline.json`. Its identity is the comparator
+  version, the frame-source version, the source root and the preset hashes. A run compares against it
   only when every part matches. The canonical check on the checked-in source and baseline must compare all twelve
   frames. It fails if the baseline is missing, any part of its identity differs, or any comparison exceeds a
   threshold. Runs on another source, scratch baselines and explicit calibration or save runs may report mismatched

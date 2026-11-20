@@ -414,7 +414,7 @@ So motion is proved in two parts, and the project's rule for timing decides whic
   the recorder's 1,800-tick limit for an exit route.
 - **Phase.** A route file's phase is one half. The strip was reproduced at route ticks 202 to 203, committed
   ticks 233 to 234, at phase 0.9999, which `THRUM_CAPTURE_PHASE` sets
-  ([record](../../../.orchestrate/evidence/SHOWCASE/M5-motion-diagnostics.json), `fixed_shadow_diagnostic`). That window is
+  ([record](../../../tests/fixtures/showcase/motion-diagnostics.json), `fixed_shadow_diagnostic`). That window is
   judged at both phases, because a fault that shows near the end of a tick can hide at its middle.
 - **Chrome.** `capture_v1_browser.mjs --mode fixed` gives the page a synthetic 60 Hz time at each callback, at
   phase one half, and retains every submission with its source tick. Under load the page can defer a due tick

@@ -45,7 +45,7 @@ def anchors(text):
 def check_links(root, files):
     errors = []
     count = 0
-    listed = {entry["path"] for entry in evidence_store.load(root)["entries"]}
+    listed = {entry["path"]: entry for entry in evidence_store.entries(root)}
     tracked = evidence_store.tracked(root) if shape_rules.owns_history(root) else None
     directories = {parent.as_posix() for path in (tracked or []) for parent in Path(path).parents}
     for path in files:
@@ -69,7 +69,7 @@ def check_links(root, files):
                 errors.append(f"missing/outside local link: {label}")
             elif url.fragment and dest.suffix == ".md" and unquote(url.fragment) not in anchors(
                     dest.read_text(encoding="utf-8") if relative not in listed else
-                    evidence_store.content(root, next(e for e in evidence_store.load(root)["entries"] if e["path"] == relative)).decode()):
+                    evidence_store.content(root, listed[relative]).decode()):
                 errors.append(f"missing anchor: {label}")
     return errors, count
 
