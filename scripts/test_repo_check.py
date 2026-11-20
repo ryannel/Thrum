@@ -267,6 +267,53 @@ class RepositoryChecks(unittest.TestCase):
             self.assertIn(".config/long-tests.txt:5: no workspace package none", wrong)
             self.assertIn(".config/long-tests.txt:6: game has no test binary gone", wrong)
 
+    def test_feature_gated_library_test_code_must_be_covered(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source = root / "examples" / "game" / "src"
+            (source / "host").mkdir(parents=True)
+            lib = source / "lib.rs"
+            lib.write_text("mod host;\n#[cfg(test)]\nmod checks;\n#[cfg(feature = \"probe\")]\npub fn probe() {}\n")
+            # Production code behind a feature, a brace in a string, and a gated test in the inline module.
+            scene = source / "host" / "scene.rs"
+            scene.write_text(
+                "#[cfg(feature = \"probe\")]\npub fn live() { let _ = \"}\"; }\n"
+                "#[cfg(test)]\nmod tests {\n    fn brace() -> &'static str { \"{\" }\n"
+                "    #[cfg(all(feature = \"probe\", not(target_arch = \"wasm32\")))]\n    #[test]\n    fn gated() {}\n}\n"
+                "#[cfg(feature = \"other\")]\npub fn after() {}\n")
+            (source / "host.rs").write_text("pub mod scene;\n")
+            checks = source / "checks.rs"
+            checks.write_text("#[test]\nfn plain() {}\n")
+            metadata = {"workspace_members": ["game"], "packages": [
+                {"id": "game", "name": "game", "manifest_path": str(root / "examples" / "game" / "Cargo.toml"),
+                 "features": {"probe": [], "other": [], "off": []}, "dependencies": [],
+                 "targets": [{"kind": ["rlib", "cdylib"], "name": "game", "src_path": str(lib)}]}]}
+            check = repo_check.check_feature_tests
+            # Production cfgs (lib.rs, `live`, `after`) are not test code; the inline gated test is.
+            errors = check(root, metadata, "")
+            self.assertEqual(len(errors), 1)
+            self.assertIn("examples/game/src/host/scene.rs:6", errors[0])
+            self.assertIn("feature probe", errors[0])
+            self.assertIn("`lib`", errors[0])
+            self.assertEqual(check(root, metadata, "game features=probe lib\n"), [])
+            self.assertEqual(check(root, metadata, "game features=probe\n"), [])
+            # Another binary's line does not cover the library's tests.
+            metadata["packages"][0]["targets"].append(
+                {"kind": ["test"], "name": "other_bin", "src_path": str(root / "examples" / "game" / "tests" / "o.rs")})
+            self.assertEqual(len(check(root, metadata, "game features=probe other_bin\n")), 1)
+            # A `#[cfg(test)] mod checks;` file is test code whole, and so is a `#[test]` item's cfg.
+            checks.write_text("#[cfg(feature = \"other\")]\n#[test]\nfn gated() {}\n")
+            lib.write_text(lib.read_text() + "#[test]\n#[cfg(feature = \"off\")]\nfn top() {}\n")
+            errors = check(root, metadata, "game features=probe lib\n")
+            self.assertEqual(sorted(e.split(":")[0] for e in errors),
+                             ["examples/game/src/checks.rs", "examples/game/src/lib.rs"])
+            # A feature under `not(...)` only turns a test off, so it needs no line.
+            checks.write_text("#[cfg(not(feature = \"other\"))]\n#[test]\nfn ungated() {}\n")
+            lib.write_text(lib.read_text().replace("cfg(feature = \"off\")", "cfg(test)"))
+            self.assertEqual(check(root, metadata, "game features=probe lib\n"), [])
+            self.assertIn(".config/long-tests.txt:1: game has no test binary gone",
+                          check(root, metadata, "game features=probe gone\n"))
+
     def test_ios_runtime_closure_rejects_authoring_and_sqlite(self):
         tree = "v1-game-ios v0.1.0\nv1-game v0.1.0\nthrum-cook v0.1.0\nthrum-source v0.1.0\nrusqlite v0.40.2\nlibsqlite3-sys v0.38.0\n"
         with patch.object(repo_check.subprocess, "run") as run:

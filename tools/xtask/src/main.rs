@@ -369,7 +369,7 @@ struct LongTestBinary {
 }
 
 /// One feature line of the main-tier list: `<package> features=<feature>[,...] [<test binary>...]`.
-/// With no binary named it covers every test binary of the package.
+/// With no binary named it covers every test binary of the package; `lib` names the library's tests.
 struct FeatureTests {
     package: String,
     features: Vec<String>,
@@ -526,7 +526,12 @@ fn long_tests() -> TaskResult {
             args.push("--tests");
         }
         for binary in &entry.binaries {
-            args.extend(["--test", binary]);
+            // `lib` names the library's own tests.
+            if binary == "lib" {
+                args.push("--lib");
+            } else {
+                args.extend(["--test", binary]);
+            }
         }
         if !main_tier_cargo(&args)?.success() {
             failed.push(format!("{} with {features}", entry.package));

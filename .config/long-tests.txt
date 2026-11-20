@@ -22,14 +22,16 @@ thrum-water-model shore_blend release
 # with these features on; `./dev long-tests` runs its tests that are not ignored, in the debug build,
 # with the features on and a GPU required (an ignored test there is a measurement a cost script runs).
 # With no binary named, a line covers every test binary of the package, the library's own tests
-# included, so a new gated file runs with no edit here. `./dev check-docs` fails when a test target's
-# `required-features`, or a `cfg` in a test file, names a feature no line covers for that file's package,
-# whole or by the binary the file builds into. A feature the workspace's own build turns on needs no line.
+# included, so a new gated file runs with no edit here. The binary `lib` names the library's own
+# tests. `./dev check-docs` fails when a test target's `required-features`, or a `cfg` that gates test
+# code (in a test file, or a test module, `#[test]` item or `cfg(test, ...)` in any source file), names
+# a feature no line covers for that package, whole or by the binary the code builds into. A feature
+# the workspace's own build turns on needs no line.
 #
 # <package> features=<feature>[,<feature>...] [<test binary> ...]
 thrum-render features=creation-counters
 thrum-asset-gpu features=draw-probe error_types
-v1-game features=draw-probe ray_tracing_gpu cooked_assets_gpu
+v1-game features=draw-probe lib ray_tracing_gpu cooked_assets_gpu
 v1-game features=thrum-asset-gpu/fault-probe cooked_fault_gpu
 
 # Not run: a binary behind a feature that failed when it was listed. It runs in no tier until the

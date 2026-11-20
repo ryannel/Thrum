@@ -437,17 +437,145 @@ CFG_START = re.compile(r"\bcfg(?:_attr)?!?\s*\(")
 CFG_FEATURE = re.compile(r'\bfeature\s*=\s*"([^"]+)"')
 
 
-def cfg_features(text):
-    """Every Cargo feature a `cfg`, `cfg_attr` or `cfg!` in the text names, with its line."""
+def blank_literals(text):
+    """The text with comments and string and character literals turned to spaces, newlines kept, so braces
+    and attributes can be matched by position in it while names are read from the original."""
+    out, i, n = list(text), 0, len(text)
+
+    def blank(start, end):
+        for k in range(start, min(end, n)):
+            if out[k] != "\n":
+                out[k] = " "
+
+    while i < n:
+        c = text[i]
+        if text.startswith("//", i):
+            end = text.find("\n", i)
+            end = n if end < 0 else end
+            blank(i, end)
+            i = end
+        elif text.startswith("/*", i):
+            depth, j = 1, i + 2
+            while j < n and depth:
+                if text.startswith("/*", j):
+                    depth, j = depth + 1, j + 2
+                elif text.startswith("*/", j):
+                    depth, j = depth - 1, j + 2
+                else:
+                    j += 1
+            blank(i, j)
+            i = j
+        elif (raw := re.match(r'b?r(#*)"', text[i:i + 300])) and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] == "_")):
+            close = '"' + raw.group(1)
+            end = text.find(close, i + raw.end())
+            end = n if end < 0 else end + len(close)
+            blank(i + raw.end(), end - len(close))
+            i = end
+        elif c == '"':
+            j = i + 1
+            while j < n and text[j] != '"':
+                j += 2 if text[j] == "\\" else 1
+            blank(i + 1, j)
+            i = j + 1
+        elif c == "'" and (char := re.match(r"'(?:\\.[^']*|[^'\\])'", text[i:i + 12])):
+            blank(i + 1, i + char.end() - 1)
+            i += char.end()
+        else:
+            i += 1
+    return "".join(out)
+
+
+CFG_START = re.compile(r"\bcfg(?:_attr)?!?\s*\(")
+CFG_FEATURE = re.compile(r'\bfeature\s*=\s*"([^"]+)"')
+NOT_START = re.compile(r"\bnot\s*\(")
+
+
+def balanced(text, start):
+    """The index just past the `)` that closes the `(` before `start`."""
+    depth, end = 1, start
+    while end < len(text) and depth:
+        depth += {"(": 1, ")": -1}.get(text[end], 0)
+        end += 1
+    return end
+
+
+def cfg_spans(text):
+    """Each `cfg`, `cfg_attr` or `cfg!` in the text as (start, end of its arguments, start of arguments)."""
+    return [(m.start(), balanced(text, m.end()), m.end()) for m in CFG_START.finditer(text)]
+
+
+def gating_features(arguments):
+    """The features a `cfg`'s arguments need on. A feature under `not(...)` only turns code off, and code
+    that runs with a feature off already runs in the merge tier, so it is left out."""
+    kept, last = [], 0
+    for m in NOT_START.finditer(arguments):
+        if m.start() < last:
+            continue
+        kept.append(arguments[last:m.start()])
+        last = balanced(arguments, m.end())
+    kept.append(arguments[last:])
+    return CFG_FEATURE.findall("".join(kept))
+
+
+def cfg_features(text, spans=None):
+    """Every Cargo feature a `cfg`, `cfg_attr` or `cfg!` in the text gates on, with its line. With `spans`,
+    only cfgs that start inside one of those (start, end) ranges."""
     found = []
-    for match in CFG_START.finditer(text):
-        depth, end = 1, match.end()
-        while end < len(text) and depth:
-            depth += {"(": 1, ")": -1}.get(text[end], 0)
-            end += 1
-        line = text.count("\n", 0, match.start()) + 1
-        found += [(line, name) for name in CFG_FEATURE.findall(text[match.end():end])]
+    for start, end, arguments in cfg_spans(text):
+        if spans is not None and not any(a <= start < b for a, b in spans):
+            continue
+        line = text.count("\n", 0, start) + 1
+        found += [(line, name) for name in gating_features(text[arguments:end - 1])]
     return found
+
+
+ATTRIBUTE = re.compile(r"#!?\[")
+TEST_TOKEN = re.compile(r"\btest\b")
+TEST_MOD = re.compile(r"\s*(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*([;{])")
+
+
+def test_code(text):
+    """Where test code sits in a source file that is not itself a test file, and the modules it declares
+    test-only. Returns ([(start, end)], [(module name, `#[path]` or None)]).
+
+    Test code is a `#[cfg(...)]`-gated module whose cfg names `test` (its body, or its file), any item whose
+    attributes hold `#[test]` or a cfg naming `test` (its attributes), and those attributes' cfgs.
+    """
+    plain = blank_literals(text)
+    spans, files = [], []
+    position = 0
+    while (m := ATTRIBUTE.search(plain, position)):
+        # One run of attributes, then the item they belong to.
+        run_start, end = m.start(), m.start()
+        attributes = []
+        while (a := ATTRIBUTE.match(plain, end)) or (attributes and plain[end:end + 1].isspace()):
+            if a:
+                close = end + plain[end:].find("[") + 1
+                depth, j = 1, close
+                while j < len(plain) and depth:
+                    depth += {"[": 1, "]": -1}.get(plain[j], 0)
+                    j += 1
+                attributes.append(plain[a.end():j - 1])
+                end = j
+            else:
+                end += 1
+        position = max(end, m.end())
+        testing = any(attr.strip() == "test" or attr.strip().endswith("::test")
+                      or (attr.lstrip().startswith("cfg") and TEST_TOKEN.search(attr)) for attr in attributes)
+        if not testing:
+            continue
+        spans.append((run_start, end))
+        module = TEST_MOD.match(plain, end)
+        if module and any(attr.lstrip().startswith("cfg") and TEST_TOKEN.search(attr) for attr in attributes):
+            if module.group(2) == "{":
+                body = balanced(plain.replace("{", "(").replace("}", ")"), module.end())
+                spans.append((module.end(), body))
+                position = body
+            else:
+                path = next((re.search(r'"([^"]+)"', text[run_start:end]) for attr in attributes
+                             if attr.lstrip().startswith("path")), None)
+                files.append((module.group(1), path.group(1) if path else None))
+    return spans, files
 
 
 def workspace_features(packages):
@@ -476,13 +604,19 @@ def workspace_features(packages):
     return enabled
 
 
-def check_feature_tests(root, metadata, list_text):
-    """No Cargo feature takes a test out of every tier unnoticed.
+LIBRARY_KINDS = {"lib", "rlib", "dylib", "cdylib", "staticlib", "proc-macro"}
 
-    A test target's `required-features`, and every feature a `cfg` in a test file names, must be covered by a
-    feature line of the main-tier list for that file's package: whole, or by the test binary the file builds
-    into. A file several binaries share, or a test module of the library, is covered only by a whole entry.
-    `./dev check` lints the listed packages' tests with those features and `./dev long-tests` runs them.
+
+def check_feature_tests(root, metadata, list_text):
+    """No Cargo feature takes a test out of every tier unnoticed, however the test is gated.
+
+    A test target's `required-features`, and every feature a `cfg` gates test code on, must be covered by a
+    feature line of the main-tier list for that file's package: whole, or by the test binary the code builds
+    into, where `lib` names the library's own tests. Test code is every file a test target reaches, every
+    file of a test-only module, and in any other source file the test modules, `#[test]` items and cfgs that
+    name `test`. A file several binaries share, or test code outside the library's tree and the test
+    targets, is covered only by a whole entry. `./dev check` lints the listed packages with those features
+    and `./dev long-tests` runs them.
     """
     _, entries, _ = parse_main_tier_list(list_text)
     members = set(metadata["workspace_members"])
@@ -494,6 +628,8 @@ def check_feature_tests(root, metadata, list_text):
             errors.append(f"{LONG_TESTS}:{number}: no workspace package {package}")
             continue
         targets = {t["name"] for t in names[package]["targets"] if "test" in t["kind"]}
+        if any(set(t["kind"]) & LIBRARY_KINDS for t in names[package]["targets"]):
+            targets.add("lib")
         for binary in sorted((binaries or set()) - targets):
             errors.append(f"{LONG_TESTS}:{number}: {package} has no test binary {binary}")
         known = set(names[package].get("features", {}))
@@ -517,16 +653,18 @@ def check_feature_tests(root, metadata, list_text):
     def missing(where, package, feature, how):
         return (f"{where}: {how} feature {feature}, and no line of {LONG_TESTS} covers {package} with it, so "
                 f"its tests run in no tier; add `{package} features={feature}` there, whole or with the test "
-                "binary")
+                "binary (`lib` for the library's own tests)")
 
-    binaries, owners = {}, []  # file -> {binary}; (package directory, package name)
+    binaries, owners, library = {}, [], set()  # file -> {binary}; (package directory, name); library files
     for package in packages:
         directory = Path(package["manifest_path"]).resolve().parent
         owners.append((directory, package["name"]))
         for target in package["targets"]:
+            source = Path(target["src_path"]).resolve()
+            if set(target["kind"]) & LIBRARY_KINDS:
+                library.update(module_files(source))
             if "test" not in target["kind"]:
                 continue
-            source = Path(target["src_path"]).resolve()
             required = target.get("required-features", [])
             if required and not covered(package["name"], required, {target["name"]}):
                 # Cargo builds the target only when every one is on, so one line must give them all.
@@ -536,22 +674,47 @@ def check_feature_tests(root, metadata, list_text):
             for path in module_files(source):
                 binaries.setdefault(path, set()).add(target["name"])
     owners.sort(key=lambda owner: len(owner[0].parts), reverse=True)
-    for path in rust_files(root):
-        resolved = path.resolve()
+
+    # Source files: test-only module files, then the test code inside every other file.
+    sources = {path.resolve(): path for path in rust_files(root)}
+    test_files, scanned = set(), {}
+    for resolved, path in sources.items():
+        if resolved in binaries:
+            continue
         relative = path.relative_to(root).as_posix()
-        if resolved not in binaries and not (is_test_file(relative) or "/tests/" in f"/{relative}"):
+        if is_test_file(relative) or "/tests/" in f"/{relative}":
+            test_files.add(resolved)
             continue
         text = path.read_text(encoding="utf-8")
+        if "test" not in text:
+            continue
+        spans, modules = test_code(text)
+        scanned[resolved] = (text, spans)
+        own = resolved.parent if resolved.name in {"lib.rs", "main.rs", "mod.rs"} else resolved.parent / resolved.stem
+        for name, explicit in modules:
+            roots = [(resolved.parent / explicit).resolve()] if explicit else [own / f"{name}.rs", own / name / "mod.rs"]
+            for module_root in roots:
+                if module_root.is_file():
+                    test_files.update(module_files(module_root))
+    for resolved, path in sorted(sources.items(), key=lambda item: item[1]):
+        if resolved in binaries or resolved in test_files:
+            text, spans = path.read_text(encoding="utf-8"), None
+        elif resolved in scanned and scanned[resolved][1]:
+            text, spans = scanned[resolved]
+        else:
+            continue
         if "feature" not in text:
             continue
         package = next((name for directory, name in owners if resolved.is_relative_to(directory)), None)
         if package is None:
             continue
-        holders, reported = binaries.get(resolved, set()), set()
-        for line, feature in cfg_features(text):
+        holders = binaries.get(resolved) or ({"lib"} if resolved in library else set())
+        reported = set()
+        relative = path.relative_to(root).as_posix()
+        for line, feature in cfg_features(text, spans):
             if feature not in reported and not covered(package, feature, holders):
                 reported.add(feature)
-                errors.append(missing(f"{relative}:{line}", package, feature, "a `cfg` names"))
+                errors.append(missing(f"{relative}:{line}", package, feature, "a `cfg` gates a test on"))
     return errors
 
 
