@@ -77,7 +77,7 @@
     {
       "id": "M2",
       "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
