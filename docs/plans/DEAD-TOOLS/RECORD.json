@@ -73,13 +73,11 @@
         "at": "2026-11-20T12:56:45Z"
       },
       "ready_for_review": {
-        "commit": "1ce43e471dd40640954c012d1e776bc7cc75d61b",
-        "checked": "1ce43e471dd40640954c012d1e776bc7cc75d61b",
-        "at": "2026-11-20T20:05:09Z",
+        "commit": "c02fc277e2a9fc57f1690044b6c4ceed425d58ce",
+        "checked": "c02fc277e2a9fc57f1690044b6c4ceed425d58ce",
+        "at": "2026-11-20T21:32:05Z",
         "reused": [
-          "Test command",
-          "M1.1",
-          "M1.2"
+          "Test command"
         ],
         "host": "claude",
         "model": "claude-opus-5-5",
@@ -90,18 +88,18 @@
         "cli": "2.1.319 (Claude Code)",
         "path": "headless",
         "usage": {
-          "input": 148020,
-          "cached": 7044318,
-          "output": 39907,
-          "cost_usd": 3.39066,
+          "input": 31988,
+          "cached": 4159213,
+          "output": 11614,
+          "cost_usd": 1.319842,
           "turns": 1
         },
         "session_usage": {
-          "input": 148020,
-          "cached": 7044318,
-          "output": 39907,
-          "cost_usd": 3.39066,
-          "turns": 1
+          "input": 180008,
+          "cached": 11203531,
+          "output": 51521,
+          "cost_usd": 4.710502,
+          "turns": 2
         }
       }
     },
