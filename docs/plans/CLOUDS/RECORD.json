@@ -477,7 +477,7 @@
         {
           "verdict": "fail",
           "commit": "8f53f1d2b475ad24eb6127fa56a147df74fc7118",
-          "review": ".orchestrate/evidence/CLOUDS/M5-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review-1.md",
           "items": {
             "M5.2": "pass",
             "M5.3": "fail",
@@ -519,6 +519,36 @@
             "turns": 1
           },
           "at": "2026-11-20T08:02:09Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "cbe5315c30c4094099f34c15b932905df87416b0",
+          "review": ".orchestrate/evidence/CLOUDS/M5-review.md",
+          "items": {
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "pass",
+            "M5.6": "pass",
+            "M5.7": "pass",
+            "M5.8": "pass",
+            "M5.9": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 267356,
+            "cached": 25716565,
+            "output": 70521,
+            "cost_usd": 8.691357,
+            "turns": 1
+          },
+          "at": "2026-11-20T16:38:42Z"
         }
       ],
       "authorised": {
@@ -554,6 +584,13 @@
           "output": 349894,
           "turns": 4
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "cbe5315c30c4094099f34c15b932905df87416b0",
+        "review": ".orchestrate/evidence/CLOUDS/M5-review.md",
+        "checked": "ce5a54574a2fecc8629509f8251545f4e07a4379",
+        "at": "2026-11-20T16:38:42Z"
       }
     },
     "M6": {
