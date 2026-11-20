@@ -981,13 +981,13 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         let stepped = self.world().tick();
         let replica = &mut self.replica;
         let slot = self.slot;
-        let mut committed = |world: &W, frame: &InputFrame<W::Action>, result| {
+        let mut committed = |world: &W, frame: &InputFrame<W::Action>, verified| {
             if let Some(prediction) = &mut self.prediction {
                 prediction.confirm(
                     frame.tick,
                     P::read(world, slot),
                     frame.axes,
-                    result,
+                    verified,
                     observe,
                 );
             }
@@ -1003,7 +1003,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
                 budget -= 1;
                 replica.commit(slot, &mut committed)
             });
-            self.state = if clock.skip.is_some() {
+            self.state = if clock.behind() {
                 ClientState::Behind
             } else {
                 ClientState::Playing
@@ -1017,9 +1017,12 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         } else if self.held - stepped >= INITIAL_BUFFER || self.ending.is_some() {
             self.clock = Some(Clock::new(stepped, now));
             self.state = ClientState::Playing;
-            if let Some(prediction) = &mut self.prediction {
-                prediction.resume();
-            }
+        }
+        if self.state == ClientState::Playing
+            && replica.fault.is_none()
+            && let Some(prediction) = &mut self.prediction
+        {
+            prediction.resume();
         }
     }
 
@@ -1244,7 +1247,7 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
     fn commit(
         &mut self,
         slot: usize,
-        committed: &mut impl FnMut(&W, &InputFrame<W::Action>, wire::SlotResult),
+        committed: &mut impl FnMut(&W, &InputFrame<W::Action>, Option<wire::SlotResult>),
     ) -> bool {
         let tick = self.world.tick() + 1;
         let index = usize::try_from(tick % self.sets.len() as u64).expect("bounded backlog");
@@ -1271,8 +1274,10 @@ impl<W: World, Codec: ActionWire<W::Action>> Replica<W, Codec> {
             None
         };
         let agrees = stepped && actual == set.digest;
-        if agrees {
-            committed(&self.world, &set.frames[slot], set.results[slot]);
+        if stepped {
+            // A digest disagreement still leaves a new committed endpoint.
+            let verified = agrees.then_some(set.results[slot]);
+            committed(&self.world, &set.frames[slot], verified);
         }
         self.spare.push(set);
         if !agrees {

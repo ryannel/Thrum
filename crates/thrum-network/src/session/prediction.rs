@@ -125,7 +125,6 @@ pub(super) struct Prediction<W: World, P: PredictedController<W>> {
     entries: VecDeque<Entry<W::Action, P::State>>,
     confirmed: Option<ControllerView<P::State>>,
     confirmed_axes: [f32; 3],
-    suspended: bool,
     live: bool,
 }
 
@@ -136,13 +135,11 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
             entries: VecDeque::with_capacity(PREDICTION_TICKS),
             confirmed: None,
             confirmed_axes: [0.0; 3],
-            suspended: true,
             live: false,
         }
     }
 
     pub(super) fn suspend(&mut self, discard: bool) {
-        self.suspended = true;
         self.live = false;
         if discard {
             self.entries.clear();
@@ -150,6 +147,7 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
     }
 
     pub(super) fn install(&mut self, tick: u64, state: Option<P::State>, axes: [f32; 3]) {
+        self.live = false;
         self.confirmed = state.map(|state| ControllerView {
             tick,
             previous: state,
@@ -159,12 +157,11 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
         });
         self.confirmed_axes = axes;
         self.entries.retain(|entry| entry.tick > tick);
-        self.replay();
     }
 
+    // The client calls this only once playout is back in step.
     pub(super) fn resume(&mut self) {
-        if self.suspended {
-            self.suspended = false;
+        if !self.live {
             self.replay();
         }
     }
@@ -263,11 +260,9 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
 
     fn replay(&mut self) {
         let Some(confirmed) = self.confirmed.filter(|confirmed| {
-            !self.suspended
-                && self
-                    .entries
-                    .front()
-                    .is_none_or(|entry| entry.tick == confirmed.tick + 1)
+            self.entries
+                .front()
+                .is_none_or(|entry| entry.tick == confirmed.tick + 1)
         }) else {
             self.live = false;
             return;
@@ -286,7 +281,7 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
         tick: u64,
         actual: Option<P::State>,
         axes: [f32; 3],
-        result: SlotResult,
+        verified: Option<SlotResult>,
         observe: &mut impl FnMut(PredictionEvent<P::State>),
     ) {
         let Some(actual) = actual else {
@@ -303,8 +298,11 @@ impl<W: World, P: PredictedController<W>> Prediction<W, P> {
         });
         self.confirmed_axes = axes;
         let entry = self.entries.pop_front_if(|entry| entry.tick == tick);
+        let Some(result) = verified else {
+            self.suspend(false);
+            return;
+        };
         let (Some(entry), Some(head)) = (entry, head) else {
-            self.replay();
             return;
         };
         let predicted = entry.state.expect("live prediction has endpoints");

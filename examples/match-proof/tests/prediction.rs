@@ -29,6 +29,14 @@ fn after_every_copy_is_lost_the_held_tick_is_corrected_once() {
     );
 }
 
+#[test]
+fn a_refused_step_keeps_the_last_committed_controller_during_repair() {
+    let report = match_proof::run_prediction("refused", "a0", 120, 128, 29_721)
+        .expect("valid conditioned prediction fixture");
+    assert_eq!(report["committed_before_fault"], report["view_tick"]);
+    assert_eq!(report["world_bits"], report["view_bits"]);
+}
+
 #[derive(Default)]
 struct PulseWorld {
     tick: u64,

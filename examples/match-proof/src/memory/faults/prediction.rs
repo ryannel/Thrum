@@ -32,6 +32,7 @@ pub(super) struct Trace {
     transitions: Vec<Value>,
     pages: Vec<Option<(u64, u64)>>,
     live: bool,
+    fallback_samples: usize,
     lead: Time,
     advance: Time,
 }
@@ -53,6 +54,7 @@ impl Trace {
             transitions: Vec::new(),
             pages: Vec::new(),
             live: false,
+            fallback_samples: 0,
             lead: Time::default(),
             advance: Time::default(),
         }
@@ -87,6 +89,15 @@ impl Trace {
         }
         let Some(view) = client.controller(now) else {
             assert!(!self.live);
+            if self.enabled
+                && !world.restores.is_empty()
+                && let Some(slot) = client.slot()
+            {
+                assert!(
+                    world.controller(slot).is_none(),
+                    "missing controller view at host tick {host_tick}"
+                );
+            }
             return;
         };
         let confirmed = world.crowd.tick();
@@ -96,15 +107,21 @@ impl Trace {
             assert_eq!(view.tick, target);
             assert!(span <= PREDICTION_TICKS as u64);
             self.lead.add(span);
-        } else if view.tick == confirmed {
+        } else {
+            assert_eq!(
+                view.tick, confirmed,
+                "fallback tick at host tick {host_tick}"
+            );
             assert_eq!(
                 controller_bits(view.current),
                 controller_bits(
                     world
                         .controller(client.slot().expect("assigned slot"))
                         .expect("confirmed controller")
-                )
+                ),
+                "fallback state at host tick {host_tick}"
             );
+            self.fallback_samples += 1;
         }
         if view.predicted != self.live {
             self.transitions
@@ -351,6 +368,7 @@ fn summary(game: &Match, peer: usize) -> Value {
     let engine = world.crowd.engine.json();
     json!({"slot": player.slot(), "epoch": player.client.epoch(), "compared": compared,
         "admitted_equal": admitted, "admitted_with_confirmed_fallback": fallback,
+        "verified_fallback_samples": trace.fallback_samples,
         "transitions": trace.transitions,
         "lead_ticks": lead, "lead_ms": {"mean": trace.lead.total as f64 / trace.lead.count as f64 * period,
             "max": trace.lead.max as f64 * period},
@@ -461,6 +479,117 @@ fn reconnect(
     )
 }
 
+fn recover_stall(game: &mut Match, hero: usize, stall_at: u64, release_at: u64) -> Value {
+    game.players[hero].carrier.stall(false);
+    let mut skipped = Vec::new();
+    let mut fallback_polls = 0;
+    for _ in 0..180 {
+        game.advance();
+        let host_tick = game.tick();
+        let client = &mut game.players[hero].client;
+        let view = client
+            .controller(game.now)
+            .expect("controller available throughout stall recovery");
+        if let Some(skip) = client.take_skip() {
+            assert_eq!(client.state(), &ClientState::Behind);
+            assert!(
+                !view.predicted,
+                "prediction resumed on a skip at host tick {host_tick}"
+            );
+            skipped.push(json!({"host_tick": host_tick, "first": skip.first,
+                "last": skip.last, "fallback_tick": view.tick}));
+        }
+        if view.predicted {
+            assert_eq!(
+                client.state(),
+                &ClientState::Playing,
+                "prediction resumed during a skip"
+            );
+            assert!(
+                !skipped.is_empty(),
+                "expected to exercise the post-stall skip"
+            );
+            return json!({"from": stall_at, "through": release_at, "resumed": host_tick,
+                "fallback_polls_after_release": fallback_polls, "skip": skipped,
+                "resumed_at_confirmed_tick": client.world().tick(), "resumed_view_tick": view.tick});
+        }
+        fallback_polls += 1;
+    }
+    panic!("controller prediction did not resume after the stall");
+}
+
+fn begin_repair(game: &mut Match, hero: usize, fault: Fault) -> Value {
+    let player = &game.players[hero];
+    assert!(
+        player
+            .client
+            .controller(game.now)
+            .expect("live controller")
+            .predicted
+    );
+    let before = player.client.world().tick();
+    player
+        .world
+        .borrow_mut()
+        .change(fault)
+        .expect("perturb replica");
+    game.until(180, |game| {
+        game.players[hero].client.state() == &ClientState::Repairing
+    });
+    let player = &game.players[hero];
+    let view = player
+        .client
+        .controller(game.now)
+        .expect("controller during repair");
+    assert!(!view.predicted);
+    let committed = player.client.world().tick();
+    if matches!(fault, Fault::StepRefused) {
+        assert_eq!(
+            committed, before,
+            "a refused step never publishes an endpoint"
+        );
+    } else {
+        assert!(
+            committed > before,
+            "the digest fault follows a committed step"
+        );
+        let trace = player
+            .prediction
+            .as_ref()
+            .expect("prediction witness attached");
+        assert!(
+            !trace.events.iter().any(|event| matches!(
+                event,
+                PredictionEvent::Compared { tick, .. } if *tick == committed
+            )),
+            "a divergent endpoint cannot verify a prediction"
+        );
+    }
+    let expected = player
+        .world
+        .borrow()
+        .controller(player.slot())
+        .expect("committed controller");
+    assert_eq!(view.tick, committed);
+    assert_eq!(controller_bits(view.current), controller_bits(expected));
+    json!({"fault": format!("{fault:?}"), "host_tick": game.tick(),
+        "committed_before_fault": before, "committed_at_detection": committed, "view_tick": view.tick,
+        "world_bits": controller_bits(expected), "view_bits": controller_bits(view.current)})
+}
+
+fn refused() -> Value {
+    let mut game = Match::new(128, Settings::default(), false);
+    let hero = game.add_conditioned(
+        Profile::default(),
+        None,
+        condition("a0", 29_721).expect("valid proof conditioner"),
+        None,
+        Some(Trace::new(true, false, WitnessKind::Match)),
+    );
+    game.advance_to(120);
+    begin_repair(&mut game, hero, Fault::StepRefused)
+}
+
 fn long(profile: &str, ticks: u64, count: u32, seed: u64, costs: bool) -> Value {
     let mut game = Match::new(count, Settings::default(), costs);
     game.admitted = Some(Vec::new());
@@ -504,31 +633,10 @@ fn long(profile: &str, ticks: u64, count: u32, seed: u64, costs: bool) -> Value 
         assert_eq!(view.tick, player.client.world().tick());
         assert!(player.client.last_frame().0 - view.tick > PREDICTION_TICKS as u64);
     }
-    game.players[hero].carrier.stall(false);
-    game.until(180, |game| {
-        game.players[hero]
-            .client
-            .controller(game.now)
-            .is_some_and(|view| view.predicted)
-    });
-    let resumed_at = game.tick();
+    let stall = recover_stall(&mut game, hero, stall_at, release_at);
     let repair_at = ticks / 2;
     game.advance_to(repair_at);
-    game.players[hero]
-        .world
-        .borrow_mut()
-        .change(Fault::Resource)
-        .expect("valid conditioned prediction fixture");
-    game.until(180, |game| {
-        game.players[hero].client.state() == &ClientState::Repairing
-    });
-    assert!(
-        !game.players[hero]
-            .client
-            .controller(game.now)
-            .expect("controller endpoint available")
-            .predicted
-    );
+    let repair_fallback = begin_repair(&mut game, hero, Fault::Resource);
     game.until(180, |game| {
         game.players[hero].world.borrow().restores.len() == 2
             && game.players[hero]
@@ -546,6 +654,10 @@ fn long(profile: &str, ticks: u64, count: u32, seed: u64, costs: bool) -> Value 
         game.diagnostics.len(),
         1,
         "only the deliberately perturbed resource diverged"
+    );
+    assert_eq!(
+        repair_fallback["committed_at_detection"],
+        game.diagnostics[0].tick
     );
     let checked: Vec<_> = (0..game.players.len())
         .map(|peer| game.compare_played(peer, (peer == hero).then_some(game.diagnostics[0].tick)))
@@ -567,8 +679,9 @@ fn long(profile: &str, ticks: u64, count: u32, seed: u64, costs: bool) -> Value 
         "schedule": game.scheduled(), "rule_set": crate::identity(false), "branches": branches,
         "compared_digests_by_replica": checked,
         "link_change": {"tick": change_at, "to": changed, "restored_at": restored_profile_at},
-        "stall": {"from": stall_at, "through": release_at, "resumed": resumed_at},
-        "repair": {"injected": repair_at, "detected": game.diagnostics[0].tick, "resumed": repair_resumed},
+        "stall": stall,
+        "repair": {"injected": repair_at, "detected": game.diagnostics[0].tick,
+            "resumed": repair_resumed, "fallback_at_detection": repair_fallback},
         "reconnect": rejoin})
 }
 
@@ -588,6 +701,7 @@ pub fn run_prediction(
 ) -> Result<Value, &'static str> {
     match scenario {
         "held" => Ok(held()),
+        "refused" => Ok(refused()),
         "isolated" => {
             let first = isolated(false);
             assert_eq!(

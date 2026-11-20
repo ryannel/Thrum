@@ -101,6 +101,10 @@ impl Clock {
         (self.wanted(now, settings) - committed.saturating_sub(1) as f64).clamp(0.0, 1.0)
     }
 
+    pub(super) fn behind(&self) -> bool {
+        self.skipping || self.skip.is_some()
+    }
+
     fn wanted(&self, now: u64, settings: Settings) -> f64 {
         let elapsed = now.saturating_sub(self.at) as f64 / f64::from(settings.tick_us);
         self.position + elapsed * self.rate
