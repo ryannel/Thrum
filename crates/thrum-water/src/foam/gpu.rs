@@ -1,4 +1,5 @@
 use super::{Hull, Report, Whitewater, Witness};
+use crate::column::{COMPONENT_LIMIT, Component};
 use bytemuck::{Pod, Zeroable};
 use thrum_render::{
     contribution::{
@@ -45,6 +46,34 @@ struct Settings {
     camera: [f32; 4],
     jacobian_variance: [f32; 4],
     hulls: [HullRecord; HULL_LIMIT],
+    components: [Component; COMPONENT_LIMIT],
+}
+
+#[cfg(test)]
+#[test]
+fn foam_settings_match_the_shader_layout() {
+    use std::mem::offset_of;
+    let source = include_str!("../field.wgsl").to_owned() + &Foam::source();
+    let shader = wgpu::naga::front::wgsl::parse_str(&source).expect("foam sampling shader");
+    let settings = shader
+        .types
+        .iter()
+        .find_map(|(_, ty)| (ty.name.as_deref() == Some("FoamSettings")).then_some(&ty.inner))
+        .expect("foam settings type");
+    let wgpu::naga::TypeInner::Struct { members, span } = settings else {
+        panic!("expected foam settings struct");
+    };
+    assert_eq!(*span as usize, size_of::<Settings>());
+    let host = [
+        offset_of!(Settings, origins),
+        offset_of!(Settings, banks),
+        offset_of!(Settings, time_wind),
+        offset_of!(Settings, camera),
+        offset_of!(Settings, jacobian_variance),
+        offset_of!(Settings, hulls),
+        offset_of!(Settings, components),
+    ];
+    assert!(members.iter().map(|member| member.offset as usize).eq(host));
 }
 
 #[derive(Clone, Copy)]
@@ -103,7 +132,12 @@ fn layout(
 
 impl Foam {
     pub(crate) fn source() -> String {
-        format!("const FOAM_SIDE: i32 = {SIDE};\n") + include_str!("sample.wgsl")
+        let [fine, coarse] = SPACING;
+        format!(
+            "const FOAM_SIDE: i32 = {SIDE};\nconst FOAM_SPACING = array({fine:?}, {coarse:?});\n\
+             const HULL_LIMIT: u32 = {HULL_LIMIT}u;\nconst COMPONENT_LIMIT: u32 = {COMPONENT_LIMIT}u;\n"
+        ) + include_str!("../column.wgsl")
+            + include_str!("sample.wgsl")
     }
 
     pub(crate) fn sample_layout() -> [wgpu::BindGroupLayoutEntry; 2] {
@@ -305,6 +339,9 @@ impl Foam {
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         frame: &ContributionFrame,
+        spectrum: &thrum_sea_model::Spectrum,
+        chop: f64,
+        seconds: f64,
     ) -> bool {
         self.recorded = None;
         self.step = false;
@@ -363,7 +400,7 @@ impl Foam {
             Some(endpoints)
         };
         if let Some([old, next]) = endpoints {
-            settings.banks = [old.bank, next.bank, 0, 1];
+            settings.banks = [old.bank, next.bank, 0, 0];
             for (row, coordinates) in settings
                 .origins
                 .iter_mut()
@@ -385,9 +422,25 @@ impl Foam {
         }
         settings.time_wind[2..].copy_from_slice(&self.whitewater.wind);
         settings.jacobian_variance = self.whitewater.jacobian_variance;
-        settings.camera = [frame.camera[0], frame.camera[2], 0.0, 0.0];
-        settings.camera[2] =
-            (1.0 - time.alpha) * time.tick_duration.as_secs_f32() - 0.5 * settings.time_wind[0];
+        let origin = [frame.camera[0], frame.camera[2]];
+        let tick_seconds = time.tick_duration.as_secs_f32();
+        // A normal step samples its committed tick. Catch-up steps sample
+        // the middle of the elapsed interval they deposit and transport over.
+        let midpoint = if settings.time_wind[0] > tick_seconds {
+            0.5 * settings.time_wind[0]
+        } else {
+            0.0
+        };
+        settings.camera = [
+            origin[0],
+            origin[1],
+            (1.0 - time.alpha) * tick_seconds - midpoint,
+            chop as f32,
+        ];
+        settings.banks[3] = u32::try_from(spectrum.long.len()).expect("bounded wave components");
+        for (out, component) in settings.components.iter_mut().zip(&spectrum.long) {
+            *out = Component::at(component, origin, seconds);
+        }
         let page = self.whitewater.input.0.lock().expect("foam hull input");
         if self.step && page.0 == time.tick {
             settings.banks[2] = u32::try_from(page.1.len()).expect("bounded foam sources");

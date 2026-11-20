@@ -4,6 +4,7 @@ use super::{Answer, CascadeSample, Component, Interaction, Point, Settings};
 fn query_records_match_the_shader_layout() {
     let source = Interaction::sample_source(0, 5, 6, true)
         + include_str!("../../gains.wgsl")
+        + include_str!("../../column.wgsl")
         + include_str!("../sample.wgsl");
     let shader = wgpu::naga::front::wgsl::parse_str(&source).expect("water query shader");
     macro_rules! check {

@@ -9,12 +9,32 @@ struct FoamSettings {
     time_wind: vec4<f32>,
     camera: vec4<f32>,
     jacobian_variance: vec4<f32>,
-    hulls: array<FoamHull, 16>,
+    hulls: array<FoamHull, HULL_LIMIT>,
+    components: array<Component, COMPONENT_LIMIT>,
 }
 @group(3) @binding(9) var<storage, read> foam_stocks: array<vec4<f32>>;
 @group(3) @binding(10) var<uniform> foam_settings: FoamSettings;
 
-const FOAM_SPACING = array(0.25, 2.0);
+fn column_component(index: u32) -> Component { return foam_settings.components[index]; }
+
+fn foam_column(point: vec2<f32>, gains: vec4<f32>, dt: f32) -> Wave {
+    var field = long_wave(point - foam_settings.camera.xy, dt, gains.x,
+        foam_settings.camera.w, foam_settings.banks.w);
+    let slope = world_slope(field);
+    field.velocity.y -= dot(slope, field.velocity.xz);
+    field.slope = slope;
+    for (var band = 0u; band < 3u; band++) {
+        let gain = gains[band + 1u];
+        if gain * water.heights[band + 1u] <= 0.0 { continue; }
+        let sample = cascade_column(point / water.lengths[band], band, 0.0);
+        let velocity = gain * sample.velocity.y;
+        field.displacement.y += gain * sample.displacement.y + dt * velocity;
+        field.slope += world_slope(Wave(sample.displacement, gain * sample.slope,
+            gain * sample.differential, sample.velocity));
+        field.velocity.y += velocity;
+    }
+    return field;
+}
 fn foam_inside(at: vec2<i32>) -> bool {
     return all(at >= vec2(0)) && all(at < vec2(FOAM_SIDE));
 }

@@ -212,3 +212,40 @@ fn eight_tick_hitch_ages_and_transports_once_and_only_submissions_commit() {
     assert!(fixture.foam().1.iter().flatten().all(|value| *value == 0.0));
     eprintln!("Metal hitch: seed {before:?}, eight at once {hitched:?}, eight singly {stepped:?}");
 }
+
+#[test]
+fn air_feeds_both_films_over_a_hitch() {
+    let Some(mut fixture) = Fixture::new_foam(terrain(|_| -8.0), None, [0.0; 2]) else {
+        return;
+    };
+    let measure = |fixture: &mut Fixture, run: &[u64], air| {
+        fixture.draw(0);
+        fixture.seed_foam(0, |[x, z]| {
+            if (x + 4.0).abs().max(z.abs()) <= 0.25 {
+                [air, 0.16, 0.10, 0.0]
+            } else {
+                [0.0; 4]
+            }
+        });
+        for &tick in run {
+            fixture.draw(tick);
+        }
+        [0, 1, 2].map(|stock| patch(fixture, stock).mass / 4.0)
+    };
+    let hitched = measure(&mut fixture, &[8], 0.30);
+    let stepped = measure(&mut fixture, &[1, 2, 3, 4, 5, 6, 7, 8], 0.30);
+    let without_air = measure(&mut fixture, &[8], 0.0);
+    for (once, repeated) in hitched.into_iter().zip(stepped) {
+        assert!(
+            (once - repeated).abs() <= 0.000_003,
+            "{hitched:?} vs {stepped:?}"
+        );
+    }
+    assert!(hitched[0] < 0.30 && hitched[1] > without_air[1]);
+    assert!(without_air[2] > aged_mass(0.10, 8));
+    assert!(hitched[2] > without_air[2] + 0.000_05);
+    assert!(0.60 * hitched[0] + hitched[1] + hitched[2] < 0.60 * 0.30 + 0.16 + 0.10);
+    eprintln!(
+        "Metal air, fresh and aged stocks: hitch {hitched:?}, single steps {stepped:?}, no air {without_air:?}"
+    );
+}

@@ -4,14 +4,12 @@ struct Parcel {
 }
 @group(0) @binding(11) var<storage, read_write> parcels: array<Parcel>;
 
-struct Wave {
+struct FilteredWave {
     height: f32,
-    slope: vec2<f32>,
     differential: vec3<f32>,
-    rise: f32,
 }
-fn foam_wave(point: vec2<f32>, gains: vec4<f32>, spacing: f32) -> Wave {
-    var wave = Wave(0.0, vec2(0.0), vec3(1.0, 0.0, 1.0), 0.0);
+fn foam_wave(point: vec2<f32>, gains: vec4<f32>, spacing: f32) -> FilteredWave {
+    var wave = FilteredWave(0.0, vec3(1.0, 0.0, 1.0));
     for (var band = 0u; band < 4u; band++) {
         let gain = gains[band];
         if gain * water.heights[band] <= 0.0 { continue; }
@@ -36,9 +34,7 @@ fn foam_wave(point: vec2<f32>, gains: vec4<f32>, spacing: f32) -> Wave {
             rate = textureSampleLevel(cascades, periodic, uv, layer + 2, lod);
         }
         wave.height += gain * surface.y;
-        wave.slope += gain * derivative.xy;
         wave.differential += gain * vec3(derivative.zw, rate.w);
-        wave.rise += gain * rate.y;
     }
     return wave;
 }
@@ -50,7 +46,8 @@ fn age_stocks(stocks: vec4<f32>, dt: f32) -> vec4<f32> {
     let aged = exp(-dt / 13.0);
     let ab = (fresh - air) * 6.0 / (6.0 - 2.4);
     let bc = (aged - fresh) * 13.0 / (13.0 - 6.0);
-    let ac = (bc - 13.0 / (13.0 - 2.4) * (aged - air)) * 6.0 / (6.0 - 2.4);
+    // Integrate the fresh-to-aged flux of air that surfaced during this step.
+    let ac = (bc - (2.4 / 6.0) * 13.0 / (13.0 - 2.4) * (aged - air)) * 6.0 / (6.0 - 2.4);
     return vec4(stocks.x * air, stocks.y * fresh + 0.60 * stocks.x * ab,
         stocks.z * aged + stocks.y * bc + 0.60 * stocks.x * ac, stocks.w * exp(-dt / 8.0));
 }
@@ -97,9 +94,14 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
     if row.body != NO_BODY {
         let depth = select(1e30, row.row.water.x - row.bed, row.has_bed);
         let gain = limit_gains(row.row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);
-        let wave = foam_wave(point, gain, spacing);
-        let wake = wake_at(point, 0.0);
-        if depth + wave.height + foam_settings.camera.z * wave.rise + wake.x > 0.0 {
+        let dt_column = foam_settings.camera.z;
+        let wake = wake_at(point, dt_column);
+        var column: Wave;
+        if row.has_bed {
+            column = foam_column(point, gain, dt_column);
+        }
+        if depth + column.displacement.y + wake.x > 0.0 {
+            let wave = foam_wave(point, gain, spacing);
             let energy_before = row.row.gains * water.heights;
             let loss = lost_wave_power(row.row.gains, gain, water.heights);
             let d = wave.differential;
@@ -122,8 +124,9 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
                 let h = cell.heights;
                 let bed_slope = vec2(mix(h.y - h.x, h.w - h.z, cell.uv.y),
                     mix(h.z - h.x, h.w - h.y, cell.uv.x)) / map.origin_spacing_margin.z;
-                let thickness_slope = wave.slope - bed_slope;
-                let speed = min(sqrt(9.81 * swash), max(0.0, wave.rise) / max(0.001, length(thickness_slope)));
+                let thickness_slope = column.slope + wake.yz - bed_slope;
+                let speed = min(sqrt(9.81 * swash), max(0.0, column.velocity.y + wake.w) /
+                    max(0.001, length(thickness_slope)));
                 drift -= normalize(thickness_slope + vec2(1e-8)) * speed *
                     (1.0 - smoothstep(0.0, 0.27 * swash, depth));
             }

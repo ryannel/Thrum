@@ -76,13 +76,14 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     }
     // The stern ribbon carries submerged air alongside fresh film. In
     // the densest part, water shows between pockets of surface churn.
-    let churn = smoothstep(0.06, 0.32, stocks.w);
+    let churn = max(smoothstep(0.010, 0.10, stocks.w),
+        smoothstep(0.05, 0.36, stocks.x) * (1.0 - smoothstep(0.0, 5.0, length(foam_settings.time_wind.zw))));
     if churn > 0.0 {
-        let bubbles = point.xz * vec2(1.20, 2.45) + vec2(1.8 * stocks.x, 2.3 * stocks.w);
-        let pockets = 0.74 * foam_noise(bubbles) + 0.26 * foam_noise(bubbles * 2.63 + 17.0);
-        let porous = mix(0.34, 0.91, smoothstep(0.24, 0.80, pockets));
+        let bubbles = point.xz * vec2(1.33, 2.80) + vec2(1.8 * stocks.x, 2.3 * stocks.w);
+        let pockets = 0.79 * foam_noise(bubbles) + 0.21 * foam_noise(bubbles * 2.63 + 17.0);
+        let porous = mix(0.14, 0.94, smoothstep(0.32, 0.66, pockets));
         stocks = vec4(stocks.x, stocks.y * mix(1.0, porous, churn),
-            stocks.z * mix(1.0, 0.78, churn), stocks.w);
+            stocks.z * mix(1.0, porous, churn), stocks.w);
     }
     return vec4(stocks.x, ranked_cover(stocks, point.xz, footprint), stocks.zw);
 }
@@ -107,23 +108,30 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let row = surface_row(map_cell(ground.xz), answer.row, answer.body, true);
     let reach = 0.175 * row.swash;
     let above = row.bed - row.level;
-    if reach <= 0.0 || above >= reach || above < -0.27 * row.swash { discard; }
+    if reach <= 0.0 || above >= reach || above <= -row.swash { discard; }
     // The depth already on screen must belong to the ground. A hull, a hill
     // in front of the beach, or the visible sheet above the bed masks the film.
     if abs(ground.y - row.bed) > 0.06 { discard; }
-    let field = field_at(ground.xz, 0.0, row.gains);
+    let field = foam_column(ground.xz, row.gains, 0.0);
     let thickness = row.level + field.displacement.y + wake_at(ground.xz, 0.0).x - row.bed;
     if thickness > 0.0 { discard; }
-    let sheen = (1.0 - smoothstep(0.0, reach, above)) * smoothstep(0.0, 0.04, -thickness);
+    // The ground's optical weight depends on elevation. Stranded foam is
+    // patterned separately so a dense stock cannot paint a solid white sheet.
+    let sheen = (1.0 - smoothstep(0.0, reach, above)) * smoothstep(-row.swash, 0.0, above);
     let stocks = foam_at(ground.xz, vec4(0.0));
-    let foam = ranked_cover(stocks, ground.xz, footprint);
+    let openings = foam_noise(ground.xz * vec2(0.87, 1.53));
+    let porous = mix(0.12, 0.66, smoothstep(0.22, 0.76, openings));
+    let stranded = vec4(stocks.x, stocks.yz * vec2(0.54, 1.0) * porous, stocks.w);
+    let foam = ranked_cover(stranded, ground.xz, footprint) * sheen;
     let v = normalize(view.camera_xyz_time.xyz - ground);
     let ray = reflect(-v, vec3(0.0, 1.0, 0.0));
     let sky = environment_sky_radiance(ray);
     let fresnel = water_fresnel(v.y);
     let incident = environment_diffuse(vec3(0.0, 1.0, 0.0)) + sun_irradiance(ground) * max(0.0, environment_sun_direction().y);
-    let light = mix(sky, 0.24 * incident, foam);
+    let reflection = sheen * fresnel * 0.56 * (1.0 - foam);
+    let opacity = reflection + foam;
+    let light = (reflection * sky + foam * 0.24 * incident) / max(1e-6, opacity);
     let air = environment_aerial(ground, uv);
     let colour = (light * air.transmission + air.scatter) * environment_storage_scale();
-    return Output(vec4(colour, sheen * clamp(fresnel * 0.56 + foam, 0.0, 1.0)), vec2(0.0), 0.0);
+    return Output(vec4(colour, opacity), vec2(0.0), foam);
 }

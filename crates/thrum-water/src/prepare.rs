@@ -465,8 +465,22 @@ fn create_pipeline(
         .map(|(i, f)| {
             Some(wgpu::ColorTargetState {
                 format: *f,
-                blend: (i == 0 && mapped).then_some(wgpu::BlendState::ALPHA_BLENDING),
-                write_mask: if film && i != 0 {
+                blend: match i {
+                    0 if mapped => Some(wgpu::BlendState::ALPHA_BLENDING),
+                    2 if film => {
+                        let max = wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::One,
+                            dst_factor: wgpu::BlendFactor::One,
+                            operation: wgpu::BlendOperation::Max,
+                        };
+                        Some(wgpu::BlendState {
+                            color: max,
+                            alpha: max,
+                        })
+                    }
+                    _ => None,
+                },
+                write_mask: if film && i == 1 {
                     wgpu::ColorWrites::empty()
                 } else {
                     wgpu::ColorWrites::ALL

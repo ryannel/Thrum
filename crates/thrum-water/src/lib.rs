@@ -1,4 +1,5 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
+mod column;
 pub mod foam;
 #[cfg(test)]
 mod fresnel_tests;
@@ -171,7 +172,7 @@ impl Water {
                 "ambient long-wave contraction must be below 0.9".into(),
             ));
         }
-        if spectrum.long.len() > 192
+        if spectrum.long.len() > column::COMPONENT_LIMIT
             || !spectrum.tail_slope_variance.is_finite()
             || spectrum.tail_slope_variance < 0.0
         {
@@ -371,7 +372,14 @@ impl SceneContribution for Water {
             interaction.record(&p.queue, encoder, frame, &map);
         }
         if let Some(foam) = &mut p.foam {
-            self.invalid |= foam.record(&p.queue, encoder, frame);
+            self.invalid |= foam.record(
+                &p.queue,
+                encoder,
+                frame,
+                &self.spectrum,
+                self.profile.waves.choppiness,
+                now,
+            );
         }
         self.invalid |= p.record_pattern(&self.foam_pattern, frame.generation);
         if let Some(query) = &mut p.query {

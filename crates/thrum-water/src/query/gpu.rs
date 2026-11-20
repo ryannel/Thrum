@@ -1,7 +1,10 @@
 mod correction;
 
 use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
-use crate::interaction::Interaction;
+use crate::{
+    column::{COMPONENT_LIMIT, Component},
+    interaction::Interaction,
+};
 use bytemuck::{Pod, Zeroable};
 use correction::{CascadeSample, MapPrediction};
 pub(super) use correction::{Correction, ReadyBody};
@@ -33,17 +36,6 @@ struct Point {
     has_bed: u32,
     gains: [f32; 4],
     dent: [f32; 4],
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
-struct Component {
-    vector: [f32; 2],
-    amplitude: f32,
-    phase: f32,
-    omega: f32,
-    inverse_k: f32,
-    padding: [f32; 2],
 }
 
 #[repr(C)]
@@ -126,9 +118,10 @@ impl Readback {
             label: Some("water body query"),
             source: wgpu::ShaderSource::Wgsl(
                 format!(
-                    "{}\n{}\n{}",
+                    "{}\n{}\n{}\n{}",
                     include_str!("../gains.wgsl"),
                     Interaction::sample_source(0, 5, 6, wake.is_some()),
+                    include_str!("../column.wgsl"),
                     include_str!("sample.wgsl")
                 )
                 .into(),
@@ -195,7 +188,7 @@ impl Readback {
             let components = buffer(
                 device,
                 "query components",
-                (192 * size_of::<Component>()) as u64,
+                (COMPONENT_LIMIT * size_of::<Component>()) as u64,
                 Usage::STORAGE | Usage::COPY_DST,
             );
             let points = buffer(
@@ -352,17 +345,7 @@ impl Readback {
             let components: Vec<_> = spectrum
                 .long
                 .iter()
-                .map(|component| {
-                    let [x, z] = component.wave_vector;
-                    Component {
-                        vector: [x as f32, z as f32],
-                        amplitude: component.amplitude as f32,
-                        phase: component.anchored_phase(origin.map(f64::from), seconds) as f32,
-                        omega: component.frequency() as f32,
-                        inverse_k: x.hypot(z).recip() as f32,
-                        padding: [0.0; 2],
-                    }
-                })
+                .map(|component| Component::at(component, origin, seconds))
                 .collect();
             let (points, map_revisions): (Vec<_>, Vec<_>) = bodies
                 .iter()

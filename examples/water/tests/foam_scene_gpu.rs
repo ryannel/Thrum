@@ -37,6 +37,43 @@ fn current<'a>(
         })
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "foam cell centres are exact in the query's f32 lattice"
+)]
+fn shore_queries(
+    witness: &Witness,
+    map: &thrum_water_model::Map,
+    tick: u64,
+) -> Vec<(usize, QueryPoint)> {
+    let origin = witness.origins[1][0].map(f64::from);
+    let spacing = f64::from(witness.spacing[0]);
+    let side = witness.side;
+    (0..side * side)
+        .filter(|&index| (u64::from(index) + tick).is_multiple_of(7))
+        .filter_map(|index| {
+            let [x, z] = [index % side, index / side];
+            let point = [
+                origin[0] + (f64::from(x) + 0.5) * spacing,
+                origin[1] + (f64::from(z) + 0.5) * spacing,
+            ];
+            map.sample(point)
+                .filter(|row| row.body == 0 && row.depth.abs() < 0.36)
+                .map(|_| {
+                    (
+                        index as usize,
+                        QueryPoint {
+                            position: point.map(|metres| metres as f32),
+                            radius: 0.0,
+                            use_tick: tick - 3,
+                        },
+                    )
+                })
+        })
+        .take(512)
+        .collect()
+}
+
 #[test]
 fn ten_minutes_moored_and_wind_sweep() {
     let _serial = DEVICE
@@ -229,7 +266,8 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
         (Wind::Trade, 1),
     ] {
         let (game, report, map, probes) = build_foam(wind, true, true).expect("island whitewater");
-        let tap = probes.expect("shore probes").foam;
+        let probes = probes.expect("shore probes");
+        let tap = probes.foam;
         let mut fixture = Fixture::from_game(gpu, [128, 96], game, report);
         fixture.parameters(if body == 0 {
             r#"{"camera.island":0}"#
@@ -253,12 +291,59 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
         let mut wet_loss = 0.0;
         let mut shoreline_cells = 0_u32;
         let mut swash_cells = 0_u32;
-        for tick in (0..=720).step_by(6) {
+        let mut newly_dry_stocks = 0;
+        for tick in (0_u32..=720).step_by(6) {
+            let sampled = tick >= 240 && tick % 30 == 0;
+            let columns = if sampled && body == 0 && !matches!(wind, Wind::Calm) {
+                let previous = tap.latest().expect("previous foam endpoint");
+                let columns =
+                    shore_queries(&previous, &map.lock().expect("island map"), u64::from(tick));
+                assert!(!columns.is_empty());
+                probes.query.post(
+                    u64::from(tick - 4),
+                    vec![BodyQuery {
+                        id: 33,
+                        generation: 1,
+                        points: columns.iter().map(|(_, point)| *point).collect(),
+                    }],
+                );
+                columns
+            } else {
+                Vec::new()
+            };
             fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
-            if tick >= 240 && tick % 30 == 0 {
+            if sampled {
                 let witness = tap.latest().expect("submitted shore");
                 let stocks = support::foam_stocks(&fixture, &witness);
                 let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(&fixture, &witness.parcels);
+                if !columns.is_empty() {
+                    let answers = probes.query.drain(
+                        u64::from(tick - 3),
+                        std::time::Duration::from_nanos(16_666_667),
+                    );
+                    assert_eq!(answers.len(), 1, "submitted midpoint query");
+                    assert_eq!(answers[0].points.len(), columns.len());
+                    let source = witness.banks[0] * 2 * (witness.side * witness.side) as usize;
+                    for ((index, _), query) in columns.into_iter().zip(&answers[0].points) {
+                        if !query.surface.wet
+                            && query.bed.is_some_and(|bed| {
+                                f64::from(bed) - query.surface.sample.height > 0.000_1
+                            })
+                        {
+                            assert_eq!(
+                                parcels[index][1], [0.0; 4],
+                                "{wind:?} tick {tick}: dry column {:?} must neither move nor create foam",
+                                query.point.position
+                            );
+                            let old = stocks[source + index];
+                            let aged = parcels[index][0];
+                            if old[1] + old[2] > 0.001 && old[0] > 0.001 {
+                                assert!(aged[0] < old[0]);
+                                newly_dry_stocks += 1;
+                            }
+                        }
+                    }
+                }
                 assert_eq!(
                     witness.origins[0], witness.origins[1],
                     "fixed-view source alignment"
@@ -302,6 +387,13 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
         );
         if body == 0 && !matches!(wind, Wind::Calm) {
             assert!(swash_cells > 0);
+            assert!(
+                newly_dry_stocks > 0,
+                "previously stocked cells must be checked after drainage"
+            );
+            eprintln!(
+                "Metal {wind:?}: {newly_dry_stocks} stocked dry midpoint columns aged without movement or birth"
+            );
         }
         means.push(means_for_view);
     }
@@ -333,8 +425,7 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
 )]
 fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     let extent = support::island::EXTENT;
-    let (control, report, _) =
-        water_scene::island::build(Wind::Trade, false).expect("opaque beach");
+    let (control, report, _) = water_scene::island::build(Wind::Gale, false).expect("opaque beach");
     let mut control = Fixture::from_game(gpu, extent, control, report);
     control.parameters(r#"{"camera.island":0}"#);
     control.warm_cooked();
@@ -343,11 +434,14 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     let ground_pixels = support::read_texture(&control.device, &control.queue, &control.output, 4);
     drop(control);
 
-    let (game, report, map, probes) = build_foam(Wind::Trade, true, true).expect("beach film");
+    let (game, report, map, probes) = build_foam(Wind::Gale, true, true).expect("beach film");
     let probes = probes.expect("beach probes");
     let mut fixture = Fixture::from_game(gpu, extent, game, report);
     fixture.parameters(r#"{"camera.island":0}"#);
     fixture.warm_cooked();
+    for tick in (0..480).step_by(8) {
+        fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+    }
     let before = probes.foam.latest().expect("submitted foam source window");
     let matrix = support::island::view_proj(0);
     let mut candidates = Vec::new();
@@ -432,6 +526,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     let image = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
     assert_eq!(answer.len(), 1, "submitted public shoreline query");
     let mut dry_film = 0;
+    let mut reactive_foam = 0;
     for (&pixel, query) in candidates.iter().zip(&answer[0].points[..sample_start]) {
         if query.surface.wet {
             continue;
@@ -440,11 +535,25 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
             && image[pixel * 4..pixel * 4 + 3] != ground_pixels[pixel * 4..pixel * 4 + 3]
         {
             dry_film += 1;
+            assert_eq!(
+                output[pixel][2..],
+                ground[pixel][2..],
+                "ground motion below the film"
+            );
+            assert!(
+                output[pixel][0] >= ground[pixel][0],
+                "film preserves existing reactive coverage"
+            );
+            reactive_foam += u32::from(output[pixel][0] > ground[pixel][0]);
         }
     }
     assert!(
         dry_film > 0,
         "dry film must colour pixels at unchanged opaque depth"
+    );
+    assert!(
+        reactive_foam > 0,
+        "stranded foam must raise reactive coverage at ground depth"
     );
     let witness = probes.foam.latest().expect("submitted foam parcels");
     assert_eq!(before.origins[1], witness.origins[0]);
@@ -469,6 +578,6 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
         "the public query must identify dry source cells"
     );
     eprintln!(
-        "Metal shore film: {dry_film} changed samples with unchanged ground depth and dry public query. {dry_births} queried dry source cells had zero shore birth."
+        "Metal shore film: {dry_film} changed samples with unchanged ground depth and motion and dry public query, including {reactive_foam} with raised reactive coverage. {dry_births} queried dry source cells had zero shore birth."
     );
 }
