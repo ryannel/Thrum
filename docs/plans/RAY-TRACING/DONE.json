@@ -197,8 +197,8 @@
     {
       "id": "M3",
       "name": "The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "ATMOSPHERE:M5",
@@ -216,8 +216,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -226,8 +226,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#fixed-route",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -236,8 +236,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#elapsed-time-route",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -248,8 +248,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -258,8 +258,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#night-lamps",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -268,10 +268,10 @@
           "ask": "Is each request resolved from the registry's facts before anything is allocated, is the report the resolved value with its reason and not an echo of the request, and is the preparation failure injected by the test and not assumed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#cooked-replacement",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -281,8 +281,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.8",
@@ -292,8 +292,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.8.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.9",
@@ -304,8 +304,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.9.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.10",
@@ -315,8 +315,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#timing-under-load",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.11",
@@ -325,8 +325,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.12",
@@ -336,8 +336,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#automated-checks",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         },
         {
           "id": "M3.13",
@@ -348,15 +348,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/M3/passage.md#one-crossing",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Cooked pipeline failure drops the contribution on device replacement",
+          "name": "Cooked scene preparation misses Maps fallback on initial attachment and visual republication",
           "item": "M3.6",
-          "different": "The earlier failure escaped the primary pipeline error scope. Here wgpu validation is caught by CookedAssets, but the contribution rebuild runs outside the Maps retry and publication drops the cooked content.",
+          "different": "Generation-2 device replacement now retains the cooked receiver and matches Maps. On generation 1 the initial attachment returns an error, and publishing a visual on the same device drops an already drawn contribution.",
           "repeat": false
         }
       ]

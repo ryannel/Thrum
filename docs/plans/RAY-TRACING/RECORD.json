@@ -315,7 +315,7 @@
         {
           "verdict": "fail",
           "commit": "d9d616781d8394289719e904e00ca01b5c09f950",
-          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review-2.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -354,6 +354,50 @@
             "turns": 1
           },
           "at": "2026-11-19T15:38:24Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9fa6860363e020e9cc144ea50027d48999201cd2",
+          "review": ".orchestrate/evidence/RAY-TRACING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "fail",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass",
+            "M3.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "Cooked scene preparation misses Maps fallback on initial attachment and visual republication",
+              "item": "M3.6",
+              "different": "Generation-2 device replacement now retains the cooked receiver and matches Maps. On generation 1 the initial attachment returns an error, and publishing a visual on the same device drops an already drawn contribution.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 159675,
+            "cached": 5171328,
+            "output": 13518,
+            "turns": 1
+          },
+          "at": "2026-11-20T01:11:56Z"
         }
       ],
       "authorised": {
