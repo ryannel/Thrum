@@ -63,6 +63,9 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
+      "depends_on": [
+        "GATE-TIME:M6"
+      ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
         {
@@ -78,11 +81,21 @@
         },
         {
           "id": "M2.2",
-          "statement": "Each wrapper that stands in front of other contributions in the engine and the game, the list of contributions and the lent one, forwards every hook: a test puts a probe behind each and sees every hook reach it. The ray-tracing replacement, a test's own fixture, still writes every forward out.",
-          "check": "sh -c 'THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib contribution && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --lib lent'",
-          "ask": "For the list and for the lent wrapper, name the test that fails if one hook is not forwarded, and try it: remove one forward in a scratch copy. Does each probe count all eight hooks, the defaulted five among them? Does the ray-tracing replacement still forward every hook itself, with none left to a default?",
+          "statement": "The list of contributions, `SceneContributions`, is the one wrapper that stands in front of other contributions outside tests, and it forwards every hook: a test puts a probe behind it and sees all eight hooks reach it, the five with defaults among them. The ray-tracing replacement, a test's own fixture, still writes all eight forwards out. The other test fixtures that forward keep the hooks their tests need, and get no probe.",
+          "check": "sh -c 'out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib contribution 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
+          "ask": "Name the test that fails if `SceneContributions` does not forward one hook, and try it: remove one forward in a scratch copy. Does its probe count all eight hooks, the five with defaults among them? Does the ray-tracing replacement still forward all eight itself, with none left to a default? Is there any other wrapper outside tests that holds a contribution and forwards to it?",
           "target": "mac-metal",
           "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "The tests behind a Cargo feature whose contributions this milestone edited pass on main with its commit in, in the main-branch check `long-tests`.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
@@ -179,7 +192,7 @@
         {
           "id": "M4.1",
           "statement": "The settings that choose the water scene, which are its `THRUM_WATER_*` variables other than the proof harness's own and its page query, are parsed by one typed settings parse, which the window, the page and the proof tests all use. Where the two parsers disagreed the window's reading stands: a floating scene's heading, `THRUM_WATER_STONE` on only when it is `1`, and `THRUM_WATER_WAKE_BODIES` honoured. A meaning only a test needs has a variable of its own. The harness's variables, which say where a proof writes and which commit, route and recipe it records, stay with the tests.",
-          "check": "sh -c 'git grep -q \"THRUM_WATER_\" -- examples/water/tests && ! git grep -qE \"var(_os)?\\(\\\"THRUM_WATER_(FOAM|LOCATION|WAKE|BODIES|SPEED|HEADING|VIEW|STONE|WAKE_BODIES|ISLAND)\\\"\" -- examples/water/tests && cargo test --locked --offline -p water-scene --lib'",
+          "check": "sh -c 'git grep -q \"THRUM_WATER_\" -- examples/water/tests && ! git grep -qE \"env::var(_os)?\\(\\\"THRUM_WATER_(FOAM|LOCATION|WAKE|BODIES|SPEED|HEADING|VIEW|STONE|WAKE_BODIES|ISLAND)\\\"\" -- examples/water/tests && cargo test --locked --offline -p water-scene --lib'",
           "ask": "List each setting either parser read at the starting commit, with the reading each gave: does the one parse give the window's reading for every one, and does the log record each decision? Does `scripts/water_cost.py` or `scripts/check_water_browser.mjs` set a variable whose meaning changed?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -215,8 +228,8 @@
         },
         {
           "id": "M5.2",
-          "statement": "The workspace has no `thrum-content-runtime`: the crate, its registration and the game's wrappers around it are gone. The cooked-rows test publishes its environment through `thrum-render`'s own API, with the photometric numbers and the revision it used.",
-          "check": "sh -c '! git grep -qE \"thrum-content-runtime|thrum_content_runtime\" -- crates examples tools Cargo.toml .config && cargo test --locked --offline -p v1-game --test cooked_rows_gpu'",
+          "statement": "The workspace has no `thrum-content-runtime`: the crate, its registration and the game's wrappers around it are gone, and the engineering skill's package table no longer names it. The cooked-rows test publishes its environment through `thrum-render`'s own API, with the photometric numbers and the revision it used.",
+          "check": "sh -c '! git grep -qE \"thrum-content-runtime|thrum_content_runtime\" -- crates examples tools Cargo.toml .config .agents && cargo test --locked --offline -p v1-game --test cooked_rows_gpu'",
           "ask": "Does the cooked-rows test assert what it asserted at the starting commit, on the same environment numbers?",
           "target": "mac-metal",
           "lock": "gpu",
@@ -245,7 +258,8 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REVIEW-RENDER:M3"
+        "REVIEW-RENDER:M3",
+        "GATE-TIME:M6"
       ],
       "quality_bar": "As safe as a dead-code removal in a well-kept engine such as Bevy or wgpu: what goes had no caller, every test of what stays still runs and passes with no expected value edited, and no pixel, state or byte on the wire changes.",
       "items": [
@@ -268,6 +282,16 @@
           "ask": "Does the function ever declare a cube or a 3D texture? Read the milestone's diff of snapshot and expected-graph files with `git diff` from the starting commit: is any changed?",
           "target": "mac-metal",
           "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.4",
+          "statement": "The tests behind a Cargo feature that build layouts through the converted code pass on main with this milestone's commit in, in the main-branch check `long-tests`.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",

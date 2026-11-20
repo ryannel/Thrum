@@ -168,6 +168,50 @@
       ]
     },
     {
+      "id": "M5",
+      "name": "The test kit's readback, device call and wait exist, and the check refuses a new hand-written readback or deadline loop in a test",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "`thrum-test-support` offers each job of the kit, with a test of its own in the support package: a readback of a buffer, of a whole mip of a 2D, 3D or array texture or one layer of it, or of a byte range, with one bounded wait, on its own submission or appended to the caller's encoder; one call that asks the gate for a GPU, on Metal where asked, and opens the recipe's device by profile and restriction; one wait with a deadline; a scratch folder that removes itself; a PPM writer; and a counting allocator type that counts allocations and bytes on the calling thread. `thrum-render`'s unit tests have the same one call from the crate's own `test_device`, typed by the crate. No existing test is converted.",
+          "check": "sh -c 'out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-test-support --all-features readback 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
+          "ask": "Read the kit's tests: would each fail if its job misbehaved, such as a readback that returned the wrong mip or layer, a wait that outlived its deadline, or an allocator that missed a thread's allocations? Does the gate half of the one call deal only in wgpu types, with the recipe reached through the `render` feature or, inside `thrum-render`, through its own `test_device`? Was any existing test changed?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "`test-readback` (a buffer mapped for reading in a test file outside the kit) and `test-deadline` (a hand-written deadline assert in a test file) are rules of the shape check, each entered at the count of the commit this milestone lands on. A landing that adds one more fails `./dev check`, and the message names the kit's function to use and the Tests section of the engineering patterns, which describes the kit. The log gives each rule's count at landing.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback && python3 scripts/shape_rules.py check --rule test-deadline && python3 scripts/test_shape_rules.py'",
+          "ask": "Read the two rules' fixtures: does each refuse one more of its shape in a test file, and pass the kit's own readback and wait and the same code in a file that is not a test? In a scratch copy, add a `map_async` readback to a test file: does `./dev check-docs` fail and name the kit's function?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M3",
       "name": "A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file",
       "status": "not_started",
@@ -176,13 +220,14 @@
       "diagnoses": 0,
       "depends_on": [
         "GATE-TIME:M2",
-        "DEAD-CODE:M2"
+        "DEAD-CODE:M2",
+        "GATE-TIME:M6"
       ],
       "quality_bar": "As dependable as wgpu's own test harness: a test file holds what it tests, the jobs every GPU test shares are written once, and converting a test changes nothing it asserts.",
       "items": [
         {
           "id": "M3.1",
-          "statement": "A test under `crates/` or in a kit scene (the water, mirror, starter, lighthouse and stones examples) reads a buffer or a texture back through the kit: `test-readback` is at zero there, outside the sites the rule exempts by name with a reason. The kit reads a buffer, one mip and layer of a texture, or a byte range, with one bounded wait, on its own submission or on the caller's encoder.",
+          "statement": "A test under `crates/` or in a kit scene (the water, mirror, starter, lighthouse and stones examples) reads a buffer or a texture back through the kit: `test-readback` is at zero there, outside the sites the rule exempts by name with a reason.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-readback --zero crates examples/water examples/mirror examples/starter examples/lighthouse examples/stones && python3 scripts/test_shape_rules.py && cargo test --locked --offline -p thrum-test-support'",
           "ask": "Read the rule's exemptions: is each one a site that does a different job, as the design lists them, and not a readback that was awkward to convert? In ten converted tests across five crates, is every assertion, bound and expected value as it was at the starting commit?",
           "target": "mac-metal",
@@ -194,8 +239,8 @@
         },
         {
           "id": "M3.2",
-          "statement": "A GPU test under `crates/` asks for its GPU and its device in one call to the kit, by backend, profile and restriction. A local wrapper is left only where it does something the call does not, and a test that needed Metal still fails without it on this Mac.",
-          "ask": "List the local gate-and-device wrappers left under `crates/`: what does each do that the kit's call does not? Did any test that asserted Metal become one that skips on this Mac? Did any test's profile, restriction or generation change?",
+          "statement": "A GPU test under `crates/` asks for its GPU and its device in one call, by backend, profile and restriction: the kit's call, or in `thrum-render`'s unit tests the crate's own `test_device`, which asks the kit's gate and opens this build's recipe. A local wrapper is left only where it does something the call does not, and a test that needed Metal still fails without it on this Mac.",
+          "ask": "List the local gate-and-device wrappers left under `crates/`: what does each do that the one call does not? How many of `thrum-render`'s unit tests still ask the gate and open a device in two steps? Did any test that asserted Metal become one that skips on this Mac? Did any test's profile, restriction or generation change?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -204,8 +249,8 @@
         },
         {
           "id": "M3.3",
-          "statement": "Frame waits, scratch folders, PPM writing and the counting allocator type come from the kit: no test file under `crates/` or in a kit scene defines its own copy of one. Each binary that counts allocations declares its own static of the kit's type, and no recorded tripwire's percentile rule changed.",
-          "ask": "Search the test files under `crates/` and the kit scenes for a local frame-wait loop, scratch folder type, PPM writer and `GlobalAlloc` implementation: is any left, and why? Did any wait's deadline get shorter, or any tripwire's percentile rule change?",
+          "statement": "Frame waits, scratch folders, PPM writing and the counting allocator type come from the kit: no test file under `crates/` or in a kit scene defines its own copy of one. Each binary that counts allocations declares its own static of the kit's type and counts what it counted before, allocations or bytes, and no recorded tripwire's percentile rule changed. Hand-written deadline asserts are not swept: `test-deadline` is no higher than at the starting commit.",
+          "ask": "Search the test files under `crates/` and the kit scenes for a local frame-wait loop, scratch folder type, PPM writer and `GlobalAlloc` implementation: is any left, and why? For each converted allocator, does the test count the same thing, allocations or bytes, behind the same switch as at the starting commit? Did any wait's deadline get shorter, or any tripwire's percentile rule change?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -214,8 +259,19 @@
         },
         {
           "id": "M3.4",
-          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
+          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`. That command runs no long test and no test behind a Cargo feature, which M3.6 covers.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "The long tests and the tests behind a Cargo feature that this milestone converted pass on main with its commit in, in the main-branch check `long-tests`, and none stopped running: every test that check reported `ok` in its last run before this milestone started reports `ok` in the run that covers it.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "ask": "Compare the saved log of the main-branch run that covers this commit with the last run before the milestone started, test by test: is any test that ran before missing, ignored or skipped now?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -236,7 +292,7 @@
     },
     {
       "id": "M4",
-      "name": "Each crate's WGSL records are held to its Rust structs by one shared check, and the game's cooked tests build their game through one fixture",
+      "name": "Each crate's WGSL records are held to its Rust structs by one shared check, and the proving ground's cooked tests build their game through one fixture",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -248,9 +304,9 @@
       "items": [
         {
           "id": "M4.1",
-          "statement": "The sea, the asset crate, water and clouds hold their WGSL records to their Rust structs through the kit's one reflection check, in member offset, size and scalar kind. No crate keeps its own walk of a shader's bound structs or a second layout type, each `wgsl_records` test target keeps its name, and the checks that did more than reflect are as they were.",
+          "statement": "The renderer's own record test, the sea, the asset crate, water and clouds hold their WGSL records to their Rust structs through the kit's one reflection check, in member offset, size and scalar kind. No crate keeps its own walk of a shader's bound structs or a second layout type, each `wgsl_records` test target keeps its name, and the checks that did more than reflect are as they were. A record that fails the stricter check is not changed here: its test keeps the comparison it made before, and the log names the record and the module that owns it.",
           "check": "sh -c 'git grep -q \"wgsl\" -- crates/thrum-test-support/src && cargo test --locked --offline -p thrum-render -p thrum-sea -p thrum-asset-gpu --test wgsl_records && cargo test --locked --offline -p thrum-water -p thrum-clouds'",
-          "ask": "How many walks of a parsed shader's bound structs are there under `crates/` outside the kit? Do the sea's and the asset crate's records now get the size and scalar-kind checks, and did any record fail them? Are the view record's literal offsets and the cloud and weather shaders' naga validation still asserted? Would a member moved in one crate's WGSL fail that crate's test?",
+          "ask": "How many walks of a parsed shader's bound structs are there under `crates/` outside the kit, the renderer's own test included? Do the sea's and the asset crate's records now get the size and scalar-kind checks, and did any record fail them? If one did, is the record untouched and named in the log with its owner? Are the view record's literal offsets and the cloud and weather shaders' naga validation still asserted? Would a member moved in one crate's WGSL fail that crate's test?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -260,9 +316,9 @@
         },
         {
           "id": "M4.2",
-          "statement": "The game's cooked tests make their scratch store, cook, device and host through one fixture in the game's test support. Each case asserts what it asserted, on the device it had: the generation it gave the recipe and its assertion on the execution path.",
+          "statement": "The proving ground's cooked tests make their scratch store, cook, device and host through one fixture in its test support. Each case asserts what it asserted, on the device it had: the generation it gave the recipe and its assertion on the execution path. The fixture shares code, not a device or a lock: no test that ran beside others now waits for one.",
           "check": "cargo test --locked --offline -p v1-game --test cooked_assets_gpu --test cooked_material_gpu",
-          "ask": "Compare five cases from each of the two files with the starting commit: same assertions, same draw path, same generation, same execution assertion? Does the log say what the fixture did to the two binaries' run time?",
+          "ask": "Compare five cases from each of the two files with the starting commit: same assertions, same draw path, same generation, same execution assertion? Does the fixture hold a lock, a static device or anything else that makes tests take turns that did not before? Does the log give the two binaries' run time before and after, with the load?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",

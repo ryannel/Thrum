@@ -59,11 +59,13 @@ default bodies to five hooks: `computes` (false), `encode_compute`, `encode_afte
 `rebuild` and `encode_upload` stay required: most implementations give them real bodies, and a default for
 `passes` would let a contribution compile while declaring nothing. Defaults hide two faults, so the trait's
 documentation states both and a test holds the first. A wrapper that stands in front of other contributions must
-forward every hook, and a default lets one forget. The engine and the game each have one, the list of
-contributions and the lent one, and a probe behind each sees every hook arrive. The ray-tracing replacement is a
-third, but it is a test's own fixture: it keeps every forward written out and gets no probe. And `computes`
-returning false means `encode_compute` is never called, while `submitted` is where work staged by
-`encode_upload` is committed.
+forward every hook, and a default lets one forget. Outside tests there is one such wrapper, the list of
+contributions (`SceneContributions`), which the game's lent browser path also wraps its contributions in; a probe
+behind it sees every hook arrive. The game's lent diagnostic is a contribution of its own and forwards to
+nothing, so it gets no probe. Three test fixtures forward: the ray-tracing replacement, which keeps all eight
+forwards written out, and the clouds' observed contribution and the mirror's pool witness, which forward only the
+hooks their tests need. None of the three gets a probe. And `computes` returning false means `encode_compute` is
+never called, while `submitted` is where work staged by `encode_upload` is committed.
 
 **4. API that only its own tests reach goes** (M3).
 
@@ -137,17 +139,18 @@ decision counts among the core's responsibilities.
 
 The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
 outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`.
-`.config/shape-baseline.json` and `docs/design/maturity.json` are shared by every module: a landing that
-lowers a count or changes a row rebases and makes the same edit again.
+Three files are everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change
+them when your landing moves them, whatever your row says; a landing that meets a conflict there rebases and
+makes the same edit again.
 
 | Milestone | Files | Waits for | Who else is near |
 |---|---|---|---|
 | M1 | `crates/thrum-core/src/sim/` (`registered_world.rs`, `registered_world/image.rs`, `runtime.rs`, `transaction.rs`, `publication/page_tests.rs`) and `crates/thrum-core/tests/g2_runtime.rs`; one line of `docs/design/decisions/G2-GENERIC-SIMULATION.md`, and the row `bounded_structural_growth` of `docs/design/maturity.json` if it describes this ring; `crates/thrum-sea/src/` (`spec.rs`, `ambient.wgsl`, `prepare.rs`, `records.rs`, `lib.rs`), `crates/thrum-sea/tests/support.rs` and the sea's README; `crates/thrum-water/src/surface.wgsl` and `src/records/tests.rs` | Nothing | `SESSION` builds in `thrum-core`'s runtime files: land the ring as small commits and tell its builder. `WATERS` builds in `thrum-water` |
-| M2 | `crates/thrum-render/src/contribution.rs` and each file with an `impl SceneContribution`, about 32 across `crates` and `examples`, tests among them | Nothing | The busiest file in the renderer: `RAY-TRACING`, `WATERS`, `CLOUDS`, `HOST` and `RENDER-2D` all implement the trait. Land the trait's defaults alone first, then the stubs, in one quick pass |
+| M2 | `crates/thrum-render/src/contribution.rs` and each file with an `impl SceneContribution`, about 32 across `crates` and `examples`, tests among them | `GATE-TIME` M6: some of these files hold tests behind a Cargo feature, which no merge compiled before it | The busiest file in the renderer: `RAY-TRACING`, `WATERS`, `CLOUDS`, `HOST` and `RENDER-2D` all implement the trait. Land the trait's defaults alone first, then the stubs, in one quick pass |
 | M3 | `crates/thrum-core/src/sim/` (`runtime.rs`, `registered_world.rs`, `schedule.rs`) and `src/sim.rs`, with `tests/g2_runtime.rs`, `g2s_chunked_kernel.rs` and `profile_resources.rs`; `crates/thrum-render/src/capabilities/hardware.rs`; `crates/thrum-rain-model/src/tree.rs`, `tree/encode.rs`, `tree/catchment.rs` and `tests/tree.rs`; the shadowed aerial shader copy in `crates/thrum-render/src/` with `atmosphere/model/tests.rs` and `synthetic/secondary/tests.rs` | Nothing | `SESSION` in `thrum-core`. `REPO-RULES` M3 later splits these runtime files, so this lands before it |
 | M4 | `examples/water/src/main.rs` and `lib.rs`; `examples/water/tests/proof_gpu.rs`, `realtime.rs` and `support.rs`; the water example's README | `WATERS` M7, which is building in these files | `PUDDLES` M3 and `RIVERS` M4 add scenes through the parse afterwards. `GATE-TIME` M1 and M3 edit other tests of the same package |
-| M5 | `examples/v1-game/src/projection.rs`, `host/world.rs`, `host.rs`, `host/scene_source.rs`, `lib.rs`; `examples/v1-game/tests/host_gpu.rs` and `cooked_rows_gpu.rs`; `crates/thrum-content-runtime/`; the workspace list in the root `Cargo.toml`, `Cargo.lock`, the game's manifest and `.config/architecture.toml`; one row of `docs/design/maturity.json` | `HOST` M3, which removes the game's forwarding host | `HOST` M4 follows in the same files. `GATE-TIME` M5 edits the `[profile]` tables of the same root manifest |
-| M6 | A new `binding` module and `graph.rs` in `crates/thrum-render/src/`; every non-test file that writes a `BindGroupLayoutEntry`, in `thrum-render`, `thrum-asset-gpu`, `thrum-clouds`, `thrum-water`, `thrum-sea`, `examples/mirror` and `examples/v1-game`; `visibility.rs`, `visibility/casters.rs`, the atmosphere's `night.rs`, `cloud.rs`, `graph.rs` and `gpu/aerial_view.rs`, `synthetic/secondary.rs` and `sprite/graph.rs` | `REVIEW-RENDER` M3, which rewrites the atmosphere's graph accesses | The widest set in the module: `synthetic.rs` had 24 commits in three days. `CLOUDS`, `WATERS`, `RAY-TRACING`, `REVIEW-RENDER` and `RENDER-2D` are in these files |
+| M5 | `examples/v1-game/src/projection.rs`, `host/world.rs`, `host.rs`, `host/scene_source.rs`, `lib.rs`; `examples/v1-game/tests/host_gpu.rs` and `cooked_rows_gpu.rs`; `crates/thrum-content-runtime/`; the workspace list in the root `Cargo.toml`, `Cargo.lock`, the game's manifest and `.config/architecture.toml`; the package table of `.agents/skills/thrum-engineering/SKILL.md`, which names the crate; one row of `docs/design/maturity.json` | `HOST` M3, which removes the game's forwarding host | `HOST` M4 follows in the same files. `GATE-TIME` M5 edits the `[profile]` tables of the same root manifest |
+| M6 | A new `binding` module and `graph.rs` in `crates/thrum-render/src/`; every non-test file that writes a `BindGroupLayoutEntry`, in `thrum-render`, `thrum-asset-gpu`, `thrum-clouds`, `thrum-water`, `thrum-sea`, `examples/mirror` and `examples/v1-game`; `visibility.rs`, `visibility/casters.rs`, the atmosphere's `night.rs`, `cloud.rs`, `graph.rs` and `gpu/aerial_view.rs`, `synthetic/secondary.rs` and `sprite/graph.rs` | `REVIEW-RENDER` M3, which rewrites the atmosphere's graph accesses; `GATE-TIME` M6, because the game's ray-tracing and mesh-stage code behind a feature writes these entries too | The widest set in the module: `synthetic.rs` had 24 commits in three days. `CLOUDS`, `WATERS`, `RAY-TRACING`, `REVIEW-RENDER` and `RENDER-2D` are in these files |
 
 ## Not built here
 
@@ -173,6 +176,8 @@ reorder code it is not deleting or converting.
 A deletion is proved by the compiler and by a search for the deleted names, and its harmlessness by the tests
 that were already there: simulation determinism and conformance with no expected value edited, the sea's and
 water's GPU tests, and the exact baselines on main. A reviewer answers whether anything kept lost its test. The
-trait's defaults are proved by the probe behind each wrapper and by a reviewer's list of implementations. The
+trait's defaults are proved by the probe behind the list of contributions and by a reviewer's list of
+implementations. A milestone that edits a file holding tests behind a Cargo feature is proved there by the
+main-branch check `long-tests`, which runs them. The
 settings parse is proved by a reviewer's table of each setting's reading before and after. The two helpers are
 proved by every GPU test passing, by graph snapshots that were not edited, and by the exact baselines.

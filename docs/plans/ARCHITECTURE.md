@@ -29,15 +29,15 @@
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors |
-| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests; GATE-TIME M2, DEAD-CODE M2 and REVIEW-RENDER M2 for the test kit |
+| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests; GATE-TIME M2 and M6, DEAD-CODE M2 and REVIEW-RENDER M2 for adopting the test kit |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close |
-| 34 | GATE-TIME | A merge's check takes far less time: it runs only fast tests, each once, and the long tests run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the foam's long test; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the check's machinery |
-| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone |
-| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | Nothing to start; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 for the two helpers |
+| 34 | GATE-TIME | A merge's check takes far less time: it runs only the fast tests its change can reach, each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the foam's long test; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the check's machinery |
+| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone |
+| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | Nothing to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
 are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 milestone. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
@@ -2295,8 +2295,9 @@ gate, no tools, records or code that nothing uses, and no proof heavier than the
 changing "what the engine draws, simulates or sends". It starts from the cleanup review of that day, kept in the
 main checkout at `/Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/`: 26 reviewers read the repository at main
 `99f8033a0` and 57 verifiers tried to refute what they found. Where a verifier corrected a finding, the plan
-follows the verifier. Three new modules, rows 34 to 36, and two milestones added to `TEST-SUPPORT`. None gates
-the V1 exit.
+follows the verifier. Three new modules, rows 34 to 36, and three milestones added to `TEST-SUPPORT`. None gates
+the V1 exit. A second read of the plan, `HARDENING.md` in the same folder, was applied on 20 November with the
+owner's decision that the merge tier is targeted.
 
 ### Why new modules, and three of them
 
@@ -2308,28 +2309,37 @@ every merge pays it.
 
 | Module | Takes from the review | Owns | Builds inside |
 |---|---|---|---|
-| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The long tests: which tests they are, `./dev long-tests` and the main-branch check `long-tests` ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers) | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; the test step of `./dev check` |
-| `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rule `evidence-path`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
+| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, and the merge selection with `./dev check-all` and the main-branch check `workspace-tests` | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards |
+| `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rules `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
 | `DEAD-CODE` | Sections 3 and 4, and the water settings that are parsed twice | `thrum_render::binding`, and the five defaults of `SceneContribution` ([design](DEAD-CODE/DESIGN.md)) | `thrum-core`, `thrum-sea`, `thrum-water`, `thrum-render`, `thrum-rain-model`, the water scene, the game's host |
-| `TEST-SUPPORT` M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support` ([design](TEST-SUPPORT/DESIGN.md#the-kit)) | Every crate's tests |
+| `TEST-SUPPORT` M5, M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support`, and the rules `test-readback` and `test-deadline` ([design](TEST-SUPPORT/DESIGN.md#the-kit)) | Every crate's tests |
 
 ### What can run side by side
 
 Each design lists the files each milestone touches, under "Files each milestone touches", and the lead confirms
-them against the builders at work before it starts one. The first milestones of the three modules can start
-together. `DEAD-TOOLS` builds M5 first, a small milestone that `CLOUDS` M6 waits for, and then M1 to M4:
+them against the builders at work before it starts one. Milestones of one module run in the order its plan
+gives, which is the order of each cell below. By the owner's word of 20 November, "Cleanup first", no feature
+milestone starts until this track has landed, so the only other builders are the ones finishing the milestones
+this track waits for.
 
-| Wave | `GATE-TIME` | `DEAD-TOOLS` | `DEAD-CODE` | Share no file because |
-|---|---|---|---|---|
-| 1, at once | M1: five test files, a new `./dev` command and one settings line | M5: five new files under `docs/provenance`. Then M1: `scripts/`, `tools/xtask`, three designs, ledger rows | M1: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | Tests, scripts and engine source. `GATE-TIME` M1 and `DEAD-TOOLS` M1 both edit `tools/xtask/src/main.rs`, one adding a command and one the script-suite step: whichever lands second rebases |
-| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere | M2: benches and the `baseline-inventory` command | M2: `contribution.rs` and every implementation | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables: whichever lands second rebases |
-| 3 | M3, after `WATERS` M7: the foam test | M3: `docs/evidence`, the evidence store, five documents | M3: `thrum-core`'s runtime, three small deletions | `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares |
-| 4 | M4, after `REVIEW-RENDER` M2; M5, after `DEAD-TOOLS` M2 | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7; M5, after `HOST` M3; M6, after `REVIEW-RENDER` M3 | `GATE-TIME` M5 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables |
+**`GATE-TIME` M1 merges first.** The other wave 1 milestones are built beside it and queue their merges behind
+it, because each merge before M1 pays about 50 minutes of the merge lock and each one after pays about half that. After
+M1 merges the lead fast-forwards the main checkout, where the script reads the settings, or the new main-branch
+check never starts. The same holds after `GATE-TIME` M7.
 
-Two files are everyone's: `.config/shape-baseline.json`, which each landing that lowers a rule's count rewrites,
-and `docs/design/maturity.json`. A builder that meets a conflict there rebases and makes its edit again.
-`TEST-SUPPORT` M3 waits for `GATE-TIME` M2 and `DEAD-CODE` M2, so the kit is adopted after the duplicate tests
-and the stubs are gone, and `REPO-RULES` M3, the one rename, now waits for all of track 6.
+| Wave | `GATE-TIME` | `DEAD-TOOLS` | `DEAD-CODE` | `TEST-SUPPORT` | Files they share |
+|---|---|---|---|---|---|
+| 1, at once | M1: six tests marked, `./dev long-tests`, the main-tier list, one settings line. M6: tests behind a Cargo feature compiled at every merge and run on main. M7: the merge selection, `./dev check-all`, one settings line | M5: five new files under `docs/provenance`. M6: four frozen rules. M1: `scripts/`, the script-suite step, three designs, ledger rows | M1: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | M5, once M2 is Done: the kit's functions and two frozen rules | `tools/xtask/src/main.rs`: `GATE-TIME` M1, M6 and M7 and `DEAD-TOOLS` M1 edit different arms of it and one help text, which M1 puts on a line for each command. The rule files `scripts/shape_matchers.py`, `shape_rules.py` and `test_shape_rules.py`: `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 each add rules. `scripts/repo_check.py`: `GATE-TIME` M1 and M6. Whichever lands second rebases |
+| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` M6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M3, after `GATE-TIME` M2 and M6 and `DEAD-CODE` M2: test files of every crate and kit scene | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` M3 is the widest set: its design says what it runs beside |
+| 3, each after another module's milestone | M3, after `WATERS` M7: the foam test. M4, after `REVIEW-RENDER` M2. M5, after `DEAD-TOOLS` M2: the check's machinery | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7. M5, after `HOST` M3. M6, after `REVIEW-RENDER` M3 and `GATE-TIME` M6 | M4, after `REVIEW-RENDER` M2 | `GATE-TIME` M5 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables. `GATE-TIME` M5 edits the check's test step, after `DEAD-TOOLS` M2 |
+
+Three files are everyone's: `.config/shape-baseline.json`, which each landing that lowers a rule's count
+rewrites, `docs/design/maturity.json` and `Cargo.lock`. A builder changes them when its landing moves them,
+whatever its row says, and one that meets a conflict there rebases and makes its edit again. `REPO-RULES` M3, the
+one rename, waits for all of track 6.
+
+Waves 2 and 3 wait for `TEST-SUPPORT` M2, `WATERS` M7, `REVIEW-RENDER` M2 and M3 and `HOST` M3. The track cannot
+land while any of them is held.
 
 ### Seam rulings for track 6
 
@@ -2341,7 +2351,8 @@ and the stubs are gone, and `REPO-RULES` M3, the one rename, now waits for all o
    November, kept as [the test tiers](../../ORCHESTRATE.md#test-tiers), no test over about a minute runs in a
    merge's check, and no short run of one stays there. The ten-minute gale, the moored foam's ten minutes, the
    exit scene's stepped hour, the field flythroughs and the shore-blend solve still run, whole and with the
-   assertions they had, in release in the main-branch check `long-tests` after merges. `WATERS`', `SHOWCASE`'s
+   assertions they had, in the main-branch check `long-tests` after merges: in release, or in the debug build for
+   a test that fails in release at the starting commit, whose owner the log names. `WATERS`', `SHOWCASE`'s
    and `CULLING`'s designs and Done items stand, because the proof they name still runs. A failure on main is
    fixed by the module whose commit caused it, as for exact images. The builder of `GATE-TIME` M1 writes the one
    settings line, in its design's words.
@@ -2360,14 +2371,37 @@ and the stubs are gone, and `REPO-RULES` M3, the one rename, now waits for all o
 7. **Exact baselines.** No track 6 milestone may move a retained image. Each that touches a covered path carries
    the verifier, and none edits a file the registry pins. A script a pinned file imports, directly or through
    another script, is not pinned: a milestone may edit it, and it keeps its name and everything the pinned files
-   use from it. `DEAD-TOOLS` M3 and M4 edit three such scripts, as
-   [their design](DEAD-TOOLS/DESIGN.md#mechanisms) lists.
+   use from it. `DEAD-TOOLS` M6, M3 and M4 edit four such scripts, as
+   [their design](DEAD-TOOLS/DESIGN.md#mechanisms) lists, `TEST-SUPPORT` M5 edits two of the same four, and
+   `GATE-TIME` M1 and M6 edit `repo_check.py`.
 8. **Provenance records** (`DEAD-TOOLS` M5; `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS`). By the owner's
    decision of 20 November, a module's record of what it copied, from where and under what licence is tracked at
    `docs/provenance/<MODULE>.md`. It is not evidence, because a person must read it to publish the code. Each
    module still owns what its record says. `CLOUDS` M6, the first milestone that copies a library, waits for
    `DEAD-TOOLS` M5. The five designs still name the working-folder file; [the settings](../../ORCHESTRATE.md#starting-from-a-clean-clone)
    say that means the tracked record, and each design is corrected at its module's next re-plan.
+
+9. **Tests behind a Cargo feature** (`GATE-TIME` M6; the modules whose tests they are, among them
+   `RAY-TRACING`, `MESH-SHADING`, `CONTENT-LOOP` and `SCENE-VIEWS`). Every merge compiles them, and the main-branch check `long-tests` runs
+   them, from the main-tier list. No test is edited to join the list: one that fails at the commit M6 starts
+   from is listed as not run, with its failure, and its owning module fixes it. Open items that run these tests
+   by name keep their text. `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 edit files that hold them, wait for M6
+   and carry the main-branch item.
+10. **The merge selection** (`GATE-TIME` M7; every module, and `REPO-RULES`, whose check command it is). By the
+    owner's decision of 20 November, `./dev check` runs the tests of the packages a change can reach, by Cargo's
+    graph, and the main-branch check `workspace-tests` runs the whole workspace. A shared input, or a path the
+    selection has no rule for, selects everything. The risk accepted is in
+    [the test tiers](../../ORCHESTRATE.md#test-tiers): a missed edge sits on main until the next whole run, and
+    until then a later merge can be refused for it. A module that adds a folder outside a package gets the whole
+    workspace on every change there until it adds a path rule. No milestone waits for the whole run.
+11. **Frozen rules** (`DEAD-TOOLS` M6, `TEST-SUPPORT` M5; `REPO-RULES`' rule engine, and every builder). Six
+    rules enter the shape check at the count of the commit they land on, before the cleanups that lower them:
+    `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`.
+    They go in through the engine with fixtures, as the track 4 rules did, and the engine itself does not
+    change. From the day one lands, a landing in any module that adds one more of its shape is refused, with a
+    message that says what to write instead. `shader-text-edit` holds a shape whose replacement is
+    [not planned yet](#not-planned-in-track-6); until that design exists a new variant is made the way the
+    engineering patterns already ask, through a hook with a stub.
 
 <a id="not-planned-in-track-6"></a>
 
@@ -2387,8 +2421,10 @@ Each of these needs a design of its own, or a decision, before it is planned.
 - **Three Mac window proofs** threaded through the production render owner (S1-08).
 - **The state-delta and state-ack codecs** (N1-01, L4-01) stay, because `SESSION`'s design says keep.
 - **One test binary for each water model crate** (W2-01): nine open items run those binaries by name.
-- **Selecting a merge's tests by the files it changed** (L1-12): an assumption in
-  [GATE-TIME's plan](GATE-TIME/PLAN.md), which keeps the whole fast suite in every merge's check.
+- **Selecting a merge's tests more finely than by package** (L1-12): `GATE-TIME` M7 selects by package, and
+  nothing says which test binary of a package a source file reaches without a coverage map.
+- **From the hardening pass, not applied**: moving `scripts/open_check_names.py` ahead of `REPO-RULES` M3, and
+  an owner for fifteen medium findings no plan names (its A8); its eleven proposals other than the frozen rules.
 - **Three benches the review did not look at**: `thrum-core`'s `v1_workload`, `thrum-water-model`'s `surf` and
   the game's `recipe_cost`.
 - **The grid-parity and CIEDE2000 gates of `run_v1_showcase.py`** (P1-10): `SHOWCASE`'s and `APPLE-PRESENTATION`'s.
@@ -2403,12 +2439,15 @@ Each of these needs a design of its own, or a decision, before it is planned.
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Long test**: a test over about a minute, marked ignored with a reason that starts `long:`, in a binary that `./dev long-tests` lists; the main-branch check `long-tests` runs it in release | `GATE-TIME:M1` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Long test**: a test over about a minute, marked ignored with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | `GATE-TIME:M1` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **The main-tier list**, `.config/long-tests.txt`: each long-test binary and each test behind a Cargo feature, with its package, features and build | `GATE-TIME:M1` and `M6` → any module that adds a long test or a feature that gates a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
+| **The merge selection**: `./dev check` runs the tests of the packages a change can reach; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:M7` → every builder | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:M6` and `TEST-SUPPORT:M5` → every builder | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 | **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:M5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:M3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Contribution defaults**: five hooks of `SceneContribution` need not be written | `DEAD-CODE:M2` → every contribution | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
 | **Layout entries**: `thrum_render::binding`, and a graph resource declared from a texture | `DEAD-CODE:M6` → every crate that creates a bind-group layout or declares a graph texture | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
-| **The test kit**: readback, the prologue, waits, scratch folders and the record reflection check | `TEST-SUPPORT:M3` and `M4` → every GPU test under `crates/` and in the kit scenes | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
+| **The test kit**: readback, the prologue, waits, scratch folders and the record reflection check | `TEST-SUPPORT:M5`, `M3` and `M4` → every GPU test under `crates/` and in the kit scenes | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 
 ## Owner decisions
 
@@ -2990,3 +3029,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `DEAD-TOOLS` gained M5, built first, and `CLOUDS` M6 waits for it. Seam ruling 7 now says what the designs
   say: a pinned comparison file is never edited, and a script it imports keeps its name and what the pinned
   files use. Open items of `CLOUDS` and `WATERS` that named the working-folder provenance file were reworded.
+- 2026-11-20 Track 6 revised a third time, in one pass over `GATE-TIME`, `DEAD-TOOLS`, `DEAD-CODE` and
+  `TEST-SUPPORT`: the second design reviews' Must Fix findings, the hardening pass, and the owner's decision that
+  the merge tier is targeted, which the lead gave as "Every merge runs only the tests for what the change
+  touches, and the full workspace runs on main." New milestones: `GATE-TIME` M6 (tests behind a Cargo feature)
+  and M7 (the merge selection), `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 (six rules frozen before their cleanups).
+  Seam rulings 9 to 11 and four interfaces were added, the wave table gained `TEST-SUPPORT`, and the test tiers
+  in the project settings were written again. No Done item, exact baseline, comparison or contract changed.

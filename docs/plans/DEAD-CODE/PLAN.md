@@ -33,10 +33,14 @@ every frame through `filtered_accesses`, stays. The cost priors in `examples/wat
 
 ## M2 A scene contribution writes only the hooks it uses
 
-The trait is in `crates/thrum-render/src/contribution.rs`. The wrappers that forward to other contributions are
-`SceneContributions` in `contribution/list.rs` and `LentDiagnostic` in `examples/v1-game/src/lent.rs`. `Fault`,
-in the game's ray-tracing proof tests, is the test fixture that gets no probe. `RAY-TRACING` M3 is building in
-`contribution.rs`: tell its builder before the trait change lands.
+The trait is in `crates/thrum-render/src/contribution.rs`. The one wrapper outside tests is `SceneContributions`
+in `contribution/list.rs`. `LentDiagnostic` in `examples/v1-game/src/lent.rs` holds no contribution: its
+`encode_after_compute` and `draw` are empty stubs that go like any other. The fixtures that forward are `Fault` in
+the game's ray-tracing proof tests, `Observed` in `crates/thrum-clouds/src/shade/tests.rs` and `PoolWitness` in
+the mirror's `view_knobs_gpu` tests. `crates/thrum-render/tests/ray_instances_seam.rs` and the game's ray-tracing
+and mesh-stage tests are behind a Cargo feature: `./dev check` compiles them from `GATE-TIME` M6 on, and M2.4
+passes from the shared run on main. `RAY-TRACING` M3 is building in `contribution.rs`: tell its builder before the
+trait change lands.
 
 ## M3 The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach
 
@@ -56,7 +60,8 @@ nearest of the three waits to clearing; if that changes, the lead asks a planner
 ## M5 The game's unread state projection and the content crate with no producer are gone
 
 `HOST` M3 will have removed the forwarding host by the time this starts, so begin by reading what it left. When
-the projection's capture goes, `recover_page` must still call `published_page()`, which republishes.
+the projection's capture goes, `recover_page` must still call `published_page()`, which republishes. The
+engineering skill's package table names `thrum-content-runtime` at about line 42.
 
 ## M6 Bind-group layout entries and graph declarations are each written through one helper
 

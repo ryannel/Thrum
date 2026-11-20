@@ -24,6 +24,38 @@
       ]
     },
     {
+      "id": "M6",
+      "name": "The check refuses a new script or bench that nothing runs, a new source file that names `docs/evidence`, and a new shader text edit: each count is frozen where it stands",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As dependable as a lint baseline in a well-kept repository such as Chromium's or rust-lang's tidy checks: what is already there is counted once, one more is refused with a message that says what to write instead, and a correct landing is never refused.",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "Four rules of the shape check each hold a count that can only fall, entered at the count of the commit this milestone lands on: `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, as the design defines them. A landing that adds one more of any of them fails `./dev check`, and the message says what to write instead. The log gives each rule's count at landing.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path && python3 scripts/shape_rules.py check --rule script-caller && python3 scripts/shape_rules.py check --rule bench-runner && python3 scripts/shape_rules.py check --rule shader-text-edit && python3 scripts/test_shape_rules.py'",
+          "ask": "Read each rule's fixtures: does each refuse one more of its shape and pass the cases the design leaves out (the evidence store's restore code, a script that `dev` or a tracked document outside the plans names, a bench a script runs, a `.replace(` in a test file)? Does `script-caller` leave a done-when item's check out of its callers? In a scratch copy, add a script nothing names and a `.replace(` to a shader source file: does `./dev check-docs` fail on each and say what to do?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.2",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M1",
       "name": "Scripts that nothing runs are gone in one landing, and the check finds the script suites that are left by itself",
       "status": "not_started",
@@ -56,8 +88,8 @@
         },
         {
           "id": "M1.3",
-          "statement": "`./dev check` finds the script suites itself: every `scripts/test_*.py` runs, and every `scripts/test_*.mjs` where node is installed, with no list to keep, so a suite added later runs without an edit to the check. A suite the check cannot run, or one that takes over about a minute, is excluded by name with its reason, and for the slow one its measured time. The record gives the time the newly run suites add to a check.",
-          "ask": "In a scratch copy, add a `scripts/test_zz_probe.py` that fails and run the check's script step: does it fail on the probe? Is any suite excluded, and would its reason satisfy someone who wanted it run? Does the record give the time each newly run suite takes, measured, and is any that takes over about a minute still in the check?",
+          "statement": "`./dev check` finds the script suites itself: every `scripts/test_*.py` runs, and every `scripts/test_*.mjs` where node is installed, with no list to keep, so a suite added later runs without an edit to the check. A suite is excluded only by name with its reason: one the check cannot run, one that fails at the starting commit, one that tests a script the review found dead and this module leaves, or one that takes over about a minute, with its measured time. The record gives the time the newly run suites add to a check.",
+          "ask": "In a scratch copy, add a `scripts/test_zz_probe.py` that fails and run the check's script step: does it fail on the probe? Is each excluded suite one of the four kinds the design names, with its reason, and for a failing one its failure and the module that owns its script? Was any failing suite edited to make it pass? Does the record give the time each newly run suite takes, measured?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -142,7 +174,7 @@
         {
           "id": "M3.2",
           "statement": "The test data `./dev check` reads is not under `docs/evidence`: the `RENDER-2D` cost receipts and the atmosphere's aerial volumes are read from test fixtures, with the bytes they had, and the tests that read them pass.",
-          "check": "sh -c 'test -z \"$(git ls-files docs/evidence/RENDER-2D/M1 docs/evidence/ATMOSPHERE/M9-volumes)\" && python3 scripts/test_render2d.py && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib aerial_ground'",
+          "check": "sh -c 'test -z \"$(git ls-files docs/evidence/RENDER-2D/M1 docs/evidence/ATMOSPHERE/M9-volumes)\" && python3 scripts/test_render2d.py && out=$(THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --lib aerial_ground 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Compare each moved file's Git blob with the starting commit: are the bytes the same? Does `python3 scripts/render2d.py costs` read the same receipts it read before?",
           "target": "mac-metal",
           "lock": "gpu",
@@ -199,9 +231,9 @@
       "items": [
         {
           "id": "M4.1",
-          "statement": "No source file under `crates`, `examples`, `scripts` or `tools` names a path under `docs/evidence`, except the evidence store's code that restores history: the rule `evidence-path` is at zero there. A record a run writes goes to the working folder by default, and a record a later run compares with is test data in a fixtures folder, with the bytes it had.",
+          "statement": "No source file under `crates`, `examples`, `scripts` or `tools` names a path under `docs/evidence`, except the evidence store's code that restores history: the rule `evidence-path`, frozen since M6, is at zero there. A record a run writes goes to the working folder by default, and a record a later run compares with is test data in a fixtures folder, with the bytes it had.",
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path --zero crates examples scripts tools && python3 scripts/test_shape_rules.py'",
-          "ask": "Do the rule's fixtures refuse a script that writes under `docs/evidence` and a test that reads there, and pass the evidence store's restore? Is every exemption written in the rule with its reason? Compare each moved record's Git blob with the starting commit.",
+          "ask": "Is every exemption written in the rule with its reason, and is the evidence store's restore code the only one? Compare each moved record's Git blob with the starting commit.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

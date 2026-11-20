@@ -1,8 +1,9 @@
 # Test support: one GPU gate, one test device, shared fixtures
 
 14 November 2026, revised 15 November after [the first design review](../../../.orchestrate/evidence/TEST-SUPPORT/design-review.md),
-and on 20 November, when [the kit](#the-kit) and M3 and M4 were added from the cleanup review. Nothing M1 or M2
-is held to changed.
+and on 20 November, when [the kit](#the-kit) and M3 and M4 were added from the cleanup review, and again that day
+after the kit's design review and the hardening pass, when M5 was added ahead of them. Nothing M1 or M2 is held to
+changed.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
@@ -96,42 +97,60 @@ them to zero: first in the crates no builder is working in, then across the rend
 cleanup review, which is kept in the main checkout at `/Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/`
 (`REPORT.md`, with each finding and its verifier's note in `results.json`). After M2 every GPU test goes through
 the gate, but each file still writes the same jobs by hand: about 44 staging readbacks, a gate-and-device
-prologue in 160 tests, five reflection tests of WGSL records, and its own frame waits, scratch folders and image
+prologue at about 286 sites, five reflection tests of WGSL records, and its own frame waits, scratch folders and image
 writers. The kit is in `thrum-test-support`, which every engine test already depends on. It covers tests under
 `crates/` and the kit scenes; the game's own tests keep their helpers, because they leave with the game and may
 use only the public API.
 
-- **Readback** (R4-01, L7-06, L3-01, R5-08), in wgpu types only: read a buffer, or one mip and layer of a
-  texture, or a byte range of either, with one bounded wait. It has two forms, because some tests must read
-  inside the encoder under test: one submits its own copy, and one appends the copy to the caller's encoder and
-  waits on that submission. A site that does a different job keeps its code and is exempted by name in the rule,
-  with its reason: a test that yields to a browser timer on wasm, one that maps a range the engine copied into
-  itself inside the host's retirement loop, and those that poll the host between submissions on purpose. The
-  rule `test-readback`, a [REPO-RULES](../REPO-RULES/DESIGN.md) ratchet, finds a buffer mapped for reading in a
-  test file outside the kit.
+The kit is built before it is adopted. The copies were multiplying while the plan waited: hand-written readbacks
+in test files went from 10 to 34 in a week, and hand-written deadline asserts from 64 to 145. So M5 builds the
+kit's functions and adds two rules through [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine, as M1 added
+`test-crate-edges`, each entered at the count of the commit it lands on: `test-readback`, a buffer mapped for
+reading in a test file outside the kit, and `test-deadline`, a hand-written deadline assert in a test file. The
+engine holds a count that can only fall, so from then on a new test uses the kit or fails `./dev check`, and M3
+converts what is already there.
+
+- **Readback** (R4-01, L7-06, L3-01, R5-08), in wgpu types only: read a buffer, a whole mip of a 2D, 3D or array
+  texture or one layer of it, or a byte range of either, with one bounded wait. It has two forms, because some
+  tests must read inside the encoder under test: one submits its own copy, and one appends the copy to the
+  caller's encoder and waits on that submission. When M3 takes `test-readback` to zero under `crates/` and the kit
+  scenes, a site that does a different job keeps its code and is exempted by name in the rule, with its reason: a
+  test that yields to a browser timer on wasm, one that maps a range the engine copied into itself inside the
+  host's retirement loop, and those that poll the host between submissions on purpose.
 - **The prologue** (R4-03, R5-06): one call asks the gate for a GPU, on Metal where the test says so, opens the
   recipe's device by profile and restriction, and returns the device and queue, with the capabilities through
   the `render` feature. By mechanism 3 a value typed by `thrum-render` cannot reach `thrum-render`'s own unit
-  tests, so those keep calling the recipe, and a local wrapper that differs for a real reason (a fresh adapter,
-  a hardware override, a generation) shrinks to a call and stays. A test that asserted Metal keeps failing
-  without it on this Mac: the prologue never turns that failure into a skip here.
-- **Waiting, scratch and images** (G2-06, L1-08): one wait with a deadline, for a frame's completion and for
-  the deadline loops tests write by hand; one scratch folder that removes itself; one PPM writer; and a counting
-  allocator type. A `#[global_allocator]` cannot live in a crate every test links, so each binary that counts
-  declares its own static of the kit's type. Quantiles are not shared, because one rule would move recorded
-  tripwire percentiles by a rank. A test that fails because the clock refuses under overload is not made to
-  pass by a longer deadline, and is left as it is.
+  tests, and those are 160 of the 286 prologues. So they get the same one call from the crate's own
+  `test_device`, typed by the crate: it asks the kit's gate, which deals only in wgpu types, and opens this
+  build's recipe. A local wrapper that differs for a real reason (a fresh adapter, a hardware override, a
+  generation) shrinks to a call and stays. A test that asserted Metal keeps failing without it on this Mac: the
+  prologue never turns that failure into a skip here.
+- **Waiting, scratch and images** (G2-06, L1-08): one wait with a deadline, one scratch folder that removes
+  itself, one PPM writer, and a counting allocator type. The wait serves a frame's completion and the deadline
+  loops tests write by hand. M3 converts the frame waits; the hand-written deadline asserts, in about 61 files,
+  are not swept here. They stay under the frozen `test-deadline` count, a new test uses the kit's wait, and a
+  conversion that removes one lowers the count. The allocator type counts allocations and bytes on the calling
+  thread, behind a switch the test turns on, because the six copies it replaces count one or the other: a
+  converted test counts what it counted before. A `#[global_allocator]` cannot live in a crate every test
+  links, so each binary that counts declares its own static of the kit's type. Quantiles are not shared, because
+  one rule would move recorded tripwire percentiles by a rank. A test that fails because the clock refuses under
+  overload is not made to pass by a longer deadline, and is left as it is.
 - **Record reflection** (L6-01, L3-02): one check that a crate's WGSL records match its Rust structs in member
   offset, size and scalar kind, built from the renderer's checker. It takes a declarations-only source and
   member aliases, because water's and the asset crate's shaders do not parse alone and name members differently.
-  The sea, the asset crate, water and clouds call it, and the three copies of the bound-struct walk and the
-  sea's second layout type go. Each crate's `wgsl_records` test target keeps its name, which open and Done
-  checks run. A check that does more stays: the view record's literal offsets, and naga validation of the cloud
-  and weather shaders.
-- **The cooked game** (G2-07): the game's cooked tests build the same cooked game about twenty times, in two
-  shapes. One fixture in the game's test support makes the scratch store, the cook, the device for a draw path
-  and the host. Each case keeps its assertions and the device it had: the generation it passed to the recipe
-  and its assertion on the execution path.
+  The renderer's own record test, the sea, the asset crate, water and clouds call it, and the three copies of
+  the bound-struct walk and the sea's second layout type go. Each crate's `wgsl_records` test target keeps its
+  name, which open and Done checks run. A check that does more stays: the view record's literal offsets, and naga
+  validation of the cloud and weather shaders. The shared check is stricter than the sea's and the asset crate's
+  were, and may find a record whose size or scalar kind is wrong. Fixing a record is engine code, which this
+  module must not change: that crate's test keeps the comparison it made before for that record, and the log
+  names the record and the module that owns it.
+- **The cooked game** (G2-07): the proving ground's cooked tests build the same cooked game about twenty times,
+  in two shapes. One fixture in the proving ground's test support makes the scratch store, the cook, the device
+  for a draw path and the host. Each case keeps its assertions and the device it had: the generation it passed
+  to the recipe and its assertion on the execution path. The fixture shares code, not a device or a lock, so no
+  test that ran beside others now waits for one: the cleanup's purpose is a shorter check. The cooked fault
+  test, which is behind a Cargo feature, is left as it is.
 
 ## Interfaces
 
@@ -142,6 +161,20 @@ use only the public API.
 | `thrum-fixtures`: fixtures as plain data, one definition each | `thrum-render`'s tests (dev-dependency), the proving ground (normal dependency) |
 | `test_role` and `proving_ground` in `.config/architecture.toml`, and the `test-crate-edges` rule | `REPO-RULES`' `library-env`, `GAME-SPLIT`'s boundary |
 | The kit: readback, the prologue, the wait, scratch folders, the PPM writer and the counting allocator type; the record reflection check through the `render` feature | Every GPU test under `crates/` and in the kit scenes |
+| The rules `test-readback` and `test-deadline`, each a count that can only fall | Every builder who writes a GPU test: read back and wait through the kit |
+
+## Files each milestone touches
+
+The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
+outside its row; a builder that finds it must writes the proposal in the log and ends `BLOCKED`. Three files are
+everyone's: `.config/shape-baseline.json`, `docs/design/maturity.json` and `Cargo.lock`. Change them when your
+landing moves them, whatever your row says. The rows are in build order: M5 is built before M3.
+
+| Milestone | Files | Waits for | Who else is near |
+|---|---|---|---|
+| M5 | `crates/thrum-test-support/` (the kit's functions, their tests, the manifest); `crates/thrum-render/src/test_device.rs`; the two rules in `scripts/shape_matchers.py` and `scripts/shape_rules.py`, their fixtures in `scripts/test_shape_rules.py`; the Tests section of the engineering patterns | Nothing outside this module | It converts no test, so it can run beside any milestone. `DEAD-TOOLS` M6 adds four rules to the same rule files: whichever lands second rebases. Both scripts are imported through a pinned comparison file, so each keeps its name and what that file uses |
+| M3 | Test files only: the integration tests and unit-test modules of every crate under `crates/`, and the `tests/` folders of the kit scenes (`examples/water`, `mirror`, `starter`, `lighthouse` and `stones`); `crates/thrum-test-support/` and `crates/thrum-render/src/test_device.rs` where a conversion needs the kit extended; the exemptions of `test-readback` in `scripts/shape_matchers.py` with their fixtures | `GATE-TIME` M2 and `DEAD-CODE` M2, which delete tests and stubs in these files; `GATE-TIME` M6, because some of these files hold tests behind a Cargo feature that no merge compiled before it | The widest set in track 6, so it runs beside milestones that touch no test file (`DEAD-TOOLS` M1, M2 and M4, `DEAD-CODE` M5, `GATE-TIME` M5 and M7) and not, where the lead can choose, beside one whose row names test files: `GATE-TIME` M3 (`foam_scene_gpu.rs`, `support/island.rs`) and M4 (the mirror's pool tests, `draw/tests.rs`, `scene_view_absent_gpu.rs`), `DEAD-TOOLS` M3 (`atmosphere/gpu/tests/aerial_ground.rs`, a readback site), `DEAD-CODE` M3 (two renderer test files), M4 (the water scene's proof tests) and M6. Where one of those is building anyway, whichever lands second rebases. `REVIEW-RENDER` and `HOST` build in the renderer's tests |
+| M4 | The reflection check in `crates/thrum-test-support/`; `crates/thrum-render/tests/wgsl_records.rs`; the `wgsl_records` tests and bound-struct walks of `thrum-sea`, `thrum-asset-gpu`, `thrum-water` and `thrum-clouds`; `examples/v1-game/tests/cooked_assets_gpu.rs`, `cooked_material_gpu.rs` and the test support they share | `REVIEW-RENDER` M2, which owns the renderer's checker | `GATE-TIME` M5 narrows the draw-probe pass that runs `cooked_assets_gpu`, in the check command only. `DEAD-CODE` M5 edits `cooked_rows_gpu.rs`, which this leaves alone |
 
 ## Not built here
 
@@ -156,9 +189,11 @@ that skips; edit a registered baseline.
 
 ## Proof
 
-The kit is proved as adoption was: by its rule's count, by the tests' results from the same command before and
+The kit is proved as adoption was: by its rules' counts, by the tests' results from the same command before and
 after with a GPU required, and by a reviewer reading that no assertion, bound or device changed in a converted
-test. The kit's own functions have tests in the support package.
+test. The kit's own functions have tests in the support package. `cargo test --workspace` does not run a long
+test or a test behind a Cargo feature, so for those the proof is the main-branch check `long-tests`: its run
+that covers M3's commit, compared test by test with its last run before M3 started.
 
 The gate is proved from outside: its tests run a child test process with the adapter forced absent and read the
 child's exit code and output, in both modes. Adoption is proved by the rules at zero, and by what ran: the tests'
