@@ -170,9 +170,9 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=begin;var samples=0u;
-    for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>0.001;i++) {
+    for(var i=0u;i<3072u && distance<end && total.transmittance*part.transmittance>0.001;i++) {
         samples+=1u;
-        let step=min(end-distance,max(cloud.heights.z,distance*0.002));
+        let step=min(end-distance,max(cloud.heights.z,distance*0.002)*0.25);
         let at=distance+step*0.5;let point=air_camera+ray*at;
         let column=cloud_column(point);
         if column.x>0.0 {
