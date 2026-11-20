@@ -374,7 +374,7 @@
         {
           "verdict": "fail",
           "commit": "165ccb226b9366121c7bc9c84cf07c926e805f12",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review-1.md",
           "items": {
             "D4.1": "pass",
             "D4.2": "pass",
@@ -428,6 +428,46 @@
             "turns": 1
           },
           "at": "2026-11-20T01:14:25Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "c9c13d132b966f3ab651b7bda426192a527ed785",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "items": {
+            "D4.1": "pass",
+            "D4.2": "pass",
+            "D4.3": "pass",
+            "D4.4": "pass",
+            "D4.5": "pass",
+            "D4.6": "fail",
+            "D4.7": "pass",
+            "D4.8": "pass",
+            "D4.9": "pass",
+            "D4.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "The sweep cannot account for every configure or missed tick",
+              "item": "D4.6",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 128912,
+            "cached": 3150976,
+            "output": 10813,
+            "turns": 1
+          },
+          "at": "2026-11-20T06:26:59Z"
         }
       ],
       "authorised": {
