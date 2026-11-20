@@ -106,7 +106,7 @@
       }
     },
     "M2": {
-      "definitions": "42c3fbd24dab1a25db661a69ef7c47e81c32964afa786e76fa5683f3d4714401",
+      "definitions": "0650a2b10dc1d4b72f4c34c594df4c40fd6dc1b8b03b6e965ec2d3605e3126ef",
       "reviews": [
         {
           "verdict": "fail",
@@ -255,45 +255,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
-        "at": "2026-11-14T23:26:02Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ],
-      "ready_for_review": {
-        "commit": "149fe1a30a587f18c3f96f2008fd62e3725498f5",
-        "checked": "79b1fcb7f8e6ad7079ff1a0c0194e43b0ee85a9b",
-        "at": "2026-11-20T17:13:49Z",
-        "reused": [
-          "Test command"
-        ],
-        "host": "claude",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "observed": {
-          "model": "claude-opus-5-5"
-        },
-        "cli": "2.1.319 (Claude Code)",
-        "path": "headless",
-        "usage": {
-          "input": 274962,
-          "cached": 10595296,
-          "output": 46501,
-          "cost_usd": 8.651399,
-          "turns": 3
-        },
-        "session_usage": {
-          "input": 274962,
-          "cached": 10595296,
-          "output": 46501,
-          "cost_usd": 8.651399,
-          "turns": 3
-        }
+        "task": "Diagnose TEST-SUPPORT M2, which has failed review three times. Read the three reviews in .claude/worktrees/test-support/",
+        "at": "2026-11-20T17:37:30Z"
       }
     },
     "M3": {
@@ -344,11 +307,15 @@
     {
       "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass so the designs can pass review together.\n\n1. Resolve every Must Fix in the latest design reviews: .orchestrate/evidence/GATE-TIME/design-review.md, DEAD-CODE/design-review.md and TEST-SUPPORT/design-review.md. For example, DEAD-CODE M2.2 asks for a probe behind the lent contribution, which forwards nothing. Suggestions are yours to take or leave; say which you took. DEAD-TOOLS passed its review, so change its rows only where something below requires it.\n\n2. Apply the hardening pass at /Users/ryannel/Workspace/thrum/tmp/cleanup-2026-11-20/HARDENING.md. Read it in place; it was written at 07339e923, so check each point against today's text.\n- A1: GATE-TIME M1 merges first in wave 1, after one release-build run of its tests, with the debug-on-main fallback the file describes.\n- A2: give the feature-gated tests a tier. That's thrum-render's creation counters, cooked_fault_gpu, ray_tracing_gpu and mesh_stage_gpu. Add a milestone (A2 calls it GATE-TIME M1a) that compiles them on every merge and runs them on main, and make the milestones that edit those files depend on it.\n- A3: stop the next slow test entering the merge tier.\n- A4: TEST-SUPPORT M3 needs a main-check long-tests item.\n- A5-A7: fix the four wrong file rows (DEAD-TOOLS M2's Cargo.lock, DEAD-CODE M5's package table, the shared xtask help string, the shape baseline), and stop DEAD-TOOLS M1.3 from running suites for deleted scripts.\n- Proposal 6: add each ratchet rule now at today's count, before its consolidation lands, rather than after.\n\n3. The owner's decision of 20 Nov: the merge tier is targeted. Every merge runs only the tests for what the change touches, and the full workspace runs on main. Replace the whole-workspace merge check. The design must say:\n- how the selection is computed from a change, at package level or finer;\n- what a change to shared inputs selects (root manifest, lockfile, toolchain, xtask, shared scripts);\n- that a selection it can't compute falls back to the whole workspace;\n- the accepted risk, written into the tier policy: a missed dependency edge reaches main and sits there until the next full run.\nMeasure the saving before the switch is turned on.\n\n4. Not yet answered by the owner, so carry these as Assumption: lines with the other choice stated: a hard stop when a test binary in the merge tier runs over three minutes, and hourly runs of the feature-gated tests on main.\n\n5. Keep each milestone's files table and the wave table current, because the lead confirms files before each builder starts. Feature builders are held until this programme lands (owner: \"Cleanup first\"), so ordering can assume a quiet machine once the live Codex milestones finish.\n\nEnd with PLANNED.",
       "at": "2026-11-20T12:18:24Z"
+    },
+    {
+      "task": "Diagnose TEST-SUPPORT M2, which has failed review three times. Read the three reviews in .claude/worktrees/test-support/.orchestrate/evidence/TEST-SUPPORT/ (M2-review-1.md, the second review in git history, and the current M2-review.md at review commit 3913f94). Each round found new non-macOS breakage because M2.2's check (\"a compile for a target that is not macOS\") is narrower than its quality bar (cargo test --workspace on Linux or Windows does not fail for want of an adapter or hide CPU tests). The third reviewer left a working cross-target type-check script with C shims for astcenc-sys (M2-review/cross-target-check.sh).\nDecide what M2.2 should ask so a builder can prove the bar itself, and amend M2's items and done-when file to match. Settle where that cross-target type-check runs afterwards. The owner's rule is no long checks in any merge check: tests are tiered with the accepted risk written down, and GATE-TIME owns the tiers and the main-branch long-tests list. If the check belongs in the main tier, say so in TEST-SUPPORT's plan and note the consumer change GATE-TIME's list needs, without editing GATE-TIME's milestones that are building now (GATE-TIME M1 is in progress). Keep the two current findings (thrum-asset-gpu draw/tests.rs needing serde_json on non-Apple targets; water-scene's 11 test targets importing macOS-only thrum-app items) in scope for M2, unless you judge water-scene's should move to a later milestone, and say why.\nDone when M2's items and done-when file are amended and committed, with a short diagnosis note naming what changed and why.",
+      "at": "2026-11-20T17:37:30Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T12:18:24Z"
+    "at": "2026-11-20T17:37:30Z"
   },
   "design_history": [
     {
