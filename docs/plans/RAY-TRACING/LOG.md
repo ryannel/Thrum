@@ -116,3 +116,5 @@
   trace preparation fallback. On Metal, a real invalid pipeline at each phase resolved the Sun
   to Maps and disabled lamp shadows with `PreparationFailed`. Each complete cooked scene matched
   its no-request control byte for byte. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#preparation-fallback).
+- 2026-11-20 Updated the terminator fixture for the shared Metal admission helper. With Metal required,
+  the clear receiver and all eight sheet cases passed. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#one-crossing).

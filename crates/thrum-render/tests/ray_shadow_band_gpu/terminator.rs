@@ -114,7 +114,9 @@ fn scene(receiver: Vec3, sun: Vec3, sheet: Option<Sheet>) -> SyntheticScene {
 
 #[test]
 fn terminator_excuses_only_the_first_crossing() {
-    let gpu = support::gate("forward Sun terminator and joined sheet");
+    let Some(gpu) = support::gate("forward Sun terminator and joined sheet") else {
+        return;
+    };
     let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
     let receiver = Vec3::new(15.0_f32.to_radians().cos(), 0.23, 0.0);
     let (y, x) = 94.0_f32.to_radians().sin_cos();
