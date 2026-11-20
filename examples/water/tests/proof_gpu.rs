@@ -7,6 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
+use water_scene::floating::WhitewaterDemo;
 use water_scene::island::Wind;
 
 fn island_wind() -> Option<Wind> {
@@ -61,7 +62,14 @@ fn floating_game(
                 stone: std::env::var_os("THRUM_WATER_STONE").is_some(),
                 disabled: !wake,
                 body_capacity: None,
-                foam,
+                whitewater: match (
+                    foam,
+                    std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
+                ) {
+                    (false, _) => WhitewaterDemo::Off,
+                    (true, false) => WhitewaterDemo::Procedural,
+                    (true, true) => WhitewaterDemo::Cooked,
+                },
             },
             water,
         )

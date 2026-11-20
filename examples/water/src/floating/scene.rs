@@ -22,6 +22,7 @@ pub(super) struct Fleet {
     pub(super) previous: Vec<Body>,
     pub(super) current: Vec<Body>,
     pub(super) craft_present: bool,
+    tick: u64,
     observe: Option<Box<dyn FnMut(BodyStep) + Send>>,
     #[cfg(target_arch = "wasm32")]
     reply_ages: std::collections::VecDeque<(u32, u64, u64)>,
@@ -42,8 +43,20 @@ pub struct WakeDemo {
     pub disabled: bool,
     /// Override the number of admitted body reactions for a capacity inspection.
     pub body_capacity: Option<u32>,
-    /// Include transported whitewater and the shore film.
-    pub foam: bool,
+    /// Whitewater route and its ranked pattern source.
+    pub whitewater: WhitewaterDemo,
+}
+
+/// Asset route for the example's optional whitewater.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum WhitewaterDemo {
+    /// Leave out foam and shore film.
+    #[default]
+    Off,
+    /// Enable whitewater with the fallback pattern.
+    Procedural,
+    /// Enable whitewater and lend a ranked texture from the cooked store.
+    Cooked,
 }
 
 /// Camera for interaction waves in the water example.
@@ -228,7 +241,7 @@ fn build_scene(
         profile.interaction = Some(limits);
     }
     let fallback = fallback(&spectrum, profile.waves.choppiness)?;
-    let whitewater = demo.is_some_and(|demo| demo.foam);
+    let whitewater = demo.is_some_and(|demo| demo.whitewater != WhitewaterDemo::Off);
     let mut water = if lake || whitewater {
         Water::mapped(Arc::clone(&map), spectrum, profile)?
     } else {
@@ -303,6 +316,7 @@ fn build_scene(
         previous: bodies.clone(),
         current: bodies,
         craft_present: true,
+        tick: 0,
         observe: None,
         #[cfg(target_arch = "wasm32")]
         reply_ages: std::collections::VecDeque::new(),
@@ -363,6 +377,9 @@ fn build_scene(
         demo,
     );
     let world_fleet = Arc::clone(&fleet);
+    let camera_swell = demo
+        .filter(|demo| demo.view == WakeView::Waterline)
+        .map(|_| fallback.layers[0].clone());
     let world_mailbox = mailbox.clone();
     let game = SkyGame::new(controls, initial, move |controls, sky| {
         *current_speed.lock().expect("speed control") = (
@@ -391,12 +408,17 @@ fn build_scene(
         body.rotation = fleet.previous[0]
             .rotation
             .slerp(body.rotation, f64::from(alpha));
-        camera(&body, view_choice.load(Ordering::Relaxed), level, demo)
+        let mut camera = camera(&body, view_choice.load(Ordering::Relaxed), level, demo);
+        if let Some(swell) = &camera_swell {
+            keep_camera_above_swell(&mut camera, swell, fleet.tick, alpha);
+        }
+        camera
     })
     .with_fixed_update(move |number, step| {
         let mut fleet = world_fleet.lock().expect("floating fleet");
         let fleet = &mut *fleet;
         fleet.craft_present = craft_present.load(Ordering::Relaxed);
+        fleet.tick = number;
         fleet.previous.clone_from(&fleet.current);
         let craft = &mut fleet.current[0];
         let (speed, turn) = *speed_value.lock().expect("speed control");
@@ -489,11 +511,7 @@ fn build_scene(
             }
         }
     });
-    let game = if lake
-        || (whitewater
-            && (cfg!(target_arch = "wasm32")
-                || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some()))
-    {
+    let game = if lake || demo.is_some_and(|demo| demo.whitewater == WhitewaterDemo::Cooked) {
         let meshes = if lake {
             vec![MeshPlacement::new("meshes/island", "textures/white")]
         } else {
@@ -564,6 +582,28 @@ fn build_scene(
         foam: foam_tap,
         fleet,
     })
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    reason = "camera inspection uses the bounded game clock and metre-scale swell"
+)]
+fn keep_camera_above_swell(
+    camera: &mut Camera,
+    swell: &thrum_sea_model::LongWaves,
+    tick: u64,
+    alpha: f32,
+) {
+    let time = (tick as f64 - 1.0 + f64::from(alpha)).max(0.0) * STEP.as_secs_f64();
+    let point = [camera.position[0], camera.position[2]].map(f64::from);
+    // The dry-side inspection rides above the local swell. Shorter waves
+    // still pass below the eye and the still-water height sets the floor.
+    let rise = swell
+        .evaluate(point, time)
+        .map_or(0.0, |wave| wave.height.max(0.0) as f32);
+    camera.position[1] += rise;
+    camera.target[1] += rise;
 }
 
 #[expect(

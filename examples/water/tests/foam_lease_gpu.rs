@@ -4,7 +4,7 @@ mod support;
 use std::path::PathBuf;
 use thrum_cook::{CookConfig, Cooker, Durability, Quality};
 use water_scene::{
-    floating::{WakeDemo, WakeView, build_wake},
+    floating::{WakeDemo, WakeView, WhitewaterDemo, build_wake},
     island::Wind,
 };
 
@@ -83,7 +83,7 @@ fn running_scene(root: &std::path::Path) {
         6.0,
         std::f32::consts::PI,
         WakeDemo {
-            foam: true,
+            whitewater: WhitewaterDemo::Cooked,
             disabled: true,
             view: WakeView::Overhead,
             ..WakeDemo::default()

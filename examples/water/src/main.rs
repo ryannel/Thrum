@@ -1,4 +1,5 @@
 //! Water example on the engine's normal window and controls.
+use water_scene::floating::WhitewaterDemo;
 fn main() {
     let island = island_preset();
     let foam = option("foam", "THRUM_WATER_FOAM");
@@ -47,7 +48,11 @@ fn main() {
                             stone: option("stone", "THRUM_WATER_STONE").as_deref() == Some("1"),
                             body_capacity: option("wake-bodies", "THRUM_WATER_WAKE_BODIES")
                                 .and_then(|value| value.parse().ok()),
-                            foam: foam.is_some(),
+                            whitewater: match (foam.is_some(), draw_float) {
+                                (false, _) => WhitewaterDemo::Off,
+                                (true, false) => WhitewaterDemo::Procedural,
+                                (true, true) => WhitewaterDemo::Cooked,
+                            },
                             ..Default::default()
                         },
                     )

@@ -7,9 +7,11 @@ use thrum_water::{
     query::{BodyQuery, QueryPoint},
 };
 use water_scene::{
-    floating::{WakeDemo, WakeView, build_wake},
+    floating::{WakeDemo, WakeView, WhitewaterDemo, build_wake},
     island::{Wind, build_foam},
 };
+
+static DEVICE: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn metal(name: &str) -> Option<thrum_test_support::Gpu> {
     thrum_test_support::gpu(name, Some(wgpu::Backend::Metal))
@@ -37,6 +39,9 @@ fn current<'a>(
 
 #[test]
 fn ten_minutes_moored_and_wind_sweep() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     support::island::with_cooked_island("ten_minutes_moored_and_wind_sweep", || {
         let Some(gpu) = metal("whitewater wind and calm") else {
             return;
@@ -48,7 +53,7 @@ fn ten_minutes_moored_and_wind_sweep() {
                 0.0,
                 0.0,
                 WakeDemo {
-                    foam: true,
+                    whitewater: WhitewaterDemo::Procedural,
                     view: WakeView::Overhead,
                     body_capacity: Some(1),
                     ..WakeDemo::default()
@@ -92,7 +97,7 @@ fn ten_minutes_moored_and_wind_sweep() {
                 0.0,
                 0.0,
                 WakeDemo {
-                    foam: true,
+                    whitewater: WhitewaterDemo::Procedural,
                     disabled: true,
                     view: WakeView::Waterline,
                     ..WakeDemo::default()
@@ -147,6 +152,9 @@ fn trail(witness: &Witness, stocks: &[[f32; 4]]) -> Trail {
 
 #[test]
 fn craft_trail_outlives_removed_source_and_spreads() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gpu) = metal("removed craft's material") else {
         return;
     };
@@ -156,7 +164,7 @@ fn craft_trail_outlives_removed_source_and_spreads() {
         6.0,
         std::f32::consts::PI,
         WakeDemo {
-            foam: true,
+            whitewater: WhitewaterDemo::Procedural,
             disabled: true,
             view: WakeView::Overhead,
             ..WakeDemo::default()
@@ -193,6 +201,9 @@ fn craft_trail_outlives_removed_source_and_spreads() {
 
 #[test]
 fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
+    let _serial = DEVICE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     support::island::with_cooked_island(
         "beach_births_follow_lost_power_and_the_film_leaves_ground_depth",
         || {
