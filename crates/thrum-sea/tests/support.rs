@@ -1,7 +1,7 @@
 //! Shared independent oracle and target readback harness.
 use std::{fmt::Write as _, sync::mpsc, time::Duration};
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
-use thrum_sea::{Ambient, MAX_QUERIES, MIP_PIXELS, PIXELS, Profile};
+use thrum_sea::{Ambient, MAX_QUERIES, PIXELS, Profile};
 use thrum_sea_model::{Forcing, LongWaves, Spectrum};
 
 pub(super) struct Harness {
@@ -14,7 +14,6 @@ pub(super) struct Harness {
 pub(super) struct Output {
     pub(super) long: Vec<f32>,
     pub(super) cascades: Vec<f32>,
-    pub(super) moments: Vec<f32>,
 }
 pub(super) fn spectrum(wind: f64) -> Spectrum {
     Spectrum::build(&Forcing {
@@ -147,15 +146,6 @@ impl Harness {
         let timing = copy(&self.device, &mut encoder, &resolve);
         let long = copy(&self.device, &mut encoder, self.sea.long_buffer());
         let cascades = copy(&self.device, &mut encoder, self.sea.cascade_buffer());
-        let moments: Vec<_> = (0..=8)
-            .map(|mip| {
-                copy(
-                    &self.device,
-                    &mut encoder,
-                    self.sea.moments_buffer(mip).expect("moment mip"),
-                )
-            })
-            .collect();
         self.queue.submit([encoder.finish()]);
         let timing = read(&self.device, &timing);
         for (pass, bytes) in graph.passes.iter().zip(timing.as_chunks::<16>().0.iter()) {
@@ -173,21 +163,9 @@ impl Harness {
             writeln!(self.record, "time {time:.9} {}: {ms:.6} ms", pass.name)
                 .expect("valid Metal qualification fixture");
         }
-        let moment_mips: Vec<_> = moments
-            .iter()
-            .map(|b| floats(&read(&self.device, b)))
-            .collect();
-        let mut moments = Vec::new();
-        for band in 0..3 {
-            for mip in &moment_mips {
-                let count = mip.len() / 3;
-                moments.extend_from_slice(&mip[band * count..(band + 1) * count]);
-            }
-        }
         Some(Output {
             long: floats(&read(&self.device, &long)),
             cascades: floats(&read(&self.device, &cascades)),
-            moments,
         })
     }
     pub(super) fn save(&self, name: &str) {
@@ -404,52 +382,6 @@ pub(super) fn check_cascades(h: &mut Harness, out: &Output, s: &Spectrum, time: 
         );
     }
 }
-pub(super) fn check_moments(out: &Output) {
-    for band in 0..3_usize {
-        let mut width = 256_usize;
-        let mut offset = 0;
-        for level in 0..=8 {
-            let block = 1 << level;
-            // Every mip texel, against direct base-level moments rather than the parent mip.
-            for z in 0..width {
-                for x in 0..width {
-                    let mut sums = [0.0; 7];
-                    for dz in 0..block {
-                        for dx in 0..block {
-                            let p =
-                                (band * PIXELS as usize + (z * block + dz) * 256 + x * block + dx)
-                                    * 12;
-                            let sx = f64::from(out.cascades[p + 4]);
-                            let sz = f64::from(out.cascades[p + 5]);
-                            let jac = f64::from(out.cascades[p + 3]);
-                            for (sum, v) in sums.iter_mut().zip([
-                                sx,
-                                sz,
-                                sx * sx,
-                                sx * sz,
-                                sz * sz,
-                                jac,
-                                jac * jac,
-                            ]) {
-                                *sum += v;
-                            }
-                        }
-                    }
-                    let p = (band * MIP_PIXELS as usize + offset + z * width + x) * 8;
-                    for (j, sum) in sums.into_iter().enumerate() {
-                        let expected = sum / (block * block) as f64;
-                        assert!(
-                            (f64::from(out.moments[p + j]) - expected).abs()
-                                < 2e-5 * (1.0 + expected.abs())
-                        );
-                    }
-                }
-            }
-            offset += width * width;
-            width /= 2;
-        }
-    }
-}
 pub(super) fn ambient(portable: bool, name: &str) {
     frame_script(portable);
     let Some(mut h) = Harness::new(portable) else {
@@ -463,7 +395,6 @@ pub(super) fn ambient(portable: bool, name: &str) {
             .expect("valid Metal qualification fixture");
         check_long(&mut h, &out, &s, time, &p, true);
         check_cascades(&mut h, &out, &s, time, 1024);
-        check_moments(&out);
         if time > 86400.0 {
             naive_seconds_ablation(&mut h, &s, time);
         }
@@ -507,7 +438,7 @@ fn naive_seconds_ablation(h: &mut Harness, s: &Spectrum, time: f64) {
 }
 
 fn frame_script(portable: bool) {
-    // Also keeps this target's full-grid/moment conformance under the same device limits.
+    // Also keeps this target's full-grid conformance under the same device limits.
     let Some(mut h) = Harness::new(portable) else {
         return;
     };

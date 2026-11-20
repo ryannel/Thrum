@@ -63,15 +63,9 @@ sampling over their own rest-space pixel derivatives, and recover covariance as 
 second moments minus the outer product of the filtered mean. Levels omitted from a
 cache contribute their model covariance. `filtered_accesses()` declares these reads.
 The complete pyramids take 17,476,120 bytes; this is additional to the retained f32
-query/transform and moment-buffer tooling products. `forward_cache_gpu` reads every
-texture texel and checks half precision against the f32 product and direct base means.
-
-Moments store two `vec4<f32>` values: `(mean sx, mean sz, mean sx², mean sx*sz)` and
-`(mean sz², mean J, mean J², 0)`. Recover covariance as second moment minus outer mean,
-and Jacobian variance as `mean J² - mean J * mean J`; clamp negative roundoff to zero.
-Each band has 87,381 moment texels across nine separately allocated mip buffers.
-`moments_buffer(mip)` lends one level with three consecutive bands. The eight reductions
-average raw moments, preserving variance instead of averaging covariance away.
+query/transform products. `forward_cache_gpu` reads every texture texel of every mip,
+all five planes, and checks half precision against the f32 product and direct base means.
+Recover Jacobian variance as `mean J² - mean J * mean J`; clamp negative roundoff to zero.
 
 Uploads reuse one CPU byte arena and GPU staging allocation. Record and submit one frame before
 uploading another; the scene owner serializes recording. An encoded and discarded upload never

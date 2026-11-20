@@ -1,5 +1,5 @@
 use crate::AmbientError;
-use crate::{Ambient, CacheLevel, LEVELS, Profile, TRANSFORM_SIZE, records, spec};
+use crate::{Ambient, CacheLevel, LEVELS, Profile, TRANSFORM_SIZE, spec};
 use spec::BufferKey;
 use std::collections::BTreeMap;
 use thrum_render::runtime::DeviceSite;
@@ -91,30 +91,14 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
             label: Some(&resource.name),
             size: resource.size,
             usage: resource.usage,
-            mapped_at_creation: matches!(
-                resource.key,
-                BufferKey::MipParams(_) | BufferKey::Twiddles
-            ),
+            mapped_at_creation: resource.key == BufferKey::Twiddles,
         });
-        if matches!(resource.key, BufferKey::MipParams(_) | BufferKey::Twiddles) {
-            {
-                let mut mapped = buffer
-                    .slice(..)
-                    .get_mapped_range_mut()
-                    .map_err(AmbientError::Mapping)?;
-                match resource.key {
-                    BufferKey::MipParams(level) => {
-                        let record = records::Mip {
-                            address: [0, 0, TRANSFORM_SIZE >> level, 0],
-                        };
-                        mapped.copy_from_slice(bytemuck::bytes_of(&record));
-                    }
-                    BufferKey::Twiddles => {
-                        mapped.copy_from_slice(bytemuck::cast_slice(&transform_twiddles()));
-                    }
-                    _ => unreachable!("only mapped resources are initialized here"),
-                }
-            }
+        if resource.key == BufferKey::Twiddles {
+            buffer
+                .slice(..)
+                .get_mapped_range_mut()
+                .map_err(AmbientError::Mapping)?
+                .copy_from_slice(bytemuck::cast_slice(&transform_twiddles()));
             buffer.unmap();
         }
         buffers.insert(resource.key, buffer);

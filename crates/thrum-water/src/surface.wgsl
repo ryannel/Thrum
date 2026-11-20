@@ -10,7 +10,6 @@ struct ViewAuxRecord {
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
 struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32>, }
-struct Moments { a:vec4<f32>, b:vec4<f32>, }
 fn add_field(a:Field,b:Field,w:f32)->Field {return Field(a.displacement+w*b.displacement,a.slope+w*b.slope,a.velocity+w*b.velocity);}
 fn cascade_at(point:vec2<f32>,band:u32)->Field {
     let uv=point/water.lengths[band];let layer=i32(band*5u);

@@ -53,7 +53,7 @@ impl fmt::Display for AmbientError {
                 ProfileField::Choppiness => "sea choppiness: expected finite 0..=4",
             }),
             Self::DeviceLimit { resource, limit } => write!(f, "sea {resource}: device limit {limit} is insufficient"),
-            Self::Mapping(error) => write!(f, "sea mip mapping failed: {error}"),
+            Self::Mapping(error) => write!(f, "sea twiddle mapping failed: {error}"),
             Self::InvalidUpload => f.write_str("sea upload requires finite time/anchor, <=192 components and <=4096 finite queries"),
             Self::LongWaves(error) => write!(f, "sea long waves refused: {error}"),
             Self::NonContractive => f.write_str("sea long-wave contraction bound must be below 0.9"),

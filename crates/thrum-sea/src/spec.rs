@@ -3,7 +3,6 @@ use crate::{CACHE_SIZE, LEVELS, MAX_QUERIES, PACKED_CHANNELS, PIXELS, TRANSFORM_
 use thrum_render::contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 use thrum_render::graph::{AccessKind, ResourceDescriptor, ResourceScope};
 
-pub(super) const MIP_LEVELS: u32 = TRANSFORM_SIZE.ilog2();
 pub(super) const CASCADES: u32 = 3;
 pub(super) const MAX_LONG: usize = 192;
 
@@ -18,9 +17,7 @@ pub(super) enum BufferKey {
     TransformFinal,
     Twiddles,
     Cascades,
-    Moments(u32),
     LongField,
-    MipParams(u32),
     UploadStaging,
 }
 
@@ -76,20 +73,6 @@ pub(super) fn resources() -> Vec<Resource> {
                 * size_of::<records::Field>() as u64,
         ),
     ];
-    for level in 0..=MIP_LEVELS {
-        rows.push((
-            B::Moments(level),
-            format!("sea moments mip {level}"),
-            u64::from(CASCADES * (PIXELS >> (2 * level))) * size_of::<records::Moments>() as u64,
-        ));
-        if level > 0 {
-            rows.push((
-                B::MipParams(level),
-                format!("sea mip {level} parameters"),
-                size_of::<records::Mip>() as u64,
-            ));
-        }
-    }
     let staging_size = rows
         .iter()
         .filter(|(key, _, _)| matches!(key, B::Params | B::Long | B::Queries))
@@ -98,7 +81,7 @@ pub(super) fn resources() -> Vec<Resource> {
     rows.push((B::UploadStaging, "sea upload staging".into(), staging_size));
     rows.into_iter()
         .map(|(key, name, size)| {
-            let uniform = matches!(key, B::Params | B::MipParams(_));
+            let uniform = key == B::Params;
             Resource {
                 key,
                 name,
@@ -112,13 +95,7 @@ pub(super) fn resources() -> Vec<Resource> {
                 } | wgpu::BufferUsages::COPY_DST,
                 scope: if matches!(
                     key,
-                    B::Params
-                        | B::Modes
-                        | B::Long
-                        | B::Queries
-                        | B::Twiddles
-                        | B::MipParams(_)
-                        | B::UploadStaging
+                    B::Params | B::Modes | B::Long | B::Queries | B::Twiddles | B::UploadStaging
                 ) {
                     ResourceScope::Imported { initialized: true }
                 } else {
@@ -136,7 +113,6 @@ pub(super) enum PassKey {
     Rows,
     Columns,
     Unpack,
-    Mip(u32),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -146,7 +122,6 @@ pub(super) enum PipelineKey {
     Rows,
     Columns,
     Unpack,
-    Reduce,
 }
 
 pub(super) struct Binding {
@@ -159,15 +134,13 @@ pub(super) struct Binding {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum GroupKey {
     Fields,
-    Mip,
 }
 
 impl GroupKey {
-    pub(super) const ALL: [Self; 2] = [Self::Fields, Self::Mip];
+    pub(super) const ALL: [Self; 1] = [Self::Fields];
     pub(super) const fn slot(self) -> u32 {
         match self {
             Self::Fields => 0,
-            Self::Mip => 1,
         }
     }
 }
@@ -188,7 +161,6 @@ impl PassSpec {
             PassKey::Rows => PipelineKey::Rows,
             PassKey::Columns => PipelineKey::Columns,
             PassKey::Unpack => PipelineKey::Unpack,
-            PassKey::Mip(_) => PipelineKey::Reduce,
         }
     }
     fn new(
@@ -220,7 +192,7 @@ pub(super) fn passes() -> Vec<PassSpec> {
     use AccessKind::{StorageRead as R, StorageWrite as W, UniformRead as U};
     use BufferKey as B;
     use PassKey as P;
-    let mut rows = vec![
+    vec![
         PassSpec::new(
             P::Long,
             "sea long waves",
@@ -270,32 +242,10 @@ pub(super) fn passes() -> Vec<PassSpec> {
             P::Unpack,
             "sea cascade unpack",
             "unpack",
-            &[
-                (4, B::TransformFinal, R),
-                (6, B::Cascades, W),
-                (7, B::Moments(0), W),
-            ],
+            &[(4, B::TransformFinal, R), (6, B::Cascades, W)],
             [(CASCADES * PIXELS).div_ceil(64), 1, 1],
         ),
-    ];
-    for level in 1..=MIP_LEVELS {
-        let width = TRANSFORM_SIZE >> level;
-        let mut pass = PassSpec::new(
-            P::Mip(level),
-            &format!("sea moments mip {level}"),
-            "reduce",
-            &[(5, B::Moments(level - 1), R), (7, B::Moments(level), W)],
-            [(CASCADES * width * width).div_ceil(64), 1, 1],
-        );
-        pass.bindings.push(Binding {
-            group: GroupKey::Mip,
-            slot: 0,
-            buffer: B::MipParams(level),
-            access: U,
-        });
-        rows.push(pass);
-    }
-    rows
+    ]
 }
 
 pub(super) fn declaration(sizes: &[u64]) -> EffectGraph {

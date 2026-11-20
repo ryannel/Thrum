@@ -4,7 +4,7 @@ use super::Parameters;
 fn lent_wave_records_match_the_seas_host_layouts() {
     let shader = include_str!("../surface.wgsl");
     let layouts = thrum_sea::records::layouts();
-    for name in ["Field", "Moments"] {
+    for name in ["Field"] {
         let declaration = shader
             .split_once(&format!("struct {name}"))
             .expect("record")

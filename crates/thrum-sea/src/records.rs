@@ -38,19 +38,6 @@ pub(crate) struct Field {
     pub velocity: [f32; 4],
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub(crate) struct Moments {
-    pub slope: [f32; 4],
-    pub extra: [f32; 4],
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub(crate) struct Mip {
-    pub address: [u32; 4],
-}
-
 /// Reflection tooling's view of the host record, generated from the actual Rust members.
 #[derive(Debug)]
 pub struct RecordLayout {
@@ -79,7 +66,5 @@ pub fn layouts() -> Vec<RecordLayout> {
         record!(Long, physical, rate),
         record!(Query, point),
         record!(Field, displacement, slope, velocity),
-        record!(Moments, slope, extra),
-        record!(Mip, address),
     ]
 }

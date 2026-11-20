@@ -8,7 +8,6 @@ struct Params {
 struct Bin { physical: vec4<f32>, clock: vec4<u32> }
 struct Long { physical: vec4<f32>, rate: vec4<f32> }
 struct Query { point: vec2<f32> }
-struct Moments { slope: vec4<f32>, extra: vec4<f32> }
 @group(0) @binding(0) var<uniform> p: Params;
 @group(0) @binding(1) var<storage, read> modes: array<Bin>;
 @group(0) @binding(2) var<storage, read> components: array<Long>;
@@ -16,7 +15,6 @@ struct Moments { slope: vec4<f32>, extra: vec4<f32> }
 @group(0) @binding(4) var<storage, read_write> a: array<vec2<f32>>;
 @group(0) @binding(5) var<storage, read_write> b: array<vec2<f32>>;
 @group(0) @binding(6) var<storage, read_write> field: array<Field>;
-@group(0) @binding(7) var<storage, read_write> moments: array<Moments>;
 @group(0) @binding(8) var<storage, read_write> long_field: array<Field>;
 @group(0) @binding(9) var<storage, read> twiddles: array<vec2<f32>>;
 const TAU: f32 = 6.283185307179586;
@@ -105,26 +103,6 @@ fn unpack(@builtin(global_invocation_id) id: vec3<u32>) {
     let sx=channel(band,3u,pixel); let sz=channel(band,4u,pixel);
     field[i]=Field(vec4(channel(band,0u,pixel),channel(band,1u,pixel),channel(band,2u,pixel),jac),
         vec4(sx,sz,dx,cross),vec4(channel(band,8u,pixel),channel(band,9u,pixel),channel(band,10u,pixel),dz));
-    // Raw second moments filter linearly; covariance is second - outer(mean).
-    moments[band*PIXELS+pixel]=Moments(vec4(sx,sz,sx*sx,sx*sz),vec4(sz*sz,jac,jac*jac,0.0));
-}
-// Mips use a separate small uniform at group 1: parent offset, child offset, width.
-struct Mip { address: vec4<u32> }
-@group(1) @binding(0) var<uniform> mip: Mip;
-fn parent_moment(index: u32) -> Moments {
-    let i=index*4u;
-    return Moments(vec4(b[i],b[i+1u]),vec4(b[i+2u],b[i+3u]));
-}
-@compute @workgroup_size(64)
-fn reduce(@builtin(global_invocation_id) id: vec3<u32>) {
-    let width=mip.address.z; let count=width*width;
-    if id.x>=3u*count { return; }
-    let band=id.x/count; let pixel=id.x%count;
-    let base=band*4u*count+(pixel/width)*4u*width+(pixel%width)*2u;
-    let v0=parent_moment(base); let v1=parent_moment(base+1u);
-    let v2=parent_moment(base+2u*width); let v3=parent_moment(base+2u*width+1u);
-    moments[band*count+pixel]=Moments((v0.slope+v1.slope+v2.slope+v3.slope)*0.25,
-        (v0.extra+v1.extra+v2.extra+v3.extra)*0.25);
 }
 @compute @workgroup_size(64)
 fn long_waves(@builtin(global_invocation_id) id: vec3<u32>) {
