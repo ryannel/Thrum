@@ -417,10 +417,10 @@
           "check": "cargo test --locked --offline -p match-proof --test prediction",
           "ask": "Read the test. Is the held tick caused by the link losing every copy of the frame, and not by the test? Is equality compared on the stored bits, with no tolerance? Does the predictor store axes through the engine's input conversion?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/held-tick.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.2",
@@ -428,10 +428,10 @@
           "check": "python3 scripts/session_match.py memory prediction",
           "ask": "Does the record give the cause of each correction, with none unexplained? After a reconnect, is the old epoch's history discarded before the new baseline is used?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/prediction.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.3",
@@ -439,10 +439,10 @@
           "check": "cargo test --locked --offline -p match-proof --test prediction_isolated",
           "ask": "Can the predictor reach the runtime other than to read the controller for a slot?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/prediction-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.4",
@@ -460,10 +460,10 @@
           "statement": "A game reads the predicted state for its newest authored tick and the one before, with the playout interpolation, and is told of each correction with the state before and after.",
           "ask": "Is everything a game needs to draw its own character ahead of the crowd, and to smooth a correction, on the session's public interface? Is a second small rule set with a predicted controller of its own in the tests, so that the interface is not the reference crowd's alone?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/prediction-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.6",
@@ -471,10 +471,10 @@
           "check": "python3 scripts/session_match.py memory prediction-costs",
           "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/M4/prediction-costs.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.7",
@@ -490,7 +490,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause."
     },
     {

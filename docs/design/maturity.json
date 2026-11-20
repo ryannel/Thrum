@@ -51,6 +51,17 @@
     },
     "evidence": "docs/evidence/SIM-2D/M1.md"
   },
+  "session_m4": {
+    "scope": "Local predicted controller over the confirmed reference crowd",
+    "implementation": "An optional client-owned 64-tick history stores wire-canonical timed frames and replays the shared game rule after a correction. Games read adjacent controller endpoints, playout interpolation and correction events.",
+    "functional_validation": "Mac tests cover bitwise reconciliation after packet loss, unchanged replica digests and publication pages, and an independent game controller. A0 and harsh in-memory runs exercise link changes, history exhaustion, same-link repair and reconnect.",
+    "experienced_quality": "Headless controller endpoint and interpolation proof.",
+    "platform_cost_baselines": {
+      "mac-metal": "Two release runs per link profile under shared load record correction causes and distances, replay work, lead, controller time, replica advance and engine tick time.",
+      "chrome-webgpu": "The cost record quotes the earlier retained SIM-2D whole-crowd replay baseline."
+    },
+    "evidence": ".orchestrate/evidence/SESSION/M4/README.md"
+  },
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [
