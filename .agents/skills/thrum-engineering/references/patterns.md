@@ -129,6 +129,9 @@ that removes tests from a harness: a file-level `#![cfg(...target_os...)]` on a 
 module, product or test, whose declared subtree holds a test (gate the individual GPU tests). Use
 `cfg(any(test, target_os = "..."))` to keep a portable module's tests everywhere. A platform shell whose tests drive
 its own platform APIs may keep its condition with a `// platform-only tests: <reason>` comment directly above.
+`test-readback` counts a buffer mapped for reading (`map_async` or `map_buffer_on_submit` with `MapMode::Read`) and
+`test-deadline` a hand-written `assert!(Instant::now() < deadline)`, in test files outside the kit. Both counts only
+fall: a new test reads back and waits through the kit.
 
 **Shape.**
 - Unit tests go in `#[cfg(test)] mod tests;`, with the body in `foo/tests.rs` once it passes a screen or two.
@@ -148,6 +151,19 @@ any backend and then asserts Metal, or opens the `apple-tile` recipe, fails on a
 skipping; admit `Some(wgpu::Backend::Metal)`. A test that runs on any backend may assert Metal only under
 `#[cfg(target_os = "macos")]`. The CPU graph
 validation cases use portable limits and feature facts and compile on every target.
+
+**The kit.** `thrum-test-support` writes once the jobs every GPU test repeats:
+- `open(test, backend, profile, &restriction)` (the `render` feature) asks the gate, on `backend` where given, and
+  returns the recipe's device, queue and capabilities, or `None` for a reported skip. `thrum-render`'s unit tests
+  call `crate::test_device::open`, the same call typed by the crate.
+- `readback::buffer(device, queue, &buffer, range)` and `readback::texture(device, queue, &texture, Mip, range)`
+  submit their own copy and wait at most `readback::WAIT`; texture bytes come back packed, without row padding.
+  A test that must read inside the encoder under test appends `Readback::buffer` or `Readback::texture` to it and
+  calls `wait(device, submission)`.
+- `wait::until(what, limit, || -> Option<T>)` for anything else a test waits on, failing at its deadline.
+- `Scratch::new(name)`, a temporary folder removed on drop; `ppm::write` for an image a person opens.
+- `CountingAllocator` with `allocations::count(|| ..)`, counting allocations and bytes on the calling thread. Each
+  counting test binary declares its own `#[global_allocator]` static of it.
 
 **Test devices.** Integration tests can enable the support package's `render` feature and open the admitted
 adapter with a portable or native profile. Restrictions remove features or lower limits. Renderer unit tests

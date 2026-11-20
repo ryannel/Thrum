@@ -362,6 +362,78 @@ test_role="fixtures"
         self.write("crates/engine/src/doc.rs", 'const WGSL: &str = "x.replace(a)";\n#[cfg(test)]\nmod tests { fn t(s: &str) { s.replace("a", "b"); } }')
         self.assertEqual(self.sites("shader-text-edit"), [])
 
+    KIT = '[packages.support]\nmanifest="crates/support/Cargo.toml"\ntest_role="support"\n'
+
+    def frozen(self, rule, bad, more, path):
+        """One more site than the committed count fails the check, which names the kit and the patterns."""
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        self.write(path, bad)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(shapes.check(self.root, tighten=True), [])
+        git = ["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run([*git, "add", "-A"], check=True)
+        subprocess.run([*git, "commit", "-qm", "baseline"], check=True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(shapes.check(self.root, rule), [])
+        self.write(path, bad + "\n" + more)
+        with contextlib.redirect_stdout(io.StringIO()):
+            errors = "\n".join(shapes.check(self.root, rule))
+            refused = shapes.check(self.root, tighten=True)
+        self.assertIn(f"{path}:", errors)
+        self.assertIn(f"{rule}: ", errors)
+        self.assertIn("thrum_test_support::", errors)
+        self.assertIn("patterns.md#tests", errors)
+        self.assertTrue(refused, "tighten cannot grant the new site")
+
+    READBACK = 'fn read(b: &wgpu::Buffer) { b.slice(..).map_async(wgpu::MapMode::Read, |_| {}); }'
+
+    def test_test_readback(self):
+        good = 'fn read() -> Vec<u8> { thrum_test_support::readback::buffer(&device, &queue, &source, ..) }'
+        self.pair("test-readback", self.READBACK, good, "crates/engine/tests/gpu.rs")
+        self.pair("test-readback", 'fn read() { encoder.map_buffer_on_submit(\n        &staging,\n        MapMode::Read,\n        ..,\n        |_| {},\n    );\n}',
+                  'fn read() { let bytes = readback.wait(&device, queue.submit([encoder.finish()])); }',
+                  "crates/engine/src/visibility/tests.rs")
+        # Writing, comments and strings are not a readback.
+        self.write("crates/engine/tests/gpu.rs", 'fn write(b: &wgpu::Buffer) { b.map_async(wgpu::MapMode::Write, .., |_| {}); }\n'
+                   '// b.map_async(wgpu::MapMode::Read, .., |_| {});\nconst S: &str = "x.map_async(MapMode::Read, ..)";')
+        self.assertEqual(self.sites("test-readback"), [])
+        # The same code outside a test file, and in the kit itself, is not counted.
+        self.write("crates/engine/tests/gpu.rs", "")
+        self.write(".config/architecture.toml", self.KIT)
+        for path in ("crates/engine/src/readback.rs", "crates/support/src/readback.rs",
+                     "crates/support/src/readback/tests.rs", "crates/support/tests/readback.rs"):
+            self.write(path, self.READBACK)
+        self.assertEqual(self.sites("test-readback"), [])
+        self.write("crates/support/src/readback.rs", "")
+        self.write(".config/architecture.toml", "")
+        self.assertEqual(len(self.sites("test-readback")), 2)
+
+    def test_test_readback_is_frozen(self):
+        self.frozen("test-readback", self.READBACK,
+                    'fn again(b: &wgpu::Buffer) { b.map_async(wgpu::MapMode::Read, .., |_| {}); }',
+                    "crates/engine/tests/gpu.rs")
+
+    DEADLINE = 'fn settle() { loop { assert!(Instant::now() < deadline, "never settled"); } }'
+
+    def test_test_deadline(self):
+        good = 'fn settle() { thrum_test_support::wait::until("settled", LIMIT, || done().then_some(())); }'
+        self.pair("test-deadline", self.DEADLINE, good, "crates/engine/tests/clock.rs")
+        self.pair("test-deadline", 'fn settle() { assert!(\n        std::time::Instant::now() <= deadline\n    );\n}', good,
+                  "crates/engine/src/sim/tests.rs")
+        # A timing bound on elapsed time, a comment and a string are not a hand-written deadline wait.
+        self.write("crates/engine/tests/clock.rs", 'fn bound() { assert!(start.elapsed() < LIMIT); }\n'
+                   '// assert!(Instant::now() < deadline);\nconst S: &str = "assert!(Instant::now() < deadline)";')
+        self.assertEqual(self.sites("test-deadline"), [])
+        self.write("crates/engine/tests/clock.rs", "")
+        self.write(".config/architecture.toml", self.KIT)
+        for path in ("crates/engine/src/clock.rs", "crates/support/src/wait.rs", "crates/support/src/tests.rs"):
+            self.write(path, self.DEADLINE)
+        self.assertEqual(self.sites("test-deadline"), [])
+
+    def test_test_deadline_is_frozen(self):
+        self.frozen("test-deadline", self.DEADLINE,
+                    'fn again() { assert!(Instant::now() < deadline); }', "crates/engine/tests/clock.rs")
+
 
 if __name__ == "__main__":
     unittest.main()

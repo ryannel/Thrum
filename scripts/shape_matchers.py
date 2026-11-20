@@ -22,6 +22,8 @@ RULES = {
     "evidence-path": (1, "evidence", "write run records to the working folder, .orchestrate/evidence/<MODULE>/, and read test data from tests/fixtures/<module>/ or beside the crate's tests; source never names the tracked evidence folder"),
     "script-caller": (1, "scripts-and-benches", "name the script from what runs it: ./dev or tools/xtask, a CI workflow, the done-when item whose check runs it, or a tracked document outside the plans folder; or delete it in the landing that removed its last caller"),
     "bench-runner": (1, "scripts-and-benches", "name the bench from what runs it, such as `cargo bench --bench NAME` in a kept script, a ./dev command or a CI workflow; or delete the [[bench]] target in the landing that removed its last runner"),
+    "test-readback": (1, "tests", "read back with thrum_test_support::readback::{buffer, texture}, or append a Readback to the encoder under test and wait on its submission"),
+    "test-deadline": (1, "tests", "wait with thrum_test_support::wait::until, which fails the test at its deadline"),
     "shader-text-edit": (1, "shader-source", "make the variant a separate entry point or a generated constant prepended to the shader, not a .replace( of WGSL text"),
 }
 # Built in two parts so this file does not name the folder it matches.
@@ -108,6 +110,29 @@ def device_owner(relative, registry):
     return any(entry.get("test_role") == "support"
                and path.is_relative_to(Path(entry["manifest"]).parent / "src")
                for entry in registry.get("packages", {}).values())
+
+
+def support_package(relative, registry):
+    """True inside a registered test-support package: the kit holds the shapes its rules refuse elsewhere."""
+    return any(entry.get("test_role") == "support"
+               and Path(relative).is_relative_to(Path(entry["manifest"]).parent)
+               for entry in registry.get("packages", {}).values())
+
+
+MAP_CALL = re.compile(r'\.\s*(?:map_async|map_buffer_on_submit)\s*\(')
+MAP_READ = re.compile(r'\bMapMode\s*::\s*Read\b')
+DEADLINE_ASSERT = re.compile(r'\bassert\s*!\s*\(\s*(?:(?:::\s*)?std\s*::\s*time\s*::\s*)?Instant\s*::\s*now\s*\(\s*\)\s*<')
+
+
+def readback_sites(code):
+    """Offsets of a buffer mapped for reading: a map call whose arguments name `MapMode::Read`."""
+    for match in MAP_CALL.finditer(code):
+        end, depth = match.end(), 1
+        while end < len(code) and depth:
+            depth += (code[end] == "(") - (code[end] == ")")
+            end += 1
+        if MAP_READ.search(code, match.end(), end):
+            yield match.start()
 
 
 def public_returns(code):
@@ -296,6 +321,11 @@ def rust_sites(root, relative, text, package, manifest, registry):
             yield "path-attribute", match.start()
         for match in re.finditer(r'#!\s*\[\s*cfg\s*\([^\]]*\b(?:target_(?:os|family)\s*=|(?:unix|windows)\b)', code):
             yield "whole-file-gpu-gate", match.start()
+    if test_file(relative) and not support_package(relative, registry):
+        for offset in readback_sites(code):
+            yield "test-readback", offset
+        for match in DEADLINE_ASSERT.finditer(code):
+            yield "test-deadline", match.start()
     for offset in os_test_module_sites(root, relative, code, text):
         yield "whole-file-gpu-gate", offset
     # Coarse on purpose: any text edit in a non-test file that mentions WGSL anywhere.

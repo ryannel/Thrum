@@ -1,5 +1,15 @@
-//! GPU admission for tests. This package is a dev-dependency only.
+//! The test kit: GPU admission, the test device, readback, waiting, scratch folders, PPM images and allocation
+//! counts. This package is a dev-dependency only.
 use std::io::Write as _;
+
+pub mod allocations;
+pub mod ppm;
+pub mod readback;
+mod scratch;
+pub mod wait;
+
+pub use allocations::CountingAllocator;
+pub use scratch::Scratch;
 #[cfg(feature = "render")]
 pub use thrum_render::capabilities::DeviceProfile as Profile;
 #[cfg(feature = "render")]
@@ -178,6 +188,45 @@ impl Gpu {
             adapter,
         }
     }
+}
+
+/// The gate's admission and the recipe's device, from [`open`].
+#[cfg(feature = "render")]
+pub struct Opened {
+    /// The admitted instance and adapter.
+    pub gpu: Gpu,
+    /// The device the recipe opened.
+    pub device: wgpu::Device,
+    /// Its queue.
+    pub queue: wgpu::Queue,
+    /// The capabilities the recipe recorded for the device.
+    pub capabilities: DeviceCapabilities,
+}
+
+/// Ask the gate for a GPU, on `backend` where given, and open the recipe's device for `profile` with
+/// `restriction`, as generation 1. None means the gate reported a skip.
+///
+/// # Panics
+/// Fails when `THRUM_REQUIRE_GPU=1` and no adapter is available, or when the admitted adapter cannot open the
+/// device.
+#[cfg(feature = "render")]
+#[must_use]
+pub fn open(
+    test: &str,
+    backend: Option<wgpu::Backend>,
+    profile: Profile,
+    restriction: &Restriction,
+) -> Option<Opened> {
+    let gpu = gpu(test, backend)?;
+    let (device, queue, capabilities) = gpu
+        .device_with_hardware(profile, restriction, 1, &[])
+        .expect("admitted GPU test device");
+    Some(Opened {
+        gpu,
+        device,
+        queue,
+        capabilities,
+    })
 }
 
 #[cfg(feature = "render")]
