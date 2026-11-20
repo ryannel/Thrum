@@ -8,14 +8,14 @@ fn observe() {
     let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
     let sun=atmosphere.sun_lux.xyz;
-    let beam=cloud_beam(ray,sun);
+    let phase=cloud_phases(ray,sun);
     let light_angles=cloud_light_angles(-ray);
     observation[0]=vec4(camera,environment_storage_scale());
     observation[1]=vec4(ray,atmosphere.sun_lux.w);
     observation[2]=vec4(sun,cloud.erosion.z);
     observation[3]=vec4(environment_sky_radiance(ray),cloud.heights.z);
     observation[4]=cloud_ambient[0];observation[5]=cloud_ambient[1];
-    observation[6]=vec4(beam.phase,cloud.scattering.xy);
+    observation[6]=vec4(phase.xy,cloud.scattering.xy);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=max(0.0,(cloud.heights.x-camera.y)/ray.y);
@@ -32,7 +32,7 @@ fn observe() {
             let world=camera+ray*at;
             let sun_depths=cloud_local_sun(point,world,at,at/f32(textureDimensions(transport).y));
             let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-            let source=cloud_source(solar,beam,sun_depths,column.yz,light_angles,at,transmission);
+            let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,transmission);
             let segment=cloud_beer(sigma,sigma*source,step);
             let air=environment_aerial(world,vec2(0.5));
             let offset=8u+count*8u;

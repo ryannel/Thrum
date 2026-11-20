@@ -165,7 +165,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let hit=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),depth,1.0);
         end=min(end,length(hit.xyz/hit.w-camera));
     }
-    let beam=cloud_beam(ray,atmosphere.sun_lux.xyz);
+    let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
     let light_angles=cloud_light_angles(-ray);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
@@ -183,7 +183,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 var sun_depths = vec2(0.0);
                 if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint); }
-                let source=cloud_source(solar,beam,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
+                let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
                 // A part spans at most 0.25 of the lent air's optical depth.
