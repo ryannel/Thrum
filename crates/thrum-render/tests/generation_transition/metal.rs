@@ -269,6 +269,10 @@ fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_compari
                 old_frame.history_identity[0]
             );
             assert!(!first_frame_matches_reset(&first_new, &reset));
+            assert_ne!(
+                first_new.rgba, reset.rgba,
+                "old reconstruction changed the first image"
+            );
             eprintln!(
                 "kept history: first new predecessor {}, reset predecessor {}, pixels equal {}",
                 first_new.sample.history_identity[1],

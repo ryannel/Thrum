@@ -192,6 +192,7 @@ fn pixels() -> Vec<u8> {
     rgba
 }
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub(crate) fn sample_stats(
     sample: &thrum_render::runtime::FrameSample,
 ) -> Option<serde_json::Value> {
