@@ -244,7 +244,7 @@
           "inspect": "Capture the same field in Chrome with T2 engine capture in `realtime` mode for at least twenty seconds. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-realtime-adjacent/inspection.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
@@ -297,20 +297,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it.",
-      "findings": [
-        {
-          "item": "M2.9",
-          "name": "Chrome movers jump after skipped tick publications",
-          "repeat": false
-        },
-        {
-          "item": "M2.9",
-          "name": "Chrome sprite capture verifies downloaded pixels against themselves",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it."
     },
     {
       "id": "M3",

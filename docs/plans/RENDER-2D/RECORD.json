@@ -259,7 +259,7 @@
         {
           "verdict": "fail",
           "commit": "ae407f5b6e8de30f9103f06f27b64bc1b8eae79b",
-          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -303,6 +303,42 @@
             "turns": 1
           },
           "at": "2026-11-20T03:57:24Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "f6581e9146d3ab55920971c5e29c2098ab06df43",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "pass",
+            "M2.10": "pass",
+            "M2.11": "pass",
+            "M2.12": "pass",
+            "M2.13": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 122115,
+            "cached": 3125888,
+            "output": 12518,
+            "turns": 1
+          },
+          "at": "2026-11-20T11:47:23Z"
         }
       ],
       "authorised": {
@@ -347,6 +383,13 @@
           "output": 116014,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "f6581e9146d3ab55920971c5e29c2098ab06df43",
+        "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+        "checked": "f657d35536520db31a7e431358ac564fc7a54edd",
+        "at": "2026-11-20T11:47:23Z"
       }
     },
     "M3": {
