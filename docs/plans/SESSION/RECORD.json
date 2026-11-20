@@ -513,7 +513,50 @@
     },
     "M4": {
       "definitions": "428f48c3065bfedde648a651ccf395bca3cc8947d0932a7f271403bef217f8c5",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "efe3deb01cbb4aec5d007be100bef7f635e070d8",
+          "review": ".orchestrate/evidence/SESSION/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "pass",
+            "M4.5": "pass",
+            "M4.6": "pass",
+            "M4.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Prediction resumes during the post-stall skip",
+              "item": "M4.2",
+              "repeat": false
+            },
+            {
+              "name": "Repair fallback trails the committed controller by one tick",
+              "item": "M4.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 75215,
+            "cached": 1091072,
+            "output": 4831,
+            "turns": 1
+          },
+          "at": "2026-11-20T07:57:36Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
