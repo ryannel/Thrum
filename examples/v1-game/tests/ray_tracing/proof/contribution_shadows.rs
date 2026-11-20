@@ -183,7 +183,7 @@ pub(crate) fn prove_contributions() {
             "secondary_scene_linear_digest":secondary_digest, "sun_shadows":sun,"lamp_shadows":lamps}),
         );
     }
-    replacement::prove(&metal, &fixture);
+    replacement::prove(&metal, &mut fixture);
 }
 
 fn copy_colour(metal: &Metal, texture: &wgpu::Texture) -> Vec<u8> {

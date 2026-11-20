@@ -67,6 +67,7 @@ fn store_manifest(store: &AssetStore, head: &Head) -> Result<Manifest, String> {
 }
 
 /// A mesh resident on the GPU, with one indexed draw per meshlet.
+#[derive(Clone)]
 pub(crate) struct GpuMesh {
     pub(crate) ray_mesh: Option<crate::ray_mesh::RayMesh>,
     pub(crate) mapped: bool,
@@ -101,6 +102,7 @@ pub(crate) struct GpuTexture {
 }
 
 /// Every product one publication draws.
+#[derive(Clone)]
 pub(crate) struct ResidentSet {
     pub(crate) rows: Vec<(
         ContentHash,
@@ -117,6 +119,23 @@ pub(crate) struct ResidentSet {
 }
 
 impl ResidentSet {
+    /// Retain the published raster resources when switching off ray demand.
+    pub(crate) fn without_ray_meshes(&self) -> Self {
+        let mut set = self.clone();
+        let mut raster_meshes = HashMap::new();
+        for (mesh, _) in &mut set.meshes {
+            if mesh.ray_mesh.is_some() {
+                *mesh = Arc::clone(raster_meshes.entry(Arc::as_ptr(mesh)).or_insert_with(|| {
+                    Arc::new(GpuMesh {
+                        ray_mesh: None,
+                        ..(**mesh).clone()
+                    })
+                }));
+            }
+        }
+        set
+    }
+
     pub(crate) fn report_mesh_storage(
         &self,
         placements: &[crate::MeshPlacement],
@@ -261,12 +280,12 @@ impl Loader {
         mailbox: &Mailbox,
         resident: &Receiver<Arc<ResidentSet>>,
         stop: &AtomicBool,
+        mut confirmed: Confirmed,
     ) {
         let CookedSource::Store(store) = &self.config.source else {
             return;
         };
         let mut watcher = HeadWatcher::new(AssetStore::new(store));
-        let mut confirmed = Confirmed::default();
         let mut latest = None;
         // The newest posted upload still being filled. HEAD is polled between bounded fill
         // slices, so a newer publication supersedes it instead of waiting for it to finish.

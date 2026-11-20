@@ -118,3 +118,7 @@
   its no-request control byte for byte. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#preparation-fallback).
 - 2026-11-20 Updated the terminator fixture for the shared Metal admission helper. With Metal required,
   the clear receiver and all eight sheet cases passed. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#one-crossing).
+- 2026-11-20 Cooked pipeline preparation now validates before replacing live bindings. A same-device
+  retry with Maps reuses the resident draw buffers and retires the ray structures. On Metal, the first
+  submitted fallback image matched the no-request control with zero upload bytes for a receiver that
+  initially required more than one upload budget. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#resident-cooked-fallback).

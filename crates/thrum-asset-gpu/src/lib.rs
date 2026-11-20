@@ -731,13 +731,24 @@ impl CookedAssets {
         self.lease.clone()
     }
 
-    fn start(&self, surface: &SceneSurface<'_>, pipelines: draw::Pipelines) -> Live {
+    fn start(
+        &self,
+        surface: &SceneSurface<'_>,
+        pipelines: draw::Pipelines,
+        readback: Option<Readback>,
+        current: Option<(Arc<load::ResidentSet>, draw::Bound)>,
+    ) -> Live {
         // One newest staged set waits for the render thread; a newer one replaces it and the
         // superseded staging retires at once, even while no frame encodes.
         let mailbox = Arc::new(load::Mailbox::default());
         let posting = Arc::clone(&mailbox);
         let (resident_tx, resident_rx) = channel();
         let stop = Arc::new(AtomicBool::new(false));
+        let confirmed = current
+            .as_ref()
+            .map_or_else(load::Confirmed::default, |(set, _)| {
+                load::Loader::confirm(set)
+            });
         let loader = load::Loader {
             ray_demand: surface.ray_demand,
             #[cfg(all(feature = "draw-probe", target_os = "macos"))]
@@ -774,7 +785,7 @@ impl CookedAssets {
         let handle = match &self.config.source {
             #[cfg(target_arch = "wasm32")]
             CookedSource::Store(_) => {
-                drop((posting, resident_rx));
+                drop((posting, resident_rx, confirmed));
                 loader.fail(&stop, "the browser has no store loader thread");
                 None
             }
@@ -783,7 +794,7 @@ impl CookedAssets {
                 let stopping = Arc::clone(&stop);
                 let handle = std::thread::Builder::new()
                     .name("thrum-cooked-loader".into())
-                    .spawn(move || loader.run(&posting, &resident_rx, &stopping))
+                    .spawn(move || loader.run(&posting, &resident_rx, &stopping, confirmed))
                     .ok();
                 if handle.is_none()
                     && let Ok(mut stats) = self.stats.lock()
@@ -799,7 +810,7 @@ impl CookedAssets {
                     loader,
                     feed: feed.clone(),
                     seen: None,
-                    confirmed: load::Confirmed::default(),
+                    confirmed,
                     filler: None,
                 };
                 state.prepare_newest(&posting, &stop);
@@ -807,8 +818,6 @@ impl CookedAssets {
                 None
             }
         };
-        let readback = (pipelines.indexed_path == CookedDrawPath::Indirect)
-            .then(|| Readback::new(surface.device));
         Live {
             #[cfg(feature = "draw-probe")]
             sun_caster_draws: std::cell::RefCell::default(),
@@ -823,7 +832,7 @@ impl CookedAssets {
             pipelines,
             secondary_views: Vec::with_capacity(surface.secondary_surfaces.len()),
             pending: None,
-            current: None,
+            current,
             readback,
             tentative: None,
             material: None,
@@ -831,15 +840,18 @@ impl CookedAssets {
     }
 
     /// Rebuild pipelines and bindings for `surface`, or restart on a new device generation.
-    fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) {
+    fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
         let (indexed_path, mut fallback) = self.config.draw_path.resolve(surface);
-        // A material candidate for the previous surface cannot publish. The new pipelines draw
-        // the built-in material until the accepted hook validates against this surface.
-        self.epoch += 1;
-        let mut target = material::Target::new(surface, self.epoch);
-        if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
-            self.material.release(&held);
-        }
+        // Finish validation before touching the draw bindings, loader or material of
+        // the last published scene. The host may retry with a different shader.
+        let internal = surface.device.push_error_scope(wgpu::ErrorFilter::Internal);
+        let memory = surface
+            .device
+            .push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+        let validation = surface
+            .device
+            .push_error_scope(wgpu::ErrorFilter::Validation);
+        let mut target = material::Target::new(surface, self.epoch + 1);
         let pipelines = draw::Pipelines::new(
             surface,
             &mut target,
@@ -854,6 +866,50 @@ impl CookedAssets {
             pipelines
         };
         let stages = pipelines.uses_mesh_stages();
+        let reuse = self.live.as_ref().filter(|live| {
+            live.generation == surface.generation
+                && live.pipelines.uses_mesh_stages() == stages
+                && (!surface.ray_demand || live.ray_queue.is_some())
+        });
+        let retiring_rays =
+            reuse.is_some_and(|live| live.ray_queue.is_some() && !surface.ray_demand);
+        let current = reuse
+            .and_then(|live| live.current.as_ref())
+            .map(|(set, _)| {
+                let set = if retiring_rays {
+                    Arc::new(set.without_ray_meshes())
+                } else {
+                    Arc::clone(set)
+                };
+                let bound = pipelines.bind(&set, &self.config.meshes, self.config.volume.as_ref());
+                (set, bound)
+            });
+        let readback =
+            (indexed_path == CookedDrawPath::Indirect).then(|| Readback::new(surface.device));
+        // Native wgpu validates synchronously. A backend whose scope is still pending
+        // reports any uncaptured error through the device handler, as on first attach.
+        let errors = [validation, memory, internal].map(|scope| {
+            let mut pop = std::pin::pin!(scope.pop());
+            match pop
+                .as_mut()
+                .poll(&mut std::task::Context::from_waker(std::task::Waker::noop()))
+            {
+                std::task::Poll::Ready(error) => error,
+                std::task::Poll::Pending => None,
+            }
+        });
+        if let Some(error) = errors.into_iter().flatten().next() {
+            return Err(format!("cooked pipelines: {error}"));
+        }
+        let reuse_live = reuse.is_some() && !retiring_rays;
+
+        // A material candidate for the previous surface cannot publish. The new pipelines draw
+        // the built-in material until the accepted hook validates against this surface.
+        self.epoch += 1;
+        if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
+            self.material.release(&held);
+        }
+        self.material.retarget(&target);
         if let Ok(mut stats) = self.stats.lock() {
             stats.draw_path = Some(if stages {
                 CookedDrawPath::MeshStages
@@ -866,41 +922,40 @@ impl CookedAssets {
             stats.visible_meshlets = None;
             stats.secondary_draw_paths.clear();
         }
-        self.material.retarget(&target);
-        match self.live.as_mut() {
+        if let Some(live) = self.live.as_mut().filter(|_| reuse_live) {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.
-            Some(live)
-                if live.generation == surface.generation
-                    && live.ray_queue.is_some() == surface.ray_demand
-                    && live.pipelines.uses_mesh_stages() == stages =>
-            {
-                live.readback = (indexed_path == CookedDrawPath::Indirect)
-                    .then(|| Readback::new(surface.device));
-                live.pipelines = pipelines;
-                live.secondary_views = Vec::with_capacity(surface.secondary_surfaces.len());
-                live.tentative = None;
-                #[cfg(feature = "draw-probe")]
-                live.sun_caster_draws.get_mut().clear();
-                if let Some((set, bound)) = live.current.as_mut() {
-                    *bound =
-                        live.pipelines
-                            .bind(set, &self.config.meshes, self.config.volume.as_ref());
-                    #[cfg(feature = "draw-probe")]
-                    if let Ok(mut stats) = self.stats.lock() {
-                        stats.draw_residency = live.pipelines.draw_residency(
-                            bound,
-                            set,
-                            live.readback.as_ref().map(|readback| &readback.buffer),
-                        );
+            live.readback = readback;
+            live.pipelines = pipelines;
+            live.current = current;
+            live.secondary_views = Vec::with_capacity(surface.secondary_surfaces.len());
+            live.tentative = None;
+            #[cfg(feature = "draw-probe")]
+            live.sun_caster_draws.get_mut().clear();
+            if let Some(pending) = live.pending.as_mut() {
+                pending.bound = None;
+            }
+        } else {
+            let old = self.live.take();
+            if retiring_rays {
+                // The new Maps arena uses committed rows. Replan an unsent
+                // cooked publication against the raster set that last drew.
+                if let Some(pending) = old.as_ref().and_then(|live| live.pending.as_ref()) {
+                    if let Some(rows) = &self.config.rows {
+                        rows.updates.invalidate_device();
+                    }
+                    if pending.ready
+                        && (self.config.rows.is_some() || !self.config.leased.is_empty())
+                    {
+                        if let Some((set, _)) = &current {
+                            offer_leases(&self.lease, &self.config.leased, set, surface.generation);
+                        } else {
+                            self.lease.clear();
+                        }
                     }
                 }
-                if let Some(pending) = live.pending.as_mut() {
-                    pending.bound = None;
-                }
-            }
-            // New device generation: products are mapped and staged again for it.
-            _ => {
+            } else {
+                // An incompatible device or draw stream needs new residency.
                 self.lease.clear();
                 if let Some(rows) = &self.config.rows {
                     rows.updates.invalidate_device();
@@ -920,10 +975,25 @@ impl CookedAssets {
                         stats.sun_caster_draws.clear();
                     }
                 }
-                self.live = None;
-                self.live = Some(self.start(surface, pipelines));
+            }
+            drop(old);
+            self.live = Some(self.start(surface, pipelines, readback, current));
+        }
+        #[cfg(feature = "draw-probe")]
+        if let Some(live) = &self.live
+            && let Some((set, bound)) = &live.current
+            && let Ok(mut stats) = self.stats.lock()
+        {
+            stats.draw_residency = live.pipelines.draw_residency(
+                bound,
+                set,
+                live.readback.as_ref().map(|readback| &readback.buffer),
+            );
+            if retiring_rays {
+                set.report_mesh_storage(&self.config.meshes, &mut stats);
             }
         }
+        Ok(())
     }
 
     fn live_for(&mut self, frame: &ContributionFrame) -> Option<&mut Live> {
@@ -931,6 +1001,32 @@ impl CookedAssets {
             .as_mut()
             .filter(|live| live.generation == frame.generation)
     }
+}
+
+fn offer_leases(
+    lease: &ProductLease,
+    requests: &[LeaseRequest],
+    set: &load::ResidentSet,
+    device_generation: u64,
+) {
+    let products = set
+        .leased
+        .iter()
+        .zip(requests)
+        .map(
+            |((hash, portable_hash, profile, texture), request)| LentProduct {
+                name: request.name.clone(),
+                hash: *hash,
+                portable_hash: *portable_hash,
+                profile: *profile,
+                device_generation,
+                serial: 0, // Assigned by the lease's lifetime counter at offer.
+                view: texture.view.clone(),
+                texture: texture.texture.clone(),
+            },
+        )
+        .collect();
+    lease.offer(set.generation, products);
 }
 
 impl SceneContribution for CookedAssets {
@@ -986,25 +1082,7 @@ impl SceneContribution for CookedAssets {
     }
 
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        // Pipelines compile against the scene's shader here: a validation error detaches the
-        // contribution (the frame host records why) instead of failing later frames.
-        let scope = surface
-            .device
-            .push_error_scope(wgpu::ErrorFilter::Validation);
-        self.rebuild_inner(surface);
-        let mut pop = std::pin::pin!(scope.pop());
-        // Native wgpu validates synchronously, so the scope is ready; a backend that is not
-        // ready yet reports through the device's uncaptured-error handler instead.
-        match pop
-            .as_mut()
-            .poll(&mut std::task::Context::from_waker(std::task::Waker::noop()))
-        {
-            std::task::Poll::Ready(Some(error)) => {
-                self.live = None;
-                Err(format!("cooked pipelines: {error}"))
-            }
-            _ => Ok(()),
-        }
+        self.rebuild_inner(surface)
     }
 
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
@@ -1300,27 +1378,13 @@ impl SceneContribution for CookedAssets {
                     .is_none_or(|rows| rows.updates.offer(pending.set.set.generation))
             {
                 pending.ready = true;
-                let products = pending
-                    .set
-                    .set
-                    .leased
-                    .iter()
-                    .zip(&self.config.leased)
-                    .map(|((hash, portable_hash, profile, texture), request)| {
-                        LentProduct {
-                            name: request.name.clone(),
-                            hash: *hash,
-                            portable_hash: *portable_hash,
-                            profile: *profile,
-                            device_generation: live.generation,
-                            serial: 0, // Assigned by the lease's lifetime counter at offer.
-                            view: texture.view.clone(),
-                            texture: texture.texture.clone(),
-                        }
-                    })
-                    .collect();
                 if self.config.rows.is_some() || !self.config.leased.is_empty() {
-                    self.lease.offer(pending.set.set.generation, products);
+                    offer_leases(
+                        &self.lease,
+                        &self.config.leased,
+                        &pending.set.set,
+                        live.generation,
+                    );
                 }
             }
             pending.first_copy.get_or_insert(now);

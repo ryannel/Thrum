@@ -2,6 +2,7 @@
 
 use thrum_asset::AssetError;
 
+#[derive(Clone)]
 pub(crate) struct RayMesh {
     pub(crate) blas: wgpu::Blas,
     size: wgpu::BlasTriangleGeometrySizeDescriptor,
