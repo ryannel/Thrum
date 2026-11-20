@@ -111,7 +111,7 @@
     {
       "id": "M2",
       "name": "Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
