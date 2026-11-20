@@ -25,7 +25,7 @@ fn scene_ticks_and_declares_one_water_contribution() {
             .iter()
             .filter(|n| n.starts_with("effect ") && !n.starts_with("effect after"))
             .count(),
-        29
+        21
     );
     let witness = fixture.witness();
     let water = witness.iter().filter(|p| p[0] > 0.1 && p[1] > 0.0).count();
