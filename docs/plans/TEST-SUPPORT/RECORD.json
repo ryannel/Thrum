@@ -107,7 +107,63 @@
     },
     "M2": {
       "definitions": "42c3fbd24dab1a25db661a69ef7c47e81c32964afa786e76fa5683f3d4714401",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ed19162adf909e3e940ec58f4669307d1e4a5fd9",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+          "items": {
+            "M2.1": "fail",
+            "M2.2": "fail",
+            "M2.3": "fail",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Parent OS conditions hide whole test files and CPU tests",
+              "item": "M2.2",
+              "repeat": false
+            },
+            {
+              "name": "Cooked exit-scene test silently passes outside macOS",
+              "item": "M2.2",
+              "repeat": false
+            },
+            {
+              "name": "Sky rendering test opens Metal without admission",
+              "item": "M2.2",
+              "repeat": false
+            },
+            {
+              "name": "Descriptor adjustment can override a validated storage cap",
+              "item": "M2.1",
+              "repeat": false
+            },
+            {
+              "name": "Sprite tests share their fixture through textual inclusion",
+              "item": "M2.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 132635,
+            "cached": 3808384,
+            "output": 12907,
+            "turns": 1
+          },
+          "at": "2026-11-20T06:28:17Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
