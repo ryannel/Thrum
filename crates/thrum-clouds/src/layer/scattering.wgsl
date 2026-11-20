@@ -25,5 +25,5 @@ fn cloud_solar_source(phases:vec2<f32>,sun_depths:vec2<f32>,light_angles:vec3<f3
     let free_boundary=boundary*max(plane_boundary,light_angles.z);
     let adjustment=free_boundary*exp(-(2.0/3.0)*view/length_scale)/(2.0/3.0+length_scale);
     let diffuse=(1.0-adjustment*length_scale)*(mean-g*flow*cosine)+g*mean*adjustment*(2.0/3.0);
-    return forward+max(0.0,diffuse);
+    return forward;
 }
