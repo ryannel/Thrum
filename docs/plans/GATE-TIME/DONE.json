@@ -117,6 +117,98 @@
       ]
     },
     {
+      "id": "M8",
+      "name": "A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As measured and as dependable as the test runs of a well-kept Rust workspace such as wgpu's or Zed's, which go through cargo-nextest: timed both ways on one commit before it is switched on, with the same tests passing after as before, run after run.",
+      "items": [
+        {
+          "id": "M8.1",
+          "statement": "Before anything is switched on, the record times the whole workspace's tests on one commit three ways: as `./dev check` ran them, one binary after another; side by side through cargo-nextest; and side by side on test builds with dependencies optimised fully and workspace crates lightly. Each way is run twice, alternating, each from the same starting state with its build counted, and each run has its wall time, the load average and what else was running. The record also gives the time alone of every test that takes over ten seconds on the build that is then switched on.",
+          "ask": "Does the record hold two runs of each of the three arrangements on one commit, alternated and not grouped, each with its load and with its build counted? Does it give the time alone of every test over ten seconds on the build now in use? Does the log show the record was made before the runner was switched on?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.2",
+          "statement": "`./dev check` runs the tests of every test binary side by side through cargo-nextest, each test in a process of its own, on binaries built once for the whole workspace, and still runs the doc tests. Side by side is on because both its runs in the record were shorter than both runs as it was. The optimised test build is on only if both its runs were shorter than both side-by-side runs without it, and the record says which. Test builds keep debug assertions and overflow checks, the four model crates keep their overrides, and nothing but a test is built differently. A failed test is not run again. Where cargo-nextest is missing or older than the version the check names, the check stops before any step with the command that installs it; `CONTRIBUTING.md` says it is needed, and the manual CI workflow installs it.",
+          "check": "sh -c 'test -f .config/nextest.toml && grep -q nextest CONTRIBUTING.md && grep -q nextest .github/workflows/ci.yml'",
+          "ask": "Read the check command and the record. Is each arrangement that is on one that won both ways? Do test builds keep debug assertions and overflow checks, and is anything that is not a test built differently from the starting commit? Are the doc tests still run? Is a failed test ever run again? With cargo-nextest taken off the path, does `./dev check` stop at once and give the command that installs it?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.3",
+          "statement": "Every test that ran and passed in `./dev check` at the starting commit runs and passes in it now on this Mac, and none is skipped; a test the check ran twice may now run once. The whole workspace's tests pass side by side five runs in a row, made while other builders work, with `THRUM_REQUIRE_GPU=1`. The record holds the test names and results before and after, the five runs with their load, and each test that takes turns in a group or is counted as heavy, with what failed or slowed without it.",
+          "ask": "Compare the two recorded lists test by test, not their totals: does every test that reported ok before report ok after? Does any of the five runs hold a failure, a second attempt or a `thrum-gpu-skip:` line? For each of the five files the design names as holding a device mutex: do its tests take turns in a group, or does the record show five whole runs passing without one and say why nothing those tests measure can be moved by another test? What stops fourteen river-model tests starting fourteen thread pools, and does the record show its effect?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.4",
+          "statement": "`./dev check` reports each test that runs for over ten seconds, and stops and fails one that runs for over sixty. The failure names the test and says what to do: make it fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration, which gives each name the milestone that removes it: M2, M9 or M3. The list holds every test the record shows over ten seconds alone, and no other.",
+          "ask": "In a scratch copy, add a test that sleeps for seventy seconds to a fast binary: does `./dev check` stop it, fail, name it and say what to do? Does one that sleeps for fifteen pass and show as slow? Compare the exempt list with the record's times alone: is every test over ten seconds on it with its milestone, and is any test on it that the record shows at ten seconds or under?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.5",
+          "statement": "`./dev check` ends, whether it passes or fails, with the wall time of each of its steps, the tests' among them, and the ten slowest tests with their times. The log gives this milestone's own merge check by those lines: its wall time and its tests' time.",
+          "ask": "Read the saved output of this milestone's own merge check, under `.git/orchestrate/checks`: does it end with a time for every step the check ran and the ten slowest tests, and do the log's two figures match it? In a scratch copy, make one step fail: are the times of the steps that ran still printed?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.6",
+          "statement": "`./dev check` runs each cooked-asset test once against the production build, in the workspace pass, and its draw-probe pass runs only the tests that assert on the draw probe.",
+          "ask": "Which tests of the cooked-assets binary read the draw probe? Does the probe pass run each of them and no other test of that binary, and does the workspace pass still run all of them?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.7",
+          "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests` on main at the claimed commit: a changed test build broke none of them.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M7",
       "name": "A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge",
       "status": "not_started",
@@ -127,8 +219,8 @@
       "items": [
         {
           "id": "M7.1",
-          "statement": "Before the selection is switched on, the record gives what it saves. For each landing on main over at least the week before the starting commit it gives the packages the selection as built picks and the time their test binaries take against the whole workspace's, from per-binary times measured at that commit. It gives the mean saving and the share of landings that run the whole workspace, and one timed pair on this Mac with the load recorded: `./dev check` for a change to one package nothing depends on, against the whole-workspace run.",
-          "ask": "Does the record replay real landings through the selection as built, with per-binary times from a run at the starting commit? What is the mean saving, and what share of landings run the whole workspace? Does the log show the record was made before the selection was switched on?",
+          "statement": "Before the selection is switched on, the record gives what it saves. For each landing on main over at least the week before the starting commit it gives the packages the selection as built picks, and the share of the whole workspace's summed test time their tests hold, from the times the check printed at that commit. It gives the mean share, the share of landings that run the whole workspace, and one timed pair on this Mac with the load recorded: `./dev check` for a change to one package nothing depends on, against the whole-workspace run.",
+          "ask": "Does the record replay real landings through the selection as built, with test times the check itself printed at the starting commit? What is the mean share of test time a landing selects, and what share of landings run the whole workspace? Does the log show the record was made before the selection was switched on?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -191,16 +283,6 @@
           "id": "M7.6",
           "statement": "The whole workspace's tests pass in the main-branch check `workspace-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check workspace-tests",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M7.7",
-          "statement": "`./dev check` and `./dev check-all` fail when one test binary's run takes over the limit by the check's own clock. The limit is three minutes, or twice the time the slowest binary the check keeps took while the main-branch check `long-tests` was running, where that time is over 90 seconds; the record gives that time and the log gives the limit. The message names the binary and says what to do: make the test fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. The foam scene's binary is exempt by name until M3, and no other binary is.",
-          "ask": "In a scratch copy, add a test that sleeps past the limit to a fast binary of a selected package: does `./dev check` fail and name the binary, with what to do? Is any binary exempt but the foam scene's? Does the record give the slowest kept binary's time from a check that overlapped a run of the main-branch check `long-tests`, and is the limit at least twice it?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -299,8 +381,69 @@
       ]
     },
     {
+      "id": "M9",
+      "name": "Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As careful as a test-suite speed-up in a well-kept engine such as Bevy or wgpu: the merge check gets shorter, every assertion that was made is still made somewhere that runs, and anyone can see where.",
+      "items": [
+        {
+          "id": "M9.1",
+          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, run alone on this Mac in the build the check uses. The record gives the time alone, before and now, of every test this milestone took off the runner's exempt list, and the ten slowest tests now. The list names only tests of the water scene, which M3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
+          "ask": "Read the record and the exempt list. Is every test the list held at the starting commit, outside the water scene, now under about ten seconds alone, or a long test, or named in the log for its module's planner with what was tried? Run three of the tests made fast, alone: do their times match the record? Does the list name a test that does not exist?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.2",
+          "statement": "A test made fast asserts what it asserted. Where one test ran several cases in turn, each case is now a test and none is dropped. Where a fixture or a run was made smaller, the log gives the old and new size and why each assertion still means what it meant. No test binary changed its name.",
+          "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there? For each fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.3",
+          "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
+          "ask": "For each test marked in this milestone: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.4",
+          "statement": "The long tests, with any this milestone added, pass in the main-branch check `long-tests`, on main at the claimed commit.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M3",
-      "name": "A merge's check no longer runs the foam's ten-minute moored run, which passes on main after each merge, and still runs the wind sweep",
+      "name": "The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -312,9 +455,9 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "`./dev check` no longer runs the moored foam scenes for ten minutes. That run is a long test of its own, on the sea and on the lake, with every assertion it had, and its reason starts `long:`. The wind sweep is a test of its own that `./dev check` runs: mean foam cover rises across the three winds, as it was asserted. The foam scene's binary is no longer exempt from the check's limit on one slow test binary.",
+          "statement": "`./dev check` no longer runs the moored foam scenes for ten minutes. That run is a long test of its own, on the sea and on the lake, with every assertion it had, and its reason starts `long:`. The wind sweep is a test of its own that `./dev check` runs: mean foam cover rises across the three winds, as it was asserted. The moored run's name is off the runner's exempt list.",
           "check": "sh -c 'cargo test --locked --offline -p water-scene --test foam_scene_gpu -- --list --ignored | grep -q \": test$\" && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p water-scene --test foam_scene_gpu'",
-          "ask": "Compare the two tests with the starting commit's one: does the ignored test make every moored assertion, at every tick it was made, and the wind-sweep test every wind assertion? When the ignored test is run, does its child process run the test and not skip it? Is the foam scene's exemption from the slow-binary limit gone?",
+          "ask": "Compare the two tests with the starting commit's one: does the ignored test make every moored assertion, at every tick it was made, and the wind-sweep test every wind assertion? When the ignored test is run, does its child process run the test and not skip it? Is the moored run's name off the runner's exempt list?",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -332,6 +475,26 @@
           "verdict": "",
           "review": "",
           "ask": "Read the log of the main-branch run that covers this commit: does the moored test's child process report `running 1 test` and one test passed, not an ignored test?"
+        },
+        {
+          "id": "M3.3",
+          "statement": "No test of the water scene that `./dev check` runs takes over about ten seconds, run alone on this Mac in the build the check uses. The record gives the time alone, before and now, of every water-scene test the runner's exempt list held. The list is empty but for any test the design leaves to its own module's planner, which the log names with what was tried.",
+          "ask": "Read the record and the exempt list. Is every water-scene test the list held at the starting commit now under about ten seconds alone, or a long test, or named in the log for its module's planner with what was tried? Run two of them alone: do their times match the record? Is anything else left on the list?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. None of them is a test that an open item of another module depends on.",
+          "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -409,7 +572,7 @@
     },
     {
       "id": "M5",
-      "name": "The check builds and runs its tests the fastest way a measurement supports, and the record says how long a merge's check and the main tier take now",
+      "name": "The record shows a typical landing's merge check takes about five minutes, and the contributor guide says what each tier runs",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -417,12 +580,12 @@
       "depends_on": [
         "DEAD-TOOLS:M2"
       ],
-      "quality_bar": "As measured as a build-profile change in a well-kept Rust workspace such as Bevy's or wgpu's: timed both ways on one commit before it is switched on, with the same tests passing after as before.",
+      "quality_bar": "As plain as the contributor guide of a well-kept Rust workspace such as wgpu's or Bevy's: someone new can tell what runs before a merge, what runs after it, and how long each should take.",
       "items": [
         {
           "id": "M5.1",
-          "statement": "The record times the whole-workspace run, `./dev check-all`, on one commit three ways: as it is; with dependencies optimised in test builds; and with test binaries run by nextest, GPU tests held to two at once. Each way is run twice, alternating, and each run has its wall time, the load average and what else was running.",
-          "ask": "Does the record hold two runs of each of the three arrangements on one commit, alternated and not grouped, each with its load? Is the build time of a changed profile counted in its runs or stated beside them?",
+          "statement": "The record lists the run of `./dev check` that the script saved for each of at least the thirty latest merges before the claimed commit, with the wall time and the tests' time the check printed. The median wall time is five minutes or less. For each run over ten minutes the record says where the time went. It also gives how long one run of each main-branch check, `long-tests` and `workspace-tests`, takes now.",
+          "ask": "Recompute the median from the saved checks under `.git/orchestrate/checks`: is every merge's check of that span in the record, and is the median five minutes or less? For each run over ten minutes, does the record's reason match that run's own step times?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -431,58 +594,8 @@
         },
         {
           "id": "M5.2",
-          "statement": "An arrangement is on only if both of its runs were shorter than both runs of the whole-workspace run as it was. Where both are on, the run that gives the time afterwards is shorter than both of those runs too, or the arrangement that won by less is off. One that did not win is left out, and the record says so. Test builds keep debug assertions and overflow checks. Where nextest is on, a machine without it still runs every test through `cargo test`, doc tests still run, tests that share a device through an in-process lock run one at a time, the merge check still runs only the tests of the packages its change can reach, on binaries built for the whole workspace, and a test or binary over the limit still fails the check.",
-          "ask": "Read the record and the diff. Is each arrangement that is on one that won both ways, and if two are on, did the pair beat the run as it was? Do test builds keep debug assertions and overflow checks? If nextest is on: what runs where it is not installed, do doc tests run, are the files that guard GPU residency or device loss with a mutex held to one test at a time, does a scratch change to one leaf package still run only that package's tests, and does a slow test still fail the check?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M5.3",
-          "statement": "Every test that ran and passed in the whole-workspace run before this milestone still runs and passes in it on this Mac, and none is skipped; a test the check ran twice may now run once. The record holds the test results before and after, the later run made with `THRUM_REQUIRE_GPU=1`.",
-          "ask": "Compare the two recorded runs test by test, not their totals: does every test that reported ok before report ok after, at least once? Does the later run hold any `thrum-gpu-skip:` line?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M5.4",
-          "statement": "`./dev check` runs each cooked-asset test once against the production build, in the workspace pass, and its draw-probe pass runs only the tests that assert on the draw probe.",
-          "ask": "Which tests of the cooked-assets binary read the draw probe? Does the probe pass run each of them and no other test of that binary, and does the workspace pass still run all of them?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M5.5",
-          "statement": "The record gives a merge's check time at this module's start, as the design records it, and now, for a change to one leaf package and for the whole workspace, and how long one run of `./dev long-tests` takes, each on this Mac with the load recorded. `CONTRIBUTING.md` says what `./dev check` runs and how it selects, what `./dev check-all` and `./dev long-tests` run on main after the merge, and how to run one long test by hand.",
-          "ask": "Do the record's times for the check and for the long tests come from runs at the claimed commit, each with its load? Does `CONTRIBUTING.md` name the three commands, say what selects a merge's tests, and say how to run one long test by hand?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M5.7",
-          "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests` on main at the claimed commit: a changed build profile or runner broke none of them.",
-          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M5.6",
-          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-          "check": "python3 scripts/exact_baselines.py verify",
+          "statement": "`CONTRIBUTING.md` says what `./dev check` runs, how it selects, that tests run side by side and what that asks of a test, that a test takes about ten seconds or less or is a long test, what `./dev check-all` and `./dev long-tests` run on main after the merge, how to run one test or one long test by hand, and how to read the times the check prints.",
+          "ask": "Does `CONTRIBUTING.md` name the three commands and say each of those things? Follow its line for running one long test by hand: does it run that test?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

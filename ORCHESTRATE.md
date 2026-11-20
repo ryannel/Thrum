@@ -149,23 +149,33 @@ regular test suite. We need to think carefully about what risks we're willing to
 vs when our tests can be more targeted. I think it has to stay off every merge check." And later that day, as the
 lead gave it to the planner: the merge tier is targeted. "Every merge runs only the tests for what the change
 touches, and the full workspace runs on main." So a test runs in the cheapest tier that still catches its fault
-before the fault costs more than the test.
+before the fault costs more than the test. And once more that day, with the long tests gone and a merge's check
+still over twenty minutes: "A 20min merge check still sounds crazy. Tests are meant to be fast." So a merge's
+check is planned to take about five minutes for a typical landing, and a test in it about ten seconds or less.
+*(both figures are the planner's assumptions until the owner answers)*
 
 [GATE-TIME](docs/plans/GATE-TIME/DESIGN.md#mechanisms) builds the tiers. Each part below binds from the milestone
-that builds it: the long tests' move (M1), the tests behind a Cargo feature (M6), and the selection with the whole
-run on main (M7). Until its milestone is Done, `./dev check` runs what it ran before.
+that builds it: the long tests' move (M1), the tests behind a Cargo feature (M6), the side-by-side run and the
+limit on one test (M8), the selection with the whole run on main (M7), and the ten-second bound (M9, and M3 for the
+water scene). Until its milestone is Done, `./dev check` runs what it ran before.
 
 | Tier | When | What runs | Risk it accepts | How a fault gets back to its cause |
 |---|---|---|---|---|
-| **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach. Then the merging milestone's item checks, which test what that milestone changed | A fault that only a long run, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
+| **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach, run side by side. Then the merging milestone's item checks, which test what that milestone changed | A fault that only a long run, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
 | **Main** | On main's tip after merges, by the `Main-branch check` lines under [Rules](#rules), each no more often than its `every` | Exact images; the long tests in a release build and the tests behind a Cargo feature; and every fast test in the workspace | The fault sits on main for up to the check's interval and one run, and later merges build on it. It costs the module that caused it; nothing ships from main | A failure is run again once, then traced through the commits since the last pass to the first that fails. Each step of the trace is one whole run of the check, so the commit is named some hours after its merge, not within the hour. The lead gives that commit's module the fix as its next task, or reverts the commit |
 | **Milestone and release** | Once, when a milestone claims Ready for Review; and at a release point, which is the V1 exit's closing record or anything published | A milestone's captures, inspections, cost records and sittings, and the test command once more on main's tip, which there is the whole workspace's fast tests unless the merge's own pass is reused. At a release point, everything on the one commit: the whole-workspace check, every main-branch check, and the release's own items | A fault only an eye, a device or a quiet machine shows lasts until the milestone that looks, or the release | The review names the item. At a release point the tier that fails names it, as above |
 
-- **A long test takes over about a minute in `./dev check` on this Mac.** It is marked `#[ignore]` with a reason
-  that starts `long:`, is named in the main-tier list, `.config/long-tests.txt`, and runs in the main tier through
+- **A test in the merge tier is fast: about ten seconds or less**, run alone on this Mac in the build the check
+  uses. A test that takes longer is made fast where the time comes from how it was written or built: one case to
+  a test, setup made once, a smaller fixture that keeps every assertion. Otherwise it is a **long test**. It is
+  marked `#[ignore]` with a reason that starts `long:`, is named in the main-tier list, `.config/long-tests.txt`,
+  with the fault it leaves unguarded before a merge written beside it, and runs in the main tier through
   `./dev long-tests`; a test is marked only once a `Main-branch check` line under Rules runs that command. No
   shortened run of it stays in the merge tier for comfort. One stays only where a design shows it is fast and
-  catches a kind of fault nothing else catches, in any tier.
+  catches a kind of fault nothing else catches, in any tier. A proof of a fault that is silent and costly is
+  the last to move: it is made fast where it can be. Until `GATE-TIME` M9, and M3 for the water scene, a long test is one over
+  about a minute, and the tests between ten seconds and that are on `GATE-TIME`'s exempt list.
+  *(planner's assumption until the owner answers: the other choice is a higher bound, such as 30 seconds)*
 - **The merge tier is targeted.** `./dev check` runs the test binaries of the packages a change can reach: each
   workspace package that holds a changed file, and every package that depends on one, directly or through others,
   by Cargo's own graph. Where a test reads another package's files when it runs, which the graph cannot show, the
@@ -202,12 +212,17 @@ run on main (M7). Until its milestone is Done, `./dev check` runs what it ran be
   fails it. A feature that no tier names is a fault in the list, not a way to keep a test out of a tier.
   *(planner's assumption until the owner answers: the other choice runs these only in the item checks that name
   them)*
-- **What keeps the merge tier fast.** `./dev check` fails when one test binary runs for over three minutes, and
-  the docs check fails when a test marked `long:` sits in a binary the list does not name. Three minutes is about
-  2.4 times the slowest binary the tier keeps, past the 1.6 times a loaded machine was seen to add, so load alone
-  does not trip it; the limit is raised to twice that binary's time if the hourly long tests are seen to slow it
-  past 90 seconds. *(planner's assumption until the owner answers: the other choice reports a slow binary and
-  fails nothing)*
+- **What keeps the merge tier fast.** From `GATE-TIME` M8, `./dev check` runs tests side by side and ends with the time of each of
+  its steps and its ten slowest tests. It reports a test that runs for over ten seconds, and stops and fails one
+  that runs for over sixty: six times the bound, because the check runs beside builders. A test is exempt only
+  by name, on a list that `GATE-TIME` empties and no other module adds to. The docs check fails when a test
+  marked `long:` sits in a binary the main-tier list does not name. *(planner's assumption until the owner
+  answers: the other choice reports a slow test and fails nothing)*
+- **A test runs in a process of its own, beside others**, from `GATE-TIME` M8. It relies on no other test of its binary having run and
+  on no static shared with one, so a mutex in a test file does not make tests take turns. A test that needs a
+  device to itself joins a group in `.config/nextest.toml`, and one that starts a thread pool is counted there as
+  heavy, in the landing that adds it. A failed test is not run again. `./dev check` needs cargo-nextest
+  installed, and says so where it is missing.
 - **A change is tested where it is made.** A builder runs the tests of what it touched while it works, and
   `./dev check` once, to merge. A milestone that changes what a long test or a test behind a feature guards
   carries an item whose check is `python3 "$ORCHESTRATE_SCRIPT" main-check long-tests`, so it is not Done until

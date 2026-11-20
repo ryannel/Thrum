@@ -35,7 +35,7 @@
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close |
-| 34 | GATE-TIME | A merge's check takes far less time: it runs only the fast tests its change can reach, each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the foam's long test; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the check's machinery |
+| 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers |
 
@@ -2309,7 +2309,7 @@ every merge pays it.
 
 | Module | Takes from the review | Owns | Builds inside |
 |---|---|---|---|
-| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, and the merge selection with `./dev check-all` and the main-branch check `workspace-tests` | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards |
+| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, the merge selection with `./dev check-all` and the main-branch check `workspace-tests`, and how the check runs tests: side by side through cargo-nextest, with its configuration `.config/nextest.toml` and the limit on one test | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards |
 | `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rules `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
 | `DEAD-CODE` | Sections 3 and 4, and the water settings that are parsed twice | `thrum_render::binding`, and the five defaults of `SceneContribution` ([design](DEAD-CODE/DESIGN.md)) | `thrum-core`, `thrum-sea`, `thrum-water`, `thrum-render`, `thrum-rain-model`, the water scene, the game's host |
 | `TEST-SUPPORT` M5, M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support`, and the rules `test-readback` and `test-deadline` ([design](TEST-SUPPORT/DESIGN.md#the-kit)) | Every crate's tests |
@@ -2329,9 +2329,9 @@ check never starts. The same holds after `GATE-TIME` M7.
 
 | Wave | `GATE-TIME` | `DEAD-TOOLS` | `DEAD-CODE` | `TEST-SUPPORT` | Files they share |
 |---|---|---|---|---|---|
-| 1, at once | M1: six tests marked, `./dev long-tests`, the main-tier list, one settings line. M6: tests behind a Cargo feature compiled at every merge and run on main. M7: the merge selection, `./dev check-all`, one settings line | M5: five new files under `docs/provenance`. M6: four frozen rules. M1: `scripts/`, the script-suite step, three designs, ledger rows | M1, once `GATE-TIME` M1 is Done: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | M5, once M2 is Done: the kit's functions and two frozen rules | `tools/xtask/src/main.rs`: `GATE-TIME` M1, M6 and M7 and `DEAD-TOOLS` M1 edit different arms of it and one help text, which M1 puts on a line for each command. The rule files `scripts/shape_matchers.py`, `shape_rules.py` and `test_shape_rules.py`: `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 each add rules. `scripts/repo_check.py`: `GATE-TIME` M1 and M6. Whichever lands second rebases |
-| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` M6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M3, after `GATE-TIME` M2 and M6 and `DEAD-CODE` M2: test files of every crate and kit scene | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` M3 is the widest set: its design says what it runs beside |
-| 3, each after another module's milestone | M3, after `WATERS` M7: the foam test. M4, after `REVIEW-RENDER` M2. M5, after `DEAD-TOOLS` M2: the check's machinery | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7. M5, after `HOST` M3. M6, after `REVIEW-RENDER` M3 and `GATE-TIME` M6 | M4, after `REVIEW-RENDER` M2 | `GATE-TIME` M5 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables. `GATE-TIME` M5 edits the check's test step, after `DEAD-TOOLS` M2 |
+| 1, at once | M1: six tests marked, `./dev long-tests`, the main-tier list, one settings line. M6: tests behind a Cargo feature compiled at every merge and run on main. M8: tests run side by side, the test build a measurement picks, step times and the limit on one test. M7: the merge selection, `./dev check-all`, one settings line | M5: five new files under `docs/provenance`. M6: four frozen rules. M1: `scripts/`, the script-suite step, three designs, ledger rows | M1, once `GATE-TIME` M1 is Done: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | M5, once M2 is Done: the kit's functions and two frozen rules | `tools/xtask/src/main.rs`: `GATE-TIME` M1, M6, M8 and M7 and `DEAD-TOOLS` M1 edit different arms of it and one help text, which M1 puts on a line for each command. The rule files `scripts/shape_matchers.py`, `shape_rules.py` and `test_shape_rules.py`: `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 each add rules. `scripts/repo_check.py`: `GATE-TIME` M1 and M6. Whichever lands second rebases |
+| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere. M9: the test files that hold a test over ten seconds, in the game and the river, water-model and sea crates | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` M6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M3, after `GATE-TIME` M2 and M6 and `DEAD-CODE` M2: test files of every crate and kit scene | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` M3 is the widest set: its design says what it runs beside |
+| 3, each after another module's milestone | M3, after `WATERS` M7: the foam test and the water scene's other slow tests. M4, after `REVIEW-RENDER` M2. M5, after `DEAD-TOOLS` M2: the closing record and the contributor guide | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7. M5, after `HOST` M3. M6, after `REVIEW-RENDER` M3 and `GATE-TIME` M6 | M4, after `REVIEW-RENDER` M2 | `GATE-TIME` M8 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables. `GATE-TIME` M8 edits the check's test step and `DEAD-TOOLS` M2 another arm of the same file. `GATE-TIME` M9 and `TEST-SUPPORT` M3 both edit test files under `crates/`: the lead does not run them side by side where it can choose |
 
 Three files are everyone's: `.config/shape-baseline.json`, which each landing that lowers a rule's count
 rewrites, `docs/design/maturity.json` and `Cargo.lock`. A builder changes them when its landing moves them,
@@ -2347,9 +2347,12 @@ land while any of them is held.
    plan on. Track 6 moves, merges and deletes tests and scripts that only Done items name, and edits no Done
    item. An owning module's design that names a proof this track moved or retired is corrected at that
    module's next re-plan, as after [the ruling of 15 November](#proofs-run-once-on-main).
-2. **Long tests** (`GATE-TIME` M1 and M3; `WATERS`, `SHOWCASE`, `CULLING`). By the owner's decision of 20
+2. **Long tests** (`GATE-TIME` M1, M9 and M3; `WATERS`, `SHOWCASE`, `CULLING`, and from M9 any module with a
+   test over about ten seconds that cannot be made fast). By the owner's decisions of 20
    November, kept as [the test tiers](../../ORCHESTRATE.md#test-tiers), no test over about a minute runs in a
-   merge's check, and no short run of one stays there. The ten-minute gale, the moored foam's ten minutes, the
+   merge's check, and no short run of one stays there. From `GATE-TIME` M9 the bound is about ten seconds: a
+   slower test is made fast with every assertion kept, or becomes a long test with the fault it leaves unguarded
+   before a merge written beside it in the main-tier list. The ten-minute gale, the moored foam's ten minutes, the
    exit scene's stepped hour, the field flythroughs and the shore-blend solve still run, whole and with the
    assertions they had, in the main-branch check `long-tests` after merges: in release, or in the debug build for
    a test that fails in release at the starting commit, whose owner the log names. `WATERS`', `SHOWCASE`'s
@@ -2416,6 +2419,17 @@ land while any of them is held.
     [not planned yet](#not-planned-in-track-6); until that design exists a new variant is made the way the
     engineering patterns already ask, through a hook with a stub.
 
+12. **How the check runs tests** (`GATE-TIME` M8; every module that writes a test, and `REPO-RULES`, whose check
+    command it is). By the owner's words of 20 November, "A 20min merge check still sounds crazy. Tests are meant
+    to be fast", a merge's check is planned to about five minutes for a typical landing. From M8 `./dev check`
+    runs tests through cargo-nextest, each test in a process of its own beside the tests of every other binary,
+    and needs it installed. So a test relies on no other test of its binary having run and on no static it
+    shares with one. A test that needs a device to itself joins a group in `.config/nextest.toml`, and one that
+    starts a thread pool is counted there as heavy, in the landing that adds it. A test that runs for over sixty
+    seconds fails the check, and a failed test is not run again. Test builds may be optimised where M8's
+    measurement shows a gain; nothing but a test is built differently. No module but `GATE-TIME` adds a name to
+    the list of tests exempt from the limit.
+
 <a id="not-planned-in-track-6"></a>
 
 ### Not planned in track 6
@@ -2452,9 +2466,10 @@ Each of these needs a design of its own, or a decision, before it is planned.
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **Long test**: a test over about a minute, marked ignored with a reason that starts `long:`, in a binary the main-tier list names; the main-branch check `long-tests` runs it | `GATE-TIME:M1` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Long test**: a test over about a minute, and from `GATE-TIME:M9` one over about ten seconds that cannot be made fast, marked ignored with a reason that starts `long:`, in a binary the main-tier list names, with the fault it leaves unguarded before a merge beside it; the main-branch check `long-tests` runs it | `GATE-TIME:M1` and `M9` → any module with such a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
 | **The main-tier list**, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary | `GATE-TIME:M1` and `M6` → any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
 | **The merge selection**: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the declared edges; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:M7` → every builder, and any module with a test that reads another package's files at run time | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **The runner**: `./dev check` runs each test in a process of its own, side by side through cargo-nextest; `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy; a test that runs for over sixty seconds fails the check | `GATE-TIME:M8` → every module that writes a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
 | **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:M6` and `TEST-SUPPORT:M5` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 | **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:M5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:M3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
@@ -3054,3 +3069,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   by binary; the merge selection has declared edges, and its accepted risk includes every milestone's Ready
   for Review; `script-caller` takes a done-when item's check as naming a script, so a proof tool is tracked.
   The test tiers in the project settings carry the same risk text.
+- 2026-11-20 `GATE-TIME` revised a fifth time, for the owner's words with M1 landed and a merge's check at 21 to
+  24 minutes: "A 20min merge check still sounds crazy. Tests are meant to be fast." The goal is about five
+  minutes for a typical landing, and a merge-tier test takes about ten seconds or less; both are assumptions for
+  the owner. A measurement put 20 of the 23 minutes in test binaries run one after another. New milestones: M8
+  (tests side by side through cargo-nextest, a measured test build, a limit on one test) and M9 (tests over ten
+  seconds made fast or moved to the main tier). Seam ruling 2 changed, ruling 12 and one interface were added,
+  and the test tiers in the project settings say the same. No other module's dependency changed.
