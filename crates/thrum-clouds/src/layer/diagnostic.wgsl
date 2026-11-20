@@ -15,7 +15,7 @@ fn observe() {
     observation[2]=vec4(sun,cloud.erosion.z);
     observation[3]=vec4(environment_sky_radiance(ray),cloud.heights.z);
     observation[4]=cloud_ambient[0];observation[5]=cloud_ambient[1];
-    observation[6]=vec4(phase,cloud.scattering.xy);
+    observation[6]=vec4(phase.xy,cloud.scattering.xy);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=max(0.0,(cloud.heights.x-camera.y)/ray.y);

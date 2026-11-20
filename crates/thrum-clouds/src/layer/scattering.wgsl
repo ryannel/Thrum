@@ -1,13 +1,13 @@
 // Unscattered beam and diffuse radiance along the effective lit plane.
-fn cloud_solar_source(phases:vec2<f32>,sun_depths:vec2<f32>,light_angles:vec3<f32>,
+fn cloud_solar_source(phases:vec3<f32>,sun_depths:vec2<f32>,light_angles:vec3<f32>,
                       view_depth:f32,boundary:f32,droplet:vec3<f32>,g:f32)->f32 {
     let reduced=1.0-droplet.x;
     // Shift the rim's energy toward the narrow disc lobe. This softens
     // pearly halos at large angles without raising the Sun or ambient level.
-    let beam_rate=mix(max(droplet.y,reduced),reduced,0.75);
+    let beam_rate=mix(max(droplet.y,reduced),reduced,0.75*(1.0-phases.z));
     let beam=exp(-beam_rate*sun_depths.x);
     let remaining=exp(-reduced*sun_depths.x);
-    let forward=dot(phases,vec2(beam,max(0.0,remaining-beam)));
+    let forward=dot(phases.xy,vec2(beam,max(0.0,remaining-beam)));
 
     let incidence=light_angles.x;
     let reduced_cosine=(1.0-g)*incidence;

@@ -10,13 +10,15 @@ fn cloud_phase_row(row:u32,s2:f32)->f32 {
     let start=row*entries+lo;
     return mix(cloud_phase[start],cloud_phase[start+1u],at-f32(lo));
 }
-fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec2<f32> {
+fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec3<f32> {
     // |ray-sun|^2/4 preserves the forward peak where 1-dot loses digits.
     let s2=clamp(dot(ray-sun,ray-sun)*0.25,0.0,1.0);
     let row=u32(cloud.erosion.x);
     let first=mix(cloud_phase_row(row,s2),cloud_phase_row(row+1u,s2),cloud.erosion.y);
     // Narrow the middle lobe to avoid a bright ring far outside the Sun's vicinity.
-    return vec2(first,cloud_hg_phase(s2,mix(cloud.erosion.z*cloud.scattering.z,cloud.erosion.z,0.65)));
+    let grazing=1.0-smoothstep(0.18,0.35,mapping.path_border.y);
+    let middle=mix(cloud.erosion.z*cloud.scattering.z,cloud.erosion.z,0.65);
+    return vec3(first,cloud_hg_phase(s2,mix(middle,0.96,grazing)),grazing);
 }
 fn cloud_light_angles(viewer:vec3<f32>)->vec3<f32> {
     let path=mapping.path_border.xyz;
@@ -30,7 +32,7 @@ fn cloud_light_angles(viewer:vec3<f32>)->vec3<f32> {
         *smoothstep(0.74,0.96,-dot(viewer,path));
     return vec3(dot(normal,path),dot(normal,viewer),min(1.0,2.5*back));
 }
-fn cloud_source(solar:vec3<f32>,phases:vec2<f32>,sun_depths:vec2<f32>,
+fn cloud_source(solar:vec3<f32>,phases:vec3<f32>,sun_depths:vec2<f32>,
                 vertical_depths:vec2<f32>,light_angles:vec3<f32>,distance:f32,transmission:f32)->vec3<f32> {
     // The first profile's near/far medium handover ends at 500 m.
     let boundary=cloud_smooth((distance-500.0)/500.0);
