@@ -127,3 +127,5 @@
   [The module list](../ARCHITECTURE.md#ruling-on-relocated-references) now rules on a relocation, M9.6 is
   written again from its claim, and the design says which paths follow the files. No other item changed.
 - 2026-11-20 Planner, from the cleanup review (L8-05): M9.7's check passed when the routes folder was missing. It now fails unless a game's route files exist, and searches them wherever the folder is. The statement and the ask are unchanged. M9 was Not Started.
+
+- 2026-11-20 Reclaimed M9 against the amended M9.6. The Git audit confirmed all 55 reference blobs survived relocation byte-for-byte. Both logs record the 34 regenerated files, and the shared Metal and Chrome verifier passed against the same fixture hashes. [Amended M9.6 proof](../../../.orchestrate/evidence/SHOWCASE/M9/amended/M9.6.md)
