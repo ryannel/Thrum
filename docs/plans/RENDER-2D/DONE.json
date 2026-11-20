@@ -154,8 +154,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -166,8 +166,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -178,8 +178,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -190,8 +190,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -201,8 +201,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -213,8 +213,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-field.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -224,8 +224,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-field.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -234,8 +234,8 @@
           "inspect": "Capture the sprite scene's field at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least twenty seconds, with movers crossing each other and with flashed, tinted and additive sprites among them. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-realtime-integrated-preview/inspection-summary.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -243,10 +243,10 @@
           "statement": "In real time in Chrome the movers glide and overlaps hold still, as on the Mac.",
           "inspect": "Capture the same field in Chrome with T2 engine capture in `realtime` mode for at least twenty seconds. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-realtime-integrated-preview/inspection-summary.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M2.10",
@@ -256,8 +256,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-costs.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -267,8 +267,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-costs.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -277,8 +277,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -289,16 +289,28 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/M2/metal-tests-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it."
+      "status": "in_progress",
+      "quality_bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it.",
+      "findings": [
+        {
+          "item": "M2.9",
+          "name": "Chrome movers jump after skipped tick publications",
+          "repeat": false
+        },
+        {
+          "item": "M2.9",
+          "name": "Chrome sprite capture verifies downloaded pixels against themselves",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M3",

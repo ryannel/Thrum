@@ -255,7 +255,56 @@
     },
     "M2": {
       "definitions": "49a90d7116bed10af0beabeb884b0d20b00cffcb620d9a665243e8ee53e0fa5e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ae407f5b6e8de30f9103f06f27b64bc1b8eae79b",
+          "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "fail",
+            "M2.10": "pass",
+            "M2.11": "pass",
+            "M2.12": "pass",
+            "M2.13": "pass"
+          },
+          "findings": [
+            {
+              "item": "M2.9",
+              "name": "Chrome movers jump after skipped tick publications",
+              "repeat": false
+            },
+            {
+              "item": "M2.9",
+              "name": "Chrome sprite capture verifies downloaded pixels against themselves",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 201056,
+            "cached": 12126464,
+            "output": 27375,
+            "turns": 1
+          },
+          "at": "2026-11-20T03:57:24Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",
