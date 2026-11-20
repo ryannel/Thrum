@@ -1,5 +1,12 @@
 # TEST-SUPPORT log
 
+- 2026-11-20 Fixed the second review's M2.2 findings. The parent-condition finding repeated because the
+  last round fixed named sites and widened the rule only to test modules; `whole-file-gpu-gate` now follows any
+  OS-conditioned module's declared subtree, with a stated `platform-only tests:` reason as the one exception.
+  Verified: 16 Metal-only tests admit Metal and pass on Mac Metal with the GPU required; `thrum-app`'s file
+  watcher and capture writer tests compile for iOS Simulator; the camera route test is unconditional.
+  Not run: Linux or Windows. [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M2/review-fix-2.md).
+
 - 2026-11-20 Fixed M2's review findings. Diagnostic device adjustments respect the limits and features
   selected by the recipe and registry. CPU tests stay in their harnesses, Metal tests report unavailable
   prerequisites through the GPU gate, and the sprite fixtures use declared modules. Verified the repaired

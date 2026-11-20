@@ -103,8 +103,8 @@
           "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
           "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition, and is that shown by a compile for a target that is not macOS? Does any GPU test still return early without asking the gate, so that no skip line is written?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M2/review-fix-2.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md"
         },
