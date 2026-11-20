@@ -137,7 +137,47 @@
     },
     "M6": {
       "definitions": "bce5f3079f1ae413f38f49c026027e672dd9df7a36230f7f39d791749e854c67",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c18171ddc54f7bbd83053a41e3b616a3ed790fc9",
+          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md",
+          "items": {
+            "M6.1": "pass",
+            "M6.2": "fail",
+            "M6.3": "fail",
+            "M6.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "gated game-library test runs in no tier",
+              "item": "M6.2",
+              "repeat": false
+            },
+            {
+              "name": "check-docs misses feature-gated inline library tests",
+              "item": "M6.3",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 114974,
+            "cached": 3300930,
+            "output": 28154,
+            "cost_usd": 2.142738,
+            "turns": 1
+          },
+          "at": "2026-11-20T21:01:30Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the GATE-TIME and DEAD-TOOLS module plans only, to resolve the Must Fix findings in their third design reviews: .",

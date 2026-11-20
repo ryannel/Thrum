@@ -67,8 +67,8 @@
     {
       "id": "M6",
       "name": "A change that breaks a test behind a Cargo feature fails its merge's check, and those tests run on main after each merge",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "quality_bar": "As dependable as the feature matrix of a well-kept Rust workspace such as wgpu's or Bevy's: no test sits behind a feature that nothing builds, and anyone can see from one list where each such test runs.",
@@ -80,8 +80,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M6/record.md#m61--scratch-faults-and-cost",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
         },
         {
           "id": "M6.2",
@@ -89,20 +89,20 @@
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Search the workspace's test files and manifests for a Cargo feature, in `required-features` and in `cfg`: is each test it gates covered by the list with that feature, or listed as not run with its failure and its owner? Was any such test edited? Does the handoff name each test listed as not run? How long does one run of `./dev long-tests` take now, and is the settings line's timeout at least twice that?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check long-tests; .orchestrate/evidence/GATE-TIME/M6/record.md#m62--long-tests-time-and-timeout",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
         },
         {
           "id": "M6.3",
           "statement": "A Cargo feature cannot take a test out of every tier unnoticed, however the test is gated. `./dev check-docs` fails when a test target requires a feature, or a `cfg` in a test file names one, and the main-tier list does not cover that file's package with that feature: whole, or by the test binary the file builds into. The message names the file, the feature and the list.",
           "ask": "In a scratch copy, add `crates/thrum-render/tests/zz_probe_gpu.rs` holding one test under `#[cfg(feature = \"creation-counters\")]`: does `./dev check-docs` pass, and is that binary among what `./dev long-tests` runs for `thrum-render`, with no edit to the list? Add a file to the game's `tests/` holding one test under `#[cfg(feature = \"draw-probe\")]`: does `./dev check-docs` fail and name the file and the feature, and pass once the list names its binary? Give one test target `required-features` naming a feature the list lacks: does it fail? Does a test file that names no feature still pass?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M6/record.md#m63--scratch-gated-files",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
         },
         {
           "id": "M6.4",
@@ -111,8 +111,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M6-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "gated game-library test runs in no tier",
+          "item": "M6.2",
+          "repeat": false
+        },
+        {
+          "name": "check-docs misses feature-gated inline library tests",
+          "item": "M6.3",
+          "repeat": false
         }
       ]
     },
