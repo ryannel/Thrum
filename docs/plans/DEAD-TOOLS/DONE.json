@@ -111,7 +111,7 @@
     {
       "id": "M2",
       "name": "Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -123,8 +123,8 @@
           "check": "sh -c 'test -z \"$(git ls-files | grep -E \"(^|/)benches/(extract|clustered|visibility|frame_target|camera_culling|camera_culling_encode|occlusion_passes|field_culling|material_reload)\\.rs$\")\" && ! git grep -q \"^divan\" -- crates/thrum-render/Cargo.toml && cargo check --locked --offline -p thrum-render -p v1-game --all-targets'",
           "ask": "For each of the four benches the design lists as kept, does the script it names still run it, and does its command still name a bench that exists?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop check on a4946d010: pass (.git/orchestrate/checks/18611c59781e642058603ba7-00a3a466ab367679.stdout); kept benches valley_culling (scripts/culling_cost.py, scripts/render2d.py), cooked_edit and edit_to_visible (scripts/check_g5_tripwires.sh), allocations (scripts/transport_link.py) unchanged",
           "verdict": "",
           "review": ""
         },
@@ -134,8 +134,8 @@
           "check": "sh -c './dev help >/dev/null && ! ./dev help | grep -q baseline-inventory && test -z \"$(git ls-files | grep -E \"(^|/)benches/(g2r|frame)\\.rs$\")\" && cargo check --locked --offline -p v1-game --benches'",
           "ask": "Does anything left print the G0 gate table or read a `--g0` or `--g3b` flag? Is the maturity ledger's mention of the inventory still worded as history?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop check on a4946d010: pass (.git/orchestrate/checks/18611c59781e642058603ba7-9215f90b80b9987f.stdout); ./dev help no longer lists baseline-inventory",
           "verdict": "",
           "review": ""
         },
@@ -144,8 +144,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
