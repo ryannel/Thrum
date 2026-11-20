@@ -11,6 +11,10 @@ fn world_slope(wave: Wave) -> vec2<f32> {
     return vec2(j.z * wave.slope.x - j.y * wave.slope.y, j.x * wave.slope.y - j.y * wave.slope.x) / det;
 }
 
+fn column_phase(c: Component, point: vec2<f32>, offset: vec2<f32>, dt: f32) -> f32 {
+    return dot(c.vector, point) + c.phase - c.omega * dt + dot(c.vector, offset);
+}
+
 fn long_wave(p: vec2<f32>, dt: f32, gain: f32, chop: f32, count: u32) -> Wave {
     var wave: Wave;
     if gain == 0.0 { return wave; }
@@ -21,7 +25,7 @@ fn long_wave(p: vec2<f32>, dt: f32, gain: f32, chop: f32, count: u32) -> Wave {
         var next = vec2(0.0);
         for (var i = 0u; i < count; i++) {
             let c = column_component(i);
-            let phase = dot(c.vector, p) + c.phase - c.omega * dt + dot(c.vector, offset);
+            let phase = column_phase(c, p, offset, dt);
             next += (gain * chop * c.amplitude * c.inverse_k * sin(phase)) * c.vector;
         }
         let residual = length(next - offset);
@@ -31,7 +35,7 @@ fn long_wave(p: vec2<f32>, dt: f32, gain: f32, chop: f32, count: u32) -> Wave {
     for (var i = 0u; i < count; i++) {
         let c = column_component(i);
         let k = c.vector;
-        let phase = dot(k, p) + c.phase - c.omega * dt + dot(k, offset);
+        let phase = column_phase(c, p, offset, dt);
         let h = gain * c.amplitude * cos(phase);
         let s = gain * c.amplitude * sin(phase);
         let direction = chop * c.inverse_k * k;

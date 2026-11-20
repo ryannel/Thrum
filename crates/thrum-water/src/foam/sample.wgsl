@@ -9,6 +9,7 @@ struct FoamSettings {
     time_wind: vec4<f32>,
     camera: vec4<f32>,
     jacobian_variance: vec4<f32>,
+    long_bounds: vec4<f32>,
     hulls: array<FoamHull, HULL_LIMIT>,
     components: array<Component, COMPONENT_LIMIT>,
 }

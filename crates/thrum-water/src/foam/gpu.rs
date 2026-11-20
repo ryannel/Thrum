@@ -45,6 +45,7 @@ struct Settings {
     time_wind: [f32; 4],
     camera: [f32; 4],
     jacobian_variance: [f32; 4],
+    long_bounds: [f32; 4],
     hulls: [HullRecord; HULL_LIMIT],
     components: [Component; COMPONENT_LIMIT],
 }
@@ -70,6 +71,7 @@ fn foam_settings_match_the_shader_layout() {
         offset_of!(Settings, time_wind),
         offset_of!(Settings, camera),
         offset_of!(Settings, jacobian_variance),
+        offset_of!(Settings, long_bounds),
         offset_of!(Settings, hulls),
         offset_of!(Settings, components),
     ];
@@ -422,6 +424,7 @@ impl Foam {
         }
         settings.time_wind[2..].copy_from_slice(&self.whitewater.wind);
         settings.jacobian_variance = self.whitewater.jacobian_variance;
+        settings.long_bounds = self.whitewater.long_bounds;
         let origin = [frame.camera[0], frame.camera[2]];
         let tick_seconds = time.tick_duration.as_secs_f32();
         // A normal step samples its committed tick. Catch-up steps sample

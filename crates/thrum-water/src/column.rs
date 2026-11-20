@@ -14,6 +14,26 @@ pub(crate) struct Component {
 
 pub(crate) const COMPONENT_LIMIT: usize = 192;
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "f32 upper bounds are rounded outwards before upload"
+)]
+pub(super) fn long_bounds(components: &[thrum_sea_model::Component]) -> [f32; 4] {
+    let (height, slope) = components.iter().fold((0.0, 0.0), |(height, slope), wave| {
+        let [kx, kz] = wave.wave_vector;
+        (
+            height + wave.amplitude,
+            slope + wave.amplitude * kx.hypot(kz),
+        )
+    });
+    [
+        (height as f32).next_up(),
+        (slope as f32).next_up(),
+        0.0,
+        0.0,
+    ]
+}
+
 impl Component {
     #[expect(
         clippy::cast_possible_truncation,

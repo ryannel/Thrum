@@ -11,6 +11,7 @@ pub(crate) struct Whitewater {
     pub(super) input: Input,
     pub(super) wind: [f32; 2],
     pub(super) jacobian_variance: [f32; 4],
+    pub(super) long_bounds: [f32; 4],
 }
 
 /// A hull in contact with the water at a committed tick.

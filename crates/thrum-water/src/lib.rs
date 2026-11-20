@@ -247,6 +247,7 @@ impl Water {
         self.foam = Some(foam::Whitewater {
             input: input.clone(),
             wind,
+            long_bounds: column::long_bounds(&self.spectrum.long),
             jacobian_variance: records::jacobian_variance(
                 &self.spectrum,
                 self.profile.waves.choppiness,
