@@ -26,7 +26,7 @@
     {
       "id": "M6",
       "name": "The check refuses a new script or bench that nothing runs, a new source file that names `docs/evidence`, and a new shader text edit: each count is frozen where it stands",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,

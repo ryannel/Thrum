@@ -139,6 +139,36 @@
         "by": "plan",
         "task": "Revise the GATE-TIME and DEAD-TOOLS module plans only, to resolve the Must Fix findings in their third design reviews: .",
         "at": "2026-11-20T12:56:45Z"
+      },
+      "ready_for_review": {
+        "commit": "30bf39522cd241c02127dbef336f3801d045ee61",
+        "checked": "30bf39522cd241c02127dbef336f3801d045ee61",
+        "at": "2026-11-20T19:01:48Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 128995,
+          "cached": 4729674,
+          "output": 36561,
+          "cost_usd": 2.708747,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 128995,
+          "cached": 4729674,
+          "output": 36561,
+          "cost_usd": 2.708747,
+          "turns": 1
+        }
       }
     }
   },
