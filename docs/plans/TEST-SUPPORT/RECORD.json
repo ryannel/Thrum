@@ -166,7 +166,7 @@
         {
           "verdict": "fail",
           "commit": "fbf7290c04d2799a4f84caa1049d331f089d4163",
-          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review-2.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "fail",
@@ -209,6 +209,48 @@
             "turns": 1
           },
           "at": "2026-11-20T13:15:15Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "ecc930cdc0bf26cfff633269271c401c88fad1cd",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "fail",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Un-gated Metal draw tests need an Apple-only dev-dependency",
+              "item": "M2.2",
+              "different": "Not a hidden test, a missing admission or an OS condition: un-gating thrum-asset-gpu's draw test module left it using serde_json, which Cargo.toml declares only for macOS and iOS, so the crate's lib tests no longer compile on Linux or Windows.",
+              "repeat": false
+            },
+            {
+              "name": "Water scene tests do not compile off macOS",
+              "item": "M2.2",
+              "different": "Not a hidden test, a missing admission or an OS condition: the water example's 11 GPU test targets import thrum-app APIs that exist only on macOS, so they fail to compile on Linux and Windows.",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 196458,
+            "cached": 12539921,
+            "output": 50651,
+            "cost_usd": 5.091884,
+            "turns": 1
+          },
+          "at": "2026-11-20T17:25:30Z"
         }
       ],
       "authorised": {
