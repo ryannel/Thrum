@@ -130,38 +130,65 @@ def annotate_display_ticks(arm, rows, calls, expected_conflict):
         if not summary or tuple(map(int, summary.groups())) != counts:
             raise ValueError(f"frame and callback logs disagree with the host's counts in {arm}: {counts}")
     presents = [row for row in rows if row["present_media"] is not None]
-    if len(presents) != sum(row["presented"] for row in rows):
+    if any(row["presented"] != (row["present_media"] is not None) for row in rows):
         raise ValueError(f"present timestamps disagree with the frame records in {arm}")
-    work = [stage for row in rows for stage in row["work"]]
+    work = [(row["sequence"], stage, started, ended)
+            for row in rows for stage, started, ended in row["work"]]
     for index, tick in enumerate(ticks):
+        successor = ticks[index + 1] if index + 1 < len(ticks) else None
         start = tick["media"]
-        end = ticks[index + 1]["media"] if index + 1 < len(ticks) else float("inf")
+        end = successor["media"] if successor else float("inf")
         if not start < min(end, tick["target"]) or tick["dispatched"] < start:
             raise ValueError(f"invalid display timestamp in {arm}: {tick}")
-        # The last callback owns the remainder of the run. Match actual host
-        # presents against the clock, independently of the intended target.
+        # The last callback owns the remainder of the run. Present calls are
+        # assigned by time, while frame work is also joined to its own target.
+        tick["interval_end"] = successor["media"] if successor else None
         presented = [row for row in presents if start <= row["present_media"] < end]
         configure = [call for call in calls if call["started"] < end and start < call["ended"]]
-        missed = [row["status"] for row in by_sequence.get(tick["sequence"], [])
-                  if not row["presented"]]
-        active = [(stage, min(end, ended) - max(start, started))
-                  for stage, started, ended in work
-                  if started < end and start < ended]
+        frames = [dict(status=row["status"], submission=row["submission"],
+                       work_started=row["work"][0][1], work_ended=row["work"][-1][2],
+                       present_media=row["present_media"])
+                  for row in by_sequence.get(tick["sequence"], [])]
+        if any(frame["work_started"] < tick["dispatched"] for frame in frames):
+            raise ValueError(f"frame work precedes its display target in {arm}: {tick}")
+        missed = [frame["status"] for frame in frames
+                  if frame["present_media"] is None and frame["work_ended"] <= end]
+        active = [dict(sequence=sequence, stage=stage,
+                       overlap_ms=(min(end, ended) - max(start, started)) * 1000)
+                  for sequence, stage, started, ended in work
+                  if max(start, started) < min(end, ended)]
+        tick["target_frames"] = frames
+        if configure:
+            tick["configure_calls"] = configure
+        if active and not presented:
+            tick["active_stages"] = active
+        if not frames and successor:
+            # The host keeps one pending target, overwritten by the next
+            # callback. Complete frame coverage proves this target was unused.
+            tick["superseded_by"] = successor["sequence"]
         if presented:
             tick["outcome"] = "presented"
             tick["presented_submissions"] = [row["submission"] for row in presented]
-        elif configure:
+        elif any(end <= call["ended"] for call in configure):
             tick["outcome"] = "configure"
-            tick["configure_calls"] = configure
+        elif tick["dispatched"] >= end:
+            tick["outcome"] = "display callback dispatched after its interval"
+        elif frames and frames[0]["work_started"] >= end:
+            tick["outcome"] = "target frame work started after its interval"
         elif missed:
             tick["outcome"] = missed[-1]
             tick["frame_deferrals"] = missed
-        elif active:
-            tick["outcome"] = max(active, key=lambda phase: phase[1])[0]
-            tick["active_stages"] = [stage for stage, _ in active]
+        elif not frames:
+            tick["outcome"] = ("display target superseded before frame work" if successor
+                               else "run ended with the last display target pending")
         else:
-            tick["outcome"] = ("awaiting the in-flight frame reply" if tick["render_busy"]
-                               else "display target coalesced before dispatch")
+            # Use this target's stage at the close, even if work from another
+            # target occupied more of the interval.
+            finishing = next((stage for sequence, stage, started, ended in work
+                              if sequence == tick["sequence"] and started < end <= ended), None)
+            if finishing is None:
+                raise ValueError(f"no observed reason for the missed display interval in {arm}: {tick}")
+            tick["outcome"] = finishing
     if sum(len(tick.get("presented_submissions", [])) for tick in ticks) != len(presents):
         raise ValueError(f"not every present belongs to a recorded display interval in {arm}")
     (arm / "display-receipt.json").write_text(json.dumps(ticks, indent=2) + "\n")
@@ -181,9 +208,6 @@ def transition_receipt(rows, calls, ticks):
             raise ValueError(f"configure did not belong to its successful generation switch: {call}")
     if len(window_sizes) < 10 or len({row["scale"] for row in rows}) != 2:
         raise ValueError("the sweep did not change the window and display record")
-    if any(tick["outcome"] in ("NotAttempted", "SurfacePreparationBusy", "synchronous extent build")
-           for tick in ticks):
-        raise ValueError("unexplained display tick or frame waiting for extent preparation")
     previous = rows[0]["surface"]
     last_size_change = max(index for index in range(1, len(rows))
                            if rows[index]["window"] != rows[index - 1]["window"])
@@ -196,6 +220,9 @@ def transition_receipt(rows, calls, ticks):
         raise ValueError("expected a settled extent switch followed by a backing-scale-only switch")
     held = held_in_motion = held_at_new_scale = 0
     for index, row in enumerate(rows):
+        if ((not row["presented"] and row["status"] in ("NotAttempted", "SurfacePreparationBusy"))
+                or any(stage == "synchronous extent build" for stage, _, _ in row["work"])):
+            raise ValueError(f"unexplained frame or frame waiting for extent preparation: {row}")
         if row["switch"] and row["switch"]["configure_calls"]:
             switch = row["switch"]
             if (switch["configure_calls"], switch["taken"], switch["restores"]) != (1, 1, 0):
@@ -212,8 +239,6 @@ def transition_receipt(rows, calls, ticks):
                 held += 1
                 held_in_motion += index <= last_size_change
             held_at_new_scale += last_scale_change <= index < scale_switch
-        elif row["status"] in ("NotAttempted", "SurfacePreparationBusy"):
-            raise ValueError(f"unexplained frame without a present: {row}")
     if held_in_motion < 5 or rows[-1]["surface"] != rows[-1]["window"]:
         raise ValueError("no held presentation through resize, or no settled surface")
     return dict(held_presents=held, distinct_window_grids=len(window_sizes),

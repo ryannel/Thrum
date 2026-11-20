@@ -364,6 +364,7 @@ fn main() -> TaskResult {
             python(&["scripts/repo_check.py"])?;
             python(&["scripts/test_evidence_store.py"])?;
             python(&["scripts/test_render2d.py"])?;
+            python(&["scripts/test_apple_presentation.py"])?;
             python(&[
                 "-m",
                 "unittest",
