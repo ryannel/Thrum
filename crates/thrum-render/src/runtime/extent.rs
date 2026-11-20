@@ -185,7 +185,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             generation: self.generation,
             source: self.slots[0].target.capture_source(),
             capture: self.submitted_capture.as_ref().map(|tap| tap.spec),
-            capture_owner: self.submitted_capture.as_ref().map(|tap| tap.owner()),
+            capture_owner: self.submitted_capture.as_ref().map(Tap::owner),
             secondary,
         })
     }

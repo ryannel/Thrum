@@ -93,6 +93,7 @@ struct App<G: Game> {
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
     observed_extent: [u32; 2],
+    window_occluded: bool,
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
     render: Option<RenderWorker<G>>,
@@ -187,6 +188,7 @@ impl<G: Game + 'static> App<G> {
             surface_format: None,
             surface_extent: [0, 0],
             observed_extent: [0, 0],
+            window_occluded: false,
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
@@ -1368,7 +1370,10 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.observed_extent = [size.width, size.height];
                 Ok(())
             }
-            WindowEvent::Occluded(_) => self.invalidate_surface(),
+            WindowEvent::Occluded(occluded) if occluded != self.window_occluded => {
+                self.window_occluded = occluded;
+                self.invalidate_surface()
+            }
             WindowEvent::RedrawRequested => {
                 let result = self.draw();
                 if self.presented >= self.target_frames {

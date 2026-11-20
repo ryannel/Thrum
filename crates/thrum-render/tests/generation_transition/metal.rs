@@ -23,6 +23,10 @@ const OLD: [u32; 2] = [64, 64];
 const STALE: [u32; 2] = [80, 64];
 const NEW: [u32; 2] = [96, 64];
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
+// The device-loss arm tears down a Metal device while work is held. Run these
+// proofs one at a time so overlapping test devices cannot disturb the loss
+// and capture observations.
+static METAL: Mutex<()> = Mutex::new(());
 
 #[derive(Clone, Default)]
 struct Creations(Arc<Mutex<Vec<(std::thread::ThreadId, &'static str)>>>);
@@ -195,6 +199,9 @@ fn independent_reset(
 
 #[test]
 fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_comparison() {
+    let _metal = METAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gpu) =
         thrum_test_support::gpu("kept extent history control", Some(wgpu::Backend::Metal))
     else {
@@ -270,6 +277,9 @@ fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_compari
 
 #[test]
 fn a_detached_extent_preserves_current_capture_admission() {
+    let _metal = METAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gpu) = thrum_test_support::gpu("extent capture admission", Some(wgpu::Backend::Metal))
     else {
         return;
@@ -339,6 +349,9 @@ fn a_detached_extent_preserves_current_capture_admission() {
 
 #[test]
 fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
+    let _metal = METAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gpu) =
         thrum_test_support::gpu("extent generation transition", Some(wgpu::Backend::Metal))
     else {
@@ -542,6 +555,9 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
 
 #[test]
 fn failed_and_lost_builds_never_take_the_surface() {
+    let _metal = METAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gpu) = thrum_test_support::gpu("failed extent generation", Some(wgpu::Backend::Metal))
     else {
         return;

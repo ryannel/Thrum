@@ -126,7 +126,7 @@ pub(super) fn reserve(
 impl Tap {
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn owner(&self) -> std::sync::Arc<()> {
-        self.owner.clone()
+        std::sync::Arc::clone(&self.owner)
     }
 
     #[cfg(not(target_arch = "wasm32"))]

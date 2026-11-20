@@ -336,7 +336,7 @@ impl SceneContribution for SceneContributions {
         self.rebuild_members(
             surface,
             |message| FrameError::Scene(message.to_owned()),
-            |entry, member| entry.rebuild_for_attachment(member),
+            SceneContribution::rebuild_for_attachment,
         )
     }
     fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {

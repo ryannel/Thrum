@@ -44,6 +44,7 @@ struct Prepared {
     environment: EnvironmentProducts,
     group: wgpu::BindGroup,
     pipeline: wgpu::RenderPipeline,
+    #[cfg(not(target_arch = "wasm32"))]
     bindings: PoolBindings,
 }
 
@@ -384,6 +385,7 @@ impl Prepared {
             environment,
             group,
             pipeline,
+            #[cfg(not(target_arch = "wasm32"))]
             bindings,
         })
     }

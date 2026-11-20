@@ -85,6 +85,10 @@ pub struct SecondaryResize {
 impl SecondaryResize {
     /// Pair the replacement graph with the pointer swaps that install its
     /// bindings in the contribution. Publication must not create GPU resources.
+    ///
+    /// # Panics
+    /// Publication panics if the job returned a replacement for a different
+    /// contribution type than the owner that created the job.
     pub fn new<T: SceneContribution>(
         graph: EffectGraph,
         publish: impl FnOnce(&mut T) + Send + 'static,

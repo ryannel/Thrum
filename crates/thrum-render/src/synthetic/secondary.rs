@@ -91,8 +91,14 @@ impl super::SyntheticTargetInputs {
                 let device = self.capabilities.device();
                 slot.handle.colour = secondary_texture(device, extent, SCENE_FORMAT);
                 slot.handle.depth = secondary_texture(device, extent, DEPTH_FORMAT);
-                slot.handle.colour_view = slot.handle.colour.create_view(&Default::default());
-                slot.handle.depth_view = slot.handle.depth.create_view(&Default::default());
+                slot.handle.colour_view = slot
+                    .handle
+                    .colour
+                    .create_view(&wgpu::TextureViewDescriptor::default());
+                slot.handle.depth_view = slot
+                    .handle
+                    .depth
+                    .create_view(&wgpu::TextureViewDescriptor::default());
                 slot.handle.maximum_extent = extent;
                 slot.handle.request = Arc::new(Mutex::new(crate::contribution::ViewRequestState {
                     camera: self.view_sample.camera_position(),
