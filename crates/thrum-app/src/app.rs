@@ -76,6 +76,12 @@ enum UserEvent {
     FilesSaved,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum WindowVisibility {
+    Visible,
+    Occluded,
+}
+
 struct App<G: Game> {
     extent_capture: Option<WindowExtentCapture>,
     transition_proof: Option<WindowTransitionProof>,
@@ -93,7 +99,7 @@ struct App<G: Game> {
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
     observed_extent: [u32; 2],
-    window_occluded: bool,
+    window_visibility: WindowVisibility,
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
     render: Option<RenderWorker<G>>,
@@ -188,7 +194,7 @@ impl<G: Game + 'static> App<G> {
             surface_format: None,
             surface_extent: [0, 0],
             observed_extent: [0, 0],
-            window_occluded: false,
+            window_visibility: WindowVisibility::Visible,
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
@@ -695,14 +701,18 @@ impl<G: Game + 'static> App<G> {
             | SurfaceStatus::WorldPageUnavailable
             | SurfaceStatus::SceneFrameUnavailable
             | SurfaceStatus::DrawableTimeout
-            | SurfaceStatus::SurfaceUnavailable
+            | SurfaceStatus::WindowExtentEmpty
+            | SurfaceStatus::SurfaceConfigurationBlocked
+            | SurfaceStatus::SurfaceConfigurationPending
             | SurfaceStatus::SurfacePreparationBusy
             | SurfaceStatus::SubmissionSkipped => self.unavailable += 1,
             SurfaceStatus::Occluded => {
                 self.unavailable += 1;
                 self.occluded += 1;
             }
-            SurfaceStatus::NeedsReconfigure => self.surface_faults += 1,
+            SurfaceStatus::NeedsReconfigure | SurfaceStatus::SurfaceEpochChanged => {
+                self.surface_faults += 1;
+            }
             SurfaceStatus::ConfigurationRefused(error) => {
                 self.surface_faults += 1;
                 self.surface_configuration_error = Some(error);
@@ -1370,9 +1380,17 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.observed_extent = [size.width, size.height];
                 Ok(())
             }
-            WindowEvent::Occluded(occluded) if occluded != self.window_occluded => {
-                self.window_occluded = occluded;
-                self.invalidate_surface()
+            WindowEvent::Occluded(occluded) => {
+                let visibility = if occluded {
+                    WindowVisibility::Occluded
+                } else {
+                    WindowVisibility::Visible
+                };
+                if std::mem::replace(&mut self.window_visibility, visibility) == visibility {
+                    Ok(())
+                } else {
+                    self.invalidate_surface()
+                }
             }
             WindowEvent::RedrawRequested => {
                 let result = self.draw();

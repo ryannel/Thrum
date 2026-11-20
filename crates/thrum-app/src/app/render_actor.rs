@@ -77,11 +77,14 @@ pub(super) enum SurfaceStatus {
     WorldPageUnavailable,
     SceneFrameUnavailable,
     DrawableTimeout,
-    SurfaceUnavailable,
+    WindowExtentEmpty,
+    SurfaceConfigurationPending,
+    SurfaceConfigurationBlocked,
     SurfacePreparationBusy,
     SubmissionSkipped,
     Occluded,
     NeedsReconfigure,
+    SurfaceEpochChanged,
     ConfigurationRefused(String),
 }
 pub(super) struct RecoveryInfo {
@@ -370,16 +373,20 @@ impl<G: Game> Actor<G> {
         self.host.set_presentation_lead(lead.duration);
         if !ready {
             if matches!(reply.surface_status, SurfaceStatus::NotAttempted) {
-                reply.surface_status = if current {
-                    if self.needs_reconfigure && self.transition.busy() {
-                        SurfaceStatus::SurfacePreparationBusy
-                    } else if self.needs_reconfigure && self.host.pending_frames() != 0 {
-                        SurfaceStatus::FrameSlotsOccupied
-                    } else {
-                        SurfaceStatus::SurfaceUnavailable
-                    }
+                reply.surface_status = if !current {
+                    SurfaceStatus::SurfaceEpochChanged
+                } else if request.extent.contains(&0) {
+                    SurfaceStatus::WindowExtentEmpty
+                } else if self.refused_surface_generation == Some(request.surface_generation)
+                    || !self.transition.surface.usable()
+                {
+                    SurfaceStatus::SurfaceConfigurationBlocked
+                } else if self.transition.busy() {
+                    SurfaceStatus::SurfacePreparationBusy
+                } else if self.host.pending_frames() != 0 {
+                    SurfaceStatus::FrameSlotsOccupied
                 } else {
-                    SurfaceStatus::NeedsReconfigure
+                    SurfaceStatus::SurfaceConfigurationPending
                 };
             }
             return self.host.drive(now, None);
@@ -409,7 +416,7 @@ impl<G: Game> Actor<G> {
         }
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
             self.needs_reconfigure = true;
-            reply.surface_status = SurfaceStatus::NeedsReconfigure;
+            reply.surface_status = SurfaceStatus::SurfaceEpochChanged;
             return Ok(encoded.skip());
         }
         ensure_running(&self.stopped)?;
@@ -444,7 +451,7 @@ impl<G: Game> Actor<G> {
         };
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
             self.needs_reconfigure = true;
-            reply.surface_status = SurfaceStatus::NeedsReconfigure;
+            reply.surface_status = SurfaceStatus::SurfaceEpochChanged;
             return Ok(encoded.skip());
         }
         if let Some(proof) = &mut self.transition_proof

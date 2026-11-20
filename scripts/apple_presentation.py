@@ -185,8 +185,17 @@ def transition_receipt(rows, calls, ticks):
            for tick in ticks):
         raise ValueError("unexplained display tick or frame waiting for extent preparation")
     previous = rows[0]["surface"]
-    held = 0
-    for row in rows:
+    last_size_change = max(index for index in range(1, len(rows))
+                           if rows[index]["window"] != rows[index - 1]["window"])
+    last_scale_change = max(index for index in range(1, len(rows))
+                            if rows[index]["scale"] != rows[index - 1]["scale"])
+    scale_switch = rows.index(switches[1])
+    if (switches[0]["surface"] == previous or switches[0]["scale"] != rows[0]["scale"]
+            or switches[1]["surface"] != switches[0]["surface"]
+            or switches[1]["scale"] == switches[0]["scale"]):
+        raise ValueError("expected a settled extent switch followed by a backing-scale-only switch")
+    held = held_in_motion = held_at_new_scale = 0
+    for index, row in enumerate(rows):
         if row["switch"] and row["switch"]["configure_calls"]:
             switch = row["switch"]
             if (switch["configure_calls"], switch["taken"], switch["restores"]) != (1, 1, 0):
@@ -199,12 +208,16 @@ def transition_receipt(rows, calls, ticks):
         if row["presented"]:
             if row["drawable"] != [previous, previous]:
                 raise ValueError(f"drawable does not match the active generation: {row}")
-            held += row["window"] != previous
+            if row["window"] != previous:
+                held += 1
+                held_in_motion += index <= last_size_change
+            held_at_new_scale += last_scale_change <= index < scale_switch
         elif row["status"] in ("NotAttempted", "SurfacePreparationBusy"):
             raise ValueError(f"unexplained frame without a present: {row}")
-    if held < 5 or rows[-1]["surface"] != rows[-1]["window"]:
+    if held_in_motion < 5 or rows[-1]["surface"] != rows[-1]["window"]:
         raise ValueError("no held presentation through resize, or no settled surface")
     return dict(held_presents=held, distinct_window_grids=len(window_sizes),
+                held_during_motion=held_in_motion, held_at_new_scale=held_at_new_scale,
                 switches=[row["switch"] for row in switches], configure_attempts=calls,
                 display_callbacks=len(ticks), ticks_without_present=sum(
                     tick["outcome"] != "presented" for tick in ticks))
@@ -240,7 +253,8 @@ def mac_transition(output):
                               control_rejection=rejection, baseline_wall=baseline_wall,
                               sweep_wall=sweep_wall,
                               wall_tripwire=sweep_wall["worst_ms"] > 2 * baseline_wall["p95_ms"])
-    return dict(target="mac-metal", console_locked='"IOConsoleLocked" = Yes' in console, recipes=report)
+    return dict(target="mac-metal", console_locked='"IOConsoleLocked" = Yes' in console,
+                binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), recipes=report)
 
 
 def mac_transition_capture(output):
