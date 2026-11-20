@@ -50,35 +50,6 @@ pub struct PreparedDevice {
 }
 
 impl PreparedDevice {
-    #[cfg(not(target_arch = "wasm32"))]
-    fn rebuild_traced_contribution(
-        &mut self,
-        contribution: &mut dyn crate::contribution::SceneContribution,
-        inputs: &SyntheticScene,
-    ) -> Result<(), String> {
-        let scene = self.scene.as_mut().expect("replacement scene");
-        let device = self.capabilities.device();
-        let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
-        let memory = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
-        let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
-        let result = super::preparation::rebuild_3d_contribution(
-            &mut scene.prepared,
-            contribution,
-            &self.queue,
-            inputs,
-            self.render_extent,
-            self.presenter.as_ref(),
-        );
-        let errors = [validation, memory, internal].map(|scope| pollster::block_on(scope.pop()));
-        if let Some(error) = errors.into_iter().flatten().next() {
-            return Err(error.to_string());
-        }
-        if let Some(slots) = result? {
-            scene.slots = slots;
-        }
-        Ok(())
-    }
-
     /// Fit the candidate to a surface resized during detached preparation.
     /// This touches only the candidate device and retains it on failure.
     /// # Errors
@@ -288,12 +259,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     "stale mesh rows in device replacement",
                 ));
             }
-            Some(self.refresh_replacement(
-                scene,
-                &candidate.queue,
-                self.visual_lighting,
-                candidate.render_extent,
-            )?)
+            let frame = self.replacement_frame(candidate.render_extent, self.visual_lighting)?;
+            Some(self.refresh_replacement(scene, &candidate.queue, &frame)?.0)
         } else {
             self.source
                 .sprites(
@@ -315,7 +282,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         #[cfg(not(target_arch = "wasm32"))]
         let (view, contribution_prepared) = {
             let mut view = view;
-            let prepared = self.prepare_replacement_contribution(candidate, &mut view)?;
+            let prepared = match self.prepare_replacement_contribution(candidate, &mut view) {
+                Ok(prepared) => prepared,
+                Err(error) => {
+                    self.contribution = None;
+                    self.record_contribution_error(&error);
+                    return Err(error);
+                }
+            };
             (view, prepared)
         };
         #[cfg(target_arch = "wasm32")]
@@ -370,23 +344,25 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         candidate: &mut PreparedDevice,
         view: &mut Option<crate::synthetic::SyntheticView>,
     ) -> Result<bool, FrameError> {
-        use crate::capabilities::RayStructureSelection;
-        let Some(scene) = candidate
-            .scene
-            .as_ref()
-            .and_then(|scene| scene.prepared.three_d())
-        else {
+        let Some(scene) = candidate.scene.as_mut() else {
             return Ok(false);
         };
-        if scene.ray_structure_selection() != RayStructureSelection::Enabled {
+        if !scene.prepared.traces() {
             return Ok(false);
         }
         let Some(contribution) = self.contribution.as_deref_mut() else {
             return Ok(false);
         };
-        let exposure = scene.fallback_exposure();
-        if candidate
-            .rebuild_traced_contribution(contribution, &self.scene)
+        let exposure = scene.prepared.fallback_exposure();
+        if scene
+            .rebuild_contribution(
+                contribution,
+                &candidate.queue,
+                &self.scene,
+                candidate.render_extent,
+                candidate.presenter.as_ref(),
+                false,
+            )
             .is_ok()
         {
             return Ok(true);
@@ -394,43 +370,31 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
         // Release the unpublishable scene before preparing the Maps variant.
         drop(candidate.scene.take());
-        let frame = self
-            .source
-            .frame(
-                self.world.source(),
-                self.presentation_alpha(),
-                candidate.render_extent,
-                self.visual_lighting,
-            )
-            .map_err(FrameError::Scene)?;
-        let mut inputs = self.scene.clone();
-        inputs.view = frame.view;
-        let prepared =
-            pollster::block_on(crate::synthetic::PreparedSynthetic::prepare_ray_fallback(
-                &candidate.capabilities,
-                &candidate.queue,
-                &inputs,
-                frame.lighting,
-                exposure,
-            ))
-            .map_err(|error| FrameError::Gpu(format!("replacement Maps scene: {error:?}")))?;
-        let prepared = PreparedRenderer::ThreeD(Box::new(prepared));
-        let mut slots = super::preparation::prepare_slots(
-            &prepared,
+        let frame = self.replacement_frame(candidate.render_extent, self.visual_lighting)?;
+        let mut scene = super::preparation::prepare_maps_fallback(
+            &candidate.capabilities,
             &candidate.queue,
+            &self.scene,
+            &frame,
+            exposure,
             candidate.render_extent,
-            candidate.presenter.as_ref().map(SurfacePresenter::profile),
+            candidate.presenter.as_ref(),
         )?;
-        super::preparation::bind_presenter(&prepared, &mut slots, candidate.presenter.as_ref())?;
-        let mut scene = PreparedScene { prepared, slots };
-        *view = Some(self.refresh_replacement(
-            &mut scene,
+        *view = Some(
+            self.refresh_replacement(&mut scene, &candidate.queue, &frame)?
+                .0,
+        );
+        scene.rebuild_contribution(
+            self.contribution
+                .as_deref_mut()
+                .expect("contribution being replaced"),
             &candidate.queue,
-            self.visual_lighting,
+            &self.scene,
             candidate.render_extent,
-        )?);
+            candidate.presenter.as_ref(),
+            false,
+        )?;
         candidate.scene = Some(scene);
-        // The existing rebuild path now compiles all members against Maps.
-        Ok(false)
+        Ok(true)
     }
 }

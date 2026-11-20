@@ -13,7 +13,7 @@ use std::{
 #[cfg(target_arch = "wasm32")]
 pub(crate) use web_time::Instant;
 
-use crate::contribution::{ContributionPasses, SceneContribution, SecondaryViewError};
+use crate::contribution::{ContributionPasses, SceneContribution};
 use crate::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
@@ -706,44 +706,35 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.contribution_error = None;
             return Ok(());
         }
-        let previous_views = self.prepared.take_secondary();
-        let declarations = contribution.secondary_view_slots();
-        if let Err(error) = self.prepared.prepare_secondary_views(
+        let slots = preparation::rebuild_3d_contribution(
+            &mut self.prepared,
+            contribution.as_mut(),
             &self.queue,
-            &declarations,
+            &self.scene,
             self.render_extent,
-            &self.scene.local_lights,
-        ) {
-            self.prepared.restore_secondary(previous_views);
-            let message = error.to_string();
-            return Err(match error {
-                SecondaryViewError::RecordLimit
-                | SecondaryViewError::LightingLimit
-                | SecondaryViewError::ShaderLimit => FrameError::Gpu(message),
-                _ => FrameError::Scene(message),
-            });
-        }
-        if let Err(error) = contribution.rebuild_for_attachment(
-            &self
-                .prepared
-                .scene_surface_with_views(&self.queue, contribution.secondary_views_enabled()),
-        ) {
-            self.prepared.restore_secondary(previous_views);
-            return Err(error);
-        }
-        let mut passes = contribution.passes();
-        passes.upload |= !declarations.is_empty();
-        let graph = contribution.effect_graph();
-        if let Err(error) = graph.validate() {
-            self.prepared.restore_secondary(previous_views);
-            return Err(FrameError::Scene(error));
-        }
-        let previous_graph = self.prepared.effect_graph().clone();
-        self.prepared.set_effect_graph(graph);
-        if let Err(error) = self.declare_contribution_passes(passes) {
-            self.prepared.set_effect_graph(previous_graph);
-            self.prepared.restore_secondary(previous_views);
-            return Err(FrameError::Gpu(format!("contribution passes: {error}")));
+            self.presenter.as_ref(),
+            true,
+        );
+        #[cfg(not(target_arch = "wasm32"))]
+        let slots = if slots.is_err() && self.prepared.traces() {
+            let (fallback, view) = self.prepare_same_device_maps(
+                contribution.as_mut(),
+                self.prepared.fallback_exposure(),
+                self.visual_lighting,
+                self.render_extent,
+                None,
+                true,
+            )?;
+            self.prepared = fallback.prepared;
+            self.scene.view = view;
+            Ok(Some(fallback.slots))
+        } else {
+            slots
+        };
+        if let Some(slots) = slots? {
+            self.slots = slots;
+            self.visual_owner = Arc::new(());
+            self.reset_replacement_history();
         }
         self.contribution = Some(contribution);
         self.contribution_error = None;
@@ -772,61 +763,90 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             return;
         }
-        let Some(contribution) = self.contribution.as_deref_mut() else {
+        let Some(mut contribution) = self.contribution.take() else {
             return;
         };
-        match preparation::rebuild_3d_contribution(
+        let result = preparation::rebuild_3d_contribution(
             &mut self.prepared,
-            contribution,
+            contribution.as_mut(),
             &self.queue,
             &self.scene,
             self.render_extent,
             self.presenter.as_ref(),
-        ) {
+            false,
+        );
+        #[cfg(not(target_arch = "wasm32"))]
+        let result = if result.is_err() && self.prepared.traces() {
+            self.prepare_same_device_maps(
+                contribution.as_mut(),
+                self.prepared.fallback_exposure(),
+                self.visual_lighting,
+                self.render_extent,
+                None,
+                false,
+            )
+            .map(|(fallback, view)| {
+                self.prepared = fallback.prepared;
+                self.scene.view = view;
+                Some(fallback.slots)
+            })
+        } else {
+            result
+        };
+        match result {
             Ok(Some(slots)) => {
                 self.slots = slots;
                 self.visual_owner = Arc::new(());
                 self.reset_replacement_history();
+                self.contribution = Some(contribution);
             }
-            Ok(None) => {}
+            Ok(None) => self.contribution = Some(contribution),
             Err(error) => {
-                self.contribution = None;
-                self.contribution_error = Some(error);
+                self.record_contribution_error(&error);
             }
         }
     }
 
-    /// Prepare a complete graph/target set before changing the active slots.
-    fn declare_contribution_passes(
-        &mut self,
-        passes: ContributionPasses,
-    ) -> Result<(), FrameError> {
-        let previous = self.prepared.contribution_passes();
-        self.prepared.set_contribution_passes(passes);
-        let slots = preparation::prepare_slots(
-            &self.prepared,
-            &self.queue,
-            self.render_extent,
-            self.presenter.as_ref().map(SurfacePresenter::profile),
-        )
-        .and_then(|mut slots| {
-            preparation::bind_presenter(&self.prepared, &mut slots, self.presenter.as_ref())?;
-            Ok(slots)
+    fn record_contribution_error(&mut self, error: &FrameError) {
+        self.contribution_error = Some(match error {
+            FrameError::Scene(message) | FrameError::Gpu(message) => message.clone(),
+            other => other.to_string(),
         });
-        match slots {
-            Ok(slots) => {
-                self.slots = slots;
-                // Detached candidates carry the previous contribution pass set.
-                self.visual_owner = Arc::new(());
-                self.reset_replacement_history();
-                Ok(())
-            }
-            Err(error) => {
-                self.prepared.set_contribution_passes(previous);
-                Err(error)
-            }
-        }
     }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn prepare_same_device_maps(
+        &mut self,
+        contribution: &mut dyn SceneContribution,
+        exposure: f32,
+        lighting: Option<FrameLighting>,
+        extent: [u32; 2],
+        replacement_presenter: Option<&SurfacePresenter>,
+        attaching: bool,
+    ) -> Result<(preparation::PreparedScene, SyntheticView), FrameError> {
+        let queue = self.queue.clone();
+        let frame = self.replacement_frame(extent, lighting)?;
+        let mut fallback = preparation::prepare_maps_fallback(
+            self.prepared.capabilities(),
+            &queue,
+            &self.scene,
+            &frame,
+            exposure,
+            extent,
+            replacement_presenter.or(self.presenter.as_ref()),
+        )?;
+        let (view, _) = self.refresh_replacement(&mut fallback, &queue, &frame)?;
+        fallback.rebuild_contribution(
+            contribution,
+            &queue,
+            &self.scene,
+            extent,
+            replacement_presenter.or(self.presenter.as_ref()),
+            attaching,
+        )?;
+        Ok((fallback, view))
+    }
+
     /// Maximum submitted scene frames awaiting GPU completion.
     pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
 
@@ -1213,7 +1233,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     ///
     /// # Errors
     ///
-    /// Returns a binding or full-table upload fault without replacing the active view.
+    /// Returns a binding, upload or failed Maps retry without replacing the active view.
+    /// If neither shadow method can prepare the contribution, it is detached.
     ///
     #[cfg(not(target_arch = "wasm32"))]
     pub fn publish_visual(&mut self, candidate: &mut PreparedVisual) -> Result<bool, FrameError> {
@@ -1239,7 +1260,51 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .extent
             .as_ref()
             .map_or(self.render_extent, |(extent, _)| *extent);
-        let view = self.refresh_replacement(scene, &queue, Some(candidate.lighting), extent)?;
+        let lighting = Some(candidate.lighting);
+        let frame = self.replacement_frame(extent, lighting)?;
+        let (mut view, inherited_rows) = self.refresh_replacement(scene, &queue, &frame)?;
+        let replacement_presenter = candidate.extent.as_ref().map(|(_, presenter)| presenter);
+        let mut contribution_prepared = false;
+        if scene.prepared.traces()
+            && let Some(mut contribution) = self.contribution.take()
+        {
+            contribution_prepared = true;
+            if scene
+                .rebuild_contribution(
+                    contribution.as_mut(),
+                    &queue,
+                    &self.scene,
+                    extent,
+                    replacement_presenter.or(self.presenter.as_ref()),
+                    false,
+                )
+                .is_err()
+            {
+                let exposure = scene.prepared.fallback_exposure();
+                if inherited_rows {
+                    scene.prepared.swap_mesh_rows(&mut self.prepared);
+                }
+                drop(candidate.scene.take());
+                match self.prepare_same_device_maps(
+                    contribution.as_mut(),
+                    exposure,
+                    lighting,
+                    extent,
+                    replacement_presenter,
+                    false,
+                ) {
+                    Ok((fallback, fallback_view)) => {
+                        candidate.scene = Some(fallback);
+                        view = fallback_view;
+                    }
+                    Err(error) => {
+                        self.record_contribution_error(&error);
+                        return Err(error);
+                    }
+                }
+            }
+            self.contribution = Some(contribution);
+        }
         let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
             "visual candidate already published",
         ))?;
@@ -1255,23 +1320,35 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
-        self.rebuild_contribution();
+        if !contribution_prepared {
+            self.rebuild_contribution();
+        }
         Ok(true)
+    }
+
+    fn replacement_frame(
+        &self,
+        extent: [u32; 2],
+        lighting: Option<FrameLighting>,
+    ) -> Result<SceneFrame, FrameError> {
+        self.source
+            .frame(
+                self.world.source(),
+                self.presentation_alpha(),
+                extent,
+                lighting,
+            )
+            .map_err(FrameError::Scene)
     }
 
     fn refresh_replacement(
         &mut self,
         replacement: &mut preparation::PreparedScene,
         queue: &wgpu::Queue,
-        lighting: Option<FrameLighting>,
-        extent: [u32; 2],
-    ) -> Result<SyntheticView, FrameError> {
+        frame: &SceneFrame,
+    ) -> Result<(SyntheticView, bool), FrameError> {
         let authority = self.world.source();
         let alpha = self.presentation_alpha();
-        let frame = self
-            .source
-            .frame(authority, alpha, extent, lighting)
-            .map_err(FrameError::Scene)?;
         let view = frame.view.with_history_reset(true);
         let previous = std::mem::replace(&mut self.scene.view, view);
         replacement.prepared.inherit_submitted_view(&self.prepared);
@@ -1310,7 +1387,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             replacement.prepared.swap_mesh_rows(&mut self.prepared);
         }
         refreshed?;
-        Ok(view)
+        Ok((view, inherited_rows))
     }
 
     fn reset_replacement_history(&mut self) {

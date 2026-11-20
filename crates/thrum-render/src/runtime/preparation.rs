@@ -1,5 +1,7 @@
 //! One preparation body for initial and replacement scene resources.
 
+#[cfg(not(target_arch = "wasm32"))]
+use super::SceneFrame;
 use super::{FrameError, FrameSlot, IN_FLIGHT, SlotState};
 use crate::{
     capabilities::DeviceCapabilities,
@@ -31,51 +33,77 @@ pub(super) fn rebuild_3d_contribution(
     scene: &SyntheticScene,
     extent: [u32; 2],
     presenter: Option<&SurfacePresenter>,
-) -> Result<Option<Vec<FrameSlot>>, String> {
+    attaching: bool,
+) -> Result<Option<Vec<FrameSlot>>, FrameError> {
+    use crate::contribution::SecondaryViewError;
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let scopes = prepared.requires_ray_preparation_scopes().then(|| {
+        let device = prepared.capabilities().device();
+        let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
+        let memory = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+        let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        [validation, memory, internal]
+    });
     let had_views = prepared.secondary_view_count() != 0;
     let previous_views = prepared.take_secondary();
+    let previous_graph = prepared.effect_graph().clone();
+    let previous_passes = prepared.contribution_passes();
     let result = (|| {
         let declarations = contribution.secondary_view_slots();
         prepared
             .prepare_secondary_views(queue, &declarations, extent, &scene.local_lights)
-            .map_err(|error| error.to_string())?;
-        contribution.rebuild(
-            &prepared.scene_surface_with_views(queue, contribution.secondary_views_enabled()),
-        )?;
+            .map_err(|error| match error {
+                SecondaryViewError::RecordLimit
+                | SecondaryViewError::LightingLimit
+                | SecondaryViewError::ShaderLimit => FrameError::Gpu(error.to_string()),
+                _ => FrameError::Scene(error.to_string()),
+            })?;
+        let surface =
+            prepared.scene_surface_with_views(queue, contribution.secondary_views_enabled());
+        if attaching {
+            contribution.rebuild_for_attachment(&surface)?;
+        } else {
+            contribution.rebuild(&surface).map_err(FrameError::Scene)?;
+        }
         let graph = contribution.effect_graph();
-        graph.validate()?;
+        graph.validate().map_err(FrameError::Scene)?;
         let mut passes = contribution.passes();
         passes.upload |= prepared.secondary_view_count() != 0;
-        if graph == *prepared.effect_graph()
-            && passes == prepared.contribution_passes()
+        if !attaching
+            && graph == previous_graph
+            && passes == previous_passes
             && !had_views
             && prepared.secondary_view_count() == 0
         {
             return Ok(None);
         }
-        let previous_graph = prepared.effect_graph().clone();
-        let previous_passes = prepared.contribution_passes();
         prepared.set_effect_graph(graph);
         prepared.set_contribution_passes(passes);
-        let slots = prepare_slots(
+        let mut slots = prepare_slots(
             prepared,
             queue,
             extent,
             presenter.map(SurfacePresenter::profile),
-        )
-        .and_then(|mut slots| {
-            bind_presenter(prepared, &mut slots, presenter)?;
-            Ok(slots)
-        });
-        if slots.is_err() {
-            prepared.set_effect_graph(previous_graph);
-            prepared.set_contribution_passes(previous_passes);
-        }
-        slots
-            .map(Some)
-            .map_err(|error| format!("rebuilt contribution graph: {error}"))
+        )?;
+        bind_presenter(prepared, &mut slots, presenter)?;
+        Ok(Some(slots))
     })();
+    #[cfg(not(target_arch = "wasm32"))]
+    let result = if let Some(scopes) = scopes {
+        let errors = scopes.map(|scope| pollster::block_on(scope.pop()));
+        match errors.into_iter().flatten().next() {
+            Some(error) => Err(FrameError::Gpu(format!(
+                "contribution preparation: {error}"
+            ))),
+            None => result,
+        }
+    } else {
+        result
+    };
     if result.is_err() {
+        prepared.set_effect_graph(previous_graph);
+        prepared.set_contribution_passes(previous_passes);
         prepared.restore_secondary(previous_views);
     }
     result
@@ -84,6 +112,25 @@ pub(super) fn rebuild_3d_contribution(
 pub(super) enum PreparedRenderer {
     ThreeD(Box<PreparedSynthetic>),
     TwoD(Box<PreparedSprites>),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl PreparedRenderer {
+    pub(super) fn traces(&self) -> bool {
+        use crate::capabilities::RayStructureSelection;
+        self.three_d()
+            .is_some_and(|scene| scene.ray_structure_selection() == RayStructureSelection::Enabled)
+    }
+
+    fn requires_ray_preparation_scopes(&self) -> bool {
+        use crate::capabilities::RayStructureSelection;
+        self.three_d().is_some_and(|scene| {
+            matches!(
+                scene.ray_structure_selection(),
+                RayStructureSelection::Enabled | RayStructureSelection::PreparationFailed
+            )
+        })
+    }
 }
 
 pub(super) enum TargetInputs {
@@ -249,12 +296,67 @@ three_d_access!(PreparedRenderer, PreparedSynthetic);
 three_d_access!(FrameTarget, OffscreenTarget);
 
 impl PreparedScene {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn rebuild_contribution(
+        &mut self,
+        contribution: &mut dyn crate::contribution::SceneContribution,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        extent: [u32; 2],
+        presenter: Option<&SurfacePresenter>,
+        attaching: bool,
+    ) -> Result<(), FrameError> {
+        if let Some(slots) = rebuild_3d_contribution(
+            &mut self.prepared,
+            contribution,
+            queue,
+            scene,
+            extent,
+            presenter,
+            attaching,
+        )? {
+            self.slots = slots;
+        }
+        Ok(())
+    }
+
     pub(super) fn bind_presenter(
         &mut self,
         presenter: Option<&SurfacePresenter>,
     ) -> Result<(), FrameError> {
         bind_presenter(&self.prepared, &mut self.slots, presenter)
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(super) fn prepare_maps_fallback(
+    capabilities: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    scene: &SyntheticScene,
+    frame: &SceneFrame,
+    exposure: f32,
+    extent: [u32; 2],
+    presenter: Option<&SurfacePresenter>,
+) -> Result<PreparedScene, FrameError> {
+    let mut inputs = scene.clone();
+    inputs.view = frame.view;
+    let prepared = pollster::block_on(PreparedSynthetic::prepare_ray_fallback(
+        capabilities,
+        queue,
+        &inputs,
+        frame.lighting,
+        exposure,
+    ))
+    .map_err(|error| FrameError::Gpu(format!("fallback Maps scene: {error:?}")))?;
+    let prepared = PreparedRenderer::ThreeD(Box::new(prepared));
+    let mut slots = prepare_slots(
+        &prepared,
+        queue,
+        extent,
+        presenter.map(SurfacePresenter::profile),
+    )?;
+    bind_presenter(&prepared, &mut slots, presenter)?;
+    Ok(PreparedScene { prepared, slots })
 }
 
 pub(super) fn bind_presenter(

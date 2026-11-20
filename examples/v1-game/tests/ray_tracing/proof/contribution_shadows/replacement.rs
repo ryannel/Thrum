@@ -3,13 +3,27 @@ use thrum_render::{
     capabilities::RayStructureSelection,
     contribution::{RayInstances, ShadowBounds},
     present::SurfaceProfile,
-    runtime::SurfaceOutput,
+    runtime::{FrameSample, SurfaceOutput},
     synthetic::ShadowSelection,
 };
 
 pub(super) fn prove(metal: &Metal, fixture: &Fixture) {
     let replacement = metal.replacement();
+    for phase in [Phase::Attachment, Phase::Visual, Phase::Device] {
+        prove_phase(metal, &replacement, fixture, phase);
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Phase {
+    Attachment,
+    Visual,
+    Device,
+}
+
+fn prove_phase(metal: &Metal, replacement: &Metal, fixture: &Fixture, phase: Phase) {
     let mut baseline = None;
+    let revision = (phase == Phase::Visual).then_some([9; 32]);
     for requested in [SunShadowMethod::Maps, SunShadowMethod::Traced] {
         let traced = requested == SunShadowMethod::Traced;
         let view = SyntheticView::perspective(
@@ -29,6 +43,11 @@ pub(super) fn prove(metal: &Metal, fixture: &Fixture) {
         scene.sun_shadows = true;
         scene.sun_shadow_method = requested;
         scene.lamp_shadows = traced;
+        scene.local_lights = vec![SyntheticPointLight {
+            position: [0.0, 1.1, -2.0],
+            radius: 5.0,
+            candela: [950.0; 3],
+        }];
         let profile = SurfaceProfile {
             format: wgpu::TextureFormat::Rgba8Unorm,
             extent: EXTENT,
@@ -56,24 +75,41 @@ pub(super) fn prove(metal: &Metal, fixture: &Fixture) {
         .expect("cooked receiver");
         let stats = cooked.stats();
         let attempts = Arc::new(Mutex::new(Vec::new()));
-        host.set_scene_contribution(Box::new(Fault {
+        host.attach_scene_contribution(Box::new(Fault {
             cooked,
             attempts: Arc::clone(&attempts),
+            phase,
         }))
-        .expect("attach before replacement");
-        assert_ne!(
-            settled_pixels(&mut host, &stats, 1, fixture.generation()),
-            bare
-        );
-        let mut candidate =
-            pollster::block_on(host.device_prepare_inputs().expect("inputs").prepare(
-                &replacement.caps,
-                &replacement.queue,
-                Some(profile),
-            ))
-            .expect("prepare replacement");
-        host.publish_device(&mut candidate)
-            .expect("publish replacement");
+        .expect("attach cooked contribution");
+        if phase != Phase::Attachment {
+            assert_ne!(
+                settled_pixels(&mut host, &stats, 1, fixture.generation()),
+                bare
+            );
+        }
+        let active = match phase {
+            Phase::Attachment => metal,
+            Phase::Visual => {
+                let mut candidate = pollster::block_on(
+                    host.visual_prepare_inputs()
+                        .prepare(lighting, 1.0, revision),
+                )
+                .expect("prepare visual");
+                assert!(host.publish_visual(&mut candidate).expect("publish visual"));
+                metal
+            }
+            Phase::Device => {
+                let mut candidate =
+                    pollster::block_on(host.device_prepare_inputs().expect("inputs").prepare(
+                        &replacement.caps,
+                        &replacement.queue,
+                        Some(profile),
+                    ))
+                    .expect("prepare device");
+                host.publish_device(&mut candidate).expect("publish device");
+                replacement
+            }
+        };
         assert_eq!(host.contribution_error(), None);
         let expected = ShadowSelection {
             requested_sun: requested,
@@ -81,9 +117,11 @@ pub(super) fn prove(metal: &Metal, fixture: &Fixture) {
             fallback: traced.then_some(RayStructureSelection::PreparationFailed),
             ..ShadowSelection::default()
         };
-        assert_eq!(first_frame(&mut host, &replacement, profile), expected);
+        let first = first_frame(&mut host, active, profile);
+        assert_eq!(first.shadow_selection, expected);
+        assert_eq!(first.visual_revision, revision);
         assert!(
-            host.ray_structure_probe_group(&replacement.device.create_bind_group_layout(
+            host.ray_structure_probe_group(&active.device.create_bind_group_layout(
                 &wgpu::BindGroupLayoutDescriptor {
                     label: None,
                     entries: &[]
@@ -91,18 +129,27 @@ pub(super) fn prove(metal: &Metal, fixture: &Fixture) {
             ))
             .is_none()
         );
-        let after = settled_pixels(&mut host, &stats, 2, fixture.generation());
+        let generation = active.caps.generation();
+        let after = settled_pixels(&mut host, &stats, generation, fixture.generation());
         let attempts = attempts.lock().expect("rebuild attempts");
         if traced {
-            assert_eq!(*attempts, [(1, true), (2, true), (2, false)]);
+            match phase {
+                Phase::Attachment => assert_eq!(*attempts, [(1, true), (1, false)]),
+                Phase::Visual => assert_eq!(*attempts, [(1, true), (1, true), (1, false)]),
+                Phase::Device => assert_eq!(*attempts, [(1, true), (2, true), (2, false)]),
+            }
             assert_eq!(&after, baseline.as_ref().expect("Maps control"));
             report(
-                &json!({"case": "cooked replacement fallback", "generation": 2,
+                &json!({"case": "cooked pipeline fallback", "phase": format!("{phase:?}"), "generation": generation,
                 "rebuild_attempts": *attempts, "selection": format!("{expected:?}"),
                 "matching_map_bytes": after.len()}),
             );
         } else {
-            assert_eq!(*attempts, [(1, false), (2, false)]);
+            match phase {
+                Phase::Attachment => assert_eq!(*attempts, [(1, false)]),
+                Phase::Visual => assert_eq!(*attempts, [(1, false), (1, false)]),
+                Phase::Device => assert_eq!(*attempts, [(1, false), (2, false)]),
+            }
             assert_ne!(after, bare);
             baseline = Some(after);
         }
@@ -133,7 +180,7 @@ fn first_frame(
     host: &mut EngineHost<World, Camera>,
     metal: &Metal,
     profile: SurfaceProfile,
-) -> ShadowSelection {
+) -> FrameSample {
     let texture = metal.device.create_texture(&wgpu::TextureDescriptor {
         label: Some("replacement fixture surface"),
         size: wgpu::Extent3d {
@@ -161,7 +208,7 @@ fn first_frame(
     let deadline = Instant::now() + Duration::from_secs(20);
     loop {
         if let Some(sample) = host.poll_completed().expect("replacement report") {
-            return sample.shadow_selection;
+            return sample;
         }
         assert!(
             Instant::now() < deadline,
@@ -174,16 +221,21 @@ fn first_frame(
 struct Fault {
     cooked: CookedAssets,
     attempts: Arc<Mutex<Vec<(u64, bool)>>>,
+    phase: Phase,
 }
 
 impl SceneContribution for Fault {
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
-        self.attempts
-            .lock()
-            .expect("rebuild attempts")
-            .push((surface.generation, surface.ray_demand));
+        let mut attempts = self.attempts.lock().expect("rebuild attempts");
+        let inject = match self.phase {
+            Phase::Attachment => true,
+            Phase::Visual => !attempts.is_empty(),
+            Phase::Device => surface.generation == 2,
+        };
+        attempts.push((surface.generation, surface.ray_demand));
+        drop(attempts);
         let mut surface = surface.clone();
-        if surface.generation == 2 && surface.ray_demand {
+        if inject && surface.ray_demand {
             surface.fragment_entry = "injected_missing_entry";
         }
         self.cooked.rebuild(&surface)
