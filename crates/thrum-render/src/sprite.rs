@@ -6,7 +6,7 @@ mod graph;
 mod pass;
 mod world;
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
-pub use world::SpriteSink;
+pub use world::{SpritePose, SpriteSink};
 
 /// One frame's 2D camera. The host supplies the drawable's physical extent.
 #[derive(Clone, Copy, Debug)]

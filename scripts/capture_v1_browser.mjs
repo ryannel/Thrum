@@ -222,8 +222,9 @@ try {
             raw = await decompress(await fs.readFile(path.join(output, row.file)));
           }
           const digest = sha(raw);
-          if (spriteField) row.rgba_sha256 = digest;
-          if (raw.length !== frameBytes || digest !== row.rgba_sha256) throw new Error('Lossless round-trip failed');
+          if (raw.length !== frameBytes || digest !== row.rgba_sha256) {
+            throw new Error(`Lossless round-trip failed for submission ${row.submission_id}`);
+          }
           if (retainRaw) {
             row.file = path.basename(spoolPath);
             row.offset = i * frameBytes;

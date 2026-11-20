@@ -9,7 +9,8 @@ use crate::{
 };
 use thrum_core::{StableId, WorldEpoch};
 use thrum_render::sprite::{
-    EmbeddedSheet, SpriteFrame, SpriteRect, SpriteRow, SpriteScene, SpriteSink, SpriteView,
+    EmbeddedSheet, SpriteFrame, SpritePose, SpriteRect, SpriteRow, SpriteScene, SpriteSink,
+    SpriteView,
 };
 
 const SIDE: u32 = 20;
@@ -155,7 +156,13 @@ pub(crate) fn extract(into: &mut SpriteSink<'_>, page: &PublishedPage) {
             row.frame = 3;
             row.additive = 1.0;
         }
-        into.push(handle.slot, handle.generation, id.0, row);
+        // Every field entity is seeded with a visual for its entire lifetime.
+        // The tick page guards the previous position by identity and generation.
+        let previous = page.previous_position(handle).map(|position| SpritePose {
+            position: [position.0[0], position.0[1]],
+            ..row.into()
+        });
+        into.push_pair(handle.slot, handle.generation, id.0, row, previous);
     });
 }
 

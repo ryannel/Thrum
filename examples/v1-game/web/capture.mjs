@@ -51,6 +51,7 @@ function drain() {
       reusablePixels.push(reply.pixels);
       if (reply.retries.length) (record.export_retries ??= []).push(...reply.retries);
       if (reply.error) throw new Error(reply.error);
+      if (spriteField) metadata.rgba_sha256 = reply.rgba_sha256;
     }) : uploadCapture(ordinal, image, retry => (record.export_retries ??= []).push(retry));
     const task = upload
       .catch(error => { exportError = String(error); }).finally(() => inflight.delete(task));

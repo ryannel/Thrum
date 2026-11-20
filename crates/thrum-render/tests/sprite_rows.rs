@@ -170,6 +170,42 @@ fn interpolates_only_adjacent_matching_endpoints_and_steps_art_by_tick() {
 }
 
 #[test]
+fn a_tick_page_pair_bridges_a_missed_observation_without_bridging_a_rewind() {
+    let Some(gpu) = thrum_test_support::gpu("published sprite pair", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let mut scene = fixture::Scene::new(Vec::new(), 1);
+    scene
+        .world_rows
+        .push((0, 1, 9, row(0, [-30.0, 10.0], 0.0, [1.0; 2])));
+    let mut config = SpriteScene::new(art(), 0);
+    config.world_capacity = 1;
+    let (device, queue, caps) = fixture::metal(&gpu, "portable", 1);
+    let mut host = fixture::configured_host(&caps, &queue, EXTENT, scene, config);
+
+    let previous = row(0, [-12.0, 10.0], 350.0, [0.75, 1.25]);
+    let current = row(1, [8.0, 2.0], 10.0, [1.75, 0.75]);
+    let scene = host.continuous_source_mut();
+    scene.world_rows[0].3 = current;
+    scene.published_poses.insert(0, Some(previous.into()));
+    let skipped = submit(&mut host, &device, 2, 0, 0.25);
+    pixel_check(&skipped, [-7.0, 8.0], 355.0, [1.0, 1.125], GREEN);
+    assert_eq!(skipped.sample.moving, 1);
+
+    let rewind = submit(&mut host, &device, 1, 1, 0.25);
+    pixel_check(&rewind, current.position, 10.0, [1.75, 0.75], GREEN);
+    assert_eq!(rewind.sample.moving, 0);
+
+    let scene = host.continuous_source_mut();
+    scene.world_rows[0] = (0, 2, 10, previous);
+    scene.published_poses.insert(0, None);
+    let reused_slot = submit(&mut host, &device, 3, 1, 0.25);
+    pixel_check(&reused_slot, previous.position, 350.0, [0.75, 1.25], RED);
+    assert_eq!(reused_slot.sample.moving, 0);
+}
+
+#[test]
 fn one_recorded_draw_binds_eight_sheets_and_writes_only_changed_world_rows() {
     let Some(gpu) = thrum_test_support::gpu("sprite sheet and uploads", Some(wgpu::Backend::Metal))
     else {

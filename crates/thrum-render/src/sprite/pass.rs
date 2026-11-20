@@ -2,7 +2,7 @@
 
 use super::{
     EmbeddedSheet, SpriteFrame, SpriteFrameStats, SpriteRect, SpriteScene,
-    world::{self, OrderedRow, Pose, SpriteWorld},
+    world::{self, OrderedRow, SpritePose, SpriteWorld},
 };
 use crate::{
     capabilities::DeviceCapabilities,
@@ -533,7 +533,12 @@ fn split([x, y]: [f64; 2]) -> [f32; 4] {
     ]
 }
 
-fn pack(scene: &SpriteScene, frame_bases: &[u32], row: super::SpriteRow, previous: Pose) -> GpuRow {
+fn pack(
+    scene: &SpriteScene,
+    frame_bases: &[u32],
+    row: super::SpriteRow,
+    previous: SpritePose,
+) -> GpuRow {
     let sheet = row.sheet as usize;
     let units = scene.sheets[sheet].sheet.texels_per_unit;
     let [x, y] = row.scale.map(|scale| scale / units);

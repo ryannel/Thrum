@@ -33,20 +33,52 @@ impl OrderKey {
     }
 }
 
-#[derive(Clone, Copy)]
-pub(super) struct Pose {
-    pub(super) position: [f64; 2],
-    pub(super) rotation: f32,
-    pub(super) scale: [f32; 2],
+/// The geometric endpoint of a world sprite row.
+#[derive(Clone, Copy, Debug)]
+pub struct SpritePose {
+    /// World position of the top-left pivot.
+    pub position: [f64; 2],
+    /// Counterclockwise rotation about the pivot, in radians.
+    pub rotation: f32,
+    /// Signed local X and Y scale.
+    pub scale: [f32; 2],
 }
 
-impl From<SpriteRow> for Pose {
+impl From<SpriteRow> for SpritePose {
     fn from(row: SpriteRow) -> Self {
         Self {
             position: row.position,
             rotation: row.rotation,
             scale: row.scale,
         }
+    }
+}
+
+// Headroom for GPU subtraction, interpolation and both quad axes.
+const POSE_LIMIT: f64 = f32::MAX as f64 / 16.0;
+
+impl SpritePose {
+    fn geometry(self, units: f32, size: [u32; 2]) -> Option<([f64; 2], f64)> {
+        let half_size =
+            [0, 1].map(|axis| f64::from(self.scale[axis] / units) * f64::from(size[axis]) * 0.5);
+        let [x, y] = half_size;
+        let radius = x.hypot(y);
+        (self
+            .position
+            .into_iter()
+            .all(|v| (-POSE_LIMIT..=POSE_LIMIT).contains(&v))
+            && radius > 0.0
+            && radius <= POSE_LIMIT
+            && x != 0.0
+            && y != 0.0
+            && self.rotation.is_finite())
+        .then_some((half_size, radius))
+    }
+
+    fn differs_from(self, row: SpriteRow) -> bool {
+        self.position.map(f64::to_bits) != row.position.map(f64::to_bits)
+            || self.rotation.to_bits() != row.rotation.to_bits()
+            || self.scale.map(f32::to_bits) != row.scale.map(f32::to_bits)
     }
 }
 
@@ -59,26 +91,13 @@ pub(super) fn describe(
     let source = &scene.sheets.get(row.sheet as usize)?.sheet;
     let rect = source.frames.get(row.frame as usize)?;
     let sort = row.sort.unwrap_or(-row.position[1]);
-    let [x, y] = [0, 1].map(|axis| {
-        f64::from(row.scale[axis] / source.texels_per_unit) * f64::from(rect.size[axis]) * 0.5
-    });
+    let ([x, y], radius) = SpritePose::from(row).geometry(source.texels_per_unit, rect.size)?;
     let (sin, cos) = f64::from(row.rotation).sin_cos();
     let centre = [
         row.position[0] + x * cos + y * sin,
         row.position[1] + x * sin - y * cos,
     ];
-    let radius = x.hypot(y);
-    // Headroom for GPU subtraction, interpolation and both quad axes.
-    let limit = f64::from(f32::MAX) / 16.0;
     if !sort.is_finite()
-        || row
-            .position
-            .into_iter()
-            .any(|value| !(-limit..=limit).contains(&value))
-        || !(radius > 0.0 && radius <= limit)
-        || x == 0.0
-        || y == 0.0
-        || !row.rotation.is_finite()
         || !row
             .tint
             .into_iter()
@@ -107,7 +126,7 @@ pub(super) struct WorldRow {
     pub(super) source: SourceTick,
     generation: u64,
     pub(super) current: SpriteRow,
-    pub(super) previous: Pose,
+    pub(super) previous: SpritePose,
     pub(super) ordered: OrderedRow,
     pub(super) moving: bool,
     has_history: bool,
@@ -120,16 +139,61 @@ pub struct SpriteSink<'a> {
     source: SourceTick,
 }
 
+enum PreviousPose {
+    Retained,
+    Published(Option<SpritePose>),
+}
+
 impl SpriteSink<'_> {
     /// Map a visible entity's physical slot, slot generation and stable identity.
     /// Invalid, duplicate and out-of-capacity rows are counted and skipped.
     pub fn push(&mut self, slot: u32, generation: u64, identity: u128, row: SpriteRow) {
-        if !self.try_push(slot, generation, identity, row) {
+        self.write(slot, generation, identity, row, PreviousPose::Retained);
+    }
+
+    /// Map a row whose tick page also supplies the previous simulation endpoint.
+    /// The source must supply that pose only for the same identity and slot
+    /// generation on the immediately preceding tick of this timeline. Use
+    /// `None` when the row did not exist there. A missing or unusable pose
+    /// holds the committed pose, including on a timeline or epoch change.
+    pub fn push_pair(
+        &mut self,
+        slot: u32,
+        generation: u64,
+        identity: u128,
+        row: SpriteRow,
+        previous: Option<SpritePose>,
+    ) {
+        self.write(
+            slot,
+            generation,
+            identity,
+            row,
+            PreviousPose::Published(previous),
+        );
+    }
+
+    fn write(
+        &mut self,
+        slot: u32,
+        generation: u64,
+        identity: u128,
+        row: SpriteRow,
+        pose: PreviousPose,
+    ) {
+        if !self.try_push(slot, generation, identity, row, pose) {
             self.world.dropped = self.world.dropped.saturating_add(1);
         }
     }
 
-    fn try_push(&mut self, slot: u32, generation: u64, identity: u128, row: SpriteRow) -> bool {
+    fn try_push(
+        &mut self,
+        slot: u32,
+        generation: u64,
+        identity: u128,
+        row: SpriteRow,
+        pose: PreviousPose,
+    ) -> bool {
         let Some(saved) = self.world.slots.get_mut(slot as usize) else {
             return false;
         };
@@ -139,27 +203,36 @@ impl SpriteSink<'_> {
         let Some(ordered) = describe(self.scene, row, false, identity) else {
             return false;
         };
+        let same_timeline = self.world.source.filter(|source| {
+            source.epoch == self.source.epoch && source.timeline == self.source.timeline
+        });
         let old = saved.filter(|old| {
-            Some(old.source) == self.world.source
-                && old.source.epoch == self.source.epoch
-                && old.source.timeline == self.source.timeline
+            Some(old.source) == same_timeline
                 && old.generation == generation
                 && old.ordered.key.identity == identity
         });
-        // A missed publication removes the pose interval. The retained list
-        // can still compare the same live identities at the next observed tick.
-        let previous = old
-            .filter(|old| old.source.tick.checked_add(1) == Some(self.source.tick))
-            .map_or(row, |old| old.current);
+        // The retained order follows observed identities. The pose pair may
+        // come from an adjacent simulation tick the host did not observe.
+        let previous = match pose {
+            PreviousPose::Retained => old
+                .filter(|old| old.source.tick.checked_add(1) == Some(self.source.tick))
+                .map(|old| old.current.into()),
+            PreviousPose::Published(previous) => previous.filter(|pose| {
+                let sheet = &self.scene.sheets[row.sheet as usize].sheet;
+                same_timeline.is_some_and(|source| source.tick < self.source.tick)
+                    && pose
+                        .geometry(sheet.texels_per_unit, sheet.frames[row.frame as usize].size)
+                        .is_some()
+            }),
+        }
+        .unwrap_or_else(|| row.into());
         *saved = Some(WorldRow {
             source: self.source,
             generation,
             current: row,
-            previous: previous.into(),
+            previous,
             ordered,
-            moving: previous.position.map(f64::to_bits) != row.position.map(f64::to_bits)
-                || previous.rotation.to_bits() != row.rotation.to_bits()
-                || previous.scale.map(f32::to_bits) != row.scale.map(f32::to_bits),
+            moving: previous.differs_from(row),
             has_history: old.is_some(),
         });
         self.world.visited.push(slot);

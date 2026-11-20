@@ -13,7 +13,7 @@ use thrum_render::{
         CaptureLimits, FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource,
         SpriteSceneRequests, SubmittedImage, SurfaceOutput,
     },
-    sprite::{EmbeddedSheet, SpriteFrame, SpriteRect, SpriteRow, SpriteScene, SpriteSink, SpriteView},
+    sprite::{EmbeddedSheet, SpriteFrame, SpritePose, SpriteRect, SpriteRow, SpriteScene, SpriteSink, SpriteView},
     synthetic::{CaptureSource, FrameLighting, SyntheticView},
 };
 
@@ -111,6 +111,7 @@ impl FrameWorld for World {
 pub(crate) struct Scene {
     pub(crate) rows: Vec<SpriteRow>,
     pub(crate) world_rows: Vec<(u32, u64, u128, SpriteRow)>,
+    pub(crate) published_poses: std::collections::BTreeMap<u32, Option<SpritePose>>,
     pub(crate) scale: u8,
     pub(crate) centre: [f64; 2],
     pub(crate) lighting: Option<FrameLighting>,
@@ -121,6 +122,7 @@ impl Scene {
         Self {
             rows,
             world_rows: Vec::new(),
+            published_poses: std::collections::BTreeMap::new(),
             scale,
             centre: [0.0; 2],
             lighting: None,
@@ -149,7 +151,11 @@ impl SceneSource<SourceTick> for Scene {
     }
     fn extract_sprites(&self, sink: &mut SpriteSink<'_>, _: &SourceTick) {
         for &(slot, generation, identity, row) in &self.world_rows {
-            sink.push(slot, generation, identity, row);
+            if let Some(&previous) = self.published_poses.get(&slot) {
+                sink.push_pair(slot, generation, identity, row, previous);
+            } else {
+                sink.push(slot, generation, identity, row);
+            }
         }
     }
     fn sprites(&self, _: SourceTick, _: f32, extent: [u32; 2]) -> Result<SpriteFrame<'_>, String> {

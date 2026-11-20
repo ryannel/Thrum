@@ -76,6 +76,7 @@ if (typeof DedicatedWorkerGlobalScope !== 'undefined' && self instanceof Dedicat
   self.onmessage = async ({ data: { ordinal, image, spool, seal } }) => {
     const retries = [];
     let error;
+    let rgba_sha256;
     try {
       if (seal) {
         const file = await opened;
@@ -89,16 +90,20 @@ if (typeof DedicatedWorkerGlobalScope !== 'undefined' && self instanceof Dedicat
         })();
         const file = await opened;
         const length = image.pixels.byteLength;
+        const offset = ordinal * length;
         // Half the output allowance is reserved for the browser's exported copy.
-        if (ownedBytes + length > 8 * 1024 ** 3 - 64 * 1024 ** 2) throw new Error('Browser spool allowance exhausted');
-        if (file.write(image.pixels, { at: ownedBytes }) !== length) throw new Error('Short browser spool write');
+        if (offset + length > 8 * 1024 ** 3 - 64 * 1024 ** 2) throw new Error('Browser spool allowance exhausted');
+        const digest = await crypto.subtle.digest('SHA-256', image.pixels);
+        rgba_sha256 = new Uint8Array(digest).toHex();
+        // Hashes can finish out of order. The submission ordinal owns its offset.
+        if (file.write(image.pixels, { at: offset }) !== length) throw new Error('Short browser spool write');
         ownedBytes += length;
       } else {
         await uploadCapture(ordinal, image, retry => retries.push(retry));
       }
     } catch (failure) { error = String(failure); }
     if (seal) self.postMessage({ sealed: true, error, spool_bytes: ownedBytes });
-    else self.postMessage({ ordinal, pixels: image.pixels, retries, error }, [image.pixels.buffer]);
+    else self.postMessage({ ordinal, pixels: image.pixels, retries, error, rgba_sha256 }, [image.pixels.buffer]);
   };
   self.postMessage({ ready: true });
 }
