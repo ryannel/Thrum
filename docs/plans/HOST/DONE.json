@@ -136,8 +136,8 @@
           "lock": "gpu",
           "ask": "Does the simulator leg run the background, rotation and loss checks `PLATFORM-RUNTIME-IOS` left, unedited? Simulator results are function only: is anything else claimed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m24-preserve-restore-after-one-configure-exception",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
