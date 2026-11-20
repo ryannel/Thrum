@@ -146,4 +146,5 @@
 - 2026-11-20 Added a client-owned predicted controller with a 64-tick history, exact reconciliation and adjacent presentation endpoints.
   Both 36,000-tick Mac runs matched every retained admitted prediction, traced corrections to held frames, and recovered from a stall, repair and reconnect.
   The Mac reproduced both retained SIM-2D traces. The landed implementation's four release cost runs recorded the machine load.
+  The shared exact-image check passed both targets on a main revision that contains the implementation.
   [M4 evidence](../../../.orchestrate/evidence/SESSION/M4/README.md)
