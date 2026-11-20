@@ -252,3 +252,7 @@
   last milestone pauses the other builders for a timing, and quiet figures wait for one batched window if
   they are still wanted ([settings](../../../ORCHESTRATE.md#targets)). The assumption in this plan was
   written again to say so. No item of this module changed.
+- 2026-11-20 [The module list](../ARCHITECTURE.md#ruling-on-relocated-references) gained a ruling on where
+  retained references are kept, after `SHOWCASE` M9 moved them to test fixtures on the lead's ruling. In the
+  registry a relocation changes `reference`, the matching `covered_paths` and, through the paths, each `pin`
+  and `refresh`. The guard and the verifier are as they were. No item of this module changed.

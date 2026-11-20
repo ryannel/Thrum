@@ -795,6 +795,9 @@ byte for byte. One run covers every commit merged since the last one, whoever me
   drawn or compared, and no image proof made before it is made again for it. A rebase that changes a pin,
   because main changed a comparison file, is settled the same way: the builder copies the pins the guard
   prints and keeps its own refresh.
+- **A relocation is separate.** Moving the retained files to another folder changes paths, which a refresh does
+  not. [The ruling on where retained references are kept](#ruling-on-relocated-references) says which paths
+  follow the files and what still may not change.
 
 <a id="the-covered-paths-are-derived"></a>
 
@@ -963,7 +966,8 @@ changes the valley's terrain, so it moves every registered set, and no plan said
   together as rule 2's planned refresh. M9's builder regenerates each reference that moved, from the changed
   commit, with `APPLE-TILE`'s own scripts. In the registry it changes the `pin` and the `refresh` of each
   baseline whose reference moved, and the refresh names `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`. Every
-  other field of the registry, the comparisons, their sampling and every script stay as they are. Both
+  other field of the registry, the comparisons, their sampling and every script stay as they are, apart from
+  the paths that [the relocation in the same landing](#ruling-on-relocated-references) moves. Both
   modules' logs record the cause and each moved reference's old and new SHA-256. `SHOWCASE` M9.6 holds this.
 - **A change to the look in `ATMOSPHERE` M6.** After the valley is fixed, M6's list may still need a change to
   the sky or the sunlight, which [its design](ATMOSPHERE/DESIGN.md#closing-g3s) allows. Such a change also
@@ -975,6 +979,44 @@ changes the valley's terrain, so it moves every registered set, and no plan said
   measured, and none is taken again for this. A milestone not yet claimed when M9 lands integrates on top, as
   after any merge.
 - **Everyone else.** Nothing is owed: the run on main after M9's landing compares with the new references.
+
+<a id="ruling-on-relocated-references"></a>
+
+**Ruling on where retained references are kept (with `SHOWCASE`, `APPLE-TILE` and `BASELINE-GUARD`), 20 November
+2026.** Evidence left Git for the working folder on 19 November, and the loop's merge guard now refuses a commit
+that changes a file under `docs/evidence/`. The retained references were kept there, so `SHOWCASE` M9 could not
+land its refresh. The lead ruled that a file a check reads is test data and not evidence, and the references
+moved to test fixtures in M9's landing. The 16 November text on a planned refresh and the valley ruling were
+written before that. Both say the registry's other fields and every comparison file stay as they are, and
+[M9's review](../../.orchestrate/evidence/SHOWCASE/M9-review.md) failed M9.6 on that wording. This ruling says
+what a relocation may change, so that the freeze keeps protecting what it was written for: what each comparison
+compares and how it decides.
+
+- **Where they are kept.** `APPLE-TILE`'s native references are in
+  `examples/v1-game/tests/fixtures/exact-images/native/` and its four Chrome manifests under
+  `examples/v1-game/tests/fixtures/exact-images/chrome/`. `SHOWCASE`'s two thresholded baselines are in
+  `examples/v1-game/tests/fixtures/showcase/`. The table above names each.
+- **What a relocation is.** Every retained file keeps its name under the new folder, and its bytes. A file the
+  same landing does not regenerate has the same Git blob at its new path as it had at its old one.
+- **What follows the files.** Only a path that says where the references are: the registry's `reference`, the
+  matching entries of `covered_paths`, and the line of a comparison file that names the folder it reads them
+  from, which is `BASELINE` in `scripts/apple_tile_m1.py`. A pin covers its baseline's definition and its
+  files' paths, so each relocated baseline's `pin` changes, and its `refresh` with it. The refresh names the
+  ruling that the landing's planned refresh names, or `ruling-on-relocated-references` when a relocation
+  lands alone.
+- **What does not change.** The registry's other fields: each baseline's identity, owner, scene, source,
+  candidate, comparison, record count and lists of comparison files. The sampling and the exactness. Every
+  other line of every comparison file. A relocation that needs more than a path is a change to the owner's
+  interface under rule 1.
+- **Proof.** A relocation draws nothing. The reference guard pins the blobs at their new paths, and the next
+  run on main compares fresh output with them there. A reviewer compares the retained files before and after,
+  by name and Git blob.
+- **Earlier text.** Where a ruling or an item written before this says a refresh changes only the `pin` and
+  the `refresh`, or that the comparison files are as they were, it means apart from these paths. `SHOWCASE`
+  M9.6 is written again to say so. `ATMOSPHERE` M6.9 judges that milestone's own commits, which hold no
+  relocation, and stands.
+- **Another relocation** is named here first, with its old and new paths, as any change to an owner's
+  interface is.
 
 <a id="a-frame-that-varies-under-load"></a>
 
@@ -2802,3 +2844,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   into the route files of `APPLE-TILE`, `CULLING` and `EFFECT-GRAPH`, and lets `ATMOSPHERE` M6 refresh the sets
   once more if its list needs a change to the look. `ATMOSPHERE` M6 now waits for `SHOWCASE` M9 and carries the
   verifier as M6.9. No item of `APPLE-TILE`, `CULLING` or `EFFECT-GRAPH`, comparison or contract changed.
+- 2026-11-20 `SHOWCASE` M9's review failed M9.6 on the lead's move of the retained references out of
+  `docs/evidence/`, which the item's wording forbade. [Exact baselines](#exact-baselines) gained
+  [the ruling on where retained references are kept](#ruling-on-relocated-references): a relocation keeps
+  every file's name and bytes, and only the paths that say where the references are follow it. The text on a
+  planned refresh and the valley ruling point at it, and `SHOWCASE` M9.6 is written again. No comparison,
+  sampling, reference byte or contract changed, and no item of `APPLE-TILE`, `BASELINE-GUARD` or `ATMOSPHERE`.

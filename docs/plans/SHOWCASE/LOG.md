@@ -119,3 +119,10 @@
 - 2026-11-20 The M9 landing moves the exact references and route and motion check inputs out of the former evidence folder under the lead's relocation ruling. The fixture audit records identical bytes across the move. The registry paths and the native comparison driver's input path follow the files. [Fixture audit](../../../.orchestrate/evidence/SHOWCASE/M9/fixture-relocation.json).
 
 - 2026-11-20 The first post-rebase exit check recorded a 1252 × 704 Chrome backing after responsive extent support landed. The route-check pages hold the original 1280 × 720 backing and viewport used for calibration. [Resize evidence](../../../.orchestrate/evidence/SHOWCASE/M9/exit-responsive-backing-failure.json).
+
+- 2026-11-20 Diagnosed M9 after [its review](../../../.orchestrate/evidence/SHOWCASE/M9-review.md) failed M9.6
+  alone. The plan was at fault. M9.6 let the registry change only in `pin` and `refresh` and froze every
+  comparison file, and was written before the lead ruled that the references leave `docs/evidence/`. The move
+  kept every file's name and bytes and changed only the paths that say where the references are.
+  [The module list](../ARCHITECTURE.md#ruling-on-relocated-references) now rules on a relocation, M9.6 is
+  written again from its claim, and the design says which paths follow the files. No other item changed.

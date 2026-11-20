@@ -52,21 +52,17 @@ them on the exit scene and changes none of them. If equality fails, stop and dia
 
 ## M9 From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows
 
-Read [The lookout's rim and the sunrise stop](DESIGN.md#the-lookouts-rim-and-the-sunrise-stop) and
-[the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) first: the ruling says which files of other modules
-take the new root and how `APPLE-TILE`'s references are refreshed. `ATMOSPHERE` M6's builder found both
-defects, and its evidence, with the held frames to compare against, is `.orchestrate/evidence/ATMOSPHERE/M6/README.md`
-on the branch `build/atmosphere` until that milestone merges. A held frame at a preset comes from
-`scripts/capture_v1_runtime.py --mode fixed --case checkpoint --params <preset> --reconstruction taau`. The
-bare valley's thresholds and calibrated root are constants in the launcher, and `check --source DIR
---recalibrate` judges another root by the rule. Before changing anything, note the main-branch check's pass
-that covers the starting commit. Everything lands together: terrain, layout, preset, root pins, references,
-registry and both baselines. The root pins are every route file naming an old root when you start, which
-includes M6's `exit-fast-yaw.json`. Make the two launcher changes of
-[What a route check must have compared](DESIGN.md#what-a-route-check-must-have-compared) before calibrating
-either baseline, because a calibration run has to pass every control. M6 built the `culling --exit` commands
-that M9.8 and M9.9 run. Keep this milestone's receipts under a name of its own, and leave
-M6's retained receipts as they are.
+M9 is built and on main (`cd0c011e5`). [Its review](../../../.orchestrate/evidence/SHOWCASE/M9-review.md) passed
+every item except M9.6, and that item is written again. The landing moved the retained references and this
+module's check inputs out of `docs/evidence/` into test fixtures, on the lead's ruling, and M9.6 froze the
+paths that had to follow them. [The relocation ruling](../ARCHITECTURE.md#ruling-on-relocated-references) now
+says which paths may. Nothing is known to be left to build. Claim each item again from its evidence in
+`.orchestrate/evidence/SHOWCASE/M9/`, renewing only what has changed on main since, and read the landed diff
+against M9.6 as it now stands before claiming it. Change the terrain, a preset, a reference or the registry only
+if a check fails, and then read
+[The lookout's rim and the sunrise stop](DESIGN.md#the-lookouts-rim-and-the-sunrise-stop) and
+[the valley ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix) first, because everything that moves with the
+terrain lands together. Keep this milestone's receipts under a name of their own, and M6's as they are.
 
 ## M7 One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran
 
