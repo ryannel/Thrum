@@ -102,6 +102,8 @@ impl PreparedSprites {
             contribution_passes: self.contribution_passes,
             effects: self.effects.clone(),
             sprites: self.sprites.target_inputs(),
+            world: SpriteWorld::new(0),
+            ordering: std::time::Duration::ZERO,
             tone: self.tone.clone(),
         }
     }

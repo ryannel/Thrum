@@ -55,15 +55,24 @@ pub(super) const VIEW_BYTES: u64 = size_of::<GpuView>() as u64;
 
 impl SpritePass {
     pub(super) fn target_inputs(&self) -> Self {
+        // Target preparation binds the resident buffers without owning their upload state.
         Self {
             key: self.key,
             pipeline: self.pipeline.clone(),
-            rows_bytes: self.rows_bytes,
+            rows: self.rows.clone(),
+            order: self.order.clone(),
             frames: self.frames.clone(),
-            sheet: self.sheet.clone(),
-            sheet_view: self.sheet_view.clone(),
+            sheets: self.sheets.clone(),
+            frame_bases: Vec::new(),
+            world_capacity: self.world_capacity,
             row_capacity: self.row_capacity,
-            scratch: Vec::new(),
+            world_source: None,
+            cpu_rows: Vec::new(),
+            frame_keys: Vec::new(),
+            frame_order: Vec::new(),
+            current_order: Vec::new(),
+            visible_world: Vec::new(),
+            uploaded_order: Vec::new(),
         }
     }
 
