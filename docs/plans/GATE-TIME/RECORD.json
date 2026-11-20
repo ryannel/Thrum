@@ -1,6 +1,28 @@
 {
   "module": "GATE-TIME",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/GATE-TIME/design-review.md",
+    "commit": "9009699b322a46f15196526adf8d67923370c27d",
+    "hash": "e7215d64c69a34107463100032f98dd57cb98d4019468fc20a16ba27f5011a87",
+    "by": "review",
+    "host": "claude",
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "observed": {
+      "model": "claude-opus-5-5"
+    },
+    "cli": "2.1.319 (Claude Code)",
+    "path": "headless",
+    "usage": {
+      "input": 170279,
+      "cached": 6298120,
+      "output": 42771,
+      "cost_usd": 3.47682,
+      "turns": 1
+    },
+    "at": "2026-11-20T10:21:11Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "423079029c663879fc24b1de6deee61d4d5e2a8415922dd4bed09175d0040fa5",
