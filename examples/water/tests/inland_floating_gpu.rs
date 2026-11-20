@@ -1,4 +1,5 @@
 //! The same game-owned forces on the lake and in a prepared chart.
+#[cfg(target_os = "macos")]
 mod support;
 
 use glam::DVec3;
@@ -14,7 +15,7 @@ use water_scene::{
     island::Wind,
 };
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn lake_remains_sheltered_in_the_gale_and_settles_in_calm() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "lake_remains_sheltered_in_the_gale_and_settles_in_calm",
@@ -48,6 +49,7 @@ fn lake_remains_sheltered_in_the_gale_and_settles_in_calm() {
             }
         },
     );
+}
 }
 
 fn channel() -> Map {
@@ -88,7 +90,7 @@ fn channel() -> Map {
     .expect("contained chart")
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn query_current_carries_a_float_and_the_dry_bank_stops_it() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "query_current_carries_a_float_and_the_dry_bank_stops_it",
@@ -160,4 +162,5 @@ fn query_current_carries_a_float_and_the_dry_bank_stops_it() {
         landing.velocity
     );
     assert_eq!(mailbox.stats().blocking_reads, 0);
+}
 }

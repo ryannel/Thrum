@@ -1,4 +1,5 @@
 //! Game-owned forces on real Metal and long-duration fixed-tick energy bounds.
+#[cfg(target_os = "macos")]
 mod support;
 use glam::DVec3;
 use std::sync::{Arc, Mutex};
@@ -9,7 +10,7 @@ use water_scene::{
     island::Wind,
 };
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn running_scene_drains_metal_answers_and_draws_the_fleet() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "running_scene_drains_metal_answers_and_draws_the_fleet",
@@ -42,6 +43,7 @@ fn running_scene_drains_metal_answers_and_draws_the_fleet() {
         }
     }
 }
+}
 
 #[derive(Default)]
 struct FleetRecord {
@@ -60,7 +62,7 @@ struct BodyRecord {
     max_draft_error: f64,
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 #[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
     let Some(test_gpu) = thrum_test_support::gpu(
@@ -184,6 +186,7 @@ fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
         assert_eq!(stats.blocking_reads, 0);
         eprintln!("gale {speed} m/s: actual {actual_speed:.3} m/s, {stats:?}");
     }
+}
 }
 
 const DT: f64 = 1.0 / 60.0;

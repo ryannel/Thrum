@@ -1,5 +1,7 @@
 //! Opt-in submitted-output capture and paired GPU measurement driver.
+#[cfg(target_os = "macos")]
 mod realtime;
+#[cfg(target_os = "macos")]
 mod support;
 use serde_json::json;
 use std::{
@@ -109,7 +111,7 @@ fn wake_wind() -> Option<Wind> {
         .as_deref()
         .and_then(Wind::named)
 }
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn proof_driver() {
     let Some(gpu) = thrum_test_support::gpu("proof_driver", Some(wgpu::Backend::Metal)) else {
         return;
@@ -118,10 +120,12 @@ fn proof_driver() {
         driver(&gpu);
     }
 }
+}
 #[expect(
     clippy::too_many_lines,
     reason = "the three submitted proof modes share target setup and the saved report"
 )]
+#[cfg(target_os = "macos")]
 fn driver(gpu: &thrum_test_support::Gpu) {
     let mode = std::env::var("THRUM_WATER_PROOF").expect("mode");
     let directory = PathBuf::from(std::env::var("THRUM_WATER_OUTPUT").expect("output"));
@@ -361,6 +365,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     .expect("record");
 }
 
+#[cfg(target_os = "macos")]
 fn island_pixels(fixture: &support::Fixture) -> [usize; 3] {
     let c = water_scene::island::CAMERAS[3];
     let view = thrum_render::synthetic::SyntheticView::perspective(
@@ -403,6 +408,7 @@ fn limits() -> CaptureLimits {
         byte_allowance: 300 * 1024 * 1024,
     }
 }
+#[cfg(target_os = "macos")]
 fn take_image(fixture: &mut support::Fixture) -> SubmittedImage {
     let deadline = Instant::now() + Duration::from_secs(30);
     loop {

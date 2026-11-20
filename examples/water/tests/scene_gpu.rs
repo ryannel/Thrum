@@ -1,7 +1,8 @@
 //! Runtime proof through the public game and water interfaces.
+#[cfg(target_os = "macos")]
 mod support;
 use thrum_render::runtime::FrameWorld;
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn scene_ticks_and_declares_one_water_contribution() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "scene_ticks_and_declares_one_water_contribution",
@@ -29,4 +30,5 @@ fn scene_ticks_and_declares_one_water_contribution() {
     let witness = fixture.witness();
     let water = witness.iter().filter(|p| p[0] > 0.1 && p[1] > 0.0).count();
     assert!(water > witness.len() / 4, "surface coverage {water}");
+}
 }

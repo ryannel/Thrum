@@ -1,7 +1,8 @@
 //! Submitted depth, motion and reset behavior against the independent f64 model.
+#[cfg(target_os = "macos")]
 mod support;
 use thrum_render::{contribution::SceneContributions, synthetic::Reconstruction};
-#[test]
+thrum_test_support::macos_gpu_test! {
 #[expect(
     clippy::cast_possible_truncation,
     reason = "the independent f64 oracle is projected into the renderer's bounded f32 camera"
@@ -107,4 +108,5 @@ fn tick_and_repeat_motion_follow_the_cpu_surface() {
         fixture.host.storage_report(),
         "absent graph storage stays unchanged"
     );
+}
 }

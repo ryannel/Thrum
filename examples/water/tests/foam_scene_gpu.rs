@@ -1,6 +1,8 @@
 //! Whitewater in the ordinary example, using submitted Metal stocks and depth.
+#[cfg(target_os = "macos")]
 mod support;
 
+#[cfg(target_os = "macos")]
 use support::Fixture;
 use thrum_water::{
     foam::Witness,
@@ -74,7 +76,7 @@ fn shore_queries(
         .collect()
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn ten_minutes_moored_and_wind_sweep() {
     let _serial = DEVICE
         .lock()
@@ -162,6 +164,7 @@ fn ten_minutes_moored_and_wind_sweep() {
         );
     });
 }
+}
 
 #[derive(Debug)]
 struct Trail {
@@ -187,7 +190,7 @@ fn trail(witness: &Witness, stocks: &[[f32; 4]]) -> Trail {
     }
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn craft_trail_outlives_removed_source_and_spreads() {
     let _serial = DEVICE
         .lock()
@@ -235,8 +238,9 @@ fn craft_trail_outlives_removed_source_and_spreads() {
     }
     assert!(readings[4].peak < 0.025);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
     let _serial = DEVICE
         .lock()
@@ -252,11 +256,13 @@ fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
         },
     );
 }
+}
 
 #[expect(
     clippy::print_stderr,
     reason = "keep shoreline power and stock measurements in target evidence"
 )]
+#[cfg(target_os = "macos")]
 fn shore_power(gpu: &thrum_test_support::Gpu) {
     let mut means = Vec::new();
     for (wind, body) in [
@@ -423,6 +429,7 @@ fn shore_power(gpu: &thrum_test_support::Gpu) {
     clippy::print_stderr,
     reason = "keep the ground-depth sample count in target evidence"
 )]
+#[cfg(target_os = "macos")]
 fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     let extent = support::island::EXTENT;
     let (control, report, _) = water_scene::island::build(Wind::Gale, false).expect("opaque beach");

@@ -1,6 +1,7 @@
 //! A live stage changes submitted geometry and scene depth together.
+#[cfg(target_os = "macos")]
 mod support;
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn stage_raises_the_surface_by_two_metres() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "stage_raises_the_surface_by_two_metres",
@@ -43,4 +44,5 @@ fn stage_raises_the_surface_by_two_metres() {
             }
         }
     }
+}
 }

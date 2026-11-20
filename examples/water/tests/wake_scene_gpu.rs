@@ -1,4 +1,5 @@
 //! The game applies public water query answers to its rigid bodies on Metal.
+#[cfg(target_os = "macos")]
 mod support;
 
 use std::sync::{Arc, Mutex};
@@ -13,7 +14,7 @@ use thrum_water_model::{Bed, BodyKind, Map, Stage};
 use water_scene::floating::{Body, Hull, WakeDemo, build_wake};
 use water_scene::island::Wind;
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity",
@@ -97,8 +98,9 @@ fn moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity() {
         "draft offsets {drafts:?}"
     );
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn moored_craft_keeps_its_draft_when_only_one_level_admits_pressure() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "moored_craft_keeps_its_draft_when_only_one_level_admits_pressure",
@@ -118,11 +120,13 @@ fn moored_craft_keeps_its_draft_when_only_one_level_admits_pressure() {
         );
     }
 }
+}
 
 #[expect(
     clippy::cast_possible_truncation,
     reason = "the public GPU query takes station coordinates in its float format"
 )]
+#[cfg(target_os = "macos")]
 fn moored_strip_draft(
     gpu: &thrum_test_support::Gpu,
     expected_solves: [u32; 2],
@@ -263,7 +267,7 @@ fn calm_spectrum() -> Spectrum {
     }
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn float_twenty_metres_off_track_responds_to_the_public_query() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "float_twenty_metres_off_track_responds_to_the_public_query",
@@ -319,8 +323,9 @@ fn float_twenty_metres_off_track_responds_to_the_public_query() {
     assert!(during[0] < -0.001 && during[1] > 0.001);
     assert!(after[1] - after[0] < (during[1] - during[0]) * 0.3);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "the_island_lake_wake_leaves_the_pond_and_sea_at_rest",
@@ -404,4 +409,5 @@ fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
     }
     assert!(lake_peak > 0.005, "the wake must reach the lake probe");
     eprintln!("Metal island crossing: lake peak {lake_peak:.6} m, pond and sea unchanged");
+}
 }

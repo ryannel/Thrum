@@ -1,9 +1,11 @@
 //! Raise and lower the lake through its sill on the live renderer.
 use std::{cmp::Ordering, time::Duration};
+#[cfg(target_os = "macos")]
 use support::island;
+#[cfg(target_os = "macos")]
 mod support;
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn lake_stage_floods_and_drains_the_hollow_without_resetting_history() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "lake_stage_floods_and_drains_the_hollow_without_resetting_history",
@@ -91,6 +93,7 @@ fn lake_stage_floods_and_drains_the_hollow_without_resetting_history() {
         },
     );
 }
+}
 
 fn coverage(map: &thrum_water_model::Map, point: [f64; 2], depth: f32, opaque: f32) -> bool {
     let wet = map
@@ -113,6 +116,7 @@ fn coverage(map: &thrum_water_model::Map, point: [f64; 2], depth: f32, opaque: f
     clippy::cast_possible_truncation,
     reason = "the projected displacement is in GPU metres"
 )]
+#[cfg(target_os = "macos")]
 fn check_motion(matrix: glam::Mat4, position: glam::Vec3, delta: f64, witness: [f32; 4]) {
     let current = matrix.project_point3(position);
     let previous = matrix.project_point3(position + glam::Vec3::Y * delta as f32);
@@ -126,6 +130,7 @@ fn check_motion(matrix: glam::Mat4, position: glam::Vec3, delta: f64, witness: [
     );
 }
 
+#[cfg(target_os = "macos")]
 fn opaque_depths(
     test_gpu: &thrum_test_support::Gpu,
     camera: &str,

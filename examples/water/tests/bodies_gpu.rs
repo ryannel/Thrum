@@ -1,11 +1,13 @@
 //! Classify submitted pixels against the f64 map and the opaque arm.
 use std::sync::{Arc, Mutex};
+#[cfg(target_os = "macos")]
 use support::island;
 use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
 use thrum_water_model::Map;
+#[cfg(target_os = "macos")]
 mod support;
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge",
@@ -102,8 +104,9 @@ fn submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge() {
         },
     );
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn no_lower_sea_sheet_is_hidden_under_the_lake() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "no_lower_sea_sheet_is_hidden_under_the_lake",
@@ -165,4 +168,5 @@ fn no_lower_sea_sheet_is_hidden_under_the_lake() {
             "only the lake may write here; a second sea sheet would read 9.25 m, got {level}"
         );
     });
+}
 }

@@ -1,4 +1,5 @@
 //! Cooked pattern editing, submission and a replacement on the actual Metal scene.
+#[cfg(target_os = "macos")]
 mod support;
 
 use std::path::PathBuf;
@@ -34,7 +35,7 @@ fn cooker(root: &std::path::Path) -> Cooker {
     .expect("open foam cooker")
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn cooked_pattern_is_lent_and_invalidates_at_submission() {
     if let Some(root) = std::env::var_os("THRUM_FOAM_LEASE_TEST") {
         running_scene(&PathBuf::from(root));
@@ -67,11 +68,13 @@ fn cooked_pattern_is_lent_and_invalidates_at_submission() {
         .expect("run lease proof against isolated store");
     assert!(status.success());
 }
+}
 
 #[expect(
     clippy::print_stderr,
     reason = "keep submitted lease transitions in the target evidence"
 )]
+#[cfg(target_os = "macos")]
 fn running_scene(root: &std::path::Path) {
     let Some(gpu) = thrum_test_support::gpu("foam pattern lease", Some(wgpu::Backend::Metal))
     else {
