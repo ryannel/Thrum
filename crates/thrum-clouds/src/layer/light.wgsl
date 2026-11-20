@@ -42,5 +42,5 @@ fn cloud_source(solar:vec3<f32>,phases:vec3<f32>,sun_depths:vec2<f32>,
     let direct=cloud_solar_source(phases,sun_depths,light_angles,depth,boundary,cloud.scattering.xyz,g);
     let diffuse_depth=0.75*(1.0-g)*vertical_depths;
     let ambient=cloud_ambient[0].rgb/(1.0+diffuse_depth.x)+cloud_ambient[1].rgb/(1.0+diffuse_depth.y);
-    return solar*direct+ambient;
+    return vec3(0.0);
 }
