@@ -117,7 +117,7 @@
       "evidence": [
         "../../.orchestrate/evidence/RAY-TRACING/M3/passage.md",
         "../../.orchestrate/evidence/RAY-TRACING/M3/passage-checks/M3.10.json",
-        "../../.orchestrate/evidence/RAY-TRACING/M3/preparation-fallback.md"
+        "../../.orchestrate/evidence/RAY-TRACING/M3/preparation-checks/cooked.json"
       ]
     },
     "SCENE_VIEWS": {

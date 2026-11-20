@@ -112,3 +112,7 @@
   A real cooked pipeline fault on device replacement retried with Maps and retained the cooked scene.
   Inspected the fixed valley route, four night lamps and three movers. Recorded the timing under load.
   [M3 Metal evidence](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md).
+- 2026-11-20 Initial attachment, visual publication and device replacement now share the cooked
+  trace preparation fallback. On Metal, a real invalid pipeline at each phase resolved the Sun
+  to Maps and disabled lamp shadows with `PreparationFailed`. Each complete cooked scene matched
+  its no-request control byte for byte. [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/M3/passage.md#preparation-fallback).
