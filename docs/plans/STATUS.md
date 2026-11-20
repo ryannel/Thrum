@@ -299,7 +299,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows (SHOWCASE M9): In Progress · [plan](SHOWCASE/PLAN.md) · [latest review](../../.orchestrate/evidence/SHOWCASE/M9-review.md)
 - Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach (WATERS M7): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/M7-review.md)
 - Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars (CLOUDS M5): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/M5-review.md)
-- Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still (RENDER-2D M2): Ready for Review · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/M2-review.md)
+- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D M3): Not Started · [plan](RENDER-2D/PLAN.md)
 - Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss (SESSION M5): Not Started · [plan](SESSION/PLAN.md)
 - TEST-SUPPORT's design: Design Changes Requested · [design](TEST-SUPPORT/DESIGN.md) · [plan](TEST-SUPPORT/PLAN.md)
 - Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test (REVIEW-RENDER M2): In Progress · [plan](REVIEW-RENDER/PLAN.md) · [latest review](../../.orchestrate/evidence/REVIEW-RENDER/M2-review.md)
@@ -311,6 +311,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still (RENDER-2D M2), 20 Nov · [review](../../.orchestrate/evidence/RENDER-2D/M2-review.md)
 - The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION M4), 20 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/M4-review.md)
 - A player's own character answers at once, while the crowd stays exact (SESSION M4), 20 Nov · [review](../../.orchestrate/evidence/SESSION/M4-review.md)
 - The same sky and the same shade draw in Chrome (CLOUDS M4), 20 Nov · [review](../../.orchestrate/evidence/CLOUDS/M4-review.md)
@@ -410,7 +411,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M2 of 5 · Ready for Review |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | M3 of 5 · Not Started |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M5 of 7 · Not Started |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
