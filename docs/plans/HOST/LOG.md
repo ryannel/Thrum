@@ -25,3 +25,7 @@
   overload recovery and device replacement on the named targets. The original iPhone route passed through
   background, foreground, rotation and device loss. The simulator evidence covers function.
   [Evidence](../../../.orchestrate/evidence/HOST/M2/README.md)
+- 2026-11-20 Addressed M2's review findings. The resume-race test fails without its guard, browser replacement
+  reconfigures a lost drawable before reporting persistent failure, and offscreen uses the shared lifecycle policy.
+  On Mac Metal the offscreen driver recorded one overload, resumed and submitted later frames. The Mac extent
+  switch and recovery use the same scoped configure operation. [Evidence](../../../.orchestrate/evidence/HOST/M2/README.md#review-fixes)

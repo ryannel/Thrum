@@ -103,8 +103,8 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_lifecycle",
           "ask": "Are `PauseIntent`, the iPhone app's `WorldPolicy`, the web shell's `recover_overload` and the game's `overload_reported` gone, or reduced to calls into the one policy? Does the test cover both drive styles and the resume race?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m21-resume-acknowledgement-race",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
@@ -114,8 +114,8 @@
           "check": "cargo test --locked --offline -p thrum-app --test surface_outcomes",
           "ask": "Does the browser shell still treat a validation failure at acquire as fatal? Does any shell configure a surface outside the recipe's retrying configure?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m22-drawable-recovery",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
@@ -124,8 +124,8 @@
           "statement": "Every drift the design's table marks M1 or M2 is closed: the device request, the fault watch, the surface configure and format list, the first generation, the surface outcome mapping and the pause and overload policy each have one implementation, and the Mac window, the browser page and the iPhone app call it.",
           "ask": "Take the rows of the design's drift table marked M1 and M2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked M3, M4 or Not here are not this milestone's.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/HOST/M2/README.md#m23-policy-ownership-after-review",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M2-review.md"
         },
