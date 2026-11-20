@@ -1,18 +1,23 @@
+#[cfg(target_os = "macos")]
 use super::support;
 
+#[cfg(target_os = "macos")]
 use std::{
     io::Write as _,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+#[cfg(target_os = "macos")]
 use thrum_asset_gpu::CookedDrawPath::{Auto, Direct, Indirect, MeshStages};
+#[cfg(target_os = "macos")]
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome};
+#[cfg(target_os = "macos")]
 use thrum_render::{
     capabilities::Recipe,
     contribution::{SecondaryViewRequest, ViewAir},
 };
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn selection() {
     let Some(test_gpu) = thrum_test_support::gpu("selection", Some(wgpu::Backend::Metal)) else {
         return;
@@ -111,8 +116,9 @@ fn selection() {
         );
     }
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn prepared() {
     let Some(test_gpu) = thrum_test_support::gpu("prepared", Some(wgpu::Backend::Metal)) else {
         return;
@@ -162,8 +168,9 @@ fn prepared() {
     scene.frame();
     assert_promoted(&scene, serial);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn eligibility() {
     let Some(test_gpu) = thrum_test_support::gpu("eligibility", Some(wgpu::Backend::Metal)) else {
         return;
@@ -198,8 +205,9 @@ fn eligibility() {
         reference.save("eligibility", &format!("{reason}-indexed"));
     }
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn residency() {
     let Some(test_gpu) = thrum_test_support::gpu("residency", Some(wgpu::Backend::Metal)) else {
         return;
@@ -251,8 +259,9 @@ fn residency() {
     assert!(b.swaps[0].upload_frames > 1);
     assert!(b.max_frame_copy_bytes > 0 && b.max_frame_copy_bytes <= thrum_asset_gpu::COPY_UNIT);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn parity() {
     let Some(test_gpu) = thrum_test_support::gpu("parity", Some(wgpu::Backend::Metal)) else {
         return;
@@ -287,8 +296,9 @@ fn parity() {
     clear_sun.camera(&support::camera([0.0, 3.1, 4.6], [0.0, 0.0, 0.0]), true);
     clear_sun.frame().save("parity", "no-shadow");
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn cull_equal() {
     let Some(test_gpu) = thrum_test_support::gpu("cull_equal", Some(wgpu::Backend::Metal)) else {
         return;
@@ -356,7 +366,9 @@ fn cull_equal() {
     )
     .expect("cull totals");
 }
+}
 
+#[cfg(target_os = "macos")]
 fn intersections(
     view: &thrum_render::synthetic::SyntheticView,
     geometry: &thrum_asset::MeshProduct,
@@ -393,6 +405,7 @@ fn intersections(
     })
 }
 
+#[cfg(target_os = "macos")]
 fn edit(name: &str, [r, g, b]: [f32; 3]) -> MaterialHook {
     MaterialHook {
         name: name.into(),
@@ -406,6 +419,7 @@ fn edit(name: &str, [r, g, b]: [f32; 3]) -> MaterialHook {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn await_candidate_off_frame(
     scene: &support::Scene<'_>,
     old: &thrum_render::runtime::CreationReport,
@@ -439,6 +453,7 @@ fn await_candidate_off_frame(
     }
 }
 
+#[cfg(target_os = "macos")]
 fn assert_promoted(scene: &support::Scene<'_>, serial: u64) {
     let outcomes = scene.reload.take_outcomes();
     assert!(
@@ -453,7 +468,7 @@ fn assert_promoted(scene: &support::Scene<'_>, serial: u64) {
     .expect("material outcome");
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn material() {
     let Some(test_gpu) = thrum_test_support::gpu("material", Some(wgpu::Backend::Metal)) else {
         return;
@@ -507,8 +522,9 @@ fn material() {
     assert_promoted(&scene, blue);
     assert_eq!(scene.host.creation_report().violations, 0);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn shadows_off() {
     let Some(test_gpu) = thrum_test_support::gpu("shadows_off", Some(wgpu::Backend::Metal)) else {
         return;
@@ -533,8 +549,9 @@ fn shadows_off() {
         "shadows disabled, one mesh pipeline and one forward mesh draw, no Sun map pass; submitted bytes match"
     );
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn publication_edit() {
     let Some(test_gpu) = thrum_test_support::gpu("publication_edit", Some(wgpu::Backend::Metal))
     else {
@@ -612,8 +629,9 @@ fn publication_edit() {
         }
     }
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn lifecycle() {
     let Some(test_gpu) = thrum_test_support::gpu("lifecycle", Some(wgpu::Backend::Metal)) else {
         return;
@@ -663,7 +681,9 @@ fn lifecycle() {
     scene.discard();
     assert_eq!(scene.frame().colour, edited);
 }
+}
 
+#[cfg(target_os = "macos")]
 fn discard_candidate(scene: &mut support::Scene<'_>, serial: u64) {
     let submitted = scene.stats.lock().expect("stats").submitted_frames;
     let deadline = Instant::now() + Duration::from_secs(10);

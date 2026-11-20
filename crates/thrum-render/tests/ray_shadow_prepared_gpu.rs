@@ -6,8 +6,8 @@ pub mod ray_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 mod support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
-#[test]
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
 fn shadow_pipelines_are_closed_when_each_generation_is_ready() {
     use glam::Vec3;
     use ray_shadow_support as fixture;
@@ -141,4 +141,5 @@ fn shadow_pipelines_are_closed_when_each_generation_is_ready() {
             ready.pipelines.len()
         );
     }
+}
 }

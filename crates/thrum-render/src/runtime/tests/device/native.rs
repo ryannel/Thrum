@@ -156,10 +156,9 @@ async fn sequence(
 #[test]
 fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_coordinator_native_history_reset_discard_and_exact_twin",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -216,10 +215,9 @@ fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
 #[test]
 fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_submission_failure_loss_and_extent_replacement_reset_history",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -346,10 +344,9 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
 #[test]
 fn metal_native_generation_resources_survive_until_completion_delivery() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_generation_resources_survive_until_completion_delivery",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -416,10 +413,9 @@ fn metal_native_generation_resources_survive_until_completion_delivery() {
 #[test]
 fn metal_native_two_slots_select_submitted_history_before_completion() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_two_slots_select_submitted_history_before_completion",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

@@ -1,8 +1,9 @@
 //! Pixel equality against fresh preparation after each real host transition.
 
-mod fixture {
-    include!("support/sprite_fixture.rs");
+mod support {
+    pub(crate) mod sprite_fixture;
 }
+use support::sprite_fixture as fixture;
 
 use std::time::Duration;
 use thrum_render::{

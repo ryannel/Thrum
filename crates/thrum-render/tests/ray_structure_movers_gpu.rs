@@ -2,20 +2,26 @@
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
 
+    #[cfg(target_os = "macos")]
     use std::sync::Arc;
+    #[cfg(target_os = "macos")]
     use thrum_render::abi::InstanceRecord;
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{
         FrameLighting, SyntheticMeshChoice, SyntheticMeshes, SyntheticScene,
     };
 
+    #[cfg(target_os = "macos")]
     const MOVERS: usize = 1500;
+    #[cfg(target_os = "macos")]
     const SLOTS: u32 = 10_000;
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn every_record_matches_the_submitted_interpolated_pose() {
         let Some(gpu) = support::gate("ray structure movers") else {
             return;
@@ -117,5 +123,6 @@ mod metal {
             }
             previous_hit = hit;
         }
+    }
     }
 }

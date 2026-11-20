@@ -116,7 +116,7 @@ fn metal_temporal_reader_storage_and_invalid_geometry_w1_w2() {
                 enabled
             );
             assert_eq!(
-                crate::capabilities::apple::storage_mode(depth),
+                crate::test_device::metal_storage_mode(depth),
                 Some(if enabled { "Private" } else { "Memoryless" })
             );
             assert_eq!(target.temporal_witness().is_some(), enabled);

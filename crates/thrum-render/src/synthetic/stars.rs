@@ -392,5 +392,5 @@ pub(crate) fn shader_source() -> String {
     )
 }
 
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(test)]
 mod tests;

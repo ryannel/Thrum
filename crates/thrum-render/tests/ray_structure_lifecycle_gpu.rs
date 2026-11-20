@@ -2,17 +2,21 @@
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
 
+    #[cfg(target_os = "macos")]
     use std::sync::Arc;
+    #[cfg(target_os = "macos")]
     use thrum_render::abi::InstanceRecord;
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{
         FrameLighting, RenderError, SyntheticMeshChoice, SyntheticMeshes, SyntheticScene,
     };
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn discarded_first_scene_build_replays_and_replacement_uses_its_prepared_meshes() {
         let Some(gpu) = support::gate("ray structure lifecycle") else {
             return;
@@ -80,5 +84,6 @@ mod metal {
         let readback = probe.record(&replacement, &mut encoder, &origins);
         new_queue.submit([encoder.finish()]);
         assert_eq!(support::answers(&replacement, &readback), [0, 0, 1]);
+    }
     }
 }

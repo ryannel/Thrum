@@ -1,6 +1,6 @@
 //! Frame-boundary surface transition and restoration proofs.
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod generation_transition {
     mod metal;
 }

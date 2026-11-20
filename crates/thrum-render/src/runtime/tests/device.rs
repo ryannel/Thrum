@@ -80,14 +80,12 @@ impl SceneSource<SourceTick> for Policy {
 
 type Host = FrameHost<StaticWorld, Policy>;
 
-#[cfg(target_os = "macos")]
 #[test]
 fn timing_demand_switches_with_both_slots_in_flight_and_survives_replacement() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "timing_demand_switches_with_both_slots_in_flight_and_survives_replacement",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -341,7 +339,6 @@ fn pending_slots(host: &mut Host) {
 }
 
 /// Metal-only device tests and the fixtures only they use.
-#[cfg(target_os = "macos")]
 mod metal {
     use super::*;
 
@@ -380,11 +377,9 @@ mod metal {
         // Without Sun shadows: this one-cube fixture's shadow passes return invalid
         // Metal stamps in FrameHost for Direct as well (pre-existing, reported to root).
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "metal_frustum_timestamps_drain_populated_then_empty_prefixes",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -525,11 +520,9 @@ mod metal {
     #[test]
     fn culled_modes_survive_surface_resize_and_device_replacement() {
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "culled_modes_survive_surface_resize_and_device_replacement",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -598,11 +591,9 @@ mod metal {
     #[test]
     fn metal_occlusion_timestamps_count_the_prepass_with_and_without_a_contribution() {
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "metal_occlusion_timestamps_count_the_prepass_with_and_without_a_contribution",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -673,11 +664,9 @@ mod metal {
     #[test]
     fn occlusion_keeps_a_blended_contribution_on_top() {
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "occlusion_keeps_a_blended_contribution_on_top",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -717,11 +706,9 @@ mod metal {
     #[test]
     fn culling_counts_never_hold_render_slots_or_cross_a_replacement() {
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "culling_counts_never_hold_render_slots_or_cross_a_replacement",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -807,11 +794,9 @@ mod metal {
     #[test]
     fn a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot() {
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -908,11 +893,9 @@ mod metal {
     #[test]
     fn metal_frame_timestamps_survive_an_empty_instance_set() {
         pollster::block_on(async {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let Some(test_gpu) = thrum_test_support::gpu_on(
+            let Some(test_gpu) = thrum_test_support::gpu(
                 "metal_frame_timestamps_survive_an_empty_instance_set",
-                &instance,
+                Some(wgpu::Backend::Metal),
             ) else {
                 return;
             };
@@ -1437,7 +1420,6 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
 mod creation;
 mod extent;
 mod mesh_rows;
-#[cfg(target_os = "macos")]
 mod surface_fault;
 mod view_history;
 
@@ -1553,6 +1535,5 @@ fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
     });
 }
 
-#[cfg(target_os = "macos")]
 mod native;
 mod split_graph;

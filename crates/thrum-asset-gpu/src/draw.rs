@@ -1115,5 +1115,5 @@ fn cooked_source(scene: &str, cloud: bool) -> String {
     }
 }
 
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(test)]
 mod tests;

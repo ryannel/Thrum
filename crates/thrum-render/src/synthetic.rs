@@ -2128,9 +2128,7 @@ impl OffscreenTarget {
 mod tests {
     use super::*;
 
-    #[cfg(target_os = "macos")]
     mod cloud;
-    #[cfg(target_os = "macos")]
     mod motion;
 
     mod compute_material;

@@ -1,11 +1,10 @@
 //! Metal graph, resource, admission and unchanged 3D closure witnesses.
 
-mod fixture {
-    include!("support/sprite_fixture.rs");
+mod support {
+    pub(crate) mod sprite_fixture;
+    pub(crate) mod sprite_graph_snapshot;
 }
-mod graph_snapshot {
-    include!("support/sprite_graph_snapshot.rs");
-}
+use support::{sprite_fixture as fixture, sprite_graph_snapshot as graph_snapshot};
 
 use std::time::Duration;
 use thrum_render::{

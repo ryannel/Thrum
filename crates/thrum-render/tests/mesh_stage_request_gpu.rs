@@ -1,14 +1,61 @@
 //! Explicit launch requests on this Mac, including a failed preferred device request.
-#[cfg(target_os = "macos")]
 use std::{cell::Cell, io::Write as _};
-#[cfg(target_os = "macos")]
 use thrum_render::capabilities::{
     DeviceRecipe, HardwareFeature, HardwareLaunchError, HardwareRequest,
 };
-#[cfg(target_os = "macos")]
 use thrum_test_support::{Profile, Restriction};
 
-#[cfg(target_os = "macos")]
+#[test]
+fn descriptor_adjustment_respects_recipe_restrictions() {
+    let Some(gate) = thrum_test_support::gpu(
+        "descriptor_adjustment_respects_recipe_restrictions",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    let restriction = Restriction {
+        storage_buffers: Some(7),
+        features: Some(wgpu::Features::empty()),
+    };
+    let profile = Profile::Portable;
+    let (device, _) = gate.device(profile, &restriction);
+    assert_eq!(device.limits().max_storage_buffers_per_shader_stage, 7);
+    assert!(device.features().is_empty());
+    let raised = gate.fresh_adapter().device_with_hardware_adjusted(
+        profile,
+        &restriction,
+        2,
+        &[],
+        |descriptor| {
+            descriptor
+                .required_limits
+                .max_storage_buffers_per_shader_stage = 8;
+        },
+    );
+    assert!(matches!(
+        raised,
+        Err(HardwareLaunchError::InvalidRestriction)
+    ));
+    let restored = gate.fresh_adapter().device_with_hardware_adjusted(
+        profile,
+        &restriction,
+        3,
+        &[],
+        |descriptor| {
+            descriptor.required_features = wgpu::Features::TIMESTAMP_QUERY;
+        },
+    );
+    assert!(
+        gate.adapter
+            .features()
+            .contains(wgpu::Features::TIMESTAMP_QUERY)
+    );
+    assert!(matches!(
+        restored,
+        Err(HardwareLaunchError::InvalidRestriction)
+    ));
+}
+
 #[test]
 fn metal_launch_and_preference_retry() {
     let Some(gate) = thrum_test_support::gpu("mesh-stage launch", Some(wgpu::Backend::Metal))

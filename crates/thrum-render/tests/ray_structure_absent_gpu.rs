@@ -2,13 +2,17 @@
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
 
+    #[cfg(target_os = "macos")]
     use thrum_render::capabilities::RayStructureSelection;
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticScene};
 
+    #[cfg(target_os = "macos")]
     fn submit_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -29,7 +33,7 @@ mod metal {
             .expect("completed")
     }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn no_demand_has_no_structure_and_does_not_change_pixels_or_usages() {
         let Some(gpu) = support::gate("ray structure absence") else {
             return;
@@ -146,8 +150,9 @@ mod metal {
             std::fs::write(path, reference_bytes).expect("write ordinary reference witness");
         }
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn portable_request_falls_back_before_allocation_even_when_device_enabled_rays() {
         let Some(gpu) = support::gate("portable ray structure fallback") else {
             return;
@@ -195,5 +200,6 @@ mod metal {
                 assert_eq!(submit_bytes(device, queue, &prepared, &target), bytes);
             }
         }
+    }
     }
 }

@@ -32,7 +32,7 @@
 
 #[cfg(target_arch = "wasm32")]
 mod browser;
-#[cfg(target_os = "macos")]
+#[cfg(any(test, target_os = "macos"))]
 mod capture;
 #[cfg(target_os = "macos")]
 pub use capture::{HeadlessDeviceError, headless_device};
@@ -56,7 +56,7 @@ use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
     synthetic::SyntheticScene,
@@ -77,7 +77,7 @@ use crate::Config;
 use crate::{Edits, Game, Gpu, KeyResponse, Prepared};
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-#[cfg(target_os = "macos")]
+#[cfg(any(test, target_os = "macos"))]
 use thrum_render::{
     capabilities::DeviceCapabilities,
     runtime::{FrameConfig, FrameHost},
@@ -123,11 +123,11 @@ impl Error for CookedSetupError {
 pub const DEFAULT_GROUND: [f32; 3] = [0.16, 0.15, 0.11];
 /// Half the width of the ground square, in metres: it reaches within a pixel of the horizon
 /// from standing height, where the sky's own planet surface takes over.
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 const GROUND_HALF_WIDTH_M: f32 = 4_000.0;
 /// Half the ground slab's thickness; its top face is the ground at Y = 0.
 const GROUND_HALF_DEPTH_M: f32 = 0.5;
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 const GROUND_ROUGHNESS: f32 = 0.95;
 
 /// Near and far clip planes of every kit camera, in metres.
@@ -228,7 +228,7 @@ impl Sky {
     }
 
     /// Refuse values the renderer cannot draw, naming the field and the fix.
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     fn check(&self) -> Result<(), String> {
         if !(-24.0..=24.0).contains(&self.exposure_compensation_ev) {
             return Err("exposure_compensation_ev must be within -24..=24".into());
@@ -504,21 +504,31 @@ impl SceneSource<SourceTick> for SkyScene {
 }
 
 /// The desired sky carried to the render owner, when it changed.
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SkyEdits(Option<Sky>);
 
 #[cfg(target_os = "macos")]
 impl Edits for SkyEdits {
     fn merge(self, newer: Self) -> Self {
-        Self(newer.0.or(self.0))
+        self.merge_edits(newer)
     }
     fn is_empty(&self) -> bool {
+        self.no_changes()
+    }
+}
+
+#[cfg(any(test, target_os = "macos"))]
+impl SkyEdits {
+    fn merge_edits(self, newer: Self) -> Self {
+        Self(newer.0.or(self.0))
+    }
+    fn no_changes(&self) -> bool {
         self.0.is_none()
     }
 }
 
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -534,17 +544,17 @@ pub struct SkyGame {
     presentation_camera: Option<PresentationCamera>,
     temporal_sampling: bool,
     overlay: DisplayOverlay,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     controls: Controls,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     sky: Sky,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     sent: Option<Sky>,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     refused: Option<String>,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     update: Update,
     ground: Option<[f32; 3]>,
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
@@ -575,7 +585,7 @@ impl SkyGame {
         update: impl FnMut(&Controls, &mut Sky) + 'static,
     ) -> Self {
         crate::profile::declare(&mut controls).expect("kit reserves the profiler group");
-        #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
+        #[cfg(not(any(test, target_os = "macos", target_arch = "wasm32")))]
         drop((controls, camera, update));
         Self {
             tick_duration: None,
@@ -583,11 +593,11 @@ impl SkyGame {
             presentation_camera: None,
             temporal_sampling: false,
             overlay: DisplayOverlay::Off,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             controls,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             sky: Sky {
                 exposure_compensation_ev: 0.0,
                 temporal_inputs: false,
@@ -596,11 +606,11 @@ impl SkyGame {
                 camera,
                 exposure_zones: false,
             },
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             sent: None,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             refused: None,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             update: Box::new(update),
             ground: Some(DEFAULT_GROUND),
             local_lights: Vec::new(),
@@ -697,7 +707,7 @@ impl SkyGame {
         }
     }
 
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     fn take_world(&mut self) -> StillWorld {
         let mut fixed_update = self.fixed_update.take();
         if let (Some(step), Some(update)) = (self.tick_duration, &mut fixed_update) {
@@ -900,7 +910,7 @@ impl SkyGame {
         clippy::print_stderr,
         reason = "a refused sky is explained to the person editing the scene"
     )]
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     fn update(&mut self) -> SkyEdits {
         let mut sky = self.sky;
         (self.update)(&self.controls, &mut sky);
@@ -972,7 +982,7 @@ impl SkyGame {
     }
 
     /// Prepare the still scene on `capabilities`' device, with the contribution attached.
-    #[cfg(target_os = "macos")]
+    #[cfg(any(test, target_os = "macos"))]
     fn build_host(
         &mut self,
         capabilities: &DeviceCapabilities,
@@ -1098,7 +1108,7 @@ impl Game for SkyGame {
 
 /// The scene's one instance row: the ground slab, or an inactive row (generation zero) that
 /// draws nothing, since the renderer needs at least one.
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 fn ground_scene(
     ground: Option<[f32; 3]>,
     lights: &[thrum_render::synthetic::SyntheticPointLight],
@@ -1222,7 +1232,6 @@ pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>
 }
 
 #[cfg(test)]
-#[cfg(target_os = "macos")]
 mod tests;
 
 #[cfg(target_arch = "wasm32")]

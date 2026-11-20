@@ -1,4 +1,6 @@
+#[cfg(target_os = "macos")]
 use crate::support;
+#[cfg(target_os = "macos")]
 use std::{
     sync::{
         Arc, Mutex,
@@ -7,6 +9,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
+#[cfg(target_os = "macos")]
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
@@ -16,21 +19,30 @@ use thrum_render::{
     },
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
 };
+#[cfg(target_os = "macos")]
 use tracing::{Dispatch, Subscriber, span};
+#[cfg(target_os = "macos")]
 use tracing_subscriber::{Layer, layer::Context, prelude::*};
 
+#[cfg(target_os = "macos")]
 const OLD: [u32; 2] = [64, 64];
+#[cfg(target_os = "macos")]
 const STALE: [u32; 2] = [80, 64];
+#[cfg(target_os = "macos")]
 const NEW: [u32; 2] = [96, 64];
+#[cfg(target_os = "macos")]
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 // The device-loss arm tears down a Metal device while work is held. Run these
 // proofs one at a time so overlapping test devices cannot disturb the loss
 // and capture observations.
+#[cfg(target_os = "macos")]
 static METAL: Mutex<()> = Mutex::new(());
 
 #[derive(Clone, Default)]
+#[cfg(target_os = "macos")]
 struct Creations(Arc<Mutex<Vec<(std::thread::ThreadId, &'static str)>>>);
 
+#[cfg(target_os = "macos")]
 impl<S: Subscriber> Layer<S> for Creations {
     fn on_new_span(&self, attributes: &span::Attributes<'_>, _: &span::Id, _: Context<'_, S>) {
         let metadata = attributes.metadata();
@@ -53,6 +65,7 @@ impl<S: Subscriber> Layer<S> for Creations {
     }
 }
 
+#[cfg(target_os = "macos")]
 impl Creations {
     fn on(&self, thread: std::thread::ThreadId) -> Vec<&'static str> {
         self.0
@@ -68,6 +81,7 @@ impl Creations {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
     ExtentRequest {
         extent,
@@ -77,6 +91,7 @@ fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue, extent: [u32; 2]) -> support::Host {
     let mut scene = SyntheticScene::grid(1).expect("test scene");
     scene.view = scene.view.with_reconstruction(true);
@@ -97,6 +112,7 @@ fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue, extent: [u32; 2]
     host
 }
 
+#[cfg(target_os = "macos")]
 fn view(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
     device
         .create_texture(&wgpu::TextureDescriptor {
@@ -116,6 +132,7 @@ fn view(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
         .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
+#[cfg(target_os = "macos")]
 fn submit(host: &mut support::Host, view: &wgpu::TextureView, extent: [u32; 2]) {
     let report = host
         .drive(Duration::ZERO, Some(&SurfaceOutput { view, extent }))
@@ -123,6 +140,7 @@ fn submit(host: &mut support::Host, view: &wgpu::TextureView, extent: [u32; 2]) 
     assert!(report.submitted && report.surface_presented);
 }
 
+#[cfg(target_os = "macos")]
 fn complete(host: &mut support::Host, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(5);
     loop {
@@ -137,12 +155,15 @@ fn complete(host: &mut support::Host, device: &wgpu::Device) -> FrameSample {
     }
 }
 
+#[cfg(target_os = "macos")]
 type ExtentJob = fn(&AtomicBool) -> Result<Option<PreparedExtent>, FrameError>;
 
+#[cfg(target_os = "macos")]
 fn unexpected_build() -> Result<ExtentJob, FrameError> {
     panic!("request was not yet eligible to build");
 }
 
+#[cfg(target_os = "macos")]
 fn prepare(
     host: &support::Host,
     extent: [u32; 2],
@@ -154,6 +175,7 @@ fn prepare(
     move |cancel| tracing::dispatcher::with_default(&dispatch, || inputs.build(cancel))
 }
 
+#[cfg(target_os = "macos")]
 fn captured(host: &mut support::Host, device: &wgpu::Device) -> SubmittedImage {
     let deadline = Instant::now() + Duration::from_secs(5);
     loop {
@@ -169,12 +191,14 @@ fn captured(host: &mut support::Host, device: &wgpu::Device) -> SubmittedImage {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn first_frame_matches_reset(actual: &SubmittedImage, reset: &SubmittedImage) -> bool {
     actual.extent == reset.extent
         && actual.sample.history_identity[1] == reset.sample.history_identity[1]
         && actual.rgba == reset.rgba
 }
 
+#[cfg(target_os = "macos")]
 fn independent_reset(
     cap: &DeviceCapabilities,
     device: &wgpu::Device,
@@ -197,7 +221,7 @@ fn independent_reset(
     captured(&mut independent, device)
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_comparison() {
     let _metal = METAL
         .lock()
@@ -284,8 +308,9 @@ fn retaining_history_across_a_backing_scale_switch_fails_the_first_frame_compari
         }
     }
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn a_detached_extent_preserves_current_capture_admission() {
     let _metal = METAL
         .lock()
@@ -356,8 +381,9 @@ fn a_detached_extent_preserves_current_capture_admission() {
     complete(&mut replaced, &device);
     assert_eq!(captured(&mut replaced, &device).extent, NEW);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     let _metal = METAL
         .lock()
@@ -568,8 +594,9 @@ fn mac_host_holds_old_frames_and_only_publishes_latest_generation() {
     );
     drop(control);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn failed_and_lost_builds_never_take_the_surface() {
     let _metal = METAL
         .lock()
@@ -672,4 +699,5 @@ fn failed_and_lost_builds_never_take_the_surface() {
     let new_output = view(&device, NEW);
     submit(&mut host, &new_output, NEW);
     assert_eq!(complete(&mut host, &device).render_extent, NEW);
+}
 }

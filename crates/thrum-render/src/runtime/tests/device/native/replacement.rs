@@ -5,10 +5,9 @@ use crate::synthetic::NativeOutcome;
 #[test]
 fn metal_native_surface_and_rejection_reset_without_fixture_cuts() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_surface_and_rejection_reset_without_fixture_cuts",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -95,10 +94,9 @@ fn metal_native_surface_and_rejection_reset_without_fixture_cuts() {
 #[test]
 fn metal_native_detached_extent_preparation_admission_and_overlap() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_detached_extent_preparation_admission_and_overlap",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -180,10 +178,9 @@ fn metal_native_detached_extent_preparation_admission_and_overlap() {
 #[test]
 fn metal_native_timing_is_completion_gated_and_submission_identified() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_timing_is_completion_gated_and_submission_identified",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };
@@ -245,10 +242,9 @@ fn metal_native_timing_is_completion_gated_and_submission_identified() {
 #[test]
 fn metal_native_rejection_is_exact_twin_and_completion_error_requires_rebuild() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Some(test_gpu) = thrum_test_support::gpu_on(
+        let Some(test_gpu) = thrum_test_support::gpu(
             "metal_native_rejection_is_exact_twin_and_completion_error_requires_rebuild",
-            &instance,
+            Some(wgpu::Backend::Metal),
         ) else {
             return;
         };

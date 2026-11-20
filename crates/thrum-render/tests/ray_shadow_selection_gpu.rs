@@ -4,8 +4,8 @@ pub mod ray_shadow_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
-#[test]
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
 fn shadow_fallback_keeps_the_map_frame() {
     use ray_support::support;
     use thrum_render::capabilities::RayStructureSelection as Reason;
@@ -99,4 +99,5 @@ fn shadow_fallback_keeps_the_map_frame() {
         support::submit_bytes(&ray_device, &ray_queue, &traced, &target).len(),
         64 * 64 * 4
     );
+}
 }

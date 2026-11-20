@@ -1,6 +1,10 @@
+#[cfg(target_os = "macos")]
 use crate::{ray_shadow_support, ray_support::support};
+#[cfg(target_os = "macos")]
 use glam::Vec3;
+#[cfg(target_os = "macos")]
 use std::sync::Arc;
+#[cfg(target_os = "macos")]
 use thrum_render::{
     abi::InstanceRecord,
     synthetic::{
@@ -9,6 +13,7 @@ use thrum_render::{
     },
 };
 
+#[cfg(target_os = "macos")]
 fn quad(mesh: &mut SyntheticMesh, points: [Vec3; 4], normals: [Vec3; 4], reverse: bool) {
     let start = u32::try_from(mesh.vertices.len()).expect("small fixture");
     mesh.vertices
@@ -31,6 +36,7 @@ fn quad(mesh: &mut SyntheticMesh, points: [Vec3; 4], normals: [Vec3; 4], reverse
     mesh.indices.extend(indices.map(|index| start + index));
 }
 
+#[cfg(target_os = "macos")]
 fn empty_mesh() -> SyntheticMesh {
     SyntheticMesh {
         vertices: vec![],
@@ -38,6 +44,7 @@ fn empty_mesh() -> SyntheticMesh {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn prism() -> SyntheticMesh {
     let radial = |side: u16| {
         let (y, x) = (30.0 * f32::from(side) - 15.0).to_radians().sin_cos();
@@ -58,12 +65,14 @@ fn prism() -> SyntheticMesh {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg(target_os = "macos")]
 struct Sheet {
     distance: f32,
     joined: bool,
     reverse: bool,
 }
 
+#[cfg(target_os = "macos")]
 fn scene(receiver: Vec3, sun: Vec3, sheet: Option<Sheet>) -> SyntheticScene {
     let mut meshes = vec![prism()];
     if let Some(sheet) = sheet {
@@ -112,7 +121,7 @@ fn scene(receiver: Vec3, sun: Vec3, sheet: Option<Sheet>) -> SyntheticScene {
     scene
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn terminator_excuses_only_the_first_crossing() {
     let Some(gpu) = support::gate("forward Sun terminator and joined sheet") else {
         return;
@@ -153,4 +162,5 @@ fn terminator_excuses_only_the_first_crossing() {
         }
         println!("{sheet:?}: middle {middle:?}, beside {beside:?}");
     }
+}
 }

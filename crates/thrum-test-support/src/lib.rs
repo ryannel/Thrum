@@ -61,15 +61,37 @@ pub fn skip(test: &str, reason: &str) {
     writeln!(std::io::stderr().lock(), "{message}").expect("write visible GPU skip reason");
 }
 
+/// Keep a macOS-only GPU test in the harness when its host APIs are unavailable.
+///
+/// The macOS body still admits its GPU through the shared gate.
+#[macro_export]
+macro_rules! macos_gpu_test {
+    ($(#[$attribute:meta])* fn $name:ident() $body:block) => {
+        #[test]
+        $(#[$attribute])*
+        fn $name() {
+            #[cfg(target_os = "macos")]
+            $body
+            #[cfg(not(target_os = "macos"))]
+            $crate::skip(stringify!($name), "requires macOS Metal and its host APIs");
+        }
+    };
+}
+
 /// Admit a GPU, optionally requiring a particular backend. None means a reported skip.
 ///
 /// # Panics
 /// Fails with the skip reason when `THRUM_REQUIRE_GPU=1` and no adapter is available.
 pub fn gpu(test: &str, backend: Option<wgpu::Backend>) -> Option<Gpu> {
-    admit(
-        test,
-        backend.map_or(wgpu::Backends::all(), wgpu::Backends::from),
-    )
+    let backends = backend.map_or(wgpu::Backends::all(), wgpu::Backends::from);
+    if !wgpu::Instance::enabled_backend_features().intersects(backends) {
+        skip(
+            test,
+            &format!("adapter unavailable: {backends:?} backend is absent from this build"),
+        );
+        return None;
+    }
+    admit(test, backends)
 }
 
 fn admit(test: &str, backends: wgpu::Backends) -> Option<Gpu> {
@@ -202,7 +224,8 @@ impl Gpu {
         self.device_with_hardware_adjusted(profile, restriction, generation, requests, |_| {})
     }
 
-    /// Open a generation with an adjustment to the test profile's base device descriptor.
+    /// Open a generation with diagnostic limit reductions or an unsupported feature
+    /// flag to exercise wgpu request failure.
     /// The adjustment runs again if the registry retries without a preference.
     ///
     /// # Errors

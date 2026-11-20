@@ -273,5 +273,5 @@ impl OffscreenTarget {
     }
 }
 
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(test)]
 pub(super) mod tests;

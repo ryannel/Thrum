@@ -2,22 +2,29 @@
 //! rendered once to a PNG without a surface, after the game's reload has reported. It makes no
 //! presentation or timing claim.
 
+use std::path::Path;
+#[cfg(target_os = "macos")]
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     time::{Duration, Instant},
 };
 
+#[cfg(target_os = "macos")]
 use thrum_render::{
     capabilities::{DeviceCapabilities, DeviceRecipe, HardwareLaunchError, OpenedDevice},
     runtime::FrameConfig,
 };
 
+#[cfg(target_os = "macos")]
 use super::{ContentStatus, SkyGame};
+#[cfg(target_os = "macos")]
 use crate::Config;
 
 /// Longest wait for the contribution's first drawn generation.
+#[cfg(target_os = "macos")]
 pub(super) const CONTENT_WAIT: Duration = Duration::from_secs(30);
 
+#[cfg(target_os = "macos")]
 #[expect(
     clippy::print_stdout,
     reason = "the capture names the file it wrote for the reviewer"
@@ -42,6 +49,7 @@ pub(super) fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, String>
     }
 }
 
+#[cfg(target_os = "macos")]
 fn capture(
     config: Config,
     game: impl FnOnce() -> Result<SkyGame, String>,
@@ -70,6 +78,7 @@ fn capture(
 }
 
 /// Render until the contribution's first generation is drawn, refusing a failure.
+#[cfg(target_os = "macos")]
 pub(super) fn wait_drawn(
     game: &mut SkyGame,
     host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
@@ -95,6 +104,7 @@ pub(super) fn wait_drawn(
 }
 
 /// Encode `pixels` and write them to `path`, creating its folder.
+#[cfg(target_os = "macos")]
 pub(super) fn write_png(path: &Path, extent: [u32; 2], pixels: &[u8]) -> Result<(), String> {
     let png = encode_png(extent, pixels)?;
     if let Some(folder) = path
@@ -108,6 +118,7 @@ pub(super) fn write_png(path: &Path, extent: [u32; 2], pixels: &[u8]) -> Result<
 }
 
 /// Apply `THRUM_PARAMS` as the window would at start; a capture refuses a file it cannot read.
+#[cfg(target_os = "macos")]
 #[expect(
     clippy::print_stderr,
     reason = "parameter diagnostics are for the person editing the file"
@@ -144,6 +155,7 @@ fn every_value_applied(path: &Path, report: &thrum_controls::FileReport) -> Resu
 }
 
 /// Run the game's reload once and render until it reports; a problem refuses the capture.
+#[cfg(target_os = "macos")]
 #[expect(
     clippy::print_stderr,
     reason = "the reload's outcome is reported to the person who asked for the capture"
@@ -177,6 +189,7 @@ fn reload(
 ///
 /// # Errors
 /// Returns the adapter or device initialization error.
+#[cfg(target_os = "macos")]
 pub async fn headless_device()
 -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), HeadlessDeviceError> {
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
@@ -210,6 +223,7 @@ pub async fn headless_device()
 ///     }
 /// }
 /// ```
+#[cfg(target_os = "macos")]
 #[derive(Debug)]
 pub enum HeadlessDeviceError {
     /// No suitable Metal adapter could be opened.
@@ -218,6 +232,7 @@ pub enum HeadlessDeviceError {
     Device(wgpu::RequestDeviceError),
 }
 
+#[cfg(target_os = "macos")]
 impl std::fmt::Display for HeadlessDeviceError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -227,6 +242,7 @@ impl std::fmt::Display for HeadlessDeviceError {
     }
 }
 
+#[cfg(target_os = "macos")]
 impl std::error::Error for HeadlessDeviceError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {

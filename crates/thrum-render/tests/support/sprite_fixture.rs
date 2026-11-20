@@ -13,7 +13,10 @@ use thrum_render::{
         CaptureLimits, FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource,
         SpriteSceneRequests, SubmittedImage, SurfaceOutput,
     },
-    sprite::{EmbeddedSheet, SpriteFrame, SpritePose, SpriteRect, SpriteRow, SpriteScene, SpriteSink, SpriteView},
+    sprite::{
+        EmbeddedSheet, SpriteFrame, SpritePose, SpriteRect, SpriteRow, SpriteScene, SpriteSink,
+        SpriteView,
+    },
     synthetic::{CaptureSource, FrameLighting, SyntheticView},
 };
 
@@ -50,7 +53,12 @@ pub(crate) struct World {
 
 impl Default for World {
     fn default() -> Self {
-        Self { tick: 0, timeline: 0, alpha: 1.0, running: true }
+        Self {
+            tick: 0,
+            timeline: 0,
+            alpha: 1.0,
+            running: true,
+        }
     }
 }
 
@@ -197,7 +205,11 @@ pub(crate) fn host(
 }
 
 pub(crate) fn configured_host(
-    caps: &DeviceCapabilities, queue: &wgpu::Queue, extent: [u32; 2], scene: Scene, config: SpriteScene,
+    caps: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    extent: [u32; 2],
+    scene: Scene,
+    config: SpriteScene,
 ) -> Host {
     pollster::block_on(FrameHost::new_2d(
         caps,

@@ -66,6 +66,8 @@ class Fixture(unittest.TestCase):
         self.pair("path-attribute", '#[path = "local.rs"] mod local;', 'mod local;')
         self.pair("path-attribute", '#[path = r#"local.rs"#] mod local;', 'mod local;')
         self.pair("package-reach", '#[path = r#"../../other/private.rs"#] mod other;', 'mod other;')
+        self.pair("path-attribute", 'mod support { include!("local.rs"); }', 'mod support;',
+                  "crates/engine/tests/render.rs")
 
     def test_manifest_reach_all_kinds(self):
         for table in ("dependencies", "dev-dependencies", "build-dependencies", 'target.\'cfg(unix)\'.dev-dependencies'):
@@ -146,6 +148,16 @@ test_role="fixtures"
     def test_whole_file_gate(self):
         self.pair("whole-file-gpu-gate", '#![cfg(target_os = "macos")]\n#[test] fn cpu() {}',
                   '#[cfg(target_os = "macos")]\n#[test] fn gpu() {}\n#[test] fn cpu() {}',
+                  "crates/engine/tests/render.rs")
+        self.pair("whole-file-gpu-gate", '#[cfg(all(test, target_os = "macos"))]\npub(super) mod tests;',
+                  '#[cfg(test)]\npub(super) mod tests;')
+        self.pair("whole-file-gpu-gate", '#[cfg(windows)]\n#[cfg(test)]\nmod tests;',
+                  '#[cfg(test)]\nmod tests;')
+        self.write("crates/engine/tests/render/metal.rs", '#[test] fn gpu() {}')
+        self.pair("whole-file-gpu-gate", '#[cfg(target_os = "macos")]\nmod metal;',
+                  'mod metal;', "crates/engine/tests/render.rs")
+        self.pair("whole-file-gpu-gate", '#[cfg(target_os = "macos")] mod metal { #[test] fn gpu() {} }',
+                  '#[cfg(target_os = "macos")] mod helpers { fn prepare() {} }\n#[test] fn gpu() {}',
                   "crates/engine/tests/render.rs")
 
     def test_history_names_all_surfaces(self):

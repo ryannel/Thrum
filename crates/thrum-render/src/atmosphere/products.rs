@@ -214,5 +214,5 @@ pub(crate) fn library(far_aerial: bool) -> String {
     )
 }
 
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(test)]
 mod tests;

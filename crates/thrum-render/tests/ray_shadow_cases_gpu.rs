@@ -4,8 +4,8 @@ pub mod ray_shadow_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
-#[test]
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
 fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
     use glam::Vec3;
     use ray_shadow_support as fixture;
@@ -178,4 +178,5 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
             println!("Sun {degrees}° on prop, mover and terrain: visibility {visibility:?}");
         }
     }
+}
 }

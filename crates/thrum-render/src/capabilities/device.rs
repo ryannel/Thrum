@@ -141,8 +141,8 @@ impl DeviceRecipe<'_> {
         .await
     }
 
-    /// Open from a caller-supplied adapter source. Descriptor adjustment lets a
-    /// diagnostic exercise unusual launch limits or the registry's preference retry.
+    /// Open from a caller-supplied adapter source. Diagnostics can lower selected
+    /// limits or set an unsupported feature flag to exercise preference retry.
     ///
     /// # Errors
     /// Reports an invalid restriction or a hardware, adapter or device failure.
@@ -156,10 +156,20 @@ impl DeviceRecipe<'_> {
             acquire_adapter,
             self.generation,
             self.hardware,
-            |adapter| {
-                let (mut descriptor, offer) = self.plan(adapter)?;
-                adjust(&mut descriptor);
-                Ok((descriptor, offer))
+            |adapter| self.plan(adapter),
+            |adapter, descriptor| {
+                let limits = descriptor.required_limits.clone();
+                let features = descriptor.required_features;
+                adjust(descriptor);
+                // A supported feature must come from the recipe or the registry.
+                // Unsupported flags reach wgpu so diagnostics can exercise its retry path.
+                let supported = adapter.features();
+                if descriptor.required_features & supported != features & supported
+                    || !descriptor.required_limits.check_limits(&limits)
+                {
+                    return Err(HardwareLaunchError::InvalidRestriction);
+                }
+                Ok(())
             },
         )
         .await?;

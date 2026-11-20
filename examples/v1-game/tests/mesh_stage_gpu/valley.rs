@@ -1,3 +1,4 @@
+#[cfg(target_os = "macos")]
 use std::{
     io::Write as _,
     path::PathBuf,
@@ -5,36 +6,46 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(target_os = "macos")]
 use thrum_asset_gpu::{CookedAssets, CookedDrawPath, CookedStats, draw_probe::ShadowFault};
+#[cfg(target_os = "macos")]
 use thrum_render::{
     present::SurfaceProfile,
     runtime::{FrameSample, SubmittedImage},
     synthetic::CaptureSource,
 };
+#[cfg(target_os = "macos")]
 use v1_game::{CameraRoute, FrameConfig, FrameHost, SurfaceOutput};
 
+#[cfg(target_os = "macos")]
 use super::support::{Gpu, read_buffer};
 
+#[cfg(target_os = "macos")]
 const ROUTE: &str = include_str!("../../routes/moving-v1.json");
+#[cfg(target_os = "macos")]
 const PROOF_EXTENT: [u32; 2] = [320, 180];
 // At this authored viewpoint the rising Sun is ~0.106° above the horizon.
 // The far cascade sees terrain whose stored depth depends on the back faces.
+#[cfg(target_os = "macos")]
 const GRAZING_SUN_HOUR: f32 = 6.01;
 
 mod cost;
 
+#[cfg(target_os = "macos")]
 fn output() -> PathBuf {
     std::env::var_os("THRUM_MESH_STAGE_PROOF_DIR")
         .expect("proof output")
         .into()
 }
 
+#[cfg(target_os = "macos")]
 fn store() -> PathBuf {
     std::env::var_os("THRUM_MESH_STAGE_VALLEY_STORE")
         .expect("cooked authored valley")
         .into()
 }
 
+#[cfg(target_os = "macos")]
 struct Valley<'a> {
     gpu: &'a Gpu,
     host: FrameHost,
@@ -45,6 +56,7 @@ struct Valley<'a> {
 }
 
 #[derive(Clone, Copy)]
+#[cfg(target_os = "macos")]
 enum Witness {
     None,
     SunMaps,
@@ -52,12 +64,14 @@ enum Witness {
 }
 
 #[derive(Clone, Copy)]
+#[cfg(target_os = "macos")]
 enum SunProbe {
     None,
     Rejections,
     Fault(ShadowFault),
 }
 
+#[cfg(target_os = "macos")]
 impl<'a> Valley<'a> {
     fn new(
         gpu: &'a Gpu,
@@ -281,6 +295,7 @@ impl<'a> Valley<'a> {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn drawable(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
     device
         .create_texture(&wgpu::TextureDescriptor {
@@ -300,7 +315,7 @@ fn drawable(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
         .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn valley_cull_equal() {
     let Some(test_gpu) = thrum_test_support::gpu("valley_cull_equal", Some(wgpu::Backend::Metal))
@@ -366,7 +381,9 @@ fn valley_cull_equal() {
         );
     }
 }
+}
 
+#[cfg(target_os = "macos")]
 fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, probe: SunProbe) -> Vec<u8> {
     let mut valley = Valley::new(gpu, path, cull, PROOF_EXTENT, hour, probe);
     let counts = valley.shadow_counts.lock().expect("shadow counts").clone();
@@ -407,7 +424,7 @@ fn shadow_maps(gpu: &Gpu, path: CookedDrawPath, cull: bool, hour: f32, probe: Su
     maps
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn shadow_equal() {
     let Some(test_gpu) = thrum_test_support::gpu("shadow_equal", Some(wgpu::Backend::Metal)) else {
@@ -438,8 +455,9 @@ fn shadow_equal() {
         println!("Sun {hour} h: all 3 x 1024 x 1024 Depth32Float texels match byte for byte");
     }
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 #[ignore = "requires cooked valley from mesh_stage_proof.py"]
 fn shadow_parity() {
     let Some(test_gpu) = thrum_test_support::gpu("shadow_parity", Some(wgpu::Backend::Metal))
@@ -473,13 +491,15 @@ fn shadow_parity() {
         save_shadow_maps(GRAZING_SUN_HOUR, name, &maps);
     }
 }
+}
 
+#[cfg(target_os = "macos")]
 fn save_shadow_maps(hour: f32, arm: &str, maps: &[u8]) {
     assert_eq!(maps.len(), 3 * 1024 * 1024 * 4);
     std::fs::write(output().join(format!("shadow-{hour}-{arm}.raw")), maps).expect("Sun maps");
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 #[ignore = "capture via scripts/mesh_stage_capture.py"]
 fn fixed_stops() {
     let Some(test_gpu) = thrum_test_support::gpu("fixed_stops", Some(wgpu::Backend::Metal)) else {
@@ -563,4 +583,5 @@ fn fixed_stops() {
         "adapter": gpu.device.adapter_info().name, "registry_digest": gpu.capabilities.registry_digest(),
         "frames": frames,
     })).expect("record encoding")).expect("fixed stops record");
+}
 }

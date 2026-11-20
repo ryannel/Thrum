@@ -1,17 +1,22 @@
 //! The governor's API changes the pool in a running Metal frame.
 
-#[cfg(target_os = "macos")]
 mod view_knobs_gpu {
+    #[cfg(target_os = "macos")]
     mod witness;
 
+    #[cfg(target_os = "macos")]
     use std::{
         sync::{Arc, Mutex},
         time::{Duration, Instant},
     };
 
+    #[cfg(target_os = "macos")]
     use glam::{Mat4, Vec4};
+    #[cfg(target_os = "macos")]
     use mirror_scene::{Pool, fixture};
+    #[cfg(target_os = "macos")]
     use thrum_app::sky::{Camera, StillWorld};
+    #[cfg(target_os = "macos")]
     use thrum_render::{
         capabilities::DeviceCapabilities,
         contribution::{SecondaryViewRequest, ViewAir, ViewClipPlane},
@@ -19,12 +24,16 @@ mod view_knobs_gpu {
         runtime::{CaptureLimits, FrameConfig, FrameHost, FrameSample, SurfaceOutput},
         synthetic::{CaptureSource, OUTPUT_FORMAT},
     };
+    #[cfg(target_os = "macos")]
     use witness::{Observation, PoolWitness, VIEWPORT_REPORT_BYTES, read_viewport};
 
+    #[cfg(target_os = "macos")]
     const EXTENT: [u32; 2] = [384, 256];
+    #[cfg(target_os = "macos")]
     type Host = FrameHost<StillWorld, fixture::Source>;
 
     #[derive(Clone, Copy)]
+    #[cfg(target_os = "macos")]
     struct Expected {
         viewport: [u32; 2],
         far: f32,
@@ -33,6 +42,7 @@ mod view_knobs_gpu {
         reach: f32,
     }
 
+    #[cfg(target_os = "macos")]
     impl Expected {
         fn endpoint(name: &str, value: u32) -> Self {
             let mut expected = Self {
@@ -79,6 +89,7 @@ mod view_knobs_gpu {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn sample(
         host: &mut Host,
         device: &wgpu::Device,
@@ -134,6 +145,7 @@ mod view_knobs_gpu {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn objects(device: &wgpu::Device) -> [isize; 11] {
         let hal = device.get_internal_counters().hal;
         [
@@ -151,6 +163,7 @@ mod view_knobs_gpu {
         ]
     }
 
+    #[cfg(target_os = "macos")]
     fn pool_pixels(matrix: Mat4) -> Vec<bool> {
         let inverse = matrix.inverse();
         let [w, h] = EXTENT;
@@ -179,6 +192,7 @@ mod view_knobs_gpu {
             .collect()
     }
 
+    #[cfg(target_os = "macos")]
     fn output_view(device: &wgpu::Device) -> wgpu::TextureView {
         device
             .create_texture(&wgpu::TextureDescriptor {
@@ -199,6 +213,7 @@ mod view_knobs_gpu {
     }
 
     #[expect(clippy::print_stderr, reason = "the GPU witness is saved as evidence")]
+    #[cfg(target_os = "macos")]
     fn verify_viewport(
         host: &mut Host,
         observation: &Mutex<Observation>,
@@ -233,6 +248,7 @@ mod view_knobs_gpu {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn submitted_camera(projection: Mat4, eye: [f32; 3]) -> Camera {
         // Use the main projection's exact forward and FOV so the optics
         // match bitwise. Specify the secondary controls independently.
@@ -251,7 +267,7 @@ mod view_knobs_gpu {
         )
     }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn quality_controls_change_only_the_reflection_on_both_recipes() {
         let Some(gpu) = thrum_test_support::gpu("mirror view knobs", Some(wgpu::Backend::Metal))
         else {
@@ -444,5 +460,6 @@ mod view_knobs_gpu {
                 recipe,
             );
         }
+    }
     }
 }

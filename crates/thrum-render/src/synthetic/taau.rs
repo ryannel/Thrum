@@ -452,5 +452,5 @@ impl SceneContext<'_> {
     }
 }
 
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(test)]
 mod tests;

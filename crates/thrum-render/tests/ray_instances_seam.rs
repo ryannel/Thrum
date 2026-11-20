@@ -5,18 +5,23 @@ pub mod ray_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 mod support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::{ray_support, support};
+    #[cfg(target_os = "macos")]
     use thrum_render::contribution::{
         ContributionFrame, ContributionPasses, RayInstances, SceneContribution, SceneContributions,
         SceneSurface,
     };
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{
         DisplayOverlay, FrameLighting, SyntheticLight, SyntheticScene, SyntheticView,
     };
+    #[cfg(target_os = "macos")]
     use wgpu::util::DeviceExt;
 
+    #[cfg(target_os = "macos")]
     struct Geometry {
         mesh: Option<wgpu::Blas>,
         vertices: Option<wgpu::Buffer>,
@@ -24,6 +29,7 @@ mod metal {
         prebuild: bool,
     }
 
+    #[cfg(target_os = "macos")]
     impl Geometry {
         fn new(placements: Vec<([f32; 3], u8)>) -> Self {
             Self {
@@ -55,6 +61,7 @@ mod metal {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn size() -> wgpu::BlasTriangleGeometrySizeDescriptor {
         wgpu::BlasTriangleGeometrySizeDescriptor {
             vertex_format: wgpu::VertexFormat::Float32x3,
@@ -65,6 +72,7 @@ mod metal {
         }
     }
 
+    #[cfg(target_os = "macos")]
     impl SceneContribution for Geometry {
         fn passes(&self) -> ContributionPasses {
             ContributionPasses {
@@ -136,7 +144,7 @@ mod metal {
         fn submitted(&mut self, _: bool) {}
     }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn a_contribution_offers_scene_membership_after_upload_without_any_draw() {
         let Some(gpu) = ray_support::support::gate("ray instances contribution seam") else {
             return;
@@ -200,8 +208,9 @@ mod metal {
             );
         });
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn traced_view_distinguishes_adjoining_coplanar_placements() {
         let Some(gpu) = ray_support::support::gate("traced view instance identity") else {
             return;
@@ -302,8 +311,9 @@ mod metal {
             "coplanar placement RGBA8: near {left:?} {right:?}, far {far_left:?} {far_right:?}, sky {sky:?}"
         );
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn visual_replacement_on_the_same_device_reuses_prepared_meshes() {
         let Some(gpu) = ray_support::support::gate("ray mesh visual replacement") else {
             return;
@@ -348,5 +358,6 @@ mod metal {
         assert_eq!(host.capture_pixels().expect("replaced frame"), before);
         assert!(probe.take_recorded().is_empty());
         println!("same-device visual preparation and first frame built zero mesh structures");
+    }
     }
 }

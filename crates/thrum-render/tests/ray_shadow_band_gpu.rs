@@ -1,6 +1,6 @@
 //! Read the forward Sun term at the terminator of a coarse, smooth prism.
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod ray_shadow_band_gpu {
     mod terminator;
 }

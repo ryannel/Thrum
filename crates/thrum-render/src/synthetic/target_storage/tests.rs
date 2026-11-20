@@ -66,11 +66,11 @@ fn metal_recipe_replacement_retains_old_target_and_exact_channels() {
             let old_depth = old_target.textures.texture(&old_target.ids.depth).unwrap();
             let new_depth = new_target.textures.texture(&new_target.ids.depth).unwrap();
             assert_eq!(
-                crate::capabilities::apple::storage_mode(old_depth),
+                crate::test_device::metal_storage_mode(old_depth),
                 Some("Private")
             );
             assert_eq!(
-                crate::capabilities::apple::storage_mode(new_depth),
+                crate::test_device::metal_storage_mode(new_depth),
                 Some("Memoryless")
             );
             let (old_count, old_bytes) = old_target.texture_allocation();

@@ -1,8 +1,9 @@
 //! Submitted SDR equality over odd/even extents, clips and whole texel scales.
 
-mod fixture {
-    include!("support/sprite_fixture.rs");
+mod support {
+    pub(crate) mod sprite_fixture;
 }
+use support::sprite_fixture as fixture;
 
 use thrum_render::{
     sprite::{SpriteRect, SpriteRow},

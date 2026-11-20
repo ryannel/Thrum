@@ -4,15 +4,19 @@ pub mod ray_shadow_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::{ray_shadow_support as fixture, ray_support::support};
+    #[cfg(target_os = "macos")]
     use glam::Vec3;
+    #[cfg(target_os = "macos")]
     use thrum_render::{
         contribution::ShadowBounds,
         synthetic::{PreparedSynthetic, SyntheticPointLight, SyntheticView},
     };
 
+    #[cfg(target_os = "macos")]
     fn lamp(position: Vec3, radius: f32, candela: [f32; 3]) -> SyntheticPointLight {
         SyntheticPointLight {
             position: position.to_array(),
@@ -21,6 +25,7 @@ mod metal {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn count(device: &wgpu::Device, queue: &wgpu::Queue, prepared: &PreparedSynthetic) -> u32 {
         let result = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("unshadowed lamp reference readback"),
@@ -44,7 +49,7 @@ mod metal {
         )
     }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn direct_lamps_obey_distance_overlap_and_quality() {
         let Some(gpu) = support::gate("lamp visibility") else {
             return;
@@ -99,8 +104,9 @@ mod metal {
             println!("{description}: {color:?}, zero-ray {unshadowed:?}, omitted {skipped}");
         }
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn wall_outside_camera_and_sun_volumes_still_casts() {
         let Some(gpu) = support::gate("off-screen lamp caster") else {
             return;
@@ -175,8 +181,9 @@ mod metal {
             );
         }
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn mirrored_receiver_keeps_its_exposed_lamp_light() {
         let Some(gpu) = support::gate("mirrored lamp receiver") else {
             return;
@@ -204,5 +211,6 @@ mod metal {
             }
         }
         assert!(samples.iter().all(|rgb| *rgb == samples[0]));
+    }
     }
 }

@@ -9,7 +9,6 @@ use crate::contribution::SceneContribution;
 
 /// Occlusion only: the prepass list's indirect arguments, for the Metal
 /// host tests.
-#[cfg(target_os = "macos")]
 pub(crate) fn prepass_args(target: &OffscreenTarget) -> Option<&wgpu::Buffer> {
     target
         .occlusion

@@ -2,15 +2,19 @@
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
 
+    #[cfg(target_os = "macos")]
     use std::sync::Arc;
+    #[cfg(target_os = "macos")]
     use thrum_render::abi::InstanceRecord;
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{SyntheticMeshChoice, SyntheticMeshes, SyntheticScene};
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn each_active_mesh_hits_and_holes_miss() {
         let Some(gpu) = support::gate("ray structure membership") else {
             return;
@@ -56,5 +60,6 @@ mod metal {
         queue.submit([encoder.finish()]);
         prepared.commit_frame();
         assert_eq!(support::answers(&device, &readback), [1, 2, 3, 0, 5, 0]);
+    }
     }
 }

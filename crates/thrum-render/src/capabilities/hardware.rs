@@ -294,9 +294,13 @@ impl DeviceCapabilities {
         descriptor: impl Fn(&wgpu::Adapter) -> wgpu::DeviceDescriptor<'static>,
         offer: impl Fn(&wgpu::Adapter) -> (wgpu::Features, wgpu::Limits),
     ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
-        Self::open_planned_generation(acquire_adapter, generation, requests, |adapter| {
-            Ok((descriptor(adapter), offer(adapter)))
-        })
+        Self::open_planned_generation(
+            acquire_adapter,
+            generation,
+            requests,
+            |adapter| Ok((descriptor(adapter), offer(adapter))),
+            |_, _| Ok(()),
+        )
         .await
     }
 
@@ -313,6 +317,10 @@ impl DeviceCapabilities {
             ),
             HardwareLaunchError,
         >,
+        adjust: impl Fn(
+            &wgpu::Adapter,
+            &mut wgpu::DeviceDescriptor<'static>,
+        ) -> Result<(), HardwareLaunchError>,
     ) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, Self), HardwareLaunchError> {
         for (index, request) in requests.iter().enumerate() {
             if requests[..index]
@@ -328,13 +336,14 @@ impl DeviceCapabilities {
                 .await
                 .map_err(HardwareLaunchError::Adapter)?;
             let (descriptor, (features, limits)) = descriptor(&adapter)?;
-            let (request, selections) = plan(
+            let (mut request, selections) = plan(
                 descriptor,
                 requests,
                 features & adapter.features(),
                 &limits,
                 retry.as_deref(),
             )?;
+            adjust(&adapter, &mut request)?;
             match adapter.request_device(&request).await {
                 Ok((device, queue)) => {
                     let mut capabilities = Self::capture(&adapter, &device, generation);

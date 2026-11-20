@@ -1,31 +1,37 @@
 //! Cooked publications through the game, with ray answers and raster bytes
 //! from the same recorded scene.
 
-#[cfg(target_os = "macos")]
 mod ray_tracing {
+    #[cfg(target_os = "macos")]
     mod proof;
 
+    #[cfg(target_os = "macos")]
     use proof::{Fixture, Metal, Snapshot, report};
+    #[cfg(target_os = "macos")]
     use std::time::{Duration, Instant};
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::mesh_rows::MeshRowStatus;
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn sun_out() {
         proof::prove_sun_out();
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn contributions() {
         proof::prove_contributions();
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     #[ignore = "contended valley timing is run by scripts/ray_tracing_cost.py"]
     fn shadow_cost() {
         proof::measure_shadows();
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn edit() {
         let Some(metal) = Metal::new(1) else {
             return;
@@ -104,8 +110,9 @@ mod ray_tracing {
         assert_eq!(Snapshot::capture(&mut game, &metal, &queries), previous);
         report(&previous.record("refused publication", &stats));
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn lifecycle() {
         let Some(metal) = Metal::new(1) else {
             return;
@@ -200,7 +207,9 @@ mod ray_tracing {
         }
         assert!(game.tick() > frozen_tick);
     }
+    }
 
+    #[cfg(target_os = "macos")]
     fn prepared_arena(probe: &thrum_render::synthetic::RayBuildProbe, device_generation: u64) {
         let meshes = probe
             .take_recorded()
@@ -222,19 +231,22 @@ mod ray_tracing {
         }));
     }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn demand() {
         proof::prove_demand();
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn casters() {
         proof::prove_casters();
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     #[ignore = "the contended Metal measurement runs through scripts/ray_tracing_cost.py"]
     fn valley_cost() {
         proof::measure_valley();
+    }
     }
 }

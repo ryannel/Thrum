@@ -2,17 +2,21 @@
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
 
+    #[cfg(target_os = "macos")]
     use std::cell::Cell;
+    #[cfg(target_os = "macos")]
     use thrum_render::capabilities::{
         DeviceRecipe, HardwareFeature, HardwareLaunchError, HardwareRequest,
     };
+    #[cfg(target_os = "macos")]
     use thrum_test_support::{Profile, Restriction};
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn mac_launch_admits_rays_and_keeps_the_original_recipe_on_fallback() {
         let Some(gate) = support::gate("ray query admission") else {
             return;
@@ -88,8 +92,9 @@ mod metal {
         assert_eq!(restricted.features(), ray);
         assert!(caps.hardware()[0].declined.is_none());
     }
+    }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     fn failed_preference_retries_once_and_retains_every_required_name() {
         let Some(gate) = support::gate("ray query device retry") else {
             return;
@@ -140,5 +145,6 @@ mod metal {
                     .all(|answer| answer.declined.is_none() && answer.request.required)
             );
         }
+    }
     }
 }

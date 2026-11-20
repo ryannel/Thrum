@@ -4,9 +4,10 @@
     dead_code,
     reason = "each sprite proof uses a subset of the shared host fixture"
 )]
-mod fixture {
-    include!("support/sprite_fixture.rs");
+mod support {
+    pub(crate) mod sprite_fixture;
 }
+use support::sprite_fixture as fixture;
 
 use thrum_render::{
     runtime::{FrameHost, SpriteSceneRequests},

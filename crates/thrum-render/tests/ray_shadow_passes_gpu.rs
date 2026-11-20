@@ -4,8 +4,8 @@ pub mod ray_shadow_support;
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
-#[test]
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
 fn traced_skips_surface_cascades_but_keeps_air_and_sun_off() {
     use glam::Vec3;
     use ray_shadow_support as fixture;
@@ -110,4 +110,5 @@ fn traced_skips_surface_cascades_but_keeps_air_and_sun_off() {
             );
         }
     }
+}
 }

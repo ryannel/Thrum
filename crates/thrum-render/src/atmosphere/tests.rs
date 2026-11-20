@@ -1,6 +1,5 @@
 use super::{AtmosphereFrame, model};
 
-#[cfg(target_os = "macos")]
 mod cache;
 
 #[test]

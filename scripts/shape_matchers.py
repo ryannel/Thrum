@@ -136,6 +136,49 @@ def path_attributes(comments, code):
             yield match.start(), match.group(2) if match.group(2) is not None else match.group(3)
 
 
+def os_test_module_sites(root, relative, code):
+    """Find OS conditions on dedicated test modules, including separate attributes."""
+    attributes = re.compile(r'(?P<attrs>(?:\#\s*\[[^\]]*\]\s*)+)'
+                            r'(?:pub(?:\([^)]*\))?\s+)?mod\s+(?P<name>\w+)\s*(?P<end>[;{])')
+    platform = re.compile(r'\b(?:target_os\s*=|target_family\s*=|(?:unix|windows)\b)')
+    test_only = re.compile(r'^\s*(?:test\s*$|all\s*\([^\]]*\btest\b)')
+    test_declaration = re.compile(r'#\s*\[\s*test\s*\]|\bmacos_gpu_test\s*!')
+    path = root / relative
+    module_dir = path.parent if path.stem in {"lib", "main", "mod"} else path.with_suffix("")
+    for match in attributes.finditer(code):
+        conditions = list(re.finditer(r'\#\s*\[\s*cfg\s*\(([^\]]*)\)\s*\]', match["attrs"]))
+        for condition in conditions:
+            cfg = condition[1]
+            # A top-level `test` alternative keeps the module in every test harness.
+            unconditional_in_tests = re.fullmatch(r'\s*any\s*\((.*)\)\s*', cfg, re.S)
+            if unconditional_in_tests:
+                alternatives = re.sub(r'\([^()]*\)', '', unconditional_in_tests[1])
+                if "test" in (part.strip() for part in alternatives.split(",")):
+                    continue
+            if not platform.search(cfg):
+                continue
+            name = match["name"]
+            if any(test_only.search(attribute[1]) for attribute in conditions) or name in {"test", "tests"}:
+                yield match.start() + condition.start()
+            elif test_file(relative):
+                if match["end"] == "{":
+                    end, depth = match.end(), 1
+                    while end < len(code) and depth:
+                        depth += (code[end] == "{") - (code[end] == "}")
+                        end += 1
+                    if test_declaration.search(code, match.end(), end):
+                        yield match.start() + condition.start()
+                else:
+                    for sibling in (path.parent, module_dir):
+                        for child in (sibling / f"{name}.rs", sibling / name / "mod.rs"):
+                            if child.is_file() and test_declaration.search(mask(child.read_text(), strings=True)):
+                                yield match.start() + condition.start()
+                                break
+                        else:
+                            continue
+                        break
+
+
 def rust_sites(root, relative, text, package, manifest, registry):
     """Yield (rule, byte offset) for each source site, once per rule."""
     comments = mask(text)
@@ -183,8 +226,12 @@ def rust_sites(root, relative, text, package, manifest, registry):
         for match in re.finditer(r'(?:\.|::)\s*(?:request_adapter|request_device)\s*\(', code):
             yield "device-request", match.start()
     if test_file(relative):
-        for match in re.finditer(r'#!\s*\[\s*cfg\s*\([^\]]*\btarget_os\s*=', code):
+        for match in re.finditer(r'\binclude\s*!\s*[(\[{]', code):
+            yield "path-attribute", match.start()
+        for match in re.finditer(r'#!\s*\[\s*cfg\s*\([^\]]*\b(?:target_(?:os|family)\s*=|(?:unix|windows)\b)', code):
             yield "whole-file-gpu-gate", match.start()
+    for offset in os_test_module_sites(root, relative, code):
+        yield "whole-file-gpu-gate", offset
 
 
 def dependency_sites(manifest, package):

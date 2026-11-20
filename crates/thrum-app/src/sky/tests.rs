@@ -6,10 +6,12 @@ use thrum_render::{
     runtime::FrameConfig,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+use super::cooked_store;
 use super::{
-    Camera, DEFAULT_GROUND, Edits, Sky, SkyEdits, SkyGame,
+    Camera, DEFAULT_GROUND, Sky, SkyEdits, SkyGame,
     capture::{crc32, encode_png},
-    cooked_store, ground_scene, kept_errors,
+    ground_scene, kept_errors,
 };
 use thrum_asset_gpu::CookedStats;
 
@@ -203,9 +205,9 @@ fn update_sends_only_changed_drawable_skies() {
     });
     let first = game.update();
     assert_eq!(first.0.map(|sky| sky.sun_elevation_degrees), Some(25.0));
-    assert!(game.update().is_empty(), "an unchanged sky is not resent");
+    assert!(game.update().no_changes(), "an unchanged sky is not resent");
     *elevation.lock().unwrap() = f32::NAN;
-    assert!(game.update().is_empty(), "a refused sky is not sent");
+    assert!(game.update().no_changes(), "a refused sky is not sent");
     assert_eq!(
         game.sky.sun_elevation_degrees, 25.0,
         "the previous sky is kept"
@@ -217,9 +219,9 @@ fn update_sends_only_changed_drawable_skies() {
         Some(5.0)
     );
     assert!(game.refused.is_none());
-    let merged = SkyEdits(Some(sky(1.0, 0.0))).merge(SkyEdits(None));
+    let merged = SkyEdits(Some(sky(1.0, 0.0))).merge_edits(SkyEdits(None));
     assert_eq!(merged.0, Some(sky(1.0, 0.0)));
-    let merged = merged.merge(SkyEdits(Some(sky(2.0, 0.0))));
+    let merged = merged.merge_edits(SkyEdits(Some(sky(2.0, 0.0))));
     assert_eq!(merged.0, Some(sky(2.0, 0.0)));
 }
 
@@ -255,6 +257,7 @@ fn png_is_a_valid_stored_rgb_image() {
 }
 
 #[test]
+#[cfg(not(target_arch = "wasm32"))]
 fn missing_or_uncooked_stores_name_the_next_step() {
     let unset = cooked_store(None).unwrap_err();
     assert!(unset.contains("THRUM_ASSET_STORE is not set"), "{unset}");
@@ -293,11 +296,8 @@ fn the_ground_is_one_wide_slab_with_its_top_at_zero() {
 }
 
 /// Render `game` offscreen at 160×90 for three frames; fail on any wgpu validation error.
-fn render(mut game: SkyGame) -> Vec<u8> {
+fn render(gpu: &thrum_test_support::Gpu, mut game: SkyGame) -> Vec<u8> {
     pollster::block_on(async {
-        let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
-        descriptor.backends = wgpu::Backends::METAL;
-        let instance = wgpu::Instance::new(descriptor);
         let OpenedDevice {
             queue,
             capabilities,
@@ -307,7 +307,7 @@ fn render(mut game: SkyGame) -> Vec<u8> {
             profile: DeviceProfile::Portable,
             ..Default::default()
         }
-        .open(&instance, None)
+        .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("device");
         let extent = [160, 90];
@@ -347,18 +347,30 @@ fn mean(pixels: &[u8], rows: std::ops::Range<usize>, channel: usize) -> f64 {
 /// display) also runs with zero active rows.
 #[test]
 fn the_sky_and_ground_render_through_every_pass() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "the_sky_and_ground_render_through_every_pass",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
     let sun = |_: &Controls, sky: &mut Sky| {
         sky.sun_elevation_degrees = 25.0;
         sky.sun_azimuth_degrees = 150.0;
     };
-    let bare = render(SkyGame::new(Controls::new(), CAMERA, sun).with_ground(None));
+    let bare = render(
+        &gpu,
+        SkyGame::new(Controls::new(), CAMERA, sun).with_ground(None),
+    );
     // The upper rows are daylit sky: bright and bluer than red.
     assert!(mean(&bare, 0..10, 2) > 60.0, "sky is lit");
     assert!(
         mean(&bare, 0..10, 2) > mean(&bare, 0..10, 0),
         "daylit sky is bluer than red"
     );
-    let grounded = render(SkyGame::new(Controls::new(), CAMERA, sun));
+    let grounded = render(
+        &gpu.fresh_adapter(),
+        SkyGame::new(Controls::new(), CAMERA, sun),
+    );
     assert!(
         mean(&grounded, 0..10, 2) > 60.0,
         "the sky stays lit above the ground"

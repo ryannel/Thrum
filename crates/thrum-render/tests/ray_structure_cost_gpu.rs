@@ -2,20 +2,30 @@
 #[cfg(all(target_os = "macos", feature = "creation-counters"))]
 pub mod ray_support;
 
-#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+#[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
 
+    #[cfg(target_os = "macos")]
     use std::io::Write as _;
+    #[cfg(target_os = "macos")]
     use std::time::Instant;
+    #[cfg(target_os = "macos")]
     use thrum_render::capabilities::DeviceCapabilities;
+    #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{PreparedSynthetic, SyntheticScene};
+    #[cfg(target_os = "macos")]
     use thrum_render::timing::GpuTimings;
 
+    #[cfg(target_os = "macos")]
     const BEFORE: &str = "before structure build";
+    #[cfg(target_os = "macos")]
     const AFTER: &str = "consume structure build";
+    #[cfg(target_os = "macos")]
     const BUILD_SAMPLES: usize = 13;
 
+    #[cfg(target_os = "macos")]
     struct Measurement<'a> {
         device: &'a wgpu::Device,
         queue: &'a wgpu::Queue,
@@ -25,6 +35,7 @@ mod metal {
         timer: GpuTimings,
     }
 
+    #[cfg(target_os = "macos")]
     impl<'a> Measurement<'a> {
         fn new(
             device: &'a wgpu::Device,
@@ -153,7 +164,7 @@ mod metal {
         }
     }
 
-    #[test]
+    thrum_test_support::macos_gpu_test! {
     #[ignore = "contended cost record is run by scripts/ray_tracing_cost.py"]
     fn report_structure_cost() {
         let Some(gpu) = support::gate("ray structure costs") else {
@@ -231,5 +242,6 @@ mod metal {
             }
             drop((ordinary, ordinary_target));
         }
+    }
     }
 }
