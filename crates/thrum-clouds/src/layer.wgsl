@@ -96,6 +96,8 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->
     let reach = min(mix(120.0, 720.0, grazing), (cloud.heights.y - point.y) / path.y);
     let step = min(reach, 120.0) / f32(samples);
     let tangent = vec3(path.z, 0.0, -path.x);
+    let across = normalize(tangent);
+    let up = cross(across, path);
     var local = 0.0;
     for (var j = 0u; j < samples * 6u; j++) {
         let start = f32(j) * step;
@@ -105,8 +107,9 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->
         // The spread grows from the shaded point and vanishes at higher Sun.
         let solar_footprint = max(footprint, 2.0 * width * grazing);
         let distance = start + 0.5 * width;
-        let lane = f32(j % 3u) - 1.0;
-        let spread = tangent * (lane * min(95.0, distance * 0.3) * grazing);
+        let angle = f32(j % 6u) * (PI / 3.0);
+        let spread = (across * cos(angle) + up * sin(angle))
+            * min(320.0, 110.0 + distance * 0.42) * grazing;
         local += cloud_density(point + path * distance + spread, solar_footprint) * width;
     }
     // In the distance the coarse path drives the complete diffuse column.
