@@ -183,7 +183,7 @@
         {
           "verdict": "fail",
           "commit": "c6153dabcaa4280e3f9a37d6fe74ebbe4cc5452f",
-          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "fail",
@@ -223,6 +223,42 @@
             "turns": 1
           },
           "at": "2026-11-20T01:06:47Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9563a37c3e0920c64ea8e6df76bae0ac6f14eb52",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "fail",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Earth profile and luminance parameters remain literal in production shaders",
+              "item": "M2.4",
+              "different": "The earlier dispatch, selector, solar tangent and binding-span sites are fixed. This concerns the Earth density law, night chart altitude and luminance weights used by independent CPU and GPU lighting paths.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 99473,
+            "cached": 1287936,
+            "output": 5618,
+            "turns": 1
+          },
+          "at": "2026-11-20T06:24:29Z"
         }
       ],
       "authorised": {
