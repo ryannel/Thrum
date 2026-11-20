@@ -526,3 +526,10 @@
   [Target evidence](../../../.orchestrate/evidence/WATERS/M7/README.md).
 - 2026-11-20 Planner, from the cleanup review (L8-07): M11.4 and M11.10 named files under `docs/evidence`, which the merge refuses; they now name this milestone's evidence and the provenance record in the module's evidence folder. Where provenance records are kept in Git is an open assumption in [DEAD-TOOLS' plan](../DEAD-TOOLS/PLAN.md). M11 was Not Started. [Track 6](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) moves the ten-minute gale and foam runs out of `./dev check`; no item of this module changed for it.
 - 2026-11-20 Planner, on the owner's decision of that day as the lead gave it: provenance records are tracked in Git. M11.10 now names the module's provenance record tracked under `docs/provenance`, where `DEAD-TOOLS` M5 puts it. The design still names the working-folder file; `ORCHESTRATE.md` says that means the tracked record, and the design is corrected at this module's next re-plan.
+
+- 2026-11-20 Fixed M7's shoreline wet support, air-to-film transfer, stranded foam coverage and powered stern trail.
+  Metal read dry columns with zero births, drift and diffusion, and verified reactive coverage over unchanged
+  ground depth and motion. Both Metal and Chrome retained the moving craft's trail after source removal.
+  Captures show open turquoise between stern foam and a receding sheet leaving broken lace over the sand.
+  A bounded wave inverse cut the direct film pass's measured cost. The 1440p record retains the remaining
+  tripwires under shared load. [Target evidence](../../../.orchestrate/evidence/WATERS/M7/REVISION.md).

@@ -3079,11 +3079,11 @@
         "implementation": "partial",
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
-        "scope": "WATERS M7 adds optional two-level whitewater, the depth-limited shore source, and a colour-only film over dry ground. The engine's water contribution transports four stocks and the example lends the cooked ranked pattern.",
-        "correctness": "Metal checks cover wind, chart current, swash, strand and fade, endpoint submission and resets, dry query and ground depth, and editing the leased pattern across device generations. Hardware Chrome reads the same submitted foam banks during wind and craft removal.",
-        "visuals": "Submitted Metal stills and elapsed-time sequences cover gale, trade wind, calm, the moving craft and its wake after stopping, trade and gale beach swash, and the sheltered lake. Independent milestone review is pending.",
-        "device": "M3 Max Metal and hardware Chrome WebGPU. Paired capture-off Metal timing at 2560×1440 compares both scenes with and without whitewater under concurrent load. The sea timing collector rejected pass timestamps and the record retains completion brackets.",
-        "evidence": "../../.orchestrate/evidence/WATERS/M7/README.md"
+        "scope": "WATERS M7 adds two-level whitewater, the depth-limited shore source and a shore film that blends colour and reactive coverage over the ground. The water contribution transports four stocks and the example lends the cooked ranked pattern.",
+        "correctness": "Metal checks cover chart current, swash, mixed-stock transfer, hitch ageing and endpoint resets. Live beach source parcels obey the point-query dry support, and the dry film preserves ground depth and motion while stranded foam raises reactive coverage. Hardware Chrome reads submitted foam banks during wind and craft removal.",
+        "visuals": "Submitted Metal stills and elapsed-time sequences cover whitecaps in gale, trade wind and calm, the craft at 6 and 12 m/s through stop and fade, and the beach and lake. Independent milestone review is pending.",
+        "device": "M3 Max Metal and hardware Chrome WebGPU. Paired 2560×1440 Metal timing under concurrent load recorded a lower shore-film pass cost with the bounded inverse than with the direct inverse. The sea's timestamp fault leaves completion brackets for that scene. Display cadence is unqualified.",
+        "evidence": "../../.orchestrate/evidence/WATERS/M7/REVISION.md"
       },
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",
