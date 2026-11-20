@@ -1,10 +1,10 @@
 {
   "module": "DEAD-TOOLS",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/DEAD-TOOLS/design-review.md",
-    "commit": "16fef5219520662117a2281dd27fa603d0b47bdb",
-    "hash": "c43544b39804137892c4adeeae94985edd13175bf90e10ecfb1e9c7ab21f99c1",
+    "commit": "7fd146b2d3f1b11a35dfd8d587c939ce682fa468",
+    "hash": "e9e7e407a6ad7356eb18d1e0df8ad5ac85b1a341b630423128f8b38a1b5e0156",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -15,13 +15,13 @@
     "cli": "2.1.319 (Claude Code)",
     "path": "headless",
     "usage": {
-      "input": 71155,
-      "cached": 1034266,
-      "output": 14215,
-      "cost_usd": 1.060249,
+      "input": 98733,
+      "cached": 2643672,
+      "output": 27594,
+      "cost_usd": 1.870198,
       "turns": 1
     },
-    "at": "2026-11-20T10:50:08Z"
+    "at": "2026-11-20T12:25:33Z"
   },
   "milestones": {
     "M1": {
@@ -120,6 +120,29 @@
         "turns": 1
       },
       "at": "2026-11-20T10:20:14Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/DEAD-TOOLS/design-review-2.md",
+      "commit": "16fef5219520662117a2281dd27fa603d0b47bdb",
+      "hash": "c43544b39804137892c4adeeae94985edd13175bf90e10ecfb1e9c7ab21f99c1",
+      "by": "review",
+      "host": "claude",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "observed": {
+        "model": "claude-opus-5-5"
+      },
+      "cli": "2.1.319 (Claude Code)",
+      "path": "headless",
+      "usage": {
+        "input": 71155,
+        "cached": 1034266,
+        "output": 14215,
+        "cost_usd": 1.060249,
+        "turns": 1
+      },
+      "at": "2026-11-20T10:50:08Z"
     }
   ]
 }
