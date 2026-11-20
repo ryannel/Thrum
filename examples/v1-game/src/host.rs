@@ -885,7 +885,7 @@ impl FrameHost {
     /// Solar time in the current tick's display interval at the submitted frame's alpha.
     /// Read it before advancing the host or editing the solar phase.
     pub fn rendered_time_of_day(&self, alpha: f32) -> f32 {
-        DayCycle::rendered_time_of_day(self.tick(), alpha, self.inner.source().day_phase_offset)
+        rendered_time_of_day(self.inner.source(), self.tick(), alpha)
     }
 
     /// Change the game camera elevation continuously.
@@ -1162,7 +1162,16 @@ pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<()
 
 /// Committed solar time of the runtime's latest world tick.
 pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
-    DayCycle::time_of_day(runtime.world().tick(), runtime.source().day_phase_offset)
+    let source = runtime.source();
+    let tick = source.held_solar_tick().unwrap_or(runtime.world().tick());
+    DayCycle::time_of_day(tick, source.day_phase_offset)
+}
+
+fn rendered_time_of_day(source: &GameScene, tick: u64, alpha: f32) -> f32 {
+    let (tick, alpha) = source
+        .held_solar_tick()
+        .map_or((tick, alpha), |held| (held, 1.0));
+    DayCycle::rendered_time_of_day(tick, alpha, source.day_phase_offset)
 }
 
 /// Change the game camera elevation continuously.

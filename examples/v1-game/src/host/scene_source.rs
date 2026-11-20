@@ -409,6 +409,13 @@ impl GameScene {
         Ok(())
     }
 
+    pub(super) fn held_solar_tick(&self) -> Option<u64> {
+        self.route
+            .as_ref()
+            .filter(|route| route.hold_solar)
+            .map(|route| route.origin_tick)
+    }
+
     pub(super) fn new(setup: GameSetup) -> Self {
         let temporal: Option<serde_json::Value> =
             (setup.display_overlay == DisplayOverlay::TemporalInputs).then(|| {
@@ -722,6 +729,14 @@ impl SceneSource<PublishedPage> for GameScene {
                 2.0
             };
         let sun = DayCycle::sample(source.tick, alpha, self.day_phase_offset);
+        let sun = if let Some(tick) = self.held_solar_tick() {
+            crate::environment::SunSample {
+                simulation_time_seconds: sun.simulation_time_seconds,
+                ..DayCycle::sample(tick, 1.0, self.day_phase_offset)
+            }
+        } else {
+            sun
+        };
         let lighting = lighting.unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m));
         let view = if self.valley_stars
             && self.camera.is_some()

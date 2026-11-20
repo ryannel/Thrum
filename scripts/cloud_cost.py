@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RECORD = ROOT / 'docs/evidence/CLOUDS/M2-cost.json'
+LOW_SUN_RECORD = ROOT / 'tests/fixtures/clouds/low-sun-cost.json'
 SCRATCH = ROOT / 'tmp/clouds-m2/cost'
 SKY_PASSES = (
     'cloud weather map', 'cloud Sun path near', 'cloud Sun path middle',
@@ -40,16 +41,17 @@ def run(command, **kwargs):
 
 
 def measure(scene='shade', alternatives=True):
-    SCRATCH.mkdir(parents=True, exist_ok=True)
+    scratch = ROOT / 'tmp/clouds-m5/cost' if scene == 'low-sun' else SCRATCH
+    scratch.mkdir(parents=True, exist_ok=True)
     run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
          '--example', 'cloud_cost'], timeout=1200)
     run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook'], timeout=1200)
-    store = SCRATCH / 'valley'
+    store = scratch / 'valley'
     if not store.exists():
         run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(store)], timeout=180)
     rows = []
     arms=[('off',1,None,None),('shade',1,None,None),('shade',8,None,None),('shade',60,None,None)]
-    if scene=='first-frame':
+    if scene in ('first-frame', 'low-sun'):
         arms=[('off',1,None,None),('sky',1,None,None)]
         if alternatives:
             arms += [('sky',1,2,3),('sky',1,4,3),('sky',1,1,1),('sky',1,1,0)]
@@ -57,13 +59,16 @@ def measure(scene='shade', alternatives=True):
         environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(store),
                            THRUM_CLOUDS=selection, THRUM_CLOUD_TIME_SCALE=str(scale),
                            THRUM_CLOUD_WIND='40', THRUM_RECIPE='portable')
-        if scene=='first-frame':
+        if scene in ('first-frame', 'low-sun'):
             environment.pop('THRUM_CLOUD_REFRESH_STRIDE', None)
             environment.pop('THRUM_CLOUD_LIGHT_SAMPLES', None)
             environment.update(THRUM_CAMERA_HEIGHT='260.4846459239257',THRUM_CAMERA_Z='80')
         if stride is not None:
             environment.update(THRUM_CLOUD_REFRESH_STRIDE=str(stride),THRUM_CLOUD_LIGHT_SAMPLES=str(samples))
-        row = json.loads(run(['target/release/examples/cloud_cost'], env=environment, timeout=180))
+        command = ['target/release/examples/cloud_cost']
+        if scene == 'low-sun':
+            command.append('--low-sun')
+        row = json.loads(run(command, env=environment, timeout=180))
         row.update(selection=selection, weather_speed=scale)
         if selection == 'sky':
             knobs = {knob['name'].rsplit('/', 1)[-1]: knob['value'] for knob in row['quality']}
@@ -77,8 +82,10 @@ def validate(record,scene='shade'):
     for key in ['commit', 'load', 'machine', 'build', 'runs', 'investigation']:
         if key not in record:
             raise ValueError(f'cost record lacks {key}')
-    if scene == 'first-frame':
+    if scene in ('first-frame', 'low-sun'):
         validate_first_frame(record)
+        if scene == 'low-sun':
+            validate_low_sun(record)
         return
     if len(record['runs']) != 4:
         raise ValueError('required paired Shade arms missing')
@@ -164,12 +171,30 @@ def require_refusal(record, rows, description):
     raise ValueError(f'accepted {description}')
 
 
+def validate_low_sun(record):
+    previous = record['previous']
+    validate_first_frame(previous)
+    for measured in (record, previous):
+        rows = measured['runs']
+        if len(rows) < 2 or [row['selection'] for row in rows[:2]] != ['off', 'sky']:
+            raise ValueError('missing default paired low-Sun arms')
+        view = previous['runs'][0]
+        for row in rows:
+            angles = row.get('view_angles') or {}
+            if (row['view'] != view['view'] or angles != view['view_angles']
+                    or not math.isclose(angles.get('start_sun_elevation_degrees', -1), 10, abs_tol=0.001)):
+                raise ValueError('expected matched 10-degree Sun views')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse'])
-    parser.add_argument('--scene', choices=['shade','first-frame'], required=True)
+    parser.add_argument('--scene', choices=['shade','first-frame','low-sun'], required=True)
+    parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
+    parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     args = parser.parse_args()
-    destination=RECORD if args.scene=='shade' else ROOT/'docs/evidence/CLOUDS/M3-cost.json'
+    destination = args.output or {'shade': RECORD, 'first-frame': ROOT/'docs/evidence/CLOUDS/M3-cost.json',
+                                  'low-sun': LOW_SUN_RECORD}[args.scene]
     if args.command == 'refuse':
         if args.scene != 'first-frame':
             parser.error('refuse is defined for first-frame')
@@ -200,16 +225,22 @@ def main():
                   'machine': platform.platform(), 'build': 'release, capture off, named GPU passes',
                   'runs': rows, 'investigation': '',
                   'estimates': 'CLOUDS DESIGN cost account: weather <0.1 ms, Sun 0.1–0.2 ms, ground <0.05 ms; profiles and resource bytes recorded separately.'}
-        if args.scene=='first-frame':
+        if args.scene in ('first-frame', 'low-sun'):
             record['estimates'] = FIRST_FRAME_ESTIMATES
+        if args.previous:
+            record['previous'] = json.loads(args.previous.read_text())
         destination.write_text(json.dumps(record, indent=2) + '\n')
-        print(destination.relative_to(ROOT))
+        print(destination)
     else:
         record = json.loads(destination.read_text())
         validate(record, args.scene)
-        if args.scene == 'first-frame':
+        if args.scene in ('first-frame', 'low-sun'):
             validate(dict(record, runs=rows), args.scene)
-        print(json.dumps({'measured_whole_frame_ns': [r['whole_frame_gpu_ns'] for r in rows]}))
+        if args.scene == 'low-sun':
+            print(json.dumps({'commit': run(['git', 'rev-parse', 'HEAD']),
+                              'load': {'before': before, 'after': os.getloadavg()}, 'runs': rows}))
+        else:
+            print(json.dumps({'measured_whole_frame_ns': [r['whole_frame_gpu_ns'] for r in rows]}))
 
 
 if __name__ == '__main__':

@@ -85,16 +85,25 @@ fn cloud_sun_depths(world:vec3<f32>)->vec2<f32> {
 }
 
 fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,footprint:f32)->vec2<f32> {
-    if cloud.settings.y==0u {return cloud_sun_depths(world);}
-    let path=mapping.path_border.xyz;
-    let reach=min(120.0,(cloud.heights.y-point.y)/path.y);
-    let step=reach/f32(cloud.settings.y);
-    var local=0.0;
-    for(var j=0u;j<cloud.settings.y;j++) {
-        local+=cloud_density(point+path*((f32(j)+0.5)*step),footprint)*step;
+    let samples = cloud.settings.y;
+    if samples == 0u { return cloud_sun_depths(world); }
+    let path = mapping.path_border.xyz;
+    // A grazing ray can stay inside the same lobe for hundreds of metres.
+    // Resolve that relief in the full density before asking the cached path
+    // for everything beyond it. Keep the sample spacing when extending.
+    let grazing = 1.0 - smoothstep(0.18, 0.35, path.y);
+    let reach = min(mix(120.0, 720.0, grazing), (cloud.heights.y - point.y) / path.y);
+    let step = min(reach, 120.0) / f32(samples);
+    var local = 0.0;
+    for (var j = 0u; j < samples * 6u; j++) {
+        let start = f32(j) * step;
+        let width = min(step, reach - start);
+        if width <= 0.0 { break; }
+        local += cloud_density(point + path * (start + 0.5 * width), footprint) * width;
     }
-    let depths=cloud_sun_depths(world+path*reach);
-    return vec2(local+depths.x,max(local+depths.x,depths.y));
+    let depths = cloud_sun_depths(world + path * reach);
+    let toward_sun = local + depths.x;
+    return vec2(toward_sun, max(toward_sun, depths.y));
 }
 
 fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray:vec3<f32>,uv:vec2<f32>)->CloudTransport {
@@ -144,8 +153,9 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
             let sigma=cloud_detail(column.x,point,footprint);
             if sigma>0.0 {
                 let world=camera+ray*at;
-                let sun_depths=cloud_local_sun(point,world,footprint);
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
+                var sun_depths = vec2(0.0);
+                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,footprint); }
                 let source=cloud_source(solar,phase,sun_depths,column.yz,plane_cosines,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;

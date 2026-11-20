@@ -62,6 +62,7 @@ pub(super) fn run(
             | "reconstruction-stars"
             | "reconstruction-scrub"
             | "clouds-drift"
+            | "clouds-dusk"
             | "clouds-still"
             | "checkpoint"
             | "clouds-route"
@@ -537,6 +538,7 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
             scenario,
             "reconstruction-stars"
                 | "reconstruction-scrub"
+                | "clouds-dusk"
                 | "exit-stop"
                 | "sprites-field"
                 | "sprites-field-cost"
@@ -548,6 +550,14 @@ fn requested_yaw(scenario: &str, time: f64, recovery: super::NativeRecovery) -> 
         3.0 * (time * 0.7).sin()
     } else {
         native_recovery::yaw(time, recovery)
+    }
+}
+
+fn capture_hz(scenario: &str, motion_capture: bool) -> u32 {
+    if motion_capture || scenario == "clouds-dusk" {
+        60
+    } else {
+        120
     }
 }
 
@@ -636,7 +646,7 @@ async fn record(
     };
     // Match the 60 Hz world and Chrome motion take. The native window and
     // existing 120 Hz capture scenarios keep their own opportunity cadence.
-    let requested_hz = if motion_capture { 60 } else { 120 };
+    let requested_hz = capture_hz(scenario, motion_capture);
     let mut clock = OpportunityClock::new(origin, requested_hz, timebase)?;
     let mut running = false;
     let mut night_variant = false;
@@ -944,6 +954,10 @@ fn lighting_edits<G: Game>(
     let solar = if scenario == "variants" && night != *night_variant {
         *night_variant = night;
         Some(if night { 0.0 } else { 12.0 })
+    } else if scenario == "clouds-dusk" && t >= 1.0 {
+        let elevation = 3.0 - 21.0 * ((t - 1.0) / 12.0).clamp(0.0, 1.0);
+        let hour_angle = (elevation.to_radians().sin() * std::f64::consts::SQRT_2).acos();
+        Some(12.0 + hour_angle.to_degrees() / 15.0)
     } else if scenario == "reconstruction-scrub" && t >= 1.0 {
         Some(6.0 + 12.0 * ((t - 1.0) / 2.0).clamp(0.0, 1.0))
     } else {
@@ -985,6 +999,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     match scenario {
         "sprites-field-cost" => (11.5, 10.0, 10.0),
         "clouds-drift" => (22.5, 22.0, 21.0),
+        "clouds-dusk" => (14.5, 14.0, f64::INFINITY),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "exit-route" => (32.0, 0.0, f64::INFINITY),
         "exit-drift" | "sprites-field" => (25.0, 23.0, 23.0),
@@ -1030,6 +1045,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "route"
                 | "clouds-route"
                 | "clouds-drift"
+                | "clouds-dusk"
                 | "exit-route"
                 | "exit-drift"
                 | "sprites-field"
@@ -1070,6 +1086,12 @@ pub(super) fn prepare_route(
     }?;
     if route.render_extent != render_extent {
         return Err("runtime route extent differs from the prepared game grid".to_owned());
+    }
+    if cloud_capture && crate::selected_setup()?.clouds != crate::CloudSelection::Off {
+        let start = route.keys[0];
+        host.set_scene_camera(camera.at(start.eye)?)?;
+        host.set_camera_yaw(start.yaw)?;
+        host.set_camera_pitch(start.pitch)?;
     }
     let stats = content.ok_or("routed capture needs cooked content")?;
     // The native provider retains the ordinary presentation contract during

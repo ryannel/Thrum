@@ -325,7 +325,7 @@ impl Layer {
         let heights = weather.height_range();
         let (phase, scattering) = self
             .lighting
-            .type_parameters(state.parameters().kind, (1.0 - kind.deck) * 0.5);
+            .type_parameters(state.parameters().kind, (1.0 - kind.deck) * 0.33);
         let uniform = Uniform {
             weather: std::array::from_fn(|i| {
                 [

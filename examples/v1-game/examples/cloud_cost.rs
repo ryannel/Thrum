@@ -3,18 +3,24 @@ use std::{
     collections::BTreeMap,
     time::{Duration, Instant},
 };
+use thrum_fixtures::mixed_field::day_cycle::DayCycle;
 use thrum_render::capabilities::{DeviceRecipe, OpenedDevice};
 use v1_game::{FrameConfig, FrameHost};
 
 fn main() -> Result<(), String> {
-    pollster::block_on(measure())
+    let low_sun = match std::env::args().nth(1).as_deref() {
+        None => false,
+        Some("--low-sun") => true,
+        Some(_) => return Err("expected no arguments or --low-sun".to_owned()),
+    };
+    pollster::block_on(measure(low_sun))
 }
 
 #[expect(
     clippy::print_stdout,
     reason = "measurement executable emits its one machine-readable record"
 )]
-async fn measure() -> Result<(), String> {
+async fn measure(low_sun: bool) -> Result<(), String> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
@@ -41,6 +47,24 @@ async fn measure() -> Result<(), String> {
     )
     .await?;
     let content = v1_game::attach_cooked_scene(&mut host)?;
+    let view_angles = if low_sun {
+        let elevation = 10.0_f32.to_radians();
+        let hour_angle = (elevation.sin() * std::f32::consts::SQRT_2).acos();
+        let solar_time = 0.5 + hour_angle / std::f32::consts::TAU;
+        let sun = DayCycle::sample(0, 0.0, hour_angle / std::f32::consts::TAU).toward_sun;
+        let yaw = sun[0].atan2(-sun[2]);
+        host.set_time_of_day(solar_time)?;
+        host.set_camera_yaw(yaw)?;
+        host.set_camera_pitch(elevation)?;
+        Some(serde_json::json!({
+            "start_solar_hours": solar_time * 24.0,
+            "start_sun_elevation_degrees": sun[1].asin().to_degrees(),
+            "yaw_degrees": yaw.to_degrees(),
+            "pitch_degrees": elevation.to_degrees()
+        }))
+    } else {
+        None
+    };
     // Settle ordinary asynchronous residency before the timed interval.
     let deadline = Instant::now() + Duration::from_secs(60);
     let mut last_tick = 0;
@@ -123,6 +147,7 @@ async fn measure() -> Result<(), String> {
             "frames":whole.len(), "whole_frame_gpu_ns":mean(&whole), "pass_gpu_ns":pass_means,
             "maximum_sun_refill_ns":refill, "resources":host.cloud_resource_bytes(),
             "storage":host.storage_report(), "view":host.scene_camera().map(v1_game::SceneCamera::eye),
+            "view_angles":view_angles,
             "first_submission":first,"ray_statistics":ray_statistics(&device,&queue,host.cloud_sky_products().as_ref())?,
             "quality":host.quality_knobs().iter().map(|q|serde_json::json!({"name":q.name,"value":q.value})).collect::<Vec<_>>(),
         })

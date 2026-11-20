@@ -543,3 +543,10 @@
   weather map and carries that comparison through retained rows. The [Chrome lifecycle evidence](../../../.orchestrate/evidence/CLOUDS/M4/README.md#m42-ground-field-review-correction)
   records 19 passing submissions, including five on the replacement device. The review's constant-depth control
   fails at the first ground-slice texel. The production Sun-path shader assembles to the same bytes.
+
+- 2026-11-20 M5 tunes the heaped diffuse plane, densifies Sun-path height nodes and extends the local march at grazing angles.
+  [Metal and Chrome evidence](../../../.orchestrate/evidence/CLOUDS/M5/README.md) shows the same noon relief and cloud shade,
+  the last pink light on the tall cloud, star occlusion, and the held 30° aureole through two 20-second pans.
+  Fine shading terraces remain in some native crops. The dusk evidence records gaps between submitted frames.
+  The [paired 1440p fixture](../../../tests/fixtures/clouds/low-sun-cost.json) records the loaded timing tripwires and the 32 MiB increase.
+  The shared exact-image check supplies the verdict on the merged work.

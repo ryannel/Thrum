@@ -88,20 +88,23 @@ pub fn shade_config() -> ShadeConfig {
         },
         sun: SunProfile {
             size: 256,
+            // At a grazing angle, one height interval spans a long reach
+            // along the Sun path. Finer nodes resolve the lighting relief
+            // without increasing the height-independent ground texture size.
             levels: [
                 SunLevel {
                     texel: 80.0,
-                    slices: 48,
+                    slices: 96,
                     maximum_age: 8.0 / 120.0,
                 },
                 SunLevel {
                     texel: 320.0,
-                    slices: 32,
+                    slices: 128,
                     maximum_age: 32.0 / 120.0,
                 },
                 SunLevel {
                     texel: 1600.0,
-                    slices: 16,
+                    slices: 128,
                     maximum_age: 128.0 / 120.0,
                 },
             ],

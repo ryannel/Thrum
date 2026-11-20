@@ -55,6 +55,8 @@ struct RouteFile {
 #[serde(deny_unknown_fields)]
 struct StartFile {
     solar_hours: f32,
+    #[serde(default)]
+    hold_solar: bool,
 }
 
 #[derive(Deserialize)]
@@ -122,6 +124,8 @@ pub struct CameraRoute {
     pub origin_tick: u64,
     /// Solar hour at the origin on both targets.
     pub solar_hours: f32,
+    /// Keep the Sun at its origin hour while the world and camera keep moving.
+    pub hold_solar: bool,
     /// Render extent on both targets.
     pub render_extent: [u32; 2],
     /// Keys in order; a cut is two consecutive keys at one tick.
@@ -243,6 +247,7 @@ impl CameraRoute {
             phase: file.phase,
             origin_tick: file.origin_tick,
             solar_hours: file.start.solar_hours,
+            hold_solar: file.start.hold_solar,
             render_extent: file.render_extent,
             keys,
             cuts: file.cuts,

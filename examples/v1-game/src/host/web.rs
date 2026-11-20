@@ -203,11 +203,7 @@ pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
         .filter(|sample| sample.tick >= from_tick)
         .map(|sample| {
             let alpha = sample.presentation_alpha;
-            let rendered = crate::environment::DayCycle::rendered_time_of_day(
-                sample.tick,
-                alpha,
-                source.day_phase_offset,
-            ) * 24.0;
+            let rendered = super::rendered_time_of_day(source, sample.tick, alpha) * 24.0;
             let pose = source.route_pose(sample.tick, alpha);
             serde_json::json!({
                 "tick": sample.tick, "alpha": alpha, "alpha_bits": alpha.to_bits(),
