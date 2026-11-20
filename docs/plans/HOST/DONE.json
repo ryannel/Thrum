@@ -90,7 +90,7 @@
     {
       "id": "M2",
       "name": "Pausing, overload, a lost surface and a lost device behave the same in the Mac window, the browser page and the iPhone app",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
