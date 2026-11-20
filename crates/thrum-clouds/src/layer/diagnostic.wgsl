@@ -10,6 +10,7 @@ fn observe() {
     let sun=atmosphere.sun_lux.xyz;
     let phase=cloud_phases(ray,sun);
     let light_angles=cloud_light_angles(-ray);
+    let sun_alignment=dot(ray,mapping.path_border.xyz);
     observation[0]=vec4(camera,environment_storage_scale());
     observation[1]=vec4(ray,atmosphere.sun_lux.w);
     observation[2]=vec4(sun,cloud.erosion.z);
@@ -30,7 +31,7 @@ fn observe() {
         let sigma=cloud_density(point,at/f32(textureDimensions(transport).y));
         if sigma>0.0 {
             let world=camera+ray*at;
-            let sun_depths=cloud_local_sun(point,world,at,at/f32(textureDimensions(transport).y));
+            let sun_depths=cloud_local_sun(point,world,at,at/f32(textureDimensions(transport).y),sun_alignment);
             let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
             let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,transmission);
             let segment=cloud_beer(sigma,sigma*source,step);

@@ -91,24 +91,34 @@ const SUN_FOOTPRINT = array(
     vec2(-1.0,0.0), vec2(0.5,-0.8660254), vec2(0.5,0.8660254),
 );
 
-fn probe_sun_depth(point:vec3<f32>,direction:vec3<f32>,reach:f32,footprint:f32)->f32 {
+fn cloud_march_sun_depth(point:vec3<f32>,direction:vec3<f32>,reach:f32,
+                         footprint:f32,near_step:f32)->f32 {
     var depth=0.0;
     var distance=0.0;
-    for (var segment=0u; segment<240u && distance<reach; segment++) {
-        let width=min(reach-distance,max(32.0,0.017*distance));
+    // Resolve the nearby lobe, then grow the footprint across distant
+    // condensate. The covered distance exceeds the cloud band at grazing Sun.
+    for (var segment=0u; segment<56u && distance<reach; segment++) {
+        let width=min(reach-distance,max(near_step,0.16*distance));
         depth+=cloud_density(point+direction*(distance+0.5*width),max(footprint,0.5*width))*width;
         distance+=width;
     }
     return depth;
 }
-fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->vec2<f32> {
+fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,sun_alignment:f32)->vec2<f32> {
     let samples = cloud.settings.y;
     if samples == 0u { return cloud_sun_depths(world,world.y).xy; }
     let path = mapping.path_border.xyz;
-    if path.y < 0.18 && distance < 15000.0 {
-        let outside=probe_sun_depth(point,path,(cloud.heights.y-point.y)/path.y,footprint);
-        let inside=probe_sun_depth(point,-path,(point.y-cloud.heights.x)/path.y,footprint);
-        return vec2(outside,outside+inside);
+    // At very low Sun, cached height intervals can cover hundreds of
+    // metres along the ray. A close silver lining reveals those intervals.
+    let rim_detail=(1.0-smoothstep(0.10,0.17,path.y))*smoothstep(0.75,0.94,sun_alignment)
+        *(1.0-smoothstep(10000.0,13500.0,distance));
+    var direct=vec2(0.0);
+    if rim_detail>0.0 {
+        let near_step=120.0/f32(samples);
+        let outside=cloud_march_sun_depth(point,path,(cloud.heights.y-point.y)/path.y,footprint,near_step);
+        let inside=cloud_march_sun_depth(point,-path,(point.y-cloud.heights.x)/path.y,footprint,near_step);
+        direct=vec2(outside,outside+inside);
+        if rim_detail==1.0 {return direct;}
     }
     // A grazing ray can stay inside the same lobe for hundreds of metres.
     // Resolve that relief in the full density before asking the cached path
@@ -145,7 +155,8 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32)->
     // At low Sun the removed cached interval can span the whole lobe. Keep
     // the cached depth behind the sample and add it to the refined depth ahead.
     let below = max(0.0, depths.y - depths.z);
-    return vec2(toward_sun, mix(max(toward_sun, depths.y), toward_sun + below, refinement));
+    let cached=vec2(toward_sun, mix(max(toward_sun, depths.y), toward_sun + below, refinement));
+    return mix(cached,direct,rim_detail);
 }
 
 fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray:vec3<f32>,uv:vec2<f32>)->CloudTransport {
@@ -182,6 +193,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     }
     let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
     let light_angles=cloud_light_angles(-ray);
+    let sun_alignment=dot(ray,mapping.path_border.xyz);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=begin;var samples=0u;
@@ -197,7 +209,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let world=camera+ray*at;
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 var sun_depths = vec2(0.0);
-                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint); }
+                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment); }
                 let source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
                 let segment=cloud_beer(sigma,sigma*source,step);
                 let air=environment_aerial(world,uv).transmission;
