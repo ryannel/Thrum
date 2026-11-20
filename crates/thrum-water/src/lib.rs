@@ -1,4 +1,5 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
+pub mod foam;
 #[cfg(test)]
 mod fresnel_tests;
 pub mod interaction;
@@ -84,6 +85,12 @@ pub struct WaterReport {
     pub resources: Vec<(String, u64)>,
     /// Last submitted interaction counters, when enabled.
     pub interaction: Option<interaction::Report>,
+    /// Last submitted foam counters, when enabled.
+    pub foam: Option<foam::Report>,
+    /// Serial of the pattern last used by a history-advancing submission.
+    pub foam_pattern: Option<u64>,
+    /// Number of submitted changes to the bound foam pattern.
+    pub foam_pattern_invalidations: u64,
 }
 
 /// A single contribution containing the ambient passes and the displaced surface.
@@ -100,6 +107,9 @@ pub struct Water {
     query: Option<query::QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
     interaction_tap: Option<interaction::WitnessTap>,
+    foam: Option<foam::Whitewater>,
+    foam_tap: Option<foam::Tap>,
+    foam_pattern: thrum_asset_gpu::ProductLease,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
@@ -196,6 +206,9 @@ impl Water {
                 .map(|limits| query::QueryMailbox::new(limits, map, long_waves, layer_heights)),
             interaction: profile.interaction.map(interaction::Mailbox::new),
             interaction_tap: None,
+            foam: None,
+            foam_tap: None,
+            foam_pattern: thrum_asset_gpu::ProductLease::default(),
             prepared: None,
             previous: None,
             recorded: (0.0, 0, 0.0),
@@ -219,6 +232,34 @@ impl Water {
         self.interaction_tap
             .get_or_insert_with(Default::default)
             .clone()
+    }
+    /// Enable transported whitewater and the shore film on mapped water.
+    /// Wind is given in world x/z metres per second.
+    ///
+    /// # Errors
+    /// Requires mapped water and a finite wind vector.
+    pub fn enable_foam(&mut self, wind: [f32; 2]) -> Result<foam::Input, &'static str> {
+        if !self.mapped || !wind.into_iter().all(f32::is_finite) {
+            return Err("foam requires mapped water and a finite wind vector");
+        }
+        let input = foam::Input::default();
+        self.foam = Some(foam::Whitewater {
+            input: input.clone(),
+            wind,
+            jacobian_variance: records::jacobian_variance(
+                &self.spectrum,
+                self.profile.waves.choppiness,
+            ),
+        });
+        Ok(input)
+    }
+    /// Attach a diagnostic receiver for submitted foam banks.
+    pub fn tap_foam(&mut self) -> foam::Tap {
+        self.foam_tap.get_or_insert_with(Default::default).clone()
+    }
+    /// Lend one cooked ranked 2D texture to the whitewater pass.
+    pub fn lend_foam_pattern(&mut self, pattern: thrum_asset_gpu::ProductLease) {
+        self.foam_pattern = pattern;
     }
     /// Actual submitted mesh vertices (including the horizon skirt).
     pub fn vertices(&self) -> u32 {
@@ -252,6 +293,9 @@ impl Water {
             if let Some(interaction) = &p.interaction {
                 resources.extend(interaction.resource_bytes());
             }
+            if let Some(foam) = &p.foam {
+                resources.extend(foam.resource_bytes());
+            }
             resources
         })
     }
@@ -268,7 +312,14 @@ impl SceneContribution for Water {
             .map
             .lock()
             .map_err(|_| WaterError::UnavailableMap.to_string())?;
-        let interaction = self.report.lock().expect("water report").interaction;
+        let (interaction, foam, foam_pattern_invalidations) = {
+            let report = self.report.lock().expect("water report");
+            (
+                report.interaction,
+                report.foam,
+                report.foam_pattern_invalidations,
+            )
+        };
         self.prepared = Some(prepare::new(
             surface,
             self.profile,
@@ -277,14 +328,23 @@ impl SceneContribution for Water {
             self.query.clone(),
             self.interaction.clone(),
             interaction,
+            self.foam
+                .clone()
+                .map(|whitewater| (whitewater, foam.unwrap_or_default())),
         )?);
         *self.report.lock().expect("water report") = WaterReport {
             vertices: self.vertices(),
             bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),
             resources: self.resource_bytes(),
             interaction,
+            foam,
+            foam_pattern: None,
+            foam_pattern_invalidations,
         };
         self.previous = None;
+        if let Some(tap) = &self.foam_tap {
+            *tap.0.lock().expect("foam witness") = None;
+        }
         Ok(())
     }
     fn effect_graph(&self) -> EffectGraph {
@@ -310,6 +370,10 @@ impl SceneContribution for Water {
         if let Some(interaction) = &mut p.interaction {
             interaction.record(&p.queue, encoder, frame, &map);
         }
+        if let Some(foam) = &mut p.foam {
+            self.invalid |= foam.record(&p.queue, encoder, frame);
+        }
+        self.invalid |= p.record_pattern(&self.foam_pattern, frame.generation);
         if let Some(query) = &mut p.query {
             query.record(
                 &p.queue,
@@ -361,8 +425,12 @@ impl SceneContribution for Water {
                 && let Some(interaction) = &p.interaction
             {
                 interaction.pending()
+            } else if index == p.query_index()
+                && let Some(query) = &p.query
+            {
+                query.pending()
             } else {
-                p.query.as_ref().is_some_and(query::Readback::pending)
+                p.foam.as_ref().is_some_and(foam::Foam::pending)
             }
         })
     }
@@ -379,14 +447,18 @@ impl SceneContribution for Water {
                 && let Some(interaction) = &p.interaction
             {
                 interaction.encode(pass);
-            } else if let Some(query) = &p.query {
+            } else if index == p.query_index()
+                && let Some(query) = &p.query
+            {
                 query.encode(pass);
+            } else if let Some(foam) = &p.foam {
+                foam.encode(pass);
             }
         }
     }
     fn encode_effect_readback(&mut self, index: usize, encoder: &mut wgpu::CommandEncoder) {
         if let Some(p) = &self.prepared
-            && index == p.ambient_passes + usize::from(p.interaction.is_some())
+            && index == p.query_index()
             && let Some(query) = &p.query
         {
             query.copy(encoder);
@@ -396,12 +468,13 @@ impl SceneContribution for Water {
     fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
     fn draw_after_opaque(
         &self,
-        _index: usize,
+        index: usize,
         pass: &mut wgpu::RenderPass<'_>,
         frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
-            pass.set_pipeline(&p.pipeline);
+            let film = p.film.as_ref().filter(|_| index == 0);
+            pass.set_pipeline(film.unwrap_or(&p.pipeline));
             pass.set_bind_group(
                 2,
                 p.environment
@@ -409,7 +482,11 @@ impl SceneContribution for Water {
                     .expect("exposure side"),
                 &[],
             );
-            pass.set_bind_group(3, &p.group, &[]);
+            pass.set_bind_group(3, p.render_group(), &[]);
+            if film.is_some() {
+                pass.draw(0..3, 0..1);
+                return;
+            }
             pass.set_vertex_buffer(0, p.mesh.slice(..));
             if let Some(indices) = &p.indices {
                 pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
@@ -425,6 +502,12 @@ impl SceneContribution for Water {
     }
     fn submitted(&mut self, history_advanced: bool) {
         if history_advanced {
+            if let Some(p) = &mut self.prepared {
+                let (pattern, changed) = p.submit_pattern();
+                let mut report = self.report.lock().expect("water report");
+                report.foam_pattern = pattern;
+                report.foam_pattern_invalidations += u64::from(changed);
+            }
             self.previous = Some(self.recorded);
             if let Some(map) = self.prepared.as_mut().and_then(|p| p.map.as_mut()) {
                 map.commit();
@@ -436,6 +519,12 @@ impl SceneContribution for Water {
                 self.report.lock().expect("water report").interaction = interaction.submit();
                 if let Some(tap) = &self.interaction_tap {
                     *tap.0.lock().expect("interaction witness") = interaction.witness();
+                }
+            }
+            if let Some(foam) = self.prepared.as_mut().and_then(|p| p.foam.as_mut()) {
+                self.report.lock().expect("water report").foam = foam.submit();
+                if let Some(tap) = &self.foam_tap {
+                    *tap.0.lock().expect("foam witness") = foam.witness();
                 }
             }
         }

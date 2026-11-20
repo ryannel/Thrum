@@ -735,6 +735,19 @@ impl SkyGame {
         meshes: Vec<MeshPlacement>,
         initial: Option<(&str, &str)>,
     ) -> Result<Self, CookedSetupError> {
+        self.with_meshes_and_texture_lease(meshes, initial, &[])
+            .map(|(game, _)| game)
+    }
+
+    /// Draw cooked meshes and lend named 2D textures from the same publication.
+    /// # Errors
+    /// Returns the same asset and placement errors as [Self::with_meshes].
+    pub fn with_meshes_and_texture_lease(
+        self,
+        meshes: Vec<MeshPlacement>,
+        initial: Option<(&str, &str)>,
+        textures: &[&str],
+    ) -> Result<(Self, thrum_asset_gpu::ProductLease), CookedSetupError> {
         #[cfg(not(target_arch = "wasm32"))]
         let source: thrum_asset_gpu::CookedSource = cooked_store(std::env::var_os(STORE_VARIABLE))
             .map_err(CookedSetupError::Store)?
@@ -749,8 +762,16 @@ impl SkyGame {
             .collect::<Vec<_>>()
             .join(", ");
         let status_names = names.clone();
-        let assets = CookedAssets::new(CookedConfig::new(source, meshes))
-            .map_err(CookedSetupError::Placement)?;
+        let mut config = CookedConfig::new(source, meshes);
+        config.leased = textures
+            .iter()
+            .map(|name| thrum_asset_gpu::LeaseRequest {
+                name: (*name).into(),
+                dimension: wgpu::TextureDimension::D2,
+            })
+            .collect();
+        let assets = CookedAssets::new(config).map_err(CookedSetupError::Placement)?;
+        let lease = assets.lease();
         let stats = assets.stats();
         let material = assets.material();
         if let Some((name, source)) = initial {
@@ -780,11 +801,11 @@ impl SkyGame {
                 })
         }));
         #[cfg(target_arch = "wasm32")]
-        return Ok(game);
+        return Ok((game, lease));
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(path) = std::env::var_os(MATERIAL_VARIABLE).map(PathBuf::from) else {
-                return Ok(game);
+                return Ok((game, lease));
             };
             let reload = material.clone();
             #[cfg(target_os = "macos")]
@@ -809,7 +830,7 @@ impl SkyGame {
                 game.reload_files = vec![watched];
                 game
             };
-            Ok(game)
+            Ok((game, lease))
         }
     }
 

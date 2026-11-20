@@ -9,10 +9,10 @@ fn lent_wave_records_match_the_seas_host_layouts() {
             .split_once(&format!("struct {name}"))
             .expect("record")
             .1
-            .split_once("@group")
+            .split_once('}')
             .expect("binding")
             .0;
-        let module = wgpu::naga::front::wgsl::parse_str(&format!("struct {name}{declaration}"))
+        let module = wgpu::naga::front::wgsl::parse_str(&format!("struct {name}{declaration}}}"))
             .expect("WGSL record");
         let ty = module
             .types
@@ -36,7 +36,7 @@ fn lent_wave_records_match_the_seas_host_layouts() {
 }
 #[test]
 fn gpu_parameter_size_and_member_offsets_match_the_actual_shader() {
-    let shader = include_str!("../surface.wgsl");
+    let shader = include_str!("../field.wgsl");
     let declaration = shader
         .split_once("struct Parameters")
         .expect("parameters")

@@ -28,22 +28,26 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let island = super::island_wind();
     let floating = super::floating_wind();
     let wake = super::wake_wind().is_some();
+    let whitewater = super::foam_wind().is_some();
+    let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
     let mut fleet = None;
     let (game, report) = if let Some(wind) = floating {
-        let scene = super::floating_game(wind, true, true);
+        let scene = super::floating_game(wind, true, true, whitewater);
         fleet = Some((scene.observer(), scene.mailbox.clone()));
         (scene.game, scene.report)
     } else {
         super::proof_game(true)
     };
-    let (extent, interval, opportunities) = if wake {
-        ([1280, 720], 12.0, 10.0)
+    let (extent, interval, opportunities, max_submissions) = if whitewater && route == "stop" {
+        ([1280, 720], 72.0, 10.0, 740)
+    } else if whitewater || wake {
+        ([1280, 720], 12.0, 10.0, MAX_SUBMISSIONS)
     } else if floating.is_some() {
-        ([2560, 1440], 3.7, 30.0)
+        ([2560, 1440], 3.7, 30.0, MAX_SUBMISSIONS)
     } else if island.is_some() {
-        ([1280, 720], 7.0, 16.0)
+        ([1280, 720], 7.0, 16.0, MAX_SUBMISSIONS)
     } else {
-        ([2560, 1440], 1.0, 120.0)
+        ([2560, 1440], 1.0, 120.0, MAX_SUBMISSIONS)
     };
     let mut runtime =
         Offscreen::new(game, &device, &caps, &queue, extent).expect("ordinary game runtime");
@@ -70,7 +74,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             },
         )
         .expect("tap");
-    let (file, encoding) = if floating.is_some() {
+    let (file, encoding) = if floating.is_some() || whitewater {
         ("motion.spool.zst", SpoolEncoding::ZstdDelta)
     } else {
         ("motion.spool.raw", SpoolEncoding::Raw)
@@ -83,9 +87,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut frames = Vec::new();
     let mut completed = BTreeMap::new();
     let mut poses = Vec::new();
-    let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
     let mut applied = "";
-    while begin.elapsed() < Duration::from_secs_f64(interval) && submitted < MAX_SUBMISSIONS {
+    while begin.elapsed() < Duration::from_secs_f64(interval) && submitted < max_submissions {
         let elapsed = begin.elapsed().as_secs_f64();
         if island.is_none() && floating.is_none() {
             runtime
@@ -95,11 +98,12 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 ))
                 .expect("pan control");
         }
-        if wake {
+        if wake || whitewater {
             let change = match (route.as_str(), elapsed) {
                 ("turn", t) if t >= 4.0 => r#"{"craft.turn":65}"#,
                 ("restart", t) if t >= 8.0 => r#"{"craft.speed":6}"#,
                 ("restart", t) if t >= 4.0 => r#"{"craft.speed":0}"#,
+                ("stop", t) if t >= 7.0 => r#"{"craft.speed":0}"#,
                 _ => "",
             };
             if !change.is_empty() && change != applied {
@@ -152,7 +156,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     assert_eq!(written.frames, frames.len() as u64);
     assert_eq!(runtime.omissions(), 0, "complete submitted interval");
     let prepared = report.lock().expect("report").clone();
-    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating).map(|w| format!("{w:?}")),"island_view":island.map(|_|&island_view),"floating_view":floating.map(|_|&island_view),"craft_speed":floating.and_then(|_|std::env::var("THRUM_WATER_SPEED").ok()),"clock":"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames","opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":MAX_SUBMISSIONS,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": wake.then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}"))})
+    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating).map(|w| format!("{w:?}")),"island_view":island.map(|_|&island_view),"floating_view":floating.map(|_|&island_view),"craft_speed":floating.and_then(|_|std::env::var("THRUM_WATER_SPEED").ok()),"clock":"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames","opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
 }
 fn drain(
     runtime: &mut Offscreen<SkyGame>,

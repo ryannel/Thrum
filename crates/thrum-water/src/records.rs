@@ -112,3 +112,26 @@ pub(super) fn layer_heights(spectrum: &Spectrum) -> [f32; 4] {
 pub(super) fn height_rms(spectrum: &Spectrum) -> f32 {
     spectrum.variance().sqrt() as f32
 }
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the bounded spectrum moments are sent to the shader in f32"
+)]
+pub(super) fn jacobian_variance(spectrum: &Spectrum, choppiness: f64) -> [f32; 4] {
+    // In the small-displacement limit the determinant is one plus the
+    // Jacobian trace. A travelling mode's trace has amplitude q * k * a.
+    [
+        spectrum.long.as_slice(),
+        spectrum.cascades[0].components(),
+        spectrum.cascades[1].components(),
+        spectrum.cascades[2].components(),
+    ]
+    .map(|band| {
+        band.iter()
+            .map(|mode| {
+                let [x, z] = mode.wave_vector;
+                0.5 * (choppiness * mode.amplitude).powi(2) * (x * x + z * z)
+            })
+            .sum::<f64>() as f32
+    })
+}

@@ -1,3 +1,7 @@
+#![allow(
+    dead_code,
+    reason = "shared by the separate interaction and foam GPU checks"
+)]
 use std::{
     sync::{Arc, Mutex, MutexGuard, PoisonError},
     time::Duration,
@@ -16,7 +20,7 @@ use thrum_render::{
 };
 use thrum_sea_model::{Cascade, Spectrum};
 use thrum_water::{
-    Water, WaterReport,
+    Water, WaterReport, foam,
     interaction::{Limits, Mailbox, Witness, WitnessTap},
     query::{QueryLimits, QueryMailbox},
 };
@@ -205,6 +209,7 @@ pub(super) struct Fixture {
     host: FrameHost<Clock, Source>,
     target: wgpu::TextureView,
     tap: WitnessTap,
+    foam: Option<foam::Tap>,
     pub mailbox: Mailbox,
     pub query: QueryMailbox,
     pub report: Arc<Mutex<WaterReport>>,
@@ -215,6 +220,30 @@ impl Fixture {
     pub(super) const STEP: Duration = Duration::from_nanos(16_666_667);
 
     pub(super) fn new(map: Map, limits: Limits) -> Option<Self> {
+        Self::with_fields(map, limits, None)
+    }
+
+    pub(super) fn new_foam(
+        map: Map,
+        wave: Option<thrum_sea_model::Component>,
+        wind: [f32; 2],
+    ) -> Option<Self> {
+        Self::with_fields(
+            map,
+            Limits {
+                bodies: 0,
+                impulses: 0,
+                solves: 1,
+            },
+            Some((wave, wind)),
+        )
+    }
+
+    fn with_fields(
+        map: Map,
+        limits: Limits,
+        foam: Option<(Option<thrum_sea_model::Component>, [f32; 2])>,
+    ) -> Option<Self> {
         let device_slot = INTERACTION_DEVICE
             .lock()
             .unwrap_or_else(PoisonError::into_inner);
@@ -257,7 +286,7 @@ impl Fixture {
         .expect("Metal host");
         host.set_timing_requested(false);
         let spectrum = Spectrum {
-            long: Vec::new(),
+            long: foam.and_then(|(wave, _)| wave).into_iter().collect(),
             cascades: [160.0, 37.0, 9.0]
                 .map(|length| Cascade::new(length, &[]).expect("calm cascade")),
             tail_slope_variance: 0.0,
@@ -274,12 +303,16 @@ impl Fixture {
             .body(0)
             .is_some_and(|body| matches!(body.kind, BodyKind::Sea));
         let map = Arc::new(Mutex::new(map));
-        let mut water = if sea {
+        let mut water = if sea && foam.is_none() {
             Water::new(map, 0, spectrum, profile)
         } else {
             Water::mapped(map, spectrum, profile)
         }
         .expect("interaction contribution");
+        let foam = foam.map(|(_, wind)| {
+            water.enable_foam(wind).expect("foam fixture");
+            water.tap_foam()
+        });
         let mailbox = water.interaction_mailbox().expect("interaction mailbox");
         let query = water.query_mailbox().expect("query mailbox");
         let tap = water.tap_interaction();
@@ -293,6 +326,7 @@ impl Fixture {
             host,
             target,
             tap,
+            foam,
             mailbox,
             query,
             report,
@@ -407,6 +441,78 @@ impl Fixture {
 
     pub(super) fn witness(&self) -> Option<Witness> {
         self.tap.latest()
+    }
+
+    pub(super) fn move_camera(&mut self, x: f32) {
+        self.host.continuous_source_mut().0.view = SyntheticView::perspective(
+            [x, 4.0, 0.0],
+            [x + 9.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            55_f32.to_radians(),
+            1.5,
+            0.1,
+            500.0,
+        )
+        .expect("shifted camera");
+    }
+
+    pub(super) fn foam(&self) -> (foam::Witness, Vec<[f32; 4]>) {
+        let witness = self
+            .foam
+            .as_ref()
+            .expect("foam fixture")
+            .latest()
+            .expect("submitted foam");
+        let stage = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("foam test readback"),
+            size: witness.buffer.size(),
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut commands = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        commands.copy_buffer_to_buffer(&witness.buffer, 0, &stage, 0, None);
+        self.queue.submit([commands.finish()]);
+        stage.slice(..).map_async(wgpu::MapMode::Read, |result| {
+            result.expect("map foam test readback");
+        });
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("foam readback completes");
+        let cells = bytemuck::cast_slice(&stage.slice(..).get_mapped_range().expect("mapped foam"))
+            .to_vec();
+        (witness, cells)
+    }
+
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "the 128 cell indices fit the exact f32 integer range"
+    )]
+    pub(super) fn seed_foam(&self, level: usize, stock: impl Fn([f32; 2]) -> [f32; 4]) {
+        let witness = self
+            .foam
+            .as_ref()
+            .expect("foam fixture")
+            .latest()
+            .expect("submitted foam");
+        let side = witness.side;
+        let spacing = witness.spacing[level];
+        let origin = witness.origins[1][level];
+        let cells: Vec<_> = (0..side * side)
+            .map(|index| {
+                let indices = [index % side, index / side];
+                stock(std::array::from_fn(|axis| {
+                    (indices[axis] as f32 + 0.5) * spacing + origin[axis]
+                }))
+            })
+            .collect();
+        let offset = (2 * witness.banks[1] + level) * cells.len() * size_of::<[f32; 4]>();
+        self.queue.write_buffer(
+            &witness.buffer,
+            u64::try_from(offset).expect("foam plane"),
+            bytemuck::cast_slice(&cells),
+        );
     }
 }
 

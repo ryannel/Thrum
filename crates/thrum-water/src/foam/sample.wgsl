@@ -1,0 +1,57 @@
+struct FoamHull {
+    location_axis: vec4<f32>,
+    extent_rate: vec4<f32>,
+    velocity: vec4<f32>,
+}
+struct FoamSettings {
+    origins: array<vec4<i32>, 4>,
+    banks: vec4<u32>,
+    time_wind: vec4<f32>,
+    camera: vec4<f32>,
+    jacobian_variance: vec4<f32>,
+    hulls: array<FoamHull, 16>,
+}
+@group(3) @binding(9) var<storage, read> foam_stocks: array<vec4<f32>>;
+@group(3) @binding(10) var<uniform> foam_settings: FoamSettings;
+
+const FOAM_SPACING = array(0.25, 2.0);
+fn foam_inside(at: vec2<i32>) -> bool {
+    return all(at >= vec2(0)) && all(at < vec2(FOAM_SIDE));
+}
+fn foam_index(bank: u32, level: u32, at: vec2<i32>) -> u32 {
+    return (2u * bank + level) * u32(FOAM_SIDE * FOAM_SIDE) + u32(at.y * FOAM_SIDE + at.x);
+}
+fn foam_load(bank: u32, level: u32, at: vec2<i32>) -> vec4<f32> {
+    if !foam_inside(at) { return vec4(0.0); }
+    return foam_stocks[foam_index(bank, level, at)];
+}
+fn foam_level(point: vec2<f32>, endpoint: u32, level: u32) -> vec4<f32> {
+    let coordinate = point / FOAM_SPACING[level] - vec2<f32>(foam_settings.origins[2u * endpoint + level].xy);
+    let centre = coordinate - 0.5;
+    let at = vec2<i32>(floor(centre));
+    let bank = foam_settings.banks[endpoint];
+    let f = fract(centre);
+    return mix(
+        mix(foam_load(bank, level, at), foam_load(bank, level, at + vec2(1, 0)), f.x),
+        mix(foam_load(bank, level, at + vec2(0, 1)), foam_load(bank, level, at + vec2(1, 1)), f.x),
+        f.y);
+}
+fn foam_edge(point: vec2<f32>, endpoint: u32, level: u32) -> f32 {
+    let p = point / FOAM_SPACING[level] - vec2<f32>(foam_settings.origins[2u * endpoint + level].xy);
+    let edge = min(p, vec2(f32(FOAM_SIDE)) - p);
+    return smoothstep(1.0, 14.0, min(edge.x, edge.y));
+}
+fn foam_endpoint(point: vec2<f32>, endpoint: u32, far: vec4<f32>) -> vec4<f32> {
+    let fine_weight = foam_edge(point, endpoint, 0u);
+    if fine_weight >= 1.0 { return foam_level(point, endpoint, 0u); }
+    let coarse_weight = foam_edge(point, endpoint, 1u);
+    var coarse = far;
+    if coarse_weight > 0.0 {
+        coarse = mix(far, foam_level(point, endpoint, 1u), coarse_weight);
+    }
+    if fine_weight <= 0.0 { return coarse; }
+    return mix(coarse, foam_level(point, endpoint, 0u), fine_weight);
+}
+fn foam_at(point: vec2<f32>, far: vec4<f32>) -> vec4<f32> {
+    return mix(foam_endpoint(point, 0u, far), foam_endpoint(point, 1u, far), foam_settings.time_wind.y);
+}

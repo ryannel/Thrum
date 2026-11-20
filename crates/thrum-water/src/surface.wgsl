@@ -9,14 +9,8 @@ struct ViewAuxRecord {
 }
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<uniform> view_aux: ViewAuxRecord;
-struct Parameters { level_dt_reset: vec4<f32>, gains: vec4<f32>, lengths: vec4<f32>, cache: array<vec4<f32>,8>, long_covariance:array<vec4<f32>,8>, scatter:vec4<f32>, heights:vec4<f32>, }
-@group(3) @binding(0) var<uniform> water: Parameters;
 struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32>, }
-@group(3) @binding(1) var cascades:texture_2d_array<f32>;
-@group(3) @binding(2) var long_field:texture_2d_array<f32>;
 struct Moments { a:vec4<f32>, b:vec4<f32>, }
-@group(3) @binding(3) var periodic:sampler;
-@group(3) @binding(4) var bounded:sampler;
 fn add_field(a:Field,b:Field,w:f32)->Field {return Field(a.displacement+w*b.displacement,a.slope+w*b.slope,a.velocity+w*b.velocity);}
 fn cascade_at(point:vec2<f32>,band:u32)->Field {
     let uv=point/water.lengths[band];let layer=i32(band*5u);
@@ -60,6 +54,8 @@ struct SurfaceRow {
     gains: vec4<f32>,
     bed: f32,
     owned: bool,
+    swash: f32,
+    loss: f32,
 }
 struct VertexOut {
     @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,
@@ -172,6 +168,11 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         a*a*covariance.x+2.0*a*b*covariance.y+b*b*covariance.z,
         a*b*covariance.x+(a*c+b*b)*covariance.y+b*c*covariance.z,
         b*b*covariance.x+2.0*b*c*covariance.y+c*c*covariance.z)/(determinant*determinant);
+    var whitewater=vec4(0.0);
+    if FOAM_ENABLED {
+        whitewater=foam_surface(input.world,row,max(length(dx),length(dy)),determinant);
+        covariance*=1.0-0.65*whitewater.w;
+    }
     let variance=max(0.0,covariance.x+covariance.z);
     let n=normalize(vec3(-slope.x,1.0,-slope.y));
     let v=normalize(view.camera_xyz_time.xyz-input.world);
@@ -200,10 +201,16 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let gl=2.0*nl/(nl+sqrt(a2+(1.0-a2)*nl*nl));
     let fh=water_fresnel(max(dot(v,h),0.0));
     light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
+    if FOAM_ENABLED {
+        light+=incident*vec3(0.035,0.19,0.19)*whitewater.x*(1.0-fresnel);
+        light=mix(light,incident*vec3(0.86,0.90,0.89)/3.14159265,whitewater.y);
+    }
     let uv=input.clip.xy*view_aux.viewport_inv_viewport.zw;
     let air=environment_aerial(input.world,uv);
     let colour=(light*air.transmission+air.scatter)*environment_storage_scale();
     var motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
     if water.level_dt_reset.z>0.5 {motion=vec2(65504.0);}
-    return Output(vec4(colour,surface_opacity(row,input.world,v.y)),motion,clamp(fresnel+0.1,0.0,1.0));
+    var opacity=surface_opacity(row,input.world,v.y);
+    if FOAM_ENABLED { opacity=max(opacity,whitewater.y); }
+    return Output(vec4(colour,opacity),motion,clamp(fresnel+0.1+whitewater.y,0.0,1.0));
 }

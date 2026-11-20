@@ -68,6 +68,8 @@ pub struct Body {
     pub propulsion: DVec3,
     /// Most recent vertical water force per kilogram, before ground contact.
     pub water_reaction: f64,
+    /// Latest horizontal drag dissipation in watts per kilogram.
+    pub drag_power: f64,
 }
 
 /// Actual positive work supplied to the normalized rigid-body state by water and motor.
@@ -114,6 +116,7 @@ impl Body {
             angular: DVec3::ZERO,
             propulsion: DVec3::ZERO,
             water_reaction: GRAVITY,
+            drag_power: 0.0,
         }
     }
 
@@ -206,6 +209,7 @@ impl Body {
         let mut torque = DVec3::ZERO;
         let mut work = Work::default();
         self.water_reaction = 0.0;
+        self.drag_power = 0.0;
         for i in 0..SAMPLES {
             let lever = self.rotation * self.hull.lever(i);
             let position = self.position + lever;
@@ -241,6 +245,7 @@ impl Body {
                     };
                     reaction +=
                         (lift + vertical_drag) * DVec3::Y + drag * (displacement * STATION_WEIGHT);
+                    self.drag_power += drag.dot(relative) * displacement * STATION_WEIGHT;
                     work.water += dt
                         * ((lift * encounter_rate).max(0.0)
                             + (damping * wetted * waterline_rate * v.y).max(0.0)

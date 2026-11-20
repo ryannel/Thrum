@@ -18,6 +18,8 @@ pub enum Wind {
     Calm,
     /// Wind and swell approaching the beach.
     Trade,
+    /// Strong breeze with the trade swell.
+    Strong,
     /// High wind waves and the prevailing swell.
     Gale,
 }
@@ -28,6 +30,7 @@ impl Wind {
         match name {
             "calm" => Some(Self::Calm),
             "trade" => Some(Self::Trade),
+            "strong" => Some(Self::Strong),
             "gale" => Some(Self::Gale),
             _ => None,
         }
@@ -41,7 +44,10 @@ impl Wind {
                 forcing.wind_speed = 0.0;
                 forcing.swells.clear();
             }
-            Self::Trade => {
+            Self::Trade | Self::Strong => {
+                if matches!(self, Self::Strong) {
+                    forcing.wind_speed = 13.0;
+                }
                 forcing.swells[0].significant_height = 1.1;
                 forcing.swells[0].wavelength = 84.0;
             }
@@ -52,6 +58,16 @@ impl Wind {
             }
         }
         forcing
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "authored wind uses bounded metres per second"
+    )]
+    pub(crate) fn velocity(self) -> [f32; 2] {
+        let forcing = self.forcing();
+        let (z, x) = forcing.wind_direction.sin_cos();
+        [x, z].map(|axis| (axis * forcing.wind_speed) as f32)
     }
 }
 
@@ -155,6 +171,8 @@ pub const CAMERAS: [Camera; 6] = [
     Camera::look_at([127.0, 400.0, 35.0], [127.0, 0.0, 34.99], 65.0),
     Camera::look_at([208.0, 76.0, 10.0], [208.0, 0.0, 9.99], 65.0),
 ];
+/// Forty-metre view of the same shore margin as the sand camera.
+pub const BEACH_OVERHEAD: Camera = Camera::look_at([-106.0, 40.0, 22.0], [-101.0, 0.0, 12.0], 65.0);
 
 /// Build the island with its cooked ground and the mapped water contribution.
 /// # Errors
@@ -165,18 +183,57 @@ pub fn build(
     wind: Wind,
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport, SharedMap), Box<dyn Error>> {
+    build_foam(wind, draw_water, false).map(|(game, report, map, _)| (game, report, map))
+}
+
+/// Diagnostics attached to the actual shoreline contribution.
+pub struct FoamProbes {
+    /// The rendered field's last submitted material banks.
+    pub foam: thrum_water::foam::Tap,
+    /// The public water query for shoreline columns.
+    pub query: thrum_water::query::QueryMailbox,
+}
+
+/// Island game, its submitted report, map, and optional whitewater probes.
+pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
+
+/// Build the island with optional transported whitewater.
+/// # Errors
+/// Returns invalid controls, content or water declarations.
+/// # Panics
+/// Panics if a scene lock is poisoned or a bounded control fails.
+pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
     let map = Arc::new(Mutex::new(map(wind)?));
     let spectrum = Spectrum::build(&wind.forcing()).map_err(|e| format!("{e:?}"))?;
-    let profile = crate::profile(&spectrum);
-    let water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
+    let mut profile = crate::profile(&spectrum);
+    if foam {
+        profile.query = Some(thrum_water::query::QueryLimits {
+            points: 512,
+            max_age: 8,
+        });
+    }
+    let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
+    let probes = if foam {
+        water.enable_foam(wind.velocity())?;
+        Some(FoamProbes {
+            foam: water.tap_foam(),
+            query: water.query_mailbox().expect("enabled shore query"),
+        })
+    } else {
+        None
+    };
     let report = water.report();
     let display_map = Arc::clone(&map);
     let mut controls = Controls::new();
     let camera = controls
         .slider(
             "camera.island",
-            "Beach / Lake / Pond / Hill / Map / Sill",
-            0.0..=5.0,
+            if foam {
+                "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
+            } else {
+                "Beach / Lake / Pond / Hill / Map / Sill"
+            },
+            0.0..=if foam { 6.0 } else { 5.0 },
         )
         .step(1.0)
         .default(3.0)
@@ -197,7 +254,7 @@ pub fn build(
             reason = "bounded discrete camera control"
         )]
         let index = c.get(camera).round() as usize;
-        sky.camera = CAMERAS[index];
+        sky.camera = CAMERAS.get(index).copied().unwrap_or(BEACH_OVERHEAD);
         sky.sun_elevation_degrees = c.get(sun);
         sky.sun_azimuth_degrees = 228.0;
         sky.exposure_compensation_ev = 0.3;
@@ -210,15 +267,19 @@ pub fn build(
     })
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
-    .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?
-    .with_meshes_and_material(
+    .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
+    let (game, lease) = game.with_meshes_and_texture_lease(
         vec![MeshPlacement::new("meshes/island", "textures/white")],
         Some(("water island", include_str!("../island.wgsl"))),
+        if foam { &["textures/foam-rank"] } else { &[] },
     )?;
+    if foam {
+        water.lend_foam_pattern(lease);
+    }
     let game = if draw_water {
         game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))
     } else {
         game
     };
-    Ok((game, report, map))
+    Ok((game, report, map, probes))
 }

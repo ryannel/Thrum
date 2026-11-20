@@ -166,6 +166,42 @@ impl Fixture {
         let (edits, _) = self.game.take_edits();
         SkyGame::apply(&mut self.host, edits).expect("apply");
     }
+    pub(crate) fn replace_device(&mut self, gpu: &thrum_test_support::Gpu) {
+        let adapter = gpu.fresh_adapter();
+        let (device, queue, _) = device(&adapter);
+        let caps = DeviceCapabilities::capture(&adapter.adapter, &device, 2);
+        let surface = SurfaceProfile {
+            format: OUTPUT_FORMAT,
+            extent: self.extent,
+        };
+        let source = self
+            .host
+            .device_prepare_inputs()
+            .expect("retain scene on device replacement");
+        let mut prepared = pollster::block_on(source.prepare(&caps, &queue, Some(surface)))
+            .expect("prepare replacement");
+        self.host
+            .publish_device(&mut prepared)
+            .expect("publish replacement");
+        self.output = device.create_texture(&self.output_descriptor());
+        self.device = device;
+        self.queue = queue;
+        self.caps = caps;
+        self.witness = None;
+    }
+
+    fn output_descriptor(&self) -> wgpu::TextureDescriptor<'static> {
+        wgpu::TextureDescriptor {
+            label: Some("water proof output"),
+            size: self.output.size(),
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: OUTPUT_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        }
+    }
     pub(crate) fn frame(&mut self, seconds: f64) -> FrameSample {
         self.submit_frame(seconds, true)
     }
@@ -303,4 +339,36 @@ fn half_value(bits: u16) -> f32 {
     } else {
         sign * (1.0 + fraction) * 2.0_f32.powi(exponent - 15)
     }
+}
+
+pub(crate) fn foam_stocks(fixture: &Fixture, point: &thrum_water::foam::Witness) -> Vec<[f32; 4]> {
+    foam_buffer(fixture, &point.buffer)
+}
+
+pub(crate) fn foam_buffer<T: bytemuck::Pod>(fixture: &Fixture, buffer: &wgpu::Buffer) -> Vec<T> {
+    let staging = fixture.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("submitted whitewater proof"),
+        size: buffer.size(),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut copy = fixture
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    copy.copy_buffer_to_buffer(buffer, 0, &staging, 0, None);
+    fixture.queue.submit([copy.finish()]);
+    staging.slice(..).map_async(wgpu::MapMode::Read, |result| {
+        result.expect("foam stock readback");
+    });
+    fixture
+        .device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("foam stock copy");
+    bytemuck::cast_slice(
+        &staging
+            .slice(..)
+            .get_mapped_range()
+            .expect("submitted foam stocks"),
+    )
+    .to_vec()
 }

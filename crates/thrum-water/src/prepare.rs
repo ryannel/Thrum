@@ -1,5 +1,6 @@
 use super::{
     Profile, SURFACE_PASS,
+    foam::{self, Foam},
     interaction::{self, Interaction},
     map_gpu::{self, MapGpu},
     query::{self, QueryMailbox, Readback},
@@ -9,6 +10,7 @@ use std::ops::Range;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     contribution::{AfterOpaqueKind, AfterOpaquePass, EffectCadence, EffectGraph, SceneSurface},
+    runtime::DeviceSite,
 };
 use wgpu::util::DeviceExt;
 
@@ -17,10 +19,13 @@ pub(super) struct Prepared {
     pub(super) ambient_passes: usize,
     pub(super) query: Option<Readback>,
     pub(super) interaction: Option<Interaction>,
+    pub(super) foam: Option<Foam>,
     pub(super) environment: EnvironmentProducts,
     pub(super) pipeline: wgpu::RenderPipeline,
+    pub(super) film: Option<wgpu::RenderPipeline>,
     pub(super) parameters: wgpu::Buffer,
     pub(super) group: wgpu::BindGroup,
+    pattern: Option<Pattern>,
     pub(super) mesh: wgpu::Buffer,
     pub(super) vertices: u32,
     pub(super) queue: wgpu::Queue,
@@ -28,6 +33,13 @@ pub(super) struct Prepared {
     pub(super) bodies: Vec<(String, u32)>,
     pub(super) indices: Option<wgpu::Buffer>,
     pub(super) draws: Vec<Range<u32>>,
+}
+struct Pattern {
+    device: DeviceSite,
+    layout: wgpu::BindGroupLayout,
+    samplers: [wgpu::Sampler; 2],
+    bound: Option<(u64, wgpu::BindGroup)>,
+    submitted: Option<u64>,
 }
 fn declaration() -> AfterOpaquePass {
     AfterOpaquePass {
@@ -40,7 +52,76 @@ fn declaration() -> AfterOpaquePass {
         refraction: false,
     }
 }
+fn film_declaration() -> AfterOpaquePass {
+    AfterOpaquePass {
+        name: "shore film".into(),
+        depth: true,
+        write_depth: false,
+        ..declaration()
+    }
+}
 impl Prepared {
+    pub(super) fn render_group(&self) -> &wgpu::BindGroup {
+        self.pattern
+            .as_ref()
+            .and_then(|pattern| pattern.bound.as_ref())
+            .map_or(&self.group, |(_, group)| group)
+    }
+
+    pub(super) fn record_pattern(
+        &mut self,
+        lease: &thrum_asset_gpu::ProductLease,
+        generation: u64,
+    ) -> bool {
+        let Some(pattern) = &mut self.pattern else {
+            return false;
+        };
+        let offer = lease.offered();
+        let product = offer
+            .as_ref()
+            .and_then(|set| set.products.first())
+            .filter(|product| product.device_generation == generation);
+        let serial = product.map(|product| product.serial);
+        if pattern.bound.as_ref().map(|(serial, _)| *serial) != serial {
+            pattern.bound = product.map(|product| {
+                let view = self.map.as_ref().map(MapGpu::view);
+                let mut entries = field_entries(
+                    &self.parameters,
+                    self.ambient.filtered_views(),
+                    &pattern.samplers,
+                    self.map.as_ref().zip(view.as_ref()),
+                    self.interaction.as_ref(),
+                );
+                entries.extend(self.foam.as_ref().expect("foam pattern").sample_entries());
+                entries.push(pattern_entry(&product.view));
+                (
+                    product.serial,
+                    pattern
+                        .device
+                        .create_bind_group(&wgpu::BindGroupDescriptor {
+                            label: Some("water field with foam pattern"),
+                            layout: &pattern.layout,
+                            entries: &entries,
+                        }),
+                )
+            });
+        }
+        serial != pattern.submitted
+    }
+
+    pub(super) fn submit_pattern(&mut self) -> (Option<u64>, bool) {
+        self.pattern.as_mut().map_or((None, false), |pattern| {
+            let serial = pattern.bound.as_ref().map(|(serial, _)| *serial);
+            let changed = serial != pattern.submitted;
+            pattern.submitted = serial;
+            (serial, changed)
+        })
+    }
+
+    pub(super) fn query_index(&self) -> usize {
+        self.ambient_passes + usize::from(self.interaction.is_some())
+    }
+
     pub(super) fn graph(&self) -> EffectGraph {
         let mut graph = self.ambient.graph();
         let wake = self
@@ -53,7 +134,16 @@ impl Prepared {
         let mut surface = declaration();
         surface.accesses = self.ambient.filtered_accesses();
         surface.accesses.extend(wake);
+        if let Some(foam) = &self.foam {
+            let read = foam.declare(&mut graph, surface.accesses.clone());
+            surface.accesses.push(read);
+        }
         graph.opaque_reads.clear();
+        if self.film.is_some() {
+            let mut film = film_declaration();
+            film.accesses.clone_from(&surface.accesses);
+            graph.after_opaque.push(film);
+        }
         graph.after_opaque.push(surface);
         graph
     }
@@ -66,6 +156,7 @@ pub(super) fn new(
     mailbox: Option<QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
     previous_interaction: Option<interaction::Report>,
+    whitewater: Option<(foam::Whitewater, foam::Report)>,
 ) -> Result<Prepared, String> {
     let device = surface.device;
     let map_gpu = mapped
@@ -132,10 +223,6 @@ pub(super) fn new(
             wgpu::ShaderStages::VERTEX_FRAGMENT,
         ));
     }
-    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("water field"),
-        entries: &entries,
-    });
     let sampler = |mode| {
         device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("water anisotropic field"),
@@ -155,61 +242,85 @@ pub(super) fn new(
             ..Default::default()
         })
     };
-    let repeat = sampler(wgpu::AddressMode::Repeat);
-    let clamp = sampler(wgpu::AddressMode::ClampToEdge);
-    let views = ambient.filtered_views();
-    let mut bindings = vec![
-        wgpu::BindGroupEntry {
-            binding: 0,
-            resource: parameters.as_entire_binding(),
-        },
-        wgpu::BindGroupEntry {
-            binding: 1,
-            resource: wgpu::BindingResource::TextureView(&views[0]),
-        },
-        wgpu::BindGroupEntry {
-            binding: 2,
-            resource: wgpu::BindingResource::TextureView(&views[1]),
-        },
-        wgpu::BindGroupEntry {
-            binding: 3,
-            resource: wgpu::BindingResource::Sampler(&repeat),
-        },
-        wgpu::BindGroupEntry {
-            binding: 4,
-            resource: wgpu::BindingResource::Sampler(&clamp),
-        },
+    let samplers = [
+        sampler(wgpu::AddressMode::Repeat),
+        sampler(wgpu::AddressMode::ClampToEdge),
     ];
     let map_view = map_gpu.as_ref().filter(|_| mapped).map(MapGpu::view);
-    if let (Some(map), Some(view)) = (&map_gpu, &map_view) {
-        bindings.extend(map.entries(view));
+    let mut bindings = field_entries(
+        &parameters,
+        ambient.filtered_views(),
+        &samplers,
+        map_gpu.as_ref().zip(map_view.as_ref()),
+        interaction.as_ref(),
+    );
+    let foam = whitewater.map(|(settings, report)| {
+        Foam::new(
+            device,
+            settings,
+            report,
+            &entries,
+            &bindings,
+            interaction.is_some(),
+        )
+    });
+    let fallback = foam.as_ref().map(|_| {
+        device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("absent foam pattern"),
+                size: wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default())
+    });
+    if let (Some(foam), Some(fallback)) = (&foam, &fallback) {
+        entries.extend(Foam::sample_layout());
+        entries.push(wgpu::BindGroupLayoutEntry {
+            binding: 12,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        });
+        bindings.extend(foam.sample_entries());
+        bindings.push(pattern_entry(fallback));
     }
-    if let Some(interaction) = &interaction {
-        bindings.extend(interaction.sample_entries(7));
-    }
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("water field"),
+        entries: &entries,
+    });
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("water field"),
         layout: &layout,
         entries: &bindings,
     });
-    let inputs = declaration().input_layout(device);
-    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+    let source = shader_source(&environment, mapped, interaction.is_some(), foam.is_some());
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(SURFACE_PASS),
-        bind_group_layouts: &[
-            Some(surface.view_layout),
-            Some(&inputs),
-            Some(&environment.layout),
-            Some(&layout),
-        ],
-        immediate_size: 0,
+        source: wgpu::ShaderSource::Wgsl(source.into()),
     });
-    let pipeline = create_pipeline(
-        surface,
-        &pipeline_layout,
-        &environment,
-        mapped,
-        interaction.is_some(),
-    );
+    let pipeline = create_pipeline(surface, &layout, &environment, &shader, mapped, false);
+    let film = (foam.is_some() && has_shore(map))
+        .then(|| create_pipeline(surface, &layout, &environment, &shader, true, true));
+    let pattern = foam.as_ref().map(|_| Pattern {
+        device: device.clone(),
+        layout,
+        samplers,
+        bound: None,
+        submitted: None,
+    });
     let geometry = surface_mesh(mapped.then_some(map));
     let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
     let (mesh, indices) = geometry.upload(device)?;
@@ -218,10 +329,13 @@ pub(super) fn new(
         ambient_passes,
         query,
         interaction,
+        foam,
         environment,
         pipeline,
+        film,
         parameters,
         group,
+        pattern,
         mesh,
         vertices: count,
         queue: surface.queue.clone(),
@@ -232,30 +346,117 @@ pub(super) fn new(
     })
 }
 
-fn create_pipeline(
-    surface: &SceneSurface<'_>,
-    pipeline_layout: &wgpu::PipelineLayout,
+fn has_shore(map: &thrum_water_model::Map) -> bool {
+    map.body(1).is_some()
+        || map.body(0).is_some_and(|body| {
+            !matches!(body.kind, thrum_water_model::BodyKind::Sea)
+                || map
+                    .bed()
+                    .heights()
+                    .iter()
+                    .any(|bed| *bed >= body.level + body.stage.min - map.profile().margin_height)
+        })
+}
+
+fn field_entries<'a>(
+    parameters: &'a wgpu::Buffer,
+    views: &'a [wgpu::TextureView; 2],
+    samplers: &'a [wgpu::Sampler; 2],
+    map: Option<(&'a MapGpu, &'a wgpu::TextureView)>,
+    interaction: Option<&'a Interaction>,
+) -> Vec<wgpu::BindGroupEntry<'a>> {
+    use wgpu::BindingResource::{Sampler, TextureView};
+    let mut bindings = vec![
+        wgpu::BindGroupEntry {
+            binding: 0,
+            resource: parameters.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 1,
+            resource: TextureView(&views[0]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 2,
+            resource: TextureView(&views[1]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 3,
+            resource: Sampler(&samplers[0]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 4,
+            resource: Sampler(&samplers[1]),
+        },
+    ];
+    if let Some((map, view)) = map {
+        bindings.extend(map.entries(view));
+    }
+    if let Some(interaction) = interaction {
+        bindings.extend(interaction.sample_entries(7));
+    }
+    bindings
+}
+
+fn pattern_entry(view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
+    wgpu::BindGroupEntry {
+        binding: 12,
+        resource: wgpu::BindingResource::TextureView(view),
+    }
+}
+
+fn shader_source(
     environment: &EnvironmentProducts,
     mapped: bool,
     wake: bool,
-) -> wgpu::RenderPipeline {
-    let device = surface.device;
-    let source = format!(
-        "{}\n{}\n{}\n{}\n{}\n{}",
+    foam: bool,
+) -> String {
+    format!(
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         environment.shader_source.replace("@group(0)", "@group(2)"),
         include_str!("fresnel.wgsl"),
         include_str!("sampling.wgsl"),
+        include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
         include_str!("surface.wgsl"),
         if mapped {
             map_gpu::declarations() + include_str!("mapped_surface.wgsl")
         } else {
             include_str!("open_surface.wgsl").to_owned()
-        }
-    );
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some(SURFACE_PASS),
-        source: wgpu::ShaderSource::Wgsl(source.into()),
+        },
+        if foam {
+            Foam::source() + include_str!("foam/appearance.wgsl")
+        } else {
+            "const FOAM_ENABLED: bool = false;
+             fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32) -> vec4<f32> { return vec4(0.0); }"
+                .into()
+        },
+    )
+}
+
+fn create_pipeline(
+    surface: &SceneSurface<'_>,
+    layout: &wgpu::BindGroupLayout,
+    environment: &EnvironmentProducts,
+    shader: &wgpu::ShaderModule,
+    mapped: bool,
+    film: bool,
+) -> wgpu::RenderPipeline {
+    let device = surface.device;
+    let pass = if film {
+        film_declaration()
+    } else {
+        declaration()
+    };
+    let inputs = pass.input_layout(device);
+    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some(&pass.name),
+        bind_group_layouts: &[
+            Some(surface.view_layout),
+            Some(&inputs),
+            Some(&environment.layout),
+            Some(layout),
+        ],
+        immediate_size: 0,
     });
     let targets: Vec<_> = surface
         .color_formats
@@ -265,32 +466,40 @@ fn create_pipeline(
             Some(wgpu::ColorTargetState {
                 format: *f,
                 blend: (i == 0 && mapped).then_some(wgpu::BlendState::ALPHA_BLENDING),
-                write_mask: wgpu::ColorWrites::ALL,
+                write_mask: if film && i != 0 {
+                    wgpu::ColorWrites::empty()
+                } else {
+                    wgpu::ColorWrites::ALL
+                },
             })
         })
         .collect();
     device.render(&wgpu::RenderPipelineDescriptor {
-        label: Some(SURFACE_PASS),
-        layout: Some(pipeline_layout),
+        label: Some(&pass.name),
+        layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: Some("water_vertex"),
+            module: shader,
+            entry_point: Some(if film { "film_vertex" } else { "water_vertex" }),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            buffers: &[Some(wgpu::VertexBufferLayout {
-                array_stride: 16,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &[wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Float32x4,
-                    offset: 0,
-                    shader_location: 0,
-                }],
-            })],
+            buffers: if film {
+                &[]
+            } else {
+                &[Some(wgpu::VertexBufferLayout {
+                    array_stride: 16,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &[wgpu::VertexAttribute {
+                        format: wgpu::VertexFormat::Float32x4,
+                        offset: 0,
+                        shader_location: 0,
+                    }],
+                })]
+            },
         },
         primitive: wgpu::PrimitiveState {
             cull_mode: None,
             ..Default::default()
         },
-        depth_stencil: Some(wgpu::DepthStencilState {
+        depth_stencil: (!film).then_some(wgpu::DepthStencilState {
             format: surface.depth_format,
             depth_write_enabled: Some(true),
             depth_compare: Some(wgpu::CompareFunction::GreaterEqual),
@@ -299,8 +508,12 @@ fn create_pipeline(
         }),
         multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: Some("water_fragment"),
+            module: shader,
+            entry_point: Some(if film {
+                "film_fragment"
+            } else {
+                "water_fragment"
+            }),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &targets,
         }),

@@ -1,0 +1,403 @@
+//! Whitewater in the ordinary example, using submitted Metal stocks and depth.
+mod support;
+
+use support::Fixture;
+use thrum_water::{
+    foam::Witness,
+    query::{BodyQuery, QueryPoint},
+};
+use water_scene::{
+    floating::{WakeDemo, WakeView, build_wake},
+    island::{Wind, build_foam},
+};
+
+fn metal(name: &str) -> Option<thrum_test_support::Gpu> {
+    thrum_test_support::gpu(name, Some(wgpu::Backend::Metal))
+}
+
+fn current<'a>(
+    witness: &'a Witness,
+    stocks: &'a [[f32; 4]],
+    level: usize,
+) -> impl Iterator<Item = ([f64; 2], [f32; 4])> + use<'a> {
+    let plane = (witness.side * witness.side) as usize;
+    let start = (witness.banks[1] * 2 + level) * plane;
+    let origin = witness.origins[1][level].map(f64::from);
+    let scale = f64::from(witness.spacing[level]);
+    (0..witness.side * witness.side)
+        .zip(stocks[start..start + plane].iter().copied())
+        .map(move |(index, values)| {
+            let cell = [index % witness.side, index / witness.side];
+            (
+                std::array::from_fn(|axis| origin[axis] + (f64::from(cell[axis]) + 0.5) * scale),
+                values,
+            )
+        })
+}
+
+#[test]
+fn ten_minutes_moored_and_wind_sweep() {
+    support::island::with_cooked_island("ten_minutes_moored_and_wind_sweep", || {
+        let Some(gpu) = metal("whitewater wind and calm") else {
+            return;
+        };
+        for lake in [false, true] {
+            let scene = build_wake(
+                Wind::Calm,
+                lake,
+                0.0,
+                0.0,
+                WakeDemo {
+                    foam: true,
+                    view: WakeView::Overhead,
+                    body_capacity: Some(1),
+                    ..WakeDemo::default()
+                },
+            )
+            .expect("moored foam scene");
+            let bodies = scene.observer();
+            let tap = scene.foam.expect("foam tap");
+            let mut fixture = Fixture::from_game(&gpu, [96, 64], scene.game, scene.report);
+            for tick in (0_u32..=36_000).step_by(8) {
+                fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+                if tick < 40 || tick % 600 == 0 {
+                    let submitted = tap.latest().expect("submitted calm scene");
+                    assert_eq!(submitted.report.ticks[1], u64::from(tick));
+                    let stocks = support::foam_stocks(&fixture, &submitted);
+                    let peak = stocks.iter().fold([0.0_f32; 4], |peak, cell| {
+                        std::array::from_fn(|stock| peak[stock].max(cell[stock]))
+                    });
+                    assert!(
+                        peak.iter().all(|value| *value == 0.0),
+                        "calm {lake}, tick {tick}: stocks {peak:?}, craft speed {}, drag power {}, float speed {}",
+                        bodies()[0].velocity.with_y(0.0).length(),
+                        bodies()[0].drag_power,
+                        bodies()
+                            .iter()
+                            .skip(1)
+                            .map(|body| body.velocity.with_y(0.0).length())
+                            .fold(0.0, f64::max)
+                    );
+                }
+            }
+            eprintln!(
+                "Metal moored scene lake={lake}: all four submitted stocks zero through 600 s"
+            );
+        }
+        let mut covers = Vec::new();
+        for wind in [Wind::Trade, Wind::Strong, Wind::Gale] {
+            let scene = build_wake(
+                wind,
+                false,
+                0.0,
+                0.0,
+                WakeDemo {
+                    foam: true,
+                    disabled: true,
+                    view: WakeView::Waterline,
+                    ..WakeDemo::default()
+                },
+            )
+            .expect("whitecap wind scene");
+            let tap = scene.foam.expect("foam tap");
+            let mut fixture = Fixture::from_game(&gpu, [96, 64], scene.game, scene.report);
+            fixture.parameters(r#"{"craft.present":0}"#);
+            for tick in (0..=480).step_by(6) {
+                fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+            }
+            let witness = tap.latest().expect("submitted whitecaps");
+            let stocks = support::foam_stocks(&fixture, &witness);
+            let cover = current(&witness, &stocks, 0)
+                .map(|(_, c)| f64::from(c[1] + c[2]))
+                .sum::<f64>()
+                / f64::from(witness.side.pow(2));
+            eprintln!("Metal {wind:?} mean fine-level film cover at eight seconds: {cover:.6}");
+            covers.push(cover);
+        }
+        assert!(
+            covers[0] > 0.0 && covers.windows(2).all(|c| c[0] < c[1]),
+            "{covers:?}"
+        );
+    });
+}
+
+#[derive(Debug)]
+struct Trail {
+    cover: f64,
+    peak: f64,
+    width: f64,
+}
+
+fn trail(witness: &Witness, stocks: &[[f32; 4]]) -> Trail {
+    let section = current(witness, stocks, 0).filter(|(p, _)| (125.0..=138.0).contains(&p[0]));
+    let (mut mass, mut peak, mut offset, mut radius) = (0.0, 0.0_f64, 0.0, 0.0);
+    for ([_, z], c) in section {
+        let cover = f64::from(c[1] + c[2]);
+        mass += cover;
+        peak = peak.max(cover);
+        offset += cover * (z - 32.0);
+        radius += cover * (z - 32.0).powi(2);
+    }
+    Trail {
+        cover: mass,
+        peak,
+        width: (radius / mass - (offset / mass).powi(2)).sqrt(),
+    }
+}
+
+#[test]
+fn craft_trail_outlives_removed_source_and_spreads() {
+    let Some(gpu) = metal("removed craft's material") else {
+        return;
+    };
+    let scene = build_wake(
+        Wind::Calm,
+        false,
+        6.0,
+        std::f32::consts::PI,
+        WakeDemo {
+            foam: true,
+            disabled: true,
+            view: WakeView::Overhead,
+            ..WakeDemo::default()
+        },
+    )
+    .expect("foam course");
+    let tap = scene.foam.expect("foam tap");
+    let mut fixture = Fixture::from_game(&gpu, [96, 64], scene.game, scene.report);
+    for tick in (0..=360).step_by(4) {
+        fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+    }
+    fixture.parameters(r#"{"craft.present":0}"#);
+    let mut readings: Vec<Trail> = Vec::new();
+    for tick in (366..=3966).step_by(6) {
+        fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+        if [366, 966, 1566, 2166, 3966].contains(&tick) {
+            let witness = tap.latest().expect("submitted trail");
+            let stocks = support::foam_stocks(&fixture, &witness);
+            readings.push(trail(&witness, &stocks));
+        }
+    }
+    eprintln!(
+        "Metal removed craft at 6 m/s, trail at 0.1, 10.1, 20.1, 30.1 and 60.1 seconds: {readings:?}"
+    );
+    assert!(readings[0].peak > 0.14 && readings[2].cover > 0.1);
+    for pair in readings.windows(2) {
+        assert!(
+            pair[1].width > pair[0].width && pair[1].peak < pair[0].peak,
+            "{pair:?}"
+        );
+    }
+    assert!(readings[4].peak < 0.025);
+}
+
+#[test]
+fn beach_births_follow_lost_power_and_the_film_leaves_ground_depth() {
+    support::island::with_cooked_island(
+        "beach_births_follow_lost_power_and_the_film_leaves_ground_depth",
+        || {
+            let Some(gpu) = metal("shore film and power") else {
+                return;
+            };
+            shore_power(&gpu);
+            film_depth_and_query(&gpu);
+        },
+    );
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "keep shoreline power and stock measurements in target evidence"
+)]
+fn shore_power(gpu: &thrum_test_support::Gpu) {
+    let mut means = Vec::new();
+    for (wind, body) in [
+        (Wind::Calm, 0),
+        (Wind::Trade, 0),
+        (Wind::Gale, 0),
+        (Wind::Trade, 1),
+    ] {
+        let (game, report, map, probes) = build_foam(wind, true, true).expect("island whitewater");
+        let tap = probes.expect("shore probes").foam;
+        let mut fixture = Fixture::from_game(gpu, [128, 96], game, report);
+        fixture.parameters(if body == 0 {
+            r#"{"camera.island":0}"#
+        } else {
+            r#"{"camera.island":1}"#
+        });
+        let spectrum = thrum_sea_model::Spectrum::build(&wind.forcing()).expect("wind forcing");
+        let significant_variance = [
+            spectrum
+                .long
+                .iter()
+                .map(|wave| 0.5 * wave.amplitude.powi(2))
+                .sum(),
+            spectrum.cascades[0].variance(),
+            spectrum.cascades[1].variance(),
+            spectrum.cascades[2].variance(),
+        ];
+        let mut deposited = 0.0;
+        let mut expected_loss = 0.0;
+        let mut reported_loss = 0.0;
+        let mut wet_loss = 0.0;
+        let mut shoreline_cells = 0_u32;
+        let mut swash_cells = 0_u32;
+        for tick in (0..=720).step_by(6) {
+            fixture.frame_without_timings(f64::from(tick) * 0.016_666_667);
+            if tick >= 240 && tick % 30 == 0 {
+                let witness = tap.latest().expect("submitted shore");
+                let stocks = support::foam_stocks(&fixture, &witness);
+                let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(&fixture, &witness.parcels);
+                assert_eq!(
+                    witness.origins[0], witness.origins[1],
+                    "fixed-view source alignment"
+                );
+                let map = map.lock().expect("island map");
+                for ((point, stock), parcel) in current(&witness, &stocks, 0).zip(parcels) {
+                    let Some(row) = map
+                        .sample(point)
+                        .filter(|p| p.body == body && (-0.45..=3.0).contains(&p.depth))
+                    else {
+                        continue;
+                    };
+                    let limited = thrum_water_model::limit(
+                        row.row,
+                        row.depth,
+                        significant_variance,
+                        map.profile(),
+                    );
+                    let lost = limited.lost_power.into_iter().sum::<f64>();
+                    let rate = f64::from(parcel[1][3]);
+                    if row.depth + limited.swash_depth < 0.0 {
+                        assert!(rate == 0.0, "birth at {point:?} beyond wave support");
+                    }
+                    if rate > 0.0 {
+                        reported_loss += rate / 1.76;
+                        wet_loss += lost;
+                    }
+                    deposited += f64::from(stock[1] + stock[2]);
+                    expected_loss += lost;
+                    shoreline_cells += 1;
+                    swash_cells += u32::from(row.depth < 0.0 && stock[1] > 1e-6);
+                }
+            }
+        }
+        assert!(shoreline_cells > 0);
+        let divisor = f64::from(shoreline_cells);
+        let means_for_view = [deposited / divisor, expected_loss / divisor];
+        assert!((reported_loss - wet_loss).abs() <= 0.002 * wet_loss + 0.000_01);
+        eprintln!(
+            "Metal {wind:?}, body {body}: cover and mean depth loss {means_for_view:?}, above-level stocked samples {swash_cells}, sampled birth-rate loss {reported_loss:.6} vs map {wet_loss:.6}"
+        );
+        if body == 0 && !matches!(wind, Wind::Calm) {
+            assert!(swash_cells > 0);
+        }
+        means.push(means_for_view);
+    }
+    assert_eq!(means[0], [0.0; 2]);
+    assert!(
+        means[2][0] > means[1][0] && means[2][1] > means[1][1],
+        "{means:?}"
+    );
+    let lake_foam_share = means[3][0] / means[1][0];
+    let lake_power_share = means[3][1] / means[1][1];
+    assert!(
+        lake_foam_share > 0.0 && lake_power_share > 0.0 && lake_foam_share < 0.32,
+        "{means:?}"
+    );
+    // Exposure of wet cells and the bounded cover cap affect the accumulated
+    // ratio. The lake must stay in the same order of magnitude as its power share.
+    assert!(
+        (0.1..8.0).contains(&(lake_foam_share / lake_power_share)),
+        "{means:?}"
+    );
+    eprintln!(
+        "Lake vs beach share of film {lake_foam_share:.5}, of depth-limited power {lake_power_share:.5}"
+    );
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "keep the ground-depth sample count in target evidence"
+)]
+fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
+    let extent = support::island::EXTENT;
+    let (control, report, _) =
+        water_scene::island::build(Wind::Trade, false).expect("opaque beach");
+    let mut control = Fixture::from_game(gpu, extent, control, report);
+    control.parameters(r#"{"camera.island":0}"#);
+    control.warm_cooked();
+    control.frame_without_timings(8.0);
+    let ground = control.witness();
+    let ground_pixels = support::read_texture(&control.device, &control.queue, &control.output, 4);
+    drop(control);
+
+    let (game, report, map, probes) = build_foam(Wind::Trade, true, true).expect("beach film");
+    let probes = probes.expect("beach probes");
+    let mut fixture = Fixture::from_game(gpu, extent, game, report);
+    fixture.parameters(r#"{"camera.island":0}"#);
+    fixture.warm_cooked();
+    let matrix = support::island::view_proj(0);
+    let mut candidates = Vec::new();
+    let mut points = Vec::new();
+    for (pixel, values) in ground.iter().enumerate().step_by(11) {
+        if values[1] <= 0.0 {
+            continue;
+        }
+        let pixel = u32::try_from(pixel).expect("pixel index");
+        let at = support::world_at(
+            matrix,
+            extent,
+            [pixel % extent[0], pixel / extent[0]],
+            values[1],
+        );
+        let point = [f64::from(at.x), f64::from(at.z)];
+        let depth = map
+            .lock()
+            .expect("map")
+            .sample(point)
+            .map_or(f64::INFINITY, |p| p.depth);
+        if (-0.20..=-0.035).contains(&depth) && points.len() < 480 {
+            points.push(QueryPoint {
+                position: [at.x, at.z],
+                radius: 0.0,
+                use_tick: 480,
+            });
+            candidates.push(pixel as usize);
+        }
+    }
+    assert!(!points.is_empty(), "visible dry beach margin");
+    probes.query.post(
+        479,
+        vec![BodyQuery {
+            id: 9,
+            generation: 1,
+            points,
+        }],
+    );
+    fixture.frame_without_timings(8.000_000_16);
+    let answer = probes
+        .query
+        .drain(481, std::time::Duration::from_nanos(16_666_667));
+    let output = fixture.witness();
+    let image = support::read_texture(&fixture.device, &fixture.queue, &fixture.output, 4);
+    assert_eq!(answer.len(), 1, "submitted public shoreline query");
+    let mut dry_film = 0;
+    for (&pixel, query) in candidates.iter().zip(&answer[0].points) {
+        if query.surface.wet {
+            continue;
+        }
+        if output[pixel][1].to_bits() == ground[pixel][1].to_bits()
+            && image[pixel * 4..pixel * 4 + 3] != ground_pixels[pixel * 4..pixel * 4 + 3]
+        {
+            dry_film += 1;
+        }
+    }
+    assert!(
+        dry_film > 0,
+        "dry film must colour pixels at unchanged opaque depth"
+    );
+    eprintln!(
+        "Metal shore film: {dry_film} changed samples with unchanged ground depth and dry public query"
+    );
+}

@@ -1,0 +1,164 @@
+struct Parcel {
+    stocks: vec4<f32>,
+    movement: vec4<f32>, // displacement in cells, diffusivity weight, shore birth rate
+}
+@group(0) @binding(11) var<storage, read_write> parcels: array<Parcel>;
+
+struct Wave {
+    height: f32,
+    slope: vec2<f32>,
+    differential: vec3<f32>,
+    rise: f32,
+}
+fn foam_wave(point: vec2<f32>, gains: vec4<f32>, spacing: f32) -> Wave {
+    var wave = Wave(0.0, vec2(0.0), vec3(1.0, 0.0, 1.0), 0.0);
+    for (var band = 0u; band < 4u; band++) {
+        let gain = gains[band];
+        if gain * water.heights[band] <= 0.0 { continue; }
+        var surface: vec4<f32>;
+        var derivative: vec4<f32>;
+        var rate: vec4<f32>;
+        if band == 0u {
+            let radius = length(point - foam_settings.camera.xy);
+            let level = u32(clamp(ceil(log2(max(1.0, radius / 62.0))), 0.0, 7.0));
+            let uv = (point - water.cache[level].xy) / (128.0 * water.cache[level].z);
+            let layer = i32(5u * level);
+            surface = textureSampleLevel(long_field, bounded, uv, layer, 0.0);
+            derivative = textureSampleLevel(long_field, bounded, uv, layer + 1, 0.0);
+            rate = textureSampleLevel(long_field, bounded, uv, layer + 2, 0.0);
+        } else {
+            let length_m = water.lengths[band - 1u];
+            let uv = point / length_m;
+            let layer = i32(5u * (band - 1u));
+            let lod = max(0.0, log2(128.0 * spacing / length_m));
+            surface = textureSampleLevel(cascades, periodic, uv, layer, lod);
+            derivative = textureSampleLevel(cascades, periodic, uv, layer + 1, lod);
+            rate = textureSampleLevel(cascades, periodic, uv, layer + 2, lod);
+        }
+        wave.height += gain * surface.y;
+        wave.slope += gain * derivative.xy;
+        wave.differential += gain * vec3(derivative.zw, rate.w);
+        wave.rise += gain * rate.y;
+    }
+    return wave;
+}
+
+fn air_fraction(dt: f32) -> f32 { return exp(-dt / 2.4); }
+fn age_stocks(stocks: vec4<f32>, dt: f32) -> vec4<f32> {
+    let air = air_fraction(dt);
+    let fresh = exp(-dt / 6.0);
+    let aged = exp(-dt / 13.0);
+    let ab = (fresh - air) * 6.0 / (6.0 - 2.4);
+    let bc = (aged - fresh) * 13.0 / (13.0 - 6.0);
+    let ac = (bc - 13.0 / (13.0 - 2.4) * (aged - air)) * 6.0 / (6.0 - 2.4);
+    return vec4(stocks.x * air, stocks.y * fresh + 0.60 * stocks.x * ab,
+        stocks.z * aged + stocks.y * bc + 0.60 * stocks.x * ac, stocks.w * exp(-dt / 8.0));
+}
+fn add_births(stocks: vec4<f32>, rates: vec4<f32>, dt: f32) -> vec4<f32> {
+    let room = max(0.0, 1.0 - stocks.y - stocks.z);
+    return stocks + max(vec4(0.0), vec4(1.0 - stocks.x, room, 0.0, 1.0 - stocks.w)) * (1.0 - exp(-rates * dt));
+}
+fn hull_births(point: vec2<f32>, current: vec2<f32>, spacing: f32) -> vec4<f32> {
+    var rates = vec4(0.0);
+    for (var index = 0u; index < foam_settings.banks.z; index++) {
+        let hull = foam_settings.hulls[index];
+        let at = point - hull.location_axis.xy + 0.5 * foam_settings.time_wind.x * hull.velocity.xy;
+        let ext = hull.extent_rate.xy;
+        if dot(at, at) > pow(5.0 + ext.x, 2.0) { continue; }
+        let direction = hull.location_axis.zw;
+        let local = vec2(dot(at, direction), dot(at, vec2(-direction.y, direction.x)));
+        let speed = max(0.0, length(hull.velocity.xy - current) - 0.22);
+        let edge = length(local / (ext + spacing * 0.25));
+        let contact = exp(-16.0 * (edge - 0.85) * (edge - 0.85)) * speed * speed;
+        let aft = max(0.0, -local.x - ext.x * 0.7);
+        let stern = select(0.0, exp(-0.85 * aft - pow(local.y / (ext.y + 0.35 + aft * 0.13), 2.0)), aft >= 0.0);
+        let work = select(0.0, max(0.0, hull.extent_rate.z - 25.0) * 0.00016 * stern, local.x <= -ext.x * 0.7);
+        rates += vec4(0.6 * contact + work, 0.32 * contact + 0.8 * work, 0.0, 0.14 * work);
+        // The stationary pressure dent and its settling transient carry no
+        // horizontal drag power. Exclude that footprint from wake breaking.
+        if speed == 0.0 && work == 0.0 {
+            rates.z = max(rates.z, 1.0 - smoothstep(1.55, 2.45, edge));
+        }
+    }
+    return rates;
+}
+
+@compute @workgroup_size(8, 8)
+fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
+    let level = id.z;
+    let local = vec2<i32>(id.xy);
+    let spacing = FOAM_SPACING[level];
+    let old = foam_settings.origins[level].xy;
+    let point = (vec2<f32>(old + local) + 0.5) * spacing;
+    let dt = foam_settings.time_wind.x;
+    let row = map_sample(point);
+    var stocks = max(vec4(0.0), age_stocks(foam_load(foam_settings.banks.x, level, local), dt));
+    var movement = vec4(0.0);
+    if row.body != NO_BODY {
+        let depth = select(1e30, row.row.water.x - row.bed, row.has_bed);
+        let gain = limit_gains(row.row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);
+        let wave = foam_wave(point, gain, spacing);
+        let wake = wake_at(point, 0.0);
+        if depth + wave.height + foam_settings.camera.z * wave.rise + wake.x > 0.0 {
+            let energy_before = row.row.gains * water.heights;
+            let loss = lost_wave_power(row.row.gains, gain, water.heights);
+            let d = wave.differential;
+            let compression = d.x * d.z - d.y * d.y;
+            let wind = foam_settings.time_wind.zw;
+            let crest = smoothstep(-0.08, 0.30, wave.height / max(water.scatter.w, 0.001));
+            let whitecap = 2.6 * pow(smoothstep(5.0, 18.0, length(wind)), 1.30) * crest *
+                pow(max(0.0, 0.88 - compression), 1.18);
+            let hull = hull_births(point, row.row.water.yz, spacing);
+            let wake_break = 0.6 * max(0.0, length(wake.yz) - 0.46) *
+                (1.0 - hull.z) * smoothstep(0.08, 0.30, abs(wake.w));
+            let shore = loss * 1.76;
+            let rates = vec4(0.55 * whitecap + wake_break + 0.22 * shore,
+                whitecap + wake_break + shore, 0.0, 0.0) + vec4(hull.xy, 0.0, hull.w);
+            stocks = add_births(stocks, rates, dt);
+            var drift = row.row.water.yz + 0.027 * wind;
+            let swash = min(map.swash.x * length(energy_before), map.origin_spacing_margin.w);
+            if level == 0u && row.has_bed && swash > 0.0 && depth < 0.27 * swash {
+                let cell = map_cell(point);
+                let h = cell.heights;
+                let bed_slope = vec2(mix(h.y - h.x, h.w - h.z, cell.uv.y),
+                    mix(h.z - h.x, h.w - h.y, cell.uv.x)) / map.origin_spacing_margin.z;
+                let thickness_slope = wave.slope - bed_slope;
+                let speed = min(sqrt(9.81 * swash), max(0.0, wave.rise) / max(0.001, length(thickness_slope)));
+                drift -= normalize(thickness_slope + vec2(1e-8)) * speed *
+                    (1.0 - smoothstep(0.0, 0.27 * swash, depth));
+            }
+            let max_shift = select(0.999, 2.0, level == 0u && dt > 0.024);
+            let shift = clamp(drift * dt / spacing, vec2(-max_shift), vec2(max_shift));
+            let diffusion = min(0.24, (0.016 + 0.14 * stocks.x + 0.06 * stocks.y) * dt / (spacing * spacing));
+            movement = vec4(shift, diffusion, shore);
+        }
+    }
+    parcels[foam_index(0u, level, local)] = Parcel(stocks, movement);
+}
+
+fn tent(distance: f32) -> f32 { return max(0.0, 1.0 - abs(distance)); }
+fn kernel(distance: f32, diffusion: f32) -> f32 {
+    return (1.0 - 2.0 * diffusion) * tent(distance)
+        + diffusion * (tent(distance - 1.0) + tent(distance + 1.0));
+}
+
+@compute @workgroup_size(8, 8)
+fn step_foam(@builtin(global_invocation_id) id: vec3<u32>) {
+    let local = vec2<i32>(id.xy);
+    let level = id.z;
+    let relative = local + foam_settings.origins[2u + level].xy - foam_settings.origins[level].xy;
+    let radius = select(2, 3, level == 0u && foam_settings.time_wind.x > 0.024);
+    var sum = vec4(0.0);
+    for (var z = -radius; z <= radius; z++) {
+        for (var x = -radius; x <= radius; x++) {
+            let at = relative + vec2(x, z);
+            if !foam_inside(at) { continue; }
+            let source = parcels[foam_index(0u, level, at)];
+            let distance = vec2<f32>(f32(x), f32(z)) + source.movement.xy;
+            let weight = kernel(distance.x, source.movement.z) * kernel(distance.y, source.movement.z);
+            sum += weight * source.stocks;
+        }
+    }
+    let film = sum.yz / max(1.0, sum.y + sum.z);
+    foam_stocks[foam_index(foam_settings.banks.y, level, local)] = clamp(vec4(sum.x, film, sum.w), vec4(0.0), vec4(1.0));
+}

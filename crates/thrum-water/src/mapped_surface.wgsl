@@ -7,7 +7,14 @@ fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
     let gains = limit_gains(row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);
     let record = map.bodies[body];
     let previous = row.water.x + record.level.z - (record.level.x + record.level.y);
-    return SurfaceRow(row.water.x, previous, gains, select(-1e30, cell.bed, cell.inside), owned);
+    var swash = 0.0;
+    var loss = 0.0;
+    if FOAM_ENABLED {
+        let before = row.gains * water.heights;
+        swash = min(map.swash.x * length(before), map.origin_spacing_margin.w);
+        loss = lost_wave_power(row.gains, gains, water.heights);
+    }
+    return SurfaceRow(row.water.x, previous, gains, select(-1e30, cell.bed, cell.inside), owned, swash, loss);
 }
 fn tail_gain(row: SurfaceRow) -> f32 { return row.gains.w; }
 

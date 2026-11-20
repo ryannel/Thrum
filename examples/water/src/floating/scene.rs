@@ -21,6 +21,7 @@ use thrum_water_model::{Bed, BodyKind, Impulse, Map, Stage};
 pub(super) struct Fleet {
     pub(super) previous: Vec<Body>,
     pub(super) current: Vec<Body>,
+    pub(super) craft_present: bool,
     observe: Option<Box<dyn FnMut(BodyStep) + Send>>,
     #[cfg(target_arch = "wasm32")]
     reply_ages: std::collections::VecDeque<(u32, u64, u64)>,
@@ -41,6 +42,8 @@ pub struct WakeDemo {
     pub disabled: bool,
     /// Override the number of admitted body reactions for a capacity inspection.
     pub body_capacity: Option<u32>,
+    /// Include transported whitewater and the shore film.
+    pub foam: bool,
 }
 
 /// Camera for interaction waves in the water example.
@@ -53,6 +56,10 @@ pub enum WakeView {
     Overhead,
     /// Watch the lake from two metres above the still level.
     Shore,
+    /// Look out across the sea from two metres.
+    Waterline,
+    /// Look out across the sea from forty metres.
+    Vista,
 }
 
 impl WakeView {
@@ -61,6 +68,8 @@ impl WakeView {
         match option {
             "overhead" => Self::Overhead,
             "shore" => Self::Shore,
+            "waterline" => Self::Waterline,
+            "vista" => Self::Vista,
             _ => Self::Chase,
         }
     }
@@ -74,6 +83,8 @@ pub struct FloatingScene {
     pub mailbox: QueryMailbox,
     /// Preparation and resource report.
     pub report: crate::SharedReport,
+    /// Optional submitted foam endpoints for numerical inspection.
+    pub foam: Option<thrum_water::foam::Tap>,
     fleet: Arc<Mutex<Fleet>>,
 }
 
@@ -217,11 +228,16 @@ fn build_scene(
         profile.interaction = Some(limits);
     }
     let fallback = fallback(&spectrum, profile.waves.choppiness)?;
-    let water = if lake {
+    let whitewater = demo.is_some_and(|demo| demo.foam);
+    let mut water = if lake || whitewater {
         Water::mapped(Arc::clone(&map), spectrum, profile)?
     } else {
         Water::new(Arc::clone(&map), 0, spectrum, profile)?
     };
+    let foam_input = whitewater
+        .then(|| water.enable_foam(wind.velocity()))
+        .transpose()?;
+    let foam_tap = whitewater.then(|| water.tap_foam());
     let mailbox = water
         .query_mailbox()
         .ok_or("floating scene requires a body query")?;
@@ -286,6 +302,7 @@ fn build_scene(
     let fleet = Arc::new(Mutex::new(Fleet {
         previous: bodies.clone(),
         current: bodies,
+        craft_present: true,
         observe: None,
         #[cfg(target_arch = "wasm32")]
         reply_ages: std::collections::VecDeque::new(),
@@ -311,8 +328,18 @@ fn build_scene(
         Some(WakeView::Shore) if demo.is_some_and(|demo| demo.stone) => (15.0, 23.0),
         Some(WakeView::Shore) => (14.0, 43.0),
         Some(WakeView::Chase) => (23.0, 251.0),
+        Some(WakeView::Waterline | WakeView::Vista) => (56.0, 235.0),
         None => (35.0, 128.0),
     };
+    let craft_control = whitewater
+        .then(|| {
+            controls
+                .slider("craft.present", "Craft present", 0.0..=1.0)
+                .default(1.0)
+                .step(1.0)
+                .add()
+        })
+        .transpose()?;
     let sun = controls
         .slider("sun.elevation", "Sun elevation", 5.0..=80.0)
         .default(elevation)
@@ -326,6 +353,8 @@ fn build_scene(
     let current_speed = Arc::clone(&speed_value);
     let view_choice = Arc::new(AtomicBool::new(chase));
     let view_control = Arc::clone(&view_choice);
+    let visible = Arc::new(AtomicBool::new(true));
+    let craft_present = Arc::clone(&visible);
     let camera_fleet = Arc::clone(&fleet);
     let initial = camera(
         &fleet.lock().map_err(|_| "fleet")?.current[0],
@@ -341,6 +370,10 @@ fn build_scene(
             heading_control.map_or(0.0, |turn| controls.get(turn)),
         );
         view_control.store(controls.get(chase_control) > 0.5, Ordering::Relaxed);
+        visible.store(
+            craft_control.is_none_or(|control| controls.get(control) > 0.5),
+            Ordering::Relaxed,
+        );
         sky.sun_elevation_degrees = controls.get(sun);
         sky.sun_azimuth_degrees = azimuth;
         sky.exposure_compensation_ev = 0.3;
@@ -363,6 +396,7 @@ fn build_scene(
     .with_fixed_update(move |number, step| {
         let mut fleet = world_fleet.lock().expect("floating fleet");
         let fleet = &mut *fleet;
+        fleet.craft_present = craft_present.load(Ordering::Relaxed);
         fleet.previous.clone_from(&fleet.current);
         let craft = &mut fleet.current[0];
         let (speed, turn) = *speed_value.lock().expect("speed control");
@@ -373,8 +407,10 @@ fn build_scene(
             let axis = craft.rotation * DVec3::X;
             craft.angular.y += 2.5 * axis.cross(target).y * step.as_secs_f64();
         }
+        let first = usize::from(!fleet.craft_present);
+        let active = &mut fleet.current[first..];
         let answers = advance_fleet(
-            &mut fleet.current,
+            active,
             number,
             step,
             &world_mailbox,
@@ -382,9 +418,11 @@ fn build_scene(
             &fallback,
             fleet.observe.as_deref_mut(),
         );
+        if let Some(foam) = &foam_input {
+            foam.post(number, active.iter().map(foam_hull));
+        }
         if let Some(interaction) = &interaction {
-            let reactions = fleet
-                .current
+            let reactions = active
                 .iter()
                 .map(|body| {
                     let axis = body.rotation * DVec3::X;
@@ -401,7 +439,7 @@ fn build_scene(
                     }
                 })
                 .collect();
-            let follow = (!demo.is_some_and(|demo| demo.stone)).then_some(0);
+            let follow = (fleet.craft_present && !demo.is_some_and(|demo| demo.stone)).then_some(0);
             interaction.post_bodies(number, follow, reactions);
             if number == 60 && lake && demo.is_some_and(|demo| demo.stone) {
                 interaction.post_impulse(Impulse {
@@ -415,8 +453,7 @@ fn build_scene(
         }
         world_mailbox.post(
             number,
-            fleet
-                .current
+            active
                 .iter()
                 .map(|body| body.request(number, step))
                 .collect(),
@@ -452,11 +489,30 @@ fn build_scene(
             }
         }
     });
-    let game = if lake {
-        game.with_meshes_and_material(
-            vec![MeshPlacement::new("meshes/island", "textures/white")],
-            Some(("water island", include_str!("../../island.wgsl"))),
-        )?
+    let game = if lake
+        || (whitewater
+            && (cfg!(target_arch = "wasm32")
+                || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some()))
+    {
+        let meshes = if lake {
+            vec![MeshPlacement::new("meshes/island", "textures/white")]
+        } else {
+            Vec::new()
+        };
+        let material = lake.then_some(("water island", include_str!("../../island.wgsl")));
+        let (game, lease) = game.with_meshes_and_texture_lease(
+            meshes,
+            material,
+            if whitewater {
+                &["textures/foam-rank"]
+            } else {
+                &[]
+            },
+        )?;
+        if whitewater {
+            water.lend_foam_pattern(lease);
+        }
+        game
     } else {
         game
     };
@@ -505,8 +561,29 @@ fn build_scene(
         game,
         mailbox,
         report,
+        foam: foam_tap,
         fleet,
     })
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the bounded example course fits GPU metres and watts"
+)]
+fn foam_hull(body: &Body) -> thrum_water::foam::Hull {
+    let forward = (body.rotation * DVec3::X).with_y(0.0).normalize_or_zero();
+    let (length, width, _) = body.hull.dimensions();
+    let mass = match body.hull {
+        Hull::Craft => 3600.0,
+        Hull::Float => 75.0,
+    };
+    thrum_water::foam::Hull {
+        place: [body.position.x as f32, body.position.z as f32],
+        forward: [forward.x as f32, forward.z as f32],
+        extent: [length as f32, width as f32],
+        velocity: [body.velocity.x as f32, body.velocity.z as f32],
+        drag_power: (mass * body.drag_power) as f32,
+    }
 }
 
 fn camera(body: &Body, chase: bool, level: f64, demo: Option<WakeDemo>) -> Camera {
@@ -521,7 +598,7 @@ fn camera(body: &Body, chase: bool, level: f64, demo: Option<WakeDemo>) -> Camer
             WakeView::Overhead => {
                 return Camera::look_at([190.0, 52.0, 27.5], [184.0, 12.0, 27.0], 65.0);
             }
-            WakeView::Chase => {}
+            WakeView::Chase | WakeView::Waterline | WakeView::Vista => {}
         }
     }
     if demo.is_some_and(|demo| demo.view == WakeView::Shore) {
@@ -536,6 +613,18 @@ fn camera(body: &Body, chase: bool, level: f64, demo: Option<WakeDemo>) -> Camer
             target.as_vec3().to_array(),
             72.0,
         );
+    }
+    if let Some(demo) =
+        demo.filter(|demo| matches!(demo.view, WakeView::Waterline | WakeView::Vista))
+    {
+        let height = if demo.view == WakeView::Vista {
+            40.0
+        } else {
+            2.0
+        };
+        let eye = centre - 8.0 * DVec3::X + height * DVec3::Y;
+        let look = eye - 90.0 * DVec3::X - (height * 0.7 + 4.0) * DVec3::Y;
+        return Camera::look_at(eye.as_vec3().to_array(), look.as_vec3().to_array(), 65.0);
     }
     let position = if demo.is_some() && chase {
         centre - 16.0 * heading + 3.6 * across + 6.4 * DVec3::Y

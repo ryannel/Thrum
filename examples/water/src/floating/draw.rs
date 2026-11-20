@@ -188,6 +188,7 @@ impl SceneContribution for Draw {
         pass.set_vertex_buffer(1, prepared.instances.slice(..));
         for (index, body) in (0_u32..).zip(&fleet.current) {
             let vertices = match body.hull {
+                Hull::Craft if !fleet.craft_present => continue,
                 Hull::Craft => &prepared.craft,
                 Hull::Float => &prepared.float,
             };

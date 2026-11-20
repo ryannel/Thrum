@@ -11,7 +11,8 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 RECORDS = {'first-frame': ROOT / 'docs/evidence/WATERS/M2-cost.json',
            'island': ROOT / 'docs/evidence/WATERS/M4-cost.json',
-           'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json'}
+           'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json',
+           'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json'}
 WAKE_HISTORY = ROOT / 'examples/water/tests/fixtures/wake-cost-prior.json'
 WAKE_ROUTE = {'wind': 'trade', 'view': 'overhead', 'speed_mps': 6}
 WAKE_ARMS = {'with-wake': (True, True), 'without-wake': (True, False),
@@ -241,6 +242,87 @@ def measure_wake():
     print(f'PASS paired 1440p Metal wake records: {path.relative_to(ROOT)}')
 
 
+def measure_foam():
+    """Run same-view controls and keep timestamp faults and comparison context."""
+    output = ROOT / 'tmp/waters-M7/cost'
+    output.mkdir(parents=True, exist_ok=True)
+    store = output / 'store'
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+         'cook', 'examples/water/assets', str(store)])
+    env = dict(os.environ, THRUM_WATER_PROOF='cost', THRUM_ASSET_STORE=str(store),
+               THRUM_WATER_FOAM='gale', THRUM_WATER_VIEW='overhead', THRUM_WATER_SPEED='6')
+    for key in ('THRUM_WATER_ISLAND', 'THRUM_WATER_STONE', 'THRUM_WATER_WAKE', 'THRUM_WATER_BODIES'):
+        env.pop(key, None)
+    env['THRUM_WATER_COMMIT'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    prior_sea = json.loads(WAKE_HISTORY.read_text())
+    prior_island = json.loads(RECORDS['island'].read_text())
+    result = {'target': 'mac-metal', 'extent': [2560, 1440], 'capture': False,
+              'commit': env['THRUM_WATER_COMMIT'], 'host': platform.platform(),
+              'load': run(['uptime'], capture_output=True, text=True).stdout.strip(),
+              'comparison': 'Each record includes the gale scene at the same camera and ticks with foam off. Earlier modules measured the overhead sea in trade wind and the island from the hill. Those historical records are kept with their differing forcing or camera.',
+              'prior': {
+                  'sea': {'path': str(WAKE_HISTORY.relative_to(ROOT)), 'route': prior_sea['route'],
+                          'commit': prior_sea['commit'], 'summary': prior_sea['views']['sea']},
+                  'island': {'path': str(RECORDS['island'].relative_to(ROOT)), 'route': prior_island['view'],
+                             'commit': prior_island['commit'], 'summary': prior_island['summary']},
+              }, 'views': {}}
+    for location in ('sea', 'beach'):
+        view = output / location
+        env.update(THRUM_WATER_OUTPUT=str(view), THRUM_WATER_LOCATION=location)
+        run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+             '--test', 'proof_gpu'], env=env)
+        record = json.loads((view / 'cost.json').read_text())
+        assert record['target'] == 'mac-metal' and record['extent'] == [2560, 1440]
+        assert record['capture'] is False and record['commit'] == result['commit']
+        names = ('foam', 'foam-absent', 'water-absent')
+        arms = dict(zip(names, record['arms'], strict=True))
+        counters = [[(f['tick'], f['alpha']) for f in arm['frames']] for arm in arms.values()]
+        assert counters[0] == counters[1] == counters[2]
+        summary = {}
+        for (name, arm), (water, foam) in zip(arms.items(), ((True, True), (True, False), (False, False)), strict=True):
+            assert (arm['water'], arm['foam']) == (water, foam)
+            assert all(('foam' in frame) == foam for frame in arm['frames'])
+            if foam:
+                assert all(frame['foam']['pattern'] is not None for frame in arm['frames'])
+                assert any(frame['foam']['endpoints'][0] < frame['foam']['endpoints'][1] for frame in arm['frames'])
+            summary[name] = wake_summary(arm['frames'])
+            for frame in arm['frames']:
+                if frame['gpu_ms'] is not None:
+                    assert any(label.endswith('shore film') for label in frame['passes_ms']) == (foam and location == 'beach')
+                    assert any(label.endswith('whitewater') for label in frame['passes_ms']) == (foam and frame['tick_frame'])
+        investigations = []
+        for phase in ('step', 'repeat'):
+            active = summary['foam'][phase]
+            control = summary['foam-absent'][phase]
+            empty = summary['water-absent'][phase]
+            if active['completion_upper_ms'] > 1000 / 120 or (active['gpu_ms'] or 0) > 1000 / 120:
+                investigations.append({
+                    'wire': '120 Hz interval', 'phase': phase,
+                    'completion_ms': {name: rows[phase]['completion_upper_ms'] for name, rows in summary.items()},
+                    'water_passes_ms': {label: active['passes_ms'].get(label) for label in ('whitewater', 'shore film', 'water surface')},
+                    'disposition': 'The foam-off arm isolates the film and whitewater changes. The water-off arm measures the same opaque and sky work. Completion includes synchronous observer polling under load.',
+                })
+            if not all(row['timestamped_samples'] == row['samples'] for row in (active, control, empty)):
+                investigations.append({
+                    'wire': 'timestamp availability', 'phase': phase,
+                    'timed': {name: rows[phase]['timestamped_samples'] for name, rows in summary.items()},
+                    'faults': {name: sorted(set(str(frame.get('timing_fault')) for frame in arm['frames'] if frame['gpu_ms'] is None))
+                               for name, arm in arms.items()},
+                    'disposition': 'Compare the presence of the fault in the foam-off and water-off arms. Keep the separate completion brackets where the collector rejects the pass batch.',
+                })
+            for name, elapsed in active['passes_ms'].items():
+                base = control['passes_ms'].get(name, 0)
+                if base > 0.05 and elapsed > 1.25 * base:
+                    investigations.append({'wire': '25 percent paired pass increase', 'phase': phase,
+                                           'pass': name, 'foam_ms': elapsed, 'foam_off_ms': base,
+                                           'disposition': 'Water surface includes pattern and endpoint reads. Common passes in all arms show the step and repeat spread under concurrent load.'})
+        result['views'][location] = {'summary': summary, 'investigations': investigations, 'record': record}
+    path = RECORDS['foam']
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, indent=2) + '\n')
+    print(f'PASS paired 1440p Metal whitewater records: {path.relative_to(ROOT)}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['record', 'check'])
@@ -248,6 +330,9 @@ def main():
     args = parser.parse_args()
     if args.scene == 'wake':
         measure_wake()
+        return
+    if args.scene == 'foam':
+        measure_foam()
         return
     record = RECORDS[args.scene]
     data = measure(args.scene)

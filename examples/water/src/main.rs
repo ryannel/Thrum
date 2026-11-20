@@ -1,7 +1,9 @@
 //! Water example on the engine's normal window and controls.
 fn main() {
     let island = island_preset();
-    let wake = option("wake", "THRUM_WATER_WAKE");
+    let foam = option("foam", "THRUM_WATER_FOAM");
+    let beach = option("location", "THRUM_WATER_LOCATION").as_deref() == Some("beach");
+    let wake = option("wake", "THRUM_WATER_WAKE").or_else(|| foam.clone().filter(|_| !beach));
     let floating = wake
         .clone()
         .or_else(|| option("bodies", "THRUM_WATER_BODIES"));
@@ -10,6 +12,11 @@ fn main() {
     thrum_app::sky::run(
         thrum_app::Config::new("water-scene", "Thrum water"),
         move || {
+            if beach && let Some(wind) = foam.as_deref().and_then(water_scene::island::Wind::named)
+            {
+                return water_scene::island::build_foam(wind, true, true)
+                    .map(|(game, _, _, _)| game);
+            }
             if let Some(wind) = floating
                 .as_deref()
                 .and_then(water_scene::island::Wind::named)
@@ -40,6 +47,7 @@ fn main() {
                             stone: option("stone", "THRUM_WATER_STONE").as_deref() == Some("1"),
                             body_capacity: option("wake-bodies", "THRUM_WATER_WAKE_BODIES")
                                 .and_then(|value| value.parse().ok()),
+                            foam: foam.is_some(),
                             ..Default::default()
                         },
                     )
