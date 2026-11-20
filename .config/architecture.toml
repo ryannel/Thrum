@@ -127,6 +127,7 @@ allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-core"
 [packages.thrum-render]
 manifest = "crates/thrum-render/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core", "thrum-test-support", "thrum-fixtures"]
+implicit_dependencies = { profiling = "Enable native wgpu resource-creation spans for the opt-in creation counter proof" }
 
 [packages.thrum-fixtures]
 manifest = "crates/thrum-fixtures/Cargo.toml"
@@ -245,6 +246,24 @@ requirement = "=1.0.154"
 license = "MIT OR Apache-2.0"
 purpose = "Decode authored scene recipes and controls; write opt-in native profiler evidence and read temporal witnesses"
 target_cost = "Cold scene/control parsing; native profiler evidence serializes only when explicitly requested, four times a second off the render path"
+
+[external_dependencies.profiling]
+requirement = "=1.0.18"
+license = "MIT OR Apache-2.0"
+purpose = "Expose wgpu creation calls as thread-local tracing spans through the native creation-counters feature"
+target_cost = "Optional native diagnostic coverage only; already transitive through wgpu"
+
+[external_dependencies.tracing]
+requirement = "=0.1.44"
+license = "MIT"
+purpose = "Observe actual wgpu creation calls on both threads in the Metal resize test"
+target_cost = "The renderer uses it directly only in tests"
+
+[external_dependencies.tracing-subscriber]
+requirement = "=0.3.23"
+license = "MIT"
+purpose = "Register a test observer of wgpu creation spans for the Metal resize proof"
+target_cost = "Test-only registry without formatting or logging features"
 
 [external_dependencies.rayon]
 requirement = "=1.12.0"

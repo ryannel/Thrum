@@ -36,7 +36,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 pollster = "=1.0.1"
-profiling = { version = "1.0", default-features = false, features = ["profile-with-tracing"], optional = true }
+profiling = { version = "=1.0.18", default-features = false, features = ["profile-with-tracing"], optional = true }
 
 [dev-dependencies]
 thrum-fixtures = { path = "../thrum-fixtures" }
@@ -44,8 +44,8 @@ thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 serde_json = "=1.0.154"
 divan = "=0.1.21"
 pollster = "=1.0.1"
-tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 
 [[bench]]
 name = "extract"
