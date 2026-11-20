@@ -318,7 +318,7 @@
           "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path, which reconfigures at every step?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/M4/missed-display-intervals/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
           "builder_result": "pass"
         },
@@ -376,15 +376,8 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function.",
-      "findings": [
-        {
-          "name": "The sweep cannot account for every configure or missed tick",
-          "item": "D4.6",
-          "repeat": true
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
     },
     {
       "id": "M5",

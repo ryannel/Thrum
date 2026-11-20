@@ -432,7 +432,7 @@
         {
           "verdict": "fail",
           "commit": "c9c13d132b966f3ab651b7bda426192a527ed785",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review-2.md",
           "items": {
             "D4.1": "pass",
             "D4.2": "pass",
@@ -468,6 +468,39 @@
             "turns": 1
           },
           "at": "2026-11-20T06:26:59Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "8d21ee104ab19a957a9abaf1f4f85c1ab6a11ece",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+          "items": {
+            "D4.1": "pass",
+            "D4.2": "pass",
+            "D4.3": "pass",
+            "D4.4": "pass",
+            "D4.5": "pass",
+            "D4.6": "pass",
+            "D4.7": "pass",
+            "D4.8": "pass",
+            "D4.9": "pass",
+            "D4.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 118104,
+            "cached": 2690816,
+            "output": 9966,
+            "turns": 1
+          },
+          "at": "2026-11-20T11:46:06Z"
         }
       ],
       "authorised": {
@@ -506,6 +539,13 @@
           "output": 230585,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8d21ee104ab19a957a9abaf1f4f85c1ab6a11ece",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/M4-review.md",
+        "checked": "db918ef75ea50743ed01eff487989a9aa8513a75",
+        "at": "2026-11-20T11:46:06Z"
       }
     },
     "M5": {
