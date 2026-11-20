@@ -229,8 +229,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/inspection-list.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.2",
@@ -240,8 +240,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/README.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.3",
@@ -250,8 +250,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/layout.log",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.4",
@@ -262,8 +262,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/valley-canonical/run.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.5",
@@ -274,8 +274,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/exit-canonical/run.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.6",
@@ -283,10 +283,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Read this milestone's diff yourself with `git diff`. Regenerated reference images and manifests under a registered `reference`, the registry's `pin` and `refresh` fields and a new entry in `APPLE-TILE`'s log are the refresh this item requires, and are expected in the diff. In `.config/exact-baselines.json`, does the diff change only the `pin` and the `refresh` of baselines whose references moved, each refresh naming `ruling-on-the-valley-fix`, `SHOWCASE` and `M9`? Is every file the registry lists under `comparisons` or `comparison_files` unchanged? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/M9/exact-verifier.json",
-          "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.7",
@@ -296,8 +296,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/route-pins.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.8",
@@ -308,8 +308,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/culling-metal/run.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         },
         {
           "id": "M9.9",
@@ -319,15 +319,23 @@
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/SHOWCASE/M9/culling-chrome/run.json",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome."
+      "status": "in_progress",
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome.",
+      "findings": [
+        {
+          "name": "Fixture relocation changes protected registry fields and a comparison file",
+          "item": "M9.6",
+          "planner": "The required fixture relocation changes the registered input locations. M9.6 freezes those fields and the native comparison driver that resolves the old location. Reconcile the permitted path-only migration with the protection of comparison behavior.",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M7",

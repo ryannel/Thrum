@@ -277,7 +277,48 @@
     },
     "M9": {
       "definitions": "0d4261b79be87bcf5e816704edf9c566c337717a1c5c44e8ead02036f555c7b9",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3a0aebbcf6e97371be0a9343fec75ad5beb62d6b",
+          "review": ".orchestrate/evidence/SHOWCASE/M9-review.md",
+          "items": {
+            "M9.1": "pass",
+            "M9.2": "pass",
+            "M9.3": "pass",
+            "M9.4": "pass",
+            "M9.5": "pass",
+            "M9.6": "fail",
+            "M9.7": "pass",
+            "M9.8": "pass",
+            "M9.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Fixture relocation changes protected registry fields and a comparison file",
+              "item": "M9.6",
+              "planner": "The required fixture relocation changes the registered input locations. M9.6 freezes those fields and the native comparison driver that resolves the old location. Reconcile the permitted path-only migration with the protection of comparison behavior.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 101724,
+            "cached": 1583232,
+            "output": 8040,
+            "turns": 1
+          },
+          "at": "2026-11-20T06:26:02Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes. Resolve its Must Fix",
