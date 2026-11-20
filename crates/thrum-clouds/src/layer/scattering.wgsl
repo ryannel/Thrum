@@ -18,12 +18,14 @@ fn cloud_solar_source(phases:vec2<f32>,sun_depths:vec2<f32>,light_angles:vec3<f3
     let mean=max(0.0,incidence/(2.0*PI)*(1.0-transmitted*(1.0+1.5*x)+(2.0*escape-1.0)*(1.0-remaining)));
     let flow=3.0*incidence/(4.0*PI)*(transmitted-remaining);
     let cosine=light_angles.y;
-    let length_scale=(column+4.0/3.0)/PI;
+    // At the back of a heap, diffuse light escapes across the view boundary
+    // over a longer distance than the projection on the grazing Sun column.
+    let length_scale=(column+4.0/3.0)/PI*mix(1.0,4.0,light_angles.z);
     let view=(1.0-g)*view_depth;
     let depth=select(column-x,x,cosine>0.0);
     let plane_boundary=select(0.0,clamp(1.0-view*abs(cosine)/max(depth,1e-6),0.0,1.0),depth>0.0);
     let free_boundary=boundary*max(plane_boundary,light_angles.z);
     let adjustment=free_boundary*exp(-(2.0/3.0)*view/length_scale)/(2.0/3.0+length_scale);
     let diffuse=(1.0-adjustment*length_scale)*(mean-g*flow*cosine)+g*mean*adjustment*(2.0/3.0);
-    return forward;
+    return forward+max(0.0,diffuse);
 }
