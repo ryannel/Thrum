@@ -143,11 +143,25 @@ PLATFORM = re.compile(r'\b(?:target_os\s*=|target_family\s*=|target_vendor\s*=|(
 PLATFORM_ONLY = re.compile(r'//[ \t]*platform-only tests:[ \t]*\S[^\n]*\n\s*$')
 
 
+def alternatives(cfg):
+    """Top-level arguments of `any(...)`, or the whole condition."""
+    outer = re.fullmatch(r'\s*any\s*\((.*)\)\s*', cfg, re.S)
+    if not outer:
+        return [cfg.strip()]
+    parts, depth, start = [], 0, 0
+    for index, char in enumerate(outer[1]):
+        depth += (char == "(") - (char == ")")
+        if char == "," and depth == 0:
+            parts.append(outer[1][start:index].strip())
+            start = index + 1
+    return parts + [outer[1][start:].strip()]
+
+
 def platform_condition(cfg):
     """True when `cfg(...)` removes the item on some OS even in a test build."""
-    # A top-level `test` alternative keeps the module in every test harness.
-    alternatives = re.fullmatch(r'\s*any\s*\((.*)\)\s*', cfg, re.S)
-    if alternatives and "test" in (part.strip() for part in re.sub(r'\([^()]*\)', '', alternatives[1]).split(",")):
+    # A `test` alternative with no OS term, such as `all(test, not(target_arch = "wasm32"))`,
+    # keeps the module in every operating system's test harness.
+    if any(re.search(r'(?<![\w"])test(?![\w"])', part) and not PLATFORM.search(part) for part in alternatives(cfg)):
         return False
     return bool(PLATFORM.search(cfg))
 

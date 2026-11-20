@@ -16,11 +16,18 @@
 #[cfg(target_os = "macos")]
 mod app;
 /// Bounded submitted-image sink shared by native platform adapters.
-#[cfg(any(test, target_os = "macos", target_os = "ios"))]
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    all(test, not(target_arch = "wasm32"))
+))]
 pub mod capture_writer;
 // Its tests are portable; only the macOS shell uses it.
 #[cfg(any(test, target_os = "macos"))]
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg_attr(
+    not(target_os = "macos"),
+    expect(dead_code, reason = "only the macOS shell starts the watcher")
+)]
 mod file_watch;
 #[cfg(target_os = "macos")]
 mod game;

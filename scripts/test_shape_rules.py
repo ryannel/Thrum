@@ -166,6 +166,8 @@ test_role="fixtures"
         self.write("crates/engine/src/watch/tests.rs", "#[test] fn cpu() {}")
         self.pair("whole-file-gpu-gate", '#[cfg(target_os = "macos")]\nmod watch;',
                   '#[cfg(any(test, target_os = "macos"))]\nmod watch;')
+        self.pair("whole-file-gpu-gate", '#[cfg(any(target_os = "macos", all(test, unix)))]\nmod watch;',
+                  '#[cfg(any(target_os = "macos", all(test, not(target_arch = "wasm32"))))]\nmod watch;')
         self.write("crates/engine/src/shell.rs", "mod inner;")
         self.write("crates/engine/src/shell/inner.rs", "#[tokio::test] async fn cpu() {}")
         self.pair("whole-file-gpu-gate", '#[cfg(target_vendor = "apple")]\npub mod shell;',

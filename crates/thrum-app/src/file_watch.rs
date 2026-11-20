@@ -96,13 +96,24 @@ struct Stamp {
 }
 
 fn stamp(path: &Path) -> Option<Stamp> {
-    use std::os::unix::fs::MetadataExt;
     let metadata = std::fs::metadata(path).ok()?;
     Some(Stamp {
         len: metadata.len(),
         modified: metadata.modified().ok(),
-        inode: metadata.ino(),
+        inode: inode(&metadata),
     })
+}
+
+#[cfg(unix)]
+fn inode(metadata: &std::fs::Metadata) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    metadata.ino()
+}
+
+/// Without a stable file index in std, a rename-save is seen by its length and modification time.
+#[cfg(not(unix))]
+fn inode(_: &std::fs::Metadata) -> u64 {
+    0
 }
 
 impl Watched {
