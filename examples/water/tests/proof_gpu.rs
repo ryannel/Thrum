@@ -111,13 +111,12 @@ fn wake_wind() -> Option<Wind> {
 }
 #[test]
 fn proof_driver() {
-    if std::env::var_os("THRUM_WATER_PROOF").is_none() {
-        return;
-    }
     let Some(gpu) = thrum_test_support::gpu("proof_driver", Some(wgpu::Backend::Metal)) else {
         return;
     };
-    driver(&gpu);
+    if std::env::var_os("THRUM_WATER_PROOF").is_some() {
+        driver(&gpu);
+    }
 }
 #[expect(
     clippy::too_many_lines,
