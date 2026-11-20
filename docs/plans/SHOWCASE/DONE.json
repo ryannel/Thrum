@@ -326,18 +326,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome.",
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "The prescribed orchestrate merge guard needs an exception for the tracked comparison fixtures at their required paths.",
-        "work": {
-          "commit": "769a0928377c92af51f2bd85387d6b1421a0ff38",
-          "branch": "build/showcase",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/SHOWCASE/M9-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: at a low Sun the ground of a ledge is lit evenly out to its edge, and everything the first sunlight reaches throws a long shadow. Judged in words from the running game with reconstruction on, never against a target image. The thin bright line on the far ridge, the warm crest after sunset and the rest of `ATMOSPHERE`'s list are judged in `ATMOSPHERE` M6, with motion and in Chrome."
     },
     {
       "id": "M7",
