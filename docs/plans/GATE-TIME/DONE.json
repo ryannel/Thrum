@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A merge's check no longer runs the ten-minute gale, the stepped hour, the field flythroughs or the shore-blend solve, and they pass on main after each merge",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -16,8 +16,8 @@
           "check": "sh -c 'test \"$(cargo test --locked --offline -p water-scene -p v1-game -p thrum-water-model --tests -- --list --ignored 2>/dev/null | grep -cE \"(^|::)(actual_gale_keeps_the_fleet_in_contact_on_metal|movers_keep_their_authored_loops_after_a_stepped_hour|field_culling_matches_direct_along_the_flythrough|mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough|mixed_mesh_occlusion_matches_bucket_direct_through_first_cut|both_blends_against_component_own_solve_and_nearest_negative_control): test$\")\" -eq 6'",
           "ask": "Compare the six tests with the starting commit: is anything changed but the ignore attribute? Does each reason start `long:` and name the command that runs the test? Is any other test of those files ignored, shortened or removed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M1/ (agent_loop check output); the six tests listed as ignored",
           "verdict": "",
           "review": ""
         },
@@ -27,8 +27,8 @@
           "check": "sh -c './dev help | grep -q long-tests && grep -q \"Main-branch check long-tests:\" ORCHESTRATE.md && git ls-files --error-unmatch .config/long-tests.txt >/dev/null'",
           "ask": "Read the command and the list. Does it run each of the six tests of M1.1, and can it run an ignored test that is not a long test, such as the cooked valley route's? Does it set what makes a GPU test fail where no adapter is found, and use the toolchain `./dev check` uses? Does this milestone's evidence hold one run of the six in release with its wall time? Is any test listed for the debug build, and does the log give its release failure and name its owner? Is the settings line the design's, word for word but for the timeout?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M1/release-run.log and release-run-gpu.log (release run of the six at 79b1fcb7f, wall times)",
           "verdict": "",
           "review": ""
         },
@@ -37,8 +37,8 @@
           "statement": "The six long tests pass in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests",
           "verdict": "",
           "review": ""
         },
@@ -47,8 +47,8 @@
           "statement": "A test marked as a long test cannot run in no tier: `./dev check-docs` fails when a test whose `#[ignore]` reason starts `long:` sits in a test binary the main-tier list does not name, and its message names the test and the list.",
           "ask": "In a scratch copy, mark a test `#[ignore = \"long: probe\"]` in a binary the list does not name and run `./dev check-docs`: does it fail and name the test? Does it still pass for an ignored test whose reason does not start `long:`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M1/m1.5-probe.log",
           "verdict": "",
           "review": ""
         },
@@ -57,8 +57,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M1/ (agent_loop check output)",
           "verdict": "",
           "review": ""
         }

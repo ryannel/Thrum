@@ -4,6 +4,7 @@ use support::shore::{bed, config};
 use thrum_water_model::{Lag, ShoreTransform};
 
 #[test]
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn both_blends_against_component_own_solve_and_nearest_negative_control() {
     for slope in [10.0, 30.0] {
         // Narrow alongshore dimension would let zero-lag side sources erase the

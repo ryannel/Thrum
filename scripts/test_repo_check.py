@@ -150,6 +150,39 @@ class RepositoryChecks(unittest.TestCase):
             self.assertEqual(repo_check.check_manifest_inventory(root, metadata),
                              ["unregistered package manifest: crates/new_module/Cargo.toml"])
 
+    def test_long_test_must_sit_in_a_listed_binary_that_holds_only_long_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            tests = root / "crates" / "core" / "tests"
+            (tests / "support").mkdir(parents=True)
+            soak = tests / "support" / "soak.rs"
+            soak.write_text("mod fly;\n#[test]\nfn quick() {}\n")
+            (tests / "support" / "fly.rs").write_text(
+                "#[test]\n#[ignore = \"long: ./dev long-tests runs it\"]\nfn hour() {}\n")
+            other = tests / "other.rs"
+            other.write_text("#[test]\n#[ignore = \"needs a cooked store\"]\nfn cooked() {}\n")
+            metadata = {"workspace_members": ["core"], "packages": [{
+                "id": "core", "name": "core", "targets": [
+                    {"kind": ["test"], "name": "soak", "src_path": str(soak)},
+                    {"kind": ["test"], "name": "other", "src_path": str(other)}]}]}
+            listed = "# comment\ncore soak release\n"
+            check = repo_check.check_long_tests
+            self.assertEqual(check(root, metadata, listed), [])
+            unlisted = check(root, metadata, "")
+            self.assertEqual(len(unlisted), 1)
+            self.assertIn("crates/core/tests/support/fly.rs:2: long test hour", unlisted[0])
+            self.assertIn(".config/long-tests.txt", unlisted[0])
+            other.write_text("#[test]\n#[ignore = \"long: probe\"]\nfn probe() {}\n")
+            self.assertTrue(any("long test probe" in e for e in check(root, metadata, listed)))
+            soak.write_text("mod fly;\n#[test]\n#[ignore = \"measurement\"]\nfn timing() {}\n")
+            other.write_text("")
+            mixed = check(root, metadata, listed)
+            self.assertEqual(len(mixed), 1)
+            self.assertIn("ignored test timing is in core soak", mixed[0])
+            malformed = check(root, metadata, "core soak fast\ncore gone debug\n")
+            self.assertIn(".config/long-tests.txt:1: expected `<package> <test binary> release|debug`", malformed)
+            self.assertIn(".config/long-tests.txt: core has no test binary gone", malformed)
+
     def test_ios_runtime_closure_rejects_authoring_and_sqlite(self):
         tree = "v1-game-ios v0.1.0\nv1-game v0.1.0\nthrum-cook v0.1.0\nthrum-source v0.1.0\nrusqlite v0.40.2\nlibsqlite3-sys v0.38.0\n"
         with patch.object(repo_check.subprocess, "run") as run:

@@ -61,6 +61,7 @@ struct BodyRecord {
 }
 
 #[test]
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn actual_gale_keeps_the_fleet_in_contact_on_metal() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "actual_gale_keeps_the_fleet_in_contact_on_metal",

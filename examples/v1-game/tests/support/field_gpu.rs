@@ -11,6 +11,7 @@
 mod field_fly;
 
 #[test]
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn field_culling_matches_direct_along_the_flythrough() {
     field_fly::fly(
         "field_culling_matches_direct_along_the_flythrough",
@@ -20,6 +21,7 @@ fn field_culling_matches_direct_along_the_flythrough() {
 }
 
 #[test]
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough() {
     field_fly::fly(
         "mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough",

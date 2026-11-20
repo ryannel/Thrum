@@ -319,6 +319,87 @@ def check_rust_layout(root, files):
     return errors, notes
 
 
+LONG_TESTS = ".config/long-tests.txt"
+REASONED_IGNORE = re.compile(r'#\[ignore\s*=\s*"((?:[^"\\]|\\.)*)"\s*\]')
+MOD_DECLARATION = re.compile(r'((?:#\[path\s*=\s*"([^"]+)"\]\s*)?)(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*;')
+
+
+def long_test_list(text):
+    """Parse the main-tier list into ({(package, binary)}, errors)."""
+    listed, errors = set(), []
+    for number, line in enumerate(text.splitlines(), 1):
+        fields = line.split("#", 1)[0].split()
+        if not fields:
+            continue
+        if len(fields) != 3 or fields[2] not in {"release", "debug"}:
+            errors.append(f"{LONG_TESTS}:{number}: expected `<package> <test binary> release|debug`")
+            continue
+        listed.add((fields[0], fields[1]))
+    return listed, errors
+
+
+def module_files(root_file):
+    """The root file of a test binary and every file its `mod name;` declarations reach."""
+    seen, pending = [], [root_file]
+    while pending:
+        path = pending.pop()
+        if path in seen or not path.is_file():
+            continue
+        seen.append(path)
+        text = path.read_text(encoding="utf-8")
+        own = path.parent if path == root_file or path.name == "mod.rs" else path.parent / path.stem
+        for match in MOD_DECLARATION.finditer(text):
+            if match.group(2):
+                pending.append((path.parent / match.group(2)).resolve())
+            else:
+                pending += [own / f"{match.group(3)}.rs", own / match.group(3) / "mod.rs"]
+    return seen
+
+
+def check_long_tests(root, metadata, list_text):
+    """A long test runs in a binary the main-tier list names, and a listed binary holds only long tests.
+
+    `./dev long-tests` runs every ignored test of each listed binary, so a long test outside the list
+    runs in no tier, and another ignored test inside it would join the main tier unnoticed.
+    """
+    listed, errors = long_test_list(list_text)
+    members = set(metadata["workspace_members"])
+    binaries = {}  # file -> {(package, binary)}
+    targets = set()
+    for package in metadata["packages"]:
+        if package["id"] not in members:
+            continue
+        for target in package["targets"]:
+            if "test" not in target["kind"]:
+                continue
+            targets.add((package["name"], target["name"]))
+            for path in module_files(Path(target["src_path"]).resolve()):
+                binaries.setdefault(path, set()).add((package["name"], target["name"]))
+    for package, binary in sorted(listed - targets):
+        errors.append(f"{LONG_TESTS}: {package} has no test binary {binary}")
+    for path in rust_files(root):
+        text = path.read_text(encoding="utf-8")
+        if "#[ignore" not in text:
+            continue
+        relative = path.relative_to(root).as_posix()
+        holders = binaries.get(path.resolve(), set())
+        for match in REASONED_IGNORE.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            name = re.search(r"fn\s+(\w+)", text[match.end():])
+            name = name.group(1) if name else "?"
+            if match.group(1).startswith("long:"):
+                if not holders & listed:
+                    errors.append(
+                        f"{relative}:{line}: long test {name} is in no test binary {LONG_TESTS} names, so it runs in "
+                        "no tier; list its binary there or drop `long:` from its reason")
+            elif holders & listed:
+                found = ", ".join(" ".join(pair) for pair in sorted(holders & listed))
+                errors.append(
+                    f"{relative}:{line}: ignored test {name} is in {found}, which {LONG_TESTS} names, so "
+                    "`./dev long-tests` would run it; only a test whose reason starts `long:` may sit there")
+    return errors
+
+
 def markdown_files(root):
     result = []
     for directory, names, files in os.walk(root):
@@ -357,6 +438,7 @@ def main():
     errors += check_ios_runtime_closure(ROOT, channel)
     errors += check_unused_direct_dependencies(metadata, policy)
     errors += check_manifest_inventory(ROOT, metadata)
+    errors += check_long_tests(ROOT, metadata, (ROOT / LONG_TESTS).read_text(encoding="utf-8"))
     if errors:
         print("\n".join(sorted(set(errors))), file=sys.stderr)
         return 1

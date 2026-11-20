@@ -116,6 +116,7 @@ fn corrected_exit_replays_complete_authority() {
 }
 
 #[test]
+#[ignore = "long: `./dev long-tests` runs it on main, from .config/long-tests.txt"]
 fn movers_keep_their_authored_loops_after_a_stepped_hour() {
     let mut sim = exit_authority().expect("exit authority");
     let duration = 3_600 * u64::from(sim.tick_hz().get());

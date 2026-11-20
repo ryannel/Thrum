@@ -279,6 +279,93 @@ fn scene(root: &Path, folder: &str) -> TaskResult {
     Ok(())
 }
 
+/// One test binary of the main-tier list: `<package> <test binary> <build>`.
+struct LongTestBinary {
+    package: String,
+    binary: String,
+    release: bool,
+}
+
+fn long_test_list(text: &str) -> Result<Vec<LongTestBinary>, String> {
+    let mut list = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        let line = line.split('#').next().unwrap_or_default().trim();
+        if line.is_empty() {
+            continue;
+        }
+        let fields: Vec<&str> = line.split_whitespace().collect();
+        let release = match fields.as_slice() {
+            [_, _, "release"] => true,
+            [_, _, "debug"] => false,
+            _ => {
+                return Err(format!(
+                    ".config/long-tests.txt:{}: expected `<package> <test binary> release|debug`",
+                    index + 1
+                ));
+            }
+        };
+        list.push(LongTestBinary {
+            package: fields[0].into(),
+            binary: fields[1].into(),
+            release,
+        });
+    }
+    Ok(list)
+}
+
+/// Runs the ignored tests of every binary on the main-tier list, each binary once, and fails
+/// if any fails. A GPU is required, so a test that finds no adapter fails rather than skips.
+fn long_tests() -> TaskResult {
+    let list = long_test_list(&std::fs::read_to_string(".config/long-tests.txt")?)?;
+    let mut failed = Vec::new();
+    for entry in &list {
+        let mut args = vec!["test", "--locked", "--offline"];
+        if entry.release {
+            args.push("--release");
+        }
+        args.extend([
+            "-p",
+            &entry.package,
+            "--test",
+            &entry.binary,
+            "--",
+            "--ignored",
+        ]);
+        let status = Command::new(env!("CARGO"))
+            .args(&args)
+            .env("THRUM_REQUIRE_GPU", "1")
+            .env("CARGO_INCREMENTAL", "0")
+            // Release keeps overflow checks; debug assertions stay off, as the flythroughs
+            // choose their length by them.
+            .env("CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS", "true")
+            .status()?;
+        if !status.success() {
+            failed.push(format!("{} {}", entry.package, entry.binary));
+        }
+    }
+    if !failed.is_empty() {
+        return Err(format!("long tests failed: {}", failed.join(", ")).into());
+    }
+    Ok(())
+}
+
+/// `./dev help`, one command to a line so that edits to different commands merge cleanly.
+const HELP: &[&str] = &[
+    "Thrum contributor commands:",
+    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy",
+    "  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it",
+    "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
+    "  long-tests             The main tier's long tests from .config/long-tests.txt, a GPU required; the main-branch check long-tests runs it",
+    "  check-docs             Links, metadata, design hashes and crate policy",
+    "  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac",
+    "  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown",
+    "  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android",
+    "  fmt                    Apply rustfmt",
+    "  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)",
+    "  starter [--web]        The same for examples/starter; --web serves Chrome",
+    "  refresh-design-hashes  Refresh current digests after reviewing design changes",
+];
+
 #[expect(
     clippy::print_stdout,
     reason = "the contributor CLI's help command intentionally writes to stdout"
@@ -305,10 +392,9 @@ fn main() -> TaskResult {
         return Err("expected one command; see ./dev help".into());
     }
     match args.first().map_or("help", String::as_str) {
-        "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it\n  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter [--web]        The same for examples/starter; --web serves Chrome\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
-        ),
+        "help" | "--help" | "-h" => println!("{}", HELP.join("\n")),
         "check-docs" => python(&["scripts/repo_check.py"])?,
+        "long-tests" => long_tests()?,
         "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
         "fmt" => cargo(&["fmt", "--all"])?,
