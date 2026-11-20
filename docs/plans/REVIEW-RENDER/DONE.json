@@ -77,7 +77,7 @@
     {
       "id": "M2",
       "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -122,7 +122,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-sky-lut-zenith-row",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
         },
         {
@@ -134,14 +134,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Sky LUT zenith row is hard-coded in the production shader",
-          "item": "M2.4",
-          "different": "The reported Earth density, night altitude, luminance, dispatch, selector, solar tangent and binding-span sites are repaired. This defect is the sky LUT producer\u2019s last-row index, which still embeds the Rust-owned texture height minus one.",
-          "repeat": false
         }
       ]
     },
