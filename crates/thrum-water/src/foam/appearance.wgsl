@@ -63,7 +63,17 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let caps = wind * gaussian_lower_tail((0.82 - mix(jacobian, 1.0, smoothstep(1.0, 9.0, footprint))) / sqrt(variance));
     let shore = 1.0 - exp(-1.65 * row.loss);
     let far = vec4(0.04 * caps, 0.08 * caps, 0.10 * caps + 0.34 * shore, 0.0);
-    let stocks = foam_at(point.xz, far);
+    var stocks = foam_at(point.xz, far);
+    // Dense shallow-water foam still leaves gaps between groups of bubbles.
+    // Weight the coarse breakup by depth-limited power so offshore caps
+    // and the hull's own film keep their contact profile.
+    let shore_mix = smoothstep(0.16, 0.95, row.loss);
+    if shore_mix > 0.0 {
+        let holes = foam_noise(point.xz * vec2(0.65, 1.18));
+        let porous = mix(0.23, 0.83, smoothstep(0.24, 0.78, holes));
+        let cover = stocks.yz * mix(1.0, porous, shore_mix);
+        stocks = vec4(stocks.x, cover, stocks.w);
+    }
     return vec4(stocks.x, ranked_cover(stocks, point.xz, footprint), stocks.zw);
 }
 
@@ -105,5 +115,5 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let light = mix(sky, 0.24 * incident, foam);
     let air = environment_aerial(ground, uv);
     let colour = (light * air.transmission + air.scatter) * environment_storage_scale();
-    return Output(vec4(colour, sheen * clamp(fresnel * 0.34 + foam, 0.0, 1.0)), vec2(0.0), 0.0);
+    return Output(vec4(colour, sheen * clamp(fresnel * 0.56 + foam, 0.0, 1.0)), vec2(0.0), 0.0);
 }
