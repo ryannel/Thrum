@@ -243,10 +243,10 @@
           "statement": "In real time in Chrome the movers glide and overlaps hold still, as on the Mac.",
           "inspect": "Capture the same field in Chrome with T2 engine capture in `realtime` mode for at least twenty seconds. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/M2/chrome-realtime-adjacent/inspection.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.10",

@@ -139,6 +139,7 @@ pub struct SpriteSink<'a> {
     source: SourceTick,
 }
 
+#[derive(Clone, Copy)]
 enum PreviousPose {
     Retained,
     Published(Option<SpritePose>),

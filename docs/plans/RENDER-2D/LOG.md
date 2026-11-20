@@ -87,3 +87,8 @@
   purple sprite through the crossing, with fractional-alpha motion and zero world-clock overloads.
   The [M2 evidence](../../../.orchestrate/evidence/RENDER-2D/M2/README.md) includes both realtime sequences,
   two release cost takes per target, and tripwires observed under load.
+- 2026-11-20 M2.9 now extracts adjacent poses from the tick page when Chrome misses a publication.
+  Metal readback verified the pose pair and the committed-pose fallbacks after rewind and slot reuse.
+  Chrome replayed the original crossing and verified a 22-second realtime take against hashes saved
+  before the browser spool write. The [evidence](../../../.orchestrate/evidence/RENDER-2D/M2/chrome-realtime-adjacent/inspection.md)
+  includes the crossing, elapsed-time playback and the download-integrity control.
