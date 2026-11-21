@@ -316,7 +316,7 @@
     {
       "id": "M2",
       "name": "Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -330,8 +330,8 @@
           "statement": "`thrum-water`'s swash test runs in one test binary, where it ran in two.",
           "check": "sh -c 'test \"$(cargo test --locked --offline -p thrum-water -- --list 2>/dev/null | grep -c \"submitted_depth_waterline_matches_the_cpu_wave_at_display_time: test\")\" -eq 1'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "tmp/gate-time-m2/record.md#m21-the-swash-test-runs-in-one-binary (gate-time worktree); agent_loop check at db3a87e71",
           "verdict": "",
           "review": ""
         },
@@ -342,8 +342,8 @@
           "ask": "How many times does `cargo test -p thrum-clouds` now run the weather loop and the Sun-path checks: once on the native device and once on default limits? Take the weather-map, Sun-path and continuity assertions of the four old files: is each still made in one of the two runs?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "tmp/gate-time-m2/record.md#m22-the-cloud-conformance-runs-once-native-once-on-default-limits (gate-time worktree); agent_loop check at db3a87e71, gpu lock",
           "verdict": "",
           "review": ""
         },
@@ -353,8 +353,8 @@
           "check": "sh -c '! git grep -q \"fn mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough\" -- crates examples && git grep -q \"fn mixed_mesh_occlusion_matches_bucket_direct_through_first_cut\" -- examples && git grep -q \"fn field_culling_matches_direct_along_the_flythrough\" -- examples'",
           "ask": "Does the occlusion flythrough still run the frustum host and assert on it exactly as the deleted test did? Do the two tests left build into one binary, are both still ignored as long tests, and does the list of `./dev long-tests` name that binary and no binary that is gone?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "tmp/gate-time-m2/record.md#m23-the-frustum-only-mixed-mesh-flythrough-is-gone (gate-time worktree); agent_loop check at db3a87e71",
           "verdict": "",
           "review": ""
         },
@@ -363,8 +363,8 @@
           "statement": "The older copy of the cloud display-phase test is gone, and the display-phase test that `CLOUDS` M2.11 replaced it with is unchanged.",
           "check": "sh -c 'test -z \"$(git ls-files \":(glob)examples/**/clouds_display_time_gpu.rs\")\" && test -n \"$(git ls-files \":(glob)examples/**/clouds_display_phase_gpu.rs\")\"'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "tmp/gate-time-m2/record.md#m24-the-older-display-phase-copy-is-gone (gate-time worktree); agent_loop check at db3a87e71",
           "verdict": "",
           "review": ""
         },
@@ -375,8 +375,8 @@
           "ask": "Is any f64 path tracer, quadrature or random-walk reference still compiled by `./dev check`? Does the night test assert what it asserted at the starting commit? Which test runs the twilight guard now, and are its three expected values, its 2.5% bound and its atlas-plane checks the ones the starting commit held, with nothing recomputed?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "tmp/gate-time-m2/record.md#m25-the-atmospheres-monte-carlo-reference-is-out-of-the-tree (gate-time worktree); agent_loop check at db3a87e71, gpu lock",
           "verdict": "",
           "review": ""
         },
@@ -385,8 +385,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
