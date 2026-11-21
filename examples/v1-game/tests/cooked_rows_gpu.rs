@@ -8,8 +8,8 @@ use thrum_asset_gpu::{
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::runtime::{FrameConfig, FrameHost, PreparedVisual, VisualPrepareInputs};
-use thrum_render::synthetic::{FrameLighting, PhotometricEnvironment};
 use thrum_render::synthetic::mesh_rows::{MeshRowError, MeshRowGeometry};
+use thrum_render::synthetic::{FrameLighting, PhotometricEnvironment};
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
 use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
 

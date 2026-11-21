@@ -41,11 +41,11 @@ pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera}
 pub use content::attach_cooked_scene_with_probe;
 #[cfg(not(target_arch = "wasm32"))]
 pub use content::{CloudQualityError, apply_cloud_quality, attach_cooked_scene, selected_setup};
+#[cfg(not(target_arch = "wasm32"))]
+pub use host::WorldControls;
 #[doc(hidden)]
 pub use host::field_in_view_share;
 pub use host::{ExitEntities, GameHost, GameScene, GameSetup, GameWorld, MeshRowSource};
-#[cfg(not(target_arch = "wasm32"))]
-pub use host::WorldControls;
 pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]
 pub use scene::{exit_authority, simulation_with_count};
