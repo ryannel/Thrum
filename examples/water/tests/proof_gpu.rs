@@ -6,107 +6,94 @@ mod support;
 use serde_json::json;
 use std::{path::PathBuf, time::Duration};
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
-use water_scene::floating::WhitewaterDemo;
 use water_scene::island::Wind;
+use water_scene::settings::{Floating, Settings};
 
 fn island_wind() -> Option<Wind> {
-    if std::env::var("THRUM_WATER_LOCATION").is_ok_and(|value| value == "beach") {
-        return foam_wind();
+    match Settings::from_env() {
+        Settings::Island { wind, .. } => Some(wind),
+        _ => None,
     }
-    std::env::var("THRUM_WATER_ISLAND")
-        .ok()
-        .as_deref()
-        .and_then(Wind::named)
+}
+
+fn floating() -> Option<Floating> {
+    match Settings::from_env() {
+        Settings::Floating(floating) => Some(floating),
+        _ => None,
+    }
+}
+
+/// The wake route, chosen by a wake or by foam away from the beach.
+fn wake_route() -> bool {
+    floating().is_some_and(|floating| floating.wake.is_some())
+}
+
+/// Transported whitewater, on the beach or on the wake route.
+fn whitewater() -> bool {
+    match Settings::from_env() {
+        Settings::Island { foam, .. } => foam,
+        Settings::Floating(floating) => floating.wake.is_some_and(|wake| wake.whitewater),
+        Settings::OpenSea => false,
+    }
 }
 
 fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedReport) {
-    if let Some(wind) = floating_wind() {
-        let scene = floating_game(wind, water, water, foam_wind().is_some());
-        return (scene.game, scene.report);
-    }
-    if let Some(wind) = island_wind() {
-        let (game, report, _, _) =
-            water_scene::island::build_foam(wind, water, foam_wind().is_some()).expect("island");
-        (game, report)
-    } else {
-        water_scene::build_paired(
+    match Settings::from_env() {
+        Settings::Floating(floating) => {
+            let scene = floating_game(floating, water, water, whitewater());
+            (scene.game, scene.report)
+        }
+        Settings::Island { wind, foam } => {
+            let (game, report, _, _) =
+                water_scene::island::build_foam(wind, water, foam).expect("island");
+            (game, report)
+        }
+        Settings::OpenSea => water_scene::build_paired(
             std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
             water,
         )
-        .expect("open sea")
+        .expect("open sea"),
     }
 }
 
+/// Build one arm of the floating scene: `wake` and `foam` switch the producers off for a paired arm.
 fn floating_game(
-    wind: Wind,
+    floating: Floating,
     water: bool,
     wake: bool,
     foam: bool,
 ) -> water_scene::floating::FloatingScene {
-    let speed = std::env::var("THRUM_WATER_SPEED")
-        .expect("craft speed")
-        .parse()
-        .expect("valid speed");
-    let view = std::env::var("THRUM_WATER_VIEW").unwrap_or_default();
-    let chase = view == "chase";
-    if wake_wind().is_some() || foam_wind().is_some() {
-        let lake = std::env::var("THRUM_WATER_LOCATION").is_ok_and(|v| v == "lake");
+    let Floating {
+        wind,
+        lake,
+        speed,
+        heading,
+        chase,
+        ..
+    } = floating;
+    if let Some(route) = floating.wake {
+        let cooked = std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some();
+        let demo = water_scene::settings::Wake {
+            whitewater: foam,
+            ..route
+        }
+        .demo(cooked);
         return water_scene::floating::build_wake_paired(
             wind,
             lake,
             speed,
-            std::f32::consts::PI,
+            heading,
             water_scene::floating::WakeDemo {
-                view: water_scene::floating::WakeView::named(&view),
-                stone: std::env::var_os("THRUM_WATER_STONE").is_some(),
                 disabled: !wake,
-                body_capacity: None,
-                whitewater: match (
-                    foam,
-                    std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
-                ) {
-                    (false, _) => WhitewaterDemo::Off,
-                    (true, false) => WhitewaterDemo::Procedural,
-                    (true, true) => WhitewaterDemo::Cooked,
-                },
-                whitewater_lighting: foam_wind().is_some(),
+                whitewater_lighting: route.whitewater,
+                ..demo
             },
             water,
         )
         .expect("wake scene");
     }
-    let heading = if chase {
-        std::f32::consts::FRAC_PI_2
-    } else {
-        std::f32::consts::PI
-    };
-    water_scene::floating::build_paired(wind, false, speed, heading, chase, water)
+    water_scene::floating::build_paired(wind, lake, speed, heading, chase, water)
         .expect("floating scene")
-}
-
-fn floating_wind() -> Option<Wind> {
-    let foam =
-        foam_wind().filter(|_| !std::env::var("THRUM_WATER_LOCATION").is_ok_and(|v| v == "beach"));
-    foam.or_else(wake_wind).or_else(|| {
-        std::env::var("THRUM_WATER_BODIES")
-            .ok()
-            .as_deref()
-            .and_then(Wind::named)
-    })
-}
-
-fn foam_wind() -> Option<Wind> {
-    std::env::var("THRUM_WATER_FOAM")
-        .ok()
-        .as_deref()
-        .and_then(Wind::named)
-}
-
-fn wake_wind() -> Option<Wind> {
-    std::env::var("THRUM_WATER_WAKE")
-        .ok()
-        .as_deref()
-        .and_then(Wind::named)
 }
 thrum_test_support::macos_gpu_test! {
 fn proof_driver() {
@@ -136,8 +123,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
-    let mut fixture = if let Some(wind) = floating_wind() {
-        let scene = floating_game(wind, true, true, foam_wind().is_some());
+    let mut fixture = if let Some(floating) = floating() {
+        let scene = floating_game(floating, true, true, whitewater());
         support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
     } else if island_wind().is_some() {
         let (game, report) = proof_game(true);
@@ -168,8 +155,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     match mode.as_str() {
         "cost" => {
             let mut arms = Vec::new();
-            let wake = wake_wind().is_some();
-            let whitewater = foam_wind().is_some();
+            let wake = wake_route();
+            let whitewater = whitewater();
             let beach = island_wind().is_some();
             let variants: &[(bool, bool, bool)] = if whitewater {
                 &[
@@ -187,8 +174,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 &[(true, false, false), (false, false, false)]
             };
             for &(present, interaction, foam) in variants {
-                let mut fixture = if let Some(wind) = floating_wind() {
-                    let scene = floating_game(wind, present, interaction, foam);
+                let mut fixture = if let Some(floating) = floating() {
+                    let scene = floating_game(floating, present, interaction, foam);
                     let mut fixture =
                         support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report);
                     if foam && std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some() {
@@ -243,7 +230,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 } else {
                     0
                 };
-                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating_wind().is_none(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
+                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating().is_none(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
                 if wake || whitewater {
                     arm["wake"] = json!(interaction);
                     let report = fixture.report.lock().expect("water report");
@@ -273,7 +260,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 ("low-sun", 2, 90, 6),
                 ("twilight", 2, 90, -4),
             ];
-            let checkpoints: Vec<_> = if foam_wind().is_some() {
+            let checkpoints: Vec<_> = if whitewater() {
                 let beach = island_wind().is_some();
                 let views: &[(&str, u32)] = if beach {
                     &[("beach", 0), ("overhead", 6), ("lake", 1)]
@@ -319,7 +306,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             };
             for (session, (name, params, time)) in (2_u64..).zip(checkpoints) {
                 fixture.parameters(&params);
-                if foam_wind().is_some() {
+                if whitewater() {
                     let steps = if name.ends_with("-0") { 72 } else { 7 };
                     for index in (1..=steps).rev() {
                         fixture.frame_without_timings(time - f64::from(index) * 0.10);

@@ -12,7 +12,7 @@ use thrum_water_model::{Bed, Body, BodyKind, Map, Profile, Stage};
 use crate::{SharedMap, SharedReport};
 
 /// Weather selected when the island is loaded.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Wind {
     /// Motionless water for shoreline inspection.
     Calm,

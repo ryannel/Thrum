@@ -39,6 +39,12 @@ reserve and a 6 GiB raw-spool allowance; these are observer resources, absent fr
 Neither route
 captures the desktop or proves physical display cadence.
 
+The proof reads the scene variables below through the same parse as the window and the page, the
+`settings` module, so it captures the scene `./dev scene` opens with the same variables. Its own
+variables say where it writes and what it records: `THRUM_WATER_PROOF`, `_OUTPUT`, `_COMMIT`,
+`_ROUTE` and `_RECIPE`. A realtime island capture chooses its camera index with
+`THRUM_WATER_ISLAND_CAMERA` (0 by default).
+
 For a portable Metal comparison, set `THRUM_RECIPE=portable THRUM_WATER_RECIPE=portable`
 on the fixed capture.
 

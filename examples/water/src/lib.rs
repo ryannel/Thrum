@@ -1,6 +1,7 @@
 //! Game content and controls for the water example. The engine contains no sea preset.
 pub mod floating;
 pub mod island;
+pub mod settings;
 use std::{
     error::Error,
     sync::{Arc, Mutex},
