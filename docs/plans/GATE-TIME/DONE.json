@@ -451,8 +451,8 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py'",
           "ask": "Read the rule's fixtures: do they cover a name added, a name removed, an override that exempts a whole binary, and a default limit raised? In a scratch copy, add a test's name to an exempt override, then raise the default limit: does `./dev check-docs` fail each time, with a message whose link lands on an entry that exists?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/M12/fix-round-trials.log (default-deleted, default-subtable-30x4)",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
@@ -473,8 +473,8 @@
           "check": "sh -c 'test -s .config/unplanned-test-binaries.txt && python3 scripts/shape_rules.py check --rule test-binary && python3 scripts/test_shape_rules.py'",
           "ask": "In a scratch copy, add a test file to a package whose test files Cargo finds, and a `[[test]]` entry to one that lists them: does `./dev check-docs` fail each time and name the target? Give an open done-when item a check that runs one of them with `--test`: does it pass? Add the other's name to the list: does that fail too? Does a helper module that a test file declares, or a file under `tests/` that is a module of another target, count as a target? Is every line of the list a target that exists and that no plan names?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/M12/fix-round-trials.log (same-name-new-file, same-name-conformance, visibility-line-removed, named-by-p-in-open-item)",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
