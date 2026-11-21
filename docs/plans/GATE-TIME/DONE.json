@@ -119,7 +119,7 @@
     {
       "id": "M8",
       "name": "A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -222,7 +222,17 @@
           "item": "M8.4",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "the render runtime's owner makes `FrameHost::capture_pixels` keep polling until its readback arrives or `GPU_WAIT` runs out; then this branch merges as it is.",
+        "work": {
+          "commit": "1750e054ab2b2b33ba68745b6d439eb3b880d94d",
+          "branch": "build/gate-time",
+          "pushed": true
+        },
+        "handoff": ".orchestrate/evidence/GATE-TIME/M8-handoff.md"
+      }
     },
     {
       "id": "M7",
