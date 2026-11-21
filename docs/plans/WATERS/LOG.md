@@ -540,3 +540,11 @@
   is also broken by world-space bubble clouds. Verified on Metal: the foam suites pass and captures at both speeds
   and headings show no straight-edged tint. Not verified: the whitewater step's cost rises with the four-fold
   cell count, which the M7.12 record retakes. [Target evidence](../../../.orchestrate/evidence/WATERS/M7/HALO.md).
+
+- 2026-11-21 Fixed M7.7's straight line where gale whitecaps met the coarse foam window. Past that window the
+  estimator now carries the open-sea mean the coarse level holds, measured each step in a ring inside its edge,
+  and hands over across 80 m rather than 28 m. Gale cover had also saturated near 73%; a breaking onset of 0.76
+  holds it near 43%, with 36% in a strong breeze and 14% in a trade wind. Verified on Metal: all foam suites pass,
+  and 40 m and 2 m captures show no line in any wind. Chrome's foam check passes. Design proposal: the design's
+  stateless far estimator now carries that one measured mean per endpoint.
+  [Target evidence](../../../.claude/worktrees/waters/tmp/waters-m7-r4/README.md).

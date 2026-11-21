@@ -60,7 +60,18 @@ fn foam_level(point: vec2<f32>, endpoint: u32, level: u32) -> vec4<f32> {
 fn foam_edge(point: vec2<f32>, endpoint: u32, level: u32) -> f32 {
     let p = point / FOAM_SPACING[level] - vec2<f32>(foam_settings.origins[2u * endpoint + level].xy);
     let edge = min(p, vec2(f32(FOAM_SIDE)) - p);
-    return smoothstep(1.0, 14.0, min(edge.x, edge.y));
+    // The coarse level hands over to the far estimator over 80 m, which
+    // spans many rows even from high above the sea.
+    return smoothstep(1.0, select(14.0, 40.0, level == 1u), min(edge.x, edge.y));
+}
+// The mean open-sea stocks the coarse level held at each endpoint, with a
+// weight of one once measured. They follow the two banks of cells.
+fn foam_held_index(bank: u32) -> u32 {
+    return 4u * u32(FOAM_SIDE * FOAM_SIDE) + bank;
+}
+fn foam_held() -> vec4<f32> {
+    return mix(foam_stocks[foam_held_index(foam_settings.banks.x)],
+        foam_stocks[foam_held_index(foam_settings.banks.y)], foam_settings.time_wind.y);
 }
 fn foam_endpoint(point: vec2<f32>, endpoint: u32, far: vec4<f32>) -> vec4<f32> {
     let fine_weight = foam_edge(point, endpoint, 0u);

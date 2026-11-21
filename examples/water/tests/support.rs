@@ -342,7 +342,10 @@ fn half_value(bits: u16) -> f32 {
 }
 
 pub(crate) fn foam_stocks(fixture: &Fixture, point: &thrum_water::foam::Witness) -> Vec<[f32; 4]> {
-    foam_buffer(fixture, &point.buffer)
+    // Two banks of two levels; the held far-sea means that follow are not stocks.
+    let mut cells = foam_buffer(fixture, &point.buffer);
+    cells.truncate(4 * (point.side * point.side) as usize);
+    cells
 }
 
 pub(crate) fn foam_buffer<T: bytemuck::Pod>(fixture: &Fixture, buffer: &wgpu::Buffer) -> Vec<T> {

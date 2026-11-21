@@ -108,8 +108,10 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             let compression = d.x * d.z - d.y * d.y;
             let wind = foam_settings.time_wind.zw;
             let crest = smoothstep(-0.08, 0.30, wave.height / max(water.scatter.w, 0.001));
-            let whitecap = 2.6 * pow(smoothstep(5.0, 18.0, length(wind)), 1.30) * crest *
-                pow(max(0.0, 0.88 - compression), 1.18);
+            // The onset lies well short of the fold, so a gale's held cover
+            // keeps open water between caps and their streaks.
+            let whitecap = 2.6 * pow(smoothstep(5.0, 18.0, length(wind)), 0.80) * crest *
+                pow(max(0.0, 0.76 - compression), 1.18);
             let hull = hull_births(point, row.row.water.yz, spacing);
             let wake_break = 0.6 * max(0.0, length(wake.yz) - 0.46) *
                 (1.0 - hull.z) * smoothstep(0.08, 0.30, abs(wake.w));
@@ -164,4 +166,38 @@ fn step_foam(@builtin(global_invocation_id) id: vec3<u32>) {
     }
     let film = sum.yz / max(1.0, sum.y + sum.z);
     foam_stocks[foam_index(foam_settings.banks.y, level, local)] = clamp(vec4(sum.x, film, sum.w), vec4(0.0), vec4(1.0));
+}
+
+// Beyond the coarse level the surface continues the cover the level holds.
+// Measure the open sea's mean stocks in a ring inside the level's edge,
+// away from the cells that lose inflow at the window's edge, so the far
+// estimator brings the same mean across the blend.
+const HELD_INNER: i32 = 16;
+const HELD_OUTER: i32 = 64;
+var<workgroup> held_sums: array<vec4<f32>, 256>;
+
+@compute @workgroup_size(256)
+fn measure_held(@builtin(local_invocation_index) lane: u32) {
+    var sum = vec4(0.0);
+    let cells = u32(FOAM_SIDE * FOAM_SIDE);
+    for (var index = lane; index < cells; index += 256u) {
+        let at = vec2<i32>(i32(index % u32(FOAM_SIDE)), i32(index / u32(FOAM_SIDE)));
+        let edge = min(min(at.x, at.y), min(FOAM_SIDE - 1 - at.x, FOAM_SIDE - 1 - at.y));
+        if edge < HELD_INNER || edge >= HELD_OUTER { continue; }
+        let parcel = parcels[foam_index(0u, 1u, at)];
+        // Dry cells take no step, and surf has its own far estimator.
+        if parcel.movement.z <= 0.0 || parcel.movement.w > 0.001 { continue; }
+        sum += vec4(parcel.stocks.xyz, 1.0);
+    }
+    held_sums[lane] = sum;
+    workgroupBarrier();
+    for (var stride = 128u; stride > 0u; stride >>= 1u) {
+        if lane < stride { held_sums[lane] += held_sums[lane + stride]; }
+        workgroupBarrier();
+    }
+    if lane == 0u {
+        let total = held_sums[0];
+        let held = select(vec4(0.0), vec4(total.xyz / max(total.w, 1.0), 1.0), total.w >= 64.0);
+        foam_stocks[foam_held_index(foam_settings.banks.y)] = held;
+    }
 }

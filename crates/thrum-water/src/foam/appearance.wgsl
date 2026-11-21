@@ -62,7 +62,15 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let wind = smoothstep(5.0, 18.0, length(foam_settings.time_wind.zw));
     let caps = wind * gaussian_lower_tail((0.82 - mix(jacobian, 1.0, smoothstep(1.0, 9.0, footprint))) / sqrt(variance));
     let shore = 1.0 - exp(-1.65 * row.loss);
-    let far = vec4(0.04 * caps, 0.08 * caps, 0.10 * caps + 0.34 * shore, 0.0);
+    // Past the coarse level the caps continue with the mean the level held,
+    // placed on crests by the estimator divided by its own expected mean.
+    // The pixel's Jacobian and the unresolved spread each carry about the
+    // spectrum's variance, so the estimator's mean is taken at twice it.
+    let expected = wind * gaussian_lower_tail(-0.18 / sqrt(2.0 * variance));
+    let held = foam_held();
+    let placed = min(vec3(1.0), held.xyz * (caps / max(expected, 0.0001)));
+    let sea = mix(vec3(0.04, 0.08, 0.10) * caps, placed, held.w);
+    let far = vec4(sea.xy, sea.z + 0.34 * shore, 0.0);
     var stocks = foam_at(point.xz, far);
     // Dense shallow-water foam still leaves gaps between groups of bubbles.
     // Weight the coarse breakup by depth-limited power so offshore caps

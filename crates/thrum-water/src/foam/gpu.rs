@@ -74,7 +74,7 @@ pub(crate) struct Foam {
     settings: wgpu::Buffer,
     scratch: wgpu::Buffer,
     group: wgpu::BindGroup,
-    pipelines: [wgpu::ComputePipeline; 2],
+    pipelines: [wgpu::ComputePipeline; 3],
     committed: Option<Frame>,
     recorded: Option<Frame>,
     step: bool,
@@ -158,7 +158,7 @@ impl Foam {
         let stocks = buffer(
             device,
             "foam endpoints",
-            4 * CELLS * 16,
+            4 * CELLS * 16 + 2 * 16,
             Usage::STORAGE | Usage::COPY_SRC | Usage::COPY_DST,
         );
         let settings = buffer(
@@ -238,7 +238,7 @@ impl Foam {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
         });
-        let pipelines = ["prepare_transport", "step_foam"].map(|entry_point| {
+        let pipelines = ["prepare_transport", "step_foam", "measure_held"].map(|entry_point| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(entry_point),
                 layout: Some(&pipeline_layout),
@@ -436,10 +436,13 @@ impl Foam {
 
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
         pass.set_bind_group(0, &self.group, &[]);
-        for pipeline in &self.pipelines {
+        let [prepare, step, held] = &self.pipelines;
+        for pipeline in [prepare, step] {
             pass.set_pipeline(pipeline);
             pass.dispatch_workgroups(SIDE / 8, SIDE / 8, 2);
         }
+        pass.set_pipeline(held);
+        pass.dispatch_workgroups(1, 1, 1);
     }
 
     pub(crate) fn submit(&mut self) -> Option<Report> {
