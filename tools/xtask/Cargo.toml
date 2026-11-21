@@ -7,3 +7,7 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+# Reads the workspace's packages from `cargo metadata` for the merge selection.
+serde_json = "=1.0.154"

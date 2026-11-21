@@ -9,10 +9,10 @@ export PATH="$(dirname -- "$thrum_rustc"):$PATH"
 export RUSTC_WRAPPER="${RUSTC_WRAPPER-}"
 # Verification must not reuse rustc's incremental query cache: the pinned compiler can
 # ICE with unstable trait-obligation fingerprints after a checkout changes revision.
-if [[ "${1:-}" == check ]]; then
+if [[ "${1:-}" == check || "${1:-}" == check-all ]]; then
   export CARGO_INCREMENTAL=0
 fi
-if [[ "${1:-}" == check && "$(uname -s)" == Darwin ]]; then
+if [[ ( "${1:-}" == check || "${1:-}" == check-all ) && "$(uname -s)" == Darwin ]]; then
   export THRUM_REQUIRE_GPU=1
 fi
 # A creator's new scene package is not in the committed lockfile yet, and the xtask runner below

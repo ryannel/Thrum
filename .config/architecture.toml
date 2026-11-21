@@ -244,8 +244,8 @@ target_cost = "Native game scene data only; derive-generated schema validation, 
 [external_dependencies.serde_json]
 requirement = "=1.0.154"
 license = "MIT OR Apache-2.0"
-purpose = "Decode authored scene recipes and controls; write opt-in native profiler evidence and read temporal witnesses"
-target_cost = "Cold scene/control parsing; native profiler evidence serializes only when explicitly requested, four times a second off the render path"
+purpose = "Decode authored scene recipes and controls; write opt-in native profiler evidence and read temporal witnesses; the contributor tool reads cargo metadata"
+target_cost = "Cold scene/control parsing; native profiler evidence serializes only when explicitly requested, four times a second off the render path; host-only in tools/xtask"
 
 [external_dependencies.profiling]
 requirement = "=1.0.18"

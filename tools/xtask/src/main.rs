@@ -8,6 +8,8 @@ use std::{
     process::Command,
 };
 
+mod selection;
+
 type TaskResult = Result<(), Box<dyn Error>>;
 
 fn run(program: &str, args: &[&str]) -> TaskResult {
@@ -770,12 +772,44 @@ fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
     })
 }
 
+/// `./dev selection`: what `./dev check` selects for this checkout's change and why, or with
+/// `--paths`, for the paths on standard input, one to a line, against the checkout's graph.
+fn print_selection(root: &Path, flag: Option<&str>) -> TaskResult {
+    let lines = match flag {
+        None => selection::for_checkout(root).1,
+        Some("--paths") => {
+            let mut input = String::new();
+            std::io::Read::read_to_string(&mut std::io::stdin(), &mut input)?;
+            let paths: Vec<String> = input
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(str::to_owned)
+                .collect();
+            let graph = selection::Graph::read()?;
+            let chosen = selection::select(&graph, &paths);
+            selection::report(
+                &chosen,
+                Some((&graph, "were given on standard input", &paths)),
+            )
+        }
+        Some(other) => return Err(format!("unknown selection flag {other:?}").into()),
+    };
+    let mut out = std::io::stdout().lock();
+    for line in lines {
+        writeln!(out, "{line}")?;
+    }
+    Ok(())
+}
+
 /// `./dev help`, one command to a line so that edits to different commands merge cleanly.
 const HELP: &[&str] = &[
     "Thrum contributor commands:",
     "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, game Wasm Clippy, Rust tests side by side through cargo-nextest (including Mac Metal; one over 60 s fails), then each step's time and the slowest tests",
     "  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it",
     "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
+    "  check-all              Everything check runs, with every test binary of the workspace whatever changed; the main-branch check workspace-tests runs it",
+    "  selection [--paths]    What check would select for this checkout's change, or for the paths on standard input, and why",
     "  long-tests             The main tier from .config/long-tests.txt (long tests, and tests behind a Cargo feature), a GPU required; the main-branch check long-tests runs it",
     "  check-docs             Links, metadata, design hashes and crate policy",
     "  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown",
@@ -806,6 +840,7 @@ fn main() -> TaskResult {
         [command, flag] if command == "starter" && flag == "--web" => true,
         [command, _] if command == "scene" => true,
         [command, _, flag] if command == "scene" && flag == "--web" => true,
+        [command, flag] if command == "selection" && flag == "--paths" => true,
         _ => false,
     };
     if !valid_args {
@@ -861,7 +896,8 @@ fn main() -> TaskResult {
                 }
             }
         }
-        "check" => check(&root)?,
+        "check" | "check-all" => check(&root)?,
+        "selection" => print_selection(&root, args.get(1).map(String::as_str))?,
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),
     }
     Ok(())
