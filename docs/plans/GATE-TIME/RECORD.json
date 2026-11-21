@@ -685,7 +685,47 @@
     },
     "M12": {
       "definitions": "1f4a271ebfefa3b766d91215ab5ae19ab137b49130754c21fffb4bec512c911d",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7b29443c2a46e3439576c24d896e7e2ad3305dce",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md",
+          "items": {
+            "M12.1": "fail",
+            "M12.2": "pass",
+            "M12.3": "fail",
+            "M12.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "test-binary matches --test names without their package",
+              "item": "M12.3",
+              "repeat": false
+            },
+            {
+              "name": "limit-exempt passes a deleted default limit",
+              "item": "M12.1",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 113230,
+            "cached": 3079375,
+            "output": 28102,
+            "cost_usd": 2.083435,
+            "turns": 1
+          },
+          "at": "2026-11-21T13:01:28Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",

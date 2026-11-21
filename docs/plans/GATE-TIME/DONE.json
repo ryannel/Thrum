@@ -436,8 +436,8 @@
     {
       "id": "M12",
       "name": "A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -451,10 +451,10 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py'",
           "ask": "Read the rule's fixtures: do they cover a name added, a name removed, an override that exempts a whole binary, and a default limit raised? In a scratch copy, add a test's name to an exempt override, then raise the default limit: does `./dev check-docs` fail each time, with a message whose link lands on an entry that exists?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (exempt-name-added, exempt-whole-binary, default-limit-raised)",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
         {
           "id": "M12.2",
@@ -464,8 +464,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (long-test-in-listed-binary, main-tier-line-added); .orchestrate/evidence/GATE-TIME/M12/scratch-version-raise.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
         {
           "id": "M12.3",
@@ -473,10 +473,10 @@
           "check": "sh -c 'test -s .config/unplanned-test-binaries.txt && python3 scripts/shape_rules.py check --rule test-binary && python3 scripts/test_shape_rules.py'",
           "ask": "In a scratch copy, add a test file to a package whose test files Cargo finds, and a `[[test]]` entry to one that lists them: does `./dev check-docs` fail each time and name the target? Give an open done-when item a check that runs one of them with `--test`: does it pass? Add the other's name to the list: does that fail too? Does a helper module that a test file declares, or a file under `tests/` that is a module of another target, count as a target? Is every line of the list a target that exists and that no plan names?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (new-test-file-autotests, new-test-table-listed, new-file-named-by-open-item, new-table-added-to-list, listed-target-gone, helper-module-and-module-file)",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
         {
           "id": "M12.4",
@@ -485,8 +485,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M12/summed-times-check.txt (a whole saved check at 775b0e678: 1329 test lines sum to 941.6 s, 284 gpu/metal-named to 541.0 s, matching its closing lines)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "test-binary matches --test names without their package",
+          "item": "M12.3",
+          "repeat": false
+        },
+        {
+          "name": "limit-exempt passes a deleted default limit",
+          "item": "M12.1",
+          "repeat": false
         }
       ]
     },
