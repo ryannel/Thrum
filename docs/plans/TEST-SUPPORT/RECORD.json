@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/TEST-SUPPORT/design-review.md",
-    "commit": "83131fc442755361ba2df3d3d26f68c9d79f2175",
-    "hash": "8d3c0410784ba8ea14ea3826a68c0a2ea52a0c91d171d3bd20aece33e4c3c6c9",
+    "commit": "3a6744e9573fa2bacfb6349fa1cd482f1304637a",
+    "hash": "e611602308a4b105075157c30ea614e822e0616dc48d3904fd7539306890f42c",
     "by": "review",
     "host": "claude",
     "model": "claude-opus-5-5",
@@ -15,13 +15,13 @@
     "cli": "2.1.319 (Claude Code)",
     "path": "headless",
     "usage": {
-      "input": 91242,
-      "cached": 1333231,
-      "output": 16913,
-      "cost_usd": 1.334674,
+      "input": 61668,
+      "cached": 606818,
+      "output": 10478,
+      "cost_usd": 0.824156,
       "turns": 1
     },
-    "at": "2026-11-21T09:13:45Z"
+    "at": "2026-11-21T19:48:30Z"
   },
   "milestones": {
     "M1": {
@@ -703,6 +703,29 @@
         "turns": 1
       },
       "at": "2026-11-20T17:42:45Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/TEST-SUPPORT/design-review-6.md",
+      "commit": "83131fc442755361ba2df3d3d26f68c9d79f2175",
+      "hash": "8d3c0410784ba8ea14ea3826a68c0a2ea52a0c91d171d3bd20aece33e4c3c6c9",
+      "by": "review",
+      "host": "claude",
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "observed": {
+        "model": "claude-opus-5-5"
+      },
+      "cli": "2.1.319 (Claude Code)",
+      "path": "headless",
+      "usage": {
+        "input": 91242,
+        "cached": 1333231,
+        "output": 16913,
+        "cost_usd": 1.334674,
+        "turns": 1
+      },
+      "at": "2026-11-21T09:13:45Z"
     }
   ]
 }
