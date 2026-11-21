@@ -643,7 +643,35 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
                         move |frame, pass| record_effect(frame, index, pass),
                     ));
                 }
-                _ => return Err(RenderError::GraphPassMismatch),
+                // 3D scene passes. Every key is listed, so a new key does not
+                // compile until it is bound here or refused.
+                PassKey::Opaque
+                | PassKey::Display
+                | PassKey::ShadowNear
+                | PassKey::ShadowFar
+                | PassKey::HorizonHeights
+                | PassKey::AirShadow
+                | PassKey::CasterCull
+                | PassKey::Cluster
+                | PassKey::History
+                | PassKey::Exposure
+                | PassKey::Stars
+                | PassKey::Atmosphere(_)
+                | PassKey::CameraVisibility
+                | PassKey::PrepassList
+                | PassKey::DepthPrepass
+                | PassKey::DepthPyramid
+                | PassKey::FinalCull
+                | PassKey::CullingStats
+                | PassKey::TemporalExposure
+                | PassKey::TemporalWitness
+                | PassKey::Taau
+                | PassKey::AfterOpaque(_)
+                | PassKey::AfterOpaqueCopy
+                | PassKey::Secondary { .. }
+                | PassKey::RayStructureBuild
+                | PassKey::NativeReset
+                | PassKey::NativeWitness => return Err(RenderError::GraphPassMismatch),
             };
             Ok(RecordBinding::new(id, kind, record))
         })

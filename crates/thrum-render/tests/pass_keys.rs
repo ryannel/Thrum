@@ -86,6 +86,13 @@ fn the_scene_timestamp_slot_count_is_the_compiled_graph_count() {
             .unwrap_or_default()
             .to_owned();
         let count = registry_audit::pipeline_pass_count(&variant.graph);
+        // A frame host's slot reads the same count from its target's compiled
+        // graphs, without compiling anything per frame.
+        assert_eq!(
+            variant.target_pass_count, variant.scene_pass_count,
+            "{}: the target's slot count differs from the prepared scene's",
+            variant.label
+        );
         let entry = largest
             .entry(scene)
             .or_insert((variant.scene_pass_count, 0));

@@ -154,8 +154,8 @@
           "lock": "gpu",
           "ask": "Is any pass still matched by a string literal, a bare role integer or a guard chain? Add a pass with no recorder or no timing category in a scratch edit: does it fail to compile or fail this test?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test pass_keys` 2 passed on 336 compiled 3D graphs from 84 prepared scenes: portable and apple-tile recipes; diagnostic, day and star lighting; Sun shadows off and on; Direct, Frustum and Occlusion culling; with and without local lights; TAAU, reference and temporal-input overlays; SDR and scene-linear sources; with and without readback. Every pass has a PassKey. Keys and roles are unique, and each pass's name, timing bucket and role equal its key's. The prepared scene_pass_count equals the compiled pipeline-pass count, and so does each target's stored slot count (the value the frame host now reads). Review fix: a frame host no longer compiles a graph to count timestamp slots. Each 3D slot sizes its batch from its target's compiled graphs (OffscreenTarget::timed_pass_count), and the timing recovery paths reuse the slot's own capacity, so poll_gpu reads no count (runtime.rs). Scratch release measurement on Metal, 12-pass scene: 47 µs per compile before, 3 ns per stored read (tmp/review-render-m3/slot-count-cost.log). Recorders bind from the key in exhaustive matches, in scene_graph.rs and now also in the 2D binder (sprite/graph.rs, which has no catch-all). Scratch: a new PassKey variant failed to compile at name, timing, role and recorder, and a keyless graph.pass failed this test. Logs: tmp/review-render-m3/pass_keys.log, scratch-*.log.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
@@ -166,8 +166,8 @@
           "lock": "gpu",
           "ask": "Does `timing.rs` import anything from the scene renderer or the atmosphere? Do the profiler's rows and the frames report show the same pass names as before?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test timing_categories` 3 passed. Across the 336 graphs, every pass lands in exactly one TimingCategory bucket (the bucket sum equals the total), and each frame host batch has a slot for every timed pass. Each profiler bucket equals the pre-M3 name lists, and the scene sum and profiler row names are unchanged. A renamed pass keeps its bucket. timing.rs imports only capabilities and names no pass. Log: tmp/review-render-m3/timing_categories.log.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
@@ -178,8 +178,8 @@
           "lock": "gpu",
           "ask": "Is the chart dependency table still written twice? Is any chart still reached as an index into a list, or remapped by an `if`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test atmosphere_stage_table` 2 passed. Across all 14 AtmosphereStage keys, the graph's chart reads equal AtmosphereStage::chart_reads, the table the bind groups are built from. Role, validity bit and timing bucket come from the key. A secondary view's aerial volume reads the aerial table's charts and records on Metal. Log: tmp/review-render-m3/atmosphere_stage_table.log.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
@@ -188,8 +188,8 @@
           "statement": "Visibility's pipeline roles and the scene's instance identity lanes are named, not hex tags or tuple positions.",
           "ask": "Are the ASCII role tags the review lists under L34, and the `ids[0]`, `ids[2]`, `ids[3]` reads under L18, replaced by names in every file that used them?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Visibility roles are PipelineRole::{CameraVisibility, FinalCull, DepthPyramid, DepthPrepass, CasterCull, Surface} in pass_key.rs, keeping the historical ASCII values. No role literal remains outside pass_key.rs: keys are built with PipelineRole::pipeline_key. InstanceRecord lanes use logical_slot, material, skin_offset, generation, is_active and deactivate in every crate, and `rg 'ids\\[[0-3]\\]'` finds no InstanceRecord lane outside abi.rs. HISTORY_OWNER is a resource owner, not a role. The first review confirmed this.",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
@@ -198,8 +198,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         }

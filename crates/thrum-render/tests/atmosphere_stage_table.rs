@@ -51,7 +51,7 @@ fn every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key() 
     for variant in &variants {
         // Every timed pass has a slot, atmosphere stages included.
         assert!(
-            usize::try_from(variant.scene_pass_count)
+            usize::try_from(variant.scene_pass_count.min(variant.target_pass_count))
                 .is_ok_and(|slots| slots >= registry_audit::pipeline_pass_count(&variant.graph)),
             "{}: fewer timestamp slots than timed passes",
             variant.label

@@ -1078,6 +1078,8 @@ impl PreparedSynthetic {
     /// and compute passes any of its day, night, scene or readback variants
     /// holds. The surface consumer is counted by its presenter. Zero only when
     /// the graph does not compile, which timing refuses as an invalid capacity.
+    /// This compiles the scene's graphs, so call it to size a batch once; a
+    /// frame host's slots read the count from their targets' compiled graphs.
     pub fn scene_pass_count(&self) -> u32 {
         self.target_inputs()
             .compile_graph(1, 1, 256, CaptureSource::Sdr, None)
@@ -2026,6 +2028,19 @@ impl OffscreenTarget {
             frame_revision: prepared.frame_revision,
         })
     }
+    /// Timed passes in this target's largest compiled graph: the timestamp
+    /// pairs one frame on it can write. Read from the graphs compiled with the
+    /// target, so it builds nothing.
+    pub(crate) fn timed_pass_count(&self) -> u32 {
+        [Some(&self.day_graphs), self.night_graphs.as_ref()]
+            .into_iter()
+            .flatten()
+            .flat_map(|graphs| [&graphs.scene, &graphs.readback])
+            .map(|graph| graph.plan().pipeline_pass_count())
+            .max()
+            .map_or(0, crate::pass_key::pass_index)
+    }
+
     fn graph(&self, readback: bool) -> &ExecutableGraph<SceneFamily> {
         let graphs = self
             .night_graphs

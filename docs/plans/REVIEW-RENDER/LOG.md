@@ -61,3 +61,7 @@
   `atmosphere_stage_table`, and the full thrum-render suite passed (470 tests). A scratch key failed to compile, and
   a keyless pass failed `pass_keys`. Found and fixed: a secondary view's aerial pass did not declare its
   multiple-scattering read. The graph goldens passed unchanged. Evidence: the M3 items in DONE.json.
+- 2026-11-21 Addressed the M3 review. The frame host no longer compiles a graph to count timestamp slots: a
+  3D slot reads its target's compiled graphs, and timing recovery reuses the slot's capacity. On Metal a stored read
+  took 3 ns, against 47 µs per compile. `pass_keys` checks that the target's count equals the compiled count. The 2D
+  binder now lists every key. Verified: the three M3 checks and `scene_2d` passed on Metal.

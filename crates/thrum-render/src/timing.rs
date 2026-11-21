@@ -425,6 +425,11 @@ pub struct GpuTimings {
     enabled: Option<Enabled>,
 }
 impl GpuTimings {
+    /// The passes one batch can time; zero for a disabled batch.
+    pub(crate) fn capacity(&self) -> u32 {
+        self.enabled.as_ref().map_or(0, |enabled| enabled.capacity)
+    }
+
     pub(crate) fn timed_pass_span(&self) -> Option<f64> {
         self.enabled.as_ref()?.timed_pass_span
     }

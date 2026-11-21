@@ -2688,7 +2688,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // Inspect every completed native segment before resolving any slot's
         // queries: a later failed slot must also forbid earlier readback work.
         self.check_native_completion()?;
-        let max_passes = self.prepared.scene_pass_count() + u32::from(self.presenter.is_some());
         for slot in self.slots.iter_mut().chain(&mut self.retired_slots) {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);
             match state {
@@ -2718,8 +2717,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         Ok(false) => slot.state = SlotState::Rendering(sample),
                         Err(_) => {
                             sample.timing_fault = true;
+                            // A replacement batch times what the slot's own did.
+                            let capacity = slot.timings.capacity();
                             slot.timings =
-                                new_timings(self.prepared.capabilities(), &self.queue, max_passes)?;
+                                new_timings(self.prepared.capabilities(), &self.queue, capacity)?;
                             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
                     }
@@ -2767,10 +2768,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                             // Collection unmaps and resets this batch even when its counter values
                             // are unusable. Keep the resources for the next submission.
                             if !matches!(error, TimingError::InvalidTimestamp { .. }) {
+                                let capacity = slot.timings.capacity();
                                 slot.timings = new_timings(
                                     self.prepared.capabilities(),
                                     &self.queue,
-                                    max_passes,
+                                    capacity,
                                 )?;
                             }
                             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
@@ -2796,9 +2798,9 @@ fn publication_source<P>(publication: &WorldPublication<P>) -> SourceTick {
 fn new_timings(
     capabilities: &DeviceCapabilities,
     queue: &wgpu::Queue,
-    max_passes: u32,
+    capacity: u32,
 ) -> Result<GpuTimings, FrameError> {
-    GpuTimings::new(capabilities, queue, max_passes)
+    GpuTimings::new(capabilities, queue, capacity)
         .map_err(|error| FrameError::Gpu(format!("GPU timing recovery: {error:?}")))
 }
 

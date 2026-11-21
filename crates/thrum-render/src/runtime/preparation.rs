@@ -142,7 +142,8 @@ pub(super) struct TargetPreparation {
     inputs: TargetInputs,
     capabilities: DeviceCapabilities,
     timing: Option<SceneTimingLayout>,
-    passes: u32,
+    // Timed passes of a 2D slot. A 3D slot counts its target's compiled graphs.
+    sprite_passes: u32,
 }
 
 impl TargetPreparation {
@@ -169,11 +170,6 @@ impl TargetPreparation {
         let views = inputs.resize_secondary(extents);
         let replacement = job(views.handles())?;
         replacement.graph.validate().map_err(FrameError::Scene)?;
-        let pass_count = |graph: &crate::contribution::EffectGraph| {
-            u32::try_from(graph.passes.len() + graph.after_opaque.len()).expect("validated graph")
-        };
-        self.passes =
-            self.passes - pass_count(&inputs.effect_graph) + pass_count(&replacement.graph);
         inputs.effect_graph.clone_from(&replacement.graph);
         Ok((views, replacement))
     }
@@ -192,7 +188,7 @@ impl TargetPreparation {
             inputs,
             timing,
             capabilities: prepared.capabilities().clone(),
-            passes: prepared.scene_pass_count(),
+            sprite_passes: prepared.sprite_pass_count(),
         }
     }
 
@@ -243,9 +239,11 @@ impl PreparedRenderer {
         }
     }
 
-    pub(super) fn scene_pass_count(&self) -> u32 {
+    // Timed passes of a 2D scene's slot; zero for a 3D scene, whose slots
+    // count their targets' compiled graphs.
+    fn sprite_pass_count(&self) -> u32 {
         match self {
-            Self::ThreeD(scene) => scene.scene_pass_count(),
+            Self::ThreeD(_) => 0,
             Self::TwoD(scene) => {
                 2 + u32::from(scene.contribution_passes.compute)
                     + u32::try_from(scene.effects.passes.len()).unwrap_or(u32::MAX - 3)
@@ -506,7 +504,7 @@ impl TargetPreparation {
             if cancel.is_some_and(|flag| flag.load(Ordering::Acquire)) {
                 return Err(FrameError::InvalidState("target preparation cancelled"));
             }
-            let (target, timing_layout) = match &self.inputs {
+            let (target, timing_layout, passes) = match &self.inputs {
                 TargetInputs::ThreeD(prepared) => {
                     let mut target = OffscreenTarget::with_target_inputs(
                         capabilities.device(),
@@ -520,18 +518,23 @@ impl TargetPreparation {
                         target.share_reconstruction_history(prepared, &first.target);
                     }
                     let timing_layout = self.timing.map(|layout| layout.with_stars(&target));
-                    (FrameTarget::ThreeD(Box::new(target)), timing_layout)
+                    let passes = target.timed_pass_count();
+                    (FrameTarget::ThreeD(Box::new(target)), timing_layout, passes)
                 }
                 TargetInputs::TwoD(prepared) => {
                     let target = SpriteTarget::prepare(prepared, extent, source, profile)
                         .map_err(|error| FrameError::Gpu(format!("sprite target: {error:?}")))?;
-                    (FrameTarget::TwoD(Box::new(target)), None)
+                    (
+                        FrameTarget::TwoD(Box::new(target)),
+                        None,
+                        self.sprite_passes,
+                    )
                 }
             };
             slots.push(FrameSlot {
                 target,
                 presentation: None,
-                timings: GpuTimings::new(capabilities, queue, self.passes + u32::from(surface))
+                timings: GpuTimings::new(capabilities, queue, passes + u32::from(surface))
                     .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
                 timing_layout,
                 timing_readback: false,

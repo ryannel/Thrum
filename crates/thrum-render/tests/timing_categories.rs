@@ -145,9 +145,10 @@ fn every_pass_lands_in_one_bucket_and_the_profiler_buckets_are_unchanged() {
         let label = &variant.label;
         let passes = timed(&variant.graph);
         let timings = registry_audit::scene_timings(&passes);
-        // Every timed pass has a timestamp slot, so none can read as zero.
+        // Every timed pass has a timestamp slot in the frame host's batch,
+        // so none can read as zero.
         assert!(
-            usize::try_from(variant.scene_pass_count)
+            usize::try_from(variant.scene_pass_count.min(variant.target_pass_count))
                 .is_ok_and(|slots| slots >= registry_audit::pipeline_pass_count(&variant.graph)),
             "{label}: fewer timestamp slots than timed passes"
         );

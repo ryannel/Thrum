@@ -19,6 +19,8 @@ pub(crate) struct Variant {
     pub(crate) graph: CompiledGraph,
     /// The prepared scene's timestamp slot count.
     pub(crate) scene_pass_count: u32,
+    /// The slot count a frame host reads from this variant's target.
+    pub(crate) target_pass_count: u32,
 }
 
 #[derive(Clone, Copy)]
@@ -141,6 +143,8 @@ pub(crate) fn variants(test: &str) -> Option<Vec<Variant>> {
                 let target =
                     OffscreenTarget::with_capture_source(&device, &prepared, 16, 16, source)
                         .expect("bind the scene graph");
+                let target_pass_count =
+                    thrum_render::registry_audit::target_timed_pass_count(&target);
                 for capture in [false, true] {
                     let label = format!(
                         "recipe={recipe} light={} shadows={shadows} culling={culling:?} \
@@ -159,6 +163,7 @@ pub(crate) fn variants(test: &str) -> Option<Vec<Variant>> {
                         label,
                         graph,
                         scene_pass_count,
+                        target_pass_count,
                     });
                 }
             }

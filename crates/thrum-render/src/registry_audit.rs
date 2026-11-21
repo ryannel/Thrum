@@ -120,6 +120,12 @@ pub fn atmosphere_stages(graph: &CompiledGraph) -> Vec<StageAudit> {
         .collect()
 }
 
+/// The timestamp slots a frame host gives a slot on `target`, read from the
+/// graphs compiled with the target.
+pub fn target_timed_pass_count(target: &crate::synthetic::OffscreenTarget) -> u32 {
+    target.timed_pass_count()
+}
+
 /// The scene timing summary the renderer builds from collected passes.
 pub fn scene_timings(passes: &[crate::timing::PassTiming]) -> crate::timing::SceneGpuTimings {
     crate::timing::SceneGpuTimings::new(passes)
