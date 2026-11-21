@@ -142,7 +142,7 @@
     {
       "id": "M3",
       "name": "The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
