@@ -279,7 +279,7 @@
     {
       "id": "M6",
       "name": "Bind-group layout entries and graph declarations are each written through one helper",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -296,8 +296,8 @@
           "ask": "List every `BindGroupLayoutEntry` literal left outside tests and outside the binding module: does each have a count or a dynamic offset? Pick ten converted entries across five crates and compare each with its literal at the starting commit: same visibility, type, read-only flag, sample type, dimension and minimum size?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; .orchestrate/evidence/DEAD-CODE/M6/M6-notes.md, binding-conversions.md, render-tests.log, crates-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -308,8 +308,8 @@
           "ask": "Does the function ever declare a cube or a 3D texture? Read the milestone's diff of snapshot and expected-graph files with `git diff` from the starting commit: is any changed?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; per-site equality asserts in .orchestrate/evidence/DEAD-CODE/M6/of-texture-asserts.log and of-texture-hits.log, summary in M6-notes.md",
           "verdict": "",
           "review": ""
         },
@@ -318,8 +318,8 @@
           "statement": "The tests that no merge check runs, and that build layouts or graphs through the converted code, pass on main with this milestone's commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through a converted file, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is M6.5's.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests",
           "verdict": "",
           "review": ""
         },
@@ -330,8 +330,8 @@
           "ask": "At the claimed commit, does the main-tier list mark not-run any other binary whose tests build a layout or a graph through a file this milestone converted? Did the milestone change `mesh_stage_gpu`'s tests or the list?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop.py check on 163875c4f (mac-metal) passes; serial run on 15ed94d9f in .orchestrate/evidence/DEAD-CODE/M6/mesh-stage-gpu.log",
           "verdict": "",
           "review": ""
         },
@@ -340,8 +340,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
