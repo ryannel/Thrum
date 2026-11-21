@@ -140,7 +140,7 @@
     {
       "id": "M3",
       "name": "Passes, stages and pipelines in the renderer are named by typed keys, so a rename or a new pass cannot silently drop a timing bucket or a barrier",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -202,12 +202,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The frame loop recompiles the whole scene graph on every poll to count timestamp slots",
-          "repeat": false
         }
       ]
     },
