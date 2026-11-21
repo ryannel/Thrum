@@ -879,7 +879,7 @@
     {
       "id": "M7",
       "name": "Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 4,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -951,7 +951,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".claude/worktrees/waters/tmp/waters-m7-r5/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M7-review.md"
         },
         {
@@ -1040,14 +1040,6 @@
           "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M7-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Gale sea saturates into a uniform foam sheet that whitens toward the horizon",
-          "item": "M7.7",
-          "different": "The earlier M7.7 finding was a straight line at the coarse window's edge where dense cover stopped and the far sea went sparse. That line is gone. This is the steady-state gale look: after about 20 s the whole sea from 2 m is one lace sheet with no open water, and from 40 m the far sea is a uniform white-grey band brighter than the horizon sky, so whitecaps do not thin toward the horizon.",
-          "repeat": false
         }
       ]
     },
