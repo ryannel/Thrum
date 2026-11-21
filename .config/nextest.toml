@@ -22,13 +22,14 @@ final-status-level = "slow"
 path = "junit.xml"
 
 [test-groups]
-# Each holds the tests of one file that kept a device mutex under `cargo test`; they take turns
-# with each other, beside every other test.
+# Each holds the tests of one file that keeps a device mutex for `cargo test`; they take turns
+# with each other, beside every other test. The fifth such file, `thrum-render`'s
+# `generation_transition/metal.rs`, is behind `creation-counters` and runs only in
+# `./dev long-tests`, one binary at a time, where its mutex still holds.
 cooked-assets = { max-threads = 1 }
 frame-alloc = { max-threads = 1 }
 foam-scene = { max-threads = 1 }
 water-interaction = { max-threads = 1 }
-generation-transition-metal = { max-threads = 1 }
 
 [[profile.default.overrides]]
 # Full scene targets, some fixtures keeping two devices alive.
@@ -50,11 +51,35 @@ filter = 'package(thrum-water) & (binary(=interaction_gpu) | binary(=foam_gpu))'
 test-group = 'water-interaction'
 
 [[profile.default.overrides]]
-# Device loss and capture observations that an overlapping test device could disturb.
-filter = 'package(thrum-render) & binary(=generation_transition) & test(/^generation_transition::metal::/)'
-test-group = 'generation-transition-metal'
-
-[[profile.default.overrides]]
 # Every river solve starts a thread pool as wide as the machine.
 filter = 'package(thrum-river-model)'
 threads-required = 4
+
+# The exempt list: each test over ten seconds alone on the test build `./dev check` uses, as
+# GATE-TIME M8 measured it, under the milestone that makes it fast or moves it to the main tier.
+# It is still reported as slow, but not stopped at sixty seconds. No other module adds a name.
+# Times alone are M8's record. M2 has no test here: the cloud conformance tests take about 5 s.
+
+[[profile.default.overrides]]
+# GATE-TIME M9.
+filter = '''
+    (binary_id(=thrum-river-model::report) & test(=no_step_is_taken_beyond_the_budget))
+  | (binary_id(=thrum-water-model::shore_basin) & test(=enclosed_water_has_finite_lags_turning_and_fetch_energy))
+  | (binary_id(=v1-game::cooked_rows_gpu) & test(=visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows))
+  | (binary_id(=thrum-sea::frames_gpu) & test(=frame_script_and_continuous_wind_change))
+  | (binary_id(=thrum-sea::portable_limits_gpu) & test(=default_webgpu_limits_and_named_profile_refusals))
+  | (binary_id(=thrum-sea::ambient_gpu) & test(=metal_ambient_matches_independent_model))
+  | (binary_id(=thrum-sea::forward_cache_gpu) & test(=forward_fields_and_full_lean_pyramids_match_the_model))
+  | (binary_id(=thrum-water-model::shore_island) & test(=waves_arrive_round_land_and_exposure_closes_far_downwind))
+'''
+slow-timeout = { period = "10s" }
+
+[[profile.default.overrides]]
+# GATE-TIME M3.
+filter = '''
+    (binary_id(=water-scene::foam_scene_gpu) & test(=ten_minutes_moored_and_wind_sweep))
+  | (binary_id(=water-scene::wake_scene_gpu) & test(=moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity))
+  | (binary_id(=water-scene::wake_scene_gpu) & test(=moored_craft_keeps_its_draft_when_only_one_level_admits_pressure))
+  | (binary_id(=water-scene::wake_scene_gpu) & test(=float_twenty_metres_off_track_responds_to_the_public_query))
+'''
+slow-timeout = { period = "10s" }
