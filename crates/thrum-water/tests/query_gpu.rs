@@ -21,19 +21,6 @@ use thrum_water::{
 
 const EXTENT: [u32; 2] = [96, 64];
 
-fn metal(test: &str) -> Option<(wgpu::Device, wgpu::Queue, DeviceCapabilities)> {
-    let thrum_test_support::Opened {
-        gpu, device, queue, ..
-    } = thrum_test_support::open(
-        test,
-        Some(wgpu::Backend::Metal),
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction::default(),
-    )?;
-    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
-    Some((device, queue, caps))
-}
-
 fn query_host(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -91,7 +78,18 @@ fn query_host(
 
 #[test]
 fn mailbox_samples_the_gale_at_its_use_tick() {
-    let Some((device, queue, caps)) = metal("mailbox_samples_the_gale_at_its_use_tick") else {
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = thrum_test_support::open(
+        "mailbox_samples_the_gale_at_its_use_tick",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
         return;
     };
     let (mut host, target) = query_host(&device, &queue, &caps, Clock::new(false));
@@ -264,8 +262,17 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
 #[test]
 fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     use thrum_water_model::{Bed, BodyKind, Chart, Map, Stage};
-    let Some((device, queue, caps)) =
-        metal("chart_queries_keep_both_tick_pages_and_sample_their_own_stage")
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = thrum_test_support::open(
+        "chart_queries_keep_both_tick_pages_and_sample_their_own_stage",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
     else {
         return;
     };

@@ -1090,14 +1090,11 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
             if let Some(dir) = std::env::var_os("THRUM_SHADOW_CAPTURE_DIR") {
                 let name = if sample_x == 84 { "near" } else { "far" };
                 for (suffix, pixels) in [("direct", &direct), ("shadow", &shaded)] {
-                    let mut ppm = Vec::with_capacity(129 * 129 * 3 + 32);
-                    ppm.extend_from_slice(b"P6\n129 129\n255\n");
-                    for rgba in pixels.as_chunks::<4>().0 {
-                        ppm.extend_from_slice(&rgba[..3]);
-                    }
-                    std::fs::write(
+                    thrum_test_support::ppm::write(
                         std::path::Path::new(&dir).join(format!("{name}-{suffix}.ppm")),
-                        ppm,
+                        [129, 129],
+                        pixels,
+                        thrum_test_support::ppm::Pixels::Rgba8,
                     )
                     .expect("optional shadow proof capture");
                 }

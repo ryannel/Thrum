@@ -1,6 +1,8 @@
 use super::*;
 
 fn retire(host: &mut Host) {
+    // Each poll gets what is left of the one deadline, as before the conversion.
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
     thrum_test_support::wait::until(
         "extent frames did not retire",
         Duration::from_secs(10),
@@ -8,10 +10,14 @@ fn retire(host: &mut Host) {
             if host.pending_frames() == 0 {
                 return Some(());
             }
+            let timeout = deadline.saturating_duration_since(std::time::Instant::now());
+            if timeout.is_zero() {
+                return None;
+            }
             host.device
                 .poll(wgpu::PollType::Wait {
                     submission_index: None,
-                    timeout: Some(Duration::from_secs(10)),
+                    timeout: Some(timeout),
                 })
                 .expect("complete frames");
             while host.poll_completed().expect("completion").is_some() {}

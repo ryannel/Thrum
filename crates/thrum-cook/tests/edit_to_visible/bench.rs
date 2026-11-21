@@ -195,23 +195,10 @@ struct Publication {
     cook: Duration,
 }
 
-/// The gate's GPU and a portable device keeping only the texture compression features.
-fn open_device() -> Option<thrum_test_support::Opened> {
-    thrum_test_support::open(
-        "edit_to_visible bench",
-        None,
-        thrum_test_support::Profile::Portable,
-        &thrum_test_support::Restriction {
-            features: Some(
-                wgpu::Features::TEXTURE_COMPRESSION_BC
-                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
-                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
-            ),
-            ..Default::default()
-        },
-    )
-}
-
+#[expect(
+    clippy::too_many_lines,
+    reason = "one edit-to-visible run: cook, publish, open the device and watch the edit reach the screen"
+)]
 fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("dir");
@@ -258,7 +245,19 @@ fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
     let start = Instant::now();
     let Some(thrum_test_support::Opened {
         gpu, device, queue, ..
-    }) = open_device()
+    }) = thrum_test_support::open(
+        "edit_to_visible bench",
+        None,
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(
+                wgpu::Features::TEXTURE_COMPRESSION_BC
+                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
+                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
+            ),
+            ..Default::default()
+        },
+    )
     else {
         stop.store(true, Ordering::Relaxed);
         watcher.join().expect("watcher");

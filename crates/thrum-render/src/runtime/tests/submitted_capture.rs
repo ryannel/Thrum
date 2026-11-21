@@ -401,9 +401,18 @@ fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize(
         );
         host.recycle_submitted_image(old);
         host.resize_surface([65, 37]).unwrap();
-        while host.pending_frames() > 0 {
-            drop(host.poll_completed().unwrap());
-        }
+        // The loop had no deadline; the kit's longest wait bounds it.
+        thrum_test_support::wait::until(
+            "resized frames retired",
+            thrum_test_support::readback::WAIT,
+            || {
+                if host.pending_frames() == 0 {
+                    return Some(());
+                }
+                drop(host.poll_completed().unwrap());
+                None
+            },
+        );
         submit(&mut host, &output);
         let fresh = image(&mut host);
         assert_eq!(fresh.sample.submission_order, 1);

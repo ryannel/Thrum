@@ -196,7 +196,7 @@
         "crates/thrum-core/tests/clock_spans/lane.rs": 1,
         "crates/thrum-core/tests/display_phase/world.rs": 4,
         "crates/thrum-core/tests/error_types/lane.rs": 1,
-        "crates/thrum-render/src/runtime/tests/device.rs": 5,
+        "crates/thrum-render/src/runtime/tests/device.rs": 1,
         "crates/thrum-render/src/runtime/tests/device/mesh_rows.rs": 1,
         "examples/link-proof/benches/allocations.rs": 4,
         "examples/mirror/tests/pool_gpu/retire.rs": 1,

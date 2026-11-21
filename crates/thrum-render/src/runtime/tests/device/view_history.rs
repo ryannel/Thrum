@@ -2,14 +2,20 @@ use super::{Host, Policy, gpu, host};
 use std::time::{Duration, Instant};
 
 fn retire_scene(host: &mut Host) {
+    // Each poll gets what is left of the one deadline, as before the conversion.
+    let deadline = Instant::now() + Duration::from_secs(10);
     thrum_test_support::wait::until(
         "camera-history test scene did not retire",
         Duration::from_secs(10),
         || {
+            let timeout = deadline.saturating_duration_since(Instant::now());
+            if timeout.is_zero() {
+                return None;
+            }
             host.device
                 .poll(wgpu::PollType::Wait {
                     submission_index: None,
-                    timeout: Some(Duration::from_secs(10)),
+                    timeout: Some(timeout),
                 })
                 .expect("wait for scene or its timing readback");
             host.poll_completed().expect("collect scene").map(|_| ())

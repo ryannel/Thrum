@@ -792,26 +792,27 @@ mod metal {
                 .defer_culling_mapping()
                 .expect("Frustum counts");
             let deadline = std::time::Instant::now() + Duration::from_secs(10);
-            let a = loop {
-                if let Some(sample) = host.poll_completed().expect("poll A") {
-                    break sample;
-                }
-                assert!(std::time::Instant::now() < deadline, "frame A timed out");
-                std::thread::yield_now();
-            };
+            let a = thrum_test_support::wait::until("frame A", Duration::from_secs(10), || {
+                host.poll_completed().expect("poll A")
+            });
             assert!(a.camera_culling.is_none(), "A retired before its count");
-            while crate::synthetic::OffscreenTarget::culling_mapping_pending(&real) {
-                host.device
-                    .poll(wgpu::PollType::Wait {
-                        submission_index: None,
-                        timeout: Some(Duration::from_secs(10)),
-                    })
-                    .expect("A's mapping");
-                assert!(
-                    std::time::Instant::now() < deadline,
-                    "A's mapping timed out"
-                );
-            }
+            // A's mapping shares frame A's deadline.
+            thrum_test_support::wait::until(
+                "A's mapping",
+                deadline.saturating_duration_since(std::time::Instant::now()),
+                || {
+                    if !crate::synthetic::OffscreenTarget::culling_mapping_pending(&real) {
+                        return Some(());
+                    }
+                    host.device
+                        .poll(wgpu::PollType::Wait {
+                            submission_index: None,
+                            timeout: Some(Duration::from_secs(10)),
+                        })
+                        .expect("A's mapping");
+                    None
+                },
+            );
             // Frame B (empty prefix) reuses the slot unarmed; A's settled
             // mapping becomes visible while B runs, and must not become B's.
             host.source_mut().empty = true;
@@ -830,14 +831,9 @@ mod metal {
             )
             .expect("frame B");
             host.slots[0].target.reveal_culling_mapping(&real);
-            let deadline = std::time::Instant::now() + Duration::from_secs(10);
-            let b = loop {
-                if let Some(sample) = host.poll_completed().expect("poll B") {
-                    break sample;
-                }
-                assert!(std::time::Instant::now() < deadline, "frame B timed out");
-                std::thread::yield_now();
-            };
+            let b = thrum_test_support::wait::until("frame B", Duration::from_secs(10), || {
+                host.poll_completed().expect("poll B")
+            });
             assert_eq!(
                 b.camera_culling, None,
                 "B was unarmed: A's count is not B's"
@@ -876,16 +872,12 @@ mod metal {
             assert_eq!(host.prepared.active_instance_count(), 0);
             let deadline = std::time::Instant::now() + Duration::from_secs(10);
             for _ in 0..IN_FLIGHT {
-                let sample = loop {
-                    if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
-                        break sample;
-                    }
-                    assert!(
-                        std::time::Instant::now() < deadline,
-                        "Metal frame report timed out"
-                    );
-                    std::thread::yield_now();
-                };
+                // Every in-flight frame shares the one deadline.
+                let sample = thrum_test_support::wait::until(
+                    "Metal frame report",
+                    deadline.saturating_duration_since(std::time::Instant::now()),
+                    || host.poll_completed().expect("poll Metal frame"),
+                );
                 assert!(
                     !sample.timing_fault,
                     "Metal frame timestamp collection failed"
