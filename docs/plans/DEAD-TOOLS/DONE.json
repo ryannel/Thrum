@@ -154,7 +154,7 @@
     {
       "id": "M3",
       "name": "The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
