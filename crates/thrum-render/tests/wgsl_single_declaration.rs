@@ -2,15 +2,15 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-mod wgsl_support;
+use thrum_test_support::records;
 
 const SOURCE: &str = "// thrum-wgsl-source: ";
 
 fn check<'a>(sources: impl IntoIterator<Item = (&'a str, &'a str)>) {
     let mut declarations = BTreeMap::<_, BTreeSet<_>>::new();
     for (shader, source) in sources {
-        let module = wgsl_support::parse(shader, source);
-        for ty in wgsl_support::bound_structs(&module) {
+        let module = records::parse(shader, source);
+        for ty in records::bound_structs(&module) {
             let name = module.types[ty].name.as_deref().expect("bound struct name");
             let offset = module
                 .types

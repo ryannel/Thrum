@@ -76,27 +76,19 @@ fn shader_validates_and_uniform_offsets_match_rust() {
     )
     .validate(&module)
     .expect("valid weather compute");
-    let (_, ty) = module
-        .types
-        .iter()
-        .find(|(_, ty)| ty.name.as_deref() == Some("Params"))
-        .expect("parameters");
-    let naga::TypeInner::Struct { members, span } = &ty.inner else {
-        panic!("parameters struct")
-    };
-    assert_eq!(*span as usize, size_of::<Uniform>());
-    let offsets = [
-        std::mem::offset_of!(Uniform, integers),
-        std::mem::offset_of!(Uniform, origin),
-        std::mem::offset_of!(Uniform, weather),
-        std::mem::offset_of!(Uniform, physical),
-        std::mem::offset_of!(Uniform, vertical),
-        std::mem::offset_of!(Uniform, noise),
-        std::mem::offset_of!(Uniform, rows),
-        std::mem::offset_of!(Uniform, turret),
-    ];
-    assert_eq!(members.len(), offsets.len());
-    for (member, offset) in members.iter().zip(offsets) {
-        assert_eq!(member.offset as usize, offset);
-    }
+    thrum_test_support::records::named(
+        "weather shader",
+        include_str!("../weather.wgsl"),
+        &[thrum_test_support::record!(
+            Uniform as "Params",
+            integers,
+            origin,
+            weather,
+            physical,
+            vertical,
+            noise,
+            rows,
+            turret
+        )],
+    );
 }

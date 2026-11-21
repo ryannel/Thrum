@@ -1,144 +1,48 @@
 //! Reflect bound records from every owned WGSL file, including declarations appended to scene WGSL.
-use std::collections::{BTreeMap, BTreeSet};
 use std::mem::{offset_of, size_of};
 use thrum_asset::layout::{Meshlet, MeshletBounds};
 use thrum_asset_gpu::records::{CookedVolume, Cull, Instance, Material};
-use wgpu::naga::{self, TypeInner};
+use thrum_test_support::{record, records};
 
 // Parse the actual declarations independently of function bodies that depend on scene-owned
 // shader libraries. No list of bound records or bindings is supplied to the discovery pass.
-fn declarations(source: &str) -> String {
-    let mut result = String::new();
-    for marker in ["struct ", "@group("] {
-        let mut rest = source;
-        while let Some(at) = rest.find(marker) {
-            rest = &rest[at..];
-            let end = if marker == "struct " {
-                rest.find('}').expect("struct closes") + 1
-            } else {
-                rest.find(';').expect("binding ends") + 1
-            };
-            result.push_str(&rest[..end]);
-            result.push('\n');
-            rest = &rest[end..];
-        }
-    }
-    result
-}
-
-fn discover(
-    module: &naga::Module,
-    ty: naga::Handle<naga::Type>,
-    found: &mut BTreeSet<naga::Handle<naga::Type>>,
-) {
-    match &module.types[ty].inner {
-        TypeInner::Struct { members, .. } if found.insert(ty) => {
-            for member in members {
-                discover(module, member.ty, found);
-            }
-        }
-        TypeInner::Array { base, .. } | TypeInner::BindingArray { base, .. } => {
-            discover(module, *base, found);
-        }
-        _ => {}
-    }
-}
-
 fn check(source: &str) -> usize {
-    // Each entry names an actual Pod type and its compiler-derived field offsets.
-    fn pod<T: bytemuck::Pod>(
-        members: Vec<(&'static str, usize)>,
-    ) -> (usize, Vec<(&'static str, usize)>) {
-        (size_of::<T>(), members)
-    }
-    let layouts = BTreeMap::from([
-        (
-            "MaterialRecord",
-            pod::<Material>(vec![
-                ("base", offset_of!(Material, base_rgba)),
-                ("emissive_cutoff", offset_of!(Material, emissive_cutoff)),
-                ("surface", offset_of!(Material, surface)),
-                ("flags", offset_of!(Material, flags)),
-                ("texture_layers", offset_of!(Material, textures)),
-            ]),
+    // Each entry names an actual Pod type and its compiler-derived field offsets, sizes and scalar kinds, under the
+    // names the WGSL gives them.
+    let layouts = [
+        record!(
+            Material as "MaterialRecord",
+            base_rgba as "base",
+            emissive_cutoff,
+            surface,
+            flags,
+            textures as "texture_layers",
         ),
-        (
-            "Cull",
-            pod::<Cull>(vec![
-                ("view_proj", offset_of!(Cull, view_proj)),
-                ("model", offset_of!(Cull, model)),
-                ("camera_scale", offset_of!(Cull, camera_scale)),
-                ("counts", offset_of!(Cull, counts)),
-            ]),
+        record!(Cull, view_proj, model, camera_scale, counts),
+        record!(CookedVolume, model, inverse_model, params),
+        record!(
+            MeshletBounds as "Bounds",
+            center,
+            radius,
+            cone_apex,
+            cone_cutoff,
+            cone_axis,
+            reserved,
         ),
-        (
-            "CookedVolume",
-            pod::<CookedVolume>(vec![
-                ("model", offset_of!(CookedVolume, model)),
-                ("inverse_model", offset_of!(CookedVolume, inverse_model)),
-                ("params", offset_of!(CookedVolume, params)),
-            ]),
+        record!(Instance as "CookedMeshPlacement", model, history as "draw"),
+        record!(
+            Meshlet as "CookedMeshlet",
+            vertex_offset,
+            triangle_offset,
+            vertex_count,
+            triangle_count,
         ),
-        (
-            "Bounds",
-            pod::<MeshletBounds>(vec![
-                ("center", offset_of!(MeshletBounds, center)),
-                ("radius", offset_of!(MeshletBounds, radius)),
-                ("cone_apex", offset_of!(MeshletBounds, cone_apex)),
-                ("cone_cutoff", offset_of!(MeshletBounds, cone_cutoff)),
-                ("cone_axis", offset_of!(MeshletBounds, cone_axis)),
-                ("reserved", offset_of!(MeshletBounds, reserved)),
-            ]),
-        ),
-        (
-            "CookedMeshPlacement",
-            pod::<Instance>(vec![
-                ("model", offset_of!(Instance, model)),
-                ("draw", offset_of!(Instance, history)),
-            ]),
-        ),
-        (
-            "CookedMeshlet",
-            pod::<Meshlet>(vec![
-                ("vertex_offset", offset_of!(Meshlet, vertex_offset)),
-                ("triangle_offset", offset_of!(Meshlet, triangle_offset)),
-                ("vertex_count", offset_of!(Meshlet, vertex_count)),
-                ("triangle_count", offset_of!(Meshlet, triangle_count)),
-            ]),
-        ),
-    ]);
-    let module = naga::front::wgsl::parse_str(&format!(
+    ];
+    let source = format!(
         "enable wgpu_mesh_shader;\n{}",
-        declarations(source)
-    ))
-    .expect("owned shader declarations parse");
-    let mut found = BTreeSet::new();
-    for (_, global) in module.global_variables.iter() {
-        if global.binding.is_some()
-            && matches!(
-                global.space,
-                naga::AddressSpace::Uniform | naga::AddressSpace::Storage { .. }
-            )
-        {
-            discover(&module, global.ty, &mut found);
-        }
-    }
-    for ty in &found {
-        let name = module.types[*ty].name.as_deref().expect("record name");
-        let (size, fields) = layouts
-            .get(name)
-            .unwrap_or_else(|| panic!("bound WGSL struct {name} has no Rust Pod record"));
-        let TypeInner::Struct { members, span } = &module.types[*ty].inner else {
-            unreachable!()
-        };
-        assert_eq!(*span as usize, *size, "{name} size");
-        assert_eq!(members.len(), fields.len(), "{name} fields");
-        for (member, (field, offset)) in members.iter().zip(fields) {
-            assert_eq!(member.name.as_deref(), Some(*field));
-            assert_eq!(member.offset as usize, *offset, "{name}.{field}");
-        }
-    }
-    found.len()
+        records::declarations(source)
+    );
+    records::bound("owned shader declarations", &source, &layouts).len()
 }
 
 #[test]

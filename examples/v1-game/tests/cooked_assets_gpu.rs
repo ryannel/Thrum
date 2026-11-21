@@ -2,24 +2,32 @@
 //! lighting, uploaded under a per-frame budget, and replaced live as sources are edited.
 #![cfg(not(target_arch = "wasm32"))]
 
+mod support {
+    pub(crate) mod cooked;
+}
+
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
+use support::cooked::{Game, Host, Opener, Sources, Tree, device, game};
 use thrum_asset::Profile;
 use thrum_asset_gpu::{
     COPY_UNIT, CookedAssets, CookedConfig, CookedDrawPath, CookedStats, Drawn, STAGING_CHUNKS,
     await_drawn,
 };
-use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-use thrum_render::capabilities::{
-    DeviceCapabilities, DeviceRecipe, DeviceRestriction, OpenedDevice,
-};
+use thrum_cook::demo;
 use thrum_render::present::SurfaceProfile;
-use thrum_render::runtime::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
-use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+use thrum_render::runtime::{FrameConfig, FrameSample, SurfaceOutput};
+use v1_game::{GameHost, GameSetup};
 
-type Host = FrameHost<GameWorld, GameScene>;
+/// This file's devices: the recipe carries the case's generation, and the adapter must offer
+/// indirect execution for the two indexed paths.
+const DEVICE: Opener = Opener {
+    recipe_generation: true,
+    indexed_only: true,
+    refused: "admitted cooked asset test device",
+};
 
 const EXTENT: [u32; 2] = [640, 360];
 
@@ -60,21 +68,11 @@ fn placements(store: PathBuf) -> CookedConfig {
     config
 }
 
-fn source_tree(root: &Path, volume_size: u32) -> CookConfig {
-    let source = root.join("source");
-    for directory in ["meshes", "textures"] {
-        std::fs::create_dir_all(source.join(directory)).expect("source tree");
-    }
-    demo::write_grid_gltf(&source.join("meshes"), "terrain", 128, 0.25).expect("mesh");
-    demo::write_checker_png(&source.join("textures/checker.png"), 512, [200, 40, 40])
-        .expect("texture");
-    demo::write_cloud_volume(&source.join("cloud.tvol"), volume_size, 1).expect("volume");
-    CookConfig {
-        source,
-        store: root.join("store"),
-        profiles: Profile::ALL.to_vec(),
-        quality: Quality::Fast,
-        durability: Durability::Process,
+/// This file's demo sources: a red checker and a cloud volume of edge `volume`.
+fn tree(volume: u32) -> Tree {
+    Tree {
+        volume,
+        checker: [200, 40, 40],
     }
 }
 
@@ -110,28 +108,6 @@ fn wait_for(
             host.poll_completed().expect("GPU progress");
         }
     }
-}
-
-async fn device_for(
-    gpu: &thrum_test_support::Gpu,
-    generation: u64,
-    path: CookedDrawPath,
-) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    // Ask for every compressed family the adapter offers, as the game's platform layer does.
-    // Timestamps too, so contributed frames exercise the renderer's timing collector.
-    let OpenedDevice { device, queue, .. } = DeviceRecipe {
-        generation,
-        restriction: Some(&DeviceRestriction {
-            limits: Some(wgpu::Limits::default()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    }
-    .open_admitted(&gpu.instance, &gpu.adapter)
-    .await
-    .expect("admitted cooked asset test device");
-    let caps = selected_capabilities(&gpu.adapter, &device, generation, path);
-    (device, queue, caps)
 }
 
 fn changed_pixels(a: &[u8], b: &[u8]) -> usize {
@@ -173,24 +149,14 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-game-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 96);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    let report = cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-game", tree(96));
+    let cook = &sources.cook;
+    let (mut cooker, report) = sources.cook_all();
     assert!(report.failed.is_empty(), "{:?}", report.failed);
 
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("prepared game scene");
+        let Game { mut host, device } =
+            game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         let before = host.capture_pixels().expect("game before cooked assets");
         save("before", &before);
 
@@ -288,7 +254,6 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(
                 .all(|swap| swap.texture_profile.is_some() && swap.volume_profile.is_some())
         );
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -309,27 +274,15 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-cull-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 32);
-    Cooker::open(cook.clone())
-        .expect("cooker")
-        .cook_all()
-        .expect("cook");
+    let sources = Sources::new("g5-cull", tree(32));
+    let cook = &sources.cook;
+    sources.cook_all();
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
+        let Game { mut host, device } =
+            game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         let bc = device
             .features()
             .contains(wgpu::Features::TEXTURE_COMPRESSION_BC);
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("prepared game scene");
         let mut config = placements(cook.store.clone());
         config.volume = None;
         // Straddle the left edge of the view: about half the meshlets are outside it.
@@ -383,7 +336,6 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(
             assert_eq!(profile, Some(Profile::Portable));
         }
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 /// Wait, without rendering, until the loader has staged `generation`.
@@ -456,13 +408,11 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-discard-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 160);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-discard", tree(160));
+    let cook = &sources.cook;
+    let (mut cooker, _) = sources.cook_all();
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
+        let (device, queue, capabilities) = device(gpu, DEVICE, 1, path).await;
         // Discarding happens when a drawable is not acquired, so these hosts present.
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("discard test drawable"),
@@ -492,10 +442,7 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads_case(
         };
         let mut hosts = Vec::new();
         for _ in 0..2 {
-            let mut host = GameSetup::default()
-                .prepare(&device, &queue, &capabilities, config)
-                .await
-                .expect("prepared game scene");
+            let mut host = support::cooked::host(&device, &queue, &capabilities, config).await;
             let assets =
                 CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
             let stats = assets.stats();
@@ -627,7 +574,6 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads_case(
             "retried uploads draw byte-identical frames"
         );
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 fn drawable(device: &wgpu::Device) -> wgpu::TextureView {
@@ -748,18 +694,12 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-timing-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 64);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-timing", tree(64));
+    let cook = &sources.cook;
+    let (mut cooker, _) = sources.cook_all();
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
+        let Game { mut host, device } = game(gpu, DEVICE, 1, path, presenting()).await;
         let view = drawable(&device);
-        let mut host = GameSetup::default()
-            .prepare(&device, &queue, &capabilities, presenting())
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_game_contribution(Box::new(assets))
@@ -799,7 +739,6 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
         );
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -826,17 +765,14 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
     path: CookedDrawPath,
     replacement_path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-device-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 64);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-device", tree(64));
+    let cook = &sources.cook;
+    let (_cooker, _) = sources.cook_all();
     pollster::block_on(async {
-        let (old_device, old_queue, old_capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(&old_device, &old_queue, &old_capabilities, presenting())
-            .await
-            .expect("prepared game scene");
+        let Game {
+            mut host,
+            device: old_device,
+        } = game(gpu, DEVICE, 1, path, presenting()).await;
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_game_contribution(Box::new(assets))
@@ -846,7 +782,7 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
         let old_view = drawable(&old_device);
         until_swap(&mut host, &old_device, &old_view, &stats, &mut clock);
         let (device, queue, capabilities) =
-            device_for(&gpu.fresh_adapter(), 2, replacement_path).await;
+            device(&gpu.fresh_adapter(), DEVICE, 2, replacement_path).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")
@@ -886,7 +822,6 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
             );
         }
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 /// A capture can draw (and swap in) a new set, but it never becomes the scene's previous frame,
 /// so the set's first normal frame still has no motion history. Then a mesh edit to fewer
@@ -910,18 +845,12 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-capture-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 32);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-capture", tree(32));
+    let cook = &sources.cook;
+    let (mut cooker, _) = sources.cook_all();
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
+        let Game { mut host, device } = game(gpu, DEVICE, 1, path, presenting()).await;
         let view = drawable(&device);
-        let mut host = GameSetup::default()
-            .prepare(&device, &queue, &capabilities, presenting())
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_game_contribution(Box::new(assets))
@@ -993,7 +922,6 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set_case(
             }
         }
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -1014,29 +942,19 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-off-camera-sun-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 16);
+    let sources = Sources::new("g5-off-camera-sun", tree(16));
+    let cook = &sources.cook;
     // Flat white reference planes isolate shadow visibility from surface normals and texture.
     demo::write_grid_gltf(&cook.source.join("meshes"), "terrain", 8, 0.0).expect("flat plane");
     demo::write_checker_png(&cook.source.join("textures/checker.png"), 64, [235; 3])
         .expect("white texture");
-    Cooker::open(cook.clone())
-        .expect("cooker")
-        .cook_all()
-        .expect("cook");
+    sources.cook_all();
 
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("game");
+        let Game {
+            mut host,
+            device: _device,
+        } = game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         host.set_scene_camera(
             v1_game::SceneCamera::perspective(
                 [0.0, 202.0, 4.0],
@@ -1093,7 +1011,6 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(
             "off-camera caster darkened only {darkened} of 256 receiver pixels"
         );
     });
-    std::fs::remove_dir_all(&root).expect("remove test store");
 }
 
 /// Blocking HTTP/1.1 GET over loopback, standing in for the browser's `fetch`.
@@ -1155,11 +1072,9 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-remote-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 64);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-remote", tree(64));
+    let cook = &sources.cook;
+    let (_cooker, _) = sources.cook_all();
     let server = thrum_cook::DevServer::start(
         "127.0.0.1:0",
         thrum_asset::AssetStore::new(&cook.store),
@@ -1181,7 +1096,7 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(
             thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
                 .expect("client");
         let fetched = client.poll().await.expect("fetch").expect("a publication");
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
+        let (device, queue, capabilities) = device(gpu, DEVICE, 1, path).await;
         let compressed = fetched
             .manifest()
             .resolve("textures/checker", &[Profile::DesktopBc])
@@ -1199,15 +1114,13 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
             thrum_asset_gpu::CookedSource::Remote(feed.clone()),
         ] {
-            let mut host = GameSetup::default()
-                .prepare(
-                    &device,
-                    &queue,
-                    &capabilities,
-                    FrameConfig::offscreen([640, 360]),
-                )
-                .await
-                .expect("prepared game scene");
+            let mut host = support::cooked::host(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await;
             let assets = CookedAssets::new(config(source)).expect("rigid placements");
             let stats = assets.stats();
             host.set_game_contribution(Box::new(assets))
@@ -1231,7 +1144,6 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(
         assert_eq!(changed_pixels(&frames[0], &frames[1]), 0);
     });
     drop(server);
-    std::fs::remove_dir_all(&root).ok();
 }
 
 /// A later publication pushed into the remote feed swaps in on the render thread, uploading only
@@ -1254,11 +1166,9 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-remote-edit-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 64);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-remote-edit", tree(64));
+    let cook = &sources.cook;
+    let (mut cooker, _) = sources.cook_all();
     let publications = Arc::new(thrum_cook::Publications::default());
     let server = thrum_cook::DevServer::start(
         "127.0.0.1:0",
@@ -1273,16 +1183,8 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(
         let feed = thrum_asset_gpu::RemoteFeed::new(
             client.poll().await.expect("fetch").expect("generation 1"),
         );
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("prepared game scene");
+        let Game { mut host, device } =
+            game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         let mut config =
             v1_game::cooked::cooked_config(thrum_asset_gpu::CookedSource::Remote(feed.clone()));
         config.upload_budget = BUDGET;
@@ -1333,7 +1235,6 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(
         );
     });
     drop(server);
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -1342,10 +1243,10 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
     let Some(gpu) = thrum_test_support::gpu("cooked bad saves", None) else {
         return;
     };
-    let root = std::env::temp_dir().join(format!("thrum-bad-saves-{}", std::process::id()));
-    let mut cook = source_tree(&root, 16);
-    cook.profiles = vec![Profile::Portable];
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    let mut sources = Sources::new("bad-saves", tree(16));
+    sources.cook.profiles = vec![Profile::Portable];
+    let cook = &sources.cook;
+    let mut cooker = sources.cooker();
     let store = thrum_asset::AssetStore::new(&cook.store);
     let first = cooker.cook_all().expect("first cook");
     assert!(first.failed.is_empty(), "{first:?}");
@@ -1355,7 +1256,7 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
             .expect("dev server");
     let origin = format!("http://{}", server.address());
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(&gpu, 1, CookedDrawPath::Direct).await;
+        let (device, queue, capabilities) = device(&gpu, DEVICE, 1, CookedDrawPath::Direct).await;
         let view = drawable(&device);
         let mut client = thrum_asset::DevClient::new(LoopbackFetch, &origin).expect("client");
         let feed = thrum_asset_gpu::RemoteFeed::new(
@@ -1370,10 +1271,8 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
             thrum_asset_gpu::CookedSource::Remote(feed.clone()),
         ] {
-            let mut host = GameSetup::default()
-                .prepare(&device, &queue, &capabilities, presenting())
-                .await
-                .expect("prepare host");
+            let mut host =
+                support::cooked::host(&device, &queue, &capabilities, presenting()).await;
             let mut config = v1_game::cooked::cooked_config(source);
             config.texture_preference = Some(vec![Profile::Portable]);
             let assets = CookedAssets::new(config).expect("placements");
@@ -1526,7 +1425,6 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
         }
     });
     drop(server);
-    std::fs::remove_dir_all(&root).expect("clean up");
 }
 
 fn wait_presented_generation(
@@ -1588,30 +1486,19 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-mirrored-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let plain = source_tree(&root.join("plain"), 16);
-    let mirrored = source_tree(&root.join("mirrored"), 16);
-    demo::write_mirrored_grid_gltf(&mirrored.source.join("meshes"), "terrain", 128, 0.25)
+    let plain = Sources::new("g5-mirrored-plain", tree(16));
+    let mirrored = Sources::new("g5-mirrored", tree(16));
+    demo::write_mirrored_grid_gltf(&mirrored.cook.source.join("meshes"), "terrain", 128, 0.25)
         .expect("mirrored mesh");
-    for cook in [&plain, &mirrored] {
-        Cooker::open(cook.clone())
-            .expect("cooker")
-            .cook_all()
-            .expect("cook");
+    for sources in [&plain, &mirrored] {
+        sources.cook_all();
     }
 
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("game");
+        let Game {
+            mut host,
+            device: _device,
+        } = game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         host.set_scene_camera(
             v1_game::SceneCamera::perspective(
                 [0.0, 203.5, 3.0],
@@ -1640,8 +1527,8 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
                 .unwrap_or_else(|error| panic!("generation 1 never drawn: {error}"));
             host.capture_pixels().expect("grid capture")
         };
-        let plain_pixels = capture(plain.store.clone());
-        let mirrored_pixels = capture(mirrored.store.clone());
+        let plain_pixels = capture(plain.cook.store.clone());
+        let mirrored_pixels = capture(mirrored.cook.store.clone());
         save("mirrored-plain", &plain_pixels);
         save("mirrored-node", &mirrored_pixels);
 
@@ -1652,7 +1539,6 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
             "the mirrored node changed {changed} of {total} pixels"
         );
     });
-    std::fs::remove_dir_all(&root).expect("remove test store");
 }
 
 /// A publication several times larger than staging streams through the bounded ring: its chunks
@@ -1676,23 +1562,13 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-ring-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 256);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    let report = cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-ring", tree(256));
+    let cook = &sources.cook;
+    let (mut cooker, report) = sources.cook_all();
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("prepared game scene");
+        let Game { mut host, device } =
+            game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_game_contribution(Box::new(assets))
@@ -1715,7 +1591,6 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(
         assert!(stats.max_frame_copy_bytes <= BUDGET);
         assert_staging_bounded(&stats);
     });
-    std::fs::remove_dir_all(&root).expect("remove test store");
 }
 
 /// Wait, without rendering, until the loader has posted `generation`.
@@ -1751,23 +1626,13 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
     gpu: &thrum_test_support::Gpu,
     path: CookedDrawPath,
 ) {
-    let root = std::env::temp_dir().join(format!("thrum-g5-supersede-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 256);
-    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    let report = cooker.cook_all().expect("cook");
+    let sources = Sources::new("g5-supersede", tree(256));
+    let cook = &sources.cook;
+    let (mut cooker, report) = sources.cook_all();
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
-        let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("prepared game scene");
+        let Game { mut host, device } =
+            game(gpu, DEVICE, 1, path, FrameConfig::offscreen([640, 360])).await;
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_game_contribution(Box::new(assets))
@@ -1792,28 +1657,6 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
         );
         assert_staging_bounded(&stats);
     });
-    std::fs::remove_dir_all(&root).expect("remove test store");
-}
-
-fn selected_capabilities(
-    adapter: &wgpu::Adapter,
-    device: &wgpu::Device,
-    generation: u64,
-    path: CookedDrawPath,
-) -> DeviceCapabilities {
-    let caps = DeviceCapabilities::capture(adapter, device, generation);
-    assert!(
-        caps.downlevel()
-            .expect("adapter facts")
-            .contains(wgpu::DownlevelFlags::INDIRECT_EXECUTION)
-    );
-    match path {
-        CookedDrawPath::Indirect => caps,
-        CookedDrawPath::Direct => caps.without_indirect_execution(),
-        CookedDrawPath::Auto | CookedDrawPath::MeshStages => {
-            panic!("expected an indexed test path")
-        }
-    }
 }
 
 #[test]
@@ -1822,15 +1665,11 @@ fn adapter_less_public_host_selects_direct() {
         return;
     };
     let _fixture = gpu_fixture();
-    let root = std::env::temp_dir().join(format!("thrum-g5-unknown-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root, 64);
-    Cooker::open(cook.clone())
-        .expect("cooker")
-        .cook_all()
-        .expect("cook");
+    let sources = Sources::new("g5-unknown", tree(64));
+    let cook = &sources.cook;
+    sources.cook_all();
     pollster::block_on(async {
-        let (device, queue, _) = device_for(&gpu, 1, CookedDrawPath::Indirect).await;
+        let (device, queue, _) = device(&gpu, DEVICE, 1, CookedDrawPath::Indirect).await;
         let mut host = GameSetup::default()
             .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
@@ -1861,7 +1700,7 @@ fn adapter_less_public_host_selects_direct() {
     {
         // A child exercises the real environment-selected game attachment without mutating
         // this parallel test process's environment.
-        let output = root.join("public-route");
+        let output = cook.store.with_file_name("public-route");
         let status = std::process::Command::new(env!("CARGO_BIN_EXE_cooked_draw_probe"))
             .env("THRUM_SCENE", "diagnostic")
             .env("THRUM_ASSET_STORE", &cook.store)
@@ -1885,5 +1724,4 @@ fn adapter_less_public_host_selects_direct() {
             serde_json::json!([0, false])
         );
     }
-    std::fs::remove_dir_all(&root).ok();
 }

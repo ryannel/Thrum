@@ -1,5 +1,6 @@
 //! Whole host/shader records. Layouts are held against reflected WGSL in `wgsl_records`.
 use bytemuck::{Pod, Zeroable};
+use thrum_render::{RecordLayout, RecordMember, RecordScalar};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
@@ -38,25 +39,42 @@ pub(crate) struct Field {
     pub velocity: [f32; 4],
 }
 
-/// Reflection tooling's view of the host record, generated from the actual Rust members.
-#[derive(Debug)]
-pub struct RecordLayout {
-    /// WGSL type name.
-    pub name: &'static str,
-    /// Rust record size in bytes.
-    pub size: usize,
-    /// WGSL member names and Rust byte offsets, in declaration order.
-    pub members: Vec<(&'static str, usize)>,
+/// The scalar kind a host record member stores, for [`layouts`].
+trait Kind {
+    const KIND: RecordScalar;
+}
+impl Kind for f32 {
+    const KIND: RecordScalar = RecordScalar::Float;
+}
+impl Kind for u32 {
+    const KIND: RecordScalar = RecordScalar::Uint;
+}
+impl<T: Kind, const N: usize> Kind for [T; N] {
+    const KIND: RecordScalar = T::KIND;
 }
 
-/// Host layouts for shader reflection tools. New bound WGSL structs must have a row here.
+fn member<T, F: Kind>(name: &'static str, offset: usize, _: fn(&T) -> &F) -> RecordMember {
+    RecordMember {
+        name,
+        offset,
+        size: size_of::<F>(),
+        kind: Some(F::KIND),
+    }
+}
+
+/// Host layouts for shader reflection tools, in the renderer's record form, generated from the actual Rust
+/// members. New bound WGSL structs must have a row here.
 pub fn layouts() -> Vec<RecordLayout> {
     macro_rules! record {
         ($ty:ident, $($member:ident),+ $(,)?) => {
             RecordLayout {
                 name: stringify!($ty),
                 size: size_of::<$ty>(),
-                members: vec![$((stringify!($member), std::mem::offset_of!($ty, $member))),+],
+                members: vec![$(member(
+                    stringify!($member),
+                    std::mem::offset_of!($ty, $member),
+                    |record: &$ty| &record.$member,
+                )),+],
             }
         };
     }

@@ -16,25 +16,17 @@ fn validate_uniform_layout(source: &str) {
     )
     .validate(&module)
     .expect("valid Sun compute entries");
-    let (_, ty) = module
-        .types
-        .iter()
-        .find(|(_, ty)| ty.name.as_deref() == Some("Params"))
-        .expect("parameters");
-    let naga::TypeInner::Struct { members, span } = &ty.inner else {
-        panic!("parameters struct")
-    };
-    assert_eq!(*span as usize, size_of::<Uniform>());
-    let offsets = [
-        std::mem::offset_of!(Uniform, weather),
-        std::mem::offset_of!(Uniform, origin),
-        std::mem::offset_of!(Uniform, direction),
-        std::mem::offset_of!(Uniform, physical),
-        std::mem::offset_of!(Uniform, erosion),
-        std::mem::offset_of!(Uniform, rows),
-    ];
-    assert_eq!(members.len(), offsets.len());
-    for (member, offset) in members.iter().zip(offsets) {
-        assert_eq!(member.offset as usize, offset);
-    }
+    thrum_test_support::records::named(
+        "Sun path shader",
+        source,
+        &[thrum_test_support::record!(
+            Uniform as "Params",
+            weather,
+            origin,
+            direction,
+            physical,
+            erosion,
+            rows
+        )],
+    );
 }

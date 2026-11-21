@@ -2,68 +2,19 @@
 
 use std::{collections::BTreeSet, fs, path::Path};
 
-use thrum_render::{RecordLayout, RecordScalar};
-use wgpu::naga::{
-    Handle, Module, ScalarKind, Type, TypeInner,
-    proc::Layouter,
-    valid::{Capabilities, ValidationFlags, Validator},
-};
+use thrum_render::RecordLayout;
+use thrum_test_support::records;
+use wgpu::naga::valid::{Capabilities, ValidationFlags, Validator};
 
-mod wgsl_support;
-
+/// The kit's record check, then naga's validation of the whole composed shader, which the renderer's check does
+/// beyond reflection.
 fn check<'a>(source: &str, name: &str, layouts: &'a [RecordLayout]) -> BTreeSet<&'a str> {
-    let module = wgsl_support::parse(name, source);
-    let mut layouter = Layouter::default();
-    layouter.update(module.to_ctx()).expect("WGSL type layout");
-    let mut records = BTreeSet::new();
-    for ty in wgsl_support::bound_structs(&module) {
-        let name = module.types[ty].name.as_deref().expect("bound struct name");
-        let rust = layouts
-            .iter()
-            .find(|layout| layout.name == name)
-            .unwrap_or_else(|| panic!("bound WGSL struct {name} has no Rust Pod record"));
-        let TypeInner::Struct { members, span } = &module.types[ty].inner else {
-            unreachable!("bound_structs returns structs")
-        };
-        assert_eq!(*span as usize, rust.size, "{name} size");
-        assert_eq!(members.len(), rust.members.len(), "{name} member count");
-        for (wgsl, rust) in members.iter().zip(&rust.members) {
-            let member = rust.name;
-            assert_eq!(wgsl.name.as_deref(), Some(member), "{name} member name");
-            assert_eq!(wgsl.offset as usize, rust.offset, "{name}.{member} offset");
-            assert_eq!(
-                layouter[wgsl.ty].size as usize, rust.size,
-                "{name}.{member} size"
-            );
-            assert_eq!(
-                scalar_kind(&module, wgsl.ty),
-                rust.kind,
-                "{name}.{member} scalar kind"
-            );
-        }
-        records.insert(rust.name);
-    }
+    let records = records::bound(name, source, layouts);
+    let module = records::parse(name, source);
     Validator::new(ValidationFlags::all(), Capabilities::all())
         .validate(&module)
         .unwrap_or_else(|err| panic!("{name}: {}", err.emit_to_string(source)));
     records
-}
-
-fn scalar_kind(module: &Module, ty: Handle<Type>) -> Option<RecordScalar> {
-    match module.types[ty].inner {
-        TypeInner::Scalar(scalar)
-        | TypeInner::Atomic(scalar)
-        | TypeInner::Vector { scalar, .. }
-        | TypeInner::Matrix { scalar, .. } => Some(match scalar.kind {
-            ScalarKind::Float => RecordScalar::Float,
-            ScalarKind::Sint => RecordScalar::Sint,
-            ScalarKind::Uint => RecordScalar::Uint,
-            other => panic!("unexpected scalar kind {other:?}"),
-        }),
-        TypeInner::Array { base, .. } => scalar_kind(module, base),
-        TypeInner::Struct { .. } => None,
-        ref unexpected => panic!("unexpected member type {unexpected:?}"),
-    }
 }
 
 #[test]

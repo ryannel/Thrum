@@ -1,5 +1,6 @@
 //! The test kit: GPU admission, the test device, the small render target, readback, waiting, scratch folders, PPM
-//! images and allocation counts. This package is a dev-dependency only.
+//! images, allocation counts and the check that holds WGSL records to Rust structs. This package is a
+//! dev-dependency only.
 use std::io::Write as _;
 
 pub mod allocations;
@@ -22,6 +23,8 @@ use thrum_render::capabilities::{
 mod light_graph;
 #[cfg(feature = "render")]
 pub use light_graph::BeforeLightSplit;
+#[cfg(feature = "render")]
+pub mod records;
 
 /// Gate result retaining the instance and admitted adapter.
 pub struct Gpu {

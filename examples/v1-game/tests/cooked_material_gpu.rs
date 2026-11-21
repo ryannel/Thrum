@@ -5,21 +5,35 @@
 //! validates on the new device. `THRUM_G6_MATERIAL_CAPTURE_DIR` keeps the captures as PPM files.
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::path::{Path, PathBuf};
+mod support {
+    pub(crate) mod cooked;
+}
+
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use thrum_asset::Profile;
+use support::cooked::{Game, Host, Opener, Sources, Tree, device, game};
 use thrum_asset_gpu::{
     CookedAssets, CookedDrawPath, CookedStats, MaterialHook, MaterialOutcome, MaterialReload,
 };
-use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::present::SurfaceProfile;
-use thrum_render::runtime::{FrameConfig, FrameHost, SurfaceOutput};
-use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+use thrum_render::runtime::{FrameConfig, SurfaceOutput};
+use v1_game::GameHost;
 
-type Host = FrameHost<GameWorld, GameScene>;
+/// This file's devices: the recipe keeps its first-device default, and the generation reaches only
+/// the captured capabilities.
+const DEVICE: Opener = Opener {
+    recipe_generation: false,
+    indexed_only: false,
+    refused: "admitted GPU test device",
+};
+
+/// This file's demo sources: a grey checker and a small cloud volume.
+const TREE: Tree = Tree {
+    volume: 32,
+    checker: [200, 200, 200],
+};
 
 const EXTENT: [u32; 2] = [640, 360];
 
@@ -79,64 +93,12 @@ fn hook(name: &str, source: &str) -> MaterialHook {
     }
 }
 
-fn source_tree(root: &Path) -> CookConfig {
-    let source = root.join("source");
-    for directory in ["meshes", "textures"] {
-        std::fs::create_dir_all(source.join(directory)).expect("source tree");
-    }
-    demo::write_grid_gltf(&source.join("meshes"), "terrain", 128, 0.25).expect("mesh");
-    demo::write_checker_png(&source.join("textures/checker.png"), 512, [200, 200, 200])
-        .expect("texture");
-    demo::write_cloud_volume(&source.join("cloud.tvol"), 32, 1).expect("volume");
-    CookConfig {
-        source,
-        store: root.join("store"),
-        profiles: Profile::ALL.to_vec(),
-        quality: Quality::Fast,
-        durability: Durability::Process,
-    }
-}
-
-fn cooked(name: &str) -> (PathBuf, CookConfig) {
-    let root = std::env::temp_dir().join(format!("thrum-g6-{name}-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root);
-    let report = Cooker::open(cook.clone())
-        .expect("cooker")
-        .cook_all()
-        .expect("cook");
+/// The sources cooked once into their store, the cook having failed nothing.
+fn cooked(name: &str) -> Sources {
+    let sources = Sources::new(&format!("g6-{name}"), TREE);
+    let (_, report) = sources.cook_all();
     assert!(report.failed.is_empty(), "{:?}", report.failed);
-    (root, cook)
-}
-
-async fn gpu(
-    test_gpu: &thrum_test_support::Gpu,
-    generation: u64,
-    path: CookedDrawPath,
-) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    let adapter = test_gpu.adapter.clone();
-    let (device, queue) = {
-        let restriction = thrum_render::capabilities::DeviceRestriction {
-            limits: Some(wgpu::Limits::default()),
-            features: None,
-            ..Default::default()
-        };
-        let opened = thrum_render::capabilities::DeviceRecipe {
-            restriction: Some(&restriction),
-            ..Default::default()
-        }
-        .open_admitted(&test_gpu.instance, &test_gpu.adapter)
-        .await
-        .expect("admitted GPU test device");
-        (opened.device, opened.queue)
-    };
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
-    let capabilities = if path == CookedDrawPath::Direct {
-        capabilities.without_indirect_execution()
-    } else {
-        capabilities
-    };
-    (device, queue, capabilities)
+    sources
 }
 
 fn settle(host: &mut Host, device: &wgpu::Device) {
@@ -280,26 +242,20 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
     ) else {
         return;
     };
-    let (root, cook) = cooked("material");
+    let sources = cooked("material");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats: Arc<Mutex<CookedStats>> = assets.stats();
@@ -413,7 +369,6 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
             0
         );
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 /// The no-hook default and the identity hook draw the same pixels.
@@ -430,26 +385,20 @@ fn the_identity_hook_draws_the_built_in_material_case(path: CookedDrawPath) {
     else {
         return;
     };
-    let (root, cook) = cooked("identity");
+    let sources = cooked("identity");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
@@ -475,7 +424,6 @@ fn the_identity_hook_draws_the_built_in_material_case(path: CookedDrawPath) {
             .count();
         assert_eq!(differing, 0, "identity hook changed {differing} bytes");
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -492,26 +440,20 @@ fn a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path:
     ) else {
         return;
     };
-    let (root, cook) = cooked("non-finite");
+    let sources = cooked("non-finite");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
@@ -537,7 +479,6 @@ fn a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path:
             .count();
         assert_eq!(differing, 0, "non-finite factors changed {differing} bytes");
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -556,26 +497,20 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
     ) else {
         return;
     };
-    let (root, cook) = cooked("material-early");
+    let sources = cooked("material-early");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
@@ -602,7 +537,6 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
         assert_eq!(material.accepted().as_deref(), Some("early/bands.wgsl"));
         assert!(stats.lock().expect("stats").drawn.is_some());
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -621,26 +555,20 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
     ) else {
         return;
     };
-    let (root, cook) = cooked("material-burst");
+    let sources = cooked("material-burst");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
@@ -686,7 +614,6 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
         assert_eq!(material.accepted().as_deref(), Some("burst/green.wgsl"));
         settle(&mut host, &device);
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
@@ -707,17 +634,17 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
     ) else {
         return;
     };
-    let (root, cook) = cooked("material-device");
+    let sources = cooked("material-device");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (old_device, old_queue, old_capabilities) = gpu(&test_gpu, 1, path).await;
         let config = FrameConfig {
             render_extent: EXTENT,
             surface: None,
         };
-        let mut host = GameSetup::default()
-            .prepare(&old_device, &old_queue, &old_capabilities, config)
-            .await
-            .expect("prepared game scene");
+        let Game {
+            mut host,
+            device: old_device,
+        } = game(&test_gpu, DEVICE, 1, path, config).await;
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
@@ -740,7 +667,8 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
 
         // Request a reload, then replace the device before any frame could draw it.
         let outstanding = material.request(hook("hooks/green.wgsl", GREEN));
-        let (device, queue, capabilities) = gpu(&test_gpu.fresh_adapter(), 2, path).await;
+        let (device, queue, capabilities) =
+            device(&test_gpu.fresh_adapter(), DEVICE, 2, path).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")
@@ -798,7 +726,6 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
         assert!(changed_pixels(&after, &green) > 640 * 360 / 100);
         settle(&mut host, &device);
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 /// A live step longer than the 60 Hz tick, so every step completes a tick and submits (or, when
@@ -823,28 +750,20 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: 
     ) else {
         return;
     };
-    let root = std::env::temp_dir().join(format!("thrum-g6-material-ready-{}", std::process::id()));
-    std::fs::remove_dir_all(&root).ok();
-    let cook = source_tree(&root);
+    let sources = Sources::new("g6-material-ready", TREE);
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared game scene");
         // Nothing is cooked yet: the store has no HEAD, so no set can become resident.
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
@@ -878,10 +797,7 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: 
         assert_eq!(material.accepted(), None);
         assert!(stats.lock().expect("stats").drawn.is_none());
         // Publish content: the first frame that draws it draws the material.
-        let report = Cooker::open(cook.clone())
-            .expect("cooker")
-            .cook_all()
-            .expect("cook");
+        let (_, report) = sources.cook_all();
         assert!(report.failed.is_empty(), "{:?}", report.failed);
         let (outcome, _) = until_outcome(&material, serial, || {
             clock += STEP;
@@ -906,7 +822,6 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: 
         assert_eq!(material.ready(), None);
         assert_eq!(material.accepted().as_deref(), Some("ready/green.wgsl"));
     });
-    std::fs::remove_dir_all(&root).ok();
 }
 
 /// With a mesh resident, an encoded frame that is skipped (as the web shell does when drawable
@@ -925,30 +840,24 @@ fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
     else {
         return;
     };
-    let (root, cook) = cooked("material-skip");
+    let sources = cooked("material-skip");
+    let cook = &sources.cook;
     pollster::block_on(async {
-        let (device, queue, capabilities) = gpu(
+        let Game { mut host, device } = game(
             &test_gpu,
+            DEVICE,
             thrum_render::capabilities::FIRST_DEVICE_GENERATION,
             path,
+            FrameConfig {
+                render_extent: EXTENT,
+                // A presenter, so the scene can be encoded before a drawable and skipped.
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent: EXTENT,
+                }),
+            },
         )
         .await;
-        let mut host = GameSetup::default()
-            .prepare(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig {
-                    render_extent: EXTENT,
-                    // A presenter, so the scene can be encoded before a drawable and skipped.
-                    surface: Some(SurfaceProfile {
-                        format: wgpu::TextureFormat::Bgra8Unorm,
-                        extent: EXTENT,
-                    }),
-                },
-            )
-            .await
-            .expect("prepared game scene");
         let drawable = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("skip test drawable"),
             size: wgpu::Extent3d {
@@ -1021,5 +930,4 @@ fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
         assert_eq!(material.ready(), None);
         assert_eq!(material.accepted().as_deref(), Some("skip/green.wgsl"));
     });
-    std::fs::remove_dir_all(&root).ok();
 }
