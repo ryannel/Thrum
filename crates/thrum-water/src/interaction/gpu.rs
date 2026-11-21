@@ -265,15 +265,22 @@ impl Interaction {
         let entries: Vec<_> = layout_entries
             .into_iter()
             .zip(0_u32..)
-            .map(|(ty, binding)| wgpu::BindGroupLayoutEntry {
-                binding,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty,
-                    has_dynamic_offset: binding == 0,
-                    min_binding_size: if binding == 0 { step_size } else { None },
-                },
-                count: None,
+            .map(|(ty, binding)| {
+                if binding == 0 {
+                    // Binding 0 takes a dynamic offset, so it keeps a literal.
+                    wgpu::BindGroupLayoutEntry {
+                        binding,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty,
+                            has_dynamic_offset: true,
+                            min_binding_size: step_size,
+                        },
+                        count: None,
+                    }
+                } else {
+                    binding::buffer(binding, wgpu::ShaderStages::COMPUTE, ty, 0)
+                }
             })
             .collect();
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

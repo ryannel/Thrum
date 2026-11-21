@@ -237,12 +237,15 @@ impl VisibilityPrepared {
         mode: CullMode,
         shape: Option<MemberShape>,
     ) -> Self {
-        let entry = |binding, ty, dynamic| wgpu::BindGroupLayoutEntry {
+        let stages = wgpu::ShaderStages::COMPUTE;
+        let entry = |binding, ty| binding::buffer(binding, stages, ty, 0);
+        // Bindings 0 and 4 take a dynamic offset, so they keep a literal.
+        let dynamic_uniform = |binding| wgpu::BindGroupLayoutEntry {
             binding,
-            visibility: wgpu::ShaderStages::COMPUTE,
+            visibility: stages,
             ty: wgpu::BindingType::Buffer {
-                ty,
-                has_dynamic_offset: dynamic,
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: true,
                 min_binding_size: None,
             },
             count: None,
@@ -251,16 +254,16 @@ impl VisibilityPrepared {
         let write = wgpu::BufferBindingType::Storage { read_only: false };
         let uniform = wgpu::BufferBindingType::Uniform;
         let mut entries = vec![
-            entry(0, uniform, true),
-            entry(1, read, false),
-            entry(2, uniform, false),
-            entry(3, read, false),
-            entry(4, uniform, true),
-            entry(5, write, false),
-            entry(6, write, false),
-            entry(7, write, false),
-            entry(9, read, false),
-            entry(11, write, false),
+            dynamic_uniform(0),
+            entry(1, read),
+            entry(2, uniform),
+            entry(3, read),
+            dynamic_uniform(4),
+            entry(5, write),
+            entry(6, write),
+            entry(7, write),
+            entry(9, read),
+            entry(11, write),
             binding::texture(
                 10,
                 wgpu::ShaderStages::COMPUTE,
@@ -271,9 +274,9 @@ impl VisibilityPrepared {
         // WebGPU allows 8 storage buffers per stage: the member path trades
         // the mask buffer for its member list and reads its table as a uniform.
         if shape.is_some() {
-            entries.extend([entry(12, read, false), entry(13, uniform, false)]);
+            entries.extend([entry(12, read), entry(13, uniform)]);
         } else {
-            entries.push(entry(8, write, false));
+            entries.push(entry(8, write));
         }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera visibility"),
