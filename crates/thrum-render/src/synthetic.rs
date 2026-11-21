@@ -19,6 +19,7 @@ use crate::graph::{
 };
 use crate::graph_record::{ExecutableGraph, RecordFamily};
 use crate::light::{DIRECTIONAL_BYTES, DirectionalLight};
+use crate::pass_key::PipelineRole;
 use crate::timing::{GpuTimings, TimingError};
 use crate::visibility::casters::{CasterCulling, CasterInputs};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
@@ -81,7 +82,6 @@ use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
 pub(crate) use contributed::CONTRIBUTION_COMPUTE;
-use contributed::CONTRIBUTION_UPLOAD;
 pub use display::{DisplayOverlay, SdrToneMap};
 pub(crate) use display::{
     PreToneInput, PreToneViews, PreparedPreToneInput, SdrToneStage, ToneOutput,
@@ -677,12 +677,16 @@ struct SceneContext<'a> {
 }
 
 impl SceneContext<'_> {
-    fn atmosphere(&mut self, index: usize, pass: &CompiledPass) -> Result<(), RenderError> {
+    fn atmosphere(
+        &mut self,
+        stage: crate::pass_key::AtmosphereStage,
+        pass: &CompiledPass,
+    ) -> Result<(), RenderError> {
         self.prepared
             .atmosphere
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?
-            .encode(index, self.encoder, pass, self.timings.as_deref_mut())
+            .encode(stage, self.encoder, pass, self.timings.as_deref_mut())
     }
 
     /// Write this recording's Sun fit once, before the first pass that reads
@@ -1070,33 +1074,16 @@ impl PreparedSynthetic {
     pub fn presentation_light_clamps(&self) -> usize {
         self.presentation_light_clamps
     }
-    /// Number of prepared GPU scene passes for this scene's shadow recipe.
+    /// Timestamped scene passes in this scene's compiled graph: the most render
+    /// and compute passes any of its day, night, scene or readback variants
+    /// holds. The surface consumer is counted by its presenter. Zero only when
+    /// the graph does not compile, which timing refuses as an invalid capacity.
     pub fn scene_pass_count(&self) -> u32 {
-        5 + u32::from(self.temporal_witness_enabled())
-            + u32::from(self.taau.is_some())
-            + u32::from(self.shadow.is_some())
-                * if self.surface_uses_cascades() {
-                    shadow::LAYERS
-                } else {
-                    1
-                }
-            + u32::from(self.caster_culling.is_some())
-            + camera_culling::pass_count(self.camera_culling())
-            + u32::from(self.stars.is_some())
-            + u32::from(self.air_shadow.is_some())
-            + u32::from(self.cluster_compute.is_some())
-            + u32::from(self.contribution_passes.compute)
-            + u32::try_from(self.effect_graph.passes.len()).unwrap_or(u32::MAX)
-            + u32::try_from(self.effect_graph.after_opaque.len()).unwrap_or(u32::MAX)
-            + self
-                .secondary
-                .iter()
-                .map(secondary::SecondaryPrepared::pass_count)
-                .sum::<u32>()
-            + self
-                .atmosphere
-                .as_ref()
-                .map_or(0, AtmospherePrepared::pass_count)
+        self.target_inputs()
+            .compile_graph(1, 1, 256, CaptureSource::Sdr, None)
+            .ok()
+            .and_then(|compiled| u32::try_from(compiled.pipeline_pass_count()).ok())
+            .unwrap_or(0)
     }
     /// Camera opaque draw mode; Frustum adds one timed compute pass and
     /// Occlusion four timed passes.
@@ -1401,7 +1388,7 @@ impl PreparedSynthetic {
         let report =
             self.instance_upload
                 .replace(queue, instances, changed_slots, |slot, instance| {
-                    instance.ids[3] != 0
+                    instance.is_active()
                         && shadow.is_some_and(|shadow| {
                             !shadow.contains_caster(instance, caster_box(boxes, slot))
                         })
@@ -1431,50 +1418,33 @@ impl PreparedSynthetic {
 
 impl SyntheticTargetInputs {
     fn exposure_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 6,
-            ..self.key
-        }
+        PipelineRole::Exposure.key(self.key)
     }
 
     fn display_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 1,
-            ..self.key
-        }
+        PipelineRole::Display.key(self.key)
     }
-    /// Roles 2 and 3 are the Sun cascades; the height map takes role 7.
+    /// The near and far Sun cascades, then the horizon height map.
     fn shadow_key(&self, index: u32) -> PipelineKey {
-        PipelineKey {
-            role: if index < 2 { index + 2 } else { 7 },
-            ..self.key
+        match index {
+            0 => PipelineRole::ShadowNear,
+            1 => PipelineRole::ShadowFar,
+            _ => PipelineRole::HorizonHeights,
         }
+        .key(self.key)
     }
     /// The Sun caster cull, on the bucket route in culled camera modes.
-    /// Roles from 10 are atmosphere stages.
     fn caster_cull_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 0x5343,
-            ..self.key
-        }
+        PipelineRole::CasterCull.key(self.key)
     }
     fn air_shadow_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 8,
-            ..self.key
-        }
+        PipelineRole::AirShadow.key(self.key)
     }
     fn cluster_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 4,
-            ..self.key
-        }
+        PipelineRole::Cluster.key(self.key)
     }
     fn history_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 5,
-            ..self.key
-        }
+        PipelineRole::History.key(self.key)
     }
 }
 

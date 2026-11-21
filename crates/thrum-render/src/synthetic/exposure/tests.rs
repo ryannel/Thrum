@@ -1,5 +1,7 @@
 use super::*;
+use crate::graph::Pass;
 use crate::synthetic::SyntheticView;
+use crate::timing::TimingCategory;
 
 #[test]
 fn policy_preserves_fixed_reciprocal_and_leaves_metered_value_gpu_owned() {
@@ -118,6 +120,7 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
             store: true,
         }],
         external_side_effect: false,
+        timing: TimingCategory::Effects,
     });
     let key = PipelineKey {
         device_generation: 41,
@@ -138,6 +141,7 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
             store: true,
         }],
         external_side_effect: true,
+        timing: TimingCategory::Effects,
     });
     let compiled = graph.compile(41, &BTreeSet::from([key])).unwrap();
     assert_eq!(compiled.dependencies, [(0, 1), (1, 2)]);

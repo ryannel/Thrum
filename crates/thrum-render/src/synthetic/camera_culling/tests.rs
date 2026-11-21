@@ -6,6 +6,7 @@ use super::super::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView}
 use super::*;
 use crate::capabilities::DeviceCapabilities;
 use crate::contribution::SceneContribution;
+use crate::visibility;
 
 /// Occlusion only: the prepass list's indirect arguments, for the Metal
 /// host tests.
@@ -774,7 +775,7 @@ fn a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot() {
         place(&mut scene.instances[1], [0.03; 3], [0.0, 0.0, 1.5], 0.0);
         let plain = veiled_frames(gpu, &scene, false).await;
         let mut uncovered = scene.clone();
-        uncovered.instances[0].ids[3] = 0;
+        uncovered.instances[0].deactivate();
         let behind = veiled_frames(gpu, &uncovered, false).await;
         let direct = veiled_frames(gpu, &scene, true).await;
         let mut runs = Vec::new();

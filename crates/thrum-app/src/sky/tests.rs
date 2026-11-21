@@ -278,7 +278,7 @@ fn missing_or_uncooked_stores_name_the_next_step() {
 fn the_ground_is_one_wide_slab_with_its_top_at_zero() {
     let scene = ground_scene(Some(DEFAULT_GROUND), &[]).unwrap();
     let slab = &scene.instances[0];
-    assert_ne!(slab.ids[3], 0, "the ground row is active");
+    assert!(slab.is_active(), "the ground row is active");
     let top = slab.current[3][1] + slab.current[1][1];
     assert!(top.abs() < 1e-6, "top face at {top}");
     assert!(
@@ -290,7 +290,7 @@ fn the_ground_is_one_wide_slab_with_its_top_at_zero() {
         "and is square"
     );
     assert_eq!(scene.materials[0].base_rgba[..3], DEFAULT_GROUND);
-    assert_eq!(ground_scene(None, &[]).unwrap().instances[0].ids[3], 0);
+    assert!(!ground_scene(None, &[]).unwrap().instances[0].is_active());
     let message = ground_scene(Some([0.2, 1.5, 0.1]), &[]).unwrap_err();
     assert!(message.contains("within 0–1"), "{message}");
 }

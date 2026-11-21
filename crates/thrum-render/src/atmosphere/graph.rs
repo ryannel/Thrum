@@ -1,14 +1,15 @@
 use std::collections::BTreeSet;
 
 use crate::graph::{
-    Access, AccessKind, FrameGraph, GraphError, Pass, PassScope, PipelineKey, ResourceDescriptor,
-    ResourceScope,
+    Access, AccessKind, FrameGraph, GraphError, PassBody, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::pass_key::{AtmosphereStage, PassKey};
 
 use super::{
-    STAGE_NAMES,
     gpu::{AERIAL_EXTENT, AtmospherePrepared, SKY_MOTION_BYTES, UNIFORM_BYTES},
     reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
+    stage::{Chart, Charts},
 };
 
 const LUT_OWNER_BASE: u64 = 0x4154_4d4f;
@@ -16,14 +17,26 @@ const AERIAL_OWNER_BASE: u64 = 0x4154_4d60;
 const REFLECTION_OWNER_BASE: u64 = 0x4154_4d70;
 const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 4);
 
+/// The chart whose persistent graph resource has `owner`.
+pub(crate) fn chart_of_owner(owner: u64) -> Option<Chart> {
+    [
+        Chart::Transmittance,
+        Chart::MultipleScattering,
+        Chart::SkyView,
+        Chart::Ground,
+    ]
+    .into_iter()
+    .find(|chart| LUT_OWNER_BASE + chart.owner_offset() == owner)
+}
+
 impl AtmospherePrepared {
     pub(crate) fn append_graph(
         &self,
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         forward_accesses: &mut Vec<Access>,
-        environment_light: crate::graph::ResourceId,
-    ) -> Result<(crate::graph::ResourceId, crate::graph::ResourceId), GraphError> {
+        environment_light: ResourceId,
+    ) -> Result<(ResourceId, ResourceId), GraphError> {
         let uniform = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: UNIFORM_BYTES,
@@ -33,91 +46,61 @@ impl AtmospherePrepared {
         )?;
         append_motion_read(graph, forward_accesses)?;
         let night_reads = self.night.graph_reads(graph)?;
-        let resources = self
-            .textures
-            .iter()
-            .enumerate()
-            .map(|(index, texture)| {
-                graph.resource(
-                    ResourceDescriptor::Texture {
-                        dimension: crate::graph::TextureKind::D2,
-                        width: texture.width(),
-                        height: texture.height(),
-                        layers: 1,
-                        mips: 1,
-                        samples: 1,
-                        format: texture.format(),
-                        usage: texture.usage(),
-                    },
-                    ResourceScope::Persistent {
-                        owner: LUT_OWNER_BASE + index as u64,
-                        epoch: self.epoch,
-                        initialized: false,
-                    },
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        // Resource indices remain T=0,M=1,Sky=2; GroundE=3 is appended. Its
-        // producer runs before Sky and has no dependency on the camera sky.
-        for index in [0_usize, 1, 3, 2] {
+        let resources = Charts::try_from_fn(|chart| {
+            let texture = self.textures.get(chart);
+            graph.resource(
+                ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
+                    width: texture.width(),
+                    height: texture.height(),
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: texture.format(),
+                    usage: texture.usage(),
+                },
+                ResourceScope::Persistent {
+                    owner: LUT_OWNER_BASE + chart.owner_offset(),
+                    epoch: self.epoch,
+                    initialized: false,
+                },
+            )
+        })?;
+        // The four chart stages, in graph order: ground runs before the sky view,
+        // which samples it, and has no dependency on the camera sky.
+        for stage in AtmosphereStage::ORDER {
+            let Some(output) = stage.chart_output() else {
+                continue;
+            };
             let mut accesses = vec![Access::new(
                 uniform.clone(),
                 0..UNIFORM_BYTES,
                 AccessKind::UniformRead,
             )];
-            let inputs: &[usize] = match index {
-                0 => &[],
-                1 => &[0],
-                2 => &[0, 1, 3],
-                _ => &[0, 1],
-            };
-            for &input in inputs {
-                accesses.push(Access::new(
-                    resources[input].clone(),
-                    0..1,
-                    AccessKind::SampledRead,
-                ));
-            }
-            if index == 2 {
+            accesses.extend(chart_reads(stage, &resources));
+            if stage == AtmosphereStage::SkyView {
                 accesses.extend(night_reads.iter().cloned());
             }
             accesses.push(Access::new(
-                resources[index].clone(),
+                resources.get(output).clone(),
                 0..1,
                 AccessKind::StorageWrite,
             ));
-            let role = if index == 3 {
-                5
-            } else {
-                u32::try_from(index).expect("three original atmosphere LUTs")
-            };
-            let key = self.key(role);
-            keys.insert(key);
-            graph.pass(Pass {
-                name: STAGE_NAMES[usize::try_from(role).expect("prepared atmosphere stage")].into(),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses,
-                external_side_effect: false,
-            });
+            self.declare_stage(graph, keys, stage, accesses);
         }
-        let diffuse_key = self.key(3);
-        keys.insert(diffuse_key);
-        graph.pass(Pass {
-            name: STAGE_NAMES[3].into(),
-            scope: PassScope::View(1),
-            pipeline: Some(diffuse_key),
-            accesses: vec![
-                Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
-                Access::new(resources[2].clone(), 0..1, AccessKind::SampledRead),
-                Access::new(
-                    environment_light,
-                    0..crate::light::ENVIRONMENT_BYTES,
-                    AccessKind::StorageWrite,
-                ),
-            ],
-            external_side_effect: false,
-        });
+        let diffuse = AtmosphereStage::Diffuse;
+        let mut accesses = vec![Access::new(
+            uniform.clone(),
+            0..UNIFORM_BYTES,
+            AccessKind::UniformRead,
+        )];
+        accesses.extend(chart_reads(diffuse, &resources));
+        accesses.push(Access::new(
+            environment_light,
+            0..crate::light::ENVIRONMENT_BYTES,
+            AccessKind::StorageWrite,
+        ));
+        self.declare_stage(graph, keys, diffuse, accesses);
         let aerial = self
             .aerial_textures
             .iter()
@@ -142,41 +125,38 @@ impl AtmospherePrepared {
                 )
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let aerial_key = self.key(4);
-        keys.insert(aerial_key);
-        graph.pass(Pass {
-            name: STAGE_NAMES[4].into(),
-            scope: PassScope::View(1),
-            pipeline: Some(aerial_key),
-            accesses: [
-                Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
-                Access::new(resources[0].clone(), 0..1, AccessKind::SampledRead),
-                Access::new(resources[1].clone(), 0..1, AccessKind::SampledRead),
-                Access::new(
-                    aerial[0].clone(),
-                    0..u64::from(AERIAL_EXTENT[2]),
-                    AccessKind::StorageWrite,
-                ),
-                Access::new(
-                    aerial[1].clone(),
-                    0..u64::from(AERIAL_EXTENT[2]),
-                    AccessKind::StorageWrite,
-                ),
-            ]
-            .into_iter()
-            .chain(night_reads)
-            .collect(),
-            external_side_effect: false,
-        });
-        self.append_reflection(graph, keys, &uniform, &resources[2], forward_accesses)?;
+        let stage = AtmosphereStage::Aerial;
+        let accesses = [Access::new(
+            uniform.clone(),
+            0..UNIFORM_BYTES,
+            AccessKind::UniformRead,
+        )]
+        .into_iter()
+        .chain(chart_reads(stage, &resources))
+        .chain([
+            Access::new(
+                aerial[0].clone(),
+                0..u64::from(AERIAL_EXTENT[2]),
+                AccessKind::StorageWrite,
+            ),
+            Access::new(
+                aerial[1].clone(),
+                0..u64::from(AERIAL_EXTENT[2]),
+                AccessKind::StorageWrite,
+            ),
+        ])
+        .chain(night_reads)
+        .collect();
+        self.declare_stage(graph, keys, stage, accesses);
+        self.append_reflection(graph, keys, &uniform, &resources, forward_accesses)?;
         forward_accesses.push(Access::new(
             uniform.clone(),
             0..UNIFORM_BYTES,
             AccessKind::UniformRead,
         ));
-        for index in [0, 2] {
+        for chart in [Chart::Transmittance, Chart::SkyView] {
             forward_accesses.push(Access::new(
-                resources[index].clone(),
+                resources.get(chart).clone(),
                 0..1,
                 AccessKind::SampledRead,
             ));
@@ -188,15 +168,35 @@ impl AtmospherePrepared {
                 AccessKind::SampledRead,
             ));
         }
-        Ok((resources[0].clone(), uniform))
+        Ok((resources.transmittance.clone(), uniform))
+    }
+
+    fn declare_stage(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        stage: AtmosphereStage,
+        accesses: Vec<Access>,
+    ) {
+        let key = self.key(stage);
+        keys.insert(key);
+        graph.declare(
+            PassKey::Atmosphere(stage),
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(key),
+                accesses,
+                external_side_effect: false,
+            },
+        );
     }
 
     fn append_reflection(
         &self,
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
-        uniform: &crate::graph::ResourceId,
-        sky: &crate::graph::ResourceId,
+        uniform: &ResourceId,
+        charts: &Charts<ResourceId>,
         forward: &mut Vec<Access>,
     ) -> Result<(), GraphError> {
         let resources = [
@@ -225,7 +225,6 @@ impl AtmospherePrepared {
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-        let dfg_key = self.key(6);
         let samples = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: SAMPLE_BYTES,
@@ -237,38 +236,29 @@ impl AtmospherePrepared {
                 initialized: false,
             },
         )?;
-        keys.insert(dfg_key);
-        graph.pass(Pass {
-            name: STAGE_NAMES[6].into(),
-            scope: PassScope::View(1),
-            pipeline: Some(dfg_key),
-            accesses: vec![
+        let dfg = AtmosphereStage::Dfg;
+        let accesses = chart_reads(dfg, charts)
+            .chain([
                 Access::new(resources[0].clone(), 0..1, AccessKind::StorageWrite),
                 Access::new(samples.clone(), 0..SAMPLE_BYTES, AccessKind::StorageWrite),
-            ],
-            external_side_effect: false,
-        });
+            ])
+            .collect();
+        self.declare_stage(graph, keys, dfg, accesses);
         for mip in 0..MIP_COUNT {
-            let stage = 7 + mip;
-            let key = self.key(stage);
-            keys.insert(key);
-            graph.pass(Pass {
-                name: STAGE_NAMES[usize::try_from(stage).expect("prepared reflection stage")]
-                    .into(),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses: vec![
-                    Access::new(samples.clone(), 0..SAMPLE_BYTES, AccessKind::StorageRead),
-                    Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
-                    Access::new(sky.clone(), 0..1, AccessKind::SampledRead),
-                    Access::new(
-                        resources[1].clone(),
-                        u64::from(mip * 6)..u64::from((mip + 1) * 6),
-                        AccessKind::StorageWrite,
-                    ),
-                ],
-                external_side_effect: false,
-            });
+            let stage = AtmosphereStage::Reflection(mip);
+            let accesses = [
+                Access::new(samples.clone(), 0..SAMPLE_BYTES, AccessKind::StorageRead),
+                Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+            ]
+            .into_iter()
+            .chain(chart_reads(stage, charts))
+            .chain([Access::new(
+                resources[1].clone(),
+                u64::from(mip * 6)..u64::from((mip + 1) * 6),
+                AccessKind::StorageWrite,
+            )])
+            .collect();
+            self.declare_stage(graph, keys, stage, accesses);
         }
         for (resource, end) in [
             (resources[0].clone(), 1),
@@ -297,4 +287,51 @@ fn append_motion_read(
         AccessKind::UniformRead,
     ));
     Ok(())
+}
+
+/// Graph reads of the charts `stage` samples, for a pass declared outside the
+/// atmosphere's own graph section, such as a secondary view's aerial volume.
+/// Accesses in `inherited` that touch any chart are replaced by the table's
+/// reads, so the pass reads exactly the charts its bind group samples.
+pub(crate) fn stage_reads(
+    graph: &FrameGraph,
+    stage: AtmosphereStage,
+    inherited: &[Access],
+) -> Result<Vec<Access>, crate::synthetic::RenderError> {
+    // The atmosphere declares its charts before any view that samples them.
+    let charts = Charts::try_from_fn(|chart| {
+        graph
+            .persistent(LUT_OWNER_BASE + chart.owner_offset())
+            .ok_or(crate::synthetic::RenderError::GraphPassMismatch)
+    })?;
+    let is_chart = |access: &Access| {
+        [
+            &charts.transmittance,
+            &charts.multiple_scattering,
+            &charts.sky_view,
+            &charts.ground,
+        ]
+        .contains(&&access.resource)
+    };
+    Ok(inherited
+        .iter()
+        .filter(|access| !is_chart(access))
+        .cloned()
+        .chain(chart_reads(stage, &charts))
+        .collect())
+}
+
+/// Graph reads of the charts `stage` samples, from the same table its bind
+/// group is built from.
+fn chart_reads(
+    stage: AtmosphereStage,
+    charts: &Charts<ResourceId>,
+) -> impl Iterator<Item = Access> + '_ {
+    stage.chart_reads().iter().map(|read| {
+        Access::new(
+            charts.get(read.chart).clone(),
+            0..1,
+            AccessKind::SampledRead,
+        )
+    })
 }

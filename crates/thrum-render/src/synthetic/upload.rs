@@ -29,7 +29,7 @@ impl PackedInstances {
         let mut physical_to_slot = Vec::with_capacity(instances.len());
         for active in [true, false] {
             for (slot, instance) in instances.iter().enumerate() {
-                if (instance.ids[3] != 0) == active {
+                if instance.is_active() == active {
                     physical_to_slot
                         .push(u32::try_from(slot).map_err(|_| RenderError::SceneCapacity)?);
                 }
@@ -38,7 +38,7 @@ impl PackedInstances {
         let active_count = u32::try_from(
             instances
                 .iter()
-                .filter(|instance| instance.ids[3] != 0)
+                .filter(|instance| instance.is_active())
                 .count(),
         )
         .map_err(|_| RenderError::SceneCapacity)?;
@@ -99,7 +99,7 @@ impl InstanceUpload {
         }
         let two_sided: Vec<bool> = instances
             .iter()
-            .map(|instance| instance.ids[3] != 0 && needs_two_sided(instance))
+            .map(|instance| instance.is_active() && needs_two_sided(instance))
             .collect();
         let active_two_sided = two_sided.iter().filter(|&&value| value).count();
         Self {
@@ -196,7 +196,7 @@ impl InstanceUpload {
                 self.staged.push(record);
                 self.staged_shadow.push(clamped);
                 self.staged_two_sided
-                    .push(instances[index].ids[3] != 0 && needs_two_sided(&instances[index]));
+                    .push(instances[index].is_active() && needs_two_sided(&instances[index]));
                 self.valid_slots.push(slot);
             }
         }
@@ -212,7 +212,7 @@ impl InstanceUpload {
         }
         for (&slot, &row) in self.valid_slots.iter().zip(&self.staged) {
             let logical = slot as usize;
-            let new_active = instances[logical].ids[3] != 0;
+            let new_active = instances[logical].is_active();
             let old_physical = self.slot_to_physical[logical];
             if new_active != self.active_slots[logical] {
                 let boundary = if new_active {
@@ -354,10 +354,10 @@ fn validate_synthetic_instance(
     material_count: u32,
     logical_slot: u32,
 ) -> Result<InstanceRecord, RenderError> {
-    if instance.ids[0] != logical_slot {
+    if instance.logical_slot() != logical_slot {
         return Err(RenderError::InvalidInstanceIdentity);
     }
-    if instance.ids[2] != 0 {
+    if instance.skin_offset() != 0 {
         return Err(RenderError::UnsupportedSyntheticMaterial);
     }
     // The bounded cube evaluator needs finite nondegenerate normal axes.

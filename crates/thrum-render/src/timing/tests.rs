@@ -1,4 +1,6 @@
-use super::{Completion, PassExecution, PassNames, PassTiming, SceneGpuTimings, TimingError};
+use super::{
+    Completion, PassExecution, PassNames, PassTiming, SceneGpuTimings, TimingCategory, TimingError,
+};
 use std::sync::Arc;
 
 #[test]
@@ -60,17 +62,17 @@ fn completed_callback_drop_cannot_poison_concurrent_reuse() {
 #[test]
 fn pass_names_reuse_slots_across_batches_and_replace_changed_roles() {
     let mut names = PassNames::with_capacity(2);
-    assert_eq!(names.push("depth"), 0);
-    assert_eq!(names.push("forward"), 1);
+    assert_eq!(names.push("depth", TimingCategory::Forward), 0);
+    assert_eq!(names.push("forward", TimingCategory::Forward), 1);
     let first = Arc::clone(&names.slots[0]);
     let second = Arc::clone(&names.slots[1]);
     names.clear();
-    assert_eq!(names.push("depth"), 0);
-    assert_eq!(names.push("forward"), 1);
+    assert_eq!(names.push("depth", TimingCategory::Forward), 0);
+    assert_eq!(names.push("forward", TimingCategory::Forward), 1);
     assert!(Arc::ptr_eq(&first, &names.slots[0]));
     assert!(Arc::ptr_eq(&second, &names.slots[1]));
     names.clear();
-    assert_eq!(names.push("shadow"), 0);
+    assert_eq!(names.push("shadow", TimingCategory::Forward), 0);
     assert!(!Arc::ptr_eq(&first, &names.slots[0]));
     assert_eq!(names.slots[1].as_ref(), "forward");
 }
@@ -80,18 +82,22 @@ fn named_scene_timings_preserve_optional_pass_identity_and_unavailable_transfers
     let passes = [
         PassTiming {
             name: "synthetic forward opaque".into(),
+            category: crate::pass_key::tests::timing_of("synthetic forward opaque"),
             nanoseconds: 7.0,
         },
         PassTiming {
             name: "atmosphere stars".into(),
+            category: crate::pass_key::tests::timing_of("atmosphere stars"),
             nanoseconds: 3.0,
         },
         PassTiming {
             name: "synthetic tone encode".into(),
+            category: crate::pass_key::tests::timing_of("synthetic tone encode"),
             nanoseconds: 0.0,
         },
         PassTiming {
             name: crate::present::PASS_NAME.into(),
+            category: crate::pass_key::tests::timing_of(crate::present::PASS_NAME),
             nanoseconds: 2.0,
         },
     ];

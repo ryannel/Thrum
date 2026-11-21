@@ -27,6 +27,7 @@ fn timings(atmosphere: &[&str]) -> Vec<PassTiming> {
         ])
         .map(|name| PassTiming {
             name: name.into(),
+            category: crate::pass_key::tests::timing_of(name),
             nanoseconds: 1.0,
         })
         .collect()
@@ -91,8 +92,7 @@ fn cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket() {
 
 #[test]
 fn reflection_queries_keep_raw_identity_and_the_existing_sky_bucket() {
-    let names =
-        crate::atmosphere::TIMING_ORDER.map(|(stage, _)| crate::atmosphere::STAGE_NAMES[stage]);
+    let names = AtmosphereStage::ORDER.map(AtmosphereStage::name);
     let cold = timings(&names);
     let (values, _, _) = pass_durations(&cold, false, TRANSFORMS).unwrap();
     assert_eq!(
@@ -128,6 +128,7 @@ fn a_contribution_compute_pass_is_reported_apart_from_the_scene_sequence() {
         1,
         PassTiming {
             name: super::super::CONTRIBUTION_COMPUTE.into(),
+            category: crate::pass_key::tests::timing_of(super::super::CONTRIBUTION_COMPUTE),
             nanoseconds: 3.0,
         },
     );
@@ -195,6 +196,7 @@ fn camera_visibility_is_required_by_the_culled_layout_and_counted_in_forward() {
         1,
         PassTiming {
             name: crate::visibility::PASS.into(),
+            category: crate::pass_key::tests::timing_of(crate::visibility::PASS),
             nanoseconds: 2.0,
         },
     );
@@ -226,6 +228,7 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
             2 + offset,
             PassTiming {
                 name: name.into(),
+                category: crate::pass_key::tests::timing_of(name),
                 nanoseconds: 2.0,
             },
         );
@@ -242,6 +245,7 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     let mut night = passes.clone();
     night.push(PassTiming {
         name: super::super::stars::PASS_NAME.into(),
+        category: crate::pass_key::tests::timing_of(super::super::stars::PASS_NAME),
         nanoseconds: 3.0,
     });
     let night_layout = SceneTimingLayout {
@@ -276,6 +280,7 @@ fn the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket() {
             .iter()
             .map(|&name| PassTiming {
                 name: name.into(),
+                category: crate::pass_key::tests::timing_of(name),
                 nanoseconds: 1.0,
             })
             .collect()
@@ -315,6 +320,7 @@ fn effect_queries_keep_names_without_changing_the_fixed_scene_buckets() {
         0,
         PassTiming {
             name: "effect 0: trail".into(),
+            category: crate::pass_key::tests::timing_of("effect 0: trail"),
             nanoseconds: 123.0,
         },
     );

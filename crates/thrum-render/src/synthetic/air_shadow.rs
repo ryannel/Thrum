@@ -5,15 +5,17 @@
 
 use super::shadow::ShadowTarget;
 use super::{DIRECTIONAL_BYTES, RenderError, shadow};
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
-    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::pass_key::PassKey;
 use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
 
 /// Timed name of the Sun air shadow heights compute pass.
-pub(crate) const AIR_SHADOW_PASS: &str = "synthetic Sun air shadow heights";
+pub(crate) const AIR_SHADOW_PASS: &str = PassKey::AirShadow.constant_name();
 /// Output columns per side: two caster height texels each, the same footprint.
 pub(super) use crate::shader_constants::AIR_SHADOW_SIZE as SIZE;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg32Float;
@@ -106,26 +108,28 @@ pub(super) fn append_graph(
         kind,
         store: true,
     };
-    graph.pass(Pass {
-        name: AIR_SHADOW_PASS.into(),
-        scope: PassScope::View(1),
-        pipeline: Some(key),
-        accesses: vec![
-            read(
-                sample,
-                0..shadow::SAMPLE_BYTES as u64,
-                AccessKind::UniformRead,
-            ),
-            read(
-                maps,
-                shadow::HEIGHT_LAYER as u64..u64::from(shadow::LAYERS),
-                AccessKind::SampledRead,
-            ),
-            read(directional, 0..DIRECTIONAL_BYTES, AccessKind::UniformRead),
-            read(heights.clone(), 0..1, AccessKind::AttachmentClear),
-        ],
-        external_side_effect: false,
-    });
+    graph.declare(
+        PassKey::AirShadow,
+        PassBody {
+            scope: PassScope::View(1),
+            pipeline: Some(key),
+            accesses: vec![
+                read(
+                    sample,
+                    0..shadow::SAMPLE_BYTES as u64,
+                    AccessKind::UniformRead,
+                ),
+                read(
+                    maps,
+                    shadow::HEIGHT_LAYER as u64..u64::from(shadow::LAYERS),
+                    AccessKind::SampledRead,
+                ),
+                read(directional, 0..DIRECTIONAL_BYTES, AccessKind::UniformRead),
+                read(heights.clone(), 0..1, AccessKind::AttachmentClear),
+            ],
+            external_side_effect: false,
+        },
+    );
     accesses.push(read(heights.clone(), 0..1, AccessKind::SampledRead));
     Ok(heights)
 }

@@ -1,0 +1,167 @@
+//! Each atmosphere stage is one typed key. The charts its graph pass reads
+//! are the charts its table lists, which its bind group is built from, and
+//! its role, cache bit and timing bucket come from the key.
+
+mod registry_support;
+mod support;
+
+use std::collections::BTreeMap;
+use support::{AIR_EXTENT, AirProbe, host_with_extent};
+use thrum_render::{
+    atmosphere::AtmosphereFrame,
+    capabilities::DeviceCapabilities,
+    contribution::{SecondaryViewRequest, ViewAir, ViewClipPlane},
+    graph::CompiledGraph,
+    registry_audit::{self, StageAudit},
+    synthetic::{FrameLighting, SyntheticScene, SyntheticView},
+};
+
+fn check(label: &str, graph: &CompiledGraph, stages: &mut BTreeMap<String, StageAudit>) {
+    for stage in registry_audit::atmosphere_stages(graph) {
+        let name = &stage.name;
+        let table: Vec<_> = stage
+            .table_reads
+            .iter()
+            .map(|(chart, _)| chart.clone())
+            .collect();
+        assert_eq!(
+            stage.graph_reads, table,
+            "{label}: {name} reads charts its bind group does not sample"
+        );
+        assert_eq!(
+            stage.role,
+            Some(stage.key_role),
+            "{label}: {name}'s role is not its key's"
+        );
+        assert_eq!(
+            stage.timing, stage.key_timing,
+            "{label}: {name}'s timing bucket is not its key's"
+        );
+        assert_ne!(stage.validity, 0, "{label}: {name} has no cache bit");
+        stages.insert(name.clone(), stage);
+    }
+}
+
+#[test]
+fn every_stage_reads_its_table_and_takes_its_role_bit_and_bucket_from_its_key() {
+    let Some(variants) = registry_support::variants("atmosphere stage table") else {
+        return;
+    };
+    let mut stages = BTreeMap::new();
+    for variant in &variants {
+        // Every timed pass has a slot, atmosphere stages included.
+        assert!(
+            usize::try_from(variant.scene_pass_count)
+                .is_ok_and(|slots| slots >= registry_audit::pipeline_pass_count(&variant.graph)),
+            "{}: fewer timestamp slots than timed passes",
+            variant.label
+        );
+        check(&variant.label, &variant.graph, &mut stages);
+    }
+    // All fourteen stages were seen, each with its own role.
+    assert_eq!(stages.len(), 14, "stages seen: {:?}", stages.keys());
+    let mut roles: Vec<_> = stages.values().map(|stage| stage.key_role).collect();
+    roles.sort_unstable();
+    roles.dedup();
+    assert_eq!(roles.len(), 14);
+    // The table, as the bind groups are built from it.
+    let table: BTreeMap<_, _> = stages
+        .iter()
+        .map(|(name, stage)| (name.as_str(), stage.table_reads.clone()))
+        .collect();
+    let reads = |charts: &[(&str, u32)]| -> Vec<(String, u32)> {
+        charts
+            .iter()
+            .map(|(chart, binding)| ((*chart).to_owned(), *binding))
+            .collect()
+    };
+    assert_eq!(table["atmosphere transmittance"], reads(&[]));
+    assert_eq!(
+        table["atmosphere multiple scattering"],
+        reads(&[("Transmittance", 1)])
+    );
+    assert_eq!(
+        table["atmosphere ground irradiance"],
+        reads(&[("Transmittance", 1), ("MultipleScattering", 2)])
+    );
+    assert_eq!(
+        table["atmosphere sky view"],
+        reads(&[
+            ("Transmittance", 1),
+            ("MultipleScattering", 2),
+            ("Ground", 5)
+        ])
+    );
+    assert_eq!(
+        table["atmosphere aerial perspective"],
+        reads(&[("Transmittance", 1), ("MultipleScattering", 2)])
+    );
+    assert_eq!(
+        table["atmosphere diffuse irradiance"],
+        reads(&[("SkyView", 1)])
+    );
+    assert_eq!(table["atmosphere DFG integration"], reads(&[]));
+    for mip in 0..7 {
+        assert_eq!(
+            table[format!("atmosphere reflection mip {mip}").as_str()],
+            reads(&[("SkyView", 1)])
+        );
+    }
+}
+
+#[test]
+fn a_secondary_view_aerial_volume_reads_the_aerial_stage_table() {
+    let Some(gpu) =
+        thrum_test_support::gpu("secondary aerial stage table", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    pollster::block_on(async {
+        let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+        let view = |height: f32| {
+            SyntheticView::perspective(
+                [0.0, height, 0.0],
+                [0.0, height, -1.0],
+                [0.0, 1.0, 0.0],
+                1.0,
+                1.0,
+                0.1,
+                5000.0,
+            )
+            .expect("camera")
+        };
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.view = view(100.0);
+        let light = FrameLighting::Atmosphere(
+            AtmosphereFrame::new([0.5, 0.707, 0.5], 100_000.0, [1.0; 3], 100.0, 1).expect("air"),
+        );
+        let mut host = host_with_extent(&capabilities, &queue, scene, light, AIR_EXTENT).await;
+        let (probe, _outputs) = AirProbe::new(Some(
+            &SecondaryViewRequest::new(
+                &view(60.0),
+                AIR_EXTENT,
+                Some(ViewClipPlane::new([0.0, 1.0, 0.0, -100.0]).expect("plane")),
+                ViewAir::Plane,
+            )
+            .expect("ask"),
+        ));
+        host.set_scene_contribution(Box::new(probe))
+            .expect("attach the secondary view");
+        let graph = host.scene_graph().expect("inspect the graph");
+        // The frame records and validates on Metal with the table's reads.
+        host.capture_pixels().expect("secondary frame");
+        let mut stages = BTreeMap::new();
+        check("secondary view", &graph, &mut stages);
+        let secondary = stages
+            .get("secondary view aerial perspective 0")
+            .unwrap_or_else(|| panic!("no secondary aerial pass: {:?}", stages.keys()));
+        assert_eq!(
+            secondary.graph_reads,
+            ["Transmittance", "MultipleScattering"]
+        );
+    });
+}

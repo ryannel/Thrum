@@ -2,6 +2,7 @@
 mod support;
 
 use std::time::Duration;
+use thrum_render::timing::TimingCategory;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::{PresentError, SurfacePresenter, SurfaceProfile},
@@ -96,7 +97,7 @@ fn extent_mismatch_reaches_the_drive_and_frame_sample() {
         let mut timings = GpuTimings::new(&cap, &queue, 1).unwrap();
         assert!(
             timings
-                .pass_writes(1, "earlier scene pass")
+                .pass_writes(1, "earlier scene pass", TimingCategory::Effects)
                 .unwrap()
                 .is_some()
         );

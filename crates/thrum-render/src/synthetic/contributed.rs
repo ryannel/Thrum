@@ -1,6 +1,8 @@
 //! The scene contribution's place in the prepared scene: its graph passes, the surface it draws
 //! into and the camera facts it is given.
 
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
 use super::{
@@ -9,13 +11,12 @@ use super::{
 };
 use crate::graph::ResourceId;
 use crate::graph::{
-    Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceScope,
+    Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceScope,
 };
 
 /// Timed graph pass that runs the scene contribution's compute work.
-pub(crate) const CONTRIBUTION_COMPUTE: &str = "contribution compute";
+pub(crate) const CONTRIBUTION_COMPUTE: &str = PassKey::ContributionCompute.constant_name();
 /// Graph name of the contribution's staged-copy pass.
-pub(super) const CONTRIBUTION_UPLOAD: &str = "contribution upload";
 /// Extent of each contribution token resource. Tokens only order the contribution passes before
 /// forward for resources the contribution owns; they are not those resources' extent, memory or
 /// hazard evidence.
@@ -46,10 +47,7 @@ impl PreparedSynthetic {
 
 impl super::SyntheticTargetInputs {
     pub(super) fn contribution_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 1000,
-            ..self.key
-        }
+        PipelineRole::ContributionCompute.key(self.key)
     }
 
     /// Declare the contribution's upload and compute passes before forward; forward reads what
@@ -82,19 +80,21 @@ impl super::SyntheticTargetInputs {
                         wgpu::BufferUsages::empty()
                     },
             )?;
-            graph.pass(Pass {
-                name: CONTRIBUTION_UPLOAD.into(),
-                scope: PassScope::View(1),
-                pipeline: None,
-                accesses: vec![Access {
-                    view: None,
-                    resource: products.clone(),
-                    range: 0..CONTRIBUTION_TOKEN_BYTES,
-                    kind: AccessKind::CopyWrite,
-                    store: true,
-                }],
-                external_side_effect: false,
-            });
+            graph.declare(
+                PassKey::ContributionUpload,
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: None,
+                    accesses: vec![Access {
+                        view: None,
+                        resource: products.clone(),
+                        range: 0..CONTRIBUTION_TOKEN_BYTES,
+                        kind: AccessKind::CopyWrite,
+                        store: true,
+                    }],
+                    external_side_effect: false,
+                },
+            );
             accesses.push(Access {
                 view: None,
                 resource: products.clone(),
@@ -129,13 +129,15 @@ impl super::SyntheticTargetInputs {
                 });
             }
             prepared_keys.insert(self.contribution_key());
-            graph.pass(Pass {
-                name: CONTRIBUTION_COMPUTE.into(),
-                scope: PassScope::View(1),
-                pipeline: Some(self.contribution_key()),
-                accesses: compute,
-                external_side_effect: false,
-            });
+            graph.declare(
+                PassKey::ContributionCompute,
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(self.contribution_key()),
+                    accesses: compute,
+                    external_side_effect: false,
+                },
+            );
             accesses.push(Access {
                 view: None,
                 resource: draws,

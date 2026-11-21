@@ -1,6 +1,7 @@
 //! Exercise the actual graph binding and retained shader on Metal.
 use super::*;
 use crate::synthetic::{CaptureSource, OffscreenTarget, PreparedSynthetic, SyntheticScene};
+use crate::timing::TimingCategory;
 
 fn capture(
     device: &wgpu::Device,
@@ -170,6 +171,7 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
                 Access::new(colour.clone(), 0..1, AccessKind::CopyWrite),
             ],
             external_side_effect: false,
+            timing: TimingCategory::Effects,
         });
         let input = PreToneInput {
             colour: colour.clone(),

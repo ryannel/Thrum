@@ -1,4 +1,6 @@
 //! Prepared star catalogue and its post-opaque HDR composite.
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
 use crate::shaders::wgsl;
@@ -7,8 +9,8 @@ use wgpu::util::DeviceExt;
 
 use crate::atmosphere::AtmospherePrepared;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
-    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
 
 use super::{
@@ -17,7 +19,7 @@ use super::{
 
 mod daylight;
 
-pub(crate) const PASS_NAME: &str = "atmosphere stars";
+pub(crate) const PASS_NAME: &str = PassKey::Stars.constant_name();
 const UNIFORM_LEN: usize = size_of::<crate::records::StarView>();
 const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const SHADER: &str = concat!(
@@ -246,10 +248,7 @@ impl StarPrepared {
 
 impl super::SyntheticTargetInputs {
     pub(super) fn star_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 9,
-            ..self.key
-        }
+        PipelineRole::Stars.key(self.key)
     }
 
     pub(super) fn append_stars(
@@ -287,47 +286,49 @@ impl super::SyntheticTargetInputs {
         )?;
         let key = self.star_key();
         keys.insert(key);
-        let pass = graph.pass(Pass {
-            name: PASS_NAME.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(key),
-            accesses: [
-                (catalogue, records, AccessKind::StorageRead),
-                (view, UNIFORM_BYTES, AccessKind::UniformRead),
-                (
-                    exposure.clone(),
-                    exposure::SAMPLE_BYTES,
-                    AccessKind::UniformRead,
-                ),
-                (transmittance.clone(), 1, AccessKind::SampledRead),
-                (observer.clone(), 80, AccessKind::UniformRead),
-                (depth.clone(), 1, AccessKind::SampledRead),
-                (scene.clone(), 1, AccessKind::AttachmentLoad),
-                (motion.clone(), 1, AccessKind::AttachmentLoad),
-                (
-                    reactive.clone(),
-                    1,
-                    if self.temporal_inputs {
-                        AccessKind::AttachmentLoad
-                    } else {
-                        AccessKind::AttachmentClear
-                    },
-                ),
-            ]
-            .into_iter()
-            .map(|(resource, end, kind)| {
-                let store = resource != *reactive || self.temporal_inputs;
-                Access {
-                    view: None,
-                    resource,
-                    range: 0..end,
-                    kind,
-                    store,
-                }
-            })
-            .collect(),
-            external_side_effect: false,
-        });
+        let pass = graph.declare(
+            PassKey::Stars,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(key),
+                accesses: [
+                    (catalogue, records, AccessKind::StorageRead),
+                    (view, UNIFORM_BYTES, AccessKind::UniformRead),
+                    (
+                        exposure.clone(),
+                        exposure::SAMPLE_BYTES,
+                        AccessKind::UniformRead,
+                    ),
+                    (transmittance.clone(), 1, AccessKind::SampledRead),
+                    (observer.clone(), 80, AccessKind::UniformRead),
+                    (depth.clone(), 1, AccessKind::SampledRead),
+                    (scene.clone(), 1, AccessKind::AttachmentLoad),
+                    (motion.clone(), 1, AccessKind::AttachmentLoad),
+                    (
+                        reactive.clone(),
+                        1,
+                        if self.temporal_inputs {
+                            AccessKind::AttachmentLoad
+                        } else {
+                            AccessKind::AttachmentClear
+                        },
+                    ),
+                ]
+                .into_iter()
+                .map(|(resource, end, kind)| {
+                    let store = resource != *reactive || self.temporal_inputs;
+                    Access {
+                        view: None,
+                        resource,
+                        range: 0..end,
+                        kind,
+                        store,
+                    }
+                })
+                .collect(),
+                external_side_effect: false,
+            },
+        );
         graph.dependency(opaque, pass)?;
         Ok(Some(pass))
     }

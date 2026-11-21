@@ -331,7 +331,7 @@ impl Gpu {
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = initial;
         scene.sun_shadows = fixture.shadows;
-        scene.instances[0].ids[3] = 0;
+        scene.instances[0].deactivate();
         let lighting = if let Some(tau) = fixture.parity_depth {
             // A small field of direct-Sun optical depth puts the cooked checker in light and
             // shade. The clear control has the same field and pipeline with zero attenuation.

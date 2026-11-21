@@ -211,7 +211,7 @@ struct Fixture {
 const KEY: PipelineKey = PipelineKey {
     device_generation: 7,
     revision: 1,
-    role: ROLE,
+    role: PipelineRole::CameraVisibility.value(),
 };
 
 impl Fixture {

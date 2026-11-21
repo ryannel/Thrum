@@ -1,12 +1,13 @@
 //! Late effects share one refraction source and independently request scene depth.
 use super::{RenderError, SceneContext, SyntheticTargetInputs, TargetResources};
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphDepthAttachment, Pass,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphDepthAttachment,
     PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
-pub(super) const COPY: &str = "effect refraction copy";
 pub(super) struct TargetEffects {
     pub(super) groups: Vec<wgpu::BindGroup>,
     pub(super) names: Vec<String>,
@@ -43,17 +44,14 @@ impl super::OffscreenTarget {
         self.graph(false)
             .plan()
             .pass_bindings()
-            .find(|(_, pass)| pass.pipeline.is_some_and(|key| key.role == 3000))
+            .find(|(_, pass)| pass.key == Some(PassKey::AfterOpaque(0)))
             .map(|(_, pass)| pass.name.as_str())
     }
 }
 
 impl SyntheticTargetInputs {
     pub(super) fn late_key(&self, index: usize) -> PipelineKey {
-        PipelineKey {
-            role: 3000 + u32::try_from(index).unwrap_or(u32::MAX),
-            ..self.key
-        }
+        PipelineRole::AfterOpaque(crate::pass_key::pass_index(index)).key(self.key)
     }
 
     pub(super) fn append_after_opaque(
@@ -89,16 +87,18 @@ impl SyntheticTargetInputs {
                 },
                 ResourceScope::Transient,
             )?;
-            let pass = graph.pass(Pass {
-                name: COPY.into(),
-                scope: PassScope::View(1),
-                pipeline: None,
-                accesses: vec![
-                    Access::new(scene.clone(), 0..1, AccessKind::CopyRead),
-                    Access::new(id.clone(), 0..1, AccessKind::CopyWrite),
-                ],
-                external_side_effect: false,
-            });
+            let pass = graph.declare(
+                PassKey::AfterOpaqueCopy,
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: None,
+                    accesses: vec![
+                        Access::new(scene.clone(), 0..1, AccessKind::CopyRead),
+                        Access::new(id.clone(), 0..1, AccessKind::CopyWrite),
+                    ],
+                    external_side_effect: false,
+                },
+            );
             graph.dependency(last, pass)?;
             first = Some(pass);
             last = pass;
@@ -130,13 +130,16 @@ impl SyntheticTargetInputs {
                     AccessKind::SampledRead,
                 ));
             }
-            let pass = graph.pass(Pass {
-                name: format!("effect after {index}: {}", declaration.name),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses,
-                external_side_effect: true,
-            });
+            let pass = graph.declare_named(
+                PassKey::AfterOpaque(crate::pass_key::pass_index(index)),
+                format!("effect after {index}: {}", declaration.name),
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(key),
+                    accesses,
+                    external_side_effect: true,
+                },
+            );
             graph.dependency(last, pass)?;
             if declaration.kind == crate::contribution::AfterOpaqueKind::Render
                 && last != previous_render

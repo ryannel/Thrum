@@ -1,9 +1,11 @@
 //! Independent cascade targets and fits, with the world's height layer read
 //! through a separate binding. No camera-visible list supplies these draws.
 use super::{
-    Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, Pass, PassScope, PipelineKey,
-    RenderError, ResourceDescriptor, ResourceId, ResourceScope, SceneContext,
+    Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, PassScope, PipelineKey, RenderError,
+    ResourceDescriptor, ResourceId, ResourceScope, SceneContext,
 };
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, PipelineRole, SecondaryStage};
 use crate::synthetic::{history_gpu, shadow};
 use crate::visibility::casters::{CasterCulling, CasterInputs};
 
@@ -140,27 +142,38 @@ impl Sun {
             ));
             culling.append_mesh_read(graph, &mut accesses)?;
             let ids = culling.append_outputs(graph, &mut accesses)?;
-            let cull_key = PipelineKey {
-                role: key.role + 6,
-                ..key
-            };
+            let cull_key = PipelineRole::Secondary {
+                view: crate::pass_key::pass_index(index),
+                stage: SecondaryStage::Casters,
+            }
+            .key(key);
             keys.insert(cull_key);
-            graph.pass(Pass {
-                name: format!("{CULL_PASS} {index}"),
-                scope: PassScope::View(index as u64 + 2),
-                pipeline: Some(cull_key),
-                accesses,
-                external_side_effect: false,
-            });
+            graph.declare(
+                PassKey::Secondary {
+                    view: crate::pass_key::pass_index(index),
+                    stage: SecondaryStage::Casters,
+                },
+                PassBody {
+                    scope: PassScope::View(index as u64 + 2),
+                    pipeline: Some(cull_key),
+                    accesses,
+                    external_side_effect: false,
+                },
+            );
             Some(ids)
         } else {
             None
         };
         for (layer, matrix) in (0..2_u32).zip(matrices) {
-            let key = PipelineKey {
-                role: key.role + 3 + layer,
-                ..key
-            };
+            let key = PipelineRole::Secondary {
+                view: crate::pass_key::pass_index(index),
+                stage: if layer == 0 {
+                    SecondaryStage::SunNear
+                } else {
+                    SecondaryStage::SunFar
+                },
+            }
+            .key(key);
             keys.insert(key);
             let mut accesses = shared.to_vec();
             if let Some(ids) = &lists {
@@ -179,13 +192,22 @@ impl Sun {
                     AccessKind::AttachmentClear,
                 ),
             ]);
-            graph.pass(Pass {
-                name: format!("{PASS} {index} {layer}"),
-                scope: PassScope::View(index as u64 + 2),
-                pipeline: Some(key),
-                accesses,
-                external_side_effect: false,
-            });
+            graph.declare(
+                PassKey::Secondary {
+                    view: crate::pass_key::pass_index(index),
+                    stage: if layer == 0 {
+                        SecondaryStage::SunNear
+                    } else {
+                        SecondaryStage::SunFar
+                    },
+                },
+                PassBody {
+                    scope: PassScope::View(index as u64 + 2),
+                    pipeline: Some(key),
+                    accesses,
+                    external_side_effect: false,
+                },
+            );
         }
         let samples = graph.resource(
             ResourceDescriptor::Buffer {

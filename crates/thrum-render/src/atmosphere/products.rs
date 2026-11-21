@@ -104,7 +104,10 @@ pub(super) fn create(
         label: Some("lent environment products"),
         entries: &entries,
     });
-    let sky = atmosphere.textures[2].create_view(&wgpu::TextureViewDescriptor::default());
+    let sky = atmosphere
+        .textures
+        .sky_view
+        .create_view(&wgpu::TextureViewDescriptor::default());
     let (aerial, sampler, uniform) = atmosphere.aerial_sampled();
     let (cube, dfg, reflection_sampler) = atmosphere.reflection_sampled();
     let mut bindings = vec![

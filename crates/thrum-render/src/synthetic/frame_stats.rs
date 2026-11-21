@@ -1,6 +1,8 @@
 //! Renderer-owned interpretation of the bounded scene timestamp layout.
 
-use super::{CullMode, OffscreenTarget, PreparedSynthetic, history_gpu};
+use super::{CullMode, OffscreenTarget, PreparedSynthetic};
+use crate::pass_key::{AtmosphereStage, PassKey};
+use crate::timing::TimingCategory;
 
 impl OffscreenTarget {
     pub(crate) fn effect_pass_names(&self) -> impl Iterator<Item = String> + '_ {
@@ -115,24 +117,28 @@ pub(crate) fn pass_durations(
     presented: bool,
     layout: SceneTimingLayout,
 ) -> Option<PassDurations> {
-    const ALL: [&str; 8] = [
-        "synthetic Sun shadow near",
-        "synthetic Sun shadow far",
-        "synthetic Sun horizon heights",
-        "synthetic cluster build",
-        "synthetic exposure resolve",
-        "synthetic forward opaque",
-        history_gpu::PASS_NAME,
-        "synthetic tone encode",
+    // The fixed scene sequence, in recording order.
+    const ALL: [PassKey; 8] = [
+        PassKey::ShadowNear,
+        PassKey::ShadowFar,
+        PassKey::HorizonHeights,
+        PassKey::Cluster,
+        PassKey::Exposure,
+        PassKey::Opaque,
+        PassKey::History,
+        PassKey::Display,
     ];
     let raw_passes = passes;
-    let names = ALL.into_iter().filter(|&name| match name {
-        "synthetic Sun shadow near" | "synthetic Sun shadow far" => layout.cascades,
-        "synthetic Sun horizon heights" => layout.shadows != Shadows::Off,
-        "synthetic cluster build" => layout.clusters,
-        history_gpu::PASS_NAME => layout.transforms,
-        _ => true,
-    });
+    let names = ALL
+        .into_iter()
+        .filter(|&key| match key {
+            PassKey::ShadowNear | PassKey::ShadowFar => layout.cascades,
+            PassKey::HorizonHeights => layout.shadows != Shadows::Off,
+            PassKey::Cluster => layout.clusters,
+            PassKey::History => layout.transforms,
+            _ => true,
+        })
+        .map(PassKey::constant_name);
     let count = names.clone().count();
     // A scene contribution adds one timed compute pass that the graph may order anywhere before
     // forward; it is reported on its own and the fixed scene sequence is matched without it.
@@ -149,13 +155,13 @@ pub(crate) fn pass_durations(
     let mut caster_cull = None;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
-        if matches!(
-            pass.name.as_ref(),
-            "temporal exposure texture" | "temporal input witness" | "portable TAAU"
-        ) {
+        if pass.category == TimingCategory::Temporal {
             continue;
         }
-        if pass.name.starts_with("effect ") || pass.name.starts_with(super::secondary::PREFIX) {
+        if matches!(
+            pass.category,
+            TimingCategory::Effects | TimingCategory::SecondaryViews
+        ) {
             // These are prepared contribution passes. Keep their original names in
             // SceneGpuTimings below; they do not belong to the fixed scene sequence.
         } else if pass.name.as_ref() == super::AIR_SHADOW_PASS {
@@ -201,8 +207,8 @@ pub(crate) fn pass_durations(
     let passes = scene_passes.as_slice();
 
     let mut offset = 0;
-    for (stage, _) in crate::atmosphere::TIMING_ORDER {
-        let name = crate::atmosphere::STAGE_NAMES[stage];
+    for stage in AtmosphereStage::ORDER {
+        let name = stage.name();
         if passes
             .get(offset)
             .is_some_and(|pass| pass.name.as_ref() == name)
@@ -215,7 +221,7 @@ pub(crate) fn pass_durations(
             .iter()
             .zip(names)
             .all(|(pass, name)| pass.name.as_ref() == name)
-        && (!presented || passes[offset + count].name.as_ref() == crate::present::PASS_NAME))
+        && (!presented || passes[offset + count].category == TimingCategory::Surface))
         .then(|| {
             (
                 crate::timing::SceneGpuTimings::new(raw_passes),

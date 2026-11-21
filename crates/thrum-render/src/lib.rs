@@ -20,8 +20,11 @@ pub mod graph;
 mod graph_record;
 pub mod history;
 mod light;
+mod pass_key;
 pub mod present;
 mod records;
+#[doc(hidden)]
+pub mod registry_audit;
 pub mod runtime;
 mod shader_constants;
 mod shaders;

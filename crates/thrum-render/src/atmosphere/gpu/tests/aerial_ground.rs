@@ -1,6 +1,7 @@
 //! Ground-continuation referee: expected transport is a production column,
 //! never a second implementation of atmospheric transport.
-use super::super::{AtmospherePrepared, EXTENTS};
+use super::super::AtmospherePrepared;
+use crate::atmosphere::stage::Chart;
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
 use std::{io::Write as _, path::Path, sync::mpsc, time::Duration};
 
@@ -40,10 +41,12 @@ impl Fixture {
             &super::sky_samples(&device),
         );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        for (index, extent) in EXTENTS.iter().take(2).enumerate() {
+        for chart in [Chart::Transmittance, Chart::MultipleScattering] {
+            let extent = chart.extent();
+            let (compute, group) = air.chart_stages.get(chart);
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-            pass.set_pipeline(&air.compute[index]);
-            pass.set_bind_group(0, &air.groups[index], &[]);
+            pass.set_pipeline(compute);
+            pass.set_bind_group(0, group, &[]);
             pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
         }
         queue.submit([encoder.finish()]);

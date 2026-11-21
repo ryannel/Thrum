@@ -253,6 +253,56 @@ impl InstanceRecord {
             ids: [instance, material, 0, 1],
         }
     }
+
+    /// Logical GPU slot (`ids` lane 0). Never a `StableId` value.
+    #[must_use]
+    pub fn logical_slot(&self) -> u32 {
+        self.ids[0]
+    }
+
+    /// Set the logical GPU slot (`ids` lane 0).
+    pub fn set_logical_slot(&mut self, slot: u32) {
+        self.ids[0] = slot;
+    }
+
+    /// Material row (`ids` lane 1).
+    #[must_use]
+    pub fn material(&self) -> u32 {
+        self.ids[1]
+    }
+
+    /// Set the material row (`ids` lane 1).
+    pub fn set_material(&mut self, material: u32) {
+        self.ids[1] = material;
+    }
+
+    /// Skin offset (`ids` lane 2); nonzero is not supported by the synthetic path.
+    #[must_use]
+    pub fn skin_offset(&self) -> u32 {
+        self.ids[2]
+    }
+
+    /// Source generation (`ids` lane 3). Zero marks the row inactive.
+    #[must_use]
+    pub fn generation(&self) -> u32 {
+        self.ids[3]
+    }
+
+    /// Set the source generation (`ids` lane 3); zero deactivates the row.
+    pub fn set_generation(&mut self, generation: u32) {
+        self.ids[3] = generation;
+    }
+
+    /// Whether the row is drawn: its source generation (`ids` lane 3) is nonzero.
+    #[must_use]
+    pub fn is_active(&self) -> bool {
+        self.ids[3] != 0
+    }
+
+    /// Hide the row by zeroing its source generation (`ids` lane 3).
+    pub fn deactivate(&mut self) {
+        self.ids[3] = 0;
+    }
     /// Check finite transforms and indexed material bounds before packing.
     ///
     /// # Errors
@@ -264,7 +314,7 @@ impl InstanceRecord {
     }
 
     pub(crate) fn validate(&self, materials: u32) -> Result<(), AbiError> {
-        if self.ids[1] >= materials {
+        if self.material() >= materials {
             return Err(AbiError::MaterialIndex);
         }
         if !self

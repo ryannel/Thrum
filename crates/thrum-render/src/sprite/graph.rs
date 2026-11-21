@@ -14,21 +14,18 @@ use crate::{
     },
     graph::{
         Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
-        GraphTextures, Pass, PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
+        GraphTextures, PassBody, PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
         ResourceScope, TextureKind,
     },
     graph_record::{ExecutableGraph, RecordBinding, RecordFamily},
+    pass_key::{PassKey, PipelineRole},
     present::{self, PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
         CaptureSource, OUTPUT_FORMAT, PixelReadback, RenderError, SCENE_FORMAT,
         display::{DISPLAY_REFERRED_PASS, DisplayReferredStage},
     },
-    timing::{GpuTimings, PassTiming, SceneGpuTimings},
+    timing::{GpuTimings, PassTiming, SceneGpuTimings, TimingCategory},
 };
-
-const UPLOAD: &str = "contribution upload";
-const COMPUTE: &str = crate::synthetic::CONTRIBUTION_COMPUTE;
-const CAPTURE: &str = "output readback";
 
 pub(crate) struct PreparedSprites {
     pub(crate) capabilities: DeviceCapabilities,
@@ -120,11 +117,7 @@ impl PreparedSprites {
             capabilities,
             queue,
             &scene,
-            PipelineKey {
-                role: 0,
-                revision: 0,
-                device_generation: capabilities.generation(),
-            },
+            PipelineRole::Sprites.pipeline_key(capabilities.generation(), 0),
         )?;
         let tone = DisplayReferredStage::new(device);
         if let Some(error) = scope.pop().await {
@@ -334,23 +327,25 @@ impl SpriteTarget {
         let scene = attachment(&mut graph, extent, SCENE_FORMAT)?;
         let sdr = attachment(&mut graph, extent, OUTPUT_FORMAT)?;
         let key = prepared.sprites.key;
-        let tone = PipelineKey { role: 1, ..key };
+        let tone = PipelineRole::Display.key(key);
         let mut keys = BTreeSet::from([key, tone]);
         let contributions = contribution_passes(prepared, &mut graph, &mut keys)?;
         let mut accesses = sprite_inputs(&mut graph, &prepared.sprites)?;
         accesses.push(store(&scene));
-        let sprites = graph.pass(declare(pass::PASS, Some(key), accesses));
+        let sprites = graph.declare(PassKey::Sprites, body(Some(key), accesses));
         for contribution in contributions {
             graph.dependency(contribution, sprites)?;
         }
-        let tone_pass = graph.pass(declare(
-            DISPLAY_REFERRED_PASS,
-            Some(tone),
-            vec![
-                Access::new(scene.clone(), 0..1, AccessKind::SampledRead),
-                store(&sdr),
-            ],
-        ));
+        let tone_pass = graph.declare(
+            PassKey::DisplayReferred,
+            body(
+                Some(tone),
+                vec![
+                    Access::new(scene.clone(), 0..1, AccessKind::SampledRead),
+                    store(&sdr),
+                ],
+            ),
+        );
         let readback_buffer = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: readback_bytes,
@@ -363,8 +358,7 @@ impl SpriteTarget {
         } else {
             &sdr
         };
-        let readback = declare(
-            CAPTURE,
+        let readback = body(
             None,
             vec![
                 Access::new(checkpoint.clone(), 0..1, AccessKind::CopyRead),
@@ -381,7 +375,7 @@ impl SpriteTarget {
         let plain =
             graph.compile_surface_variant(None, generation, &keys, None, surface.clone())?;
         let capture = graph.compile_surface_variant(
-            Some(readback),
+            Some((PassKey::Readback, readback)),
             generation,
             &keys,
             Some(tone_pass),
@@ -479,7 +473,7 @@ impl SpriteTarget {
         };
         let present = passes
             .iter()
-            .find(|pass| pass.name.as_ref() == present::PASS_NAME)
+            .find(|pass| pass.category == TimingCategory::Surface)
             .map(|pass| pass.nanoseconds);
         let mut scene = SceneGpuTimings::new(passes);
         scene.get(pass::PASS)?;
@@ -488,9 +482,9 @@ impl SpriteTarget {
             return None;
         }
         scene.effect_passes(
-            plan.pass_names()
-                .filter(|name| name.starts_with("effect "))
-                .map(str::to_owned),
+            plan.pass_bindings()
+                .filter(|(_, pass)| matches!(pass.key, Some(PassKey::Effect(_))))
+                .map(|(_, pass)| pass.name.clone()),
         );
         scene.unmeasured(
             plan.pass_bindings()
@@ -498,7 +492,7 @@ impl SpriteTarget {
                 .filter(|(_, pass)| pass.kind == Some(PassKind::Copy))
                 .map(|(_, pass)| pass.name.clone()),
         );
-        let contribution = scene.get(COMPUTE);
+        let contribution = scene.get(crate::synthetic::CONTRIBUTION_COMPUTE);
         Some((scene, present, contribution))
     }
 }
@@ -567,19 +561,15 @@ fn contribution_passes(
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        ordered.push(graph.pass(declare(
-            UPLOAD,
-            None,
-            vec![Access::new(token, 0..4, AccessKind::CopyWrite)],
-        )));
+        ordered.push(graph.declare(
+            PassKey::ContributionUpload,
+            body(None, vec![Access::new(token, 0..4, AccessKind::CopyWrite)]),
+        ));
     }
     if prepared.contribution_passes.compute {
-        let key = PipelineKey {
-            role: 1000,
-            ..prepared.sprites.key
-        };
+        let key = PipelineRole::ContributionCompute.key(prepared.sprites.key);
         keys.insert(key);
-        ordered.push(graph.pass(declare(COMPUTE, Some(key), Vec::new())));
+        ordered.push(graph.declare(PassKey::ContributionCompute, body(Some(key), Vec::new())));
     }
     let effects = prepared.effects.append(graph, prepared.sprites.key, keys)?;
     if let Some(&last) = ordered.last() {
@@ -623,9 +613,8 @@ fn store(id: &ResourceId) -> Access {
     }
 }
 
-fn declare(name: &str, pipeline: Option<PipelineKey>, accesses: Vec<Access>) -> Pass {
-    Pass {
-        name: name.into(),
+fn body(pipeline: Option<PipelineKey>, accesses: Vec<Access>) -> PassBody {
+    PassBody {
         scope: PassScope::View(1),
         pipeline,
         accesses,
@@ -638,14 +627,22 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
         .pass_bindings()
         .map(|(id, pass)| {
             type Callback = fn(&mut RecordContext<'_>, &CompiledPass) -> Result<(), RenderError>;
-            let (kind, record): (PassKind, Callback) = match pass.name.as_str() {
-                pass::PASS => (PassKind::Render, record_sprites),
-                DISPLAY_REFERRED_PASS => (PassKind::Render, record_tone),
-                present::PASS_NAME => (PassKind::Render, record_present),
-                CAPTURE => (PassKind::Copy, record_capture),
-                UPLOAD => (PassKind::Copy, record_upload),
-                COMPUTE => (PassKind::Compute, record_compute),
-                name if name.starts_with("effect ") => (PassKind::Compute, record_effect),
+            let key = pass.key.ok_or(RenderError::GraphPassMismatch)?;
+            let (kind, record): (PassKind, Callback) = match key {
+                PassKey::Sprites => (PassKind::Render, record_sprites),
+                PassKey::DisplayReferred => (PassKind::Render, record_tone),
+                PassKey::Surface => (PassKind::Render, record_present),
+                PassKey::Readback => (PassKind::Copy, record_capture),
+                PassKey::ContributionUpload => (PassKind::Copy, record_upload),
+                PassKey::ContributionCompute => (PassKind::Compute, record_compute),
+                PassKey::Effect(index) => {
+                    let index = index as usize;
+                    return Ok(RecordBinding::new(
+                        id,
+                        PassKind::Compute,
+                        move |frame, pass| record_effect(frame, index, pass),
+                    ));
+                }
                 _ => return Err(RenderError::GraphPassMismatch),
             };
             Ok(RecordBinding::new(id, kind, record))
@@ -743,8 +740,11 @@ fn record_compute(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<
     Ok(())
 }
 
-fn record_effect(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(), RenderError> {
-    let index = pass.pipeline.ok_or(RenderError::GraphPassMismatch)?.role as usize - 2000;
+fn record_effect(
+    frame: &mut RecordContext<'_>,
+    index: usize,
+    pass: &CompiledPass,
+) -> Result<(), RenderError> {
     if let Some((entry, time)) = frame.contribution.as_deref_mut().zip(frame.frame.as_ref())
         && !time.time.capture
         && entry.effect_runs(index, time)

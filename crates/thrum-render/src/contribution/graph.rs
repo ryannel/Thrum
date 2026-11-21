@@ -1,10 +1,12 @@
 //! Public, generation-prepared effect declarations. Physical resources stay with the effect.
 
 use super::HistoryBinding;
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
+    Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
     ResourceScope,
 };
+use crate::pass_key::{PassKey, PipelineRole};
 use std::{collections::BTreeSet, ops::Range};
 
 /// Work frequency, independent of graph compilation.
@@ -290,20 +292,21 @@ impl EffectGraph {
             simulate: Vec::new(),
         };
         for (index, pass) in self.passes.iter().enumerate() {
-            let key = PipelineKey {
-                role: 2000
-                    + u32::try_from(index)
-                        .map_err(|_| crate::synthetic::RenderError::SceneCapacity)?,
-                ..base
-            };
+            let key = PipelineRole::Effect(
+                u32::try_from(index).map_err(|_| crate::synthetic::RenderError::SceneCapacity)?,
+            )
+            .key(base);
             keys.insert(key);
-            let id = graph.pass(Pass {
-                name: format!("effect {index}: {}", pass.name),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses: resources.accesses(&pass.accesses),
-                external_side_effect: true,
-            });
+            let id = graph.declare_named(
+                PassKey::Effect(crate::pass_key::pass_index(index)),
+                format!("effect {index}: {}", pass.name),
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(key),
+                    accesses: resources.accesses(&pass.accesses),
+                    external_side_effect: true,
+                },
+            );
             resources.simulate.push(id);
             if pass.async_eligible {
                 graph.mark_async_eligible(id);

@@ -11,12 +11,13 @@ mod metal {
     use std::io::Write as _;
     #[cfg(target_os = "macos")]
     use std::time::Instant;
-    #[cfg(target_os = "macos")]
     use thrum_render::capabilities::DeviceCapabilities;
     #[cfg(target_os = "macos")]
     use thrum_render::synthetic::{PreparedSynthetic, SyntheticScene};
     #[cfg(target_os = "macos")]
     use thrum_render::timing::GpuTimings;
+    #[cfg(target_os = "macos")]
+    use thrum_render::timing::TimingCategory;
 
     #[cfg(target_os = "macos")]
     const BEFORE: &str = "before structure build";
@@ -101,7 +102,7 @@ mod metal {
                     label: Some(BEFORE),
                     timestamp_writes: self
                         .timer
-                        .compute_writes(generation, BEFORE)
+                        .compute_writes(generation, BEFORE, TimingCategory::Transfer)
                         .expect("begin"),
                 });
                 marker.set_pipeline(&self.marker);
@@ -117,7 +118,9 @@ mod metal {
                 self.device,
                 &mut encoder,
                 &[[0.01, 0.01, -4.0, 0.0]],
-                self.timer.compute_writes(generation, AFTER).expect("end"),
+                self.timer
+                    .compute_writes(generation, AFTER, TimingCategory::Transfer)
+                    .expect("end"),
             );
             self.timer
                 .finish_render(generation, &encoder)

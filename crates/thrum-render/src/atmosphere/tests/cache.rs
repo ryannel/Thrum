@@ -1,6 +1,7 @@
 //! Actual pass observations: caching and cancelled recording must agree with
 //! submitted products, independently of the implementation's validity bits.
 
+use crate::pass_key::AtmosphereStage;
 use crate::{
     atmosphere::AtmosphereFrame,
     capabilities::DeviceCapabilities,
@@ -215,12 +216,22 @@ fn metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work(
                 7,
                 "night source changes all reflection mips"
             );
-            for name in &super::super::STAGE_NAMES[2..5] {
+            for name in [
+                AtmosphereStage::SkyView,
+                AtmosphereStage::Diffuse,
+                AtmosphereStage::Aerial,
+            ]
+            .map(AtmosphereStage::name)
+            {
                 assert!(toggled.iter().any(|actual| actual == name), "{name}");
             }
-            for name in super::super::STAGE_NAMES[..2]
-                .iter()
-                .chain(&super::super::STAGE_NAMES[5..7])
+            for name in [
+                AtmosphereStage::Transmittance,
+                AtmosphereStage::MultipleScattering,
+                AtmosphereStage::Ground,
+                AtmosphereStage::Dfg,
+            ]
+            .map(AtmosphereStage::name)
             {
                 assert!(!toggled.iter().any(|actual| actual == name), "{name}");
             }

@@ -2,6 +2,7 @@ use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::graph::{
     Access, AccessKind, Pass, PassScope, ResourceDescriptor, ResourceId, TextureKind,
 };
+use thrum_render::timing::TimingCategory;
 pub(crate) mod gpu;
 mod scenes;
 pub(crate) use scenes::prove_scenes;
@@ -44,6 +45,7 @@ pub(crate) fn pass(name: &str, accesses: Vec<Access>) -> Pass {
         pipeline: None,
         accesses,
         external_side_effect: true,
+        timing: TimingCategory::Effects,
     }
 }
 pub(crate) fn device(

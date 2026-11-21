@@ -9,6 +9,7 @@ use objc2_metal::{
 use thrum_render::graph::{
     Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope, TextureKind,
 };
+use thrum_render::timing::TimingCategory;
 
 fn fixture_graph() -> thrum_render::graph::CompiledGraph {
     let mut graph = FrameGraph::default();
@@ -57,6 +58,7 @@ fn fixture_graph() -> thrum_render::graph::CompiledGraph {
         pipeline: None,
         accesses,
         external_side_effect: true,
+        timing: TimingCategory::Effects,
     };
     graph.pass(pass(
         "wgpu producer",

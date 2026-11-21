@@ -1,6 +1,7 @@
 //! Disk-free sky reflection products. All passes record into the existing
 //! frame graph; generation/profile validity is owned by AtmospherePrepared.
 
+use crate::pass_key::AtmosphereStage;
 use crate::shaders::wgsl;
 use crate::synthetic::RenderError;
 
@@ -49,7 +50,7 @@ impl ReflectionPrepared {
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         uniform: &wgpu::Buffer,
-        sky: &wgpu::TextureView,
+        charts: &[wgpu::BindGroupEntry<'_>],
         sky_sampler: &wgpu::Sampler,
     ) -> Self {
         let cube = texture(device, "atmosphere specular cube", CUBE_SIZE, 6, MIP_COUNT);
@@ -96,10 +97,6 @@ impl ReflectionPrepared {
                         resource: uniform.as_entire_binding(),
                     },
                     wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::TextureView(sky),
-                    },
-                    wgpu::BindGroupEntry {
                         binding: 2,
                         resource: wgpu::BindingResource::Sampler(sky_sampler),
                     },
@@ -111,7 +108,10 @@ impl ReflectionPrepared {
                         binding: 4,
                         resource: samples.as_entire_binding(),
                     },
-                ],
+                ]
+                .into_iter()
+                .chain(charts.iter().cloned())
+                .collect::<Vec<_>>(),
             })
         });
         let dfg_pipeline = pipeline(
@@ -157,20 +157,16 @@ impl ReflectionPrepared {
         }
     }
 
-    pub(super) fn mip_count(&self) -> usize {
-        self.cube_groups.len()
-    }
-
     pub(super) fn sampled(&self) -> (&wgpu::TextureView, &wgpu::TextureView, &wgpu::Sampler) {
         (&self.cube_view, &self.dfg_view, &self.sampler)
     }
 
     pub(super) fn encode(
         &self,
-        stage: usize,
+        stage: AtmosphereStage,
         pass: &mut wgpu::ComputePass<'_>,
     ) -> Result<(), RenderError> {
-        if stage == 0 {
+        if stage == AtmosphereStage::Dfg {
             pass.set_pipeline(&self.dfg_pipeline);
             pass.set_bind_group(0, &self.dfg_group, &[]);
             let groups = DFG_SIZE.div_ceil(DFG_WORKGROUP_EDGE);
@@ -183,10 +179,12 @@ impl ReflectionPrepared {
                 1,
             );
         } else {
-            let mip = stage - 1;
+            let AtmosphereStage::Reflection(mip) = stage else {
+                return Err(RenderError::GraphPassMismatch);
+            };
             let group = self
                 .cube_groups
-                .get(mip)
+                .get(mip as usize)
                 .ok_or(RenderError::GraphPassMismatch)?;
             pass.set_pipeline(&self.cube_pipeline);
             pass.set_bind_group(0, group, &[]);

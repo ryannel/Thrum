@@ -9,6 +9,8 @@
 //! the final list, so atmosphere, the list in slot order into cleared depth,
 //! then any contribution draw exactly as in Direct.
 
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
 use super::mesh_arena::MeshArena;
@@ -19,7 +21,7 @@ use super::{
     storage_layout,
 };
 use crate::graph::{
-    Access, AccessKind, FrameGraph, GraphError, Pass, PassScope, PipelineKey, ResourceDescriptor,
+    Access, AccessKind, FrameGraph, GraphError, PassScope, PipelineKey, ResourceDescriptor,
     ResourceId, ResourceScope,
 };
 pub use crate::visibility::CullMode;
@@ -85,18 +87,15 @@ impl CullingSelection {
     }
 }
 use crate::visibility::{
-    self, MeshRecord, OcclusionTarget, VisibilityIds, VisibilityPrepared, VisibilityTarget,
+    MeshRecord, OcclusionTarget, VisibilityIds, VisibilityPrepared, VisibilityTarget,
 };
 pub(super) use stats::CullingStats;
-pub(super) use stats::STATS_PASS;
 pub use stats::{CountedFrame, CullingCounts};
 
 /// Forward view-group binding of the camera's visible slot list.
 pub(super) const VISIBLE_BINDING: u32 = 5;
 /// Graph and timing name of Occlusion's depth-only prepass.
-pub(crate) const DEPTH_PREPASS_PASS: &str = "camera depth prepass";
-/// Pipeline role of the depth prepass inside the synthetic closure.
-const DEPTH_PREPASS_ROLE: u32 = 0x4450;
+pub(crate) const DEPTH_PREPASS_PASS: &str = PassKey::DepthPrepass.constant_name();
 
 /// One frame slot's prepass list, its pyramid, the private depth the
 /// prepass draws, and the view group that reads the prepass list.
@@ -133,7 +132,7 @@ pub(super) fn prepare(
     let key = PipelineKey {
         device_generation: generation,
         revision: SYNTHETIC_REVISION,
-        role: visibility::ROLE,
+        role: PipelineRole::CameraVisibility.value(),
     };
     let Some(route) = route else {
         let row = arena
@@ -189,15 +188,6 @@ fn mesh_record(row: &super::mesh_arena::MeshRow) -> Result<MeshRecord, RenderErr
 pub(super) fn view_layout_entry(mode: CullMode) -> Option<wgpu::BindGroupLayoutEntry> {
     (mode != CullMode::Direct)
         .then(|| storage_layout(VISIBLE_BINDING, wgpu::ShaderStages::VERTEX, 4))
-}
-
-/// Timed scene passes camera culling adds.
-pub(super) fn pass_count(mode: CullMode) -> u32 {
-    match mode {
-        CullMode::Direct => 0,
-        CullMode::Frustum => 1,
-        CullMode::Occlusion => 4,
-    }
 }
 
 pub(super) fn visible_entry(target: Option<&VisibilityTarget>) -> Option<wgpu::BindGroupEntry<'_>> {
@@ -341,13 +331,15 @@ impl super::SyntheticTargetInputs {
             kind: AccessKind::AttachmentClear,
             store: true,
         });
-        graph.pass(Pass {
-            name: DEPTH_PREPASS_PASS.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.depth_prepass_key()),
-            accesses: prepass,
-            external_side_effect: false,
-        });
+        graph.declare(
+            PassKey::DepthPrepass,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.depth_prepass_key()),
+                accesses: prepass,
+                external_side_effect: false,
+            },
+        );
         let mut final_reads = reads;
         final_reads.extend_from_slice(route);
         let last = prepared.append_final_graph(graph, final_reads, &first, &depth, extent)?;
@@ -364,10 +356,7 @@ impl super::SyntheticTargetInputs {
     }
 
     pub(super) fn depth_prepass_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: DEPTH_PREPASS_ROLE,
-            ..self.key
-        }
+        PipelineRole::DepthPrepass.key(self.key)
     }
 }
 

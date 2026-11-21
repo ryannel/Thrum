@@ -1,7 +1,9 @@
 //! Independent cosine integrals on the actual half-float LUT, not an Earth-sky
 //! oracle. CPU midpoint refinement and degree-two truncation are separate errors.
 
-use super::super::{AtmospherePrepared, EXTENTS, prepare_diffuse};
+use super::super::{AtmospherePrepared, prepare_diffuse};
+use crate::atmosphere::stage::{Chart, Charts};
+use crate::shader_constants::ATMOSPHERE_EXTENTS as EXTENTS;
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
 use std::{f64::consts::PI, sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
@@ -216,10 +218,13 @@ impl Gpu {
             ..Default::default()
         });
         let light = self.light();
+        let sky_view = sky.create_view(&wgpu::TextureViewDescriptor::default());
+        // The diffuse stage samples only the sky view.
+        let views = Charts::from_fn(|_| sky_view.clone());
         let (pipeline, group) = prepare_diffuse(
             &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&self.device)),
             &uniform,
-            &sky.create_view(&wgpu::TextureViewDescriptor::default()),
+            &views,
             &sampler,
             &light,
         );
@@ -671,18 +676,24 @@ fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
             let mut encoder = gpu
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            for index in [0, 1, 3, 2] {
+            for chart in [
+                Chart::Transmittance,
+                Chart::MultipleScattering,
+                Chart::Ground,
+                Chart::SkyView,
+            ] {
+                let (compute, group) = prepared.chart_stages.get(chart);
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-                pass.set_pipeline(&prepared.compute[index]);
-                pass.set_bind_group(0, &prepared.groups[index], &[]);
-                let [w, h] = EXTENTS[index];
-                if index == 3 {
+                pass.set_pipeline(compute);
+                pass.set_bind_group(0, group, &[]);
+                let [w, h] = chart.extent();
+                if chart == Chart::Ground {
                     pass.dispatch_workgroups(w, 1, 1);
                 } else {
                     pass.dispatch_workgroups(w.div_ceil(8), h.div_ceil(8), 1);
                 }
             }
-            let pixels = gpu.observe(encoder, &light, Some(&prepared.textures[2]));
+            let pixels = gpu.observe(encoder, &light, Some(&prepared.textures.sky_view));
             let pixels: Vec<_> = pixels
                 .iter()
                 .map(|v| [v[0] / 1024.0, v[1] / 1024.0, v[2] / 1024.0])

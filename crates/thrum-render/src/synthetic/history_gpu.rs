@@ -10,7 +10,6 @@ use super::{RenderError, abi, storage_layout, uniform_layout};
 
 pub(super) const ENTRY_BYTES: u64 = size_of::<HistoryRecord>() as u64;
 pub(super) const SERIAL_BYTES: u64 = size_of::<Serials>() as u64;
-pub(super) const PASS_NAME: &str = "synthetic transform history";
 use crate::shader_constants::HISTORY_WORKGROUP;
 
 pub(super) struct TransformHistory {

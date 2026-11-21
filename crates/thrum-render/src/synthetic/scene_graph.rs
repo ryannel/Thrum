@@ -1,16 +1,17 @@
 //! Compiles and binds the prepared scene and capture graph.
 
 use super::{
-    AUX_BYTES, CONTRIBUTION_UPLOAD, CaptureSource, DEPTH_FORMAT, DIRECTIONAL_BYTES,
-    ExposureResolve, MOTION_FORMAT, PreToneInput, PreparedSynthetic, RenderError, SCENE_FORMAT,
-    SceneFamily, SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure,
-    history_gpu, shadow,
+    AUX_BYTES, CaptureSource, DEPTH_FORMAT, DIRECTIONAL_BYTES, ExposureResolve, MOTION_FORMAT,
+    PreToneInput, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily, SceneGraphs,
+    TargetResources, VIEW_BYTES, air_shadow, exposure, history_gpu, shadow,
 };
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassKind, PassScope,
-    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledGraph, FrameGraph, GraphError, PassKind, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::graph_record::{ExecutableGraph, RecordBinding};
+use crate::pass_key::PassKey;
 use crate::visibility::VisibilityPrepared;
 use std::collections::BTreeSet;
 
@@ -18,6 +19,19 @@ pub(super) struct CompiledScene {
     pub(super) day: SceneGraphs<CompiledGraph>,
     pub(super) night: Option<SceneGraphs<CompiledGraph>>,
     pub(super) ids: TargetResources,
+}
+
+impl CompiledScene {
+    /// The most timestamped passes any variant records.
+    pub(super) fn pipeline_pass_count(&self) -> usize {
+        [Some(&self.day), self.night.as_ref()]
+            .into_iter()
+            .flatten()
+            .flat_map(|graphs| [&graphs.scene, &graphs.readback])
+            .map(CompiledGraph::pipeline_pass_count)
+            .max()
+            .unwrap_or(0)
+    }
 }
 
 struct FrameEnvironment {
@@ -31,11 +45,11 @@ impl SceneGraphs<CompiledGraph> {
     fn compile_night(
         graph: &mut FrameGraph,
         stars: Option<usize>,
-        readback: Pass,
+        readback: PassBody,
         capabilities: &crate::capabilities::DeviceCapabilities,
         keys: &BTreeSet<PipelineKey>,
         capture: CaptureSource,
-        surface: Option<&(ResourceId, Pass)>,
+        surface: Option<&(ResourceId, PassBody)>,
         consumers: [Option<usize>; 4],
     ) -> Result<Option<Self>, RenderError> {
         let Some(stars) = stars else {
@@ -57,14 +71,20 @@ impl SceneGraphs<CompiledGraph> {
 
     fn compile(
         graph: &mut FrameGraph,
-        readback: Pass,
+        readback: PassBody,
         generation: u64,
         keys: &BTreeSet<PipelineKey>,
         producer: Option<usize>,
-        surface: Option<&(ResourceId, Pass)>,
+        surface: Option<&(ResourceId, PassBody)>,
     ) -> Result<Self, GraphError> {
-        let mut compile = |readback: Option<Pass>| {
-            graph.compile_surface_variant(readback, generation, keys, producer, surface.cloned())
+        let mut compile = |readback: Option<PassBody>| {
+            graph.compile_surface_variant(
+                readback.map(|body| (PassKey::Readback, body)),
+                generation,
+                keys,
+                producer,
+                surface.cloned(),
+            )
         };
         Ok(Self {
             scene: compile(None)?,
@@ -397,13 +417,15 @@ impl super::SyntheticTargetInputs {
             &mut accesses,
             &mut late_uniforms,
         )?;
-        let forward = graph.pass(Pass {
-            name: "synthetic forward opaque".into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.key),
-            accesses,
-            external_side_effect: true,
-        });
+        let forward = graph.declare(
+            PassKey::Opaque,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.key),
+                accesses,
+                external_side_effect: true,
+            },
+        );
         self.append_forward_epilogues(
             &mut graph,
             &mut prepared_keys,
@@ -634,7 +656,7 @@ impl super::SyntheticTargetInputs {
         generation: u64,
         prepared_keys: &mut BTreeSet<PipelineKey>,
         profile: Option<crate::present::SurfaceProfile>,
-    ) -> Result<Option<(ResourceId, Pass)>, GraphError> {
+    ) -> Result<Option<(ResourceId, PassBody)>, GraphError> {
         profile
             .map(|profile| {
                 prepared_keys.insert(crate::present::pipeline_key(generation));
@@ -751,16 +773,18 @@ impl super::SyntheticTargetInputs {
         history_bytes: u64,
     ) -> Result<(), RenderError> {
         prepared_keys.insert(self.history_key());
-        let publish = graph.pass(Pass {
-            name: history_gpu::PASS_NAME.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.history_key()),
-            accesses: vec![
-                Access::new(instance, 0..self.instance_bytes, AccessKind::StorageRead),
-                Access::new(history_write, 0..history_bytes, AccessKind::StorageWrite),
-            ],
-            external_side_effect: false,
-        });
+        let publish = graph.declare(
+            PassKey::History,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.history_key()),
+                accesses: vec![
+                    Access::new(instance, 0..self.instance_bytes, AccessKind::StorageRead),
+                    Access::new(history_write, 0..history_bytes, AccessKind::StorageWrite),
+                ],
+                external_side_effect: false,
+            },
+        );
         graph.dependency(forward, publish)?;
         Ok(())
     }
@@ -771,7 +795,7 @@ impl super::SyntheticTargetInputs {
         exposure: &ResourceId,
         height: u32,
         row_bytes: u32,
-    ) -> Result<Pass, RenderError> {
+    ) -> Result<PassBody, RenderError> {
         let bytes = u64::from(row_bytes) * u64::from(height) + exposure::SAMPLE_BYTES;
         let destination = graph.resource(
             ResourceDescriptor::Buffer {
@@ -780,8 +804,7 @@ impl super::SyntheticTargetInputs {
             },
             ResourceScope::Imported { initialized: false },
         )?;
-        Ok(Pass {
-            name: "output readback".into(),
+        Ok(PassBody {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![
@@ -910,13 +933,15 @@ impl super::SyntheticTargetInputs {
                 let ids = culling.append_outputs(graph, &mut cull)?;
                 let key = self.caster_cull_key();
                 prepared_keys.insert(key);
-                graph.pass(Pass {
-                    name: crate::visibility::casters::PASS.into(),
-                    scope: PassScope::View(1),
-                    pipeline: Some(key),
-                    accesses: cull,
-                    external_side_effect: false,
-                });
+                graph.declare(
+                    PassKey::CasterCull,
+                    PassBody {
+                        scope: PassScope::View(1),
+                        pipeline: Some(key),
+                        accesses: cull,
+                        external_side_effect: false,
+                    },
+                );
                 Some(
                     ids.lists
                         .iter()
@@ -939,43 +964,44 @@ impl super::SyntheticTargetInputs {
             };
             let key = self.shadow_key(index);
             prepared_keys.insert(key);
-            graph.pass(Pass {
-                name: match index {
-                    0 => "synthetic Sun shadow near",
-                    1 => "synthetic Sun shadow far",
-                    _ => "synthetic Sun horizon heights",
-                }
-                .into(),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses: [
-                    Access::new(
-                        instance.clone(),
-                        0..self.instance_bytes,
-                        AccessKind::StorageRead,
-                    ),
-                    Access::new(
-                        matrix,
-                        0..shadow::CASTER_VIEW_RANGE,
-                        AccessKind::UniformRead,
-                    ),
-                    Access::new(
-                        serials.clone(),
-                        0..history_gpu::SERIAL_BYTES,
-                        AccessKind::UniformRead,
-                    ),
-                    Access::new(
-                        maps.clone(),
-                        u64::from(index)..u64::from(index + 1),
-                        AccessKind::AttachmentClear,
-                    ),
-                ]
-                .into_iter()
-                .chain(caster_reads)
-                .chain(contribution_reads.iter().cloned())
-                .collect(),
-                external_side_effect: false,
-            });
+            graph.declare(
+                match index {
+                    0 => PassKey::ShadowNear,
+                    1 => PassKey::ShadowFar,
+                    _ => PassKey::HorizonHeights,
+                },
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(key),
+                    accesses: [
+                        Access::new(
+                            instance.clone(),
+                            0..self.instance_bytes,
+                            AccessKind::StorageRead,
+                        ),
+                        Access::new(
+                            matrix,
+                            0..shadow::CASTER_VIEW_RANGE,
+                            AccessKind::UniformRead,
+                        ),
+                        Access::new(
+                            serials.clone(),
+                            0..history_gpu::SERIAL_BYTES,
+                            AccessKind::UniformRead,
+                        ),
+                        Access::new(
+                            maps.clone(),
+                            u64::from(index)..u64::from(index + 1),
+                            AccessKind::AttachmentClear,
+                        ),
+                    ]
+                    .into_iter()
+                    .chain(caster_reads)
+                    .chain(contribution_reads.iter().cloned())
+                    .collect(),
+                    external_side_effect: false,
+                },
+            );
         }
         let sample = graph.resource(
             ResourceDescriptor::Buffer {
@@ -1036,31 +1062,33 @@ impl super::SyntheticTargetInputs {
                 ResourceScope::Imported { initialized: true },
             )?;
             prepared_keys.insert(self.cluster_key());
-            graph.pass(Pass {
-                name: "synthetic cluster build".into(),
-                scope: PassScope::View(1),
-                pipeline: Some(self.cluster_key()),
-                accesses: vec![
-                    Access {
-                        view: None,
-                        resource: bounds,
-                        range: 0..bounds_bytes,
-                        kind: AccessKind::StorageRead,
-                        store: true,
-                    },
-                    Access::new(
-                        resources[1].clone(),
-                        0..self.cluster_head_bytes,
-                        AccessKind::StorageWrite,
-                    ),
-                    Access::new(
-                        resources[2].clone(),
-                        0..self.cluster_index_bytes,
-                        AccessKind::StorageWrite,
-                    ),
-                ],
-                external_side_effect: false,
-            });
+            graph.declare(
+                PassKey::Cluster,
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(self.cluster_key()),
+                    accesses: vec![
+                        Access {
+                            view: None,
+                            resource: bounds,
+                            range: 0..bounds_bytes,
+                            kind: AccessKind::StorageRead,
+                            store: true,
+                        },
+                        Access::new(
+                            resources[1].clone(),
+                            0..self.cluster_head_bytes,
+                            AccessKind::StorageWrite,
+                        ),
+                        Access::new(
+                            resources[2].clone(),
+                            0..self.cluster_index_bytes,
+                            AccessKind::StorageWrite,
+                        ),
+                    ],
+                    external_side_effect: false,
+                },
+            );
         }
         Ok(())
     }
@@ -1183,194 +1211,123 @@ impl super::SyntheticTargetInputs {
     ) -> Result<ExecutableGraph<SceneFamily>, RenderError> {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
-            let binding = match pass.pipeline {
-                Some(key) if super::secondary::index(key, self.secondary.len()).is_some() => {
-                    let (index, stage) = super::secondary::index(key, self.secondary.len())
-                        .ok_or(RenderError::GraphPassMismatch)?;
-                    RecordBinding::<SceneFamily>::new(id, stage.kind(), move |frame, pass| {
-                        frame.secondary_stage(index, stage, pass)
-                    })
-                }
-                Some(key)
-                    if key.role >= 3000
-                        && key.role
-                            < 3000
-                                + u32::try_from(self.effect_graph.after_opaque.len())
-                                    .unwrap_or(0) =>
-                {
-                    let index = (key.role - 3000) as usize;
-                    let kind = match self.effect_graph.after_opaque[index].kind {
-                        crate::contribution::AfterOpaqueKind::Render => PassKind::Render,
-                        crate::contribution::AfterOpaqueKind::Compute => PassKind::Compute,
-                    };
-                    RecordBinding::<SceneFamily>::new(id, kind, move |frame, pass| {
-                        frame.after_opaque(index, pass)
-                    })
-                }
-                Some(key)
-                    if key.role >= 2000
-                        && key.role
-                            < 2000 + u32::try_from(self.effect_graph.passes.len()).unwrap_or(0) =>
-                {
-                    let index = (key.role - 2000) as usize;
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {
-                        frame.effect(index, pass)
-                    })
-                }
-
-                Some(key) if key == crate::present::pipeline_key(self.key.device_generation) => {
-                    Self::surface_binding(&graph, id)?
-                }
-                Some(key)
-                    if self
-                        .atmosphere
-                        .as_ref()
-                        .is_some_and(|atmosphere| atmosphere.stage_index(key.role).is_some()) =>
-                {
-                    let index = self
-                        .atmosphere
-                        .as_ref()
-                        .and_then(|atmosphere| atmosphere.stage_index(key.role))
-                        .ok_or(RenderError::GraphPassMismatch)?;
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {
-                        frame.atmosphere(index, pass)
-                    })
-                }
-                Some(key) if (0..shadow::LAYERS).any(|index| key == self.shadow_key(index)) => {
-                    let index = (0..shadow::LAYERS)
-                        .find(|&index| key == self.shadow_key(index))
-                        .and_then(|index| usize::try_from(index).ok())
-                        .ok_or(RenderError::GraphPassMismatch)?;
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
-                        frame.shadow(index, pass)
-                    })
-                }
-                Some(key) if self.caster_culling.is_some() && key == self.caster_cull_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.caster_cull(pass)
-                    })
-                }
-                Some(key) if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::key) => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.visibility(pass)
-                    })
-                }
-                Some(key)
-                    if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::final_key) =>
-                {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.final_visibility(pass)
-                    })
-                }
-                Some(key)
-                    if Some(key)
-                        == self
-                            .visibility
-                            .as_ref()
-                            .map(VisibilityPrepared::pyramid_key) =>
-                {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.depth_pyramid(pass)
-                    })
-                }
-                Some(key) if key == self.depth_prepass_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
-                        frame.depth_prepass(pass)
-                    })
-                }
-                Some(key) if key == self.key => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
-                        frame.opaque(pass)
-                    })
-                }
-                Some(key) if key == self.cluster_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.cluster(pass)
-                    })
-                }
-                Some(key) if key == self.air_shadow_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
-                        frame.air_shadow(pass)
-                    })
-                }
-                Some(key) if key == self.history_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.publish_history(pass)
-                    })
-                }
-                Some(key) if key == self.temporal_key(false) || key == self.temporal_key(true) => {
-                    let witness = key == self.temporal_key(true);
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
-                        frame.temporal(pass, witness)
-                    })
-                }
-                Some(key) if key == self.taau_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.taau(pass)
-                    })
-                }
-                Some(key) if key == self.exposure_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.exposure(pass)
-                    })
-                }
-                Some(key) if key == self.star_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
-                        frame.stars(pass)
-                    })
-                }
-                Some(key) if key == self.display_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
-                        frame.tone(pass)
-                    })
-                }
-                None if pass.kind == Some(PassKind::AccelerationBuild) => {
-                    super::raytrace::binding(id)
-                }
-                None if pass.name == super::native_witness::RESET
-                    || pass.name == super::native_witness::PASS =>
-                {
-                    Self::bind_native(id, pass.kind)
-                }
-                None if pass.kind == Some(PassKind::Copy)
-                    && pass.name == camera_culling::STATS_PASS =>
-                {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
-                        frame.culling_stats()
-                    })
-                }
-                None if pass.kind == Some(PassKind::Copy) && pass.name == CONTRIBUTION_UPLOAD => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
-                        frame.contribution_upload();
-                        Ok(())
-                    })
-                }
-                Some(key) if key == self.contribution_key() => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.contribution_compute(pass)
-                    })
-                }
-                None if pass.kind == Some(PassKind::Copy)
-                    && pass.name == super::after_opaque::COPY =>
-                {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
-                        frame.refraction_copy()
-                    })
-                }
-                None if pass.kind == Some(PassKind::Copy) => {
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, pass| {
-                        frame.copy(pass)
-                    })
-                }
-                _ => return Err(RenderError::GraphPassMismatch),
-            };
-            bindings.push(binding);
+            // A pass declared without a key has no recorder.
+            let key = pass.key.ok_or(RenderError::GraphPassMismatch)?;
+            bindings.push(self.recorder(&graph, id, key)?);
         }
         graph.bind(bindings).map_err(RenderError::Graph)
     }
 
-    fn bind_native(id: usize, kind: Option<PassKind>) -> RecordBinding<SceneFamily> {
-        if kind == Some(PassKind::Native) {
+    /// The recorder a scene pass's key selects. Every key is listed, so a new
+    /// key does not compile until it has a recorder here or is refused.
+    #[expect(
+        clippy::redundant_closure_for_method_calls,
+        reason = "a method path fixes the scene context's lifetime; the recorder must accept any"
+    )]
+    fn recorder(
+        &self,
+        graph: &CompiledGraph,
+        id: usize,
+        key: PassKey,
+    ) -> Result<RecordBinding<SceneFamily>, RenderError> {
+        type B = RecordBinding<SceneFamily>;
+        Ok(match key {
+            PassKey::Opaque => B::new(id, PassKind::Render, |frame, pass| frame.opaque(pass)),
+            PassKey::Display => B::new(id, PassKind::Render, |frame, pass| frame.tone(pass)),
+            PassKey::ShadowNear | PassKey::ShadowFar | PassKey::HorizonHeights => {
+                let index = match key {
+                    PassKey::ShadowNear => 0,
+                    PassKey::ShadowFar => 1,
+                    _ => 2,
+                };
+                B::new(id, PassKind::Render, move |frame, pass| {
+                    frame.shadow(index, pass)
+                })
+            }
+            PassKey::AirShadow => {
+                B::new(id, PassKind::Render, |frame, pass| frame.air_shadow(pass))
+            }
+            PassKey::CasterCull => {
+                B::new(id, PassKind::Compute, |frame, pass| frame.caster_cull(pass))
+            }
+            PassKey::Cluster => B::new(id, PassKind::Compute, |frame, pass| frame.cluster(pass)),
+            PassKey::History => B::new(id, PassKind::Compute, |frame, pass| {
+                frame.publish_history(pass)
+            }),
+            PassKey::Exposure => B::new(id, PassKind::Compute, |frame, pass| frame.exposure(pass)),
+            PassKey::Stars => B::new(id, PassKind::Render, |frame, pass| frame.stars(pass)),
+            PassKey::Atmosphere(stage) => B::new(id, PassKind::Compute, move |frame, pass| {
+                frame.atmosphere(stage, pass)
+            }),
+            PassKey::CameraVisibility | PassKey::PrepassList => {
+                B::new(id, PassKind::Compute, |frame, pass| frame.visibility(pass))
+            }
+            PassKey::DepthPrepass => B::new(id, PassKind::Render, |frame, pass| {
+                frame.depth_prepass(pass)
+            }),
+            PassKey::DepthPyramid => B::new(id, PassKind::Compute, |frame, pass| {
+                frame.depth_pyramid(pass)
+            }),
+            PassKey::FinalCull => B::new(id, PassKind::Compute, |frame, pass| {
+                frame.final_visibility(pass)
+            }),
+            PassKey::CullingStats => B::new(id, PassKind::Copy, |frame, _| frame.culling_stats()),
+            PassKey::TemporalExposure | PassKey::TemporalWitness => {
+                let witness = key == PassKey::TemporalWitness;
+                B::new(id, PassKind::Render, move |frame, pass| {
+                    frame.temporal(pass, witness)
+                })
+            }
+            PassKey::Taau => B::new(id, PassKind::Compute, |frame, pass| frame.taau(pass)),
+            PassKey::ContributionUpload => B::new(id, PassKind::Copy, |frame, _| {
+                frame.contribution_upload();
+                Ok(())
+            }),
+            PassKey::ContributionCompute => B::new(id, PassKind::Compute, |frame, pass| {
+                frame.contribution_compute(pass)
+            }),
+            PassKey::Effect(index) => {
+                let index = index as usize;
+                B::new(id, PassKind::Compute, move |frame, pass| {
+                    frame.effect(index, pass)
+                })
+            }
+            PassKey::AfterOpaque(index) => {
+                let index = index as usize;
+                let kind = match self
+                    .effect_graph
+                    .after_opaque
+                    .get(index)
+                    .ok_or(RenderError::GraphPassMismatch)?
+                    .kind
+                {
+                    crate::contribution::AfterOpaqueKind::Render => PassKind::Render,
+                    crate::contribution::AfterOpaqueKind::Compute => PassKind::Compute,
+                };
+                B::new(id, kind, move |frame, pass| frame.after_opaque(index, pass))
+            }
+            PassKey::AfterOpaqueCopy => {
+                B::new(id, PassKind::Copy, |frame, _| frame.refraction_copy())
+            }
+            PassKey::Secondary { view, stage } => {
+                let view = view as usize;
+                B::new(id, stage.kind(), move |frame, pass| {
+                    frame.secondary_stage(view, stage, pass)
+                })
+            }
+            PassKey::RayStructureBuild => super::raytrace::binding(id),
+            PassKey::NativeReset => Self::bind_native(id, false),
+            PassKey::NativeWitness => Self::bind_native(id, true),
+            PassKey::Readback => B::new(id, PassKind::Copy, |frame, pass| frame.copy(pass)),
+            PassKey::Surface => Self::surface_binding(graph, id)?,
+            PassKey::DisplayReferred | PassKey::Sprites => {
+                return Err(RenderError::GraphPassMismatch);
+            }
+        })
+    }
+
+    fn bind_native(id: usize, segment: bool) -> RecordBinding<SceneFamily> {
+        if segment {
             RecordBinding::<SceneFamily>::new(id, PassKind::Native, |frame, _| {
                 let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
                 native.encode(

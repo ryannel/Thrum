@@ -1,5 +1,7 @@
 //! Scene-wide acceleration structures for explicitly requested ray queries.
 
+use crate::graph::PassBody;
+use crate::pass_key::PassKey;
 use std::sync::Mutex;
 
 use super::mesh_arena::{ArenaBuffers, MeshArena, MeshId, MeshRow, VERTEX_BYTES};
@@ -7,12 +9,11 @@ use super::{PreparedSynthetic, RenderError, SceneFamily, mesh_rows::LiveRows};
 use crate::capabilities::DeviceCapabilities;
 use crate::contribution::{RayInstances, SceneContribution};
 use crate::graph::{
-    Access, AccessKind, FrameGraph, GraphError, Pass, PassKind, PassScope, ResourceDescriptor,
+    Access, AccessKind, FrameGraph, GraphError, PassKind, PassScope, ResourceDescriptor,
     ResourceId, ResourceScope,
 };
 use crate::graph_record::RecordBinding;
 
-pub(super) const PASS: &str = "ray structure build";
 mod view;
 pub(super) use view::TracedView;
 const SHADOW_AND_AMBIENT: u8 = 0b11;
@@ -432,13 +433,15 @@ impl super::SyntheticTargetInputs {
             0..1,
             AccessKind::AccelerationBuild,
         ));
-        graph.pass(Pass {
-            name: PASS.into(),
-            scope: PassScope::Shared,
-            pipeline: None,
-            accesses,
-            external_side_effect: true,
-        });
+        graph.declare(
+            PassKey::RayStructureBuild,
+            PassBody {
+                scope: PassScope::Shared,
+                pipeline: None,
+                accesses,
+                external_side_effect: true,
+            },
+        );
         Ok(Some(structure))
     }
 }

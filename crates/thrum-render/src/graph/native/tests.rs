@@ -1,5 +1,6 @@
 use super::*;
 use crate::graph::{Access, PassKind, PassScope, ResourceDescriptor};
+use crate::timing::TimingCategory;
 use std::collections::BTreeSet;
 
 fn access(resource: ResourceId, kind: AccessKind) -> Access {
@@ -19,6 +20,7 @@ fn pass(name: &str, accesses: Vec<Access>) -> Pass {
         pipeline: None,
         accesses,
         external_side_effect: true,
+        timing: TimingCategory::Effects,
     }
 }
 

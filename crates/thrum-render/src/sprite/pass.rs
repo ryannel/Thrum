@@ -22,7 +22,7 @@ use coverage::coverage_at;
 mod coverage;
 use wgpu::util::DeviceExt;
 
-pub(crate) const PASS: &str = "sprites";
+pub(crate) const PASS: &str = crate::pass_key::PassKey::Sprites.constant_name();
 const SHEET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const SHEET_SLOTS: usize = 8;
 

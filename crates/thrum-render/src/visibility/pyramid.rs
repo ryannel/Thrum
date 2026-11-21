@@ -5,7 +5,7 @@
 /// Format of every pyramid mip: one portable, storage-writable float.
 pub(crate) const PYRAMID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R32Float;
 /// Graph and timing pass name.
-pub(crate) const PASS: &str = "camera depth pyramid";
+pub(crate) const PASS: &str = crate::pass_key::PassKey::DepthPyramid.constant_name();
 use crate::shader_constants::PYRAMID_WORKGROUP_EDGE;
 
 /// Compute pipelines and layouts; independent of target size.

@@ -1,8 +1,9 @@
 //! Actual production transmittance lookup versus the separate CPU direct-light
 //! quadrature, plus physical endpoint coverage of both LUT mappings.
 
-use super::super::{EARTH, EXTENTS, LUT_PLANES, LUT_SHADER};
+use super::super::{EARTH, LUT_SHADER};
 use crate::atmosphere::model;
+use crate::shader_constants::{ATMOSPHERE_EXTENTS as EXTENTS, ATMOSPHERE_PLANES as LUT_PLANES};
 use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 

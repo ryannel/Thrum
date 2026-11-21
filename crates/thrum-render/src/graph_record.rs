@@ -125,6 +125,8 @@ impl<F: RecordFamily> ExecutableGraph<F> {
 mod tests {
     use std::collections::BTreeSet;
 
+    use crate::timing::TimingCategory;
+
     use crate::graph::{
         Access, AccessKind, FrameGraph, GraphError, Pass, PassKind, PassScope, ResourceDescriptor,
         ResourceScope,
@@ -185,6 +187,7 @@ mod tests {
                     store: true,
                 }],
                 external_side_effect: output,
+                timing: TimingCategory::Effects,
             });
         }
         graph.compile(1, &BTreeSet::new()).expect("copy closure")

@@ -66,11 +66,14 @@ fn metal_h3_lent_diffuse_meets_independent_hemisphere_integral() {
                 .unwrap();
             filtered::submit(&device, &queue, &mut prepared, &target);
             let surface = prepared.scene_surface(&queue);
-            let pixels: Vec<_> =
-                observer::texels(&device, &queue, &surface.environment.unwrap().textures[2])
-                    .iter()
-                    .map(|p| [p[0] / 1024.0, p[1] / 1024.0, p[2] / 1024.0])
-                    .collect();
+            let pixels: Vec<_> = observer::texels(
+                &device,
+                &queue,
+                &surface.environment.unwrap().textures.sky_view,
+            )
+            .iter()
+            .map(|p| [p[0] / 1024.0, p[1] / 1024.0, p[2] / 1024.0])
+            .collect();
             let coarse =
                 reference::integrate(&pixels, f64::from(azimuth).to_radians(), [1.0; 3], 64);
             let fine =

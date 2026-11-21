@@ -135,7 +135,7 @@ impl Fixture<'_> {
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = *view;
         scene.sun_shadows = true;
-        scene.instances[0].ids[3] = 0;
+        scene.instances[0].deactivate();
         scene.local_lights.push(SyntheticPointLight {
             position: [-2.0, 1.0, 0.8],
             radius: 5.0,

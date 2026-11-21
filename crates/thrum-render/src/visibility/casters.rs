@@ -15,7 +15,7 @@ use crate::graph::{
 use crate::timing::{GpuTimings, TimingError};
 
 /// Graph pass name of the caster compaction, which runs every Sun pass's list.
-pub(crate) const PASS: &str = "synthetic Sun caster cull";
+pub(crate) const PASS: &str = crate::pass_key::PassKey::CasterCull.constant_name();
 /// Bytes of the caster view each Sun pass draws with (`ShadowView`).
 const CASTER_VIEW_BYTES: u64 = size_of::<crate::records::ShadowView>() as u64;
 

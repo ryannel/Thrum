@@ -73,7 +73,7 @@ fn scene(view: &SyntheticView, culling: CullMode, shadows: bool, hidden: usize) 
     scene.sun_shadows = shadows;
     for (index, instance) in scene.instances.iter_mut().enumerate() {
         if index % hidden == 0 {
-            instance.ids[3] = 0;
+            instance.deactivate();
         }
         // Mirrored instances take the two-sided pipeline and a negative basis.
         if index % 11 == 0 {
@@ -440,7 +440,7 @@ fn walled(mut scene: SyntheticScene) -> SyntheticScene {
     }
     wall.current[3] = [0.0, 0.05, 0.55, 1.0];
     wall.previous = wall.current;
-    wall.ids[3] = 1;
+    wall.set_generation(1);
     scene
 }
 
@@ -689,13 +689,14 @@ async fn flush_tie(
     let half = [0.25, 0.25, 0.25];
     place(&mut base.instances[0], half, at([60.0, 0.0, 1.75]), yaw);
     assert_ne!(
-        base.instances[0].ids[1], base.instances[1].ids[1],
+        base.instances[0].material(),
+        base.instances[1].material(),
         "materials differ"
     );
     let mut flush = base.clone();
     place(&mut flush.instances[0], half, at([0.1, -0.05, 1.75]), yaw);
     let mut walled = flush.clone();
-    walled.instances[0].ids[3] = 0;
+    walled.instances[0].deactivate();
     let mut images = Vec::new();
     for (mode, last) in [
         (CullMode::Direct, &walled),

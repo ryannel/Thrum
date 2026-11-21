@@ -12,10 +12,12 @@
 //! pass draws only the final list, so its draw sequence is Direct's minus
 //! slots strictly behind depth drawn this frame, which win no pixel.
 
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphError, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::pass_key::{PassKey, PipelineRole};
 use crate::shader_constants::{
     PHASE_FINAL, PHASE_FRUSTUM, PHASE_PREPASS, VISIBILITY_WORKGROUP as WORKGROUP,
 };
@@ -33,18 +35,12 @@ const WORDS: u32 = WORKGROUP / u32::BITS;
 /// Graph owner of the last-visible history pair.
 const HISTORY_OWNER: u64 = 0x5649_4849;
 const VIEW_BYTES: u64 = size_of::<crate::records::ViewRecord>() as u64;
-/// Pipeline role inside the synthetic closure.
-pub(crate) const ROLE: u32 = 0x5649;
-/// Pipeline role of the final occlusion cull.
-pub(crate) const ROLE_FINAL: u32 = 0x564A;
-/// Pipeline role of the depth pyramid build.
-pub(crate) const ROLE_PYRAMID: u32 = 0x5650;
 /// Graph pass name of the frustum compaction.
-pub(crate) const PASS: &str = "camera visibility";
+pub(crate) const PASS: &str = PassKey::CameraVisibility.constant_name();
 /// Graph pass name of the occlusion prepass list.
-pub(crate) const PREPASS_LIST_PASS: &str = "camera prepass list";
+pub(crate) const PREPASS_LIST_PASS: &str = PassKey::PrepassList.constant_name();
 /// Graph pass name of the final occlusion cull.
-pub(crate) const FINAL_PASS: &str = "camera final cull";
+pub(crate) const FINAL_PASS: &str = PassKey::FinalCull.constant_name();
 pub(crate) use pyramid::PASS as PYRAMID_PASS;
 mod secondary;
 pub(crate) use secondary::SecondaryVisibility;
@@ -370,18 +366,12 @@ impl VisibilityPrepared {
 
     /// Occlusion only: the final cull's pipeline key.
     pub(crate) fn final_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: ROLE_FINAL,
-            ..self.key
-        }
+        PipelineRole::FinalCull.key(self.key)
     }
 
     /// Occlusion only: the pyramid build's pipeline key.
     pub(crate) fn pyramid_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: ROLE_PYRAMID,
-            ..self.key
-        }
+        PipelineRole::DepthPyramid.key(self.key)
     }
 
     /// Bytes of one target's visible slot list. The member path leaves room
@@ -639,19 +629,25 @@ impl VisibilityPrepared {
             kind: AccessKind::StorageRead,
             store: true,
         }));
-        let name = if history.is_some() {
+        let _name = if history.is_some() {
             PREPASS_LIST_PASS
         } else {
             PASS
         };
         let (visible, args) = self.outputs(graph, &mut reads)?;
-        graph.pass(Pass {
-            name: name.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.key),
-            accesses: reads,
-            external_side_effect: false,
-        });
+        graph.declare(
+            if history.is_some() {
+                PassKey::PrepassList
+            } else {
+                PassKey::CameraVisibility
+            },
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.key),
+                accesses: reads,
+                external_side_effect: false,
+            },
+        );
         Ok(VisibilityIds {
             visible,
             args,
@@ -711,28 +707,30 @@ impl VisibilityPrepared {
             },
             ResourceScope::Imported { initialized: false },
         )?;
-        graph.pass(Pass {
-            name: PYRAMID_PASS.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.pyramid_key()),
-            accesses: vec![
-                Access {
-                    view: None,
-                    resource: depth.clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    view: None,
-                    resource: texture.clone(),
-                    range: 0..u64::from(mips),
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
-            ],
-            external_side_effect: false,
-        });
+        graph.declare(
+            PassKey::DepthPyramid,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.pyramid_key()),
+                accesses: vec![
+                    Access {
+                        view: None,
+                        resource: depth.clone(),
+                        range: 0..1,
+                        kind: AccessKind::SampledRead,
+                        store: true,
+                    },
+                    Access {
+                        view: None,
+                        resource: texture.clone(),
+                        range: 0..u64::from(mips),
+                        kind: AccessKind::StorageWrite,
+                        store: true,
+                    },
+                ],
+                external_side_effect: false,
+            },
+        );
         reads.extend([
             Access {
                 view: None,
@@ -758,13 +756,15 @@ impl VisibilityPrepared {
             },
         ]);
         let (visible, args) = self.outputs(graph, &mut reads)?;
-        graph.pass(Pass {
-            name: FINAL_PASS.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.final_key()),
-            accesses: reads,
-            external_side_effect: false,
-        });
+        graph.declare(
+            PassKey::FinalCull,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.final_key()),
+                accesses: reads,
+                external_side_effect: false,
+            },
+        );
         Ok(VisibilityIds {
             visible,
             args,

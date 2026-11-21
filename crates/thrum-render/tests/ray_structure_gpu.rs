@@ -33,7 +33,7 @@ mod metal {
         // Scaling moves the local x=2 centre to x=6 around the slot origin.
         scene.instances[2].current[0][0] = 3.0;
         scene.instances[2].normal[0][0] = 1.0 / 3.0;
-        scene.instances[3].ids[3] = 0;
+        scene.instances[3].deactivate();
         for instance in &mut scene.instances {
             instance.previous = instance.current;
         }

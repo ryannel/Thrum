@@ -53,8 +53,8 @@ mod metal {
             }
             scene.instances[0].previous[3] = [-100.0 - frame as f32 * 10.0, 1.0, 0.0, 1.0];
             scene.instances[0].current[3] = [-110.0 - frame as f32 * 10.0, 1.0, 0.0, 1.0];
-            scene.instances[9000].ids[3] = u32::from(frame % 2 == 0);
-            scene.instances[9001].ids[3] = u32::from(frame % 2 != 0);
+            scene.instances[9000].set_generation(u32::from(frame % 2 == 0));
+            scene.instances[9001].set_generation(u32::from(frame % 2 != 0));
             if frame == 4 {
                 // Slot mesh changes use the renderer's admitted reprepare path.
                 meshes.slots[0] = SyntheticMeshChoice::Mesh(1);
@@ -102,14 +102,14 @@ mod metal {
             );
             let mut rows = prepared.ray_structure_instances().expect("recorded list");
             rows.sort_unstable_by_key(|row| row.slot);
-            let expected = scene.instances.iter().filter(|slot| slot.ids[3] != 0);
+            let expected = scene.instances.iter().filter(|slot| slot.is_active());
             assert_eq!(rows.len(), expected.clone().count(), "frame {frame}");
             for (row, slot) in rows.iter().zip(expected) {
-                let mesh = match meshes.slots[slot.ids[0] as usize] {
+                let mesh = match meshes.slots[slot.logical_slot() as usize] {
                     SyntheticMeshChoice::Cube => 0,
                     SyntheticMeshChoice::Mesh(index) => 2 + index,
                 };
-                assert_eq!((row.slot, row.mesh_row, row.mask), (slot.ids[0], mesh, 3));
+                assert_eq!((row.slot, row.mesh_row, row.mask), (slot.logical_slot(), mesh, 3));
                 let mut model = slot.current;
                 for (position, previous) in model[3][..3].iter_mut().zip(slot.previous[3]) {
                     *position = previous + alpha * (*position - previous);

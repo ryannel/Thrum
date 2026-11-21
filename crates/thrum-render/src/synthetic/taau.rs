@@ -1,10 +1,12 @@
 //! Prepared portable temporal resolve. One retained pair is shared by frame slots;
 //! the submitted transform cursor also selects its read and publication sides.
 use super::{OffscreenTarget, PreparedSynthetic, RenderError, SceneContext, SyntheticView};
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
+    Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
     ResourceScope,
 };
+use crate::pass_key::{PassKey, PipelineRole};
 use crate::shader_constants::RECONSTRUCTION_WORKGROUP_EDGE;
 use std::collections::BTreeSet;
 
@@ -251,10 +253,7 @@ impl super::SyntheticTargetInputs {
             .transpose()
     }
     pub(super) fn taau_key(&self) -> PipelineKey {
-        PipelineKey {
-            role: 0x5450,
-            ..self.key
-        }
+        PipelineRole::Taau.key(self.key)
     }
 
     pub(super) fn append_taau(
@@ -348,13 +347,15 @@ impl super::SyntheticTargetInputs {
             ));
         }
         keys.insert(self.taau_key());
-        let pass = graph.pass(Pass {
-            name: "portable TAAU".into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.taau_key()),
-            accesses,
-            external_side_effect: true,
-        });
+        let pass = graph.declare(
+            PassKey::Taau,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.taau_key()),
+                accesses,
+                external_side_effect: true,
+            },
+        );
         Ok(Some(TaauResources { output, pass }))
     }
 }

@@ -9,6 +9,7 @@ use thrum_render::synthetic::{
     FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight,
     SyntheticScene, SyntheticView,
 };
+use thrum_render::timing::TimingCategory;
 use thrum_render::timing::{GpuTimings, TimingError};
 
 #[test]
@@ -196,7 +197,12 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 ))
             ));
             // No timestamp labels were reserved by the rejected whole-view check.
-            assert!(one_pass.pass_writes(41, "still unused").unwrap().is_some());
+            assert!(
+                one_pass
+                    .pass_writes(41, "still unused", TimingCategory::Effects)
+                    .unwrap()
+                    .is_some()
+            );
             prepared
                 .encode(&mut encoder, 41, &target, Some(&mut timings))
                 .unwrap();
@@ -208,7 +214,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 Err(TimingError::StaleGeneration)
             );
             assert!(matches!(
-                timings.pass_writes(41, "still full"),
+                timings.pass_writes(41, "still full", TimingCategory::Effects),
                 Err(TimingError::Capacity)
             ));
             timings.discard_unsubmitted(41).unwrap();
@@ -421,7 +427,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             if reversed {
                 overlap.instances.reverse();
                 for (slot, instance) in overlap.instances.iter_mut().enumerate() {
-                    instance.ids[0] = u32::try_from(slot).expect("two diagnostic slots");
+                    instance.set_logical_slot(u32::try_from(slot).expect("two diagnostic slots"));
                 }
             }
             let prepared = PreparedSynthetic::prepare_with_light(
@@ -618,7 +624,12 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         let plain_capabilities = DeviceCapabilities::capture(&adapter, &plain_device, 42);
         let mut disabled = GpuTimings::new(&plain_capabilities, &plain_queue, 1).unwrap();
         assert!(!disabled.is_enabled());
-        assert!(disabled.pass_writes(42, "unsupported").unwrap().is_none());
+        assert!(
+            disabled
+                .pass_writes(42, "unsupported", TimingCategory::Effects)
+                .unwrap()
+                .is_none()
+        );
         disabled.discard_unsubmitted(42).unwrap();
         assert_eq!(
             disabled.discard_unsubmitted(41),

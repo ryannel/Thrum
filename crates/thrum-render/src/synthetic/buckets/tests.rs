@@ -138,7 +138,7 @@ fn members_follow_upload_activity_churn() {
         .map(|slot| instance(slot, if slot % 5 == 0 { -1.0 } else { 1.0 }))
         .collect();
     for slot in (0..count).step_by(4) {
-        instances[slot as usize].ids[3] = 0;
+        instances[slot as usize].deactivate();
     }
     let keys = [MeshId::CUBE, MeshId::CUBE_REVERSED]
         .into_iter()
@@ -159,15 +159,16 @@ fn members_follow_upload_activity_churn() {
             let changed: Vec<u32> = (0..count).filter(|s| (s + frame) % 3 == 0).collect();
             for &slot in &changed {
                 let instance = &mut instances[slot as usize];
-                instance.ids[3] = u32::from(instance.ids[3] == 0);
+                instance.set_generation(u32::from(!instance.is_active()));
             }
             upload
                 .replace(&queue, &instances, &changed, |_, _| false)
                 .expect("replace");
         }
         for (slot, instance) in (0..count).zip(&instances) {
-            let key =
-                (instance.ids[3] != 0).then(|| key(mesh_of(slot), PipelineClass::of(instance)));
+            let key = instance
+                .is_active()
+                .then(|| key(mesh_of(slot), PipelineClass::of(instance)));
             buckets.set(slot, key).expect("known");
         }
         let (physical_to_slot, _) = upload.physical_rows();
@@ -194,7 +195,7 @@ fn members_follow_upload_activity_churn() {
         for (slot, instance) in instances.iter().enumerate() {
             assert_eq!(
                 seen[slot],
-                instance.ids[3] != 0,
+                instance.is_active(),
                 "frame {frame} slot {slot}"
             );
         }

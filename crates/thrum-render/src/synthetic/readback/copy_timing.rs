@@ -70,9 +70,11 @@ impl CopyTiming {
         encoder: &mut wgpu::CommandEncoder,
         after: bool,
     ) -> Result<(), TimingError> {
-        let writes = self
-            .timings
-            .compute_writes(generation, if after { AFTER } else { BEFORE })?;
+        let writes = self.timings.compute_writes(
+            generation,
+            if after { AFTER } else { BEFORE },
+            crate::timing::TimingCategory::Transfer,
+        )?;
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("readback dependency marker"),
             timestamp_writes: writes,

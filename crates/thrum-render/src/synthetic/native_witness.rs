@@ -9,8 +9,7 @@ use std::{
     },
 };
 
-pub(super) const RESET: &str = "native witness reset";
-pub(super) const PASS: &str = "native stateful copy/select witness";
+pub(super) const PASS: &str = crate::pass_key::PassKey::NativeWitness.constant_name();
 pub(crate) mod graph;
 
 /// Explicit diagnostic selection. Ordinary scenes leave this disabled.

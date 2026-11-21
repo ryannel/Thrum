@@ -97,21 +97,21 @@ fn changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw() {
         let moved = pixels(&device, &queue, &prepared, &target);
         assert_ne!(after, moved);
 
-        scene.instances[1].ids[0] = 0;
+        scene.instances[1].set_logical_slot(0);
         let duplicate = prepared
             .upload_instances(&queue, &scene.instances, &[1])
             .expect("duplicate logical identity degrades");
         assert_eq!((duplicate.changed_rows, duplicate.dropped_invalid), (0, 1));
         assert_eq!(moved, pixels(&device, &queue, &prepared, &target));
-        scene.instances[1].ids[0] = 1;
+        scene.instances[1].set_logical_slot(1);
 
-        scene.instances[1].ids[3] = 0;
+        scene.instances[1].deactivate();
         prepared
             .upload_instances(&queue, &scene.instances, &[1])
             .expect("retired instance upload");
         let hidden = pixels(&device, &queue, &prepared, &target);
         assert_ne!(moved, hidden, "retired GPU instance no longer draws");
-        scene.instances[1].ids[3] = 1;
+        scene.instances[1].set_generation(1);
         prepared
             .upload_instances(&queue, &scene.instances, &[1])
             .expect("reused instance upload");
@@ -138,7 +138,7 @@ fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
         assert_eq!(prepared.active_instance_count(), 4);
 
         for slot in [0, 2] {
-            scene.instances[slot].ids[3] = 0;
+            scene.instances[slot].deactivate();
         }
         prepared
             .upload_instances(&queue, &scene.instances, &[0, 2])
@@ -155,7 +155,7 @@ fn active_prefix_matches_fresh_scene_through_churn_and_slot_reuse() {
         );
 
         for slot in [0, 2] {
-            scene.instances[slot].ids[3] = 1;
+            scene.instances[slot].set_generation(1);
         }
         prepared
             .upload_instances(&queue, &scene.instances, &[0, 2])

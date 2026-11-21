@@ -1,4 +1,5 @@
 use super::*;
+use crate::timing::TimingCategory;
 
 fn split_plan(
     post: &BTreeSet<usize>,
@@ -31,6 +32,7 @@ fn split_plan(
                 store: true,
             }],
             external_side_effect: true,
+            timing: TimingCategory::Effects,
         });
     }
     if scene_after_surface {

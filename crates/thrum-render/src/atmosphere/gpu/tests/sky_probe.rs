@@ -22,7 +22,9 @@ fn shipping_spectral_twilight_matches_its_written_radiance() {
         let (device, queue) =
             crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
-        let [width, height] = crate::atmosphere::gpu::EXTENTS[1].map(|v| v as usize);
+        let [width, height] = crate::atmosphere::stage::Chart::MultipleScattering
+            .extent()
+            .map(|v| v as usize);
         shipping_spectral_twilight(&device, &queue, width * height);
         assert!(scope.pop().await.is_none());
     });

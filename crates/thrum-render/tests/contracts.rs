@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use thrum_render::abi::*;
 use thrum_render::graph::*;
 use thrum_render::history::*;
+use thrum_render::timing::TimingCategory;
 
 fn buffer(graph: &mut FrameGraph, scope: ResourceScope) -> ResourceId {
     graph
@@ -24,6 +25,7 @@ fn pass(graph: &mut FrameGraph, accesses: Vec<Access>) {
         pipeline: None,
         accesses,
         external_side_effect: false,
+        timing: TimingCategory::Effects,
     });
 }
 fn access(resource: &ResourceId, range: std::ops::Range<u64>, kind: AccessKind) -> Access {
@@ -374,6 +376,7 @@ fn wrong_graph_bounds_usage_and_unprepared_generations_refuse() {
         pipeline: Some(key),
         accesses: vec![],
         external_side_effect: true,
+        timing: TimingCategory::Effects,
     });
     assert!(matches!(
         graph.compile(3, &BTreeSet::new()),
@@ -411,7 +414,7 @@ fn abi_encodes_semantic_offsets_and_rejects_wrong_references() {
     let mut instance = InstanceRecord::identity(17, 1);
     instance.current[3][0] = 3.25;
     instance.previous[2][2] = 0.75;
-    instance.ids[3] = 29;
+    instance.set_generation(29);
     let bytes = instance.pack(2).expect("valid test fixture");
     assert_eq!(bytes.len(), 192);
     assert_eq!(&bytes[48..52], &3.25_f32.to_le_bytes());

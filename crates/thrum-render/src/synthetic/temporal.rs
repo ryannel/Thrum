@@ -1,9 +1,11 @@
 //! GPU exposure and submitted temporal-input diagnostics. No CPU metering.
-use super::{OffscreenTarget, PreparedSynthetic, RenderError, SceneContext};
+use super::{OffscreenTarget, RenderError, SceneContext};
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
-    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
 /// The shared submitted temporal-input qualification witness, as UTF-8 JSON.
@@ -113,21 +115,17 @@ impl TemporalInputs {
     }
 }
 
-impl PreparedSynthetic {
-    pub(super) fn temporal_witness_enabled(&self) -> bool {
-        self.temporal_inputs && (self.taau.is_none() || self.view_sample.temporal_diagnostic())
-    }
-}
-
 impl super::SyntheticTargetInputs {
     pub(super) fn temporal_witness_enabled(&self) -> bool {
         self.temporal_inputs && (self.taau.is_none() || self.view_sample.temporal_diagnostic())
     }
     pub(super) fn temporal_key(&self, witness: bool) -> PipelineKey {
-        PipelineKey {
-            role: 0x5440 + u32::from(witness),
-            ..self.key
+        if witness {
+            PipelineRole::TemporalWitness
+        } else {
+            PipelineRole::TemporalExposure
         }
+        .key(self.key)
     }
 
     pub(super) fn append_temporal(
@@ -186,18 +184,19 @@ impl super::SyntheticTargetInputs {
                     store: true,
                 }));
             }
-            let pass = graph.pass(Pass {
-                name: if witness {
-                    "temporal input witness"
+            let pass = graph.declare(
+                if witness {
+                    PassKey::TemporalWitness
                 } else {
-                    "temporal exposure texture"
-                }
-                .into(),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses,
-                external_side_effect: true,
-            });
+                    PassKey::TemporalExposure
+                },
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(key),
+                    accesses,
+                    external_side_effect: true,
+                },
+            );
             Ok::<_, RenderError>((output, pass))
         };
         let (exposure, _) = append(false)?;

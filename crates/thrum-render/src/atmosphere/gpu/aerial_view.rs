@@ -3,10 +3,12 @@
 //! of the column volume. There is no second transport integrator.
 
 use super::{AERIAL_EXTENT, AtmospherePrepared, AtmosphereUniform, UNIFORM_BYTES};
+use crate::graph::PassBody;
+use crate::pass_key::{AtmosphereStage, PassKey, SecondaryStage};
 use crate::{
     graph::{
-        Access, AccessKind, CompiledPass, FrameGraph, Pass, PassScope, PipelineKey,
-        ResourceDescriptor, ResourceScope,
+        Access, AccessKind, CompiledPass, FrameGraph, PassScope, PipelineKey, ResourceDescriptor,
+        ResourceScope,
     },
     shader_constants::AERIAL_WORKGROUP_EDGE,
     synthetic::{RenderError, SyntheticView},
@@ -63,8 +65,9 @@ impl AtmospherePrepared {
                 ..wgpu::TextureViewDescriptor::default()
             })
         });
-        let inputs = [0, 1]
-            .map(|index| self.textures[index].create_view(&wgpu::TextureViewDescriptor::default()));
+        let charts = self
+            .textures
+            .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
         let night = self
             .night
             .observer(device, queue, self.frame.nightglow_active());
@@ -72,14 +75,6 @@ impl AtmospherePrepared {
             wgpu::BindGroupEntry {
                 binding: 0,
                 resource: uniform.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::TextureView(&inputs[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(&inputs[1]),
             },
             wgpu::BindGroupEntry {
                 binding: 3,
@@ -95,6 +90,8 @@ impl AtmospherePrepared {
             },
         ]
         .into_iter()
+        // The same shader and chart reads as the camera's aerial stage.
+        .chain(super::chart_entries(AtmosphereStage::Aerial, &charts))
         .chain(night.bindings())
         .collect::<Vec<_>>();
         let pipeline = self.aerial_pipeline.clone();
@@ -181,7 +178,10 @@ impl SecondaryAerial {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        let mut writes = shared.to_vec();
+        // The shared view inputs carry the forward pass's chart reads; the
+        // aerial stage reads the charts its table lists instead.
+        let mut writes =
+            crate::atmosphere::graph::stage_reads(graph, AtmosphereStage::Aerial, shared)?;
         writes.extend(self.night.write().graph_reads(graph)?);
         let read = Access::new(uniform, 0..UNIFORM_BYTES, AccessKind::UniformRead);
         writes.push(read.clone());
@@ -216,13 +216,18 @@ impl SecondaryAerial {
             opaque.push(Access::new(id, 0..layers, AccessKind::SampledRead));
         }
         keys.insert(key);
-        graph.pass(Pass {
-            name: format!("{PASS} {index}"),
-            scope: PassScope::View(index as u64 + 2),
-            pipeline: Some(key),
-            accesses: writes,
-            external_side_effect: false,
-        });
+        graph.declare(
+            PassKey::Secondary {
+                view: crate::pass_key::pass_index(index),
+                stage: SecondaryStage::Aerial,
+            },
+            PassBody {
+                scope: PassScope::View(index as u64 + 2),
+                pipeline: Some(key),
+                accesses: writes,
+                external_side_effect: false,
+            },
+        );
         Ok(())
     }
 

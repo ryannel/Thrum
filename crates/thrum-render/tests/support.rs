@@ -404,7 +404,7 @@ pub(crate) async fn host_with_config(
             .map(|instance| {
                 (
                     std::array::from_fn(|axis| f64::from(instance.current[3][axis])),
-                    instance.ids[1],
+                    instance.material(),
                 )
             })
             .collect(),

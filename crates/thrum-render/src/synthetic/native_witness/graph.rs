@@ -1,8 +1,9 @@
-use super::{PASS, RESET};
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, FrameGraph, PassScope, ResourceDescriptor, ResourceId, ResourceScope,
     TextureKind,
 };
+use crate::pass_key::PassKey;
 use crate::synthetic::RenderError;
 
 pub(crate) struct Resources {
@@ -57,27 +58,31 @@ pub(crate) fn append(
         descriptor(1, 1),
         ResourceScope::Imported { initialized: true },
     )?;
-    graph.pass(Pass {
-        name: RESET.into(),
-        scope: PassScope::View(1),
-        pipeline: None,
-        accesses: vec![
-            Access::new(zero, 0..1, AccessKind::CopyRead),
-            Access::new(previous.clone(), 0..1, AccessKind::CopyWrite),
-        ],
-        external_side_effect: false,
-    });
-    let pass = graph.native_pass(Pass {
-        name: PASS.into(),
-        scope: PassScope::View(1),
-        pipeline: None,
-        accesses: vec![
-            Access::new(source.clone(), 0..1, AccessKind::CopyRead),
-            Access::new(previous.clone(), 0..1, AccessKind::SampledRead),
-            Access::new(output.clone(), 0..1, AccessKind::StorageWrite),
-            Access::new(next.clone(), 0..1, AccessKind::StorageWrite),
-        ],
-        external_side_effect: false,
-    });
+    graph.declare(
+        PassKey::NativeReset,
+        PassBody {
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![
+                Access::new(zero, 0..1, AccessKind::CopyRead),
+                Access::new(previous.clone(), 0..1, AccessKind::CopyWrite),
+            ],
+            external_side_effect: false,
+        },
+    );
+    let pass = graph.declare_native(
+        PassKey::NativeWitness,
+        PassBody {
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![
+                Access::new(source.clone(), 0..1, AccessKind::CopyRead),
+                Access::new(previous.clone(), 0..1, AccessKind::SampledRead),
+                Access::new(output.clone(), 0..1, AccessKind::StorageWrite),
+                Access::new(next.clone(), 0..1, AccessKind::StorageWrite),
+            ],
+            external_side_effect: false,
+        },
+    );
     Ok(Resources { output, next, pass })
 }

@@ -5,11 +5,13 @@ use super::{
     DisplayOverlay, PRE_EXPOSURE, RenderError, SdrToneMap, display::display_selectors, history_gpu,
     uniform_layout,
 };
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphError, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BYTES};
+use crate::pass_key::PassKey;
 use crate::shader_constants::{EXPOSURE_INCIDENT, EXPOSURE_LOW_LIGHT};
 use crate::shaders::wgsl;
 use crate::timing::GpuTimings;
@@ -259,13 +261,15 @@ impl ExposureResolve {
             kind: AccessKind::StorageWrite,
             store: true,
         });
-        graph.pass(Pass {
-            name: "synthetic exposure resolve".into(),
-            scope: PassScope::View(1),
-            pipeline: Some(key),
-            accesses,
-            external_side_effect: false,
-        });
+        graph.declare(
+            PassKey::Exposure,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(key),
+                accesses,
+                external_side_effect: false,
+            },
+        );
         Ok(sample)
     }
 

@@ -286,7 +286,12 @@ fn metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                 )
                 .unwrap();
             submit(&device, &queue, &mut prepared, &target);
-            let chart = &prepared.scene_surface(&queue).environment.unwrap().textures[2];
+            let chart = &prepared
+                .scene_surface(&queue)
+                .environment
+                .unwrap()
+                .textures
+                .sky_view;
             let field = Field {
                 width: 192,
                 height: 108,
@@ -661,7 +666,7 @@ fn metal_h2_sampler_precision_report() {
         let target = OffscreenTarget::new(&device, &prepared, 8, 8).unwrap();
         submit(&device, &queue, &mut prepared, &target);
         let surface = prepared.scene_surface(&queue);
-        let chart = &surface.environment.unwrap().textures[2];
+        let chart = &surface.environment.unwrap().textures.sky_view;
         let products = surface.environment_products().unwrap();
         let queries: Vec<_> = (0..=256_u16)
             .map(|i| direction([20.5 / 192.0, (70.5 + f64::from(i) / 256.0) / 108.0], 0.0))
@@ -841,7 +846,11 @@ fn known_sky_fields(
             .expect("known sky fixture admitted");
         submit(device, queue, prepared, target);
         let surface = prepared.scene_surface(queue);
-        let chart = &surface.environment.expect("atmosphere surface").textures[2];
+        let chart = &surface
+            .environment
+            .expect("atmosphere surface")
+            .textures
+            .sky_view;
         observer::write_field(queue, chart, |x, y, _| {
             [
                 1.0 + (x % 2) as f32 + (y % 2) as f32,

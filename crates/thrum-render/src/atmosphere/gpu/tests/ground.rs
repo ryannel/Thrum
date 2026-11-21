@@ -1,7 +1,8 @@
-use super::super::{
-    AtmospherePrepared, EARTH, EXTENTS, GROUND_VALID, LUT_PLANES, LUT_SHADER, prepare_compute,
-};
+use super::super::{AtmospherePrepared, EARTH, LUT_SHADER, prepare_compute};
 use crate::atmosphere::AtmosphereFrame;
+use crate::atmosphere::stage::{Charts, GROUND_VALID};
+use crate::pass_key::AtmosphereStage;
+use crate::shader_constants::{ATMOSPHERE_EXTENTS as EXTENTS, ATMOSPHERE_PLANES as LUT_PLANES};
 use crate::synthetic::SyntheticView;
 use std::{f64::consts::PI, sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
@@ -184,9 +185,15 @@ impl Fixture {
                 view_formats: &[],
             })
         });
-        let views = textures
+        let [transmittance, multiple_scattering, sky_view, ground] = textures
             .each_ref()
             .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        let views = Charts {
+            transmittance,
+            multiple_scattering,
+            sky_view,
+            ground,
+        };
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
@@ -197,10 +204,10 @@ impl Fixture {
             source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
         let night = super::super::NightProfile::new(&device, &queue, false);
-        let producers = [2, 3].map(|index| {
+        let producers = [AtmosphereStage::SkyView, AtmosphereStage::Ground].map(|stage| {
             prepare_compute(
                 &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
-                index,
+                stage,
                 &uniform,
                 &views,
                 &sampler,

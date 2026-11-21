@@ -232,7 +232,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             (after_drop + 12.8).abs() < 0.5,
             "a dropped cut must preserve submitted history: {after_drop}"
         );
-        scene.instances[0].ids[3] = 2;
+        scene.instances[0].set_generation(2);
         let reused = submitted_motion_x(
             &device,
             &queue,
@@ -288,7 +288,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             &[],
             46,
         );
-        compacted_scene.instances[0].ids[3] = 0;
+        compacted_scene.instances[0].deactivate();
         let after_compaction = submitted_motion_x(
             &device,
             &queue,

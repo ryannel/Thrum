@@ -1117,7 +1117,7 @@ fn ground_scene(
     scene.sun_shadows = true;
     scene.local_lights.extend_from_slice(lights);
     let Some(colour) = ground else {
-        scene.instances[0].ids[3] = 0;
+        scene.instances[0].deactivate();
         return Ok(scene);
     };
     if !colour.iter().all(|channel| (0.0..=1.0).contains(channel)) {

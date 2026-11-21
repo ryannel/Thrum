@@ -194,7 +194,7 @@ fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, String>
         )]
         let position = entity.position.map(|value| value as f32);
         instance.current[3][..3].copy_from_slice(&position);
-        instance.ids[1] = u32::try_from(entity.material).map_err(|_| "field material row")?;
+        instance.set_material(u32::try_from(entity.material).map_err(|_| "field material row")?);
         instance.previous = instance.current;
     }
     scene.view = field_view(0, 0.0, extent, 0.0, 0.0)?;
@@ -1029,7 +1029,7 @@ mod tests {
             assert_eq!(report.dropped_invalid, 0);
             let subject = &render.instances[slot];
             assert_eq!(
-                u64::from(subject.ids[1]),
+                u64::from(subject.material()),
                 scene::REFLECTION_SUBJECT_MATERIAL
             );
             assert_eq!(subject.current, subject.previous);

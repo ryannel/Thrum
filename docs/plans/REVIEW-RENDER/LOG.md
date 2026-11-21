@@ -55,3 +55,9 @@
   row from the generated Rust texture height. The production shader regression passed on Mac.
   A source probe at height 110 derived row 109, and the shipping height still derives row 107.
   [Evidence](../../../.orchestrate/evidence/REVIEW-RENDER/M2/README.md#m24-sky-lut-zenith-row).
+- 2026-11-21 Built M3. Every renderer pass is declared by a typed `PassKey` that supplies its name, timing
+  bucket, pipeline role and recorder. Timing buckets sum by category, and an atmosphere stage's bind group and graph
+  reads come from one chart table. Verified on Metal: 336 compiled graphs pass `pass_keys`, `timing_categories` and
+  `atmosphere_stage_table`, and the full thrum-render suite passed (470 tests). A scratch key failed to compile, and
+  a keyless pass failed `pass_keys`. Found and fixed: a secondary view's aerial pass did not declare its
+  multiple-scattering read. The graph goldens passed unchanged. Evidence: the M3 items in DONE.json.

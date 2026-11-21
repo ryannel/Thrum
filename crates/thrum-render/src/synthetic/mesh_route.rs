@@ -327,7 +327,7 @@ impl BucketRoute {
     }
 
     fn key(mesh: MeshId, instance: &InstanceRecord) -> Option<BucketKey> {
-        (instance.ids[3] != 0).then(|| BucketKey {
+        instance.is_active().then(|| BucketKey {
             mesh,
             class: PipelineClass::of(instance),
         })

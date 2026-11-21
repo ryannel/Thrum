@@ -135,7 +135,7 @@ pub fn scene(count: u32, extent: [u32; 2]) -> (SyntheticScene, Source) {
             .map(|row| {
                 (
                     std::array::from_fn(|axis| f64::from(row.current[3][axis])),
-                    u64::from(row.ids[1]),
+                    u64::from(row.material()),
                 )
             })
             .collect(),

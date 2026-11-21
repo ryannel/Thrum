@@ -6,18 +6,18 @@ use std::{collections::BTreeSet, sync::Arc};
 use crate::{
     capabilities::DeviceCapabilities,
     graph::{
-        Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphError, Pass,
+        Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphError, PassBody,
         PassKind, PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
     },
     graph_record::{ExecutableGraph, RecordBinding, RecordFamily},
+    pass_key::{PassKey, PipelineRole},
     synthetic::{OUTPUT_FORMAT, OffscreenTarget},
     timing::{GpuTimings, TimingError},
 };
 
-const ROLE: u32 = 0x5052;
 const REVISION: u64 = 1;
 /// Name of the optional fifth timestamped V1 pass.
-pub const PASS_NAME: &str = "V1 surface present";
+pub const PASS_NAME: &str = PassKey::Surface.constant_name();
 
 /// One selected 8-bit SDR surface and its current nonzero pixel extent.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -432,11 +432,7 @@ fn check_extent(limit: u32, extent: [u32; 2]) -> Result<(), PresentError> {
 }
 
 pub(crate) fn pipeline_key(generation: u64) -> PipelineKey {
-    PipelineKey {
-        device_generation: generation,
-        revision: REVISION,
-        role: ROLE,
-    }
+    PipelineRole::Surface.pipeline_key(generation, REVISION)
 }
 
 /// Declare the unchanged SDR surface consumer in either the standalone utility
@@ -446,7 +442,7 @@ pub(crate) fn surface_pass(
     source: &ResourceId,
     profile: SurfaceProfile,
     generation: u64,
-) -> Result<(ResourceId, Pass), GraphError> {
+) -> Result<(ResourceId, PassBody), GraphError> {
     let surface = graph.resource(
         ResourceDescriptor::Texture {
             dimension: crate::graph::TextureKind::D2,
@@ -460,8 +456,7 @@ pub(crate) fn surface_pass(
         },
         ResourceScope::Imported { initialized: false },
     )?;
-    let pass = Pass {
-        name: PASS_NAME.into(),
+    let pass = PassBody {
         scope: PassScope::View(1),
         pipeline: Some(pipeline_key(generation)),
         accesses: vec![
@@ -511,7 +506,7 @@ fn compile_plan(
         .map_err(PresentError::Graph)?;
     let (surface, pass) =
         surface_pass(&mut graph, &source, profile, generation).map_err(PresentError::Graph)?;
-    let present_pass = graph.pass(pass);
+    let present_pass = graph.declare(PassKey::Surface, pass);
     let plan = graph
         .compile(generation, &BTreeSet::from([key]))
         .map_err(PresentError::Graph)?;

@@ -15,6 +15,17 @@ impl FrameGraph {
         index
     }
 
+    /// Declare a renderer native segment by its key.
+    pub(crate) fn declare_native(
+        &mut self,
+        key: crate::pass_key::PassKey,
+        body: super::PassBody,
+    ) -> usize {
+        let index = self.declare(key, body);
+        self.native_passes.insert(index);
+        index
+    }
+
     pub(super) fn validate_native_resources(&self) -> Result<(), GraphError> {
         for &index in &self.native_passes {
             for access in &self.passes[index].accesses {

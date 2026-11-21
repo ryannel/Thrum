@@ -603,7 +603,7 @@ mod tests {
             },
         );
         scene.apply_render_columns(extractor.frame(), &mut changed);
-        assert_eq!(scene.instances[1].ids[3], 0, "retired slot is hidden");
+        assert_eq!(scene.instances[1].generation(), 0, "retired slot is hidden");
         extractor.extract(
             SourceTick {
                 epoch: 1,
@@ -617,7 +617,8 @@ mod tests {
         );
         scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(
-            scene.instances[1].ids[3], 2,
+            scene.instances[1].generation(),
+            2,
             "reused slot has a new GPU history token"
         );
     }
@@ -637,7 +638,7 @@ mod tests {
             |sink| assert!(sink.push(0, u64::from(u32::MAX), 7, [0.0; 3], 0)),
         );
         scene.apply_render_columns(extractor.frame(), &mut changed);
-        assert_eq!(scene.instances[0].ids[3], u32::MAX);
+        assert_eq!(scene.instances[0].generation(), u32::MAX);
         extractor.extract(
             SourceTick {
                 epoch: 1,
@@ -650,7 +651,7 @@ mod tests {
         assert!(!extractor.frame().history_valid()[0]);
         scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(changed, [0]);
-        assert_eq!(scene.instances[0].ids[3], 1);
+        assert_eq!(scene.instances[0].generation(), 1);
         extractor.extract(
             SourceTick {
                 epoch: 1,
@@ -662,7 +663,7 @@ mod tests {
         );
         scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(changed, [0], "next wrapped generation must retag the slot");
-        assert_eq!(scene.instances[0].ids[3], 2);
+        assert_eq!(scene.instances[0].generation(), 2);
     }
 
     #[test]

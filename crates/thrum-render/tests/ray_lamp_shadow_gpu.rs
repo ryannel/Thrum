@@ -171,7 +171,7 @@ mod metal {
             let blocked = fixture::sample(&scene.view, &blocked, receiver);
             assert!(blocked[0] <= 2, "blocked receiver: {blocked:?}");
             let mut control = scene.clone();
-            control.instances[1].ids[3] = 0;
+            control.instances[1].deactivate();
             let (prepared, target) = fixture::prepare(&device, &caps, &queue, &control, lighting);
             let clear = support::submit_bytes(&device, &queue, &prepared, &target);
             let clear = fixture::sample(&scene.view, &clear, receiver);

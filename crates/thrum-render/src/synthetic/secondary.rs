@@ -4,6 +4,8 @@
 use super::{
     DEPTH_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneContext, SyntheticView,
 };
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, PipelineRole, SecondaryStage};
 use crate::shaders::wgsl;
 use crate::{
     contribution::{
@@ -12,7 +14,7 @@ use crate::{
     },
     graph::{
         Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphDepthAttachment,
-        Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+        PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
     },
 };
 use std::{
@@ -22,9 +24,6 @@ use std::{
 
 /// One name template, used by the graph, timing and observers.
 pub(super) const PASS: &str = "secondary view opaque";
-pub(super) const PREFIX: &str = "secondary view ";
-const ROLE_BASE: u32 = 5000;
-const STAGES: u32 = 7;
 const RECORD_BYTES: u64 = size_of::<SecondaryViewRecord>() as u64;
 mod lighting;
 mod sun;
@@ -39,16 +38,7 @@ fn shader_input_counts(atmosphere: bool, shadows: bool, cloud: bool) -> [u32; 2]
     ]
 }
 
-#[derive(Clone, Copy)]
-pub(super) enum Stage {
-    Opaque,
-    Clusters,
-    Aerial,
-    SunNear,
-    SunFar,
-    Visibility,
-    Casters,
-}
+pub(super) use crate::pass_key::SecondaryStage as Stage;
 
 impl Stage {
     pub(super) fn kind(self) -> crate::graph::PassKind {
@@ -310,6 +300,15 @@ fn secondary_texture(
 }
 
 impl SecondaryPrepared {
+    /// Pipeline key of one of this view's stages.
+    fn stage_key(&self, index: usize, stage: Stage) -> PipelineKey {
+        PipelineRole::Secondary {
+            view: crate::pass_key::pass_index(index),
+            stage,
+        }
+        .key(self.key)
+    }
+
     fn new(
         prepared: &PreparedSynthetic,
         queue: &wgpu::Queue,
@@ -477,10 +476,11 @@ impl SecondaryPrepared {
             layout,
             pipelines,
             source: source.into(),
-            key: PipelineKey {
-                role: ROLE_BASE + index * STAGES,
-                ..prepared.key
-            },
+            key: PipelineRole::Secondary {
+                view: index,
+                stage: Stage::Opaque,
+            }
+            .key(prepared.key),
             lighting,
             aerial,
             sun: prepared
@@ -589,10 +589,7 @@ impl SecondaryPrepared {
         )?;
         let mut accesses = shared.to_vec();
         if self.culling.is_some() {
-            let key = PipelineKey {
-                role: self.key.role + 5,
-                ..self.key
-            };
+            let key = self.stage_key(index, Stage::Visibility);
             keys.insert(key);
             let mut reads = shared.to_vec();
             reads.push(Access::new(
@@ -619,10 +616,7 @@ impl SecondaryPrepared {
         self.lighting.append(
             graph,
             keys,
-            PipelineKey {
-                role: self.key.role + 1,
-                ..self.key
-            },
+            self.stage_key(index, Stage::Clusters),
             index,
             shared,
             &mut accesses,
@@ -631,10 +625,7 @@ impl SecondaryPrepared {
             aerial.append(
                 graph,
                 keys,
-                PipelineKey {
-                    role: self.key.role + 2,
-                    ..self.key
-                },
+                self.stage_key(index, Stage::Aerial),
                 index,
                 shared,
                 &mut accesses,
@@ -656,13 +647,18 @@ impl SecondaryPrepared {
             Access::new(depth.clone(), 0..1, AccessKind::AttachmentClear),
         ]);
         keys.insert(self.key);
-        graph.pass(Pass {
-            name: format!("{PASS} {index}"),
-            scope: PassScope::View(index as u64 + 2),
-            pipeline: Some(self.key),
-            accesses,
-            external_side_effect: true,
-        });
+        graph.declare(
+            PassKey::Secondary {
+                view: crate::pass_key::pass_index(index),
+                stage: SecondaryStage::Opaque,
+            },
+            PassBody {
+                scope: PassScope::View(index as u64 + 2),
+                pipeline: Some(self.key),
+                accesses,
+                external_side_effect: true,
+            },
+        );
         let reads = vec![
             Access::new(colour.clone(), 0..1, AccessKind::SampledRead),
             Access::new(depth.clone(), 0..1, AccessKind::SampledRead),
@@ -753,14 +749,6 @@ impl SecondaryPrepared {
             shadow: self.sun.as_ref().map(|sun| sun.prepared.surface()),
         }
     }
-    pub(super) fn pass_count(&self) -> u32 {
-        1 + u32::from(self.lighting.gpu)
-            + u32::from(self.aerial.is_some())
-            + 2 * u32::from(self.sun.is_some())
-            + u32::from(self.culling.is_some())
-            + u32::from(self.sun.as_ref().is_some_and(|sun| sun.culling.is_some()))
-    }
-
     fn camera(prepared: &PreparedSynthetic, request: &SecondaryViewRequest) -> SyntheticView {
         let main = prepared
             .pending_view
@@ -1001,21 +989,6 @@ impl SceneContext<'_> {
         }
         Ok(())
     }
-}
-
-pub(super) fn index(key: PipelineKey, count: usize) -> Option<(usize, Stage)> {
-    let role = key.role.checked_sub(ROLE_BASE)?;
-    let index = (role / STAGES) as usize;
-    let stage = match role % STAGES {
-        0 => Stage::Opaque,
-        1 => Stage::Clusters,
-        2 => Stage::Aerial,
-        3 => Stage::SunNear,
-        4 => Stage::SunFar,
-        5 => Stage::Visibility,
-        _ => Stage::Casters,
-    };
-    (index < count).then_some((index, stage))
 }
 
 pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {

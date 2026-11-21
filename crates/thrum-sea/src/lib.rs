@@ -82,6 +82,7 @@ mod tests {
                     })
                     .collect(),
                 external_side_effect: true,
+                timing: thrum_render::timing::TimingCategory::Effects,
             });
         }
         let compiled = graph

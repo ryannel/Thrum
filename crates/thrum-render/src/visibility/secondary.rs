@@ -1,9 +1,11 @@
 //! The same stable scan/scatter as camera visibility, with view-local tests
 //! and outputs. It never executes either occlusion phase or writes history.
 use super::{
-    Access, AccessKind, CompiledPass, FrameGraph, GpuTimings, GraphError, Pass, PassScope,
-    PipelineKey, TimingError, VisibilityPrepared, VisibilityTarget,
+    Access, AccessKind, CompiledPass, FrameGraph, GpuTimings, GraphError, PassScope, PipelineKey,
+    TimingError, VisibilityPrepared, VisibilityTarget,
 };
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, SecondaryStage};
 
 pub(crate) const PASS: &str = "secondary view visibility";
 #[derive(Clone)]
@@ -80,13 +82,18 @@ impl SecondaryVisibility {
             Access::new(visible, 0..world.visible_bytes(), AccessKind::StorageRead),
             Access::new(args, 0..world.args_bytes(), AccessKind::IndirectRead),
         ]);
-        graph.pass(Pass {
-            name: format!("{PASS} {index}"),
-            scope: PassScope::View(index as u64 + 2),
-            pipeline: Some(key),
-            accesses: reads,
-            external_side_effect: false,
-        });
+        graph.declare(
+            PassKey::Secondary {
+                view: crate::pass_key::pass_index(index),
+                stage: SecondaryStage::Visibility,
+            },
+            PassBody {
+                scope: PassScope::View(index as u64 + 2),
+                pipeline: Some(key),
+                accesses: reads,
+                external_side_effect: false,
+            },
+        );
         Ok(())
     }
 

@@ -1,6 +1,7 @@
 //! Isolate aerial storage error from transport error: all variants execute the
 //! production integrator over the same half-precision transmittance/M inputs.
-use super::super::{AtmospherePrepared, EARTH, EXTENTS};
+use super::super::{AtmospherePrepared, EARTH};
+use crate::atmosphere::stage::Chart;
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
 use std::io::Write as _;
 use std::{fmt::Write, sync::mpsc, time::Duration};
@@ -77,8 +78,14 @@ impl Output {
         );
         let pipeline = pipeline(device, &EARTH.shader(&source), "aerial_main");
         let views = [
-            atmosphere.textures[0].create_view(&wgpu::TextureViewDescriptor::default()),
-            atmosphere.textures[1].create_view(&wgpu::TextureViewDescriptor::default()),
+            atmosphere
+                .textures
+                .transmittance
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+            atmosphere
+                .textures
+                .multiple_scattering
+                .create_view(&wgpu::TextureViewDescriptor::default()),
             array_view(&scatter),
             array_view(&trans),
         ];
@@ -338,10 +345,12 @@ fn aerial_storage_matches_float32_transport_and_consumer_units() {
             Output::new(&device, &atmosphere, Storage::Production),
         ];
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        for (index, extent) in EXTENTS.iter().take(2).enumerate() {
+        for chart in [Chart::Transmittance, Chart::MultipleScattering] {
+            let extent = chart.extent();
+            let (compute, group) = atmosphere.chart_stages.get(chart);
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-            pass.set_pipeline(&atmosphere.compute[index]);
-            pass.set_bind_group(0, &atmosphere.groups[index], &[]);
+            pass.set_pipeline(compute);
+            pass.set_bind_group(0, group, &[]);
             pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
         }
         queue.submit([encoder.finish()]);

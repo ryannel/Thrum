@@ -42,7 +42,7 @@ fn prove_phase(metal: &Metal, replacement: &Metal, fixture: &mut Fixture, phase:
         .expect("replacement camera");
         let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
         let mut scene = SyntheticScene::grid(1).expect("replacement scene");
-        scene.instances[0].ids[3] = 0;
+        scene.instances[0].deactivate();
         scene.view = view;
         scene.sun_shadows = true;
         scene.sun_shadow_method = requested;

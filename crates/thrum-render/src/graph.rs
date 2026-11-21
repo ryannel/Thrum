@@ -10,7 +10,8 @@ use std::collections::BTreeSet;
 use std::ops::Range;
 use std::sync::Arc;
 
-use crate::timing::{GpuTimings, TimingError};
+use crate::pass_key::PassKey;
+use crate::timing::{GpuTimings, TimingCategory, TimingError};
 
 /// A graph-local resource identity. Constructed only by its owning graph.
 #[derive(Clone, Debug)]
@@ -337,6 +338,8 @@ fn pass_kind(pass: &Pass) -> Option<PassKind> {
 pub struct Pass {
     /// Diagnostic name.
     pub name: String,
+    /// The timing bucket this pass's GPU time lands in.
+    pub timing: TimingCategory,
     /// View or shared ownership.
     pub scope: PassScope,
     /// Required prepared pipeline; copies need none.
@@ -345,6 +348,33 @@ pub struct Pass {
     pub accesses: Vec<Access>,
     /// Presentation, readback or another externally observed effect.
     pub external_side_effect: bool,
+}
+
+/// A renderer pass declaration whose name and timing bucket come from its
+/// [`PassKey`]; see [`FrameGraph::declare`].
+#[derive(Clone, Debug)]
+pub(crate) struct PassBody {
+    /// View or shared ownership.
+    pub(crate) scope: PassScope,
+    /// Required prepared pipeline; copies need none.
+    pub(crate) pipeline: Option<PipelineKey>,
+    /// Exact resource accesses.
+    pub(crate) accesses: Vec<Access>,
+    /// Presentation, readback or another externally observed effect.
+    pub(crate) external_side_effect: bool,
+}
+
+impl PassBody {
+    fn into_pass(self, name: String, timing: TimingCategory) -> Pass {
+        Pass {
+            name,
+            timing,
+            scope: self.scope,
+            pipeline: self.pipeline,
+            accesses: self.accesses,
+            external_side_effect: self.external_side_effect,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -365,6 +395,9 @@ pub struct FrameGraph {
     async_eligible: BTreeSet<usize>,
     resources: Vec<Resource>,
     passes: Vec<Pass>,
+    // The renderer's key for each declared pass; `None` for a pass declared
+    // without one through `pass`.
+    keys: Vec<Option<PassKey>>,
     native_passes: BTreeSet<usize>,
     explicit_dependencies: Vec<(usize, usize)>,
     owner: Arc<()>,
@@ -559,6 +592,11 @@ pub(crate) struct CompiledPass {
     pub(crate) reads: Vec<Access>,
     /// Stable diagnostic label chosen at graph closure.
     pub(crate) name: String,
+    /// The declared timing bucket.
+    pub(crate) timing: TimingCategory,
+    /// The renderer's key, which selects the recorder; absent for a pass
+    /// declared without one.
+    pub(crate) key: Option<PassKey>,
     /// Pipeline identity checked during closure; copy passes have none.
     pub(crate) pipeline: Option<PipelineKey>,
     pub(crate) kind: Option<PassKind>,
@@ -599,7 +637,7 @@ impl CompiledPass {
             return Ok(None);
         }
         let timestamp_writes = timings
-            .map(|timings| timings.compute_writes(generation, &self.name))
+            .map(|timings| timings.compute_writes(generation, &self.name, self.timing))
             .transpose()?
             .flatten();
         Ok(Some(encoder.begin_compute_pass(
@@ -690,7 +728,7 @@ impl CompiledPass {
         };
         let color_attachments = &colors[..];
         let timestamp_writes = timings
-            .map(|timings| timings.pass_writes(generation, &self.name))
+            .map(|timings| timings.pass_writes(generation, &self.name, self.timing))
             .transpose()?
             .flatten();
         Ok(Some(encoder.begin_render_pass(
@@ -874,9 +912,24 @@ impl CompiledGraph {
         self.pass_order.iter().copied().zip(&self.passes)
     }
 
+    /// The scope `resource` was declared with in this graph.
+    pub(crate) fn resource_scope(&self, resource: &ResourceId) -> Option<ResourceScope> {
+        self.resources
+            .get(resource.index)
+            .filter(|_| Arc::ptr_eq(&resource.owner, &self.owner))
+            .map(|declared| declared.scope)
+    }
+
     /// Live diagnostic pass names in execution order.
     pub fn pass_names(&self) -> impl Iterator<Item = &str> {
         self.passes.iter().map(|pass| pass.name.as_str())
+    }
+
+    /// Live passes' names and declared timing buckets in execution order.
+    pub fn pass_timings(&self) -> impl Iterator<Item = (&str, TimingCategory)> {
+        self.passes
+            .iter()
+            .map(|pass| (pass.name.as_str(), pass.timing))
     }
 
     /// Number of render or compute pipelines requiring timestamp slots.
@@ -896,24 +949,24 @@ impl FrameGraph {
     }
     pub(crate) fn compile_surface_variant(
         &mut self,
-        readback: Option<Pass>,
+        readback: Option<(PassKey, PassBody)>,
         generation: u64,
         prepared: &BTreeSet<PipelineKey>,
         producer: Option<usize>,
-        surface: Option<(ResourceId, Pass)>,
+        surface: Option<(ResourceId, PassBody)>,
     ) -> Result<CompiledGraph, GraphError> {
         let pass_count = self.passes.len();
         let dependency_count = self.explicit_dependencies.len();
         let result = (|| {
-            if let Some(readback) = readback {
-                let terminal = self.pass(readback);
+            if let Some((key, readback)) = readback {
+                let terminal = self.declare(key, readback);
                 if let Some(producer) = producer {
                     self.dependency(producer, terminal)?;
                 }
             }
             if let Some((surface, pass)) = surface {
                 let live_scene = self.compile(generation, prepared)?.pass_order;
-                let present = self.pass(pass);
+                let present = self.declare(PassKey::Surface, pass);
                 // All pre-acquire work, including independent copy epilogues,
                 // must precede the only surface consumer.
                 for scene in live_scene {
@@ -930,6 +983,7 @@ impl FrameGraph {
             }
         })();
         self.passes.truncate(pass_count);
+        self.keys.truncate(pass_count);
         self.explicit_dependencies.truncate(dependency_count);
         result
     }
@@ -1055,10 +1109,61 @@ impl FrameGraph {
         self.resources.push(Resource { descriptor, scope });
         Ok(id)
     }
+    /// The resource declared for persistent `owner`; owners are unique within
+    /// one graph.
+    pub(crate) fn persistent(&self, owner: u64) -> Option<ResourceId> {
+        self.resources
+            .iter()
+            .position(|resource| {
+                matches!(
+                    resource.scope,
+                    ResourceScope::Persistent { owner: declared, .. } if declared == owner
+                )
+            })
+            .map(|index| ResourceId {
+                index,
+                owner: Arc::clone(&self.owner),
+            })
+    }
+
     /// Append a pass and return its declaration index for explicit dependencies.
     pub fn pass(&mut self, pass: Pass) -> usize {
         let index = self.passes.len();
         self.passes.push(pass);
+        self.keys.push(None);
+        index
+    }
+
+    /// Declare a renderer pass by its key, which names it, sets its timing
+    /// bucket and later selects its recorder.
+    ///
+    /// # Panics
+    ///
+    /// Panics for a contributed key, whose name comes from its contribution:
+    /// use [`Self::declare_named`].
+    pub(crate) fn declare(&mut self, key: PassKey, body: PassBody) -> usize {
+        let name = key
+            .name()
+            .expect("a contributed pass is declared with its contribution's name");
+        self.push_keyed(key, body.into_pass(name.into_owned(), key.timing()))
+    }
+
+    /// Declare a contributed pass by its key and the name its contribution gave.
+    pub(crate) fn declare_named(&mut self, key: PassKey, name: String, body: PassBody) -> usize {
+        debug_assert!(key.name().is_none(), "a fixed pass keeps its key's name");
+        self.push_keyed(key, body.into_pass(name, key.timing()))
+    }
+
+    fn push_keyed(&mut self, key: PassKey, pass: Pass) -> usize {
+        debug_assert_eq!(
+            pass.pipeline.map(|pipeline| pipeline.role),
+            key.pipeline_role()
+                .map(crate::pass_key::PipelineRole::value),
+            "{key:?} records with the pipeline its key names"
+        );
+        let index = self.passes.len();
+        self.passes.push(pass);
+        self.keys.push(Some(key));
         index
     }
     /// Require `before` to execute before `after`. A direct writer-to-reader
@@ -1570,6 +1675,8 @@ impl FrameGraph {
                         .cloned()
                         .collect(),
                     name: self.passes[index].name.clone(),
+                    timing: self.passes[index].timing,
+                    key: self.keys[index],
                     pipeline: self.passes[index].pipeline,
                     kind: if self.native_passes.contains(&index) {
                         Some(PassKind::Native)
@@ -1639,6 +1746,7 @@ mod tests {
     use super::{
         Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope,
     };
+    use crate::timing::TimingCategory;
     use std::collections::BTreeSet;
 
     #[test]
@@ -1677,6 +1785,7 @@ mod tests {
                     store: false,
                 }],
                 external_side_effect: name == "sample",
+                timing: TimingCategory::Effects,
             });
         }
         assert!(matches!(
@@ -1726,6 +1835,7 @@ mod tests {
                     store: true,
                 }],
                 external_side_effect: name != "producer",
+                timing: TimingCategory::Effects,
             });
         }
         let compiled = graph.compile(1, &BTreeSet::new()).expect("valid closure");
@@ -1767,6 +1877,7 @@ mod tests {
                     store: true,
                 }],
                 external_side_effect,
+                timing: TimingCategory::Effects,
             });
         }
         let compiled = graph.compile(1, &BTreeSet::new()).expect("topology");
@@ -1812,6 +1923,7 @@ mod tests {
                 store: true,
             }],
             external_side_effect: false,
+            timing: TimingCategory::Effects,
         };
         let read = |name: &str, resource: &super::ResourceId| Pass {
             name: name.into(),
@@ -1825,6 +1937,7 @@ mod tests {
                 store: true,
             }],
             external_side_effect: true,
+            timing: TimingCategory::Effects,
         };
         graph.pass(write("dead", &resources[0]));
         graph.pass(write("first", &resources[1]));
@@ -1885,6 +1998,7 @@ mod tests {
                     },
                 ],
                 external_side_effect: read == &b,
+                timing: TimingCategory::Effects,
             });
         }
         assert_eq!(
@@ -1962,6 +2076,7 @@ mod tests {
                 store: false,
             }],
             external_side_effect: false,
+            timing: TimingCategory::Effects,
         });
         let compiled = graph.compile(1, &BTreeSet::new()).expect("history root");
         assert_eq!(compiled.pass_order, [0]);
@@ -2004,6 +2119,7 @@ mod tests {
                 store: true,
             }],
             external_side_effect: false,
+            timing: TimingCategory::Effects,
         });
         let publish = graph.pass(Pass {
             name: "publish next transform".into(),
@@ -2017,6 +2133,7 @@ mod tests {
                 store: true,
             }],
             external_side_effect: false,
+            timing: TimingCategory::Effects,
         });
         graph.dependency(read, publish).expect("history order");
         let compiled = graph.compile(1, &BTreeSet::new()).expect("history closure");
@@ -2068,6 +2185,7 @@ mod tests {
                 })
                 .into(),
             external_side_effect: true,
+            timing: TimingCategory::Effects,
         });
         let compiled = graph.compile(1, &BTreeSet::new()).expect("frame output");
         let pass = compiled.pass_bindings().next().expect("render pass").1;
@@ -2094,6 +2212,7 @@ mod tests {
             pipeline: None,
             accesses: Vec::new(),
             external_side_effect,
+            timing: TimingCategory::Effects,
         };
         let prerequisite = graph.pass(pass("prerequisite", false));
         graph.pass(pass("unrelated", false));
@@ -2143,6 +2262,7 @@ mod tests {
                     store: true,
                 }],
                 external_side_effect,
+                timing: TimingCategory::Effects,
             });
         }
         graph.dependency(0, 2).expect("select first writer");

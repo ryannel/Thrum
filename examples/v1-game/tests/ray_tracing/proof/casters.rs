@@ -62,7 +62,7 @@ pub(crate) fn prove_casters() {
                 .instances
                 .iter()
                 .enumerate()
-                .filter(|(_, instance)| instance.ids[3] != 0)
+                .filter(|(_, instance)| instance.is_active())
                 .map(|(slot, instance)| (identity(slot), instance.current[3][..3].to_vec(), 3_u8))
                 .chain(PLACEMENTS.iter().enumerate().map(|(index, position)| {
                     (
@@ -157,13 +157,13 @@ fn scene(view: &SyntheticView, sun_shadows: bool) -> SyntheticScene {
     }));
     for (slot, instance) in scene.instances.iter_mut().enumerate() {
         *instance = InstanceRecord::identity(identity(slot), 0);
-        instance.ids[3] = 0;
+        instance.deactivate();
     }
     for (slot, position) in ENTITIES {
         let instance = &mut scene.instances[slot];
         instance.current[3][..3].copy_from_slice(&position);
         instance.previous = instance.current;
-        instance.ids[3] = 1;
+        instance.set_generation(1);
     }
     scene
 }

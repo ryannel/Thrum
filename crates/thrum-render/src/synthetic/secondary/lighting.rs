@@ -2,11 +2,13 @@
 //! bounds, cluster table and dispatch. The same builder serves the main view.
 
 use super::{
-    Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, Pass, PassScope, PipelineKey,
+    Access, AccessKind, BTreeSet, CompiledPass, FrameGraph, PassScope, PipelineKey,
     PreparedSynthetic, RenderError, ResourceDescriptor, ResourceScope, SecondaryViewError,
     SyntheticView,
 };
 use crate::SharedGpu;
+use crate::graph::PassBody;
+use crate::pass_key::{PassKey, SecondaryStage};
 use crate::synthetic::{SyntheticPointLight, cluster::ClusterTable, cluster_gpu::ClusterCompute};
 
 pub(super) const PASS: &str = "secondary view clusters";
@@ -159,13 +161,18 @@ impl Lighting {
             // Uploaded scene inputs and simulate products precede the view's work.
             writes.extend_from_slice(shared);
             keys.insert(key);
-            graph.pass(Pass {
-                name: format!("{PASS} {index}"),
-                scope: PassScope::View(index as u64 + 2),
-                pipeline: Some(key),
-                accesses: writes,
-                external_side_effect: false,
-            });
+            graph.declare(
+                PassKey::Secondary {
+                    view: crate::pass_key::pass_index(index),
+                    stage: SecondaryStage::Clusters,
+                },
+                PassBody {
+                    scope: PassScope::View(index as u64 + 2),
+                    pipeline: Some(key),
+                    accesses: writes,
+                    external_side_effect: false,
+                },
+            );
         }
         Ok(())
     }

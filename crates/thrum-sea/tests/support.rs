@@ -1,6 +1,7 @@
 //! Shared independent oracle and target readback harness.
 use std::{fmt::Write as _, sync::mpsc, time::Duration};
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};
+use thrum_render::timing::TimingCategory;
 use thrum_sea::{Ambient, MAX_QUERIES, PIXELS, Profile};
 use thrum_sea_model::{Forcing, LongWaves, Spectrum};
 
@@ -200,6 +201,7 @@ fn check_graph(declaration: &thrum_render::contribution::EffectGraph) {
                 })
                 .collect(),
             external_side_effect: true,
+            timing: TimingCategory::Effects,
         });
     }
     let compiled = graph

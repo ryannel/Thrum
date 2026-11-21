@@ -302,7 +302,7 @@ fn metal_sky_pan_and_solar_sidereal_phase_match_independent_projection() {
         let (device, queue, info) = metal(&test_gpu).await;
         println!("M1 target mac-metal: {info:?}");
         let mut scene = SyntheticScene::grid(1).expect("checked Metal motion witness");
-        scene.instances[0].ids[3] = 0; // unobstructed infinity witness
+        scene.instances[0].deactivate(); // unobstructed infinity witness
         scene.star_catalogue = Some(&[[0.0, 0.15, -0.988_686, 9.6e-6]]);
         scene.view = camera(0.0, 0.0);
         let night = FrameLighting::Atmosphere(

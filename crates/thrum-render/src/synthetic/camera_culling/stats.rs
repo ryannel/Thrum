@@ -7,6 +7,8 @@
 //! frame. No count depends on timestamps. Direct lists nothing and declares
 //! no copy.
 
+use crate::graph::PassBody;
+use crate::pass_key::PassKey;
 use std::sync::{
     Arc,
     atomic::{AtomicU8, Ordering},
@@ -15,14 +17,12 @@ use std::sync::{
 use super::super::{OffscreenTarget, PreparedSynthetic, RenderError, SceneContext};
 use super::CullMode;
 use crate::graph::{
-    Access, AccessKind, FrameGraph, GraphError, Pass, PassScope, ResourceDescriptor, ResourceId,
+    Access, AccessKind, FrameGraph, GraphError, PassScope, ResourceDescriptor, ResourceId,
     ResourceScope,
 };
 use crate::timing::GpuTimings;
 use crate::visibility::ARGS_BYTES;
 
-/// Graph name of the untimed copy of each culling list's instance count.
-pub(crate) const STATS_PASS: &str = "camera culling stats";
 /// Word index of `instance_count` in an indexed indirect argument record.
 const COUNT_WORD: usize = 1;
 
@@ -132,13 +132,15 @@ impl PreparedSynthetic {
             kind: AccessKind::CopyWrite,
             store: true,
         });
-        graph.pass(Pass {
-            name: STATS_PASS.into(),
-            scope: PassScope::View(1),
-            pipeline: None,
-            accesses,
-            external_side_effect: true,
-        });
+        graph.declare(
+            PassKey::CullingStats,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses,
+                external_side_effect: true,
+            },
+        );
         Ok(())
     }
 }

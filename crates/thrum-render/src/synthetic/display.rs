@@ -2,10 +2,12 @@
 //! exposure is resolved separately; output remains relative to display white.
 
 use super::{OUTPUT_FORMAT, RenderError, exposure};
+use crate::graph::PassBody;
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
-    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
+use crate::pass_key::PassKey;
 use crate::shader_constants::{
     DISPLAY_OVERLAY_SHIFT, OVERLAY_EXPOSURE_ZONES, OVERLAY_MOTION, OVERLAY_TEMPORAL_INPUTS,
     TONE_MAP_NEUTRAL_HIGHLIGHTS,
@@ -67,7 +69,7 @@ pub(crate) const DISPLAY_REFERRED_SHADER: &str = concat!(
     wgsl!("synthetic/display/display_referred.wgsl"),
 );
 
-pub(crate) const DISPLAY_REFERRED_PASS: &str = "display-referred tone encode";
+pub(crate) const DISPLAY_REFERRED_PASS: &str = PassKey::DisplayReferred.constant_name();
 
 /// Fixed-exposure SDR output used when the scene publishes colour only.
 #[derive(Clone)]
@@ -366,45 +368,49 @@ impl SdrToneStage {
             },
             ResourceScope::Transient,
         )?;
-        let pass = graph.pass(Pass {
-            name: "synthetic tone encode".into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.key),
-            accesses: [
-                Access {
-                    view: None,
-                    resource: input.motion.clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    view: None,
-                    resource: input.colour.clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    view: None,
-                    resource: input.exposure.clone(),
-                    range: 0..exposure::SAMPLE_BYTES,
-                    kind: AccessKind::UniformRead,
-                    store: true,
-                },
-                Access {
-                    view: None,
-                    resource: output.clone(),
-                    range: 0..1,
-                    kind: AccessKind::AttachmentClear,
-                    store: true,
-                },
-            ]
-            .into_iter()
-            .chain(ray_structure.map(|resource| Access::new(resource, 0..1, AccessKind::RayQuery)))
-            .collect(),
-            external_side_effect: true,
-        });
+        let pass = graph.declare(
+            PassKey::Display,
+            PassBody {
+                scope: PassScope::View(1),
+                pipeline: Some(self.key),
+                accesses: [
+                    Access {
+                        view: None,
+                        resource: input.motion.clone(),
+                        range: 0..1,
+                        kind: AccessKind::SampledRead,
+                        store: true,
+                    },
+                    Access {
+                        view: None,
+                        resource: input.colour.clone(),
+                        range: 0..1,
+                        kind: AccessKind::SampledRead,
+                        store: true,
+                    },
+                    Access {
+                        view: None,
+                        resource: input.exposure.clone(),
+                        range: 0..exposure::SAMPLE_BYTES,
+                        kind: AccessKind::UniformRead,
+                        store: true,
+                    },
+                    Access {
+                        view: None,
+                        resource: output.clone(),
+                        range: 0..1,
+                        kind: AccessKind::AttachmentClear,
+                        store: true,
+                    },
+                ]
+                .into_iter()
+                .chain(
+                    ray_structure.map(|resource| Access::new(resource, 0..1, AccessKind::RayQuery)),
+                )
+                .collect(),
+                external_side_effect: true,
+            },
+        );
         Ok((output, pass))
     }
 

@@ -158,7 +158,7 @@ fn aloft_casters_draw_into_both_cascades_only() {
         scene.aloft_mesh_rows = vec![0];
         let marked = read_layers(&gpu, &scene);
         scene.aloft_mesh_rows.clear();
-        scene.instances[2].ids[3] = 0;
+        scene.instances[2].deactivate();
         let absent = read_layers(&gpu, &scene);
         for (layer, ((marked, unmarked), absent)) in marked
             .as_chunks::<LAYER_BYTES>()

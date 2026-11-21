@@ -9,12 +9,13 @@ use crate::synthetic::RenderError;
 mod cloud;
 mod environment;
 pub(crate) mod gpu;
-mod graph;
+pub(crate) mod graph;
 mod model;
 mod night;
 pub(crate) mod products;
 pub(crate) mod reflection;
 pub(crate) mod spectrum;
+pub(crate) mod stage;
 
 pub(crate) use cloud::CloudPrepared;
 pub use cloud::{GpuSunMapping, SunOpticalDepth};
@@ -24,41 +25,6 @@ pub use products::EnvironmentProducts;
 
 /// Cloud sampling source shared by the synthetic and cooked draw shader assemblies.
 pub const CLOUD_SHADER_SOURCE: &str = wgsl!("atmosphere/cloud.wgsl");
-
-pub(crate) const STAGE_NAMES: [&str; 14] = [
-    "atmosphere transmittance",
-    "atmosphere multiple scattering",
-    "atmosphere sky view",
-    "atmosphere diffuse irradiance",
-    "atmosphere aerial perspective",
-    "atmosphere ground irradiance",
-    "atmosphere DFG integration",
-    "atmosphere reflection mip 0",
-    "atmosphere reflection mip 1",
-    "atmosphere reflection mip 2",
-    "atmosphere reflection mip 3",
-    "atmosphere reflection mip 4",
-    "atmosphere reflection mip 5",
-    "atmosphere reflection mip 6",
-];
-// Logical stage, existing five-slot atmosphere timing bucket. Specular
-// preparation stays in the sky-view bucket; raw queries keep distinct names.
-pub(crate) const TIMING_ORDER: [(usize, usize); 14] = [
-    (0, 0),
-    (1, 1),
-    (5, 1),
-    (2, 2),
-    (3, 3),
-    (4, 4),
-    (6, 2),
-    (7, 2),
-    (8, 2),
-    (9, 2),
-    (10, 2),
-    (11, 2),
-    (12, 2),
-    (13, 2),
-];
 
 /// Checked presentation sample for the fixed Earth atmosphere profile.
 /// Directions use world +Y up; illuminance is perpendicular, above atmosphere.

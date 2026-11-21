@@ -252,8 +252,8 @@ fn mirrored_classes_against_the_legacy_route() {
         // keeps the same surface), with different materials.
         place(&mut scene.instances[a], mirror(1.0), [-0.3, 0.0, 0.0], 0.4);
         place(&mut scene.instances[b], [0.25; 3], [-0.3, 0.0, 0.0], 0.4);
-        scene.instances[a].ids[1] = 0;
-        scene.instances[b].ids[1] = 1;
+        scene.instances[a].set_material(0);
+        scene.instances[b].set_material(1);
         // A lone mirrored box and a lone ordinary box.
         place(&mut scene.instances[2], mirror(1.0), [0.35, 0.0, 0.1], -0.7);
         place(&mut scene.instances[3], [0.2; 3], [0.0, -0.4, 0.3], 0.2);
@@ -282,7 +282,7 @@ fn members_follow_activity_churn_like_the_legacy_route() {
         let changed: Vec<u32> = (0..256).filter(|slot| (slot + frame) % 5 == 0).collect();
         for &slot in &changed {
             let instance = &mut scene.instances[slot as usize];
-            instance.ids[3] = u32::from(instance.ids[3] == 0);
+            instance.set_generation(u32::from(!instance.is_active()));
         }
         for prepared in [&mut legacy, &mut route] {
             prepared
@@ -368,9 +368,9 @@ fn frustum_buckets_match_bucket_direct_on_a_mixed_field() {
             for &slot in &changed {
                 let instance = &mut scene.instances[slot as usize];
                 if frame >= 5 {
-                    instance.ids[3] = u32::from(frame == 6);
+                    instance.set_generation(u32::from(frame == 6));
                 } else if slot % 2 == 0 && frame != 4 {
-                    instance.ids[3] = u32::from(instance.ids[3] == 0);
+                    instance.set_generation(u32::from(!instance.is_active()));
                 } else {
                     instance.current[0] = instance.current[0].map(|value| -value);
                     instance.normal[0] = instance.normal[0].map(|value| -value);
@@ -386,7 +386,7 @@ fn frustum_buckets_match_bucket_direct_on_a_mixed_field() {
         let (reference, none) = gpu.render_counted(&mut direct, &scene);
         let (culled, drawn) = gpu.render_counted(&mut frustum, &scene);
         assert_eq!(none, None);
-        let active = scene.instances.iter().filter(|i| i.ids[3] != 0).count();
+        let active = scene.instances.iter().filter(|i| i.is_active()).count();
         let drawn = drawn.expect("frustum counts") as usize;
         assert!(
             drawn > 50 && drawn < active,
@@ -450,14 +450,14 @@ fn frustum_buckets_follow_a_growing_member_list() {
     let gpu = gpu(&test_gpu);
     let (mut scene, meshes) = mixed_field(900);
     for (slot, instance) in (0_u32..).zip(&mut scene.instances) {
-        instance.ids[3] = u32::from(slot % 3 == 0);
+        instance.set_generation(u32::from(slot % 3 == 0));
     }
     let mut direct = gpu.prepare(&scene, Some(meshes.clone()));
     scene.camera_culling = crate::visibility::CullMode::Frustum;
     let mut frustum = gpu.prepare(&scene, Some(meshes));
     let changed: Vec<u32> = (0..900).filter(|slot| slot % 3 != 0).collect();
     for &slot in &changed {
-        scene.instances[slot as usize].ids[3] = 1;
+        scene.instances[slot as usize].set_generation(1);
     }
     for prepared in [&mut direct, &mut frustum] {
         prepared

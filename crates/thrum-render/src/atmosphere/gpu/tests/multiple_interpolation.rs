@@ -1,6 +1,8 @@
 //! Same-model GPU diagnostic: change only M's Sun-mu column count. This does
 //! not qualify the isotropic closure, transport quadrature or spectral model.
-use super::super::{AtmospherePrepared, EARTH, EXTENTS, LUT_PLANES, LUT_SHADER, prepare_compute};
+use super::super::{AtmospherePrepared, EARTH, LUT_SHADER, prepare_compute};
+use crate::pass_key::AtmosphereStage;
+use crate::shader_constants::{ATMOSPHERE_EXTENTS as EXTENTS, ATMOSPHERE_PLANES as LUT_PLANES};
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
 use std::{fmt::Write, sync::mpsc, time::Duration};
 use wgpu::BindingResource::{Sampler, TextureView};
@@ -95,7 +97,7 @@ impl Variant {
         columns: u32,
     ) -> Self {
         let texture = if columns == EXTENTS[1][0] {
-            atmosphere.textures[1].clone()
+            atmosphere.textures.multiple_scattering.clone()
         } else {
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("same-model M Sun resolution"),
@@ -114,19 +116,18 @@ impl Variant {
         };
         let mut views = atmosphere
             .textures
-            .each_ref()
             .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
-        views[1] = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        views.multiple_scattering = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("unchanged production M estimator and encoding"),
             source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
         let (producer, producer_group) = if columns == EXTENTS[1][0] {
-            (atmosphere.compute[1].clone(), atmosphere.groups[1].clone())
+            atmosphere.chart_stages.multiple_scattering.clone()
         } else {
             prepare_compute(
                 &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
-                1,
+                AtmosphereStage::MultipleScattering,
                 &atmosphere.uniform,
                 &views,
                 sampler,
@@ -139,8 +140,8 @@ impl Variant {
             layout: &observer.get_bind_group_layout(0),
             entries: &[
                 entry(0, atmosphere.uniform.as_entire_binding()),
-                entry(1, TextureView(&views[0])),
-                entry(2, TextureView(&views[1])),
+                entry(1, TextureView(&views.transmittance)),
+                entry(2, TextureView(&views.multiple_scattering)),
                 entry(4, Sampler(sampler)),
                 entry(6, output.as_entire_binding()),
             ],
@@ -323,8 +324,9 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
         let mut cold = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         {
             let mut pass = cold.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-            pass.set_pipeline(&atmosphere.compute[0]);
-            pass.set_bind_group(0, &atmosphere.groups[0], &[]);
+            let (compute, group) = &atmosphere.chart_stages.transmittance;
+            pass.set_pipeline(compute);
+            pass.set_bind_group(0, group, &[]);
             pass.dispatch_workgroups(EXTENTS[0][0].div_ceil(8), EXTENTS[0][1].div_ceil(8), 1);
         }
         for variant in &variants {

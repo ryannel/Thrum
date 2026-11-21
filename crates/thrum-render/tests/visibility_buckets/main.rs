@@ -237,8 +237,8 @@ fn churn_reveal_resize_and_device_replacement_keep_bucket_direct() {
                             instance.current[0][0] = -instance.current[0][0];
                             instance.normal[0][0] = -instance.normal[0][0];
                         }
-                        4 => instance.ids[3] = u32::from(slot % 3 == 0),
-                        5 => instance.ids[3] = 1,
+                        4 => instance.set_generation(u32::from(slot % 3 == 0)),
+                        5 => instance.set_generation(1),
                         6 => place(instance, [0.1; 3], [0.0, 0.0, -0.5]),
                         _ => {}
                     }
@@ -331,7 +331,7 @@ fn mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses() {
                     [origin[0], origin[1], origin[2] - 0.731_f32 * 0.5],
                 );
                 let mut initial = scene.clone();
-                initial.instances[0].ids[3] = 0;
+                initial.instances[0].deactivate();
                 let mut direct = gpu.prepare(&initial, CullMode::Direct, [320, 180]).await;
                 let mut occlusion = gpu.prepare(&initial, CullMode::Occlusion, [320, 180]).await;
                 let (wall, _) = direct.frame(&gpu, &initial, &[]);

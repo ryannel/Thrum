@@ -60,7 +60,7 @@ pub(crate) fn prove_contributions() {
         });
         let mut scene = SyntheticScene::grid(1).expect("fixture");
         scene.view = view;
-        scene.instances[0].ids[3] = 0;
+        scene.instances[0].deactivate();
         scene.sun_shadows = sun;
         scene.sun_shadow_method = method;
         scene.lamp_shadows = lamps;

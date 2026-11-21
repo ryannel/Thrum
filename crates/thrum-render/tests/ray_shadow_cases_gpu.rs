@@ -95,7 +95,7 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
                 "{degrees} degrees at {x} m: dark {dark:?}, lit {lit:?}"
             );
 
-            scene.instances[1].ids[3] = 0;
+            scene.instances[1].deactivate();
             let (clear, clear_target) = fixture::prepare(&device, &caps, &queue, &scene, lighting);
             let clear_pixels = support::submit_bytes(&device, &queue, &clear, &clear_target);
             let clear = fixture::sample(&scene.view, &clear_pixels, centre);
@@ -106,7 +106,7 @@ fn sun_blocks_at_every_elevation_and_at_large_coordinates() {
 
             // Move both the prop and the slab 2 m in the displayed half-frame.
             // The current transform alone is 4 m away and would miss the ray.
-            scene.instances[1].ids[3] = 1;
+            scene.instances[1].set_generation(1);
             for instance in &mut scene.instances {
                 instance.current[3][0] += 4.0;
             }

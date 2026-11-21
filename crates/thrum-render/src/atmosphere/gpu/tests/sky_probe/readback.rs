@@ -5,7 +5,8 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use crate::atmosphere::AtmosphereFrame;
-use crate::atmosphere::gpu::{AtmospherePrepared, EXTENTS};
+use crate::atmosphere::gpu::AtmospherePrepared;
+use crate::atmosphere::stage::Chart;
 use crate::light::EnvironmentLight;
 use crate::synthetic::SyntheticView;
 
@@ -87,17 +88,20 @@ impl Probe {
         );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         if !self.transport_ready {
-            for index in 0..2 {
-                self.dispatch(&mut encoder, index, &self.atmosphere.groups[index]);
+            for chart in [
+                Chart::Transmittance,
+                Chart::MultipleScattering,
+                Chart::Ground,
+            ] {
+                self.dispatch(&mut encoder, chart);
             }
-            self.dispatch(&mut encoder, 3, &self.atmosphere.groups[3]);
         }
-        self.dispatch(&mut encoder, 2, &self.atmosphere.groups[2]);
+        self.dispatch(&mut encoder, Chart::SkyView);
         let rays_full = self.rays.observe(
             device,
             &mut encoder,
             &self.atmosphere.uniform,
-            &self.atmosphere.textures[2],
+            &self.atmosphere.textures.sky_view,
         );
         submit(device, queue, encoder, [&rays_full]);
         self.transport_ready = true;
@@ -111,7 +115,11 @@ impl Probe {
             self.transport_ready,
             "profile has executed before observation"
         );
-        let snapshot = Snapshot::new(device, &self.reader, &self.atmosphere.textures[1]);
+        let snapshot = Snapshot::new(
+            device,
+            &self.reader,
+            &self.atmosphere.textures.multiple_scattering,
+        );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         snapshot.encode(&mut encoder, &self.reader);
         submit(device, queue, encoder, [&snapshot.readback]);
@@ -129,7 +137,7 @@ impl Probe {
         let frame = if enabled { day.with_nightglow() } else { day };
         self.atmosphere
             .update(queue, frame, &SyntheticView::default(), [1, 1]);
-        let texture = &self.atmosphere.textures[2];
+        let texture = &self.atmosphere.textures.sky_view;
         let snapshot = Snapshot::new(device, &self.reader, texture);
         let readback = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("night meter and diffuse readback"),
@@ -139,11 +147,15 @@ impl Probe {
         });
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         if !self.transport_ready {
-            for index in [0, 1, 3] {
-                self.dispatch(&mut encoder, index, &self.atmosphere.groups[index]);
+            for chart in [
+                Chart::Transmittance,
+                Chart::MultipleScattering,
+                Chart::Ground,
+            ] {
+                self.dispatch(&mut encoder, chart);
             }
         }
-        self.dispatch(&mut encoder, 2, &self.atmosphere.groups[2]);
+        self.dispatch(&mut encoder, Chart::SkyView);
         {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(&self.atmosphere.diffuse_pipeline);
@@ -174,12 +186,13 @@ impl Probe {
         }
     }
 
-    fn dispatch(&self, encoder: &mut wgpu::CommandEncoder, index: usize, group: &wgpu::BindGroup) {
+    fn dispatch(&self, encoder: &mut wgpu::CommandEncoder, chart: Chart) {
+        let (pipeline, group) = self.atmosphere.chart_stages.get(chart);
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-        pass.set_pipeline(&self.atmosphere.compute[index]);
+        pass.set_pipeline(pipeline);
         pass.set_bind_group(0, group, &[]);
-        let [width, height] = EXTENTS[index];
-        if index == 3 {
+        let [width, height] = chart.extent();
+        if chart == Chart::Ground {
             // Ground irradiance cooperates across 64 lanes per solar entry.
             pass.dispatch_workgroups(width, 1, 1);
         } else {

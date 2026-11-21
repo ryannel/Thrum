@@ -33,8 +33,8 @@ fn packed_rows_put_active_slots_first_without_changing_logical_identity() {
     let mut instances: Vec<_> = (0..4)
         .map(|slot| abi::InstanceRecord::identity(slot, 0))
         .collect();
-    instances[1].ids[3] = 0;
-    instances[3].ids[3] = 0;
+    instances[1].deactivate();
+    instances[3].deactivate();
     let packed = PackedInstances::new(&instances, 1).unwrap();
     assert_eq!(packed.active_count, 2);
     assert_eq!(packed.physical_to_slot, [0, 2, 1, 3]);
@@ -67,7 +67,7 @@ fn shared_pack_validation_refuses_invalid_updates() {
         Err(RenderError::InvalidLighting)
     ));
     instance.current[3][0] = 0.0;
-    instance.ids[1] = 1;
+    instance.set_material(1);
     assert!(matches!(
         validate_synthetic_instance(&instance, 1, 0),
         Err(RenderError::Abi(abi::AbiError::MaterialIndex))
@@ -76,7 +76,7 @@ fn shared_pack_validation_refuses_invalid_updates() {
         abi::InstanceRecord::identity(0, 0),
         abi::InstanceRecord::identity(1, 0),
     ];
-    duplicate[1].ids[0] = 0;
+    duplicate[1].set_logical_slot(0);
     assert!(matches!(
         PackedInstances::new(&duplicate, 1),
         Err(RenderError::InvalidInstanceIdentity)

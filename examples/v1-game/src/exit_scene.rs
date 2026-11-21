@@ -129,7 +129,7 @@ pub(crate) fn scene() -> Result<SyntheticScene, String> {
         let position = prop.position().map(|value| value as f32);
         instance.current[3][..3].copy_from_slice(&position);
         instance.previous = instance.current;
-        instance.ids[1] = u32::try_from(prop.material()).expect("authored material");
+        instance.set_material(u32::try_from(prop.material()).expect("authored material"));
     }
     scene.meshes = Some(Arc::new(SyntheticMeshes {
         updates: None,

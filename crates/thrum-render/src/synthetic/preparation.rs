@@ -4,7 +4,7 @@ use super::{
     AirShadowPrepared, ArenaLimits, BucketRoute, CasterBox, CasterCulling, CasterInputs,
     ClusterCompute, ClusterTable, ContributionPasses, CullMode, CullingSelection, DEPTH_FORMAT,
     DeviceCapabilities, ExposureResolve, FrameLighting, InstanceUpload, MOTION_FORMAT,
-    MeshSelection, NativeWitness, PackedInstances, PipelineKey, PreparedSynthetic, REACTIVE_FORMAT,
+    MeshSelection, NativeWitness, PackedInstances, PreparedSynthetic, REACTIVE_FORMAT,
     RayStructureSelection, RenderError, RetainedRayMeshes, SCENE_FORMAT, SYNTHETIC_REVISION,
     SdrToneStage, ShadowPrepared, ShadowSelection, StarPrepared, SunOpticalDepth, SunShadowMethod,
     SurfaceParts, SyntheticScene, TextureClasses, TransformHistory, VIEW_BYTES, VIEW_SLOTS, abi,
@@ -16,6 +16,7 @@ use super::{
 use crate::abi::AbiError;
 use crate::atmosphere::{AtmospherePrepared, CloudPrepared};
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BINDING, ENVIRONMENT_BYTES};
+use crate::pass_key::PipelineRole;
 use crate::records::{CloudField, ClusterHead, LocalSource};
 use std::sync::Arc;
 
@@ -536,7 +537,7 @@ impl PreparedSynthetic {
         });
         if let Some(shadow) = shadow.as_ref() {
             instance_upload.seed_shadow_clamps(&scene.instances, |slot, instance| {
-                instance.ids[3] != 0
+                instance.is_active()
                     && !shadow.contains_caster(instance, caster_box(caster_boxes.as_deref(), slot))
             });
         }
@@ -806,11 +807,7 @@ impl PreparedSynthetic {
         );
         let display = SdrToneStage::new(
             device,
-            PipelineKey {
-                role: 1,
-                device_generation: generation,
-                revision: SYNTHETIC_REVISION,
-            },
+            PipelineRole::Display.pipeline_key(generation, SYNTHETIC_REVISION),
         );
         let stars = if atmosphere.is_some() {
             scene
@@ -878,11 +875,7 @@ impl PreparedSynthetic {
             culling_selection,
             classes,
             owner: Arc::new(()),
-            key: PipelineKey {
-                device_generation: generation,
-                revision: SYNTHETIC_REVISION,
-                role: 0,
-            },
+            key: PipelineRole::Opaque.pipeline_key(generation, SYNTHETIC_REVISION),
             pipeline,
             pipeline_two_sided,
             depth_prepass,

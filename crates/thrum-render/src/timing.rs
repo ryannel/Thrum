@@ -9,18 +9,99 @@ use std::sync::{
 
 use crate::capabilities::DeviceCapabilities;
 
+/// The timing bucket a pass declares. Every graph pass names one, and the frame
+/// timing feed sums each bucket by it, never by a pass's name, so a renamed pass
+/// keeps its bucket and a new pass cannot be left out of every bucket.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub enum TimingCategory {
+    /// Near Sun shadow map and its caster-list build.
+    ShadowNear,
+    /// Far Sun shadow map, horizon heights and atmospheric shadow heights.
+    ShadowFar,
+    /// Local-light cluster build.
+    Clusters,
+    /// Opaque-phase work: forward, contribution compute, stars and camera culling.
+    Forward,
+    /// Transform history publication.
+    History,
+    /// Exposure resolve and the display tone stage.
+    Tone,
+    /// Atmospheric transmittance preparation.
+    AtmosphereTransmittance,
+    /// Multiple scattering and ground irradiance preparation.
+    AtmosphereMultipleGround,
+    /// Sky-view, DFG and reflection preparation.
+    AtmosphereSky,
+    /// Diffuse irradiance preparation.
+    AtmosphereDiffuse,
+    /// Aerial perspective preparation.
+    AtmosphereAerial,
+    /// Temporal inputs and temporal upscaling.
+    Temporal,
+    /// Contributed effect passes, before and after opaque.
+    Effects,
+    /// Every pass of a secondary scene view.
+    SecondaryViews,
+    /// The 2D sprite scene's draws and compute.
+    Sprites,
+    /// The surface consumer, reported apart from the scene sum.
+    Surface,
+    /// Copies, readbacks, native segments and acceleration builds, which the
+    /// graph records without timestamp writes and reports as unmeasured, and
+    /// the readback copy's own diagnostic brackets.
+    Transfer,
+}
+
+impl TimingCategory {
+    /// Every category, in profiler order.
+    pub const ALL: [Self; 17] = [
+        Self::ShadowNear,
+        Self::ShadowFar,
+        Self::Clusters,
+        Self::Forward,
+        Self::History,
+        Self::Tone,
+        Self::AtmosphereTransmittance,
+        Self::AtmosphereMultipleGround,
+        Self::AtmosphereSky,
+        Self::AtmosphereDiffuse,
+        Self::AtmosphereAerial,
+        Self::Temporal,
+        Self::Effects,
+        Self::SecondaryViews,
+        Self::Sprites,
+        Self::Surface,
+        Self::Transfer,
+    ];
+
+    /// Whether this bucket is an atmosphere preparation stage.
+    #[must_use]
+    pub const fn is_atmosphere(self) -> bool {
+        matches!(
+            self,
+            Self::AtmosphereTransmittance
+                | Self::AtmosphereMultipleGround
+                | Self::AtmosphereSky
+                | Self::AtmosphereDiffuse
+                | Self::AtmosphereAerial
+        )
+    }
+}
+
 /// One pass duration, separate from CPU encode time or display latency.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PassTiming {
     /// Caller-assigned diagnostic name in encoding order.
     pub name: Arc<str>,
+    /// The bucket the pass declared.
+    pub category: TimingCategory,
     /// GPU timestamp delta in nanoseconds; may be zero at backend precision.
     pub nanoseconds: f64,
 }
 
-/// Completed scene timestamps keyed by the graph's pass names. Missing optional
-/// passes are absent; unsupported or faulted batches are `None` in `FrameSample`.
-/// Summaries below explicitly name their members; no ordinal carries semantics.
+/// Completed scene timestamps with each pass's name and declared bucket. Missing
+/// optional passes are absent; unsupported or faulted batches are `None` in
+/// `FrameSample`. Buckets sum by declared category; no name or ordinal selects one.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SceneGpuTimings {
     passes: Vec<PassTiming>,
@@ -120,89 +201,72 @@ impl SceneGpuTimings {
     pub fn sum(&self) -> f64 {
         self.passes
             .iter()
-            .filter(|p| p.name.as_ref() != crate::present::PASS_NAME)
+            .filter(|p| p.category != TimingCategory::Surface)
             .map(|p| p.nanoseconds)
             .sum()
     }
 
-    fn sum_matching(&self, predicate: impl Fn(&str) -> bool) -> f64 {
+    /// Every measured pass that declared `category`; zero when none executed.
+    #[must_use]
+    pub fn bucket(&self, category: TimingCategory) -> f64 {
+        self.sum_where(|c| c == category)
+    }
+
+    fn sum_where(&self, predicate: impl Fn(TimingCategory) -> bool) -> f64 {
         self.passes
             .iter()
-            .filter(|p| predicate(&p.name))
+            .filter(|p| predicate(p.category))
             .map(|p| p.nanoseconds)
             .sum()
     }
 
     /// Near shadow map and its optional caster-list build.
     pub fn shadow_near(&self) -> f64 {
-        self.sum_matching(|n| {
-            matches!(n, "synthetic Sun shadow near") || n == crate::visibility::casters::PASS
-        })
+        self.bucket(TimingCategory::ShadowNear)
     }
     /// Far shadow map, horizon heights and atmospheric shadow heights.
     pub fn shadow_far(&self) -> f64 {
-        self.sum_matching(|n| {
-            matches!(
-                n,
-                "synthetic Sun shadow far" | "synthetic Sun horizon heights"
-            ) || n == crate::synthetic::AIR_SHADOW_PASS
-        })
+        self.bucket(TimingCategory::ShadowFar)
     }
     /// Local-light cluster build, zero when not executed.
     pub fn clusters(&self) -> f64 {
-        self.get("synthetic cluster build").unwrap_or(0.0)
+        self.bucket(TimingCategory::Clusters)
     }
     /// Opaque-phase work including contribution, stars and camera culling.
     pub fn forward(&self) -> f64 {
-        self.sum_matching(|n| {
-            matches!(n, "synthetic forward opaque")
-                || n == crate::synthetic::CONTRIBUTION_COMPUTE
-                || n == crate::synthetic::stars::PASS_NAME
-                || crate::synthetic::frame_stats::CULLING_PASSES.contains(&n)
-        })
+        self.bucket(TimingCategory::Forward)
     }
     /// Transform history publication, zero for an empty prefix.
     pub fn history(&self) -> f64 {
-        self.get("synthetic transform history").unwrap_or(0.0)
+        self.bucket(TimingCategory::History)
     }
     /// Exposure resolve and SDR tone stage.
     pub fn tone(&self) -> f64 {
-        self.sum_matching(|n| matches!(n, "synthetic exposure resolve" | "synthetic tone encode"))
+        self.bucket(TimingCategory::Tone)
     }
     /// All executed atmosphere preparation stages.
     pub fn atmosphere(&self) -> f64 {
-        self.sum_matching(|n| {
-            n.starts_with("atmosphere ") && n != crate::synthetic::stars::PASS_NAME
-        })
+        self.sum_where(TimingCategory::is_atmosphere)
     }
     /// Atmospheric transmittance preparation.
     pub fn transmittance(&self) -> f64 {
-        self.get("atmosphere transmittance").unwrap_or(0.0)
+        self.bucket(TimingCategory::AtmosphereTransmittance)
     }
     /// Multiple scattering and ground irradiance preparation.
     pub fn multiple_ground(&self) -> f64 {
-        self.sum_matching(|n| {
-            matches!(
-                n,
-                "atmosphere multiple scattering" | "atmosphere ground irradiance"
-            )
-        })
+        self.bucket(TimingCategory::AtmosphereMultipleGround)
     }
     /// Sky-view and reflection preparation.
     pub fn sky(&self) -> f64 {
-        self.sum_matching(|n| {
-            n.starts_with("atmosphere sky ")
-                || n.starts_with("atmosphere reflection ")
-                || n == "atmosphere DFG integration"
-        })
+        self.bucket(TimingCategory::AtmosphereSky)
     }
     /// Diffuse irradiance preparation.
     pub fn diffuse(&self) -> f64 {
-        self.get("atmosphere diffuse irradiance").unwrap_or(0.0)
+        self.bucket(TimingCategory::AtmosphereDiffuse)
     }
     /// Aerial perspective preparation.
     pub fn aerial(&self) -> f64 {
-        self.get("atmosphere aerial perspective").unwrap_or(0.0)
+        self.bucket(TimingCategory::AtmosphereAerial)
     }
     /// Named values for serializers, without imposing a serialization dependency.
     /// Executed transfers and query resolution without counters have `None` values.
@@ -308,24 +372,28 @@ impl Drop for CompletionTicket {
 // names every frame, so only its first batch allocates label storage.
 struct PassNames {
     slots: Vec<Arc<str>>,
+    categories: Vec<TimingCategory>,
     active: usize,
 }
 impl PassNames {
     fn with_capacity(capacity: usize) -> Self {
         Self {
             slots: Vec::with_capacity(capacity),
+            categories: Vec::with_capacity(capacity),
             active: 0,
         }
     }
 
-    fn push(&mut self, name: &str) -> usize {
+    fn push(&mut self, name: &str, category: TimingCategory) -> usize {
         let index = self.active;
         if let Some(slot) = self.slots.get_mut(index) {
             if slot.as_ref() != name {
                 *slot = Arc::from(name);
             }
+            self.categories[index] = category;
         } else {
             self.slots.push(Arc::from(name));
+            self.categories.push(category);
         }
         self.active += 1;
         index
@@ -343,8 +411,10 @@ impl PassNames {
         self.active
     }
 
-    fn iter(&self) -> impl Iterator<Item = &Arc<str>> {
-        self.slots[..self.active].iter()
+    fn iter(&self) -> impl Iterator<Item = (&Arc<str>, TimingCategory)> {
+        self.slots[..self.active]
+            .iter()
+            .zip(self.categories[..self.active].iter().copied())
     }
 }
 
@@ -489,9 +559,10 @@ impl GpuTimings {
         &mut self,
         generation: u64,
         name: impl AsRef<str>,
+        category: TimingCategory,
     ) -> Result<Option<wgpu::RenderPassTimestampWrites<'_>>, TimingError> {
         Ok(self
-            .reserve_pass(generation, name)?
+            .reserve_pass(generation, name, category)?
             .map(|(query_set, index)| wgpu::RenderPassTimestampWrites {
                 query_set,
                 beginning_of_pass_write_index: Some(index * 2),
@@ -506,9 +577,10 @@ impl GpuTimings {
         &mut self,
         generation: u64,
         name: impl AsRef<str>,
+        category: TimingCategory,
     ) -> Result<Option<wgpu::ComputePassTimestampWrites<'_>>, TimingError> {
         Ok(self
-            .reserve_pass(generation, name)?
+            .reserve_pass(generation, name, category)?
             .map(|(query_set, index)| wgpu::ComputePassTimestampWrites {
                 query_set,
                 beginning_of_pass_write_index: Some(index * 2),
@@ -520,6 +592,7 @@ impl GpuTimings {
         &mut self,
         generation: u64,
         name: impl AsRef<str>,
+        category: TimingCategory,
     ) -> Result<Option<(&wgpu::QuerySet, u32)>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
@@ -532,7 +605,7 @@ impl GpuTimings {
         if index >= enabled.capacity {
             return Err(TimingError::Capacity);
         }
-        enabled.names.push(name.as_ref());
+        enabled.names.push(name.as_ref(), category);
         Ok(Some((&enabled.query, index)))
     }
     /// Release pass reservations after dropping their unsubmitted encoder.
@@ -685,7 +758,7 @@ impl GpuTimings {
         let mut first_start = None;
         let mut previous_end = None;
         let mut invalid = None;
-        for (index, name) in enabled.names.iter().enumerate() {
+        for (index, (name, category)) in enabled.names.iter().enumerate() {
             let base = index * 16;
             let start =
                 u64::from_le_bytes(values[base..base + 8].try_into().expect("query scalar"));
@@ -696,7 +769,7 @@ impl GpuTimings {
             );
             if start != 0 && start != u64::MAX && end != u64::MAX && end >= start {
                 first_start.get_or_insert(start);
-                if name.as_ref() == crate::present::PASS_NAME {
+                if category == TimingCategory::Surface {
                     enabled.timed_pass_span = first_start
                         .and_then(|first| end.checked_sub(first))
                         .map(|ticks| ticks as f64 * enabled.period);
@@ -716,6 +789,7 @@ impl GpuTimings {
                 let delta = end - start;
                 enabled.results.push(PassTiming {
                     name: Arc::clone(name),
+                    category,
                     nanoseconds: delta as f64 * enabled.period,
                 });
             } else {

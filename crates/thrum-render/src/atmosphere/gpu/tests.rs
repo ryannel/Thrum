@@ -98,10 +98,13 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
+        let sky_view = sky.create_view(&wgpu::TextureViewDescriptor::default());
+        // The diffuse stage samples only the sky view.
+        let views = crate::atmosphere::stage::Charts::from_fn(|_| sky_view.clone());
         let (pipeline, group) = super::prepare_diffuse(
             &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &uniform,
-            &sky.create_view(&wgpu::TextureViewDescriptor::default()),
+            &views,
             &sampler,
             &directional,
         );

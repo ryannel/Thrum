@@ -1,5 +1,6 @@
 //! H5 applies P7/P8's independent references to the lent operation.
 use super::{filtered, observer};
+use crate::pass_key::AtmosphereStage;
 use crate::{
     atmosphere::{AtmosphereFrame, reflection::tests as reference},
     capabilities::DeviceCapabilities,
@@ -59,7 +60,7 @@ fn metal_h5_lent_reflection_direction_roughness_source_night_and_exposure() {
                 .unwrap();
             let surface = prepared.scene_surface(&queue);
             let atmosphere = surface.environment.unwrap();
-            let sky = &atmosphere.textures[2];
+            let sky = &atmosphere.textures.sky_view;
             let mut bytes = reference::analytic_sky(azimuth);
             // Known absolute night radiance 1/16, separate from unit-Sun RGB.
             for pixel in bytes.as_chunks_mut::<8>().0 {
@@ -77,14 +78,19 @@ fn metal_h5_lent_reflection_direction_roughness_source_night_and_exposure() {
             );
             let mut encoder =
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-            for stage in 0..=6 {
+            for stage in
+                std::iter::once(AtmosphereStage::Dfg).chain((0..6).map(AtmosphereStage::Reflection))
+            {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
                 atmosphere.reflection.encode(stage, &mut pass).unwrap();
             }
             // Stage zero is DFG, followed by all seven filtered cube levels.
             {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-                atmosphere.reflection.encode(7, &mut pass).unwrap();
+                atmosphere
+                    .reflection
+                    .encode(AtmosphereStage::Reflection(6), &mut pass)
+                    .unwrap();
             }
             queue.submit([encoder.finish()]);
             for lux in [1.0_f32, 0.0, 2.0] {
@@ -215,11 +221,11 @@ fn furnace(
 ) {
     let surface = prepared.scene_surface(queue);
     let atmosphere = surface.environment.expect("valid furnace fixture");
-    observer::write_field(queue, &atmosphere.textures[2], |_, _, _| {
+    observer::write_field(queue, &atmosphere.textures.sky_view, |_, _, _| {
         [1024.0, 512.0, 256.0, 0.0]
     });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    for stage in 1..=7 {
+    for stage in (0..7).map(AtmosphereStage::Reflection) {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         atmosphere
             .reflection

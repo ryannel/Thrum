@@ -2,6 +2,7 @@
 //! quadrature as the BRDF oracle. No production COPY_SRC usage is needed.
 
 use super::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, ReflectionPrepared};
+use crate::pass_key::AtmosphereStage;
 use std::{f64::consts::PI, sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
@@ -510,7 +511,7 @@ fn check_analytic_cube(
             sky.size(),
         );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        for stage in 1..=MIP_COUNT as usize {
+        for stage in (0..MIP_COUNT).map(AtmosphereStage::Reflection) {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             prepared
                 .encode(stage, &mut pass)
@@ -725,10 +726,13 @@ fn gpu_reflection_constant_all_faces_mips_and_independent_dfg() {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        let sky_view = sky.create_view(&wgpu::TextureViewDescriptor::default());
+        // Reflection samples only the sky view.
+        let views = crate::atmosphere::stage::Charts::from_fn(|_| sky_view.clone());
         let prepared = ReflectionPrepared::new(
             &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &uniform,
-            &sky.create_view(&wgpu::TextureViewDescriptor::default()),
+            &crate::atmosphere::gpu::chart_entries(AtmosphereStage::Reflection(0), &views),
             &sampler,
         );
         assert_eq!(prepared.cube.width(), CUBE_SIZE);
@@ -736,7 +740,9 @@ fn gpu_reflection_constant_all_faces_mips_and_independent_dfg() {
         assert_eq!(prepared.cube.mip_level_count(), MIP_COUNT);
         assert_eq!([prepared.dfg.width(), prepared.dfg.height()], [DFG_SIZE; 2]);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        for stage in 0..=MIP_COUNT as usize {
+        for stage in std::iter::once(AtmosphereStage::Dfg)
+            .chain((0..MIP_COUNT).map(AtmosphereStage::Reflection))
+        {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             prepared
                 .encode(stage, &mut pass)

@@ -1,4 +1,6 @@
 use super::*;
+use crate::pass_key::PassKey;
+use crate::timing::TimingCategory;
 
 #[test]
 fn only_live_variant_uses_determine_attachment_storage() {
@@ -48,6 +50,7 @@ fn only_live_variant_uses_determine_attachment_storage() {
                     store: explicit_store,
                 }],
                 external_side_effect: true,
+                timing: TimingCategory::Effects,
             });
             let day = graph.compile(1, &BTreeSet::new()).unwrap();
             assert_eq!(
@@ -59,8 +62,7 @@ fn only_live_variant_uses_determine_attachment_storage() {
                 AccessKind::CopyRead,
                 AccessKind::AttachmentLoad,
             ] {
-                let readback = Pass {
-                    name: "capture or later reader".into(),
+                let readback = PassBody {
                     scope: PassScope::View(1),
                     pipeline: None,
                     accesses: vec![Access {
@@ -73,7 +75,13 @@ fn only_live_variant_uses_determine_attachment_storage() {
                     external_side_effect: true,
                 };
                 let capture = graph
-                    .compile_surface_variant(Some(readback), 1, &BTreeSet::new(), None, None)
+                    .compile_surface_variant(
+                        Some((PassKey::Readback, readback)),
+                        1,
+                        &BTreeSet::new(),
+                        None,
+                        None,
+                    )
                     .unwrap();
                 assert!(!capture.memoryless_eligible(&depth));
                 assert_eq!(
@@ -116,6 +124,7 @@ fn transient_storage_respects_locked_wgpu_layer_and_mip_restrictions() {
                 store: false,
             }],
             external_side_effect: true,
+            timing: TimingCategory::Effects,
         });
         assert_eq!(
             graph

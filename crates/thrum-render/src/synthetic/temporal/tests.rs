@@ -207,7 +207,7 @@ fn metal_sky_and_star_reactive_edit_then_steady_w4_w5() {
         let expected = fixture();
         for night in [false, true] {
             let mut scene = SyntheticScene::grid(1).expect("scene");
-            scene.instances[0].ids[3] = 0;
+            scene.instances[0].deactivate();
             scene.star_catalogue = Some(&[[0.0, 0.0, -1.0, 9.6e-6]]);
             scene.view = SyntheticView::perspective(
                 [0.0, 2.0, 3.0],

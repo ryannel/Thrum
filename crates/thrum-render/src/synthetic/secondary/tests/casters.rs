@@ -404,7 +404,7 @@ fn secondary_caster_lists_preserve_off_camera_members_and_match_direct() {
             // Rebuild the member groups after crossing a workgroup boundary.
             let changed: Vec<_> = (0..68).collect();
             for instance in &mut scene.instances {
-                instance.ids[3] = 0;
+                instance.deactivate();
             }
             prepared
                 .upload_instances(&gpu.queue, &scene.instances, &changed)
