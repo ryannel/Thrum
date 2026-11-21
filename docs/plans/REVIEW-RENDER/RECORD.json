@@ -376,7 +376,42 @@
     },
     "M3": {
       "definitions": "844ad5cf61222109f0a84ee40ff4f16c53510bb13bce9cfea1ec48669372a6ea",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3fb33c30621763ff1aa3b902f13f2af8c6356819",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "The frame loop recompiles the whole scene graph on every poll to count timestamp slots",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 190083,
+            "cached": 10139901,
+            "output": 35511,
+            "cost_usd": 4.2582,
+            "turns": 1
+          },
+          "at": "2026-11-21T11:45:33Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",

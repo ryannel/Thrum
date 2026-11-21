@@ -140,8 +140,8 @@
     {
       "id": "M3",
       "name": "Passes, stages and pipelines in the renderer are named by typed keys, so a rename or a new pass cannot silently drop a timing bucket or a barrier",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -154,10 +154,10 @@
           "lock": "gpu",
           "ask": "Is any pass still matched by a string literal, a bare role integer or a guard chain? Add a pass with no recorder or no timing category in a scratch edit: does it fail to compile or fail this test?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "Mac Metal (Apple GPU), `cargo test --locked --offline -p thrum-render --test pass_keys` 2 passed: 336 compiled 3D graphs (84 prepared scenes) (portable and apple-tile recipes; diagnostic, day and star lighting; Sun shadows off/on; Direct, Frustum and Occlusion culling; with and without local lights; TAAU, reference and temporal-input overlays; SDR and scene-linear sources; with and without readback). Every pass has a PassKey, keys and roles are unique, name, timing bucket and role equal the key's, and prepared scene_pass_count equals the compiled pipeline-pass count. Recorders bind from the key in an exhaustive match (scene_graph.rs recorder). Scratch: an added PassKey variant failed to compile at name, timing, role and recorder; a keyless graph.pass failed this test (GraphPassMismatch). Logs: tmp/review-render-m3/pass_keys.log, scratch-unregistered-key.log, scratch-keyless-pass.log. Full thrum-render suite on Metal: 64 binaries, 470 passed, 0 failed (.orchestrate/evidence/REVIEW-RENDER/M3/render-all-tests.log).",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -166,10 +166,10 @@
           "lock": "gpu",
           "ask": "Does `timing.rs` import anything from the scene renderer or the atmosphere? Do the profiler's rows and the frames report show the same pass names as before?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test timing_categories` 3 passed: across the same 336 graphs every pass lands in exactly one TimingCategory bucket (bucket sum equals total), each profiler bucket equals the pre-M3 name lists, the scene sum and profiler row names are unchanged, a renamed pass keeps its bucket, and timing.rs imports only capabilities and names no pass. frame_stats and timing unit tests pass unchanged. Log: tmp/review-render-m3/timing_categories.log.",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -178,28 +178,36 @@
           "lock": "gpu",
           "ask": "Is the chart dependency table still written twice? Is any chart still reached as an index into a list, or remapped by an `if`?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "Mac Metal, `cargo test --locked --offline -p thrum-render --test atmosphere_stage_table` 2 passed: all 14 AtmosphereStage keys, graph chart reads equal AtmosphereStage::chart_reads (the table the bind groups are built from), role, validity bit and timing bucket come from the key; a secondary view's aerial volume now reads the aerial table's charts (before: transmittance and sky view inherited from forward, multiple scattering missing) and records on Metal. Log: tmp/review-render-m3/atmosphere_stage_table.log.",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
         {
           "id": "M3.4",
           "statement": "Visibility's pipeline roles and the scene's instance identity lanes are named, not hex tags or tuple positions.",
           "ask": "Are the ASCII role tags the review lists under L34, and the `ids[0]`, `ids[2]`, `ids[3]` reads under L18, replaced by names in every file that used them?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "Visibility roles are PipelineRole::{CameraVisibility, FinalCull, DepthPyramid, DepthPrepass, CasterCull, Surface} in pass_key.rs (the historical ASCII values kept so prepared identities are unchanged); no role literal remains outside pass_key.rs (keys built with PipelineRole::pipeline_key). InstanceRecord lanes use logical_slot, material, skin_offset, generation, is_active and deactivate in thrum-render, thrum-app, thrum-asset-gpu, examples/mirror and examples/v1-game; `rg 'ids\\[[0-3]\\]'` finds no InstanceRecord lane. HISTORY_OWNER is a resource owner, not a role. Mac Metal full thrum-render suite passed.",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
         },
         {
           "id": "M3.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/REVIEW-RENDER/M3-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "The frame loop recompiles the whole scene graph on every poll to count timestamp slots",
+          "repeat": false
         }
       ]
     },
