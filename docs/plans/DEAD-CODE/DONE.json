@@ -72,7 +72,7 @@
     {
       "id": "M2",
       "name": "A scene contribution writes only the hooks it uses",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
@@ -87,8 +87,8 @@
           "check": "git grep -q \"trait SceneContribution\" -- crates && git grep -lE \"SceneContribution for\" -- crates examples | xargs perl -0777 -ne 'while (/\\bimpl\\b[^{;]*\\bSceneContribution\\s+for\\b[^{]*(\\{(?:[^{}]++|(?1))*\\})/g) { $body = $1; $impls++; $stubs++ while $body =~ /\\bfn\\s+(?:encode_compute|encode_after_compute|draw|submitted)\\b[^{;]*\\{(?:\\s|\\/\\/[^\\n]*)*\\}/g; $stubs++ while $body =~ /\\bfn\\s+computes\\b[^{;]*\\{(?:\\s|\\/\\/[^\\n]*)*false\\s*\\}/g } END { print $impls + 0, \" impls, \", $stubs + 0, \" bodies equal to a default\\n\"; exit(($stubs || !$impls) ? 1 : 0) }'",
           "ask": "List every `impl SceneContribution` under `crates` and `examples`: does any still write a body equal to a default, for any of the five hooks? Compare with the starting commit: is any body that did work gone, or any hook's behaviour changed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.1-check.log: \"36 impls, 0 bodies equal to a default\" on main c0e172d27 (M2 code from b57808ace, 8956287dd)",
           "verdict": "",
           "review": ""
         },
@@ -99,8 +99,8 @@
           "ask": "Name the test that fails if `SceneContributions` does not forward one hook, and try it: remove one forward in a scratch copy. Does its probe count all eight hooks, the five with defaults among them? Does the ray-tracing replacement still forward all eight itself, with none left to a default? Is there any other wrapper outside tests that holds a contribution and forwards to it?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.2-check.log is empty because the check keeps its own output; the check passed on main c0e172d27 (agent_loop check record 25556f4b57d7a94f6d643068-8ae08c7734c118c8): contribution::list::tests::every_hook_reaches_a_member_behind_the_list ok, 1 passed, GPU required",
           "verdict": "",
           "review": ""
         },
@@ -109,8 +109,8 @@
           "statement": "The tests that no merge check runs, and that reach a contribution this milestone edited, pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature that the main-tier list runs, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them. A binary the list marks not-run is M2.5's.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.4-long-tests-run.json: main-branch check long-tests passed on main 199c58df01fa (2026-11-21 02:13-02:39Z), which contains 8956287dd; mesh_stage_gpu skipped as not-run (M2.5)",
           "verdict": "",
           "review": ""
         },
@@ -121,8 +121,8 @@
           "ask": "Compare the not-run lines of `.config/long-tests.txt` at the claimed commit with the files this milestone changed since `f5d7c5bba`: is `mesh_stage_gpu` the only not-run binary among them? In that binary, did the milestone change anything but the removed stub bodies, and did it change the list?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.5-check.log: mesh_stage_gpu, --test-threads=1, GPU required: 10 passed, 5 ignored, on main c0e172d27",
           "verdict": "",
           "review": ""
         },
@@ -131,8 +131,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M2/M2.3-check.log: main-branch check exact-images COVERED, passed on main 199c58df01fa, which contains 8956287dd",
           "verdict": "",
           "review": ""
         }
