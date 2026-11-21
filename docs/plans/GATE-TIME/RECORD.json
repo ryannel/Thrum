@@ -732,9 +732,9 @@
         "at": "2026-11-21T09:09:42Z"
       },
       "ready_for_review": {
-        "commit": "8462edb0972171a67d6535f1777c0e044dc6f732",
-        "checked": "8462edb0972171a67d6535f1777c0e044dc6f732",
-        "at": "2026-11-21T12:52:01Z",
+        "commit": "a0cd1b8235b835e99114a888b7ec466743276143",
+        "checked": "a0cd1b8235b835e99114a888b7ec466743276143",
+        "at": "2026-11-21T13:22:16Z",
         "reused": [
           "Test command",
           "M12.1",
@@ -750,18 +750,18 @@
         "cli": "2.1.319 (Claude Code)",
         "path": "headless",
         "usage": {
-          "input": 169359,
-          "cached": 8370078,
-          "output": 47500,
-          "cost_usd": 3.978344,
+          "input": 40667,
+          "cached": 7414452,
+          "output": 20381,
+          "cost_usd": 2.215558,
           "turns": 1
         },
         "session_usage": {
-          "input": 169359,
-          "cached": 8370078,
-          "output": 47500,
-          "cost_usd": 3.978344,
-          "turns": 1
+          "input": 210026,
+          "cached": 15784530,
+          "output": 67881,
+          "cost_usd": 6.193902,
+          "turns": 2
         }
       }
     },
