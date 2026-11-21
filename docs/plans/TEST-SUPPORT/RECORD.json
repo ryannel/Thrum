@@ -329,7 +329,65 @@
     },
     "M3": {
       "definitions": "78850e1081b90ccd76aa19f264fecf771a0d1a77598ccc89b8c5f02628eb0a25",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3cc944afa2b8fda18bc043ab493c3aa8dc5fa183",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "fail",
+            "M3.3": "fail",
+            "M3.4": "pass",
+            "M3.6": "fail",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Long-test baseline includes tests removed by prerequisite milestones",
+              "item": "M3.6",
+              "planner": "The last scheduled pre-start run predates required GATE-TIME M2 deletions. No TEST-SUPPORT conversion can preserve those executions without undoing the prerequisite. Specify the comparison population or the accepted mappings and retirements.",
+              "repeat": false
+            },
+            {
+              "name": "Frame retirement polls can exceed the original remaining timeout",
+              "item": "M3.3",
+              "repeat": false
+            },
+            {
+              "name": "Native frame completion loops still bypass the kit",
+              "item": "M3.3",
+              "repeat": false
+            },
+            {
+              "name": "Shadow capture still writes PPM by hand",
+              "item": "M3.3",
+              "repeat": false
+            },
+            {
+              "name": "Local device wrappers repeat the kit call without additional behavior",
+              "item": "M3.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 111849,
+            "cached": 2244480,
+            "output": 10119,
+            "turns": 1
+          },
+          "at": "2026-11-21T19:40:10Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
