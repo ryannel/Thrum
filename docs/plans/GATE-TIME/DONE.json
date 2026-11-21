@@ -493,7 +493,7 @@
     {
       "id": "M9",
       "name": "Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -506,8 +506,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/M9/record.md (before and now, alone and median in three ./dev check-all runs; no test outside the water scene over 10 s in any run; ten slowest now); exempt list holds only M3's four",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
         },
         {
           "id": "M9.2",
@@ -516,8 +516,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/M9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
         },
         {
           "id": "M9.3",
@@ -526,8 +526,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal at 87e326a66: no test was marked long; .orchestrate/evidence/GATE-TIME/M9/record.md#long-tests-m93",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
         },
         {
           "id": "M9.4",
@@ -536,8 +536,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests, after the merge (no long test added)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
         },
         {
           "id": "M9.5",
@@ -546,8 +546,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images, after the merge (no image-producing code changed; only tests)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md"
         }
       ]
     },

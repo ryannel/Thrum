@@ -527,7 +527,36 @@
     },
     "M9": {
       "definitions": "432d0047179081b647c38d7a9b8189dced4fbdfc1a84cb63e33d1a04d515992c",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "666db5da6e58a2adc0c30e79865d697ac61e1001",
+          "review": ".orchestrate/evidence/GATE-TIME/M9-review.md",
+          "items": {
+            "M9.1": "pass",
+            "M9.2": "pass",
+            "M9.3": "pass",
+            "M9.4": "pass",
+            "M9.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.1",
+          "path": "headless",
+          "usage": {
+            "input": 88228,
+            "cached": 1012992,
+            "output": 4934,
+            "turns": 1
+          },
+          "at": "2026-11-21T19:37:55Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
@@ -564,6 +593,13 @@
           "cost_usd": 20.536539,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "666db5da6e58a2adc0c30e79865d697ac61e1001",
+        "review": ".orchestrate/evidence/GATE-TIME/M9-review.md",
+        "checked": "b63faa90bbc34381fa3f36ac05f594b33973ab11",
+        "at": "2026-11-21T19:37:55Z"
       }
     },
     "M10": {
