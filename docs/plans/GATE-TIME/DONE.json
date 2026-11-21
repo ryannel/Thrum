@@ -223,7 +223,7 @@
     {
       "id": "M7",
       "name": "A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,

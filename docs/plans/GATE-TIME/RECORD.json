@@ -255,6 +255,36 @@
         "by": "plan",
         "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
         "at": "2026-11-20T22:57:57Z"
+      },
+      "ready_for_review": {
+        "commit": "46f4c4c65dbd854509b602c82721fcc61962a5f8",
+        "checked": "46f4c4c65dbd854509b602c82721fcc61962a5f8",
+        "at": "2026-11-21T07:03:47Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 209195,
+          "cached": 14421916,
+          "output": 83577,
+          "cost_usd": 6.228659,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 209195,
+          "cached": 14421916,
+          "output": 83577,
+          "cost_usd": 6.228659,
+          "turns": 1
+        }
       }
     },
     "M8": {
