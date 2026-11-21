@@ -113,7 +113,8 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
             concat!(
                 crate::shaders::wgsl!("synthetic_aerial.wgsl"),
                 "\n",
-                include_str!("../../synthetic_aerial_shadowed.wgsl")
+                crate::shaders::wgsl!("synthetic_aerial_visibility.wgsl"),
+                crate::shaders::wgsl!("synthetic_aerial_camera_shadowed.wgsl")
             ),
             concat!(
                 crate::shaders::wgsl!("atmosphere/geometry.wgsl"),

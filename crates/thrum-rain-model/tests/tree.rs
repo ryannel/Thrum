@@ -242,16 +242,16 @@ fn small_hollows_are_reported() {
 }
 
 #[test]
-fn the_same_bed_gives_the_same_bytes() {
-    let a = prepare(&bed()).to_bytes();
-    let b = prepare(&bed()).to_bytes();
-    assert_eq!(a, b);
-    // And a changed bed gives other bytes.
+fn the_same_bed_gives_the_same_tree() {
+    let a = prepare(&bed());
+    let b = prepare(&bed());
+    assert_eq!(a, b, "two preparations of one bed are equal");
+    // And a changed bed gives another tree.
     let mut r = Lcg(3);
     let g = bed();
     let heights = g.heights().iter().map(|h| h + r.uniform() * 1e-6).collect();
     let other = Ground::new(g.origin(), g.spacing(), g.size(), heights).expect("valid test case");
-    assert_ne!(a, prepare(&other).to_bytes());
+    assert_ne!(a, prepare(&other), "a changed bed gives another tree");
 }
 
 #[test]

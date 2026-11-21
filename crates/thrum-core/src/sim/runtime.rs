@@ -31,7 +31,7 @@ use super::{
     publication::{PublicationCapture, PublicationPage},
     registered_world::{
         ChunkedVisit, EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError,
-        TentativeDirty, WorldCapture, WorldDelta, WorldUndo,
+        TentativeDirty, WorldCapture, WorldUndo,
     },
     snapshot_ring::{PAGE_COUNT, PublicationBusy},
     transaction::{Edit, EditError, EditScratch, EditWriter},
@@ -44,16 +44,6 @@ pub struct RuntimeCapture {
     tick: u64,
     nonce: u64,
     revision: u64,
-}
-
-/// Reusable changed-component and structural record for one committed tick.
-pub struct RuntimeDelta {
-    world: WorldDelta,
-    from: u64,
-    to: u64,
-    nonce: u64,
-    from_revision: u64,
-    to_revision: u64,
 }
 
 /// Reusable sparse preimages for reversing one committed tick on this runtime.
@@ -179,11 +169,6 @@ impl RuntimeCapture {
         self.world.hash_metadata(hash);
     }
 
-    /// Whether a one-tick delta follows this exact committed endpoint.
-    pub fn accepts_delta(&self, delta: &RuntimeDelta) -> bool {
-        delta.nonce == self.nonce && delta.from == self.tick && delta.from_revision == self.revision
-    }
-
     /// Committed tick represented by this capture.
     pub fn tick(&self) -> u64 {
         self.tick
@@ -218,44 +203,6 @@ impl RuntimeCapture {
         self.tick = source.tick;
         self.revision = source.revision;
         Ok(())
-    }
-
-    /// Advance a full baseline with one contiguous delta from the same runtime.
-    ///
-    /// # Errors
-    ///
-    /// The delta belongs to another runtime or does not follow this capture.
-    ///
-    /// # Panics
-    ///
-    /// Only if an engine-produced delta contradicts its recorded slot order or schema.
-    pub fn advance(&mut self, delta: &RuntimeDelta) -> Result<(), RuntimeError> {
-        if !self.accepts_delta(delta) {
-            return Err(RuntimeError::WrongCapture);
-        }
-        self.world.advance(&delta.world);
-        self.tick = delta.to;
-        self.revision = delta.to_revision;
-        Ok(())
-    }
-}
-
-impl RuntimeDelta {
-    /// Whether this delta immediately follows another on the same branch.
-    pub fn follows(&self, previous: &Self) -> bool {
-        self.nonce == previous.nonce
-            && self.from == previous.to
-            && self.from_revision == previous.to_revision
-    }
-
-    /// Committed tick represented by this one-tick delta.
-    pub fn tick(&self) -> u64 {
-        self.to
-    }
-
-    /// Retained backing storage, including typed component columns.
-    pub fn reserved_bytes(&self) -> usize {
-        self.world.reserved_bytes()
     }
 }
 
@@ -566,10 +513,6 @@ impl TentativeDirty for DirectDirty {
         *word |= bit;
         true
     }
-
-    fn unmark_last(&mut self, component: usize, slot: u32) {
-        self.words[component][slot as usize / 64] &= !(1_u64 << (slot % 64));
-    }
 }
 
 /// World capacity at or above which requested `Rayon` splits warm page
@@ -610,8 +553,6 @@ pub struct GameRuntime<G: TickGame> {
     timeline: u64,
     revision: u64,
     next_revision: u64,
-    delta_from_revision: u64,
-    delta_ready: bool,
     executor: Executor,
     nonce: u64,
     edit_scratch: EditScratch,
@@ -680,49 +621,6 @@ impl<G: TickGame> GameRuntime<G> {
         }
     }
 
-    /// Whether a retained capture belongs to this exact runtime generation.
-    pub fn matches_capture(&self, capture: &RuntimeCapture) -> bool {
-        capture.nonce == self.nonce
-    }
-
-    /// Allocate an empty reusable delta for this registered schema.
-    pub fn new_delta(&self) -> RuntimeDelta {
-        RuntimeDelta {
-            world: self.world.empty_delta(),
-            from: 0,
-            to: 0,
-            nonce: self.nonce,
-            from_revision: 0,
-            to_revision: 0,
-        }
-    }
-
-    /// Fill a reusable delta immediately after its committed tick.
-    ///
-    /// # Errors
-    ///
-    /// No tick has committed, or the delta belongs to another runtime.
-    pub fn capture_delta_into(&self, delta: &mut RuntimeDelta) -> Result<(), RuntimeError> {
-        self.assert_usable();
-        if delta.nonce != self.nonce {
-            return Err(RuntimeError::WrongCapture);
-        }
-        if !self.delta_ready {
-            return Err(RuntimeError::NoCommittedTick);
-        }
-        let from = self
-            .tick
-            .checked_sub(1)
-            .ok_or(RuntimeError::NoCommittedTick)?;
-        self.world
-            .capture_delta_into(&self.structural_journal, &mut delta.world);
-        delta.from = from;
-        delta.to = self.tick;
-        delta.from_revision = self.delta_from_revision;
-        delta.to_revision = self.revision;
-        Ok(())
-    }
-
     /// Capture registered components, identities, slot generations and free
     /// order after a complete committed tick. This is a cold replay path.
     pub fn capture(&self) -> RuntimeCapture {
@@ -758,7 +656,6 @@ impl<G: TickGame> GameRuntime<G> {
         self.tick = capture.tick;
         self.timeline = following_timeline;
         self.revision = capture.revision;
-        self.delta_ready = false;
         self.world.begin_tick();
         self.structural_journal.clear();
         self.initial_published = false;
@@ -868,7 +765,6 @@ impl<G: TickGame> GameRuntime<G> {
         self.tick = tick;
         self.revision = revision;
         self.timeline = timeline;
-        self.delta_ready = false;
         self.structural_journal.clear();
         self.pages.reset_timeline();
         Ok(())
@@ -941,8 +837,6 @@ impl<G: TickGame> GameRuntime<G> {
             timeline: 0,
             revision: 0,
             next_revision: 1,
-            delta_from_revision: 0,
-            delta_ready: false,
             executor: Executor {
                 mode: ExecutionMode::Serial,
             },
@@ -966,11 +860,6 @@ impl<G: TickGame> GameRuntime<G> {
     /// Select serial or native parallel candidate work before the next tick.
     pub fn set_execution_mode(&mut self, mode: ExecutionMode) {
         self.executor.mode = mode;
-    }
-
-    /// Current engine dispatch policy.
-    pub fn execution_mode(&self) -> ExecutionMode {
-        self.executor.mode
     }
 
     /// Generation shared by checked handles and pages.
@@ -1065,13 +954,14 @@ impl<G: TickGame> GameRuntime<G> {
         })
     }
 
-    /// Prepare a storage-order query whose access is `&mut T` and `&U`.
-    /// The distinct columns and schedule permissions are checked once.
+    /// Prepare a mutable query whose shared component has a registered active
+    /// index. Supplemental rows can still be supplied at visit time for
+    /// candidate-local input or one-shot edits.
     ///
     /// # Errors
     ///
-    /// The types are identical, absent or undeclared for this system.
-    pub fn write_read2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static>(
+    /// Access is undeclared, a type is absent, or `U` has no active index.
+    pub fn write_read2_indexed<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static>(
         &self,
         system: SystemId,
     ) -> Result<WriteRead2<T, U>, RuntimeError> {
@@ -1090,36 +980,17 @@ impl<G: TickGame> GameRuntime<G> {
             || !self
                 .schedule
                 .permits(system, ComponentKey::of::<U>(), AccessMode::Read)
+            || !self.world.has_active_index(second)
         {
             return Err(RuntimeError::UndeclaredAccess);
         }
         Ok(WriteRead2 {
             first,
             second,
-            indexed: false,
             nonce: self.nonce,
             system,
             marker: PhantomData,
         })
-    }
-
-    /// Prepare a mutable query whose shared component has a registered active
-    /// index. Supplemental rows can still be supplied at visit time for
-    /// candidate-local input or one-shot edits.
-    ///
-    /// # Errors
-    ///
-    /// Access is undeclared, a type is absent, or `U` has no active index.
-    pub fn write_read2_indexed<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static>(
-        &self,
-        system: SystemId,
-    ) -> Result<WriteRead2<T, U>, RuntimeError> {
-        let mut query = self.write_read2::<T, U>(system)?;
-        if !self.world.has_active_index(query.second) {
-            return Err(RuntimeError::UndeclaredAccess);
-        }
-        query.indexed = true;
-        Ok(query)
     }
 
     /// Grant a typed sparse read only when declared in the compiled schedule.
@@ -1617,10 +1488,8 @@ impl<G: TickGame> GameRuntime<G> {
             record.spent = false;
         }
         self.tick = next;
-        self.delta_from_revision = self.revision;
         self.revision = self.next_revision;
         self.next_revision = following_revision;
-        self.delta_ready = true;
         self.capture_committed(game, candidate, undo.as_deref(), publication);
         self.poisoned = false;
         Ok(next)
@@ -1703,30 +1572,6 @@ impl<G: TickGame> GameRuntime<G> {
         })
     }
 
-    /// Rebuild a complete endpoint from one baseline and contiguous deltas.
-    ///
-    /// # Errors
-    ///
-    /// A capture is foreign or the delta sequence has a gap.
-    ///
-    /// # Panics
-    ///
-    /// Only if an engine-produced delta contradicts its recorded slot order or schema.
-    pub fn restore_through(
-        &mut self,
-        base: &RuntimeCapture,
-        deltas: &[RuntimeDelta],
-    ) -> Result<(), RuntimeError> {
-        if base.nonce != self.nonce {
-            return Err(RuntimeError::WrongCapture);
-        }
-        let mut merged = base.clone_independent();
-        for delta in deltas {
-            merged.advance(delta)?;
-        }
-        self.restore_published(&merged)
-    }
-
     /// Restore a cold authority capture and rebuild engine publication pages.
     ///
     /// # Errors
@@ -1772,7 +1617,6 @@ pub struct WorldTxn<'a> {
 pub struct WriteRead2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static> {
     first: usize,
     second: usize,
-    indexed: bool,
     nonce: u64,
     system: SystemId,
     marker: PhantomData<(T, U)>,
@@ -1829,120 +1673,6 @@ impl WorldTxn<'_> {
             .put_tentative(permit.component, handle, value, self.undo, self.dirty)
     }
 
-    /// Visit matching rows in deterministic slot order. Return `true` for a
-    /// changed value and `false` for an unchanged value. A callback refusal
-    /// stops the visit and returns at once. Earlier rows stay written until
-    /// the system returns that error, which refuses the tick, and the abort
-    /// restores every tentative write. A system must not swallow the error.
-    ///
-    /// # Errors
-    ///
-    /// The game callback refuses one row.
-    ///
-    /// # Panics
-    ///
-    /// The query belongs to a different runtime or system callback.
-    pub fn visit<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, E>(
-        &mut self,
-        query: &WriteRead2<T, U>,
-        visit: impl FnMut(Handle, StableId, &mut T, &U) -> Result<bool, E>,
-    ) -> Result<(), E> {
-        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
-        assert_eq!(query.system, self.system, "query belongs to another system");
-        let mut visit = visit;
-        self.world.visit_mut2_if(
-            query.first,
-            query.second,
-            query.indexed,
-            None,
-            self.undo,
-            self.dirty,
-            &mut (),
-            |(), _, _, _, _| true,
-            |(), handle, id, value, read| visit(handle, id, value, read),
-        )
-    }
-
-    /// Visit selected matching rows in deterministic slot order. Selection
-    /// sees immutable values before any preimage copy; unselected rows never
-    /// enter the undo log. Both callbacks share mutable game scratch in order,
-    /// while the selection callback receives it immutably.
-    ///
-    /// # Errors
-    ///
-    /// The game callback refuses one selected row. Return the error to refuse
-    /// the tick: writes made before the refusal are restored only by the abort.
-    ///
-    /// # Panics
-    ///
-    /// The query belongs to a different runtime or system callback.
-    pub fn visit_if<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, C, E>(
-        &mut self,
-        query: &WriteRead2<T, U>,
-        context: &mut C,
-        select: impl FnMut(&C, Handle, StableId, &T, &U) -> bool,
-        visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
-    ) -> Result<(), E> {
-        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
-        assert_eq!(query.system, self.system, "query belongs to another system");
-        self.world.visit_mut2_if(
-            query.first,
-            query.second,
-            query.indexed,
-            None,
-            self.undo,
-            self.dirty,
-            context,
-            select,
-            visit,
-        )
-    }
-
-    /// Visit indexed rows except for selected logical slots. Exclusions are
-    /// mapped into preallocated engine scratch before mutable callbacks begin;
-    /// selected rows retain ascending storage order.
-    ///
-    /// # Errors
-    ///
-    /// The game callback refuses one selected row. Return the error to refuse
-    /// the tick: writes made before the refusal are restored only by the abort.
-    ///
-    /// # Panics
-    ///
-    /// The query is foreign, not indexed, or an excluded slot is out of range.
-    pub fn visit_if_indexed<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, C, E>(
-        &mut self,
-        query: &WriteRead2<T, U>,
-        context: &mut C,
-        exclude: impl FnOnce(&C, &mut dyn FnMut(usize)),
-        select: impl FnMut(&C, Handle, StableId, &T, &U) -> bool,
-        visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
-    ) -> Result<(), E> {
-        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
-        assert_eq!(query.system, self.system, "query belongs to another system");
-        assert!(query.indexed, "query has no active index");
-        self.query_exclusions.clear();
-        exclude(context, &mut |slot| {
-            let row = self
-                .world
-                .row_of_slot(u32::try_from(slot).expect("validated slot"));
-            self.query_exclusions.mark(row);
-        });
-        let result = self.world.visit_mut2_if(
-            query.first,
-            query.second,
-            true,
-            Some(&self.query_exclusions.words),
-            self.undo,
-            self.dirty,
-            context,
-            select,
-            visit,
-        );
-        self.query_exclusions.clear();
-        result
-    }
-
     /// Live entities in the committed world this transaction edits.
     pub fn len(&self) -> usize {
         self.world.len()
@@ -1969,7 +1699,7 @@ impl WorldTxn<'_> {
     ///
     /// # Panics
     ///
-    /// The query is foreign, not indexed, or an excluded slot is out of range.
+    /// The query is foreign or an excluded slot is out of range.
     pub fn visit_chunked_indexed<
         T: Clone + Send + Sync + 'static,
         U: Send + Sync + 'static,
@@ -1986,7 +1716,6 @@ impl WorldTxn<'_> {
     ) -> Result<ChunkedVisit, E> {
         assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
         assert_eq!(query.system, self.system, "query belongs to another system");
-        assert!(query.indexed, "query has no active index");
         self.query_exclusions.clear();
         exclude(context, &mut |slot| {
             let row = self
@@ -2168,45 +1897,6 @@ impl<T: Send + Sync + 'static, U: Send + Sync + 'static> Read2<T, U> {
         assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
         assert!(world.system.is_none_or(|system| system == self.system));
         self.query.visit(world.world, visit);
-    }
-
-    /// Visit query rows with three registered change stamps and the structural
-    /// stamp. Permits are checked once before entering storage-order traversal.
-    ///
-    /// # Panics
-    ///
-    /// A query or permit belongs to another runtime or system callback.
-    pub fn visit_with_changes<
-        A: Send + Sync + 'static,
-        B: Send + Sync + 'static,
-        C: Send + Sync + 'static,
-    >(
-        &mut self,
-        world: &WorldRead<'_>,
-        permits: (&ReadPermit<A>, &ReadPermit<B>, &ReadPermit<C>),
-        mut visit: impl FnMut(Handle, StableId, &T, &U, [u64; 4]),
-    ) {
-        assert_eq!(self.nonce, world.nonce, "query belongs to another runtime");
-        assert!(world.system.is_none_or(|system| system == self.system));
-        for permit in [permits.0.nonce, permits.1.nonce, permits.2.nonce] {
-            assert_eq!(
-                permit, world.nonce,
-                "change permit belongs to another runtime"
-            );
-        }
-        assert!(world.system.is_none_or(|system| {
-            system == permits.0.system && system == permits.1.system && system == permits.2.system
-        }));
-        let components = [
-            permits.0.component,
-            permits.1.component,
-            permits.2.component,
-        ];
-        self.query
-            .visit_rows(world.world, |handle, id, a, b, slot| {
-                let stamps = world.world.change_ticks3_at(slot, components);
-                visit(handle, id, a, b, stamps);
-            });
     }
 
     /// Visit matching entities in stable physical-slot order. Use this for

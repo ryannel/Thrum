@@ -56,14 +56,6 @@ impl<T> TypedUndo<T> {
         self.prior_ticks.push(tick);
     }
 
-    pub(super) fn pop_tentative(&mut self, slot: u32) {
-        let (recorded, _) = self.rows.pop().expect("tentative preimage exists");
-        assert_eq!(recorded, slot, "tentative preimage is the last row");
-        self.prior_ticks
-            .pop()
-            .expect("tentative change tick exists");
-    }
-
     pub(super) fn visit_first_preimages(
         &self,
         seen_words: &mut [u64],

@@ -33,8 +33,6 @@ pub(super) const VIEW_ENTRY: wgpu::BindGroupLayoutEntry = wgpu::BindGroupLayoutE
 /// The forward shader's aerial perspective: terrain-shadowed with the heights, clear without
 /// them, or none without atmosphere lighting.
 pub(super) fn aerial_source(atmosphere: bool, shadowed: bool) -> &'static str {
-    // The tests compare these live pieces with the pre-view source oracle
-    // after restoring the original spelling of the generated constant.
     match (atmosphere, shadowed) {
         (true, true) => concat!(
             wgsl!("synthetic_aerial.wgsl"),

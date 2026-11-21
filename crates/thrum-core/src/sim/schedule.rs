@@ -245,13 +245,6 @@ impl ComponentRegistry {
             storage,
             pending: Box::new(|| Box::new(Pending::<T> { value: None })),
             undo: Box::new(|| Box::new(super::undo::TypedUndo::<T>::new())),
-            empty: Box::new(move || {
-                Box::new(TypedColumn::<T> {
-                    rows: Vec::new(),
-                    snapshot,
-                    nested_bytes,
-                })
-            }),
         });
         Ok(key)
     }
@@ -571,9 +564,6 @@ pub(super) trait SnapshotColumn: Send + Sync {
     fn restore_into(&self, column: &mut dyn StorageColumn, directory: Option<&DenseDirectory>);
     fn clone_box(&self) -> Box<dyn SnapshotColumn>;
     fn copy_from(&mut self, source: &dyn SnapshotColumn);
-    fn clear(&mut self);
-    fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32);
-    fn overlay(&mut self, delta: &dyn SnapshotColumn, changed: &[(u32, u64)]);
     fn as_any(&self) -> &dyn Any;
     fn reserved_bytes(&self) -> usize;
 }
@@ -589,7 +579,7 @@ struct TypedColumn<T> {
 
 impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
     fn hash_presence(&self, hash: &mut dyn std::hash::Hasher) {
-        // Captures and overlays retain canonical logical-slot order. Values
+        // Captures retain canonical logical-slot order. Values
         // remain game-owned; presence is exact authority metadata even when a
         // game's read model supplies a default for a missing component.
         hash.write_usize(self.rows.len());
@@ -639,38 +629,6 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
         );
     }
 
-    fn clear(&mut self) {
-        self.rows.clear();
-    }
-
-    fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32) {
-        let handle = world.handle_at(slot);
-        if let Ok(value) = world.with::<T, _>(handle, |value| (self.snapshot)(value)) {
-            self.rows.push((slot, value));
-        }
-    }
-
-    fn overlay(&mut self, delta: &dyn SnapshotColumn, changed: &[(u32, u64)]) {
-        let delta = delta
-            .as_any()
-            .downcast_ref::<Self>()
-            .expect("same registered schema");
-        for &(slot, _) in changed {
-            let current = self.rows.binary_search_by_key(&slot, |row| row.0);
-            let next = delta.rows.binary_search_by_key(&slot, |row| row.0);
-            match (current, next) {
-                (Ok(at), Ok(from)) => self.rows[at].1 = (self.snapshot)(&delta.rows[from].1),
-                (Err(at), Ok(from)) => self
-                    .rows
-                    .insert(at, (slot, (self.snapshot)(&delta.rows[from].1))),
-                (Ok(at), Err(_)) => {
-                    self.rows.remove(at);
-                }
-                (Err(_), Err(_)) => {}
-            }
-        }
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -711,7 +669,6 @@ pub(super) struct ComponentEntry {
     pub(super) storage: CreateStorage,
     pub(super) pending: Box<dyn Fn() -> Box<dyn PendingValue> + Send + Sync>,
     pub(super) undo: Box<dyn Fn() -> Box<dyn super::undo::UndoColumn> + Send + Sync>,
-    pub(super) empty: Box<dyn Fn() -> Box<dyn SnapshotColumn> + Send + Sync>,
 }
 
 fn capture_component<T: Send + Sync + 'static>(
@@ -778,19 +735,19 @@ mod tests {
     }
 
     #[test]
-    fn noncopy_column_delta_overlays_values_membership_and_independent_copy() {
+    fn noncopy_column_copy_replaces_values_membership_and_clone_stays_independent() {
         let mut baseline = TypedColumn {
             rows: vec![(0, vec![1_u8, 2]), (2, vec![3_u8])],
             snapshot: Vec::clone,
             nested_bytes: Vec::capacity,
         };
         let retained = baseline.clone_box();
-        let delta = TypedColumn {
+        let next = TypedColumn {
             rows: vec![(0, vec![9_u8]), (1, vec![7_u8, 8])],
             snapshot: Vec::clone,
             nested_bytes: Vec::capacity,
         };
-        baseline.overlay(&delta, &[(0, 1), (1, 1), (2, 1)]);
+        baseline.copy_from(&next);
         assert_eq!(baseline.rows, [(0, vec![9]), (1, vec![7, 8])]);
         let original = retained
             .as_any()

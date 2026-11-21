@@ -210,7 +210,7 @@ fn nonfinite_resources_refuse_atomically_after_merges_and_recover() {
         for mode in [ExecutionMode::Serial, ExecutionMode::RayonForced] {
             let (mut runtime, mut game, mut candidate) = setup(in_place);
             runtime.set_execution_mode(mode);
-            // First commit establishes a nonzero endpoint and a useful prior delta.
+            // First commit establishes a nonzero endpoint.
             assert_eq!(runtime.step(&mut game, &mut candidate), Ok(1));
             let before = digest(&runtime, &game);
             let endpoint = runtime.endpoint();
@@ -218,8 +218,6 @@ fn nonfinite_resources_refuse_atomically_after_merges_and_recover() {
             let page = runtime.latest().expect("published page");
             let page_id = page.id();
             let applies = game.applies;
-            let mut delta = runtime.new_delta();
-            runtime.capture_delta_into(&mut delta).expect("prior delta");
             for invalid in [
                 Number::ONE / Number::ZERO,
                 -Number::ONE / Number::ZERO,
@@ -241,9 +239,11 @@ fn nonfinite_resources_refuse_atomically_after_merges_and_recover() {
                     *page.component::<Scalar>(game.handle).expect("component"),
                     Scalar(Number::from_i32(7))
                 );
-                runtime
-                    .capture_delta_into(&mut delta)
-                    .expect("prior delta survives refusal");
+                assert_eq!(
+                    runtime.capture().tick(),
+                    1,
+                    "a capture after refusal names the committed tick"
+                );
             }
             game.next = Number::from_i32(3);
             assert_eq!(runtime.step(&mut game, &mut candidate), Ok(2));

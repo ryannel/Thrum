@@ -68,6 +68,7 @@ impl<T> TypedStore<T> {
         self.values[slot].as_ref()
     }
 
+    #[cfg(test)]
     pub(super) fn get_mut(&mut self, slot: usize) -> Option<&mut T> {
         self.values[slot].as_mut()
     }

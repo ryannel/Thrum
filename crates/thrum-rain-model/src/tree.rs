@@ -9,7 +9,7 @@ use std::collections::BinaryHeap;
 use thrum_water_model::NO_HOLLOW;
 
 pub(crate) mod catchment;
-mod encode;
+mod equality;
 
 pub(crate) use catchment::Catchment;
 

@@ -210,28 +210,20 @@ fn as_u32(v: usize) -> u32 {
     u32::try_from(v).expect("cells fit the profile's count")
 }
 
-impl Catchment {
-    pub(crate) fn to_bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(self.bytes());
-        for &v in &self.z {
-            out.extend_from_slice(&v.to_le_bytes());
-        }
-        for &v in self
-            .start
-            .iter()
-            .chain(&self.open)
-            .chain(&self.shaded_start)
-        {
-            out.extend_from_slice(&v.to_le_bytes());
-        }
-        for &(p, at) in &self.shaded {
-            out.extend_from_slice(&p.to_le_bytes());
-            out.extend_from_slice(&at.to_le_bytes());
-        }
-        for &(h, e) in &self.steps {
-            out.extend_from_slice(&h.to_le_bytes());
-            out.extend_from_slice(&e.to_le_bytes());
-        }
-        out
+/// Catchments are equal when every value is identical, floats bit for bit.
+impl PartialEq for Catchment {
+    fn eq(&self, other: &Self) -> bool {
+        let float_pairs = |a: &[(f64, f64)], b: &[(f64, f64)]| {
+            a.len() == b.len()
+                && a.iter()
+                    .zip(b)
+                    .all(|(x, y)| super::equality::same_floats(&[x.0, x.1], &[y.0, y.1]))
+        };
+        self.start == other.start
+            && super::equality::same_floats(&self.z, &other.z)
+            && self.open == other.open
+            && self.shaded == other.shaded
+            && self.shaded_start == other.shaded_start
+            && float_pairs(&self.steps, &other.steps)
     }
 }

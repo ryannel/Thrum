@@ -261,15 +261,9 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     );
     runtime.publish_initial(&mut game, &mut candidate);
     let baseline = runtime.latest().expect("tick-zero page");
-    let mut rolling = runtime.capture();
-    assert!(rolling.reserved_bytes() >= 1_048_576);
-    assert!(rolling.clone_independent().reserved_bytes() >= 1_048_576);
-    let mut delta_one = runtime.new_delta();
-    let mut delta_two = runtime.new_delta();
-    assert!(matches!(
-        runtime.capture_delta_into(&mut delta_one),
-        Err(RuntimeError::NoCommittedTick)
-    ));
+    let initial = runtime.capture();
+    assert!(initial.reserved_bytes() >= 1_048_576);
+    assert!(initial.clone_independent().reserved_bytes() >= 1_048_576);
     game.reject = true;
     assert_eq!(
         runtime.step(&mut game, &mut candidate),
@@ -285,11 +279,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     assert_eq!(runtime.latest().expect("same page").id().tick, 0);
     game.reject = false;
     assert_eq!(runtime.step(&mut game, &mut candidate), Ok(1));
-    runtime
-        .capture_delta_into(&mut delta_one)
-        .expect("first delta");
-    rolling.advance(&delta_one).expect("contiguous first tick");
-    let branch_point = rolling.clone_independent();
+    let branch_point = runtime.capture();
     assert_eq!(
         runtime.read().with(&game.height_read, first, |h| *h),
         Ok(Height(3.0))
@@ -316,11 +306,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     game.bad_edit = None;
     game.churn = Some((first, StableId(3)));
     assert_eq!(runtime.step(&mut game, &mut candidate), Ok(2));
-    runtime
-        .capture_delta_into(&mut delta_two)
-        .expect("churn delta");
-    rolling.advance(&delta_two).expect("contiguous churn");
-    assert_eq!(rolling.advance(&delta_one), Err(RuntimeError::WrongCapture));
+    let saved = runtime.capture();
     assert!(
         runtime
             .read()
@@ -345,7 +331,6 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Height(1.0),
         "leased baseline stays complete"
     );
-    let saved = rolling;
     runtime
         .step(&mut game, &mut candidate)
         .expect("tick after churn");
@@ -354,11 +339,6 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     runtime
         .restore_published(&saved)
         .expect("same runtime capture");
-    assert_eq!(
-        runtime.capture_delta_into(&mut delta_two),
-        Err(RuntimeError::NoCommittedTick),
-        "restored future edits cannot become a mislabeled delta"
-    );
     runtime.publish_initial(&mut game, &mut candidate);
     runtime
         .step(&mut game, &mut candidate)
@@ -380,24 +360,9 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     runtime
         .step(&mut game, &mut candidate)
         .expect("alternate churn");
-    let mut alternate = runtime.new_delta();
-    runtime
-        .capture_delta_into(&mut alternate)
-        .expect("alternate tick-two delta");
     runtime
         .step(&mut game, &mut candidate)
         .expect("alternate next tick");
-    let mut alternate_next = runtime.new_delta();
-    runtime
-        .capture_delta_into(&mut alternate_next)
-        .expect("alternate tick-three delta");
-    let mut first_branch = branch_point.clone_independent();
-    first_branch.advance(&delta_two).expect("original churn");
-    assert_eq!(
-        first_branch.advance(&alternate_next),
-        Err(RuntimeError::WrongCapture),
-        "a numerically adjacent tick from another branch is not contiguous"
-    );
     assert_optional_component_history(&mut runtime, &mut game, &mut candidate);
     assert_coalesced_optional_component_history(&mut runtime, &mut game, &mut candidate);
     assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
@@ -516,7 +481,6 @@ fn assert_optional_component_history(
     candidate: &mut Candidate,
 ) {
     let handle = runtime.handle(StableId(2)).expect("unchanged entity");
-    let before = runtime.capture();
     game.optional_edit = Some((handle, true));
     runtime.step(game, candidate).expect("insert optional tag");
     let inserted = runtime.capture();
@@ -524,14 +488,8 @@ fn assert_optional_component_history(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
         Ok(Tag(7))
     );
-    let mut insert_delta = runtime.new_delta();
     runtime
-        .capture_delta_into(&mut insert_delta)
-        .expect("insert delta");
-    let mut replayed = before.clone_independent();
-    replayed.advance(&insert_delta).expect("apply insert delta");
-    runtime
-        .restore_published(&replayed)
+        .restore_published(&inserted)
         .expect("restore inserted tag");
     assert_eq!(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
@@ -540,17 +498,13 @@ fn assert_optional_component_history(
     runtime.publish_initial(game, candidate);
     game.optional_edit = Some((handle, false));
     runtime.step(game, candidate).expect("remove optional tag");
-    let mut remove_delta = runtime.new_delta();
-    runtime
-        .capture_delta_into(&mut remove_delta)
-        .expect("remove delta");
-    replayed.advance(&remove_delta).expect("apply remove delta");
+    let removed = runtime.capture();
     assert_eq!(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
         Err(RegisteredWorldError::MissingComponent)
     );
     runtime
-        .restore_published(&replayed)
+        .restore_published(&removed)
         .expect("restore removed tag");
     assert_eq!(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),

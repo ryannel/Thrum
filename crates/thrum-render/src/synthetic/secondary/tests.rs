@@ -35,25 +35,6 @@ fn secondary_fragment_variants_validate_with_the_shared_shading_source() {
     }
 }
 
-#[test]
-fn main_shadowed_decoder_is_byte_identical_to_the_pre_view_oracle() {
-    assert_eq!(
-        crate::synthetic::air_shadow::aerial_source(true, true)
-            .strip_suffix("\n// thrum-wgsl-end\n")
-            .expect("end of camera decoder")
-            .replace("\n// thrum-wgsl-source: synthetic_aerial_visibility.wgsl\n", "")
-            .replace("\n// thrum-wgsl-end\n\n// thrum-wgsl-source: synthetic_aerial_camera_shadowed.wgsl\n", "")
-            .replace(
-                "dot(delta.rgb, REC709_LUMA)",
-                "dot(delta.rgb, vec3(0.2126, 0.7152, 0.0722))",
-            ),
-        concat!(
-            crate::shaders::wgsl!("synthetic_aerial.wgsl"),
-            "\n",
-            include_str!("../../synthetic_aerial_shadowed.wgsl")
-        )
-    );
-}
 impl SceneContribution for Asker {
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {

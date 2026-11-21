@@ -169,19 +169,6 @@ impl DenseDirectory {
         })
     }
 
-    /// Reapplies a recorded transition from its prior layout. Records must be
-    /// replayed in their original order against an identical starting layout;
-    /// component columns must apply the same swaps.
-    pub(super) fn replay(&mut self, swap: RowSwap) {
-        assert_eq!(
-            self.active_len, swap.previous_active_len,
-            "layout replay starts at the recorded active prefix"
-        );
-        self.swap_rows(swap.row, swap.boundary_row);
-        self.layout_id = next_layout_id();
-        self.active_len = swap.resulting_active_len;
-    }
-
     /// Restores the exact prior row order and membership. Records must be
     /// replayed in reverse order against the directory that produced them;
     /// component columns must reverse the same swaps before reuse.
@@ -283,23 +270,6 @@ mod tests {
         assert_layout(&directory, 0, &[1, 0, 3, 2, 4]);
         directory.transition(4, true).expect("reused slot");
         assert_layout(&directory, 1, &[4, 0, 3, 2, 1]);
-    }
-
-    #[test]
-    fn forward_replay_matches_transitions_and_undo_restores_the_start() {
-        let mut source = DenseDirectory::new(5);
-        let mut replayed = source.clone();
-        let mut records = Vec::new();
-        for (slot, active) in [(0, true), (4, true), (0, false), (4, false)] {
-            let record = source.transition(slot, active).expect("membership change");
-            replayed.replay(record);
-            assert_layout(&replayed, source.active_len(), &source.row_to_slot);
-            records.push(record);
-        }
-        for record in records.into_iter().rev() {
-            replayed.undo(record);
-        }
-        assert_layout(&replayed, 0, &[0, 1, 2, 3, 4]);
     }
 
     #[test]
