@@ -705,7 +705,7 @@ impl CheckRecord {
             let mut alone: Vec<&str> = strip_filters(args);
             alone.extend_from_slice(&["-E", &filter, "--test-threads", "1"]);
             let (_, xml) = run_nextest(junit, &alone)?;
-            let alone_times = xml.as_deref().map(junit_times).unwrap_or_default();
+            let alone_times = xml.as_deref().map_or_else(Vec::new, junit_times);
             again = reruns(&stopped, &alone_times);
             let mut out = std::io::stdout().lock();
             for rerun in again.iter().filter(|rerun| !rerun.passed) {
@@ -790,8 +790,10 @@ impl CheckRecord {
                 writeln!(out, "  {:>8.1} s  {}", test.seconds, label(test))?;
             }
         }
-        for line in rerun_lines(&self.reruns) {
-            writeln!(out, "{line}")?;
+        if !self.tests.is_empty() {
+            for line in rerun_lines(&self.reruns) {
+                writeln!(out, "{line}")?;
+            }
         }
         for line in summed_times(&self.tests) {
             writeln!(out, "{line}")?;
