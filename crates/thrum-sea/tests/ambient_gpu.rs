@@ -1,9 +1,5 @@
 //! Metal ambient field conformance.
-#[expect(
-    dead_code,
-    reason = "shared harness includes other independent sea oracles"
-)]
-mod support;
+use crate::support;
 
 // The full grid at each clock age is one test, so the runner spreads them over the cores. The
 // frame script this test also ran is `frames_gpu`'s test, which ran the same function.

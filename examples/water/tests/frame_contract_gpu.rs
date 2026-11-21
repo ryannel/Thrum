@@ -1,6 +1,6 @@
 //! Submitted depth, motion and reset behavior against the independent f64 model.
 #[cfg(target_os = "macos")]
-mod support;
+use crate::support;
 use thrum_render::{contribution::SceneContributions, synthetic::Reconstruction};
 thrum_test_support::macos_gpu_test! {
 #[expect(

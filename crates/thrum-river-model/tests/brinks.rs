@@ -8,7 +8,7 @@
     clippy::unwrap_used,
     reason = "test arithmetic over cell indices; the test reports what it found"
 )]
-mod support;
+use crate::support;
 use support::fall::{Cliff, Foot, LIP, WIDTH, channel};
 use thrum_river_model::{Grid, Profile, Side, brinks, solve};
 

@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Deterministic derived circle queries"
+autotests = false
 
 [lints]
 workspace = true
@@ -14,3 +15,15 @@ thrum-core = { path = "../thrum-core" }
 
 [dev-dependencies]
 thrum-test-support = { path = "../thrum-test-support" }
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+# A target of its own: it sets its binary's global allocator, so it runs apart; run by name from
+# scripts/sim2d_conformance.py.
+[[test]]
+name = "allocations"
+path = "tests/allocations.rs"

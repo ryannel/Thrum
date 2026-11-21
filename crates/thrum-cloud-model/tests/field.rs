@@ -1,5 +1,5 @@
 //! Monotonic weather coverage across the supplied type axis.
-pub mod support;
+use crate::support;
 use support::{field, parameters};
 use thrum_cloud_model::Column;
 

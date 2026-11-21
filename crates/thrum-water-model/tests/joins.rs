@@ -1,5 +1,5 @@
 //! Joined rows, stages, reach and the complete limited surface at shallow/deep ends.
-mod support;
+use crate::support;
 use support::fixtures::{close, field, grid, profile};
 use thrum_water_model::{BodyKind, Map, MapSample, limit};
 

@@ -22,60 +22,8 @@ workspace = true
 name = "valley_cost"
 path = "tests/support/valley_cost.rs"
 
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
 [[test]]
-name = "chart"
-path = "tests/chart.rs"
-[[test]]
-name = "closed_forms"
-path = "tests/closed_forms.rs"
-[[test]]
-name = "energy"
-path = "tests/energy.rs"
-[[test]]
-name = "fronts"
-path = "tests/fronts.rs"
-[[test]]
-name = "report"
-path = "tests/report.rs"
-[[test]]
-name = "store"
-path = "tests/store.rs"
-[[test]]
-name = "valley"
-path = "tests/valley.rs"
-[[test]]
-name = "brinks"
-path = "tests/brinks.rs"
-[[test]]
-name = "falls"
-path = "tests/falls.rs"
-[[test]]
-name = "brink_end"
-path = "tests/brink_end.rs"
-[[test]]
-name = "sheet"
-path = "tests/sheet.rs"
-[[test]]
-name = "plunge"
-path = "tests/plunge.rs"
-[[test]]
-name = "samples"
-path = "tests/samples.rs"
-[[test]]
-name = "gauge"
-path = "tests/gauge.rs"
-[[test]]
-name = "fall_gauge"
-path = "tests/fall_gauge.rs"
-[[test]]
-name = "wetting"
-path = "tests/wetting.rs"
-[[test]]
-name = "chop"
-path = "tests/chop.rs"
-[[test]]
-name = "flow_bands"
-path = "tests/flow_bands.rs"
-[[test]]
-name = "conformance"
-path = "tests/conformance.rs"
+name = "it"
+path = "tests/it.rs"

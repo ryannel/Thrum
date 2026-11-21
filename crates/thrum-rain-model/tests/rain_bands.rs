@@ -5,7 +5,7 @@
 //! profile's count; the drops below the cut add their squared slope to the moments over
 //! the same history; the gain is exposure times the depth response on every body; and
 //! with no rain bands every answer is the same to the bit.
-pub mod support;
+use crate::support;
 use std::sync::Arc;
 use support::{mm_h, pair, prepare};
 use thrum_rain_model::{Canopy, Profile, RainState, RingProfile, Shelter};

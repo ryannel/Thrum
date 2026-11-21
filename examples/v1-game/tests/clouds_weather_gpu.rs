@@ -1,7 +1,7 @@
 //! The authored fair-weather fixture at the same numerical bounds as Chrome.
 /// Shared native diagnostic device policy.
 #[cfg(target_os = "macos")]
-pub mod support;
+use crate::support;
 
 #[cfg(target_os = "macos")]
 #[test]

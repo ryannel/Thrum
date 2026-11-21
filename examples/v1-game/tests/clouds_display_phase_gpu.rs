@@ -1,5 +1,5 @@
 //! Submitted game frames interpolate shade without refreshing its products.
-pub mod support;
+use crate::support;
 
 use std::{
     sync::mpsc,

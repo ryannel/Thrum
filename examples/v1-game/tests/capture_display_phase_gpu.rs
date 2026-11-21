@@ -1,5 +1,5 @@
 //! Realtime T2 submitted images from the ordinary V1 offscreen runner.
-pub mod support;
+use crate::support;
 #[cfg(target_os = "macos")]
 use std::time::{Duration, Instant};
 #[cfg(target_os = "macos")]

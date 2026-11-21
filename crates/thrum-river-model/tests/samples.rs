@@ -3,7 +3,7 @@
 //! gauge level, and the river reports the range of its gauge. Below a lake with a sill the
 //! discharge rises with the level at every sample, and between the lowest and the highest it
 //! grows as the head over the sill to a power between 1.3 and 2.
-mod support;
+use crate::support;
 use support::lake::{HIGH, SILL, lake};
 use support::valley::{DISCHARGE, valley};
 use thrum_river_model::{Profile, key_for_samples, sample_levels, solve_samples, write};

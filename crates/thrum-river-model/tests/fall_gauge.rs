@@ -14,7 +14,7 @@
     clippy::float_cmp,
     reason = "test arithmetic; the test reports what it checked"
 )]
-mod support;
+use crate::support;
 use support::lake::{BANKS, FOOT, RANGE, lower_sample, sampled, unjoined, water};
 use thrum_river_model::Grid;
 use thrum_water_model::{Below, Fall, FallSegment, Map, PlungeProfile, RiverFile, SheetProfile};

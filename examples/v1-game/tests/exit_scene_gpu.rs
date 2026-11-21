@@ -20,12 +20,7 @@ use v1_game::{GameContent, GameHost, GameScene, GameSetup, GameWorld, MeshRowSou
 
 type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
 
-#[expect(
-    dead_code,
-    unreachable_pub,
-    reason = "this test only needs the common surface helper"
-)]
-mod support;
+use crate::support;
 
 const EXTENT: [u32; 2] = [1280, 720];
 const MESHES: [&str; 5] = [

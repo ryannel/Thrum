@@ -1,5 +1,5 @@
 //! Stage connectivity and clamping.
-mod support;
+use crate::support;
 use support::fixtures::{body, close, grid, profile};
 use thrum_water_model::{BodyKind, Map, Stage};
 

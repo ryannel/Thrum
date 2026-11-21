@@ -1,5 +1,7 @@
 # The test runner's configuration for `./dev check`, which runs every test in a process of its
 # own, side by side across every test binary (ORCHESTRATE.md, Test tiers; GATE-TIME mechanism 8).
+# A package's test files are modules of one test target, `it` (GATE-TIME mechanism 10), so a filter
+# selects a file's tests in it by their module, as `binary(=it) & test(/^<file>::/)`.
 # A test relies on no other test of its binary having run and on no static it shares with one. A
 # test that needs a device to itself joins a group below, and one that starts a thread pool is
 # counted as heavy, in the landing that adds it.
@@ -53,7 +55,7 @@ filter = 'package(v1-game) & binary(=frame_alloc)'
 test-group = 'frame-alloc'
 
 [[profile.default.overrides]]
-filter = 'package(v1-game) & (binary(=cooked_rows_gpu) | binary(=lent_products_gpu))'
+filter = 'package(v1-game) & binary(=it) & (test(/^cooked_rows_gpu::/) | test(/^lent_products_gpu::/))'
 test-group = 'game-cooked-content'
 
 [[profile.default.overrides]]
@@ -62,7 +64,7 @@ test-group = 'foam-scene'
 
 [[profile.default.overrides]]
 # One live interaction fixture at a time: a Metal device and several full-grid buffers each.
-filter = 'package(thrum-water) & (binary(=interaction_gpu) | binary(=foam_gpu))'
+filter = 'package(thrum-water) & (binary(=interaction_gpu) | (binary(=it) & test(/^foam_gpu::/)))'
 test-group = 'water-interaction'
 
 [[profile.default.overrides]]
@@ -85,8 +87,8 @@ threads-required = 4
 # GATE-TIME M3.
 filter = '''
     (binary_id(=water-scene::foam_scene_gpu) & test(=ten_minutes_moored_and_wind_sweep))
-  | (binary_id(=water-scene::wake_scene_gpu) & test(=moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity))
-  | (binary_id(=water-scene::wake_scene_gpu) & test(=moored_craft_keeps_its_draft_when_only_one_level_admits_pressure))
-  | (binary_id(=water-scene::wake_scene_gpu) & test(=float_twenty_metres_off_track_responds_to_the_public_query))
+  | (binary_id(=water-scene::it) & test(=wake_scene_gpu::moored_craft_keeps_its_draft_and_refuses_reactions_by_capacity))
+  | (binary_id(=water-scene::it) & test(=wake_scene_gpu::moored_craft_keeps_its_draft_when_only_one_level_admits_pressure))
+  | (binary_id(=water-scene::it) & test(=wake_scene_gpu::float_twenty_metres_off_track_responds_to_the_public_query))
 '''
 slow-timeout = { period = "10s" }

@@ -1,6 +1,6 @@
 //! Three deterministic days driven by supplied solar elevation.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{GroundState, State};
 
 fn days(dt: f64, coverage: f64, wind: f64, moisture: f64) -> (Vec<(f64, f64)>, State) {

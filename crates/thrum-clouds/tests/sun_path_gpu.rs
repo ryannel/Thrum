@@ -1,5 +1,5 @@
 //! Sun-path conformance and far-value reduction on mac-metal.
-mod support;
+use crate::support;
 
 #[test]
 #[cfg(target_os = "macos")]

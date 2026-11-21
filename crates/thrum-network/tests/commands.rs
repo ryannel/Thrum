@@ -1,6 +1,6 @@
 //! Reliable commands are ordered authority input even when timed actions miss.
 /// The shared integer rule set and carrier fixture.
-pub mod support;
+use crate::support;
 
 use support::{Match, local, shaped};
 use thrum_network::session::{Controls, Disposition, Input, World};

@@ -1,5 +1,5 @@
 //! Linear theory's break depth, independently from group velocity and dispersion.
-mod support;
+use crate::support;
 use std::f64::consts::TAU;
 use support::shore::wave_number;
 use thrum_water_model::shoaling;

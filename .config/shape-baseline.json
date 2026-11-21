@@ -29,7 +29,7 @@
         "crates/thrum-asset-gpu/Cargo.toml": 1,
         "crates/thrum-asset/tests/dev_server_wasm.rs": 1,
         "crates/thrum-cook/tests/edit_to_visible/bench.rs": 1,
-        "crates/thrum-cook/tests/edit_to_visible/main.rs": 2,
+        "crates/thrum-cook/tests/edit_to_visible/mod.rs": 2,
         "crates/thrum-core/tests/a1_schedule.rs": 1,
         "crates/thrum-core/tests/g2_edit_ownership.rs": 1,
         "crates/thrum-core/tests/g2_runtime.rs": 1,
@@ -177,7 +177,7 @@
     "test-binary": {
       "version": 2,
       "files": {
-        ".config/unplanned-test-binaries.txt": 45
+        ".config/unplanned-test-binaries.txt": 15
       }
     },
     "test-crate-edges": {

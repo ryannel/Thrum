@@ -1,5 +1,5 @@
 //! Clear-air range is an ordinary ramped weather control.
-pub mod support;
+use crate::support;
 use thrum_cloud_model::{GroundState, aerosol_extinction, visual_range};
 
 #[test]

@@ -1,5 +1,5 @@
 //! Whitewater transport and endpoint transitions on the submitted Metal field.
-mod interaction_fixture;
+use crate::interaction_fixture;
 
 use interaction_fixture::{Fixture, current, terrain};
 use thrum_sea_model::Component;

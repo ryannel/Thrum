@@ -5,7 +5,7 @@
 //! M2.9: with rain bands on the hollows body, the harness reports nothing for the model
 //! against itself, and reports a provider that ignores exposure by the points under the
 //! roof where rings stand and by the differences there.
-pub mod support;
+use crate::support;
 use std::sync::Arc;
 use support::{mm_h, pair, prepare};
 use thrum_rain_model::{

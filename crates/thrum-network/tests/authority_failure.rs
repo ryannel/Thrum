@@ -1,6 +1,6 @@
 //! Runtime refusal terminates authority without publishing a set for that tick.
 /// The shared integer rule set and carrier fixture.
-pub mod support;
+use crate::support;
 
 use support::{Failure, Match, local};
 use thrum_core::sim::TickError;

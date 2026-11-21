@@ -12,7 +12,7 @@
     clippy::cast_precision_loss,
     reason = "test arithmetic; the test reports what it checked"
 )]
-mod support;
+use crate::support;
 use support::lake::{CENTRE, FOOT, HIGH, RANGE, basin, bed_of, chart_body, sampled};
 use thrum_river_model::Grid;
 use thrum_sea_model::{Component, LongWaves};

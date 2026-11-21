@@ -1,7 +1,7 @@
 //! M1.2: the point test is exact. On 200 seeded beds and fills, the cells where a hollow's
 //! level stands above the cell's bed are the cells a flood from the pits reaches under the
 //! same levels. The flood is the test's own and starts from pits only.
-pub mod support;
+use crate::support;
 use support::{Lcg, flood_from_pits, mm_h, pits, prepare, random_bed};
 use thrum_rain_model::{GroundClass, Rain, RainState, TickReport};
 use thrum_water_model::NO_HOLLOW;

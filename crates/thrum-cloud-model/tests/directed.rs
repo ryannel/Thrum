@@ -1,5 +1,5 @@
 //! Directed authority: ramps, additive columns, rejection and travel round-trip.
-pub mod support;
+use crate::support;
 use support::{close, directed, field, parameters, shape};
 use thrum_cloud_model::{Error, State};
 

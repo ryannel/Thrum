@@ -1,6 +1,6 @@
 //! The game applies public water query answers to its rigid bodies on Metal.
 #[cfg(target_os = "macos")]
-mod support;
+use crate::support;
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

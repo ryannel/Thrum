@@ -1,7 +1,7 @@
 //! Default WebGPU limits on the Metal target.
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction};
 
-mod support;
+use crate::support;
 
 // The frame script, the full grid at each clock age and the refusals under default WebGPU
 // limits are each one test, so the runner spreads them over the cores.

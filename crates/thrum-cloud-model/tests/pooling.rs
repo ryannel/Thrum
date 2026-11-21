@@ -1,6 +1,6 @@
 //! Independent relief, including a narrow ridge wholly inside the datum window.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{Density, Surface, SurfacePoint};
 
 #[test]

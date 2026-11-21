@@ -1,6 +1,6 @@
 //! The same game-owned forces on the lake and in a prepared chart.
 #[cfg(target_os = "macos")]
-mod support;
+use crate::support;
 
 use glam::DVec3;
 use std::{
@@ -23,8 +23,9 @@ fn lake_remains_sheltered_in_the_gale_and_settles_in_calm() {
     ) else {
         return;
     };
+    // The test's name in the package's `it` binary, which the child process runs by.
     support::island::with_cooked_island(
-        "lake_remains_sheltered_in_the_gale_and_settles_in_calm",
+        "inland_floating_gpu::lake_remains_sheltered_in_the_gale_and_settles_in_calm",
         || {
             for wind in [Wind::Calm, Wind::Gale] {
                 let scene =

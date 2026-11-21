@@ -4,7 +4,7 @@
 //! steepest slope; a pattern's lows take the surface water first. And part 5's bound:
 //! ground that 0.4 of the rain reaches, read between the stores, against that ground
 //! stepped by itself.
-pub mod support;
+use crate::support;
 use support::mm_h;
 use thrum_rain_model::{
     Canopy, GroundClass, GroundStores, Profile, Rain, Shelter, WetPoint, Wetness, wetness,

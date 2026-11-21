@@ -6,7 +6,7 @@
     clippy::cast_sign_loss,
     reason = "cell indices of positive extents"
 )]
-mod support;
+use crate::support;
 use support::{section, valley};
 use thrum_river_model::{Profile, Solution, solve};
 

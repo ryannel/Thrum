@@ -1,5 +1,5 @@
 //! Submitted V1 effect times, independently checked against consumed targets.
-pub mod support;
+use crate::support;
 #[cfg(target_os = "macos")]
 use std::time::{Duration, Instant};
 #[cfg(target_os = "macos")]

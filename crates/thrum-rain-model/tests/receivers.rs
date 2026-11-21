@@ -4,7 +4,7 @@
 //! exposure from the shelters' rectangles, without the model. A low shelter stands in the
 //! bowl, so the water rises from under it to over it: rain on water is stopped first by what
 //! is above the water's surface, and rain on bare ground by what is above the ground.
-pub mod support;
+use crate::support;
 use support::{ground, mm_h};
 use thrum_rain_model::{Canopy, GroundClass, Profile, Rain, RainState, Shelter, TickReport, Tree};
 

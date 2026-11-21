@@ -1,5 +1,5 @@
 //! Validate every index of the table, and retain M1's swash closed form.
-mod support;
+use crate::support;
 use std::f64::consts::TAU;
 use support::fixtures::{body, field, grid, profile};
 use thrum_water_model::{BodyKind, BreakerSection, Map, SectionPoint, SurfProfile};

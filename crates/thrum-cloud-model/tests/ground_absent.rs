@@ -1,6 +1,6 @@
 //! Optional ground inputs preserve existing calls, not stored expected numbers.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{Density, Weather};
 
 #[test]

@@ -1,5 +1,5 @@
 //! Temporal and spatial convergence rejects a cell that switches on or off.
-pub mod support;
+use crate::support;
 use support::parameters;
 use thrum_cloud_model::{Column, Field, Profile, Type};
 

@@ -5,7 +5,7 @@
     clippy::cast_possible_truncation,
     reason = "test counts of cells, hollows and nodes are far below u32::MAX"
 )]
-pub mod support;
+use crate::support;
 use std::collections::{BTreeSet, VecDeque};
 use support::{Lcg, design_bed, ground, minimax_from, pits, prepare};
 use thrum_rain_model::{Canopy, Ground, Profile, Tree};

@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Application shells shared by Thrum games: the native macOS window, display link and render owner, and the browser WebGPU canvas shell"
+autotests = false
 
 [dependencies]
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
@@ -49,3 +50,9 @@ zstd = { version = "=0.13.3", default-features = false, features = ["zstdmt"] }
 
 [lints]
 workspace = true
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"

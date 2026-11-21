@@ -2,7 +2,7 @@
 //! expected time and fill is worked out here from the class's rates, as parts 5 and 8 of
 //! the design proofs work them, and not read from the model; and the water account closes
 //! with the stores, the marks' transfers and the pores under the marks in it.
-pub mod support;
+use crate::support;
 use support::{design_bed, mm_h};
 use thrum_rain_model::{
     Canopy, GroundClass, GroundStores, Profile, REACHES, Rain, RainState, Shelter, TickReport, Tree,

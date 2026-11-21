@@ -1,5 +1,5 @@
 //! A growing turret's clearing is continuous in the public point query.
-pub mod support;
+use crate::support;
 
 use thrum_cloud_model::Column;
 

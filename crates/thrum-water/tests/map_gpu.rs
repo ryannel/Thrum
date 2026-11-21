@@ -1,5 +1,5 @@
 //! Camera-free Metal proof of the map sampled by the surface shader.
-mod probe_support;
+use crate::probe_support;
 use probe_support as support;
 
 #[test]

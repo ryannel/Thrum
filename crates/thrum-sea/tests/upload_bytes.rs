@@ -1,9 +1,5 @@
 //! Count the queue's upload bytes and exercise persistence across compute and dropped encoders.
-#[expect(
-    dead_code,
-    reason = "shared Metal harness also supports other field oracles"
-)]
-mod support;
+use crate::support;
 use std::fmt::Write as _;
 
 fn record(h: &mut support::Harness, label: &str, changed: bool, queries: usize) {

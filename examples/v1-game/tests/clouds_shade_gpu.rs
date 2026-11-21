@@ -1,5 +1,5 @@
 //! The real game's atmosphere consumes a GPU-written optical-depth field.
-pub mod support;
+use crate::support;
 
 use std::time::Duration;
 use thrum_render::runtime::FrameConfig;

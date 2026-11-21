@@ -11,10 +11,9 @@
 #![expect(
     clippy::unwrap_used,
     clippy::float_cmp,
-    clippy::cast_precision_loss,
     reason = "test arithmetic; the test reports what it checked"
 )]
-mod support;
+use crate::support;
 use support::lake::{BANKS, CENTRE, HIGH, WATER, bed_of, chart_body, lake, water};
 use support::valley::{DISCHARGE, LAKE, valley};
 use thrum_river_model::{Profile, Samples, key, key_for_samples, solve, solve_samples};

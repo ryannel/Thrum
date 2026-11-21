@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+autotests = false
 description = "Thrum's typed GPU graph and prepared synthetic renderer foundation"
 
 [lints]
@@ -46,6 +47,11 @@ pollster = "=1.0.1"
 tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 
+# Every test file here is a target of its own, not a module of one `it` target (GATE-TIME mechanism
+# 10): the main-tier list's `creation-counters` line runs every test binary of this package through
+# `cargo test`, where a binary's tests share one process and its device. The shared fixtures
+# `support.rs`, `ray_support.rs` and `ray_shadow_support.rs` hold no test, so they are modules of
+# the files that use them and not targets.
 [[test]]
 name = "graph_kinds"
 path = "tests/graph_kinds_support/graph_kinds.rs"
@@ -53,3 +59,231 @@ path = "tests/graph_kinds_support/graph_kinds.rs"
 [[test]]
 name = "effect_state"
 path = "tests/graph_kinds_support/effect_state.rs"
+
+[[test]]
+name = "atmosphere_stage_table"
+path = "tests/atmosphere_stage_table.rs"
+
+[[test]]
+name = "contracts"
+path = "tests/contracts.rs"
+
+[[test]]
+name = "culling_selection"
+path = "tests/culling_selection.rs"
+
+[[test]]
+name = "culling_temporal"
+path = "tests/culling_temporal.rs"
+
+[[test]]
+name = "device_fault"
+path = "tests/device_fault.rs"
+
+[[test]]
+name = "device_recipe"
+path = "tests/device_recipe.rs"
+
+[[test]]
+name = "extract"
+path = "tests/extract.rs"
+
+[[test]]
+name = "far_aerial_gpu"
+path = "tests/far_aerial_gpu.rs"
+
+[[test]]
+name = "frame_error_kinds"
+path = "tests/frame_error_kinds.rs"
+
+[[test]]
+name = "generation_transition"
+path = "tests/generation_transition.rs"
+
+[[test]]
+name = "gpu"
+path = "tests/gpu.rs"
+
+[[test]]
+name = "light_records"
+path = "tests/light_records.rs"
+
+[[test]]
+name = "mesh_stage_request_gpu"
+path = "tests/mesh_stage_request_gpu.rs"
+
+[[test]]
+name = "native_segment"
+path = "tests/native_segment/main.rs"
+
+[[test]]
+name = "pass_keys"
+path = "tests/pass_keys.rs"
+
+[[test]]
+name = "ray_instances_seam"
+path = "tests/ray_instances_seam.rs"
+
+[[test]]
+name = "ray_lamp_shadow_gpu"
+path = "tests/ray_lamp_shadow_gpu.rs"
+
+[[test]]
+name = "ray_request_gpu"
+path = "tests/ray_request_gpu.rs"
+
+[[test]]
+name = "ray_shadow_band_gpu"
+path = "tests/ray_shadow_band_gpu.rs"
+
+[[test]]
+name = "ray_shadow_cases_gpu"
+path = "tests/ray_shadow_cases_gpu.rs"
+
+[[test]]
+name = "ray_shadow_passes_gpu"
+path = "tests/ray_shadow_passes_gpu.rs"
+
+[[test]]
+name = "ray_shadow_prepared_gpu"
+path = "tests/ray_shadow_prepared_gpu.rs"
+
+[[test]]
+name = "ray_shadow_selection_gpu"
+path = "tests/ray_shadow_selection_gpu.rs"
+
+[[test]]
+name = "ray_structure_absent_gpu"
+path = "tests/ray_structure_absent_gpu.rs"
+
+[[test]]
+name = "ray_structure_cost_gpu"
+path = "tests/ray_structure_cost_gpu.rs"
+
+[[test]]
+name = "ray_structure_gpu"
+path = "tests/ray_structure_gpu.rs"
+
+[[test]]
+name = "ray_structure_lifecycle_gpu"
+path = "tests/ray_structure_lifecycle_gpu.rs"
+
+[[test]]
+name = "ray_structure_movers_gpu"
+path = "tests/ray_structure_movers_gpu.rs"
+
+[[test]]
+name = "scene_2d"
+path = "tests/scene_2d.rs"
+
+[[test]]
+name = "scene_2d_lifecycle"
+path = "tests/scene_2d_lifecycle.rs"
+
+[[test]]
+name = "scene_view_absent_gpu"
+path = "tests/scene_view_absent_gpu.rs"
+
+[[test]]
+name = "scene_view_admission"
+path = "tests/scene_view_admission.rs"
+
+[[test]]
+name = "scene_view_air_gpu"
+path = "tests/scene_view_air_gpu.rs"
+
+[[test]]
+name = "scene_view_air_shaded_gpu"
+path = "tests/scene_view_air_shaded_gpu.rs"
+
+[[test]]
+name = "scene_view_clip_gpu"
+path = "tests/scene_view_clip_gpu.rs"
+
+[[test]]
+name = "scene_view_equal_gpu"
+path = "tests/scene_view_equal_gpu.rs"
+
+[[test]]
+name = "scene_view_frame_gpu"
+path = "tests/scene_view_frame_gpu.rs"
+
+[[test]]
+name = "scene_view_independent_gpu"
+path = "tests/scene_view_independent_gpu.rs"
+
+[[test]]
+name = "scene_view_offscreen_gpu"
+path = "tests/scene_view_offscreen_gpu.rs"
+
+[[test]]
+name = "scene_view_optin_gpu"
+path = "tests/scene_view_optin_gpu.rs"
+
+[[test]]
+name = "scene_view_pair_gpu"
+path = "tests/scene_view_pair_gpu.rs"
+
+[[test]]
+name = "scene_view_seam"
+path = "tests/scene_view_seam.rs"
+
+[[test]]
+name = "scene_view_shadow_gpu"
+path = "tests/scene_view_shadow_gpu.rs"
+
+[[test]]
+name = "scene_view_vertical_gpu"
+path = "tests/scene_view_vertical_gpu.rs"
+
+[[test]]
+name = "sprite_band"
+path = "tests/sprite_band.rs"
+
+[[test]]
+name = "sprite_blend"
+path = "tests/sprite_blend.rs"
+
+[[test]]
+name = "sprite_colour"
+path = "tests/sprite_colour.rs"
+
+[[test]]
+name = "sprite_exact"
+path = "tests/sprite_exact.rs"
+
+[[test]]
+name = "sprite_order"
+path = "tests/sprite_order.rs"
+
+[[test]]
+name = "sprite_rows"
+path = "tests/sprite_rows.rs"
+
+[[test]]
+name = "surface_fault"
+path = "tests/surface_fault.rs"
+
+[[test]]
+name = "timing_categories"
+path = "tests/timing_categories.rs"
+
+[[test]]
+name = "upload_gpu"
+path = "tests/upload_gpu.rs"
+
+[[test]]
+name = "visibility"
+path = "tests/visibility.rs"
+
+[[test]]
+name = "visibility_buckets"
+path = "tests/visibility_buckets/main.rs"
+
+[[test]]
+name = "wgsl_records"
+path = "tests/wgsl_records.rs"
+
+[[test]]
+name = "wgsl_single_declaration"
+path = "tests/wgsl_single_declaration.rs"

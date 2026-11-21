@@ -1,5 +1,5 @@
 //! Atomic profile refusal through a registered rule and ordinary runtime commit.
-mod profile_game;
+use super::profile_game;
 use profile_game as support;
 use thrum_core::{
     profile::Number,

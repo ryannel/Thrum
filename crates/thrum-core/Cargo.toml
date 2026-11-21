@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Thrum's shared simulation identities, clock and provisional world"
+autotests = false
 
 [lints]
 workspace = true
@@ -30,14 +31,23 @@ name = "v1_workload"
 path = "tests/support/workload_bench.rs"
 harness = false
 
+# A target of its own: it sets its binary's global allocator, so it runs apart.
 [[test]]
 name = "v1_workload"
 path = "tests/support/workload_test.rs"
 
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
 [[test]]
-name = "profile_refusal"
-path = "tests/support/profile_refusal.rs"
+name = "it"
+path = "tests/it.rs"
 
+# A target of its own: its check is named by open items HOST M5.2, REVIEW-RENDER M4.2.
 [[test]]
-name = "world_digest"
-path = "tests/support/world_digest.rs"
+name = "error_types"
+path = "tests/error_types.rs"
+
+# A target of its own: it sets its binary's global allocator, so it runs apart.
+[[test]]
+name = "world_image_untrusted"
+path = "tests/world_image_untrusted/main.rs"

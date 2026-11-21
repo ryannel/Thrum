@@ -1,6 +1,6 @@
 //! Cooked pattern editing, submission and a replacement on the actual Metal scene.
 #[cfg(target_os = "macos")]
-mod support;
+use crate::support;
 
 use std::path::PathBuf;
 use thrum_cook::{CookConfig, Cooker, Durability, Quality};
@@ -47,7 +47,8 @@ fn cooked_pattern_is_lent_and_invalidates_at_submission() {
     let status = std::process::Command::new(std::env::current_exe().expect("lease test binary"))
         .args([
             "--exact",
-            "cooked_pattern_is_lent_and_invalidates_at_submission",
+            // The test's name in the package's `it` binary.
+            "foam_lease_gpu::cooked_pattern_is_lent_and_invalidates_at_submission",
             "--nocapture",
         ])
         .env(thrum_app::sky::STORE_VARIABLE, root.join("store"))

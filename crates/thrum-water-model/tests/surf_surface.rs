@@ -1,5 +1,5 @@
 //! Original answers remain exact; surf supplies all derivatives and dry support.
-mod support;
+use crate::support;
 use support::fixtures::{body, field, grid, profile};
 use support::untransformed;
 use thrum_water_model::{BodyKind, Map, SurfProfile, compare};

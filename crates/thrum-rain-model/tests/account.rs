@@ -1,7 +1,7 @@
 //! M1.4: the water account closes through spills, merges and partings; a catchment six
 //! times a pothole's area fills it in a sixth of the time; and a puddle on ground that
 //! passes the rain down does not grow.
-pub mod support;
+use crate::support;
 use support::{design_bed, mm_h, pothole, prepare, residual};
 use thrum_rain_model::{Canopy, GroundClass, Profile, Rain, RainState, Shelter, TickReport, Tree};
 

@@ -1,5 +1,5 @@
 //! Submitted effect times across inline and resident-world lifecycle boundaries.
-pub mod support;
+use crate::support;
 #[cfg(target_os = "macos")]
 use std::time::{Duration, Instant};
 #[cfg(target_os = "macos")]

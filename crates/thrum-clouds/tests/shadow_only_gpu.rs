@@ -1,5 +1,5 @@
 //! Shade is independent of Sky under real detail-changing Sun rays.
-mod shadow_scene;
+use crate::shadow_scene;
 use thrum_cloud_model::{Density, Field, Parameters, Profile, Sample, State, Type};
 use thrum_clouds::{Shade, ShadeConfig, SkyProfile, SunLevel, SunProfile, WeatherProfile};
 use thrum_render::{

@@ -1,7 +1,7 @@
 //! Generated peer bytes go through the production session decoders on conditioned links.
 
 /// Shared independent world and virtual time.
-pub mod support;
+use crate::support;
 
 use support::{Codec, Match, local};
 use thrum_core::{ActorId, Origin, PeerId, sim::InputFrame};

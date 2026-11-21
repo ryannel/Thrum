@@ -1,5 +1,5 @@
 //! Independent vertical quadrature of the public density at interiors and edges.
-pub mod support;
+use crate::support;
 use support::{close, field, state};
 use thrum_cloud_model::Density;
 

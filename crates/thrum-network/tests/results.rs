@@ -1,6 +1,6 @@
 //! Results come from the committed set stream and are retained through receipt.
 /// The shared integer rule set and carrier fixture.
-pub mod support;
+use crate::support;
 
 use support::{Match, shaped};
 use thrum_network::session::{Controls, Disposition, Input, World};

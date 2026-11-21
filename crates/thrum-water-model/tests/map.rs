@@ -1,5 +1,5 @@
 //! Map oracles and named refusal cases.
-mod support;
+use crate::support;
 use support::fixtures::{body, close, grid, profile};
 use thrum_water_model::{BodyKind, Chart, Map};
 

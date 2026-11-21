@@ -37,3 +37,9 @@ url = "=2.5.8"
 thrum-transport = { path = "../../crates/thrum-transport", features = ["browser"] }
 wasm-bindgen = "=0.2.129"
 js-sys = "=0.3.106"
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "link-proof"
+path = "src/main.rs"
+test = false

@@ -18,7 +18,7 @@
     clippy::float_cmp,
     reason = "entries that must be exactly nothing, and marks that are the level's own bits"
 )]
-pub mod support;
+use crate::support;
 use support::{ground, mm_h, pair};
 use thrum_rain_model::{
     Canopy, Ground, GroundClass, GroundStores, Profile, Rain, RainState, Shelter, TickReport, Tree,

@@ -16,7 +16,7 @@
     clippy::unwrap_used,
     reason = "test arithmetic; the test reports what it checked"
 )]
-mod support;
+use crate::support;
 use std::collections::VecDeque;
 use support::lake::{
     BANKS, CENTRE, FOOT, HOLLOW, NOTCH, RANGE, RIDGE, lower_sample, sampled, stored, unjoined,

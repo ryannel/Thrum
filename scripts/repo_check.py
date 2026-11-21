@@ -321,9 +321,6 @@ def check_rust_layout(root, files):
 
 LONG_TESTS = ".config/long-tests.txt"
 REASONED_IGNORE = re.compile(r'#\[ignore\s*=\s*"((?:[^"\\]|\\.)*)"\s*\]')
-MOD_DECLARATION = re.compile(r'((?:#\[path\s*=\s*"([^"]+)"\]\s*)?)(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*;')
-
-
 def parse_main_tier_list(text):
     """Parse the main-tier list into its long-test binaries, its feature entries and its errors.
 
@@ -371,8 +368,16 @@ def long_test_list(text):
     return listed, errors
 
 
+MOD_TOKEN = re.compile(r"[{}]|\bmod\s+(\w+)\s*([;{])")
+PATH_ATTRIBUTE = re.compile(r'#\[path\s*=\s*"([^"]+)"\]\s*(?:pub(?:\([^)]*\))?\s+)?$')
+
+
 def module_files(root_file):
-    """The root file of a test binary and every file its `mod name;` declarations reach."""
+    """The root file of a test binary and every file its `mod name;` declarations reach.
+
+    A declaration inside an inline module, as `mod error_types { mod lane; }`, resolves under that module's
+    folder, as Rust resolves it.
+    """
     seen, pending = [], [root_file]
     while pending:
         path = pending.pop()
@@ -381,12 +386,54 @@ def module_files(root_file):
         seen.append(path)
         text = path.read_text(encoding="utf-8")
         own = path.parent if path == root_file or path.name == "mod.rs" else path.parent / path.stem
-        for match in MOD_DECLARATION.finditer(text):
-            if match.group(2):
-                pending.append((path.parent / match.group(2)).resolve())
+        inline, depth = [], 0  # inline modules open around this point, as (depth outside, name)
+        for match in MOD_TOKEN.finditer(blank_literals(text)):
+            if match.group(0) == "{":
+                depth += 1
+            elif match.group(0) == "}":
+                depth -= 1
+                if inline and inline[-1][0] == depth:
+                    inline.pop()
+            elif match.group(2) == "{":
+                inline.append((depth, match.group(1)))
+                depth += 1
             else:
-                pending += [own / f"{match.group(3)}.rs", own / match.group(3) / "mod.rs"]
+                folder = own.joinpath(*(name for _, name in inline))
+                attribute = PATH_ATTRIBUTE.search(text[max(0, match.start() - 300):match.start()])
+                if attribute:
+                    pending.append((path.parent / attribute.group(1)).resolve())
+                else:
+                    pending += [folder / f"{match.group(1)}.rs", folder / match.group(1) / "mod.rs"]
     return seen
+
+
+def check_test_files_compiled(root, metadata):
+    """Every Rust file under a package's `tests/` folder is compiled by one of its test targets, or by a
+    bench or example whose files sit there.
+
+    Cargo builds no file in `tests/` that no target declares, and says nothing, so a test file left out of
+    the package's `it` target would never run (GATE-TIME mechanism 10).
+    """
+    errors = []
+    members = set(metadata["workspace_members"])
+    for package in metadata["packages"]:
+        folder = Path(package["manifest_path"]).parent / "tests"
+        if package["id"] not in members or not folder.is_dir():
+            continue
+        reached = set()
+        for target in package["targets"]:
+            if {"test", "bench", "example"} & set(target["kind"]):
+                reached.update(path.resolve() for path in module_files(Path(target["src_path"]).resolve()))
+        manifest = Path(package["manifest_path"]).relative_to(root).as_posix()
+        it = (folder / "it.rs").relative_to(root).as_posix()
+        for path in sorted(folder.rglob("*.rs")):
+            if path.resolve() in reached:
+                continue
+            errors.append(
+                f"{path.relative_to(root).as_posix()}: no test target of {package['name']} compiles this file, so "
+                f"its tests never run; declare it as `mod {path.stem};` in {it}, or in the module whose folder "
+                f"holds it, or as a [[test]] in {manifest} if it has to run apart (GATE-TIME mechanism 10)")
+    return errors
 
 
 def check_long_tests(root, metadata, list_text):
@@ -757,6 +804,7 @@ def main():
     errors += check_unused_direct_dependencies(metadata, policy)
     errors += check_manifest_inventory(ROOT, metadata)
     main_tier = (ROOT / LONG_TESTS).read_text(encoding="utf-8")
+    errors += check_test_files_compiled(ROOT, metadata)
     errors += check_long_tests(ROOT, metadata, main_tier)
     errors += check_feature_tests(ROOT, metadata, main_tier)
     if errors:

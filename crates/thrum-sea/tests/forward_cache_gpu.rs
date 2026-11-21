@@ -1,9 +1,5 @@
 //! The drawn forward sheet and every filtered mip texel, on native and portable Metal.
-#[expect(
-    dead_code,
-    reason = "shared harness includes other independent sea oracles"
-)]
-mod support;
+use crate::support;
 use std::fmt::Write as _;
 
 // Each device profile and wind is one test, so the runner spreads them over the cores.

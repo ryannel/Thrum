@@ -11,7 +11,7 @@
     clippy::cast_precision_loss,
     reason = "test arithmetic; the test reports what it checked"
 )]
-mod support;
+use crate::support;
 use support::valley::{CENTRE, DISCHARGE, MANNING, valley};
 use thrum_river_model::{Profile, key_for_samples, solve, solve_samples};
 

@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "A flat mirror pool with scene-local lighting and aerial composition"
+autotests = false
 
 [lints]
 workspace = true
@@ -30,3 +31,21 @@ js-sys = "=0.3.106"
 wasm-bindgen = "=0.2.129"
 wasm-bindgen-futures = "=0.4.79"
 web-time = "=1.1.0"
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+# A target of its own: its check is named by open item GATE-TIME M4.1; run by name from
+# scripts/check_mirror_browser.mjs.
+[[test]]
+name = "pool_gpu"
+path = "tests/pool_gpu/main.rs"
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "mirror-scene"
+path = "src/main.rs"
+test = false

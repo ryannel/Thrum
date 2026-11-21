@@ -7,42 +7,16 @@ publish.workspace = true
 description = "Frame-time ambient wave fields on the scene effect graph"
 autotests = false
 
+# A target of its own: its check is named by open items HOST M5.2, REVIEW-RENDER M4.2.
 [[test]]
 name = "error_types"
 
-[[test]]
-name = "ambient_gpu"
-
-[[test]]
-name = "frames_gpu"
-
-[[test]]
-name = "portable_limits_gpu"
-
-[[test]]
-name = "recipe_limits"
-
-[[test]]
-name = "upload_cost"
-
+# A target of its own: its check is named by open item TEST-SUPPORT M4.1.
 [[test]]
 name = "wgsl_records"
 
-[[test]]
-name = "declared_accesses"
-
-[[test]]
-name = "upload_bytes"
-
-[[test]]
-name = "packed_transforms"
-
 [lints]
 workspace = true
-
-[[test]]
-name = "forward_cache_gpu"
-path = "tests/forward_cache_gpu.rs"
 
 [dependencies]
 bytemuck = { version = "=1.25.2", features = ["derive"] }
@@ -54,3 +28,8 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl
 pollster = "=1.0.1"
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"

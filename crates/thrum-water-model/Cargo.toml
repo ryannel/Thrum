@@ -21,54 +21,13 @@ name = "surf"
 path = "tests/support/bench.rs"
 harness = false
 
-[[test]]
-name = "bed"
-path = "tests/bed.rs"
-[[test]]
-name = "breaker_section"
-path = "tests/breaker_section.rs"
-[[test]]
-name = "breaking"
-path = "tests/breaking.rs"
-[[test]]
-name = "conformance"
-path = "tests/conformance.rs"
-[[test]]
-name = "gains"
-path = "tests/gains.rs"
-[[test]]
-name = "joins"
-path = "tests/joins.rs"
-[[test]]
-name = "map"
-path = "tests/map.rs"
-[[test]]
-name = "shore_basin"
-path = "tests/shore_basin.rs"
+# A target of its own: the main-tier list names it for its long tests.
 [[test]]
 name = "shore_blend"
 path = "tests/shore_blend.rs"
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
 [[test]]
-name = "shore_island"
-path = "tests/shore_island.rs"
-[[test]]
-name = "shore_transform"
-path = "tests/shore_transform.rs"
-[[test]]
-name = "stage"
-path = "tests/stage.rs"
-[[test]]
-name = "surf_cut"
-path = "tests/surf_cut.rs"
-[[test]]
-name = "surf_joins"
-path = "tests/surf_joins.rs"
-[[test]]
-name = "surf_surface"
-path = "tests/surf_surface.rs"
-[[test]]
-name = "surface"
-path = "tests/surface.rs"
-[[test]]
-name = "swash"
-path = "tests/swash.rs"
+name = "it"
+path = "tests/it.rs"

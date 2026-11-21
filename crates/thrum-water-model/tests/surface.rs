@@ -1,5 +1,5 @@
 //! Surface values and time/spatial derivatives against analytic waves and SEA.
-mod support;
+use crate::support;
 use support::fixtures::{basin, body, close, field, grid, profile};
 use thrum_water_model::{BodyKind, Chart, Map};
 

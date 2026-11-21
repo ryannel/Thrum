@@ -1,5 +1,5 @@
 //! Distinct interiors with identical footprints have distinct slant optical paths.
-pub mod support;
+use crate::support;
 use support::{close, directed, field, state};
 use thrum_cloud_model::{Density, Sample, Shape};
 

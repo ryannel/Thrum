@@ -1,5 +1,5 @@
 //! Visible cloud contribution on the real game's submitted scene path.
-pub mod support;
+use crate::support;
 use std::time::{Duration, Instant};
 use thrum_render::runtime::FrameConfig;
 use v1_game::{CloudSelection, GameHost, GameScene, GameSetup, GameWorld};

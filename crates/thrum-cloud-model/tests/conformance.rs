@@ -1,5 +1,5 @@
 //! Weather-column and arbitrary-direction Sun-depth providers share one harness.
-pub mod support;
+use crate::support;
 use support::{close, field, state};
 use thrum_cloud_model::{Conformance, Density, Error, Sample};
 

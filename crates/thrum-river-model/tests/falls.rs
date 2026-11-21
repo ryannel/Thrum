@@ -8,7 +8,7 @@
     clippy::unwrap_used,
     reason = "test arithmetic; the test reports what it measured"
 )]
-mod support;
+use crate::support;
 use support::fall::{Channel, Cliff, Foot, WIDTH, channel, critical, normal, through};
 use thrum_river_model::{LAUNCH_SHARE, Profile, Solution, solve};
 use thrum_water_model::{Below, EndKind};

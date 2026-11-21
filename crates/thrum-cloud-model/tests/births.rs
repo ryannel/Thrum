@@ -1,5 +1,5 @@
 //! Six-hour birth-count statistics, and independent generation centres.
-pub mod support;
+use crate::support;
 use std::f64::consts::TAU;
 use support::field;
 

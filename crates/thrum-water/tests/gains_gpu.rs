@@ -1,5 +1,5 @@
 //! Fetch and depth gains as read from the map by the shared surface path.
-mod probe_support;
+use crate::probe_support;
 use probe_support as support;
 use thrum_sea_model::{Forcing, Spectrum, Swell};
 

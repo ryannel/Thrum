@@ -1,10 +1,6 @@
 //! Metal pass timestamps and actual allocation sizes for the cascade transforms.
 
-#[expect(
-    dead_code,
-    reason = "the shared oracle also supports full field comparisons"
-)]
-mod support;
+use crate::support;
 
 #[test]
 fn cascade_passes() {

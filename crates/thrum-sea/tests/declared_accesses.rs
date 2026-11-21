@@ -1,9 +1,5 @@
 //! The actual prepared bindings and graph are checked against entry-point reflection.
-#[expect(
-    dead_code,
-    reason = "shared Metal harness also contains full field oracles"
-)]
-mod support;
+use crate::support;
 
 #[test]
 fn bound_resources_equal_declared_accesses_for_every_pass() {

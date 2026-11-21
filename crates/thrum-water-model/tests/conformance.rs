@@ -1,5 +1,5 @@
 //! Provider fault injection: values and support disagreements remain observable.
-mod support;
+use crate::support;
 use support::fixtures::{close, field};
 use thrum_water_model::{MapSample, compare};
 

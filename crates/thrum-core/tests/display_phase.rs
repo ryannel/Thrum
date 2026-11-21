@@ -1,7 +1,5 @@
 //! Scripted consumed-target expectations, independent of clock sampling code.
-mod display_phase {
-    mod world;
-}
+mod world;
 use std::{num::NonZeroU32, time::Duration};
 use thrum_core::{ClockConfig, TickClock};
 

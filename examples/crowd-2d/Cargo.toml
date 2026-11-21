@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Reference portable crowd rules"
+autotests = false
 
 [lints]
 workspace = true
@@ -12,3 +13,14 @@ workspace = true
 [dependencies]
 thrum-core = { path = "../../crates/thrum-core" }
 thrum-sim2d = { path = "../../crates/thrum-sim2d" }
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+# A target of its own: its check is named by open item SWARM M2.6.
+[[test]]
+name = "retained_slice"
+path = "tests/retained_slice.rs"

@@ -8,7 +8,7 @@
     clippy::unwrap_used,
     reason = "test arithmetic over cell indices"
 )]
-mod support;
+use crate::support;
 use support::valley::{self, HOLLOW, LAKE};
 use thrum_river_model::{Profile, Solution, solve};
 use thrum_water_model::{Bed, Body, BodyKind, Chart, Map, Profile as WaterProfile, Stage};

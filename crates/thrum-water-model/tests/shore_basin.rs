@@ -1,5 +1,5 @@
 //! A disconnected, non-flat lake with its own wave sources and fetch growth.
-mod support;
+use crate::support;
 use std::f64::consts::FRAC_PI_4;
 use support::shore::{bed, config};
 use thrum_water_model::{

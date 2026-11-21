@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Native, browser and simulator conformance runner for portable crowd rules"
+autotests = false
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -21,3 +22,15 @@ serde_json = "=1.0.154"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "=0.2.129"
 web-time = "=1.1.0"
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "crowd-2d-run"
+path = "src/main.rs"
+test = false

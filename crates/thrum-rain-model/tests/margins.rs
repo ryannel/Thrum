@@ -4,7 +4,7 @@
 //! state follows the rule on the levels the test reads; a shore's band is kept by the same
 //! rule from its stage, above the wave support `thrum-water-model` gives; and neither
 //! holds water in the account.
-pub mod support;
+use crate::support;
 use std::f64::consts::{LN_2, TAU};
 use support::{mm_h, pothole, prepare};
 use thrum_rain_model::{

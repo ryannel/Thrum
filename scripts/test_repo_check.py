@@ -183,6 +183,53 @@ class RepositoryChecks(unittest.TestCase):
             self.assertTrue(any(e.startswith(".config/long-tests.txt:1: expected `<package> <test binary> release|debug`") for e in malformed))
             self.assertIn(".config/long-tests.txt: core has no test binary gone", malformed)
 
+    def test_test_file_no_target_compiles_fails_and_names_where_to_declare_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            tests = root / "crates" / "core" / "tests"
+            (tests / "support").mkdir(parents=True)
+            (tests / "lanes").mkdir()
+            (tests / "fixtures").mkdir()
+            it = tests / "it.rs"
+            it.write_text("mod support;\nmod clock;\nmod nested {\n    mod deep;\n}\n")
+            # A helper only a declared file reaches, and one only a helper's inline module reaches.
+            (tests / "clock.rs").write_text("use crate::support;\nmod lanes {\n    mod lane;\n}\n#[test]\nfn ticks() {}\n")
+            (tests / "clock").mkdir()
+            (tests / "clock" / "lanes").mkdir()
+            (tests / "clock" / "lanes" / "lane.rs").write_text("#[test]\nfn lane() {}\n")
+            (tests / "support.rs").write_text("pub(crate) mod world;\n// mod commented_out;\n")
+            (tests / "support" / "world.rs").write_text("pub(crate) fn world() {}\n")
+            (tests / "nested").mkdir()
+            (tests / "nested" / "deep.rs").write_text("#[test]\nfn deep() {}\n")
+            # A bench whose files sit in `tests/` compiles them.
+            (tests / "fixtures" / "bench.rs").write_text("fn main() {}\n")
+            manifest = root / "crates" / "core" / "Cargo.toml"
+            manifest.write_text("[package]\n")
+            metadata = {"workspace_members": ["core"], "packages": [{
+                "id": "core", "name": "core", "manifest_path": str(manifest), "targets": [
+                    {"kind": ["lib"], "name": "core", "src_path": str(root / "crates/core/src/lib.rs")},
+                    {"kind": ["test"], "name": "it", "src_path": str(it)},
+                    {"kind": ["bench"], "name": "bench", "src_path": str(tests / "fixtures" / "bench.rs")}]}]}
+            check = repo_check.check_test_files_compiled
+            self.assertEqual(check(root, metadata), [])
+            # A file left out of `it`, one only a comment names, and one in a folder nothing declares.
+            (tests / "drift.rs").write_text("#[test]\nfn drifts() {}\n")
+            (tests / "support" / "commented_out.rs").write_text("")
+            (tests / "lanes" / "lane.rs").write_text("#[test]\nfn lane() {}\n")
+            errors = check(root, metadata)
+            self.assertEqual(len(errors), 3, errors)
+            self.assertTrue(errors[0].startswith("crates/core/tests/drift.rs: no test target of core compiles this file"))
+            self.assertIn("declare it as `mod drift;` in crates/core/tests/it.rs", errors[0])
+            self.assertIn("as a [[test]] in crates/core/Cargo.toml", errors[0])
+            self.assertTrue(errors[1].startswith("crates/core/tests/lanes/lane.rs: "))
+            self.assertTrue(errors[2].startswith("crates/core/tests/support/commented_out.rs: "))
+            # Declared in the package's `it` target, the file passes; so does one with a target of its own.
+            it.write_text(it.read_text() + "mod drift;\n")
+            (tests / "support" / "commented_out.rs").unlink()
+            metadata["packages"][0]["targets"].append(
+                {"kind": ["test"], "name": "lanes", "src_path": str(tests / "lanes" / "lane.rs")})
+            self.assertEqual(check(root, metadata), [])
+
     def test_feature_gated_test_must_be_covered_by_the_main_tier_list(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

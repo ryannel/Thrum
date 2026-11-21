@@ -1,6 +1,6 @@
 //! Closed forms for slabs and ground, and independently authored voxel sums.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{Density, Fidelity, Shape, Weather};
 
 #[test]

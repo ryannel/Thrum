@@ -1,7 +1,7 @@
 //! Submitted late-stage qualification on both native recipes.
 #![cfg(not(target_arch = "wasm32"))]
 /// Shared native diagnostic device policy.
-pub mod support;
+use crate::support;
 #[test]
 fn submitted_slab_depth_refraction_motion_and_resets() {
     let Some(test_gpu) = thrum_test_support::gpu(

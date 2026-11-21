@@ -1,6 +1,6 @@
 //! Frame identity and a shore mask that must never travel with a bank.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{Affinity, Density};
 
 #[test]

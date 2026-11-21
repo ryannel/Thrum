@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Thin UIKit scene shell for the shared V1 game diagnostic"
+autotests = false
 
 [lib]
 crate-type = ["staticlib", "rlib"]
@@ -28,3 +29,9 @@ winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] 
 [dev-dependencies]
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-test-support = { path = "../../crates/thrum-test-support" }
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"

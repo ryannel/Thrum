@@ -1,5 +1,5 @@
 //! Closed land, arrival direction and independently traced sector exposure.
-mod support;
+use crate::support;
 use std::f64::consts::{FRAC_PI_4, TAU};
 use support::shore::{bed, config};
 use thrum_water_model::ShoreTransform;

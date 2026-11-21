@@ -7,16 +7,9 @@ publish.workspace = true
 description = "Shared water surface on the scene effect graph"
 autotests = false
 
-[[test]]
-name = "map_gpu"
-[[test]]
-name = "gains_gpu"
-[[test]]
-name = "query_gpu"
+# A target of its own: its check is named by open items PUDDLES M8.3, RIVERS M6.11, RIVERS M6.3.
 [[test]]
 name = "interaction_gpu"
-[[test]]
-name = "foam_gpu"
 
 [lints]
 workspace = true
@@ -36,3 +29,9 @@ glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 pollster = "=1.0.1"
 thrum-core = { path = "../thrum-core" }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"

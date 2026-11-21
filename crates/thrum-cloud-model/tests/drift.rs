@@ -1,5 +1,5 @@
 //! Exact world/air-frame drift identity over a day.
-pub mod support;
+use crate::support;
 use support::{field, parameters};
 use thrum_cloud_model::State;
 

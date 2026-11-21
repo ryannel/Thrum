@@ -1,5 +1,5 @@
 //! Hold the first-arrival solve to an independently integrated Snell phase.
-mod support;
+use crate::support;
 use std::f64::consts::TAU;
 use support::shore::{bed, config, wave_number};
 use thrum_water_model::{Lag, ShoreTransform};

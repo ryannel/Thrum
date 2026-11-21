@@ -1,7 +1,5 @@
 //! Host due times and world display times through lifecycle spans.
-mod clock_spans {
-    mod lane;
-}
+mod lane;
 use std::{num::NonZeroU32, time::Duration};
 use thrum_core::{ClockConfig, ClockError, ClockState, TickClock};
 

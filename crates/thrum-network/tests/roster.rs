@@ -1,7 +1,7 @@
 //! The second rule set observes slot identity and lifecycle only through committed sets.
 
 /// Shared test rules and carrier.
-pub mod support;
+use crate::support;
 
 use support::{Match, Rule, local};
 use thrum_core::profile::StateBytes;

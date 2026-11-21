@@ -1,5 +1,5 @@
 //! Independent fetch spectrum quadrature and saturation checks.
-mod support;
+use crate::support;
 use std::f64::consts::{PI, TAU};
 use support::fixtures::{body, close, grid, profile};
 use thrum_sea_model::{Forcing, GRAVITY, Swell};

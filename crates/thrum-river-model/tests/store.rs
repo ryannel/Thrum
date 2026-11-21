@@ -1,7 +1,7 @@
 //! M1.7: a river file holds a solve's output and decodes to the same bytes; its key follows its
 //! inputs; a stale file is refused by name; the reader lives in `thrum-water-model`, which does
 //! not depend on the solver.
-mod support;
+use crate::support;
 use support::valley;
 use thrum_river_model::{Manning, Profile, SOLVER_VERSION, key, key_for_version, solve, write};
 use thrum_water_model::{Bed, RiverFile};

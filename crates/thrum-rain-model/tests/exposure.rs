@@ -1,6 +1,6 @@
 //! M1.5: shelter is content. Exposure from shelters the test gives, and the hollows under a
 //! roof that fill only by what drains to them from open ground.
-pub mod support;
+use crate::support;
 use support::{ground, mm_h};
 use thrum_rain_model::{
     Canopy, GroundClass, Profile, Rain, RainError, RainState, Shelter, TickReport, Tree,

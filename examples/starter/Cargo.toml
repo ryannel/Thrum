@@ -11,3 +11,9 @@ workspace = true
 
 [dependencies]
 thrum-app = { path = "../../crates/thrum-app" }
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "thrum-starter"
+path = "src/main.rs"
+test = false

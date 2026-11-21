@@ -1,5 +1,5 @@
 //! Disc-energy conservation and renderer f32 table measurements.
-pub mod support;
+use crate::support;
 use std::f64::consts::PI;
 use support::close;
 use thrum_cloud_model::{Phase, PhaseTable};

@@ -5,7 +5,7 @@
     clippy::cast_possible_truncation,
     reason = "test counts of cells, hollows and nodes are far below u32::MAX"
 )]
-pub mod support;
+use crate::support;
 use support::{many_hollows, mm_h, prepare};
 use thrum_rain_model::{GroundClass, Rain, RainError, RainState, TickReport, Tree};
 

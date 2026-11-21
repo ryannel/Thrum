@@ -1,5 +1,5 @@
 //! Plane beach waterline from the independent regular-wave closed form.
-mod support;
+use crate::support;
 use support::fixtures::{body, close, field, grid, profile};
 use thrum_water_model::{BodyKind, Map};
 

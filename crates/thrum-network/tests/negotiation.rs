@@ -1,6 +1,6 @@
 //! Session negotiation before input admission.
 /// The shared integer rule set and carrier fixture.
-pub mod support;
+use crate::support;
 
 use support::{Game, Match, Rule, local, shaped};
 use thrum_network::{

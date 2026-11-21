@@ -1,5 +1,5 @@
 //! Vertical-ray rasterization against independently specified ground.
-mod support;
+use crate::support;
 use support::fixtures::close;
 use thrum_water_model::{Bed, BedPyramid};
 

@@ -1,6 +1,6 @@
 //! An independently interpolated 80 m / nine-height band, held to fixed ceilings.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{Density, Fidelity, Light, Sample, Weather};
 
 #[test]

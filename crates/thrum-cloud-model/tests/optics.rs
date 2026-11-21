@@ -1,11 +1,11 @@
 //! Optical oracle values and independent sphere quadrature.
-pub mod support;
+use crate::support;
 use std::f64::consts::PI;
 use support::close;
 use thrum_cloud_model::{Orders, Phase, Segment};
 
 /// Independent midpoint integration under u=sin(theta/2)^(1/2).
-pub fn sphere(phase: impl Fn(f64) -> f64, n: u32) -> [f64; 2] {
+pub(crate) fn sphere(phase: impl Fn(f64) -> f64, n: u32) -> [f64; 2] {
     let mut total = 0.0;
     let mut moment = 0.0;
     for i in 0..n {

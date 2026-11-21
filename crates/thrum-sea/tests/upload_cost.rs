@@ -1,9 +1,5 @@
 //! Paired CPU upload measurement on the same Metal fixture.
-#[expect(
-    dead_code,
-    reason = "the shared oracle also supports full field readback tests"
-)]
-mod support;
+use crate::support;
 
 #[test]
 fn cpu_upload_cost() {

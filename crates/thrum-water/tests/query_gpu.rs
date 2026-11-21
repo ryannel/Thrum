@@ -1,5 +1,5 @@
 //! Mac Metal proof of the public query mailbox through the renderer.
-mod swash_gpu;
+use crate::swash_gpu;
 
 use std::{
     sync::{Arc, Mutex},

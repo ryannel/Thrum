@@ -1,5 +1,5 @@
 //! Tick authority, replay, response and accumulated-travel precision.
-pub mod support;
+use crate::support;
 use support::{close, parameters};
 use thrum_cloud_model::{Error, State};
 

@@ -1,6 +1,6 @@
 //! Runtime proof through the public game and water interfaces.
 #[cfg(target_os = "macos")]
-mod support;
+use crate::support;
 use thrum_render::runtime::FrameWorld;
 thrum_test_support::macos_gpu_test! {
 fn scene_ticks_and_declares_one_water_contribution() {

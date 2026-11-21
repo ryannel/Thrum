@@ -1,6 +1,6 @@
 //! Sample ordinary buffered motion, underrun recovery, and a deliberate skip.
 /// The shared integer rule set and carrier fixture.
-pub mod support;
+use crate::support;
 
 use support::{Match, local};
 use thrum_network::session::{Playout, Settings, Skip, World};

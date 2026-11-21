@@ -6,6 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 description = "Authoring-only Thrum asset cooker: stat cache, BLAKE3 CAS, cookers, atomic manifest, watcher and dev server"
+autotests = false
 
 [lints]
 workspace = true
@@ -37,3 +38,20 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
 name = "edit_to_visible"
 path = "tests/edit_to_visible/bench.rs"
 harness = false
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+# A target of its own: its check is named by open items HOST M5.2, REVIEW-RENDER M4.2.
+[[test]]
+name = "error_types"
+path = "tests/error_types.rs"
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "thrum-cook"
+path = "src/main.rs"
+test = false

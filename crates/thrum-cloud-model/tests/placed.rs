@@ -1,5 +1,5 @@
 //! Asymmetric voxel footprints bound volume, column and every tested blend.
-pub mod support;
+use crate::support;
 use support::{close, field, formed, shape};
 use thrum_cloud_model::Density;
 

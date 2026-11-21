@@ -9,7 +9,7 @@
     clippy::print_stdout,
     reason = "test arithmetic over cell indices; helpers report what they measured"
 )]
-mod support;
+use crate::support;
 use support::section::{depths, profile, section};
 use thrum_river_model::{Grid, Manning, State, Stepper, solve};
 

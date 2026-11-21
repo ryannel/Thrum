@@ -6,6 +6,7 @@ rust-version.workspace = true
 publish.workspace = true
 description = "Thrum's external-consumer V1 test game"
 default-run = "v1-game"
+autotests = false
 
 [lib]
 crate-type = ["rlib", "cdylib"]
@@ -19,14 +20,19 @@ draw-probe = ["thrum-asset-gpu/draw-probe", "thrum-render/creation-counters"]
 # shaders synchronously; only `web/build.sh --dev` enables it.
 dev-material = []
 
+# A target of its own: its check is named by open item GAME-SPLIT M3.2; the main-tier list names it
+# for its tests behind a feature.
 [[test]]
 name = "cooked_fault_gpu"
 required-features = ["thrum-asset-gpu/fault-probe"]
 
+# A target of its own: the main-tier list names it for its tests behind a feature; run by name from
+# scripts/ray_tracing_proof.py.
 [[test]]
 name = "ray_tracing_gpu"
 required-features = ["draw-probe"]
 
+# A target of its own: the main-tier list names it for its long tests.
 [[test]]
 name = "field_occlusion_gpu"
 path = "tests/support/field_occlusion_gpu.rs"
@@ -86,3 +92,72 @@ required-features = ["draw-probe"]
 name = "cooked_draw_probe"
 path = "src/bin/cooked_draw_probe.rs"
 required-features = ["draw-probe"]
+test = false
+
+# Integration tests: one target `it` holds every test file (GATE-TIME mechanism 10); a file is a
+# target of its own below only while something names its binary or it has to run apart.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+# A target of its own: its check is named by open item CLOUDS M11.1.
+[[test]]
+name = "clouds_selection_gpu"
+path = "tests/clouds_selection_gpu.rs"
+
+# A target of its own: its check is named by open item TEST-SUPPORT M4.2; the main-tier list names
+# it for its tests behind a feature; it holds tests behind a Cargo feature; run by name from
+# tools/xtask/src/main.rs.
+[[test]]
+name = "cooked_assets_gpu"
+path = "tests/cooked_assets_gpu.rs"
+
+# A target of its own: its check is named by open item TEST-SUPPORT M4.2.
+[[test]]
+name = "cooked_material_gpu"
+path = "tests/cooked_material_gpu.rs"
+
+# A target of its own: its check is named by open item GAME-SPLIT M3.2.
+[[test]]
+name = "cooked_texture_quality"
+path = "tests/cooked_texture_quality.rs"
+
+# A target of its own: the main-tier list names it for its long tests.
+[[test]]
+name = "exit_scene"
+path = "tests/exit_scene.rs"
+
+# A target of its own: its check is named by open item REVIEW-RENDER M5.1; it sets its binary's
+# global allocator, so it runs apart.
+[[test]]
+name = "frame_alloc"
+path = "tests/frame_alloc.rs"
+
+# A target of its own: its check is named by open item DEAD-CODE M6.5; the main-tier list names it
+# as not run; it holds tests behind a Cargo feature; run by name from scripts/mesh_stage_cost.py;
+# run by name from scripts/mesh_stage_proof.py; run by name from scripts/mesh_stage_capture.py.
+[[test]]
+name = "mesh_stage_gpu"
+path = "tests/mesh_stage_gpu/main.rs"
+
+# A target of its own: it sets its binary's global allocator, so it runs apart.
+[[test]]
+name = "simulation"
+path = "tests/simulation.rs"
+
+# A target of its own: run by name from scripts/run_v1_showcase.py.
+[[test]]
+name = "valley_culling_gpu"
+path = "tests/valley_culling_gpu.rs"
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "v1-game"
+path = "src/main.rs"
+test = false
+
+# The binary holds no test, so the test runner neither builds nor starts it as one.
+[[bin]]
+name = "apple_tile_residency"
+path = "src/bin/apple_tile_residency.rs"
+test = false

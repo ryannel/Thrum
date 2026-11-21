@@ -1,5 +1,5 @@
 //! M1's source and mouth seams, with the complete surf capability enabled.
-mod support;
+use crate::support;
 use support::fixtures::{field, profile};
 use support::joined::declarations;
 use thrum_water_model::{Map, SurfProfile};

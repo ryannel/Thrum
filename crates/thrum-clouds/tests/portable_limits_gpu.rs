@@ -1,5 +1,5 @@
 //! Both cloud products on Metal with WebGPU's default limits.
-mod support;
+use crate::support;
 
 #[test]
 #[cfg(target_os = "macos")]

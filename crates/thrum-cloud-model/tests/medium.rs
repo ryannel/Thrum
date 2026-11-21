@@ -1,6 +1,6 @@
 //! Partitioned integrations and independent light-coefficient expectations.
-pub mod ground_support;
-pub mod support;
+use crate::ground_support;
+use crate::support;
 use thrum_cloud_model::{
     Coefficients, Conformance, Handover, Light, Orders, Phase, PhaseTable, Sample, Segment, Weather,
 };

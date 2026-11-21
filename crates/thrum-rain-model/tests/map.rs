@@ -2,7 +2,7 @@
 //! with no current and no wind gain; its identity and generation hold through a merge; it
 //! refuses a body in another's water or margin and one over the profile's counts; and it
 //! holds a table that stands two levels in wet cells that touch.
-pub mod support;
+use crate::support;
 use support::{mm_h, pair, prepare};
 use thrum_rain_model::{GroundClass, Rain, RainState, TickReport, Tree};
 use thrum_water_model::{Bed, Body, BodyKind, Hollows, HollowsProfile, Map, Profile, Stage};

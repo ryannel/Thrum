@@ -1,7 +1,7 @@
 //! Reliable set delivery uses its deadline only while the send remains blocked.
 
 /// The shared integer rule set and carrier fixture.
-pub mod support;
+use crate::support;
 
 use support::{Match, local};
 use thrum_network::session::{ClientState, Close, Controls, EndReason, Settings, World};

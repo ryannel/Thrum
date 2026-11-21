@@ -14,7 +14,7 @@
     clippy::unwrap_used,
     reason = "test arithmetic; the test reports what it checked"
 )]
-mod support;
+use crate::support;
 use support::lake::{bed_of, chart_body};
 use support::valley::{CENTRE, DISCHARGE, LAKE, MANNING, valley};
 use thrum_river_model::{Grid, Profile, key_for_samples, solve_samples};
