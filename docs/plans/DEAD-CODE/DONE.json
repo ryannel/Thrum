@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -21,8 +21,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "Item check run by agent_loop.py check on the M1 branch; thrum-core tests pass; absence greps empty. LOG.md entry of 2026-11-20.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -32,8 +32,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "Item check run by agent_loop.py check on the M1 branch; core, sim2d and network tests pass; no test expected value edited (git diff of tests: one removed assertion on a deleted query in g2_runtime).",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -44,8 +44,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "Item check run by agent_loop.py check on the M1 branch under gpu; sea and water tests pass with THRUM_REQUIRE_GPU=1; forward_cache_gpu unchanged.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -54,8 +54,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests; before merge the stepped hour and the gale passed in release on the branch, as ./dev long-tests runs them.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -64,8 +64,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md"
         }
       ]
     },

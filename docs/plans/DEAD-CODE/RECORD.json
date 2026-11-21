@@ -26,7 +26,36 @@
   "milestones": {
     "M1": {
       "definitions": "6455e00dbf22493dfc932b95d2674546cc3ed3b54e30d13879d567912c77cdd8",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "64958bfe4718d8b38de2f845eb869f90c6075251",
+          "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.5": "pass",
+            "M1.4": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 101303,
+            "cached": 2140106,
+            "output": 14287,
+            "cost_usd": 1.523945,
+            "turns": 1
+          },
+          "at": "2026-11-21T00:31:56Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the DEAD-CODE module plan only, to resolve the Must Fix in its third design review, .orchestrate/evidence/DEAD-CO",
@@ -61,6 +90,13 @@
           "incomplete_turns": 1,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "64958bfe4718d8b38de2f845eb869f90c6075251",
+        "review": ".orchestrate/evidence/DEAD-CODE/M1-review.md",
+        "checked": "ccc1990916c6be621f3676959e1d34797083d1c1",
+        "at": "2026-11-21T00:31:56Z"
       }
     },
     "M2": {
