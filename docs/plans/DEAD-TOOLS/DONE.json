@@ -154,7 +154,7 @@
     {
       "id": "M3",
       "name": "The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -168,7 +168,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md (M3.1 and both fix rounds), with sweep-refs-to-deleted.txt, deleted-records.json and deleted.txt beside it",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
         },
         {
@@ -214,14 +214,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "maturity ledger points at three deleted RAY-TRACING and SESSION records through ../evidence paths",
-          "item": "M3.1",
-          "different": "The four SIM-2D pointers named last time are fixed. These are three other ledger entries (RAY_TRACING_M2 evidence, SESSION M2 deterministic_session evidence), written as paths relative to docs/design (../evidence/...), which neither the earlier review's search nor the fix's git grep for docs/evidence/... strings could match.",
-          "repeat": false
         }
       ]
     },
