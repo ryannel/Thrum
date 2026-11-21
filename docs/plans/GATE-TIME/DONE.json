@@ -514,8 +514,8 @@
           "statement": "A test made fast asserts what it asserted. Where one test ran several cases in turn, each case is now a test and none is dropped. Where a world, a fixture or a run was made smaller, the log gives the old and new size and why each assertion still means what it meant. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two, and the log says what the GPU test still shows that only a device can. No test binary changed its name.",
           "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there, in that test or in the device-free test the log names for it? For each world, fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal at f798a3063: .orchestrate/evidence/GATE-TIME/M9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
           "verdict": "",
           "review": ""
         },
@@ -524,8 +524,8 @@
           "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. This item asks for each of them, so from M12 the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
           "ask": "For each test marked in this milestone: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal at f798a3063: no test was marked long; .orchestrate/evidence/GATE-TIME/M9/record.md#long-tests-m93",
           "verdict": "",
           "review": ""
         },
