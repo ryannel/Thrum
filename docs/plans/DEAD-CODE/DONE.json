@@ -221,8 +221,8 @@
           "check": "sh -c 'git grep -q \"THRUM_WATER_\" -- examples/water/tests && ! git grep -qE \"env::var(_os)?\\(\\\"THRUM_WATER_(FOAM|LOCATION|WAKE|BODIES|SPEED|HEADING|VIEW|STONE|WAKE_BODIES|ISLAND)\\\"\" -- examples/water/tests && cargo test --locked --offline -p water-scene --lib'",
           "ask": "List each setting either parser read at the starting commit, with the reading each gave: does the one parse give the window's reading for every one, and does the log record each decision? Does `scripts/water_cost.py` or `scripts/check_water_browser.mjs` set a variable whose meaning changed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop.py check on c83ac24a4 (mac-metal): M4.1 and ./dev check pass, log .git/orchestrate/jobs/20261121-164904-11925.log; the before/after reading of each setting is in commit 6ccb11f4c's message; settings::tests in water-scene's lib",
           "verdict": "",
           "review": ""
         }
