@@ -949,8 +949,8 @@
           "statement": "In a gale, whitecaps form on breaking crests with a bright core and a feathered edge, stay behind the crest as streaks, and fade. A fresh breeze shows fewer and a glassy sea none. No stamp, grid or repeated shape shows from 2 m or from 40 m, and whitecaps thin toward the horizon with no line where the foam's windows end.",
           "inspect": "`fixed` stills and a `realtime` sequence at each wind, from 2 m and 40 m: single caps, the water behind a breaking crest, two places a pattern length apart, and the far sea.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".claude/worktrees/waters/tmp/waters-m7-r5/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/M7-review.md"
         },

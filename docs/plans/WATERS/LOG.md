@@ -548,3 +548,11 @@
   and 40 m and 2 m captures show no line in any wind. Chrome's foam check passes. Design proposal: the design's
   stateless far estimator now carries that one measured mean per endpoint.
   Target evidence: `.claude/worktrees/waters/tmp/waters-m7-r4/README.md`.
+
+- 2026-11-21 Fixed M7.7's steady gale, which saturated into a lace sheet and a white far sea. Only the most
+  compressed crests now break, at a strong rate; fresh film spreads faster, and dense foam varies in density.
+  Verified on Metal over 72 s: steady fine-level cover is 15% in a gale, about 9% in a strong breeze and 2% in a
+  trade wind, ordered at every reading. Caps stand on open water from 2 m and 40 m, and the far sea is darker than
+  the sky. The foam suites pass, and the trail and beach captures are unchanged in kind. Design proposal: the design's
+  stateless far estimator now carries one measured mean per endpoint (earlier entry, open).
+  Target evidence: `.claude/worktrees/waters/tmp/waters-m7-r5/README.md`.
