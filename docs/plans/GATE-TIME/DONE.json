@@ -504,8 +504,8 @@
           "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every test this milestone took off the runner's exempt list and for every other test that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median, and the ten slowest tests now. The list names only tests of the water scene, which M3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
           "ask": "Read the record and the exempt list. Is every test the list held at the starting commit, and every other test the saved checks showed over ten seconds, outside the water scene, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run three of the tests made fast, alone: do their times match the record? Does the list name a test that does not exist?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/M9/record.md (before and now, alone and median in three ./dev check-all runs; no test outside the water scene over 10 s in any run; ten slowest now); exempt list holds only M3's four",
           "verdict": "",
           "review": ""
         },
@@ -515,7 +515,7 @@
           "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there, in that test or in the device-free test the log names for it? For each world, fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal at f798a3063: .orchestrate/evidence/GATE-TIME/M9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
+          "evidence": "mac-metal at 87e326a66: .orchestrate/evidence/GATE-TIME/M9/record.md#what-each-change-keeps-m92 (each split, smaller world and removed duplicate, with old and new sizes); no binary renamed",
           "verdict": "",
           "review": ""
         },
@@ -525,7 +525,7 @@
           "ask": "For each test marked in this milestone: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "mac-metal at f798a3063: no test was marked long; .orchestrate/evidence/GATE-TIME/M9/record.md#long-tests-m93",
+          "evidence": "mac-metal at 87e326a66: no test was marked long; .orchestrate/evidence/GATE-TIME/M9/record.md#long-tests-m93",
           "verdict": "",
           "review": ""
         },
@@ -534,8 +534,8 @@
           "statement": "The long tests, with any this milestone added, pass in the main-branch check `long-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests, after the merge (no long test added)",
           "verdict": "",
           "review": ""
         },
@@ -544,8 +544,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images, after the merge (no image-producing code changed; only tests)",
           "verdict": "",
           "review": ""
         }
