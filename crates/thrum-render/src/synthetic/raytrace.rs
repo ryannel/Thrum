@@ -460,7 +460,7 @@ impl PreparedSynthetic {
 }
 
 mod lamps;
-pub(super) use lamps::{LampShadows, structure_layout_entry};
+pub(super) use lamps::LampShadows;
 
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 mod diagnostics;

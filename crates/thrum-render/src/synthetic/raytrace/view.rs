@@ -1,6 +1,7 @@
 //! Display a primary-ray inspection of the same frame's opaque geometry.
 
 use super::super::{OUTPUT_FORMAT, RenderError, SceneContext};
+use crate::binding;
 use crate::graph::{CompiledPass, GraphColorAttachment};
 use crate::runtime::DeviceSite;
 
@@ -13,14 +14,10 @@ impl TracedView {
     pub(in crate::synthetic) fn new(device: &DeviceSite, view: &wgpu::BindGroupLayout) -> Self {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("traced view structure layout"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::AccelerationStructure {
-                    vertex_return: false,
-                },
-                count: None,
-            }],
+            entries: &[binding::acceleration_structure(
+                0,
+                wgpu::ShaderStages::FRAGMENT,
+            )],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("traced view pipeline layout"),

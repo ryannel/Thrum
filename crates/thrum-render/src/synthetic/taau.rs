@@ -1,6 +1,7 @@
 //! Prepared portable temporal resolve. One retained pair is shared by frame slots;
 //! the submitted transform cursor also selects its read and publication sides.
 use super::{OffscreenTarget, PreparedSynthetic, RenderError, SceneContext, SyntheticView};
+use crate::binding;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
@@ -43,40 +44,38 @@ impl Taau {
         let entries: Vec<_> = (0..=11)
             .filter(|binding| !reference || [0, 4, 6, 7, 9].contains(binding))
             .map(|binding| {
-                let ty = match binding {
-                    6..=8 => wgpu::BindingType::StorageTexture {
-                        access: wgpu::StorageTextureAccess::WriteOnly,
-                        format: match binding {
+                let visibility = wgpu::ShaderStages::COMPUTE;
+                match binding {
+                    6..=8 => binding::storage_texture(
+                        binding,
+                        visibility,
+                        wgpu::StorageTextureAccess::WriteOnly,
+                        match binding {
                             8 => wgpu::TextureFormat::R32Float,
                             7 if reference => wgpu::TextureFormat::Rgba32Float,
                             _ => wgpu::TextureFormat::Rgba16Float,
                         },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                    },
-                    9..=11 => wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(if binding == 9 {
+                        wgpu::TextureViewDimension::D2,
+                    ),
+                    9..=11 => binding::uniform(
+                        binding,
+                        visibility,
+                        if binding == 9 {
                             PARAM_BYTES
                         } else {
                             super::exposure::SAMPLE_BYTES
-                        }),
-                    },
-                    _ => wgpu::BindingType::Texture {
-                        sample_type: if binding == 1 {
+                        },
+                    ),
+                    _ => binding::texture(
+                        binding,
+                        visibility,
+                        if binding == 1 {
                             wgpu::TextureSampleType::Depth
                         } else {
                             wgpu::TextureSampleType::Float { filterable: false }
                         },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                };
-                wgpu::BindGroupLayoutEntry {
-                    binding,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty,
-                    count: None,
+                        wgpu::TextureViewDimension::D2,
+                    ),
                 }
             })
             .collect();

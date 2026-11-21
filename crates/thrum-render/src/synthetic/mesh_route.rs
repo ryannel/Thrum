@@ -21,7 +21,6 @@ use super::shadow::CasterDraw;
 use super::upload::InstanceUpload;
 use super::{
     MESH_COORDINATE_LIMIT, RenderError, SyntheticMesh, SyntheticMeshChoice, SyntheticScene,
-    storage_layout,
 };
 use crate::abi::InstanceRecord;
 use crate::visibility::{MemberInputs, MemberShape};
@@ -454,14 +453,16 @@ impl BucketRoute {
 
     /// The forward view-group entry the route binds per bucket.
     pub(super) fn view_layout_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
-        let mut entry = storage_layout(binding, wgpu::ShaderStages::VERTEX, 4);
-        if let wgpu::BindingType::Buffer {
-            has_dynamic_offset, ..
-        } = &mut entry.ty
-        {
-            *has_dynamic_offset = true;
+        wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::VERTEX,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Storage { read_only: true },
+                has_dynamic_offset: true,
+                min_binding_size: wgpu::BufferSize::new(4),
+            },
+            count: None,
         }
-        entry
     }
 
     /// Direct: the member list, bound one segment wide.

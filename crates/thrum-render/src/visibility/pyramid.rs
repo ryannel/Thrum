@@ -6,6 +6,7 @@
 pub(crate) const PYRAMID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R32Float;
 /// Graph and timing pass name.
 pub(crate) const PASS: &str = crate::pass_key::PassKey::DepthPyramid.constant_name();
+use crate::binding;
 use crate::shader_constants::PYRAMID_WORKGROUP_EDGE;
 
 /// Compute pipelines and layouts; independent of target size.
@@ -30,25 +31,20 @@ pub(crate) fn previous_pow2(n: u32) -> u32 {
 
 impl PyramidPrepared {
     pub(crate) fn new(device: &crate::runtime::DeviceSite) -> Self {
-        let storage = wgpu::BindGroupLayoutEntry {
-            binding: 1,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::StorageTexture {
-                access: wgpu::StorageTextureAccess::WriteOnly,
-                format: PYRAMID_FORMAT,
-                view_dimension: wgpu::TextureViewDimension::D2,
-            },
-            count: None,
-        };
-        let source = |sample_type| wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Texture {
+        let storage = binding::storage_texture(
+            1,
+            wgpu::ShaderStages::COMPUTE,
+            wgpu::StorageTextureAccess::WriteOnly,
+            PYRAMID_FORMAT,
+            wgpu::TextureViewDimension::D2,
+        );
+        let source = |sample_type| {
+            binding::texture(
+                0,
+                wgpu::ShaderStages::COMPUTE,
                 sample_type,
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
+                wgpu::TextureViewDimension::D2,
+            )
         };
         let layout = |label, sample_type| {
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

@@ -4,6 +4,7 @@
 use super::{
     DEPTH_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneContext, SyntheticView,
 };
+use crate::binding;
 use crate::graph::PassBody;
 use crate::pass_key::{PassKey, PipelineRole, SecondaryStage};
 use crate::shaders::wgsl;
@@ -347,10 +348,10 @@ impl SecondaryPrepared {
             prepared.shadow.is_some(),
             prepared.atmosphere.is_some(),
         );
-        entries.push(super::uniform_layout(
+        entries.push(binding::uniform(
             6,
-            RECORD_BYTES,
             wgpu::ShaderStages::FRAGMENT,
+            RECORD_BYTES,
         ));
         if prepared.shadow.is_some() {
             let mut height = *entries

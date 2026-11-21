@@ -12,6 +12,7 @@
 //! pass draws only the final list, so its draw sequence is Direct's minus
 //! slots strictly behind depth drawn this frame, which win no pixel.
 
+use crate::binding;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, PassScope, PipelineKey,
@@ -260,16 +261,12 @@ impl VisibilityPrepared {
             entry(7, write, false),
             entry(9, read, false),
             entry(11, write, false),
-            wgpu::BindGroupLayoutEntry {
-                binding: 10,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            },
+            binding::texture(
+                10,
+                wgpu::ShaderStages::COMPUTE,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D2,
+            ),
         ];
         // WebGPU allows 8 storage buffers per stage: the member path trades
         // the mask buffer for its member list and reads its table as a uniform.

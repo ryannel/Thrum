@@ -67,16 +67,7 @@ impl CasterCulling {
         shape: MemberShape,
         inputs: &CasterInputs<'_>,
     ) -> Self {
-        let entry = |binding, ty| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                ty,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        };
+        let entry = |binding, ty| binding::buffer(binding, wgpu::ShaderStages::COMPUTE, ty, 0);
         let read = wgpu::BufferBindingType::Storage { read_only: true };
         let write = wgpu::BufferBindingType::Storage { read_only: false };
         let uniform = wgpu::BufferBindingType::Uniform;

@@ -1,6 +1,7 @@
 //! Prepared SDR texture-to-surface pass. The platform owns the surface and
 //! presentation; this module only declares and encodes one view-sized GPU pass.
 
+use crate::binding;
 use std::{collections::BTreeSet, sync::Arc};
 
 use crate::{
@@ -200,16 +201,12 @@ impl SurfacePresenter {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("V1 surface source"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            }],
+            entries: &[binding::texture(
+                0,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D2,
+            )],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("V1 surface present"),

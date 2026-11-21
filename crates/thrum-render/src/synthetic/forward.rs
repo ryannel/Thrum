@@ -3,6 +3,7 @@
 //! prepass shares with it.
 
 use super::mesh_arena::MeshId;
+use crate::binding;
 mod light;
 use super::{
     CompiledPass, GpuTimings, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
@@ -37,10 +38,10 @@ pub(super) fn view_entries(
             },
             count: None,
         },
-        super::uniform_layout(
+        binding::uniform(
             1,
-            super::AUX_BYTES as u64,
             wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
+            super::AUX_BYTES as u64,
         ),
     ];
     if meshes {
@@ -52,21 +53,17 @@ pub(super) fn view_entries(
     }
     if shadowed {
         entries.extend([
-            super::uniform_layout(
+            binding::uniform(
                 2,
-                super::shadow::SAMPLE_BYTES as u64,
                 wgpu::ShaderStages::FRAGMENT,
+                super::shadow::SAMPLE_BYTES as u64,
             ),
-            wgpu::BindGroupLayoutEntry {
-                binding: 3,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Depth,
-                    view_dimension: wgpu::TextureViewDimension::D2Array,
-                    multisampled: false,
-                },
-                count: None,
-            },
+            binding::texture(
+                3,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Depth,
+                wgpu::TextureViewDimension::D2Array,
+            ),
         ]);
         if atmosphere {
             entries.push(super::air_shadow::VIEW_ENTRY);

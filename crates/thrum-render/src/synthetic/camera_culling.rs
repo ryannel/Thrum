@@ -9,6 +9,7 @@
 //! the final list, so atmosphere, the list in slot order into cleared depth,
 //! then any contribution draw exactly as in Direct.
 
+use crate::binding;
 use crate::graph::PassBody;
 use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
@@ -18,7 +19,6 @@ use super::mesh_route::BucketRoute;
 use super::{
     CompiledPass, DEPTH_FORMAT, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
     PreparedSynthetic, RenderError, SYNTHETIC_REVISION, SceneContext, VIEW_BYTES, history_gpu,
-    storage_layout,
 };
 use crate::graph::{
     Access, AccessKind, FrameGraph, GraphError, PassScope, PipelineKey, ResourceDescriptor,
@@ -187,7 +187,7 @@ fn mesh_record(row: &super::mesh_arena::MeshRow) -> Result<MeshRecord, RenderErr
 /// Culled modes: the forward view-group entry for the compacted slot list.
 pub(super) fn view_layout_entry(mode: CullMode) -> Option<wgpu::BindGroupLayoutEntry> {
     (mode != CullMode::Direct)
-        .then(|| storage_layout(VISIBLE_BINDING, wgpu::ShaderStages::VERTEX, 4))
+        .then(|| binding::storage(VISIBLE_BINDING, wgpu::ShaderStages::VERTEX, true, 4))
 }
 
 pub(super) fn visible_entry(target: Option<&VisibilityTarget>) -> Option<wgpu::BindGroupEntry<'_>> {

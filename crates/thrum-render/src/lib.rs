@@ -12,6 +12,7 @@ pub mod abi;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod apple_tile;
 pub mod atmosphere;
+pub mod binding;
 pub mod capabilities;
 pub mod contribution;
 pub mod extract;

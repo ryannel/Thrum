@@ -1,6 +1,7 @@
 //! Generation-bound LUTs and prepared portable pipelines. Encoding belongs to
 //! the caller's existing compiled graph; this owner never submits GPU work.
 
+use crate::binding;
 use crate::graph::{CompiledPass, PipelineKey};
 use crate::pass_key::{AtmosphereStage, PipelineRole, REFLECTION_MIPS};
 use crate::shaders::wgsl;
@@ -427,18 +428,9 @@ fn prepare_diffuse(
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere diffuse irradiance"),
         entries: &[
-            uniform_entry(visibility),
-            sampler_entry(2, visibility),
-            wgpu::BindGroupLayoutEntry {
-                binding: 3,
-                visibility,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(crate::light::ENVIRONMENT_BYTES),
-                },
-                count: None,
-            },
+            binding::uniform(0, visibility, UNIFORM_BYTES),
+            binding::sampler(2, visibility, wgpu::SamplerBindingType::Filtering),
+            binding::storage(3, visibility, false, crate::light::ENVIRONMENT_BYTES),
         ]
         .into_iter()
         .chain(chart_layout(AtmosphereStage::Diffuse, visibility))
@@ -492,21 +484,20 @@ fn prepare_aerial(
     night: &NightProfile,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
     let visibility = wgpu::ShaderStages::COMPUTE;
-    let output = |binding| wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::StorageTexture {
-            access: wgpu::StorageTextureAccess::WriteOnly,
-            format: wgpu::TextureFormat::Rgba16Float,
-            view_dimension: wgpu::TextureViewDimension::D2Array,
-        },
-        count: None,
+    let output = |binding| {
+        binding::storage_texture(
+            binding,
+            visibility,
+            wgpu::StorageTextureAccess::WriteOnly,
+            wgpu::TextureFormat::Rgba16Float,
+            wgpu::TextureViewDimension::D2Array,
+        )
     };
     let entries = [
-        uniform_entry(visibility),
+        binding::uniform(0, visibility, UNIFORM_BYTES),
         output(3),
         output(4),
-        sampler_entry(5, visibility),
+        binding::sampler(5, visibility, wgpu::SamplerBindingType::Filtering),
     ];
     let entries = entries
         .into_iter()
@@ -563,53 +554,19 @@ fn prepare_aerial(
     (pipeline, group)
 }
 
-fn uniform_entry(visibility: wgpu::ShaderStages) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding: 0,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
-            has_dynamic_offset: false,
-            min_binding_size: wgpu::BufferSize::new(UNIFORM_BYTES),
-        },
-        count: None,
-    }
-}
-
-pub(super) fn sampled_entry(
-    binding: u32,
-    visibility: wgpu::ShaderStages,
-) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Texture {
-            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-            view_dimension: wgpu::TextureViewDimension::D2,
-            multisampled: false,
-        },
-        count: None,
-    }
-}
-
-fn sampler_entry(binding: u32, visibility: wgpu::ShaderStages) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-        count: None,
-    }
-}
-
 /// Layout entries for the charts `stage` samples, from its one table.
 fn chart_layout(
     stage: AtmosphereStage,
     visibility: wgpu::ShaderStages,
 ) -> impl Iterator<Item = wgpu::BindGroupLayoutEntry> {
-    stage
-        .chart_reads()
-        .iter()
-        .map(move |read| sampled_entry(read.binding, visibility))
+    stage.chart_reads().iter().map(move |read| {
+        binding::texture(
+            read.binding,
+            visibility,
+            wgpu::TextureSampleType::Float { filterable: true },
+            wgpu::TextureViewDimension::D2,
+        )
+    })
 }
 
 /// Group entries for the charts `stage` samples, from the same table.
@@ -640,29 +597,30 @@ fn prepare_compute(
     let output = stage
         .chart_output()
         .expect("a chart stage writes its chart");
-    let mut entries = vec![uniform_entry(visibility)];
+    let mut entries = vec![binding::uniform(0, visibility, UNIFORM_BYTES)];
     entries.extend(chart_layout(stage, visibility));
     let mut bindings = vec![wgpu::BindGroupEntry {
         binding: 0,
         resource: uniform.as_entire_binding(),
     }];
     bindings.extend(chart_entries(stage, views));
-    entries.push(wgpu::BindGroupLayoutEntry {
-        binding: 3,
+    entries.push(binding::storage_texture(
+        3,
         visibility,
-        ty: wgpu::BindingType::StorageTexture {
-            access: wgpu::StorageTextureAccess::WriteOnly,
-            format: wgpu::TextureFormat::Rgba16Float,
-            view_dimension: wgpu::TextureViewDimension::D2,
-        },
-        count: None,
-    });
+        wgpu::StorageTextureAccess::WriteOnly,
+        wgpu::TextureFormat::Rgba16Float,
+        wgpu::TextureViewDimension::D2,
+    ));
     bindings.push(wgpu::BindGroupEntry {
         binding: 3,
         resource: wgpu::BindingResource::TextureView(views.get(output)),
     });
     if !stage.chart_reads().is_empty() {
-        entries.push(sampler_entry(4, visibility));
+        entries.push(binding::sampler(
+            4,
+            visibility,
+            wgpu::SamplerBindingType::Filtering,
+        ));
         bindings.push(wgpu::BindGroupEntry {
             binding: 4,
             resource: wgpu::BindingResource::Sampler(sampler),
@@ -740,30 +698,22 @@ fn prepare_sky(
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere sky resources"),
         entries: &[
-            uniform_entry(visibility),
-            sampled_entry(1, visibility),
-            sampled_entry(2, visibility),
-            sampler_entry(3, visibility),
-            wgpu::BindGroupLayoutEntry {
-                binding: 4,
+            binding::uniform(0, visibility, UNIFORM_BYTES),
+            binding::texture(
+                1,
                 visibility,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(size_of::<[f32; 4]>() as u64),
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 5,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D2,
+            ),
+            binding::texture(
+                2,
                 visibility,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(SKY_MOTION_BYTES),
-                },
-                count: None,
-            },
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D2,
+            ),
+            binding::sampler(3, visibility, wgpu::SamplerBindingType::Filtering),
+            binding::uniform(4, visibility, size_of::<[f32; 4]>() as u64),
+            binding::uniform(5, visibility, SKY_MOTION_BYTES),
         ],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

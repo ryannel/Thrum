@@ -5,6 +5,7 @@
 
 use super::shadow::ShadowTarget;
 use super::{DIRECTIONAL_BYTES, RenderError, shadow};
+use crate::binding;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, PassScope, PipelineKey,
@@ -21,16 +22,12 @@ pub(super) use crate::shader_constants::AIR_SHADOW_SIZE as SIZE;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg32Float;
 
 /// The forward pass's binding of the heights (view group, binding 4).
-pub(super) const VIEW_ENTRY: wgpu::BindGroupLayoutEntry = wgpu::BindGroupLayoutEntry {
-    binding: 4,
-    visibility: wgpu::ShaderStages::FRAGMENT,
-    ty: wgpu::BindingType::Texture {
-        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-        view_dimension: wgpu::TextureViewDimension::D2,
-        multisampled: false,
-    },
-    count: None,
-};
+pub(super) const VIEW_ENTRY: wgpu::BindGroupLayoutEntry = binding::texture(
+    4,
+    wgpu::ShaderStages::FRAGMENT,
+    wgpu::TextureSampleType::Float { filterable: false },
+    wgpu::TextureViewDimension::D2,
+);
 
 /// The forward shader's aerial perspective: terrain-shadowed with the heights, clear without
 /// them, or none without atmosphere lighting.
@@ -146,30 +143,18 @@ impl AirShadowPrepared {
         sample_bytes: u64,
         light_bytes: u64,
     ) -> Self {
-        let uniform = |binding, bytes| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(bytes),
-            },
-            count: None,
-        };
+        let uniform =
+            |binding, bytes| binding::uniform(binding, wgpu::ShaderStages::FRAGMENT, bytes);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic Sun air shadow heights"),
             entries: &[
                 uniform(0, sample_bytes),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Depth,
-                        view_dimension: wgpu::TextureViewDimension::D2Array,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
+                binding::texture(
+                    1,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Depth,
+                    wgpu::TextureViewDimension::D2Array,
+                ),
                 uniform(2, light_bytes),
             ],
         });

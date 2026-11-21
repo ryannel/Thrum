@@ -1,5 +1,6 @@
 //! Fixed Earth night transport, prepared once on the view's device.
 
+use crate::binding;
 use wgpu::util::DeviceExt as _;
 
 use crate::graph::{Access, AccessKind, FrameGraph, GraphError, ResourceDescriptor, ResourceScope};
@@ -150,17 +151,13 @@ impl NightProfile {
 
 pub(super) fn layout_entries() -> [wgpu::BindGroupLayoutEntry; 2] {
     [
-        super::gpu::sampled_entry(6, wgpu::ShaderStages::COMPUTE),
-        wgpu::BindGroupLayoutEntry {
-            binding: 7,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(CONTROL_BYTES),
-            },
-            count: None,
-        },
+        binding::texture(
+            6,
+            wgpu::ShaderStages::COMPUTE,
+            wgpu::TextureSampleType::Float { filterable: true },
+            wgpu::TextureViewDimension::D2,
+        ),
+        binding::uniform(7, wgpu::ShaderStages::COMPUTE, CONTROL_BYTES),
     ]
 }
 

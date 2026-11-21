@@ -1,6 +1,7 @@
 //! Explicit Metal build observation. The marker passes bracket the production
 //! build without sampling host wait or readback time.
 
+use crate::binding;
 use std::sync::{Arc, Mutex};
 
 use super::PreparedSynthetic;
@@ -77,27 +78,14 @@ impl RayBuildProbe {
         let shader = crate::shaders::Shader::RayBuild.compile(device, "ray mesh timestamp marker");
         let sink_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ray mesh timestamp sink layout"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(4),
-                },
-                count: None,
-            }],
+            entries: &[binding::storage(0, wgpu::ShaderStages::COMPUTE, false, 4)],
         });
         let structure_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ray mesh timestamp structure layout"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::AccelerationStructure {
-                    vertex_return: false,
-                },
-                count: None,
-            }],
+            entries: &[binding::acceleration_structure(
+                0,
+                wgpu::ShaderStages::COMPUTE,
+            )],
         });
         let pipeline = |entry, groups| {
             let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

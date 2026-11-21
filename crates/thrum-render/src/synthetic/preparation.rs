@@ -10,11 +10,11 @@ use super::{
     SurfaceParts, SyntheticScene, TextureClasses, TransformHistory, VIEW_BYTES, VIEW_SLOTS, abi,
     admit_meshes, camera_culling, caster_box, checked_display_gain, cluster, draw_witness_usage,
     forward, history_gpu, mesh_arena, mesh_rows, native_witness, pack_frame_lighting,
-    packed_light_direction, raytrace, scene_source, shadow, storage_buffer, storage_layout, taau,
-    temporal, uniform_layout,
+    packed_light_direction, raytrace, scene_source, shadow, storage_buffer, taau, temporal,
 };
 use crate::abi::AbiError;
 use crate::atmosphere::{AtmospherePrepared, CloudPrepared};
+use crate::binding;
 use crate::light::{DIRECTIONAL_BYTES, ENVIRONMENT_BINDING, ENVIRONMENT_BYTES};
 use crate::pass_key::PipelineRole;
 use crate::records::{CloudField, ClusterHead, LocalSource};
@@ -268,31 +268,29 @@ impl PreparedSynthetic {
             entries: &view_entries,
         });
         let mut light_entries = vec![
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(DIRECTIONAL_BYTES),
-                },
-                count: None,
-            },
-            storage_layout(
+            binding::uniform(0, wgpu::ShaderStages::FRAGMENT, DIRECTIONAL_BYTES),
+            binding::storage(
                 1,
                 wgpu::ShaderStages::FRAGMENT,
+                true,
                 size_of::<LocalSource>() as u64,
             ),
-            storage_layout(
+            binding::storage(
                 2,
                 wgpu::ShaderStages::FRAGMENT,
+                true,
                 size_of::<ClusterHead>() as u64,
             ),
-            storage_layout(3, wgpu::ShaderStages::FRAGMENT, size_of::<u32>() as u64),
-            uniform_layout(
-                ENVIRONMENT_BINDING,
-                ENVIRONMENT_BYTES,
+            binding::storage(
+                3,
                 wgpu::ShaderStages::FRAGMENT,
+                true,
+                size_of::<u32>() as u64,
+            ),
+            binding::uniform(
+                ENVIRONMENT_BINDING,
+                wgpu::ShaderStages::FRAGMENT,
+                ENVIRONMENT_BYTES,
             ),
         ];
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
@@ -303,49 +301,41 @@ impl PreparedSynthetic {
                 (9, wgpu::TextureViewDimension::D2),
                 (11, wgpu::TextureViewDimension::D2),
             ] {
-                light_entries.push(wgpu::BindGroupLayoutEntry {
+                light_entries.push(binding::texture(
                     binding,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: dimension,
-                        multisampled: false,
-                    },
-                    count: None,
-                });
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    dimension,
+                ));
             }
             for binding in [6, 10] {
-                light_entries.push(wgpu::BindGroupLayoutEntry {
+                light_entries.push(binding::sampler(
                     binding,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                });
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::SamplerBindingType::Filtering,
+                ));
             }
-            light_entries.push(uniform_layout(
+            light_entries.push(binding::uniform(
                 7,
-                size_of::<crate::records::Atmosphere>() as u64,
                 wgpu::ShaderStages::FRAGMENT,
+                size_of::<crate::records::Atmosphere>() as u64,
             ));
         }
-        light_entries.push(uniform_layout(
+        light_entries.push(binding::uniform(
             12,
-            size_of::<[f32; 4]>() as u64,
             wgpu::ShaderStages::FRAGMENT,
+            size_of::<[f32; 4]>() as u64,
         ));
         if cloud.is_some() {
-            light_entries.push(wgpu::BindGroupLayoutEntry {
-                binding: 13,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            });
-            light_entries.push(uniform_layout(
+            light_entries.push(binding::texture(
+                13,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D2,
+            ));
+            light_entries.push(binding::uniform(
                 14,
+                wgpu::ShaderStages::FRAGMENT,
                 if scene
                     .sun_optical_depth
                     .as_ref()
@@ -355,7 +345,6 @@ impl PreparedSynthetic {
                 } else {
                     size_of::<CloudField>() as u64
                 },
-                wgpu::ShaderStages::FRAGMENT,
             ));
         }
         let map_light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -366,7 +355,10 @@ impl PreparedSynthetic {
             .lamps
             .then(|| raytrace::LampShadows::new(device, queue));
         let light_layout = if trace_lights {
-            light_entries.push(raytrace::structure_layout_entry());
+            light_entries.push(binding::acceleration_structure(
+                15,
+                wgpu::ShaderStages::FRAGMENT,
+            ));
             if lamp_shadows.is_some() {
                 light_entries.extend(raytrace::LampShadows::layout_entries());
             }
@@ -450,29 +442,25 @@ impl PreparedSynthetic {
             aerial: None,
         }
         .bind(device, &map_light_layout, &exposure_samples, None, None);
-        let mut entries = vec![storage_layout(
+        let mut entries = vec![binding::storage(
             0,
             wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
+            true,
             abi::MATERIAL_BYTES as u64,
         )];
         for binding in 1..=4 {
-            entries.push(wgpu::BindGroupLayoutEntry {
+            entries.push(binding::texture(
                 binding,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2Array,
-                    multisampled: false,
-                },
-                count: None,
-            });
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D2Array,
+            ));
         }
-        entries.push(wgpu::BindGroupLayoutEntry {
-            binding: 5,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-            count: None,
-        });
+        entries.push(binding::sampler(
+            5,
+            wgpu::ShaderStages::FRAGMENT,
+            wgpu::SamplerBindingType::Filtering,
+        ));
         let material_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ABI2 material table and classes"),
             entries: &entries,
@@ -505,10 +493,25 @@ impl PreparedSynthetic {
         let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ABI2 instance table"),
             entries: &[
-                storage_layout(0, wgpu::ShaderStages::VERTEX, abi::INSTANCE_BYTES as u64),
-                storage_layout(1, wgpu::ShaderStages::VERTEX, history_gpu::ENTRY_BYTES),
-                uniform_layout(2, history_gpu::SERIAL_BYTES, wgpu::ShaderStages::VERTEX),
-                storage_layout(3, wgpu::ShaderStages::VERTEX, mesh_arena::VERTEX_BYTES),
+                binding::storage(
+                    0,
+                    wgpu::ShaderStages::VERTEX,
+                    true,
+                    abi::INSTANCE_BYTES as u64,
+                ),
+                binding::storage(
+                    1,
+                    wgpu::ShaderStages::VERTEX,
+                    true,
+                    history_gpu::ENTRY_BYTES,
+                ),
+                binding::uniform(2, wgpu::ShaderStages::VERTEX, history_gpu::SERIAL_BYTES),
+                binding::storage(
+                    3,
+                    wgpu::ShaderStages::VERTEX,
+                    true,
+                    mesh_arena::VERTEX_BYTES,
+                ),
             ],
         });
         let history = TransformHistory::new(

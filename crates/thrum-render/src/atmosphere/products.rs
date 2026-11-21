@@ -1,6 +1,7 @@
 //! On-demand read-only bindings for independent scene contributions.
 
 use super::gpu::AtmospherePrepared;
+use crate::binding;
 use crate::shaders::wgsl;
 
 /// Read-only atmosphere products, created on the contribution's request.
@@ -57,16 +58,7 @@ pub(super) fn create(
     far_aerial: bool,
 ) -> EnvironmentProducts {
     let visibility = wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE;
-    let buffer = |binding, bytes| wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
-            has_dynamic_offset: false,
-            min_binding_size: wgpu::BufferSize::new(bytes),
-        },
-        count: None,
-    };
+    let buffer = |binding, bytes| binding::uniform(binding, visibility, bytes);
     let mut entries = vec![
         buffer(0, super::gpu::UNIFORM_BYTES),
         buffer(3, crate::light::ENVIRONMENT_BYTES),
@@ -81,24 +73,19 @@ pub(super) fn create(
         (7, wgpu::TextureViewDimension::Cube),
         (8, wgpu::TextureViewDimension::D2),
     ] {
-        entries.push(wgpu::BindGroupLayoutEntry {
+        entries.push(binding::texture(
             binding,
             visibility,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension,
-                multisampled: false,
-            },
-            count: None,
-        });
+            wgpu::TextureSampleType::Float { filterable: true },
+            view_dimension,
+        ));
     }
     for binding in [2, 9] {
-        entries.push(wgpu::BindGroupLayoutEntry {
+        entries.push(binding::sampler(
             binding,
             visibility,
-            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-            count: None,
-        });
+            wgpu::SamplerBindingType::Filtering,
+        ));
     }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("lent environment products"),

@@ -2,6 +2,7 @@
 //! exposure is resolved separately; output remains relative to display white.
 
 use super::{OUTPUT_FORMAT, RenderError, exposure};
+use crate::binding;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, PassScope, PipelineKey,
@@ -80,16 +81,12 @@ impl DisplayReferredStage {
         let shader = crate::shaders::Shader::DisplayReferred.compile(device, DISPLAY_REFERRED_PASS);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(DISPLAY_REFERRED_PASS),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            }],
+            entries: &[binding::texture(
+                0,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D2,
+            )],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(DISPLAY_REFERRED_PASS),
@@ -223,36 +220,19 @@ impl SdrToneStage {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic display layout"),
             entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(exposure::SAMPLE_BYTES),
-                    },
-                    count: None,
-                },
+                binding::texture(
+                    0,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureViewDimension::D2,
+                ),
+                binding::texture(
+                    2,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureViewDimension::D2,
+                ),
+                binding::uniform(1, wgpu::ShaderStages::FRAGMENT, exposure::SAMPLE_BYTES),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

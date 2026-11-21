@@ -1,16 +1,6 @@
+use crate::binding;
 use crate::contribution::{QualityInvalidation, QualityKnob, QualitySettings};
 use crate::records::LampShadowQuality;
-
-pub(in crate::synthetic) fn structure_layout_entry() -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding: 15,
-        visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::AccelerationStructure {
-            vertex_return: false,
-        },
-        count: None,
-    }
-}
 
 pub(in crate::synthetic) struct LampShadows {
     pub(in crate::synthetic) settings: QualitySettings,
@@ -80,21 +70,12 @@ impl LampShadows {
 
     pub(in crate::synthetic) fn layout_entries() -> [wgpu::BindGroupLayoutEntry; 2] {
         [
-            crate::synthetic::uniform_layout(
+            binding::uniform(
                 16,
-                size_of::<LampShadowQuality>() as u64,
                 wgpu::ShaderStages::FRAGMENT,
+                size_of::<LampShadowQuality>() as u64,
             ),
-            wgpu::BindGroupLayoutEntry {
-                binding: 17,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(4),
-                },
-                count: None,
-            },
+            binding::storage(17, wgpu::ShaderStages::FRAGMENT, false, 4),
         ]
     }
 

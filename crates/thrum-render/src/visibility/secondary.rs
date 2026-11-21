@@ -4,6 +4,7 @@ use super::{
     Access, AccessKind, CompiledPass, FrameGraph, GpuTimings, GraphError, PassScope, PipelineKey,
     TimingError, VisibilityPrepared, VisibilityTarget,
 };
+use crate::binding;
 use crate::graph::PassBody;
 use crate::pass_key::{PassKey, SecondaryStage};
 
@@ -22,18 +23,11 @@ impl SecondaryVisibility {
     ) -> Self {
         let record_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(size_of::<
-                        crate::contribution::SecondaryViewRecord,
-                    >() as u64),
-                },
-                count: None,
-            }],
+            entries: &[binding::uniform(
+                0,
+                wgpu::ShaderStages::COMPUTE,
+                size_of::<crate::contribution::SecondaryViewRecord>() as u64,
+            )],
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(PASS),

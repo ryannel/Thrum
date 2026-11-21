@@ -2,6 +2,7 @@
 
 use super::RenderError;
 use super::cluster::{X, Y, Z};
+use crate::binding;
 use crate::graph::CompiledPass;
 use crate::records::{Bounds, ClusterHead};
 use crate::timing::GpuTimings;
@@ -20,36 +21,24 @@ impl ClusterCompute {
         indices: &wgpu::Buffer,
     ) -> Self {
         let entries = [
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: true },
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(size_of::<Bounds>() as u64),
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(size_of::<ClusterHead>() as u64),
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 2,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(size_of::<u32>() as u64),
-                },
-                count: None,
-            },
+            binding::storage(
+                0,
+                wgpu::ShaderStages::COMPUTE,
+                true,
+                size_of::<Bounds>() as u64,
+            ),
+            binding::storage(
+                1,
+                wgpu::ShaderStages::COMPUTE,
+                false,
+                size_of::<ClusterHead>() as u64,
+            ),
+            binding::storage(
+                2,
+                wgpu::ShaderStages::COMPUTE,
+                false,
+                size_of::<u32>() as u64,
+            ),
         ];
         let group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic cluster compute"),

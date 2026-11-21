@@ -3,8 +3,8 @@
 
 use super::{
     DisplayOverlay, PRE_EXPOSURE, RenderError, SdrToneMap, display::display_selectors, history_gpu,
-    uniform_layout,
 };
+use crate::binding;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, PassScope, PipelineKey,
@@ -139,20 +139,11 @@ impl ExposureResolve {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera exposure resolve"),
             entries: &[
-                uniform_layout(0, POLICY_BYTES, wgpu::ShaderStages::COMPUTE),
-                uniform_layout(1, DIRECTIONAL_BYTES, wgpu::ShaderStages::COMPUTE),
-                uniform_layout(4, ENVIRONMENT_BYTES, wgpu::ShaderStages::COMPUTE),
-                uniform_layout(2, history_gpu::SERIAL_BYTES, wgpu::ShaderStages::COMPUTE),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: false },
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(SAMPLE_BYTES),
-                    },
-                    count: None,
-                },
+                binding::uniform(0, wgpu::ShaderStages::COMPUTE, POLICY_BYTES),
+                binding::uniform(1, wgpu::ShaderStages::COMPUTE, DIRECTIONAL_BYTES),
+                binding::uniform(4, wgpu::ShaderStages::COMPUTE, ENVIRONMENT_BYTES),
+                binding::uniform(2, wgpu::ShaderStages::COMPUTE, history_gpu::SERIAL_BYTES),
+                binding::storage(3, wgpu::ShaderStages::COMPUTE, false, SAMPLE_BYTES),
             ],
         });
         let groups = std::array::from_fn(|side| {

@@ -4,6 +4,7 @@
 //! the prepared pipelines and light matrices belong to its device generation and
 //! checked camera sample.
 
+use crate::binding;
 use glam::{Mat4, Vec3, Vec4};
 use wgpu::util::DeviceExt;
 
@@ -207,17 +208,12 @@ impl ShadowPrepared {
         let fitted = inputs.fit(None)?;
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic Sun cascade view"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX
+            entries: &[binding::uniform(
+                0,
+                wgpu::ShaderStages::VERTEX
                     | super::forward::mesh_stage_visibility(device.features()),
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(CASTER_VIEW_RANGE),
-                },
-                count: None,
-            }],
+                CASTER_VIEW_RANGE,
+            )],
         });
         let cascades = std::array::from_fn(|index| {
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

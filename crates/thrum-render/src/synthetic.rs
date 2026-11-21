@@ -1612,38 +1612,6 @@ fn checked_display_gain(exposure: f32) -> Result<f32, RenderError> {
     Ok(gain)
 }
 
-fn uniform_layout(
-    binding: u32,
-    size: u64,
-    visibility: wgpu::ShaderStages,
-) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
-            has_dynamic_offset: false,
-            min_binding_size: wgpu::BufferSize::new(size),
-        },
-        count: None,
-    }
-}
-fn storage_layout(
-    binding: u32,
-    visibility: wgpu::ShaderStages,
-    stride: u64,
-) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Storage { read_only: true },
-            has_dynamic_offset: false,
-            min_binding_size: wgpu::BufferSize::new(stride),
-        },
-        count: None,
-    }
-}
 fn storage_buffer(
     device: &wgpu::Device,
     queue: &wgpu::Queue,

@@ -1,5 +1,7 @@
 //! Prepared inputs shared by late scene effects. No allocation occurs in a frame.
 
+use crate::binding;
+
 /// Work recorded after opaque, sky and stars.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AfterOpaqueKind {
@@ -44,16 +46,12 @@ impl AfterOpaquePass {
             ),
         ] {
             if enabled {
-                entries.push(wgpu::BindGroupLayoutEntry {
+                entries.push(binding::texture(
                     binding,
-                    visibility: wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                });
+                    wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
+                    sample_type,
+                    wgpu::TextureViewDimension::D2,
+                ));
             }
         }
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

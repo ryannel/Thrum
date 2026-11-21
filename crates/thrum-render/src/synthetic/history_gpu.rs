@@ -1,12 +1,13 @@
 //! Two GPU-retained transform samples. Physical instance slots are the index;
 //! identity, generation and submitted serial reject history after compaction.
 
+use crate::binding;
 use crate::records::{HistoryRecord, Serials};
 
 use crate::graph::CompiledPass;
 use crate::timing::GpuTimings;
 
-use super::{RenderError, abi, storage_layout, uniform_layout};
+use super::{RenderError, abi};
 
 pub(super) const ENTRY_BYTES: u64 = size_of::<HistoryRecord>() as u64;
 pub(super) const SERIAL_BYTES: u64 = size_of::<Serials>() as u64;
@@ -54,18 +55,14 @@ impl TransformHistory {
         let writer_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic history publisher layout"),
             entries: &[
-                storage_layout(0, wgpu::ShaderStages::COMPUTE, abi::INSTANCE_BYTES as u64),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: false },
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(ENTRY_BYTES),
-                    },
-                    count: None,
-                },
-                uniform_layout(2, SERIAL_BYTES, wgpu::ShaderStages::COMPUTE),
+                binding::storage(
+                    0,
+                    wgpu::ShaderStages::COMPUTE,
+                    true,
+                    abi::INSTANCE_BYTES as u64,
+                ),
+                binding::storage(1, wgpu::ShaderStages::COMPUTE, false, ENTRY_BYTES),
+                binding::uniform(2, wgpu::ShaderStages::COMPUTE, SERIAL_BYTES),
             ],
         });
         let read_groups = read_groups(
