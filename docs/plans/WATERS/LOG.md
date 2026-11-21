@@ -547,4 +547,4 @@
   holds it near 43%, with 36% in a strong breeze and 14% in a trade wind. Verified on Metal: all foam suites pass,
   and 40 m and 2 m captures show no line in any wind. Chrome's foam check passes. Design proposal: the design's
   stateless far estimator now carries that one measured mean per endpoint.
-  [Target evidence](../../../.claude/worktrees/waters/tmp/waters-m7-r4/README.md).
+  Target evidence: `.claude/worktrees/waters/tmp/waters-m7-r4/README.md`.
