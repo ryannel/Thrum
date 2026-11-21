@@ -3,6 +3,17 @@ members = ["crates/thrum-test-support", "crates/thrum-fixtures", "crates/thrum-c
 default-members = ["crates/thrum-core"]
 resolver = "3"
 
+# Test builds only, as GATE-TIME M8 measured before switching them on: every dependency fully
+# optimised and workspace crates lightly. Debug assertions and overflow checks stay on, so no test
+# changes meaning; the model crates below keep their own levels.
+[profile.test]
+opt-level = 1
+debug-assertions = true
+overflow-checks = true
+
+[profile.test.package."*"]
+opt-level = 3
+
 # Dense f64 shore-lag proofs visit millions of cells. Keep debug assertions and
 # test semantics while optimizing this numerical model's test artifacts only.
 [profile.test.package.thrum-water-model]

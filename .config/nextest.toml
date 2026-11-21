@@ -1,0 +1,60 @@
+# The test runner's configuration for `./dev check`, which runs every test in a process of its
+# own, side by side across every test binary (ORCHESTRATE.md, Test tiers; GATE-TIME mechanism 8).
+# A test relies on no other test of its binary having run and on no static it shares with one. A
+# test that needs a device to itself joins a group below, and one that starts a thread pool is
+# counted as heavy, in the landing that adds it.
+
+# `./dev check` names the same version and stops before any step when an older one is installed.
+nextest-version = { required = "0.9.150" }
+
+[profile.default]
+# Every test runs and reports, and a failed test is never run again: a retry would hide a test
+# that fails one time in ten.
+fail-fast = false
+retries = 0
+# A test over ten seconds is reported as slow; one still running at sixty is stopped and fails
+# the check. Sixty is six times the merge tier's bound, because the check runs beside builders.
+slow-timeout = { period = "10s", terminate-after = 6 }
+final-status-level = "slow"
+
+[profile.default.junit]
+# `./dev check` reads this report for its ten slowest tests and the tests it stopped.
+path = "junit.xml"
+
+[test-groups]
+# Each holds the tests of one file that kept a device mutex under `cargo test`; they take turns
+# with each other, beside every other test.
+cooked-assets = { max-threads = 1 }
+frame-alloc = { max-threads = 1 }
+foam-scene = { max-threads = 1 }
+water-interaction = { max-threads = 1 }
+generation-transition-metal = { max-threads = 1 }
+
+[[profile.default.overrides]]
+# Full scene targets, some fixtures keeping two devices alive.
+filter = 'package(v1-game) & binary(=cooked_assets_gpu)'
+test-group = 'cooked-assets'
+
+[[profile.default.overrides]]
+# Counts the main thread's allocations over 600 frames of a Metal host.
+filter = 'package(v1-game) & binary(=frame_alloc)'
+test-group = 'frame-alloc'
+
+[[profile.default.overrides]]
+filter = 'package(water-scene) & binary(=foam_scene_gpu)'
+test-group = 'foam-scene'
+
+[[profile.default.overrides]]
+# One live interaction fixture at a time: a Metal device and several full-grid buffers each.
+filter = 'package(thrum-water) & (binary(=interaction_gpu) | binary(=foam_gpu))'
+test-group = 'water-interaction'
+
+[[profile.default.overrides]]
+# Device loss and capture observations that an overlapping test device could disturb.
+filter = 'package(thrum-render) & binary(=generation_transition) & test(/^generation_transition::metal::/)'
+test-group = 'generation-transition-metal'
+
+[[profile.default.overrides]]
+# Every river solve starts a thread pool as wide as the machine.
+filter = 'package(thrum-river-model)'
+threads-required = 4

@@ -452,6 +452,270 @@ fn long_tests() -> TaskResult {
     Ok(())
 }
 
+/// The oldest cargo-nextest `./dev check` accepts; `.config/nextest.toml` names the same.
+const NEXTEST_MIN: (u64, u64, u64) = (0, 9, 150);
+
+/// Fails before any step when cargo-nextest is missing or older than [`NEXTEST_MIN`].
+fn require_nextest() -> TaskResult {
+    let (major, minor, patch) = NEXTEST_MIN;
+    let install = format!(
+        "./dev check runs its tests through cargo-nextest {major}.{minor}.{patch} or newer; \
+         install it with `cargo install --locked cargo-nextest`"
+    );
+    let found = Command::new(env!("CARGO"))
+        .args(["nextest", "--version"])
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .and_then(|output| nextest_version(&String::from_utf8_lossy(&output.stdout)));
+    match found {
+        Some(version) if version >= NEXTEST_MIN => Ok(()),
+        Some((a, b, c)) => Err(format!("{install} (found {a}.{b}.{c})").into()),
+        None => Err(format!("{install} (it is not installed)").into()),
+    }
+}
+
+/// The version in `cargo-nextest 0.9.150 (d225b1daf 2026-10-26)`.
+fn nextest_version(text: &str) -> Option<(u64, u64, u64)> {
+    let version = text
+        .lines()
+        .next()?
+        .strip_prefix("cargo-nextest ")?
+        .split_whitespace()
+        .next()?;
+    let mut parts = version.split('-').next()?.split('.').map(str::parse::<u64>);
+    Some((
+        parts.next()?.ok()?,
+        parts.next()?.ok()?,
+        parts.next()?.ok()?,
+    ))
+}
+
+/// One test's result from cargo-nextest's JUnit report.
+struct TestTime {
+    /// `<package>::<binary> <test>`, as cargo-nextest names it.
+    name: String,
+    seconds: f64,
+    timed_out: bool,
+}
+
+/// The value of `attribute="..."` in one XML start tag, unescaped.
+fn xml_attribute(tag: &str, attribute: &str) -> Option<String> {
+    let start = tag.find(&format!(" {attribute}=\""))? + attribute.len() + 3;
+    let value = &tag[start..start + tag[start..].find('"')?];
+    Some(
+        value
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
+            .replace("&amp;", "&"),
+    )
+}
+
+/// Every test case of a cargo-nextest JUnit report. A case whose failure says it timed out was
+/// stopped by the slow-test limit of `.config/nextest.toml`.
+fn junit_times(xml: &str) -> Vec<TestTime> {
+    let mut times = Vec::new();
+    for case in xml.split("<testcase ").skip(1) {
+        // The leading space lets the first attribute match like the others.
+        let tag = format!(" {}", &case[..case.find('>').unwrap_or(case.len())]);
+        let body = &case[..case.find("</testcase>").unwrap_or(case.len())];
+        let (Some(name), Some(class)) = (
+            xml_attribute(&tag, "name"),
+            xml_attribute(&tag, "classname"),
+        ) else {
+            continue;
+        };
+        times.push(TestTime {
+            name: format!("{class} {name}"),
+            seconds: xml_attribute(&tag, "time")
+                .and_then(|time| time.parse().ok())
+                .unwrap_or(0.0),
+            timed_out: body.contains("timed out"),
+        });
+    }
+    times
+}
+
+/// Above this a test is reported as slow; ten seconds is the merge tier's bound for one test.
+const SLOW_TEST_SECONDS: f64 = 10.0;
+
+/// What `./dev check` has done so far: each step's wall time, and each test's time.
+#[derive(Default)]
+struct CheckRecord {
+    steps: Vec<(String, std::time::Duration, bool)>,
+    tests: Vec<TestTime>,
+}
+
+impl CheckRecord {
+    fn step(&mut self, name: &str, work: impl FnOnce(&mut Self) -> TaskResult) -> TaskResult {
+        writeln!(std::io::stdout().lock(), "==> {name}")?;
+        let start = std::time::Instant::now();
+        let result = work(self);
+        self.steps
+            .push((name.to_owned(), start.elapsed(), result.is_ok()));
+        result
+    }
+
+    /// Runs cargo-nextest with `args` after `cargo nextest run`, then reads its JUnit report.
+    fn nextest(&mut self, junit: &Path, args: &[&str]) -> TaskResult {
+        // A report left by an earlier run must not be read as this one's.
+        match std::fs::remove_file(junit) {
+            Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
+            _ => {}
+        }
+        let mut full = vec!["nextest", "run", "--locked", "--offline"];
+        full.extend_from_slice(args);
+        let ran = cargo(&full);
+        if let Ok(xml) = std::fs::read_to_string(junit) {
+            let times = junit_times(&xml);
+            let stopped: Vec<&TestTime> = times.iter().filter(|test| test.timed_out).collect();
+            if !stopped.is_empty() {
+                let mut out = std::io::stdout().lock();
+                for test in stopped {
+                    writeln!(
+                        out,
+                        "test stopped: {} ran for over 60 s. A test in a merge's check takes about ten \
+                         seconds or less: make it fast, or mark it #[ignore = \"long: <reason>\"] and \
+                         list its binary in .config/long-tests.txt (ORCHESTRATE.md, Test tiers)",
+                        test.name
+                    )?;
+                }
+            }
+            self.tests.extend(times);
+        }
+        ran
+    }
+
+    /// The closing summary, printed whether the check passed or failed.
+    fn summary(&mut self) -> TaskResult {
+        let mut out = std::io::stdout().lock();
+        writeln!(out, "\n./dev check step times (wall):")?;
+        let mut total = std::time::Duration::ZERO;
+        for (name, elapsed, passed) in &self.steps {
+            total += *elapsed;
+            let mark = if *passed { "" } else { "  FAILED" };
+            writeln!(out, "  {:>8.1} s  {name}{mark}", elapsed.as_secs_f64())?;
+        }
+        writeln!(out, "  {:>8.1} s  total", total.as_secs_f64())?;
+        self.tests.sort_by(|a, b| b.seconds.total_cmp(&a.seconds));
+        if !self.tests.is_empty() {
+            writeln!(out, "ten slowest tests:")?;
+            for test in self.tests.iter().take(10) {
+                writeln!(out, "  {:>8.1} s  {}", test.seconds, test.name)?;
+            }
+            let slow: Vec<&TestTime> = self
+                .tests
+                .iter()
+                .filter(|test| test.seconds > SLOW_TEST_SECONDS)
+                .collect();
+            writeln!(
+                out,
+                "{} of {} tests ran for over {SLOW_TEST_SECONDS} s, the merge tier's bound for one test; \
+                 one over 60 s is stopped unless .config/nextest.toml exempts it by name:",
+                slow.len(),
+                self.tests.len()
+            )?;
+            for test in slow {
+                writeln!(out, "  {:>8.1} s  {}", test.seconds, test.name)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// The target directory cargo-nextest writes its store under.
+fn target_dir(root: &Path) -> PathBuf {
+    env::var_os("CARGO_TARGET_DIR").map_or_else(|| root.join("target"), PathBuf::from)
+}
+
+/// The draw-probe pass runs only the cooked-asset tests that assert on the draw probe; the
+/// workspace pass runs every cooked-asset test against the production build.
+const DRAW_PROBE_TESTS: &[&str] = &[
+    "a_fetched_edit_swaps_in_and_reuses_unchanged_products",
+    "a_publication_larger_than_staging_streams_through_the_bounded_ring",
+    "a_newer_publication_supersedes_an_upload_still_being_filled",
+    "adapter_less_public_host_selects_direct",
+];
+
+/// `./dev check`: every step in turn, stopping at the first that fails, then the time of each
+/// step that ran and the slowest tests.
+fn check(root: &Path) -> TaskResult {
+    require_nextest()?;
+    let junit = target_dir(root).join("nextest/default/junit.xml");
+    let mut record = CheckRecord::default();
+    let result = check_steps(&mut record, &junit);
+    record.summary()?;
+    result
+}
+
+fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
+    record.step("2D profile guard", |_| {
+        python(&["scripts/sim2d_profile.py", "check"])?;
+        python(&["scripts/sim2d_profile.py", "controls"])
+    })?;
+    record.step("exact-baseline reference guard", |_| {
+        python(&["scripts/exact_baselines.py", "guard"])
+    })?;
+    record.step("repository guards", |_| python(&["scripts/repo_check.py"]))?;
+    record.step("script suites", |_| script_suites())?;
+    record.step("rustfmt", |_| cargo(&["fmt", "--all", "--", "--check"]))?;
+    record.step("Clippy, workspace", |_| {
+        cargo(&[
+            "clippy",
+            "--locked",
+            "--offline",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings",
+        ])
+    })?;
+    record.step("Clippy, wasm", |_| check_web())?;
+    // Tests behind a Cargo feature, from the main-tier list; `./dev long-tests` runs them.
+    record.step("Clippy, tests behind a feature", |_| lint_feature_tests())?;
+    // Every test binary of the workspace, built once, each test in a process of its own.
+    record.step("tests, side by side", |record| {
+        record.nextest(junit, &["--workspace"])
+    })?;
+    record.step("doc tests", |_| {
+        cargo(&["test", "--locked", "--offline", "--workspace", "--doc"])
+    })?;
+    // Qualification-only observations inspect the real bound buffers and commands.
+    record.step("draw-probe tests", |record| {
+        let filter = DRAW_PROBE_TESTS
+            .iter()
+            .map(|name| format!("test(={name})"))
+            .collect::<Vec<_>>()
+            .join(" | ");
+        let before = record.tests.len();
+        record.nextest(
+            junit,
+            &[
+                "-p",
+                "v1-game",
+                "--features",
+                "draw-probe",
+                "--test",
+                "cooked_assets_gpu",
+                "-E",
+                &filter,
+            ],
+        )?;
+        let ran = record.tests.len() - before;
+        if ran != DRAW_PROBE_TESTS.len() {
+            return Err(format!(
+                "the draw-probe pass ran {ran} tests where it names {}; a test it names was renamed or removed",
+                DRAW_PROBE_TESTS.len()
+            )
+            .into());
+        }
+        Ok(())
+    })
+}
+
 /// `./dev help`, one command to a line so that edits to different commands merge cleanly.
 const HELP: &[&str] = &[
     "Thrum contributor commands:",
@@ -543,40 +807,7 @@ fn main() -> TaskResult {
                 }
             }
         }
-        "check" => {
-            python(&["scripts/sim2d_profile.py", "check"])?;
-            python(&["scripts/sim2d_profile.py", "controls"])?;
-            python(&["scripts/exact_baselines.py", "guard"])?;
-            python(&["scripts/repo_check.py"])?;
-            script_suites()?;
-            cargo(&["fmt", "--all", "--", "--check"])?;
-            cargo(&[
-                "clippy",
-                "--locked",
-                "--offline",
-                "--workspace",
-                "--all-targets",
-                "--",
-                "-D",
-                "warnings",
-            ])?;
-            check_web()?;
-            // Tests behind a Cargo feature, from the main-tier list; `./dev long-tests` runs them.
-            lint_feature_tests()?;
-            cargo(&["test", "--locked", "--offline", "--workspace"])?;
-            // Qualification-only observations inspect the real bound buffers and commands.
-            cargo(&[
-                "test",
-                "--locked",
-                "--offline",
-                "-p",
-                "v1-game",
-                "--features",
-                "draw-probe",
-                "--test",
-                "cooked_assets_gpu",
-            ])?;
-        }
+        "check" => check(&root)?,
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),
     }
     Ok(())
@@ -584,7 +815,43 @@ fn main() -> TaskResult {
 
 #[cfg(test)]
 mod tests {
-    use super::main_tier_list;
+    use super::{junit_times, main_tier_list, nextest_version};
+
+    #[test]
+    fn nextest_version_reads_the_first_line() {
+        assert_eq!(
+            nextest_version("cargo-nextest 0.9.150 (d225b1daf 2026-10-26)\nrelease: 0.9.150\n"),
+            Some((0, 9, 150))
+        );
+        assert_eq!(
+            nextest_version("cargo-nextest 0.10.2-rc.1\n"),
+            Some((0, 10, 2))
+        );
+        assert_eq!(nextest_version("error: no such command: `nextest`"), None);
+    }
+
+    #[test]
+    fn junit_times_reads_each_case_and_marks_timeouts() {
+        let xml = r#"<testsuites><testsuite name="game::cooked">
+<testcase name="fast" classname="game::cooked" time="1.5"></testcase>
+<testcase name="a &amp; b" classname="game::cooked" time="61.000">
+<failure type="test failure">test timed out</failure></testcase>
+<testcase name="slow" classname="model::report" time="12.25"/>
+</testsuite></testsuites>"#;
+        let times = junit_times(xml);
+        let names: Vec<_> = times
+            .iter()
+            .map(|t| (t.name.as_str(), t.seconds, t.timed_out))
+            .collect();
+        assert_eq!(
+            names,
+            [
+                ("game::cooked fast", 1.5, false),
+                ("game::cooked a & b", 61.0, true),
+                ("model::report slow", 12.25, false)
+            ]
+        );
+    }
 
     #[test]
     fn main_tier_list_reads_long_tests_and_feature_lines() {

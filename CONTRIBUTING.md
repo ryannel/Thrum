@@ -23,7 +23,9 @@ fingerprints after revision changes; the gate therefore does not reuse that quer
 
 Before `./dev check`, run
 `rustup target add --toolchain stable wasm32-unknown-unknown aarch64-apple-ios-sim`
-to install the rule guard's cross-compilation targets.
+to install the rule guard's cross-compilation targets, and `cargo install --locked cargo-nextest`:
+`./dev check` runs its tests side by side through cargo-nextest 0.9.150 or newer, and stops before
+any step with that command when it is missing or older.
 For actual Chrome function: build with `sh examples/v1-game/web/build.sh`, then run
 `node scripts/check_v1_browser.mjs --case all --output tmp/browser-check` (new output directory, Node 24, this M3 Max).
 The material hook reload is compiled only into the development page: build it with `build.sh --dev`, then run

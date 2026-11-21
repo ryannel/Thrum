@@ -26,6 +26,8 @@ jobs:
         run: |
           rustup toolchain install stable --profile minimal --component rustfmt --component clippy
           rustup target add --toolchain stable wasm32-unknown-unknown aarch64-apple-ios-sim
+      - name: Install the test runner ./dev check requires
+        run: rustup run stable cargo install --locked cargo-nextest
       - name: Fetch locked dependencies for offline checks
         run: rustup run stable cargo fetch --locked
       - name: Check repository, game Wasm build and native tests
