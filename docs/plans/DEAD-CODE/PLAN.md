@@ -37,15 +37,16 @@ them.
 
 ## M2 A scene contribution writes only the hooks it uses
 
-The trait is in `crates/thrum-render/src/contribution.rs`. The one wrapper outside tests is `SceneContributions`
-in `contribution/list.rs`. `LentDiagnostic` in `examples/v1-game/src/lent.rs` holds no contribution: its
-`encode_after_compute` and `draw` are empty stubs that go like any other. The fixtures that forward are `Fault` in
+The trait's defaults, the stub removal and the probe test in `contribution::list` are on main, from `b57808ace`
+and `8956287dd`, which started from `f5d7c5bba`. A review of them found the work sound and failed only an item
+that named a run which skips one binary, so this milestone is most likely proved on main's tip as it stands:
+change code only where a check fails. The trait is in `crates/thrum-render/src/contribution.rs`, and the one
+wrapper outside tests is `SceneContributions` in `contribution/list.rs`. The fixtures that forward are `Fault` in
 the game's ray-tracing proof tests, `Observed` in `crates/thrum-clouds/src/shade/tests.rs` and `PoolWitness` in
-the mirror's `view_knobs_gpu` tests. `crates/thrum-render/tests/ray_instances_seam.rs` and the game's ray-tracing
-and mesh-stage tests are behind a Cargo feature: `./dev check` compiles them from `GATE-TIME` M6 on, and M2.4
-passes from the shared run on main. The probe's test goes in `contribution::list`, which has no test today: M2.2's
-check runs that module's tests. `RAY-TRACING` M3 is building in `contribution.rs`: tell its builder before the
-trait change lands.
+the mirror's `view_knobs_gpu` tests. M2.5 runs the game's `mesh_stage_gpu` one test at a time because the
+main-tier list marks it not-run: run whole, 4 to 6 of its 10 `metal::` tests fail on state they share, which is
+`MESH-SHADING`'s to fix. Leave those tests, their support file and the list's not-run line as they are. In each
+item's evidence, name the commit on main that the check ran on, not a branch commit that a rebase replaces.
 
 ## M3 The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach
 

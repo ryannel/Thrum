@@ -186,6 +186,11 @@ trait's defaults are proved by the probe behind the list of contributions and by
 implementations. A milestone that changes what a long test runs, or edits a file holding tests behind a Cargo
 feature, is proved there by the main-branch check `long-tests`, because no merge check runs those tests: M1 for
 the stepped hour and the gale, M2 and M6 for the feature tests and for the long tests that render through what
-they edit. M3 and M5 delete only what nothing calls on those paths, and M4 leaves the fixture the gale and the
+they edit. That check skips a binary the main-tier list marks not-run, which today is the game's `mesh_stage_gpu`:
+run whole, its tests fail on state they share, a fault that is `MESH-SHADING`'s to fix and was listed before M2
+began. M2 edits a contribution in that binary and M6 converts layouts its tests draw through, so each carries a
+second item whose check runs the binary one test at a time with a GPU required, on main. That shows the edit
+broke none of its tests. It does not show the binary is sound run whole, and neither milestone changes those
+tests or the list. M3 and M5 delete only what nothing calls on those paths, and M4 leaves the fixture the gale and the
 foam's moored run build their hosts through as it is, so none of the three carries that item. The settings parse is proved by a reviewer's table of each setting's reading before and after. The two helpers are
 proved by every GPU test passing, by graph snapshots that were not edited, and by the exact baselines.
