@@ -395,7 +395,7 @@
     {
       "id": "M10",
       "name": "A record shows where a builder's session goes: the model's own time, each kind of command and each wait",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -406,8 +406,8 @@
           "statement": "The record splits the wall time of every builder session of track 6's milestones, from 20 November 2026 to this milestone's starting commit, into three kinds of part: the model's own time; commands, by what they ran (a build or lint, tests the builder chose, `./dev check`, an item's check, the merge, anything else); and waits (for a lock, behind another merge, and a command that only sleeps or polls). It gives each part for each milestone and for all of them together, and gives the time between one milestone's sessions apart from the sessions themselves. The parts of a session add up to its wall time, and time the sources cannot place is a part of its own.",
           "ask": "Take two sessions of your choice, one of them the longest. Run the record's script on them: do its figures match the record, and do the parts add up to each session's wall time? Read twenty minutes of one transcript beside the script's output for that span: is each interval in the part you would put it in? Is a wait inside a command counted as the wait and not as the command?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md (tables and placing rules; run on main 5746cde98)",
           "verdict": "",
           "review": ""
         },
@@ -416,8 +416,8 @@
           "statement": "The record is made by a script kept with it in this milestone's evidence, from sources the record names: each session's transcript, which gives the time of every tool call and its result, and the orchestrate script's own logs of jobs, locks and merge checks. It runs again on a later session with no edit.",
           "ask": "Run the script on a builder session that ended after the record was made: does it give the same parts with no edit to the script? Does the record say where each source is and which sessions it could not read?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M10/session_record.py (sources and unread sessions in record.md)",
           "verdict": "",
           "review": ""
         },
@@ -426,8 +426,8 @@
           "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This milestone changed no setting, plan, skill or check.",
           "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the milestone's commits change any file but this module's log and done-when file?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md#what-it-shows",
           "verdict": "",
           "review": ""
         }
