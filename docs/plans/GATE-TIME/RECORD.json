@@ -874,6 +874,36 @@
         "by": "plan",
         "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
         "at": "2026-11-21T09:09:42Z"
+      },
+      "ready_for_review": {
+        "commit": "87ee81806917719edc99693f054a911d4be4ed94",
+        "checked": "87ee81806917719edc99693f054a911d4be4ed94",
+        "at": "2026-11-21T20:47:48Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 136357,
+          "cached": 7944925,
+          "output": 49334,
+          "cost_usd": 3.665897,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 136357,
+          "cached": 7944925,
+          "output": 49334,
+          "cost_usd": 3.665897,
+          "turns": 1
+        }
       }
     }
   },
