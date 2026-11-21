@@ -119,7 +119,7 @@
     {
       "id": "M8",
       "name": "A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -132,8 +132,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.1; runs/ A1 C1 A2 B2 C2 B3 at 48286bcae, alone.junit.xml at c6a5fdc48)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.2",
@@ -143,8 +143,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.2; probes/no-nextest.log, probes/old-nextest.log)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.3",
@@ -153,8 +153,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.3; runs/check1-5.log and .tests.tsv against runs/A1.tests.tsv)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.4",
@@ -163,8 +163,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.4 and Round 2; round2/ctd-relative-sleep.log, round2/default-sleep.log)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.5",
@@ -173,8 +173,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.5 and Round 2; round2/ctd-clean.log, round2/ctd-relative-sleep.log, probes/failing-step.log; the merge check named in LOG.md)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.6",
@@ -183,8 +183,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.6; runs/check5.log draw-probe step)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.7",
@@ -193,8 +193,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check long-tests",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.8",
@@ -203,8 +203,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
         {
           "id": "M8.9",
@@ -215,24 +215,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md#round-3-m89-the-capture-wait: the test's sixteen threads poll host.device.clone(), the device the host captures on. Before the fix (capture_pixels at ebddf70da) the check failed 10 of 10 runs, 1 to 13 of 300 captures with capture readback incomplete (m8.9/before-write.log); with the fix (7cbd2921a) it passed 10 of 10, 0.85 to 0.91 s (m8.9/after-write.log). Only changes under crates/: capture_pixels's wait and the test.",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "./dev check reads the JUnit report from CARGO_TARGET_DIR, where cargo-nextest does not write it, so a passing tree fails the draw-probe step",
-          "repeat": false
-        },
-        {
-          "name": "With CARGO_TARGET_DIR set, ./dev check does not end with the ten slowest tests",
-          "item": "M8.5",
-          "repeat": false
-        },
-        {
-          "name": "With CARGO_TARGET_DIR set, a stopped test's failure does not say what to do",
-          "item": "M8.4",
-          "repeat": false
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         }
       ]
     },
