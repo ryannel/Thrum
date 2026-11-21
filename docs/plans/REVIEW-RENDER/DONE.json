@@ -140,7 +140,7 @@
     {
       "id": "M3",
       "name": "Passes, stages and pipelines in the renderer are named by typed keys, so a rename or a new pass cannot silently drop a timing bucket or a barrier",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
