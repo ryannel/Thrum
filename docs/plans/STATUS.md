@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-15 of 36 modules done · 18 in progress · 3 to come
+15 of 36 modules done · 19 in progress · 2 to come
 
 ### Needs you now
 
@@ -313,7 +313,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
 - A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it (GATE-TIME M8): Not Started · [plan](GATE-TIME/PLAN.md)
 - The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left (DEAD-TOOLS M3): Not Started · [plan](DEAD-TOOLS/PLAN.md)
-- The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist (DEAD-CODE M1): Not Started · [plan](DEAD-CODE/PLAN.md)
+- The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist (DEAD-CODE M1): Ready for Review · [plan](DEAD-CODE/PLAN.md)
 
 ### Recently done
 
@@ -439,4 +439,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Waiting: On Dependency, SHOWCASE:M8 |
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide | M8 of 9 · Not Started |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | M3 of 6 · Not Started |
-| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers | M1 of 6 · Not Started |
+| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers | M1 of 6 · Ready for Review |
