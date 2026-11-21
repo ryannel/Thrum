@@ -536,7 +536,41 @@
     },
     "M10": {
       "definitions": "244f57ee9c13063ceb692605c9b463e0d1a85c4f94b8e3b463b3a718ec0c0158",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "4bc589612e14eaa51359cdffc2beeaade0e89679",
+          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md",
+          "items": {
+            "M10.1": "pass",
+            "M10.2": "pass",
+            "M10.3": "fail"
+          },
+          "findings": [
+            {
+              "name": "A closing statement says agent_loop.py check took about 10 to 12 minutes each time until 04:38, which the record's own tables contradict and no table can show",
+              "item": "M10.3",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 132576,
+            "cached": 3275507,
+            "output": 32040,
+            "cost_usd": 2.356221,
+            "turns": 1
+          },
+          "at": "2026-11-21T12:11:13Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
