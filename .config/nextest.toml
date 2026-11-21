@@ -60,6 +60,11 @@ test-group = 'water-interaction'
 filter = 'package(thrum-river-model)'
 threads-required = 4
 
+[[profile.default.overrides]]
+# Sixteen threads poll the device for two seconds while this capture test runs.
+filter = 'package(thrum-render) & test(gpu_capture_pixels_waits_for_a_readback_another_thread_delivers)'
+threads-required = 4
+
 # The exempt list: each test over ten seconds alone on the test build `./dev check` uses, as
 # GATE-TIME M8 measured it, under the milestone that makes it fast or moves it to the main tier.
 # It is still reported as slow, but not stopped at sixty seconds. No other module adds a name.

@@ -2391,8 +2391,19 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn capture_pixels(&mut self) -> Result<Vec<u8>, FrameError> {
         let mut pending = self.begin_capture()?;
         self.wait(pending.submitted.clone(), "capture")?;
-        self.try_finish_capture(&mut pending)?
-            .ok_or(FrameError::InvalidState("capture readback incomplete"))
+        // The submission being complete does not mean the readback's map callback has run here:
+        // another thread's poll of the same device can collect the callback and fire it a moment
+        // later. Keep polling until this capture's pixels arrive, within the same GPU_WAIT bound.
+        let deadline = Instant::now() + GPU_WAIT;
+        loop {
+            if let Some(pixels) = self.try_finish_capture(&mut pending)? {
+                return Ok(pixels);
+            }
+            if Instant::now() >= deadline {
+                return Err(FrameError::InvalidState("capture readback incomplete"));
+            }
+            std::thread::yield_now();
+        }
     }
 
     /// Record and submit a capture of the current committed endpoint without
