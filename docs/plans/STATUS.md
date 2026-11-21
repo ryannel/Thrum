@@ -314,7 +314,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A game is hosted through one contract on the Mac, in Chrome and offscreen: it implements one runtime half and names its own controls, and a second game copies nothing from the first (HOST M4): Not Started · [plan](HOST/PLAN.md)
 - The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
 - Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down (GATE-TIME M9): In Progress · [plan](GATE-TIME/PLAN.md)
-- The game's unread state projection and the content crate with no producer are gone (DEAD-CODE M5): Not Started · [plan](DEAD-CODE/PLAN.md)
+- The game's unread state projection and the content crate with no producer are gone (DEAD-CODE M5): Ready for Review · [plan](DEAD-CODE/PLAN.md)
 
 ### Recently done
 
@@ -410,8 +410,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh (BASELINE-GUARD M2), 16 Nov · [review](../../.orchestrate/evidence/BASELINE-GUARD/M2-review.md)
 - Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point (WATERS M1), 15 Nov · [review](../../.orchestrate/evidence/WATERS/M1-review.md)
 - The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly (CLOUDS M1), 15 Nov · [review](../../.orchestrate/evidence/CLOUDS/M1-review.md)
-- After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3), 14 Nov · [review](../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/M3-review.md)
-- The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2), 14 Nov · [review](../../.orchestrate/evidence/CREATOR/M2-review.md)
 
 ## All modules
 
@@ -452,4 +450,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Waiting: On Dependency, SHOWCASE:M8 |
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; TEST-SUPPORT M6 for the guard rules; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide | M9 of 13 · In Progress |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | Done 21 Nov |
-| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers | M5 of 6 · Not Started |
+| 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers | M5 of 6 · Ready for Review |
