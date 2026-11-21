@@ -105,7 +105,7 @@
         {
           "verdict": "fail",
           "commit": "c21a04911871fbeaf1299b8e23554395cd2065c9",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md",
+          "review": ".orchestrate/evidence/DEAD-CODE/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -136,6 +136,34 @@
             "turns": 1
           },
           "at": "2026-11-21T02:03:46Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "2dce6c9c65f00a33797f7e477b3ff117a9689bc0",
+          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.3": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 84898,
+            "cached": 2101341,
+            "output": 16051,
+            "cost_usd": 1.420208,
+            "turns": 1
+          },
+          "at": "2026-11-21T03:44:38Z"
         }
       ],
       "authorised": {
@@ -176,6 +204,13 @@
           "cost_usd": 1.106657,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "2dce6c9c65f00a33797f7e477b3ff117a9689bc0",
+        "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md",
+        "checked": "7ef9fdc5ca63b7e02f3332a1f5088157491f77f5",
+        "at": "2026-11-21T03:44:38Z"
       }
     },
     "M3": {
