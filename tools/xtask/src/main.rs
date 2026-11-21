@@ -874,7 +874,11 @@ mod tests {
     /// The check reads cargo-nextest's report from the store `.config/nextest.toml` names.
     #[test]
     fn the_runner_configuration_names_the_store_the_check_reads() {
-        let config = include_str!("../../../.config/nextest.toml");
+        // xtask is the repository's own tool, run from the root; its test reads the root's file.
+        let config = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.config/nextest.toml"),
+        )
+        .expect(".config/nextest.toml");
         let store = config
             .split("\n[store]\n")
             .nth(1)
