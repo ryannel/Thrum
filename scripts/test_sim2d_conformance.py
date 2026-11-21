@@ -145,7 +145,7 @@ class BuildIdentity(unittest.TestCase):
 
 class CostComparisons(unittest.TestCase):
     def test_validation_cannot_overwrite_measurement_with_receipt(self):
-        destination = ROOT / "docs/evidence/SIM-2D/M1/costs-mac-metal.json"
+        destination = ROOT / "tests/fixtures/sim-2d/prior-costs-mac-metal.json"
         with patch("sys.argv", ["sim2d_conformance.py", "costs", "--output", str(destination)]), \
                 patch("sim2d_conformance.identity", return_value={}), \
                 patch("sim2d_conformance.costs") as validate, redirect_stderr(StringIO()):

@@ -15,6 +15,8 @@ from copy import deepcopy
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "tmp/sim2d"
+# Retained device measurements: the first take (prior-costs) and the one costs checks (costs).
+PRIOR_COSTS = ROOT / "tests/fixtures/sim-2d"
 RETAINED = ROOT / "examples/crowd-2d/retained/crowd.txt"
 MIXED = ROOT / "examples/crowd-2d/retained/mixed.txt"
 VECTORS = ROOT / "crates/thrum-core/src/profile/vectors.json"
@@ -362,7 +364,7 @@ def measure(target):
     measured_commit = command(["git", "rev-parse", "HEAD"]).strip()
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
-    previous_path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
+    previous_path = PRIOR_COSTS / f"prior-costs-{target}.json"
     previous = load_cost_record(previous_path) if previous_path.exists() else None
     previous_hash = hashlib.sha256(previous_path.read_bytes()).hexdigest() if previous else None
     allocations = allocation_counts() if target == "mac-metal" else None
@@ -424,7 +426,7 @@ def load_cost_record(path):
 
 def costs(target):
     """Check the retained device measurements, independently of their time values."""
-    path = ROOT / f"docs/evidence/SIM-2D/M2/costs-{target}.json"
+    path = PRIOR_COSTS / f"costs-{target}.json"
     record = load_cost_record(path)
     assert record["target"] == target and record["dirty"] is False
     current = source_inputs()
@@ -439,8 +441,9 @@ def costs(target):
         assert all(isinstance(count, int) and count >= 0 for count in record["allocations"]["counts"].values())
     previous = None
     if record["previous_record_commit"]:
-        retained = command(["git", "show", f"{record['previous_record_commit']}:docs/evidence/SIM-2D/M1/costs-{target}.json"])
-        assert hashlib.sha256(retained.encode()).hexdigest() == record["previous_record_sha256"]
+        # The prior record is test data with the bytes it had at previous_record_commit.
+        retained = (PRIOR_COSTS / f"prior-costs-{target}.json").read_bytes()
+        assert hashlib.sha256(retained).hexdigest() == record["previous_record_sha256"]
         previous = json.loads(retained)
     for index, run in enumerate(record["runs"]):
         assert run["build"] == "release" and len(run["load"]) == 3
@@ -499,8 +502,8 @@ def main():
         print(json.dumps(record_trace(args.trace, args.output)))
         return
     record = {"action": args.action, "target": args.target, "package": PACKAGE, **identity()}
-    protected = [ROOT / f"docs/evidence/SIM-2D/{milestone}/costs-{target}.json"
-                 for milestone in ["M1", "M2"] for target in ["mac-metal", "chrome-webgpu"]]
+    protected = [PRIOR_COSTS / f"{kind}costs-{target}.json"
+                 for kind in ["prior-", ""] for target in ["mac-metal", "chrome-webgpu"]]
     if args.action != "measure" and args.output and args.output.resolve() in protected:
         parser.error("only measure may write a retained cost record; costs writes a validation receipt")
     if args.action == "retain-mixed":

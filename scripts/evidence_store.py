@@ -18,6 +18,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ".config/evidence-manifest.json"
+# The tracked evidence folder, which only this store and its restored copies use.
+FOLDER = "docs/evidence/"
 CAP = 2 * 1024 * 1024
 
 

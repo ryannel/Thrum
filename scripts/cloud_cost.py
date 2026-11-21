@@ -9,8 +9,10 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RECORD = ROOT / 'docs/evidence/CLOUDS/M2-cost.json'
-LOW_SUN_RECORD = ROOT / 'tests/fixtures/clouds/low-sun-cost.json'
+# check and refuse compare with the committed records; record writes to the working folder unless --output
+# names a fixture to promote.
+FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun')}
+WORKING = ROOT / '.orchestrate/evidence/CLOUDS'
 SCRATCH = ROOT / 'tmp/clouds-m2/cost'
 SKY_PASSES = (
     'cloud weather map', 'cloud Sun path near', 'cloud Sun path middle',
@@ -193,8 +195,7 @@ def main():
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     args = parser.parse_args()
-    destination = args.output or {'shade': RECORD, 'first-frame': ROOT/'docs/evidence/CLOUDS/M3-cost.json',
-                                  'low-sun': LOW_SUN_RECORD}[args.scene]
+    destination = args.output or FIXTURES[args.scene]
     if args.command == 'refuse':
         if args.scene != 'first-frame':
             parser.error('refuse is defined for first-frame')
@@ -229,6 +230,8 @@ def main():
             record['estimates'] = FIRST_FRAME_ESTIMATES
         if args.previous:
             record['previous'] = json.loads(args.previous.read_text())
+        destination = args.output or WORKING / f'{args.scene}-cost.json'
+        destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(record, indent=2) + '\n')
         print(destination)
     else:

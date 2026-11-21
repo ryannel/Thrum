@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """PUDDLES cost record: preparing a hollows body of 640,000 cells and a fill step.
 
-  python3 scripts/rain_cost.py record   measure in a release build and write the record
+  python3 scripts/rain_cost.py record   measure in a release build and write the record to the working folder
   python3 scripts/rain_cost.py check    measure again; fail only if it cannot be measured
                                         or the committed record lacks a field
+
+The committed record is test data in tests/fixtures/puddles/; promoting a new take is copying it there.
 
 No timing figure decides anything (brief decision 3): `check` compares no numbers.
 """
@@ -16,7 +18,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-RECORD = REPO / "docs/evidence/PUDDLES/rain-cost.json"
+RECORD = REPO / "tests/fixtures/puddles/rain-cost.json"
+TAKE = REPO / ".orchestrate/evidence/PUDDLES/rain-cost.json"
 COMMAND = ["cargo", "run", "--release", "--locked", "--offline", "-q",
            "-p", "thrum-rain-model", "--example", "rain_cost"]
 MEASURED = ["cells", "prepare_seconds", "hollows", "nodes", "bytes", "curve_bytes",
@@ -61,8 +64,9 @@ def record():
         "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "note": "taken while other builders share the machine; a tripwire, not a budget",
     })
-    RECORD.write_text(json.dumps(measured, indent=2) + "\n", encoding="utf-8")
-    print(RECORD.relative_to(REPO))
+    TAKE.parent.mkdir(parents=True, exist_ok=True)
+    TAKE.write_text(json.dumps(measured, indent=2) + "\n", encoding="utf-8")
+    print(TAKE.relative_to(REPO))
 
 
 def check():

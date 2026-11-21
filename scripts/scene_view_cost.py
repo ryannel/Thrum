@@ -11,7 +11,9 @@ import re
 import statistics
 import subprocess
 
-RECORD = Path("docs/evidence/SCENE-VIEWS/M3/cost.json.gz")
+# check reads the committed record; run writes a new take to the working folder unless --record names another.
+RECORD = Path("tests/fixtures/scene-views/cost.json.gz")
+TAKE = Path(".orchestrate/evidence/SCENE-VIEWS/cost.json.gz")
 RECIPES = ("portable", "apple-tile")
 SCENES = ("mirror", "field")
 KNOBS = (
@@ -115,12 +117,12 @@ def check(record):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("run", "check"))
-    parser.add_argument("--record", type=Path, default=RECORD)
+    parser.add_argument("--record", type=Path)
     parser.add_argument("--binary", type=Path, default=Path("target/release/mirror-scene"))
     parser.add_argument("--store", type=Path)
     arguments = parser.parse_args()
     if arguments.action == "check":
-        with gzip.open(arguments.record, "rt", encoding="utf-8") as stream:
+        with gzip.open(arguments.record or RECORD, "rt", encoding="utf-8") as stream:
             check(json.load(stream))
         return
     if arguments.store is None:
@@ -135,8 +137,9 @@ def main():
         "field_instances": 100_513,
         "runs": {recipe: collect(recipe, arguments.binary, arguments.store) for recipe in RECIPES},
     }
-    arguments.record.parent.mkdir(parents=True, exist_ok=True)
-    with gzip.open(arguments.record, "wt", encoding="utf-8") as stream:
+    destination = arguments.record or TAKE
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(destination, "wt", encoding="utf-8") as stream:
         json.dump(record, stream, separators=(",", ":"))
     check(record)
 

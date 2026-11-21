@@ -2,11 +2,12 @@
 """Cost record for the river solve (RIVERS M1.8).
 
 `record` builds the solver in release, solves the M1.1 test valley at 0.25 m cells on one thread
-and on all of the machine's, and writes docs/evidence/RIVERS/river-cost.json with the wet cells,
-steps, cell updates and seconds, the commit, the load on the machine and the build. It compares
-the cell updates with part 5 of docs/evidence/RIVERS/design-proof/river_proof.py.
+and on all of the machine's, and writes the working folder's .orchestrate/evidence/RIVERS/river-cost.json
+with the wet cells, steps, cell updates and seconds, the commit, the load on the machine and the build.
+It compares the cell updates with part 5 of tests/fixtures/rivers/river_proof.py.
 
-`check` fails only when the solve cannot be measured or the committed record lacks a field. No
+`check` fails only when the solve cannot be measured or the committed record, the test data in
+tests/fixtures/rivers/river-cost.json, lacks a field; promoting a new take is copying it there. No
 figure in the record decides anything; it is a record, not a gate (brief decision 3).
 """
 import json
@@ -17,7 +18,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RECORD = ROOT / 'docs/evidence/RIVERS/river-cost.json'
+RECORD = ROOT / 'tests/fixtures/rivers/river-cost.json'
+TAKE = ROOT / '.orchestrate/evidence/RIVERS/river-cost.json'
 FIELDS = ('wet_cells', 'steps', 'cell_updates', 'seconds')
 TOP = ('commit', 'load', 'build', 'runs', 'part5_comparison')
 # Part 5: a 350 m stream 4 m wide at 0.25 m cells, 22,400 wet cells and about 24,267 steps, so
@@ -85,7 +87,8 @@ def record():
                       "beside the water that each step works on."),
         },
     }
-    RECORD.write_text(json.dumps(rec, indent=2) + '\n')
+    TAKE.parent.mkdir(parents=True, exist_ok=True)
+    TAKE.write_text(json.dumps(rec, indent=2) + '\n')
     print(json.dumps(rec, indent=2))
 
 

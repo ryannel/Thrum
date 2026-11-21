@@ -1,6 +1,6 @@
 #!/bin/sh
 # G5 asserted tripwires: run the scan/edit-to-visible/startup/hitch bench and the in-game upload bench,
-# each checking its metrics against same-load history in docs/evidence/integration/tripwires/.
+# each checking its metrics against same-load history in tests/fixtures/tripwires/.
 # Exits non-zero naming every regressed metric. Pass --record to append passing runs to the history.
 # The benches need the GPU and minutes of machine time, so they stay out of ./dev check.
 set -eu

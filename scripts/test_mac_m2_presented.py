@@ -10,7 +10,7 @@ from qualify_mac_m2 import bounded
 import mac_m2_presented as witness
 
 ROOT=Path(__file__).resolve().parents[1]
-EVIDENCE=ROOT/'docs/evidence'
+EVIDENCE=ROOT/'.orchestrate/evidence'
 
 class PresentedWitness(unittest.TestCase):
     def retained(self, arm):

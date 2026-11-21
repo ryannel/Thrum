@@ -14,9 +14,6 @@ use v1_game::{
     CameraRoute, FrameConfig, FrameHost, FrameSample, RouteOverlay, SceneCamera, SurfaceOutput,
 };
 
-mod timing_interleave;
-use timing_interleave::TimingInterleave;
-
 fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     loop {
         if let Some(sample) = host.poll_completed().expect("poll") {
@@ -90,7 +87,6 @@ fn record_sample(
     mode: &str,
     capture: Option<&serde_json::Value>,
     sample: &FrameSample,
-    timing_pair: Option<&serde_json::Value>,
 ) {
     let pass_ns = sample.gpu_pass_ns.as_ref().map(|timings| {
         let mut totals = std::collections::BTreeMap::<String, f64>::new();
@@ -107,46 +103,7 @@ fn record_sample(
             .map(|(name, _)| name.to_owned())
             .collect::<Vec<_>>()
     });
-    writeln!(log, "{}", serde_json::json!({"tick":tick,"mode":mode,"capture":capture,"timing_pair":timing_pair,"whole_gpu_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::sum),"pass_gpu_ns":pass_ns,"unmeasured_gpu_passes":unmeasured,"counts":sample.camera_culling.map(|c|serde_json::json!({"active":c.active,"drawn":c.drawn,"prepass":c.prepass}))})).expect("row");
-}
-
-fn record_campaign_comparison(
-    images: &[Vec<u8>],
-    source: CaptureSource,
-    modes: &[CullMode],
-    output: &std::path::Path,
-    tick: u64,
-    log: &mut std::fs::File,
-) -> bool {
-    let bytes_per_pixel = usize::try_from(source.bytes_per_pixel()).expect("pixel size");
-    let differences: Vec<_> = images[1..]
-        .iter()
-        .map(|image| {
-            assert_eq!(images[0].len(), image.len(), "complete image");
-            images[0]
-                .chunks_exact(bytes_per_pixel)
-                .zip(image.chunks_exact(bytes_per_pixel))
-                .filter(|(left, right)| left != right)
-                .count()
-        })
-        .collect();
-    let differs = differences.iter().any(|&count| count != 0);
-    writeln!(
-        log,
-        "{}",
-        serde_json::json!({"comparison_tick":tick,"different_pixels":differences,"equal":!differs})
-    )
-    .expect("comparison row");
-    if differs {
-        for (index, image) in images.iter().enumerate() {
-            std::fs::write(
-                output.join(format!("failure-{tick}-{index}-{:?}.raw", modes[index])),
-                image,
-            )
-            .expect("complete campaign failure image");
-        }
-    }
-    differs
+    writeln!(log, "{}", serde_json::json!({"tick":tick,"mode":mode,"capture":capture,"whole_gpu_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::sum),"pass_gpu_ns":pass_ns,"unmeasured_gpu_passes":unmeasured,"counts":sample.camera_culling.map(|c|serde_json::json!({"active":c.active,"drawn":c.drawn,"prepass":c.prepass}))})).expect("row");
 }
 
 fn surface_texture(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::Texture {
@@ -312,11 +269,10 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
         .expect("route file");
     let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
     let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
-    let campaign = std::env::var_os("THRUM_CULLING_CAMPAIGN").is_some();
     let mut exit_arm = ExitArm::from_env();
     assert!(
         exit_arm.is_none()
-            || (!timing && !campaign && std::env::var("THRUM_SCENE").as_deref() == Ok("exit"))
+            || (!timing && std::env::var("THRUM_SCENE").as_deref() == Ok("exit"))
     );
     let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
         CaptureSource::SceneLinear
@@ -343,9 +299,7 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
     let mut log = std::fs::File::create(output.join("rows.jsonl")).expect("rows");
     writeln!(log, "{}", serde_json::json!({"adapter":caps.adapter().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"mode":"fixed","capture_source":format!("{capture_source:?}"),"timing_only":timing,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
     let mut hidden = [0_u64; 2];
-    let mut differing_ticks = 0_u64;
     let mut last_times = vec![Duration::ZERO; modes.len()];
-    let mut interleave = timing.then(TimingInterleave::from_env).flatten();
     for tick in 1..=last {
         if tick == route.origin_tick {
             for host in &mut hosts {
@@ -359,7 +313,6 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
         let mut images: Vec<Vec<u8>> = (0..modes.len()).map(|_| Vec::new()).collect();
         let count = modes.len();
         for index in (0..count).map(|step| (step + usize::try_from(tick).expect("small")) % count) {
-            let timing_pair = interleave.as_mut().map(TimingInterleave::begin);
             let host = &mut hosts[index];
             let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
             last_times[index] = now;
@@ -367,9 +320,6 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
             assert_eq!(frame.tick, tick);
             assert!(frame.surface_presented && !frame.dropped_view && frame.completed_ticks == 1);
             let sample = complete(host, &device);
-            if let Some(pair) = &mut interleave {
-                pair.completed();
-            }
             if tick < route.origin_tick {
                 continue;
             }
@@ -419,7 +369,6 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
                 &mode,
                 capture_identity.as_ref(),
                 &sample,
-                timing_pair.as_ref(),
             );
         }
         if tick >= route.origin_tick && !timing {
@@ -448,17 +397,6 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
                     );
                     panic!("{} differs at submitted tick {tick}", arm.name);
                 }
-                continue;
-            }
-            if campaign {
-                differing_ticks += u64::from(record_campaign_comparison(
-                    &images,
-                    capture_source,
-                    &modes,
-                    &output,
-                    tick,
-                    &mut log,
-                ));
                 continue;
             }
             for index in 1..count {
@@ -497,8 +435,7 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
     writeln!(
         log,
         "{}",
-        serde_json::json!({"compared":if timing {0} else {last-route.origin_tick+1},"timed":timing,"hidden_ticks":hidden,"hosts":modes.len(),"differing_ticks":differing_ticks,"equal":!timing && differing_ticks==0})
+        serde_json::json!({"compared":if timing {0} else {last-route.origin_tick+1},"timed":timing,"hidden_ticks":hidden,"hosts":modes.len(),"differing_ticks":0,"equal":!timing})
     )
     .expect("result");
-    assert_eq!(differing_ticks, 0, "campaign routes must be exact");
 }

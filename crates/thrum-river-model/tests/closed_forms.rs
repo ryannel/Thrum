@@ -1,5 +1,5 @@
 //! The solver in section against closed forms this test works out itself, as in part 1 of
-//! `docs/evidence/RIVERS/design-proof/river_proof.py`: water at rest, Bernoulli's branches and
+//! `tests/fixtures/rivers/river_proof.py`: water at rest, Bernoulli's branches and
 //! the jump condition over a bump, a bed integrated for a chosen depth with friction, and
 //! Manning's normal depth for a thin sheet on steep ground.
 #![expect(

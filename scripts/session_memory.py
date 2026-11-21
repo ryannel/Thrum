@@ -13,7 +13,7 @@ import time
 import sim2d_conformance as conformance
 
 SCRATCH = conformance.ROOT / "tmp/session-m2"
-EVIDENCE = conformance.ROOT / "docs/evidence/SESSION/M2"
+EVIDENCE = conformance.ROOT / "tests/fixtures/session"
 SEED = 29721
 FULL_TICKS = 36_000
 FULL_BODIES = 10_000

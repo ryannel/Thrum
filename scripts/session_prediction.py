@@ -68,7 +68,7 @@ def add_cost_summary(record):
 
 def sim2d_replay():
     # These committed records were captured on their named targets by SIM-2D.
-    retained = conformance.ROOT / "docs/evidence/SIM-2D/M2"
+    retained = conformance.PRIOR_COSTS
     records = []
     for target in (TARGET, "chrome-webgpu"):
         source = retained / f"costs-{target}.json"

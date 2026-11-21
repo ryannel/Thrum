@@ -489,7 +489,7 @@ def save_baseline(baseline_path, grids, identity, report, run):
     baseline_path.write_text(json.dumps({
         'about': 'G7 showcase route baseline: per-stop 32x18 grids consumed by scripts/run_v1_showcase.py check. '
                  'Reproduce with `check`; replace only with `check --save-baseline` after reviewing the frames, and '
-                 'record why in docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md.',
+                 'record why in the working folder, .orchestrate/evidence/v1-workload/.',
         'identity': identity,
         'builds': report['builds'],
         'thresholds': report['thresholds'],

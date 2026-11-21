@@ -1,7 +1,7 @@
 //! M2.4: a fall record gives, for each place along the lip, the water's path with its time, its
 //! discharge for each metre of lip and its launch speed, with stable IDs; the f64 reference in
 //! `thrum-water-model` gives the sheet's speed, thickness, white share and presence along it.
-//! The expected values are part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py`, worked
+//! The expected values are part 4 of `tests/fixtures/rivers/river_proof.py`, worked
 //! out here: `hc = (q^2/g)^(1/3)`, `hb = 0.715 hc`, `ub = q/hb`, `t = sqrt(2H/g)`, the throw
 //! `ub t`, the speed `hypot(ub, g t)`, the thickness `q/v` and the breakup length `6 q^0.32`.
 #![expect(

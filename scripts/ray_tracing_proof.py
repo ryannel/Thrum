@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = ROOT / "docs/evidence/RAY-TRACING/M2"
+EVIDENCE = ROOT / "tests/fixtures/ray-tracing"
 VIEWS = (
     ("valley", 0, 0),
     ("contact", 0, -13),

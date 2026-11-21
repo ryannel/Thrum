@@ -122,7 +122,7 @@ fn main() {
     }
     // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
     let history = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/evidence/integration/tripwires/cooked-loader-edit-to-visible.tsv");
+        .join("../../tests/fixtures/tripwires/cooked-loader-edit-to-visible.tsv");
     let record = std::env::var_os("THRUM_TRIPWIRES_RECORD").is_some();
     let verdict = tripwire::gate(&history, &tripwire::this_run(metrics), RULES, record);
     report.push_str(

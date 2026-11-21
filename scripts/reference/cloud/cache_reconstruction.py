@@ -11,7 +11,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from cloud_lighting_reference import Field,floats,source
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--input',type=Path,required=True)
-parser.add_argument('--samples',type=Path,default=Path('docs/evidence/CLOUDS/M3-lighting-diagnosis/samples.csv'))
+parser.add_argument('--samples',type=Path,default=Path('tests/fixtures/clouds/lighting-diagnosis-samples.csv'))
 parser.add_argument('--output',type=Path,required=True)
 args=parser.parse_args()
 ROOT=args.input

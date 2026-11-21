@@ -9,10 +9,16 @@ import statistics
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-RECORDS = {'first-frame': ROOT / 'docs/evidence/WATERS/M2-cost.json',
-           'island': ROOT / 'docs/evidence/WATERS/M4-cost.json',
+# The first-frame and island records are test data later checks compare with; record writes a new take to the
+# working folder, and promoting it is copying it over the fixture.
+RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
+           'island': ROOT / 'tests/fixtures/waters/island-cost.json',
            'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json'}
+WORKING = ROOT / '.orchestrate/evidence/WATERS'
+# The island record taken before the records moved to fixtures names the first-frame record by its old path,
+# which ends in this name.
+FIRST_FRAME_FORMER = '/WATERS/M2-cost.json'
 WAKE_HISTORY = ROOT / 'examples/water/tests/fixtures/wake-cost-prior.json'
 WAKE_ROUTE = {'wind': 'trade', 'view': 'overhead', 'speed_mps': 6}
 WAKE_ARMS = {'with-wake': (True, True), 'without-wake': (True, False),
@@ -105,7 +111,8 @@ def validate(data, scene):
         if max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / data['refresh_hz']:
             assert any(i['water'] == row['water'] and i['tick_frame'] == row['tick_frame'] and i['measurement'] and i['disposition'] for i in data['investigations'])
     if scene == 'island':
-        assert data['first_frame_record'] == str(RECORDS['first-frame'].relative_to(ROOT))
+        named = data['first_frame_record']
+        assert named == str(RECORDS['first-frame'].relative_to(ROOT)) or named.endswith(FIRST_FRAME_FORMER)
         assert set(data['body_pixels']) == {'Sea', 'Lake', 'Pond'}
         assert all(count > 0 for count in data['body_pixels'].values())
         assert len(data['body_vertices']) == 3 and sum(n for _, n in data['body_vertices']) == data['vertices']
@@ -338,6 +345,8 @@ def main():
     data = measure(args.scene)
     validate(data, args.scene)
     if args.action == 'record':
+        record = WORKING / f'{args.scene}-cost.json'
+        record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text(json.dumps(data, indent=2) + '\n')
     else:
         validate(json.loads(record.read_text()), args.scene)

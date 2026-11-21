@@ -16,30 +16,6 @@
     "evidence-path": {
       "version": 1,
       "files": {
-        "crates/thrum-cloud-model/tests/optics.rs": 1,
-        "crates/thrum-cook/tests/edit_to_visible/bench.rs": 1,
-        "crates/thrum-river-model/tests/closed_forms.rs": 1,
-        "crates/thrum-river-model/tests/falls.rs": 1,
-        "crates/thrum-river-model/tests/sheet.rs": 1,
-        "examples/v1-game/benches/cooked_edit.rs": 1,
-        "examples/v1-game/src/host.rs": 1,
-        "scripts/check_g5_tripwires.sh": 1,
-        "scripts/cloud_cost.py": 2,
-        "scripts/environment_products.py": 2,
-        "scripts/evidence_inventory.py": 1,
-        "scripts/rain_cost.py": 1,
-        "scripts/ray_tracing_proof.py": 1,
-        "scripts/reference/cloud/cache_reconstruction.py": 1,
-        "scripts/river_cost.py": 3,
-        "scripts/run_v1_showcase.py": 1,
-        "scripts/scene_view_cost.py": 1,
-        "scripts/session_memory.py": 1,
-        "scripts/session_prediction.py": 1,
-        "scripts/sim2d_conformance.py": 4,
-        "scripts/test_mac_m2_presented.py": 1,
-        "scripts/test_sim2d_conformance.py": 1,
-        "scripts/transport_link.py": 1,
-        "scripts/water_cost.py": 2
       }
     },
     "evidence-size": {

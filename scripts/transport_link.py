@@ -567,7 +567,7 @@ def session(output):
 
 
 def closure(output):
-    baseline = json.loads((ROOT / "docs/evidence/TRANSPORT/lock-before.json").read_text())
+    baseline = json.loads((ROOT / "tests/fixtures/transport/lock-before.json").read_text())
     locked = tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]
     present = {(p["name"], p["version"]) for p in locked}
     names = {name for name, _ in present}

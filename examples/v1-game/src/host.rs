@@ -135,7 +135,7 @@ impl GameSetup {
     }
 
     /// Two paired 1080p runs favour Occlusion on mixed meshes in cover and open
-    /// views (docs/evidence/CULLING/M2.md). The cube field retains Frustum.
+    /// views (CULLING's M2 record, .orchestrate/evidence/CULLING/M2.md). The cube field retains Frustum.
     pub(crate) fn field_default_culling(meshes: bool) -> CullMode {
         if meshes {
             CullMode::Occlusion

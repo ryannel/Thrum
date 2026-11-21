@@ -1,5 +1,5 @@
 //! M2.2: water leaves a brink freely and enters the solve again where its path lands. The
-//! expected depths are part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py`, worked out
+//! expected depths are part 4 of `tests/fixtures/rivers/river_proof.py`, worked out
 //! here: the critical depth `(q^2/g)^(1/3)`, Manning's normal depth `(q n / sqrt(S))^0.6`, and
 //! the launch at 0.715 of the critical depth where the flow above is slow. A lower dry cell in
 //! place of the lip's face, as part 4 shows, draws the lip down to about a fifth of the critical

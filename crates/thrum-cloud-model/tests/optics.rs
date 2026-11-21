@@ -21,7 +21,7 @@ pub fn sphere(phase: impl Fn(f64) -> f64, n: u32) -> [f64; 2] {
 #[test]
 fn beer_composition_and_later_orders_match_the_independent_oracle() {
     // Printed by scripts/reference/cloud/optical_reference.py; command retained
-    // in docs/evidence/CLOUDS/M1-optical-reference.py and M1-optical-reference.txt.
+    // in tests/fixtures/clouds/optical-reference-values.py.
     let a = Segment::beer(0.04, 0.03, 25.0).expect("segment");
     close(a.transmittance, 0.367_879_441_171_442_33, 1e-15);
     close(a.scattering, 0.474_090_419_121_418_25, 1e-15);

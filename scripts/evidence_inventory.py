@@ -23,7 +23,7 @@ def inventory(root, revision):
     sizes = subprocess.check_output(["git", "cat-file", "--batch-check=%(objectsize)"], cwd=root,
                                     input=("\n".join(blob for blob, _ in objects) + "\n").encode()).decode().splitlines()
     rows = [{"path": path, "size": int(size)} for (_, path), size in zip(objects, sizes)]
-    evidence = [row for row in rows if row["path"].startswith("docs/evidence/")]
+    evidence = [row for row in rows if row["path"].startswith(store.FOLDER)]
     registry = json.loads(store.git(root, "show", f"{commit}:.config/exact-baselines.json"))
     references = [item["reference"] for item in registry["baselines"]]
     caps = {}
