@@ -869,7 +869,33 @@
     },
     "M13": {
       "definitions": "333250e6b14e8ec1e4575469fa4deb1600c893d3dafe776bb02d1ed38ae2978c",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "6014c0d31169d0899ced8108530201b02c4ce1a4",
+          "review": ".orchestrate/evidence/GATE-TIME/M13-review.md",
+          "items": {
+            "M13.1": "pass",
+            "M13.2": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 99628,
+            "cached": 2100946,
+            "output": 19223,
+            "cost_usd": 1.601417,
+            "turns": 1
+          },
+          "at": "2026-11-21T20:55:09Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
@@ -904,6 +930,13 @@
           "cost_usd": 3.665897,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "6014c0d31169d0899ced8108530201b02c4ce1a4",
+        "review": ".orchestrate/evidence/GATE-TIME/M13-review.md",
+        "checked": "87ee81806917719edc99693f054a911d4be4ed94",
+        "at": "2026-11-21T20:55:09Z"
       }
     }
   },

@@ -554,7 +554,7 @@
     {
       "id": "M13",
       "name": "A test over ten seconds in a merge's check is stopped, and fails the check unless it passes within ten seconds alone",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -568,8 +568,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M13/m13.1-trial.log; .orchestrate/evidence/GATE-TIME/M13/record.md#m131-the-three-test-trial",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M13-review.md"
         },
         {
           "id": "M13.2",
@@ -578,8 +578,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M13/record.md#m132-three-whole-runs-beside-builders; .orchestrate/evidence/GATE-TIME/M13/m13.2-run1.log, m13.2-run2.log, m13.2-run3.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M13-review.md"
         }
       ]
     },
