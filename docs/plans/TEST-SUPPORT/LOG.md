@@ -5,8 +5,8 @@
   a left-half quad and read colour and depth back through the kit. Verified on Metal with `THRUM_REQUIRE_GPU=1`; a
   32-texel target and a removed draw each fail both tests. The skill's "Unit tests" and "GPU tests" rows became the
   five-line block (1,695 words); patterns.md gained the five anchored entries, linked to the settings' test tiers.
-  The tests sit inline in `target.rs` because `.gitignore` ignores every `target/` folder.
-  [Proof](../../../.orchestrate/evidence/TEST-SUPPORT/M6/README.md).
+  The tests sit inline in `target.rs` because `.gitignore` ignores every `target/` folder. `agent_loop check`
+  passed all three items and `./dev check` on `59047a2e4`; this session could not write to the evidence folder.
 
 - 2026-11-20 Built M5, the kit: readback of a buffer, a texture mip or layer, or a byte range, on its own
   submission or appended to the caller's encoder, with one 120 s wait; `open` (gate, then recipe) in the kit and

@@ -232,7 +232,7 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M6/README.md",
+          "evidence": "agent_loop check on 59047a2e4 (mac-metal, THRUM_REQUIRE_GPU=1): 2 target tests pass; size-32 and no-draw mutations each fail both (LOG.md, 2026-11-21)",
           "verdict": "",
           "review": ""
         },
@@ -243,7 +243,7 @@
           "ask": "Does each of the five lines link to its own entry, and is the unit-test layout and the GPU gate, which the two rows gave, one link from the block? Did this milestone's commits change `AGENTS.md` or `CLAUDE.md`, or add test guidance to the skill outside the block?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M6/README.md",
+          "evidence": "agent_loop check on 59047a2e4: rows gone, five links, 1,695 words, ./dev check-docs pass; AGENTS.md and CLAUDE.md untouched",
           "verdict": "",
           "review": ""
         },
@@ -254,7 +254,7 @@
           "ask": "Take each entry beside the test tiers of `ORCHESTRATE.md`: does it say the same, and state no number the tiers do not? Does the entry on logic without a device show the kit's target call as the kit now has it? Does the entry on simulated time show how a test steps the engine's clock, and say what a wait on the device uses?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M6/README.md",
+          "evidence": "agent_loop check on 59047a2e4: five anchors in references/patterns.md, ./dev check-docs pass",
           "verdict": "",
           "review": ""
         }
