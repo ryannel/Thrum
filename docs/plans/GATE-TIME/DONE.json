@@ -436,7 +436,7 @@
     {
       "id": "M12",
       "name": "A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -453,7 +453,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/M12/fix-round-trials.log (default-deleted, default-subtable-30x4)",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
         {
@@ -475,7 +475,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log; .orchestrate/evidence/GATE-TIME/M12/fix-round-trials.log (same-name-new-file, same-name-conformance, visibility-line-removed, named-by-p-in-open-item)",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
         },
         {
@@ -487,18 +487,6 @@
           "evidence": ".orchestrate/evidence/GATE-TIME/M12/summed-times-check.txt (a whole saved check at 775b0e678: 1329 test lines sum to 941.6 s, 284 gpu/metal-named to 541.0 s, matching its closing lines)",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M12-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "test-binary matches --test names without their package",
-          "item": "M12.3",
-          "repeat": false
-        },
-        {
-          "name": "limit-exempt passes a deleted default limit",
-          "item": "M12.1",
-          "repeat": false
         }
       ]
     },

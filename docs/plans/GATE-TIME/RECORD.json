@@ -689,7 +689,7 @@
         {
           "verdict": "fail",
           "commit": "7b29443c2a46e3439576c24d896e7e2ad3305dce",
-          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review-1.md",
           "items": {
             "M12.1": "fail",
             "M12.2": "pass",
@@ -724,6 +724,33 @@
             "turns": 1
           },
           "at": "2026-11-21T13:01:28Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "8ee6bbaab7d062e21d3eba620c35d62359091f69",
+          "review": ".orchestrate/evidence/GATE-TIME/M12-review.md",
+          "items": {
+            "M12.1": "pass",
+            "M12.2": "pass",
+            "M12.3": "pass",
+            "M12.4": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 120239,
+            "cached": 3241429,
+            "output": 28294,
+            "cost_usd": 2.175758,
+            "turns": 1
+          },
+          "at": "2026-11-21T13:32:39Z"
         }
       ],
       "authorised": {
@@ -763,6 +790,13 @@
           "cost_usd": 6.193902,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8ee6bbaab7d062e21d3eba620c35d62359091f69",
+        "review": ".orchestrate/evidence/GATE-TIME/M12-review.md",
+        "checked": "a0cd1b8235b835e99114a888b7ec466743276143",
+        "at": "2026-11-21T13:32:39Z"
       }
     },
     "M13": {
