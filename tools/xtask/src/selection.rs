@@ -409,10 +409,6 @@ pub(crate) fn report(
 }
 
 /// The cargo-nextest filter for a selection of packages, or `None` for the whole workspace.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "switched on once GATE-TIME M7.1's record is made")
-)]
 pub(crate) fn nextest_filter(selection: &Selection) -> Option<String> {
     match selection {
         Selection::Whole(_) => None,

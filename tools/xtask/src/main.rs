@@ -690,8 +690,9 @@ const DRAW_PROBE_TESTS: &[&str] = &[
 ];
 
 /// `./dev check`: every step in turn, stopping at the first that fails, then the time of each
-/// step that ran and the slowest tests.
-fn check(root: &Path) -> TaskResult {
+/// step that ran and the slowest tests. With `all`, as `./dev check-all`, every test binary of the
+/// workspace runs; without it, those of the packages the change can reach (GATE-TIME mechanism 4).
+fn check(root: &Path, all: bool) -> TaskResult {
     let started = std::time::Instant::now();
     require_nextest()?;
     let junit = root.join(NEXTEST_STORE).join("default/junit.xml");
@@ -699,12 +700,47 @@ fn check(root: &Path) -> TaskResult {
         started: Some(started),
         ..CheckRecord::default()
     };
-    let result = check_steps(&mut record, &junit);
+    let mut chosen = None;
+    let result = record
+        .step("selection", |_| {
+            let (selection, lines) = if all {
+                let selection = selection::Selection::Whole(
+                    "`./dev check-all` runs every test binary, whatever changed".to_owned(),
+                );
+                let lines = selection::report(&selection, None);
+                (selection, lines)
+            } else {
+                selection::for_checkout(root)
+            };
+            let mut out = std::io::stdout().lock();
+            for line in lines {
+                writeln!(out, "{line}")?;
+            }
+            chosen = Some(selection);
+            Ok(())
+        })
+        .and_then(|()| {
+            let chosen = chosen.as_ref().ok_or("the selection step chose nothing")?;
+            check_steps(&mut record, &junit, chosen)
+        });
     record.summary()?;
     result
 }
 
-fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
+/// Whether the game's package, whose draw-probe pass is a second build of one of its test
+/// binaries, is selected.
+fn game_selected(chosen: &selection::Selection) -> bool {
+    match chosen {
+        selection::Selection::Whole(_) => true,
+        selection::Selection::Packages(packages) => packages.contains_key("v1-game"),
+    }
+}
+
+fn check_steps(
+    record: &mut CheckRecord,
+    junit: &Path,
+    chosen: &selection::Selection,
+) -> TaskResult {
     record.step("2D profile guard", |_| {
         python(&["scripts/sim2d_profile.py", "check"])?;
         python(&["scripts/sim2d_profile.py", "controls"])
@@ -730,13 +766,29 @@ fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
     record.step("Clippy, wasm", |_| check_web())?;
     // Tests behind a Cargo feature, from the main-tier list; `./dev long-tests` runs them.
     record.step("Clippy, tests behind a feature", |_| lint_feature_tests())?;
-    // Every test binary of the workspace, built once, each test in a process of its own.
-    record.step("tests, side by side", |record| {
-        record.nextest(junit, false, &["--workspace"])
-    })?;
+    // Every test binary of the workspace, built once with the workspace's features, each test in
+    // a process of its own; the selection decides only which packages' binaries run.
+    record.step(
+        "tests, side by side",
+        |record| match selection::nextest_filter(chosen) {
+            None => record.nextest(junit, false, &["--workspace"]),
+            Some(filter) => record.nextest(
+                junit,
+                false,
+                &["--workspace", "-E", &filter, "--no-tests=pass"],
+            ),
+        },
+    )?;
     record.step("doc tests", |_| {
         cargo(&["test", "--locked", "--offline", "--workspace", "--doc"])
     })?;
+    if !game_selected(chosen) {
+        writeln!(
+            std::io::stdout().lock(),
+            "==> draw-probe tests: not run, because the selection leaves out v1-game"
+        )?;
+        return Ok(());
+    }
     // Qualification-only observations inspect the real bound buffers and commands.
     record.step("draw-probe tests", |record| {
         let filter = DRAW_PROBE_TESTS
@@ -805,7 +857,7 @@ fn print_selection(root: &Path, flag: Option<&str>) -> TaskResult {
 /// `./dev help`, one command to a line so that edits to different commands merge cleanly.
 const HELP: &[&str] = &[
     "Thrum contributor commands:",
-    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, game Wasm Clippy, Rust tests side by side through cargo-nextest (including Mac Metal; one over 60 s fails), then each step's time and the slowest tests",
+    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, game Wasm Clippy, the Rust tests of the packages the change since the merge base with origin/main can reach, side by side through cargo-nextest (including Mac Metal; one over 60 s fails; it prints what it selected and why), then each step's time and the slowest tests",
     "  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it",
     "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
     "  check-all              Everything check runs, with every test binary of the workspace whatever changed; the main-branch check workspace-tests runs it",
@@ -896,7 +948,8 @@ fn main() -> TaskResult {
                 }
             }
         }
-        "check" | "check-all" => check(&root)?,
+        "check" => check(&root, false)?,
+        "check-all" => check(&root, true)?,
         "selection" => print_selection(&root, args.get(1).map(String::as_str))?,
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),
     }
