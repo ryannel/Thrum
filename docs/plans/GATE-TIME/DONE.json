@@ -161,8 +161,8 @@
           "statement": "`./dev check` reports each test that runs for over ten seconds, and stops and fails one that runs for over sixty. The failure names the test and says what to do: make it fast, or mark it `#[ignore]` with a reason that starts `long:` and list it. A test is exempt from the sixty seconds only by name, in a list kept with the runner's configuration, which gives each name the milestone that removes it: M2, M9 or M3. The list holds every test the record shows over ten seconds alone, and no other.",
           "ask": "In a scratch copy, add a test that sleeps for seventy seconds to a fast binary: does `./dev check` stop it, fail, name it and say what to do? Does one that sleeps for fifteen pass and show as slow? Compare the exempt list with the record's times alone: is every test over ten seconds on it with its milestone, and is any test on it that the record shows at ten seconds or under?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.4 and Round 2; round2/ctd-relative-sleep.log, round2/default-sleep.log)",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
@@ -171,8 +171,8 @@
           "statement": "`./dev check` ends, whether it passes or fails, with the wall time of each of its steps, the tests' among them, and the ten slowest tests with their times. The log gives this milestone's own merge check by those lines: its wall time and its tests' time.",
           "ask": "Read the saved output of this milestone's own merge check, under `.git/orchestrate/checks`: does it end with a time for every step the check ran and the ten slowest tests, and do the log's two figures match it? In a scratch copy, make one step fail: are the times of the steps that ran still printed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.5 and Round 2; round2/ctd-clean.log, round2/ctd-relative-sleep.log, probes/failing-step.log; the merge check named in LOG.md)",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
         },
