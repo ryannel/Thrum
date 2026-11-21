@@ -173,9 +173,26 @@ def history_errors(root, baseline, sites=None):
             for path, count in entry["files"].items():
                 if count > low[1].get(path, 0):
                     lines = [line for file, line in (sites or {}).get(rule, []) if file == path] or [1]
-                    for line in lines:
+                    for line in added_lines(root, low[2], path, lines):
                         errors.append(f"{path}:{line}: {rule}: {count} above historical file count {low[1].get(path, 0)}; {guidance(rule)}")
     return errors, ""
+
+
+def added_lines(root, revision, path, lines):
+    """The site lines whose text the file did not hold at `revision`, so a refusal names what was added.
+
+    Falls back to every site line when none is new by its text, such as a copy of an existing line.
+    """
+    shown = git(root, "show", f"{revision}:{path}")
+    if shown.returncode:
+        return lines
+    before = {line.strip() for line in shown.stdout.splitlines()}
+    try:
+        text = (root / path).read_text(errors="ignore").splitlines()
+    except OSError:
+        return lines
+    added = [line for line in lines if 0 < line <= len(text) and text[line - 1].strip() not in before]
+    return added or lines
 
 
 def guidance(rule):
@@ -303,12 +320,16 @@ def check(root, rule=None, zero=None, tighten=False):
     expected = json.loads(path.read_text())
     if expected.get("schema") != 1 or expected.get("rules", {}).keys() != RULES.keys():
         return errors + [f"{BASELINE}: rule registry/schema mismatch; run shape_rules.py tighten"]
+    # A file the history check already refused is named once, by the lines it added.
+    named = {(error.split(":", 1)[0], error.split(": ", 2)[1]) for error in errors if "above historical file count" in error}
     for name in ([rule] if rule else RULES):
         entry = expected["rules"][name]
         actual = current["rules"][name]
         if entry != actual:
             errors.append(f"{BASELINE}: {name}: counts/version differ; remove new violations or run shape_rules.py tighten after removing old ones")
             for relative, line in sites[name]:
+                if (relative, name) in named:
+                    continue
                 if actual["files"][relative] != entry["files"].get(relative, 0):
                     errors.append(f"{relative}:{line}: {name}: {guidance(name)}")
     # Check the reviewed baseline too, so stale or inflated allowances are refused.
