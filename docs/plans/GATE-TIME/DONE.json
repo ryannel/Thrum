@@ -316,7 +316,7 @@
     {
       "id": "M2",
       "name": "Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -332,8 +332,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m21-the-swash-test-runs-in-one-binary (gate-time worktree); agent_loop check at db3a87e71",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -344,8 +344,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m22-the-cloud-conformance-runs-once-native-once-on-default-limits (gate-time worktree); agent_loop check at db3a87e71, gpu lock",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -355,8 +355,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m23-the-frustum-only-mixed-mesh-flythrough-is-gone (gate-time worktree); agent_loop check at db3a87e71",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -365,8 +365,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m24-the-older-display-phase-copy-is-gone (gate-time worktree); agent_loop check at db3a87e71",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -377,8 +377,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "tmp/gate-time-m2/record.md#m25-the-atmospheres-monte-carlo-reference-is-out-of-the-tree (gate-time worktree); agent_loop check at db3a87e71, gpu lock",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -387,8 +387,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GATE-TIME/M2-review.md"
         }
       ]
     },
