@@ -30,6 +30,8 @@
 )]
 
 mod draw;
+#[cfg(not(target_arch = "wasm32"))]
+mod drawn;
 #[cfg(feature = "fault-probe")]
 mod fault;
 mod lease;
@@ -62,6 +64,8 @@ use thrum_render::contribution::{
     ShadowBounds,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use drawn::{AwaitDrawnError, DRAWN_DEADLINE, Drawn, await_drawn};
 pub use lease::{LeaseRequest, LentProduct, LentSet, ProductLease};
 pub use material::{
     MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReadError, MaterialReload,

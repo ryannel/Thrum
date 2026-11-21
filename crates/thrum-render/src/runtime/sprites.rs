@@ -2,13 +2,13 @@
 
 use super::{
     DriveReport, FrameError, FrameHost, FrameSample, FrameTarget, FrameWorld, Instant,
-    PendingCapture, PreparedRenderer, PreparedSample, SceneSource, SubmitFrame, SurfacePresenter,
+    PreparedRenderer, PreparedSample, SceneSource, SubmitFrame, SurfacePresenter,
     duration_ns_u32, preparation,
 };
 use crate::{
     contribution::{EffectTime, SceneContribution, SpriteContributionSurface},
     sprite::SpriteTarget,
-    synthetic::{CaptureSource, CullMode, ShadowSelection},
+    synthetic::{CaptureSource, CullMode, PixelReadback, ShadowSelection},
 };
 use std::{sync::Arc, time::Duration};
 
@@ -159,7 +159,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }))
     }
 
-    pub(super) fn begin_sprite_capture(&mut self) -> Result<PendingCapture, FrameError> {
+    pub(super) fn record_sprite_endpoint(
+        &mut self,
+        readback: bool,
+    ) -> Result<(Option<PixelReadback>, wgpu::SubmissionIndex), FrameError> {
         let source = self.world.source();
         let snapshot = self.world.publication().map_err(FrameError::World)?;
         if super::publication_source(&snapshot) != source {
@@ -187,7 +190,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.dropped_capture_rows = self
             .dropped_capture_rows
             .saturating_add(u64::from(upload.dropped));
-        let mut pixels = target.readback(&self.device);
+        let mut pixels = readback.then(|| target.readback(&self.device));
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -205,7 +208,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 &mut encoder,
                 &target,
                 None,
-                Some(&mut pixels),
+                pixels.as_mut(),
                 self.contribution.as_deref_mut(),
                 None,
                 time,
@@ -215,14 +218,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(false);
         }
-        Ok(PendingCapture {
-            pixels,
-            submitted,
-            owner: Arc::clone(&self.capture_owner),
-            generation: self.generation,
-            tick: source.tick,
-            extent: self.render_extent,
-        })
+        Ok((pixels, submitted))
     }
 }
 

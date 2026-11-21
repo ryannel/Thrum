@@ -557,6 +557,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     dropped_stale_views: u64,
     dropped_reports: u64,
     dropped_capture_rows: u64,
+    endpoint_readbacks: u64,
     dropped_surface: u64,
     visual_lighting: Option<FrameLighting>,
     visual_revision: Option<[u8; 32]>,
@@ -1167,6 +1168,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             dropped_stale_views: 0,
             dropped_reports: 0,
             dropped_capture_rows: 0,
+            endpoint_readbacks: 0,
             dropped_surface: 0,
             visual_lighting: None,
             visual_revision: None,
@@ -2413,6 +2415,40 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a GPU encode or submission error.
     pub fn begin_capture(&mut self) -> Result<PendingCapture, FrameError> {
+        let (pixels, submitted) = self.record_endpoint(true)?;
+        self.endpoint_readbacks += 1;
+        Ok(PendingCapture {
+            pixels: pixels.ok_or(FrameError::InvalidState("capture recorded no readback"))?,
+            submitted,
+            owner: Arc::clone(&self.capture_owner),
+            generation: self.generation,
+            tick: self.world.source().tick,
+            extent: self.render_extent,
+        })
+    }
+
+    /// Endpoint captures this host has recorded with a readback, through
+    /// [`Self::begin_capture`] or [`Self::capture_pixels`].
+    #[must_use]
+    pub fn endpoint_readbacks(&self) -> u64 {
+        self.endpoint_readbacks
+    }
+
+    /// Draw and submit the current committed endpoint once, as
+    /// [`Self::begin_capture`] records it, with no readback and no wait. The
+    /// scene contribution records its staged work into the frame, so a caller
+    /// waiting for content to be drawn advances it this way. Like a capture,
+    /// this never advances authority or commits display history.
+    /// # Errors
+    /// Returns a GPU encode or submission error.
+    pub fn render_once(&mut self) -> Result<wgpu::SubmissionIndex, FrameError> {
+        self.record_endpoint(false).map(|(_, submitted)| submitted)
+    }
+
+    fn record_endpoint(
+        &mut self,
+        readback: bool,
+    ) -> Result<(Option<crate::synthetic::PixelReadback>, wgpu::SubmissionIndex), FrameError> {
         if self.native_witness_report().is_some() {
             return Err(FrameError::InvalidState(
                 "native witness uses the submitted-image tap, not endpoint capture",
@@ -2421,7 +2457,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let creations = self.creations.clone();
         let _region = creations.region(CreationPhase::Transition, "capture");
         if self.scene_kind() == SceneKind::TwoD {
-            return self.begin_sprite_capture();
+            return self.record_sprite_endpoint(readback);
         }
         let needs_extract = self.extractor.frame().source().is_none_or(|source| {
             source.epoch != self.world.source().epoch
@@ -2536,7 +2572,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 display_phase: 1.0,
                 capture: true,
             });
-        let mut pixels = target.readback(&self.device);
+        let mut pixels = readback.then(|| target.readback(&self.device));
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -2546,7 +2582,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.generation,
                 &target,
                 None,
-                Some(&mut pixels),
+                pixels.as_mut(),
                 self.contribution.as_deref_mut(),
                 None,
                 &mut Vec::new(),
@@ -2557,14 +2593,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(false);
         }
-        Ok(PendingCapture {
-            pixels,
-            submitted,
-            owner: Arc::clone(&self.capture_owner),
-            generation: self.generation,
-            tick: self.world.source().tick,
-            extent: self.render_extent,
-        })
+        Ok((pixels, submitted))
     }
 
     /// Nonblocking check of a pending capture: `Ok(None)` until its readback
