@@ -395,8 +395,8 @@
     {
       "id": "M10",
       "name": "A record shows where a builder's session goes: the model's own time, each kind of command and each wait",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "quality_bar": "As checkable as a `cargo build --timings` report: every minute of a session sits in one named part, the parts add up to the session's wall time, and a reader can trace any figure back to the lines it came from.",
@@ -426,16 +426,17 @@
           "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This milestone changed no setting, plan, skill or check.",
           "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the milestone's commits change any file but this module's log and done-when file?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md#what-it-shows (fix round: the per-call check sentence removed; lock waits tied to the asking process)",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M10-review.md"
         }
       ],
       "findings": [
         {
-          "name": "A closing statement says agent_loop.py check took about 10 to 12 minutes each time until 04:38, which the record's own tables contradict and no table can show",
+          "name": "The closing statements on savings call the median of each session's saving the most that could come off the median session, which the tables contradict",
           "item": "M10.3",
+          "different": "The earlier finding was a figure no table held (a per-call check time); that sentence is gone. This one is a correct table figure, the median of per-session savings, described in the prose as an upper bound for the median session.",
           "repeat": false
         }
       ]

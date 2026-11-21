@@ -540,7 +540,7 @@
         {
           "verdict": "fail",
           "commit": "4bc589612e14eaa51359cdffc2beeaade0e89679",
-          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/M10-review-1.md",
           "items": {
             "M10.1": "pass",
             "M10.2": "pass",
@@ -569,6 +569,40 @@
             "turns": 1
           },
           "at": "2026-11-21T12:11:13Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "6d9c2a2b327f3f96e7e5df8c14f3dd1dc9533a2a",
+          "review": ".orchestrate/evidence/GATE-TIME/M10-review.md",
+          "items": {
+            "M10.1": "pass",
+            "M10.2": "pass",
+            "M10.3": "fail"
+          },
+          "findings": [
+            {
+              "name": "The closing statements on savings call the median of each session's saving the most that could come off the median session, which the tables contradict",
+              "item": "M10.3",
+              "different": "The earlier finding was a figure no table held (a per-call check time); that sentence is gone. This one is a correct table figure, the median of per-session savings, described in the prose as an upper bound for the median session.",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 132454,
+            "cached": 3036876,
+            "output": 29316,
+            "cost_usd": 2.253047,
+            "turns": 1
+          },
+          "at": "2026-11-21T12:21:16Z"
         }
       ],
       "authorised": {
