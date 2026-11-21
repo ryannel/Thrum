@@ -1,7 +1,10 @@
 //! Visible cloud contribution on the real game's submitted scene path.
 pub mod support;
 use std::time::{Duration, Instant};
-use v1_game::{CloudSelection, FrameConfig, FrameHost, GameSetup};
+use thrum_render::runtime::FrameConfig;
+use v1_game::{CloudSelection, GameHost, GameScene, GameSetup, GameWorld};
+
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
 
 type Pixel = [f32; 4];
 const EXTENT: [u32; 2] = [320, 180];
@@ -21,20 +24,15 @@ fn absent_cloud_selection_keeps_the_compiled_graph_storage_and_pixels() {
             render_extent: [160, 90],
             surface: None,
         };
-        let mut original =
-            FrameHost::new_with_setup(&device, &queue, &caps, config, GameSetup::default())
-                .await
-                .unwrap();
-        let mut absent = FrameHost::new_with_setup(
-            &device,
-            &queue,
-            &caps,
-            config,
-            GameSetup {
-                clouds: CloudSelection::Off,
-                ..GameSetup::default()
-            },
-        )
+        let mut original = GameSetup::default()
+            .prepare(&device, &queue, &caps, config)
+            .await
+            .unwrap();
+        let mut absent = GameSetup {
+            clouds: CloudSelection::Off,
+            ..GameSetup::default()
+        }
+        .prepare(&device, &queue, &caps, config)
         .await
         .unwrap();
         assert_eq!(original.storage_report(), absent.storage_report());
@@ -117,12 +115,12 @@ fn pixels(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture) -
 }
 
 fn frame(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    surface: &v1_game::SurfaceOutput<'_>,
+    surface: &thrum_render::runtime::SurfaceOutput<'_>,
     now: Duration,
-) -> (v1_game::FrameSample, Vec<Pixel>) {
+) -> (thrum_render::runtime::FrameSample, Vec<Pixel>) {
     assert!(
         host.drive(now, Some(surface))
             .expect("display frame")
@@ -236,7 +234,7 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
     pollster::block_on(async {
         let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, EXTENT);
-        let surface = v1_game::SurfaceOutput {
+        let surface = thrum_render::runtime::SurfaceOutput {
             view: &view,
             extent: EXTENT,
         };
@@ -254,23 +252,19 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
             display_overlay: thrum_render::synthetic::DisplayOverlay::TemporalInputs,
             ..GameSetup::default()
         };
-        let mut clear = FrameHost::new_with_setup(&device, &queue, &caps, config, setup)
+        let mut clear = setup
+            .prepare(&device, &queue, &caps, config)
             .await
             .expect("absent cloud game");
-        let mut sky = FrameHost::new_with_setup(
-            &device,
-            &queue,
-            &caps,
-            config,
-            GameSetup {
-                clouds: CloudSelection::Sky,
-                cloud_weather: parameters,
-                ..setup
-            },
-        )
+        let mut sky = GameSetup {
+            clouds: CloudSelection::Sky,
+            cloud_weather: parameters,
+            ..setup
+        }
+        .prepare(&device, &queue, &caps, config)
         .await
         .expect("visible cloud game");
-        sky.set_quality_knob("cloud refresh exponent", 1)
+        sky.set_game_quality_knob("cloud refresh exponent", 1)
             .expect("start with sparse refresh before testing a profile change");
         let eye = [0.0, 40.0, 0.0];
         let target = [0.0, 1600.0, -3000.0];
@@ -313,7 +307,7 @@ fn submitted_cloud_motion_tracks_model_display_travel_and_resets_whole_without_d
             (Duration::from_millis(48), 2, true, false, true),
         ] {
             if quality {
-                sky.set_quality_knob("cloud refresh exponent", 0)
+                sky.set_game_quality_knob("cloud refresh exponent", 0)
                     .expect("profile change");
             }
             if cut {
@@ -367,22 +361,22 @@ fn visible_layer_prepares_physical_light_and_submits_late_transport() {
     pollster::block_on(async {
         let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
-        let surface = v1_game::SurfaceOutput {
+        let surface = thrum_render::runtime::SurfaceOutput {
             view: &view,
             extent: [160, 90],
         };
-        let mut game = FrameHost::new_with_setup(
+        let mut game = GameSetup {
+            clouds: CloudSelection::Sky,
+            reconstruction: thrum_render::synthetic::Reconstruction::Taau,
+            ..GameSetup::default()
+        }
+        .prepare(
             &device,
             &queue,
             &caps,
             FrameConfig {
                 render_extent: [160, 90],
                 surface: Some(profile),
-            },
-            GameSetup {
-                clouds: CloudSelection::Sky,
-                reconstruction: thrum_render::synthetic::Reconstruction::Taau,
-                ..GameSetup::default()
             },
         )
         .await

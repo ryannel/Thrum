@@ -3,7 +3,8 @@ pub mod support;
 #[cfg(target_os = "macos")]
 use std::time::{Duration, Instant};
 #[cfg(target_os = "macos")]
-use v1_game::{FrameConfig, FrameHost, FrameSample, effect::DiagnosticEffect};
+use thrum_render::runtime::{FrameConfig, FrameSample};
+use v1_game::{GameHost, GameSetup, effect::DiagnosticEffect};
 
 #[cfg(target_os = "macos")]
 fn complete(mut poll: impl FnMut() -> Option<FrameSample>, device: &wgpu::Device) -> FrameSample {
@@ -62,18 +63,19 @@ fn delayed_observation_still_describes_the_consumed_target() {
     pollster::block_on(async {
         let (_, device, queue, _) = support::device(&test_gpu, "portable", false);
         let (view, profile) = support::presentation(&device, [96, 54]);
-        let mut host = FrameHost::new(
-            &device,
-            &queue,
-            FrameConfig {
-                render_extent: [96, 54],
-                surface: Some(profile),
-            },
-        )
-        .await
-        .expect("V1 game");
+        let mut host = GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                FrameConfig {
+                    render_extent: [96, 54],
+                    surface: Some(profile),
+                },
+            )
+            .await
+            .expect("V1 game");
         let (effect, handle) = DiagnosticEffect::new();
-        host.set_scene_contribution(Box::new(effect))
+        host.set_game_contribution(Box::new(effect))
             .expect("public effect seam");
         let origin = Instant::now();
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("world lane");
@@ -89,7 +91,7 @@ fn delayed_observation_still_describes_the_consumed_target() {
         let report = host
             .drive(
                 observation,
-                Some(&v1_game::SurfaceOutput {
+                Some(&thrum_render::runtime::SurfaceOutput {
                     view: &view,
                     extent: [96, 54],
                 }),
@@ -137,24 +139,22 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
     pollster::block_on(async {
         let (instance, device, queue, caps) = support::device(&test_gpu, "portable", false);
         let (view, profile) = support::presentation(&device, [96, 54]);
-        let surface = v1_game::SurfaceOutput {
+        let surface = thrum_render::runtime::SurfaceOutput {
             view: &view,
             extent: [96, 54],
         };
+        let config = FrameConfig {
+            render_extent: [96, 54],
+            surface: Some(profile),
+        };
         let mut records = Vec::new();
         for refresh in [120_u64, 60] {
-            let mut host = FrameHost::new(
-                &device,
-                &queue,
-                FrameConfig {
-                    render_extent: [96, 54],
-                    surface: Some(profile),
-                },
-            )
-            .await
-            .expect("V1 game");
+            let mut host = GameSetup::default()
+                .prepare_on(&device, &queue, config)
+                .await
+                .expect("V1 game");
             let (effect, handle) = DiagnosticEffect::new();
-            host.set_scene_contribution(Box::new(effect))
+            host.set_game_contribution(Box::new(effect))
                 .expect("effect seam");
             let mut previous: Option<(f64, f64)> = None;
             let mut past_endpoint = 0;
@@ -207,7 +207,7 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
             }
             assert!(past_endpoint > 0);
             assert!(nonempty, "the kept field was not empty");
-            host.pause().expect("pause inline world");
+            host.world_mut().pause().expect("pause inline world");
             host.drive(Duration::from_secs(1), Some(&surface))
                 .expect("paused");
             let paused = complete(|| host.poll_completed().expect("completion"), &device);
@@ -245,18 +245,12 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
         }
         // The autonomous world is genuinely on its own lane. Observation is the
         // actual world-origin timestamp, while targets follow the runner's schedule.
-        let mut host = FrameHost::new(
-            &device,
-            &queue,
-            FrameConfig {
-                render_extent: [96, 54],
-                surface: Some(profile),
-            },
-        )
-        .await
-        .expect("V1 game");
+        let mut host = GameSetup::default()
+            .prepare_on(&device, &queue, config)
+            .await
+            .expect("V1 game");
         let (effect, handle) = DiagnosticEffect::new();
-        host.set_scene_contribution(Box::new(effect))
+        host.set_game_contribution(Box::new(effect))
             .expect("effect");
         let origin = Instant::now();
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("world lane");

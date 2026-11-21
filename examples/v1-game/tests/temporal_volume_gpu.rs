@@ -9,11 +9,14 @@ use thrum_cook::{CookConfig, Cooker, Durability, Quality};
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::present::SurfaceProfile;
 use thrum_render::runtime::SubmittedImage;
+use thrum_render::runtime::{FrameConfig, FrameHost, SurfaceOutput};
 use thrum_render::synthetic::{CaptureSource, DisplayOverlay};
-use v1_game::{FrameConfig, FrameHost, GameSetup, SceneCamera, SurfaceOutput};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld, SceneCamera};
+
+type Host = FrameHost<GameWorld, GameScene>;
 
 fn submitted(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     surface: &SurfaceOutput<'_>,
     clock: &mut Duration,
@@ -144,7 +147,11 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
                 view: &view,
                 extent: [65, 65],
             };
-            let mut host = FrameHost::new_with_setup(
+            let mut host = GameSetup {
+                display_overlay: DisplayOverlay::TemporalInputs,
+                ..GameSetup::default()
+            }
+            .prepare(
                 &device,
                 &queue,
                 &caps,
@@ -155,14 +162,10 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
                         extent: [65, 65],
                     }),
                 },
-                GameSetup {
-                    display_overlay: DisplayOverlay::TemporalInputs,
-                    ..GameSetup::default()
-                },
             )
             .await
             .expect("real game host");
-            host.pause().expect("steady scene");
+            host.world_mut().pause().expect("steady scene");
             let center = glam::Mat4::from_cols_array_2d(&placement.transform)
                 .transform_point3(glam::Vec3::splat(0.5));
             host.set_scene_camera(
@@ -180,7 +183,7 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
             config.volume = Some(placement.clone());
             let assets = CookedAssets::new(config).expect("production contribution");
             let stats = assets.stats();
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach cooked volume");
             host.enable_submitted_capture(1)
                 .expect("submitted temporal diagnostic tap");

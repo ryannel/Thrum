@@ -39,8 +39,8 @@
         "crates/thrum-render/src/atmosphere/gpu/tests/reference/multiple.rs": 3,
         "crates/thrum-render/src/atmosphere/tests.rs": 1,
         "examples/v1-game/benches/cooked_edit.rs": 2,
-        "examples/v1-game/src/bin/window/capture.rs": 3,
         "examples/v1-game/src/host/scene_source.rs": 2,
+        "examples/v1-game/src/main.rs": 2,
         "examples/v1-game/tests/cooked_assets_gpu.rs": 2,
         "examples/v1-game/tests/cooked_material_gpu.rs": 2,
         "examples/v1-game/tests/temporal_volume_gpu.rs": 1,
@@ -92,8 +92,6 @@
     "path-attribute": {
       "version": 1,
       "files": {
-        "examples/v1-game/src/bin/window/capture.rs": 2,
-        "examples/v1-game/src/main.rs": 1
       }
     },
     "script-caller": {
@@ -144,7 +142,7 @@
       "version": 4,
       "files": {
         "crates/thrum-app/src/capture_writer.rs": 2,
-        "crates/thrum-app/src/offscreen.rs": 9,
+        "crates/thrum-app/src/offscreen.rs": 11,
         "crates/thrum-app/src/offscreen/clock.rs": 1,
         "crates/thrum-app/src/sky.rs": 1,
         "crates/thrum-app/src/web.rs": 9,
@@ -155,11 +153,11 @@
         "examples/v1-game/src/camera/route.rs": 3,
         "examples/v1-game/src/content.rs": 3,
         "examples/v1-game/src/effect/qualification.rs": 2,
-        "examples/v1-game/src/host.rs": 31,
-        "examples/v1-game/src/host/scene_source.rs": 3,
+        "examples/v1-game/src/host.rs": 7,
+        "examples/v1-game/src/host/scene_source.rs": 1,
         "examples/v1-game/src/host/world_thread.rs": 1,
         "examples/v1-game/src/scene.rs": 1,
-        "examples/v1-game/src/window.rs": 2
+        "examples/v1-game/src/window.rs": 3
       }
     },
     "test-crate-edges": {
@@ -171,7 +169,6 @@
       "version": 1,
       "files": {
         "crates/thrum-app/src/app/qualification/tests.rs": 1,
-        "crates/thrum-asset-gpu/tests/cooked_view_gpu/support.rs": 1,
         "crates/thrum-cook/tests/edit_to_visible/bench.rs": 1,
         "crates/thrum-cook/tests/edit_to_visible/main.rs": 1,
         "crates/thrum-cook/tests/serve_and_watch.rs": 1,
@@ -196,7 +193,6 @@
         "examples/mirror/tests/view_knobs_gpu.rs": 1,
         "examples/v1-game/src/host/tests/gpu_support.rs": 3,
         "examples/v1-game/src/host/tests/lifecycle_gpu.rs": 1,
-        "examples/v1-game/src/host/tests/reconstruction_gpu.rs": 1,
         "examples/v1-game/src/host/tests/recovery_gpu.rs": 3,
         "examples/v1-game/src/host/world_thread/tests.rs": 8,
         "examples/v1-game/tests/capture_display_phase_gpu.rs": 1,
@@ -204,28 +200,24 @@
         "examples/v1-game/tests/clouds_display_time_gpu.rs": 1,
         "examples/v1-game/tests/clouds_frame_contract_gpu.rs": 2,
         "examples/v1-game/tests/clouds_selection_gpu.rs": 1,
-        "examples/v1-game/tests/cooked_assets_gpu.rs": 15,
+        "examples/v1-game/tests/cooked_assets_gpu.rs": 12,
         "examples/v1-game/tests/cooked_fault_gpu.rs": 1,
         "examples/v1-game/tests/cooked_material_gpu.rs": 7,
-        "examples/v1-game/tests/cooked_rows_gpu.rs": 8,
+        "examples/v1-game/tests/cooked_rows_gpu.rs": 7,
         "examples/v1-game/tests/effect_display_phase_gpu.rs": 3,
         "examples/v1-game/tests/effect_resume_gpu.rs": 2,
         "examples/v1-game/tests/exit_scene_gpu.rs": 1,
         "examples/v1-game/tests/host_gpu.rs": 5,
-        "examples/v1-game/tests/lent_products_gpu.rs": 6,
+        "examples/v1-game/tests/lent_products_gpu.rs": 4,
         "examples/v1-game/tests/mesh_stage_gpu/metal.rs": 5,
         "examples/v1-game/tests/mesh_stage_gpu/support.rs": 3,
         "examples/v1-game/tests/mesh_stage_gpu/valley.rs": 3,
-        "examples/v1-game/tests/ray_tracing/proof.rs": 1,
-        "examples/v1-game/tests/ray_tracing/proof/casters.rs": 1,
-        "examples/v1-game/tests/ray_tracing/proof/contribution_shadows.rs": 1,
-        "examples/v1-game/tests/ray_tracing/proof/contribution_shadows/replacement.rs": 3,
+        "examples/v1-game/tests/ray_tracing/proof/contribution_shadows/replacement.rs": 2,
         "examples/v1-game/tests/ray_tracing/proof/cost.rs": 1,
         "examples/v1-game/tests/ray_tracing/proof/shadows.rs": 2,
         "examples/v1-game/tests/ray_tracing_gpu.rs": 2,
         "examples/v1-game/tests/surface_gpu.rs": 1,
         "examples/v1-game/tests/temporal_volume_gpu.rs": 1,
-        "examples/v1-game/tests/valley_route_support/valley_route.rs": 1,
         "examples/water/tests/proof_gpu.rs": 1,
         "examples/water/tests/realtime.rs": 1,
         "examples/water/tests/support.rs": 1

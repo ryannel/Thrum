@@ -3,14 +3,18 @@
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use thrum_asset::{AssetStore, MeshProduct, Profile};
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MeshPlacement, rows::CookedRows};
+use thrum_asset_gpu::{
+    CookedAssets, CookedConfig, CookedStats, Drawn, MeshPlacement, await_drawn, rows::CookedRows,
+};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
+use thrum_render::runtime::{FrameConfig, FrameHost};
 use thrum_render::synthetic::mesh_rows::{MeshRowError, MeshRowGeometry};
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
-use v1_game::{FrameConfig, FrameHost, GameSetup};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
 
 const EXTENT: [u32; 2] = [320, 180];
 type Stats = Arc<Mutex<CookedStats>>;
+type Host = FrameHost<GameWorld, GameScene>;
 
 struct Scratch(std::path::PathBuf);
 impl Scratch {
@@ -67,12 +71,17 @@ async fn host(
     mode: CullMode,
     coupled: bool,
     binding: Option<u64>,
-) -> (FrameHost, Stats) {
+) -> (Host, Stats) {
     let rows = rows(cook, device);
     if let Some(binding) = binding {
         drop(rows.updates().with_binding_limit(binding));
     }
-    let mut host = FrameHost::new_with_rows(
+    let mut host = GameSetup {
+        field_meshes: true,
+        camera_culling: mode,
+        ..GameSetup::default()
+    }
+    .prepare_with_rows(
         device,
         queue,
         caps,
@@ -82,11 +91,6 @@ async fn host(
                 format: wgpu::TextureFormat::Bgra8Unorm,
                 extent: EXTENT,
             }),
-        },
-        GameSetup {
-            field_meshes: true,
-            camera_culling: mode,
-            ..GameSetup::default()
         },
         Some(rows.clone()),
     )
@@ -104,28 +108,36 @@ async fn host(
     config.rows = Some(rows);
     let assets = CookedAssets::new(config).expect("residency");
     let stats = assets.stats();
-    host.set_scene_contribution(Box::new(assets))
+    host.set_game_contribution(Box::new(assets))
         .expect("attach");
-    host.pause().expect("pause at same tick");
+    host.world_mut().pause().expect("pause at same tick");
     (host, stats)
 }
 
-fn settle(host: &mut FrameHost, stats: &Stats, generation: u64) -> Vec<u8> {
-    let deadline = Instant::now() + Duration::from_secs(90);
-    loop {
-        let image = host.capture_pixels().expect("game capture");
-        let stats = stats.lock().expect("stats");
-        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-        if stats.drawn == Some(generation) {
-            return image;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "generation {generation} timed out"
-        );
-        drop(stats);
-        std::thread::yield_now();
-    }
+fn settle(host: &mut Host, stats: &Stats, generation: u64) -> Vec<u8> {
+    // One frame first: a published device or surface reaches the contribution only in a frame,
+    // which then restages, so the drawn generation read before it may be stale.
+    render_frame(host);
+    await_drawn(host, stats, Drawn::Generation(generation))
+        .unwrap_or_else(|error| panic!("generation {generation}: {error}"));
+    let image = host.capture_pixels().expect("game capture");
+    let stats = stats.lock().expect("stats");
+    assert!(stats.errors.is_empty(), "{:?}", stats.errors);
+    assert_eq!(stats.drawn, Some(generation));
+    image
+}
+
+/// Submit one frame of the committed endpoint without a readback and wait for it,
+/// so row writes and staged copies advance as a capture would advance them.
+fn render_frame(host: &mut Host) {
+    let submitted = host.render_once().expect("endpoint frame");
+    host.device_capabilities()
+        .site()
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submitted),
+            timeout: Some(Duration::from_secs(10)),
+        })
+        .expect("endpoint frame completes");
 }
 
 fn generation(cook: &CookConfig) -> u64 {
@@ -153,7 +165,7 @@ fn staged(stats: &Stats, generation: u64) {
     }
 }
 
-fn only_old_or_new(live: &mut FrameHost, stats: &Stats, generation: u64, old: &[u8], new: &[u8]) {
+fn only_old_or_new(live: &mut Host, stats: &Stats, generation: u64, old: &[u8], new: &[u8]) {
     let deadline = Instant::now() + Duration::from_secs(90);
     loop {
         let image = live.capture_pixels().expect("publication frame");
@@ -272,18 +284,18 @@ fn repeated_products_keep_each_initial_row_identity_without_overlap_space() {
         )
         .expect("compact rows");
         let updates = rows.updates();
-        let mut live = FrameHost::new_with_rows(
+        let mut live = GameSetup {
+            field_meshes: true,
+            camera_culling: CullMode::Occlusion,
+            ..GameSetup::default()
+        }
+        .prepare_with_rows(
             &device,
             &queue,
             &caps,
             FrameConfig {
                 render_extent: EXTENT,
                 surface: None,
-            },
-            GameSetup {
-                field_meshes: true,
-                camera_culling: CullMode::Occlusion,
-                ..GameSetup::default()
             },
             Some(rows.clone()),
         )
@@ -293,9 +305,9 @@ fn repeated_products_keep_each_initial_row_identity_without_overlap_space() {
         config.rows = Some(rows);
         let assets = CookedAssets::new(config).expect("residency");
         let stats = assets.stats();
-        live.set_scene_contribution(Box::new(assets))
+        live.set_game_contribution(Box::new(assets))
             .expect("attach");
-        live.pause().expect("pause");
+        live.world_mut().pause().expect("pause");
         let first = generation(&cook);
         let reference = settle(&mut live, &stats, first);
         assert_eq!(
@@ -846,7 +858,7 @@ async fn environment_reference(
     let (mut fresh, stats) = host(cook, device, queue, caps, mode, true, None).await;
     settle(&mut fresh, &stats, generation(cook));
     let mut candidate = fresh
-        .visual_prepare_inputs()
+        .environment_prepare_inputs()
         .prepare(product)
         .await
         .expect("fresh environment");
@@ -888,7 +900,7 @@ fn visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows() {
                 let updates = live.cooked_rows().expect("rows").updates();
                 let mut candidate = if phase == 3 {
                     Some(
-                        live.visual_prepare_inputs()
+                        live.environment_prepare_inputs()
                             .prepare(product)
                             .await
                             .expect("early candidate"),
@@ -920,7 +932,7 @@ fn visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows() {
                     if reached {
                         break;
                     }
-                    live.capture_pixels().expect("pre-rebuild frame");
+                    render_frame(&mut live);
                     assert!(
                         Instant::now() < deadline,
                         "rebuild stage {phase} never reached"
@@ -938,7 +950,7 @@ fn visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows() {
                 let mut candidate = match candidate.take() {
                     Some(candidate) => candidate,
                     None => live
-                        .visual_prepare_inputs()
+                        .environment_prepare_inputs()
                         .prepare(product)
                         .await
                         .expect("candidate"),

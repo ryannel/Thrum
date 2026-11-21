@@ -16,7 +16,10 @@ use thrum_asset_gpu::{
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::present::SurfaceProfile;
-use v1_game::{FrameConfig, FrameHost, SurfaceOutput};
+use thrum_render::runtime::{FrameConfig, FrameHost, SurfaceOutput};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+
+type Host = FrameHost<GameWorld, GameScene>;
 
 const EXTENT: [u32; 2] = [640, 360];
 
@@ -136,7 +139,7 @@ async fn gpu(
     (device, queue, capabilities)
 }
 
-fn settle(host: &mut FrameHost, device: &wgpu::Device) {
+fn settle(host: &mut Host, device: &wgpu::Device) {
     while host.pending_frames() > 0 {
         device
             .poll(wgpu::PollType::Wait {
@@ -151,7 +154,7 @@ fn settle(host: &mut FrameHost, device: &wgpu::Device) {
 /// Drive one submitted live frame and wait for it. Steps are 16 ms against the 60 Hz tick, so about
 /// one step in 25 completes no tick, and a live frame without a completed tick submits nothing; such
 /// a step leaves the last frame's stats in place, so keep stepping until a frame is submitted.
-fn live_frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
+fn live_frame(host: &mut Host, device: &wgpu::Device, clock: &mut Duration) {
     for _ in 0..4 {
         *clock += Duration::from_millis(16);
         let submitted = host.drive(*clock, None).expect("frame").submitted;
@@ -165,7 +168,7 @@ fn live_frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration)
 
 /// Drive live frames until the cooked set `generation` is drawn and one more frame follows it.
 fn drive_until_drawn(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     stats: &Mutex<CookedStats>,
     clock: &mut Duration,
@@ -244,7 +247,20 @@ fn record(outcome: &MaterialOutcome) {
     }
 }
 
-fn capture(host: &mut FrameHost, name: &str) -> Vec<u8> {
+/// Submit one frame of the committed endpoint without a readback and wait for it, so staging
+/// and material reloads advance as a capture would advance them.
+fn render_frame(host: &mut Host) {
+    let submitted = host.render_once().expect("endpoint frame");
+    host.device_capabilities()
+        .site()
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submitted),
+            timeout: Some(Duration::from_secs(10)),
+        })
+        .expect("endpoint frame completes");
+}
+
+fn capture(host: &mut Host, name: &str) -> Vec<u8> {
     let pixels = host.capture_pixels().expect("capture");
     save(name, &pixels);
     pixels
@@ -266,24 +282,29 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
     };
     let (root, cook) = cooked("material");
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats: Arc<Mutex<CookedStats>> = assets.stats();
         let material = assets.material();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -312,7 +333,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
 
         // Paused from here, so captures differ only by material.
-        host.pause().expect("pause");
+        host.world_mut().pause().expect("pause");
         let identity = capture(&mut host, "identity");
         assert_eq!(
             identity,
@@ -322,7 +343,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
 
         // A visible valid reload.
         let serial = material.request(hook("hooks/bands.wgsl", BANDS));
-        let (outcome, _) = until_outcome(&material, serial, || drop(capture(&mut host, "_")));
+        let (outcome, _) = until_outcome(&material, serial, || render_frame(&mut host));
         let MaterialOutcome::Promoted { name, timing, .. } = &outcome else {
             panic!("bands refused: {outcome}");
         };
@@ -338,7 +359,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
 
         // An invalid reload: the bands keep drawing and the diagnostic names the hook's line.
         let serial = material.request(hook("hooks/misspelt.wgsl", MISSPELT));
-        let (outcome, _) = until_outcome(&material, serial, || drop(capture(&mut host, "_")));
+        let (outcome, _) = until_outcome(&material, serial, || render_frame(&mut host));
         let MaterialOutcome::Rejected { diagnostics, .. } = &outcome else {
             panic!("a misspelt hook was accepted: {outcome}");
         };
@@ -361,7 +382,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
         let missing = material.request(hook("hooks/empty.wgsl", "// nothing here\n"));
         let superseded = material.request(hook("hooks/identity.wgsl", IDENTITY));
         let newest = material.request(hook("hooks/green.wgsl", GREEN));
-        let (outcome, seen) = until_outcome(&material, newest, || drop(capture(&mut host, "_")));
+        let (outcome, seen) = until_outcome(&material, newest, || render_frame(&mut host));
         assert!(
             matches!(outcome, MaterialOutcome::Promoted { .. }),
             "{outcome}"
@@ -377,7 +398,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(pat
         assert!(changed_pixels(&bands, &green) > 640 * 360 / 100);
 
         let missing = material.request(hook("hooks/empty.wgsl", "// nothing here\n"));
-        let (outcome, _) = until_outcome(&material, missing, || drop(capture(&mut host, "_")));
+        let (outcome, _) = until_outcome(&material, missing, || render_frame(&mut host));
         let MaterialOutcome::Rejected { diagnostics, .. } = &outcome else {
             panic!("a hook without cooked_surface was accepted: {outcome}");
         };
@@ -411,32 +432,37 @@ fn the_identity_hook_draws_the_built_in_material_case(path: CookedDrawPath) {
     };
     let (root, cook) = cooked("identity");
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
         let material = assets.material();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
-        host.pause().expect("pause");
+        host.world_mut().pause().expect("pause");
         let default = capture(&mut host, "default");
         let serial = material.request(hook("identity.wgsl", IDENTITY));
-        let (outcome, _) = until_outcome(&material, serial, || drop(capture(&mut host, "_")));
+        let (outcome, _) = until_outcome(&material, serial, || render_frame(&mut host));
         assert!(
             matches!(outcome, MaterialOutcome::Promoted { .. }),
             "{outcome}"
@@ -468,32 +494,37 @@ fn a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path:
     };
     let (root, cook) = cooked("non-finite");
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
         let material = assets.material();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
-        host.pause().expect("pause");
+        host.world_mut().pause().expect("pause");
         let default = capture(&mut host, "default");
         let serial = material.request(hook("non-finite.wgsl", NON_FINITE));
-        let (outcome, _) = until_outcome(&material, serial, || drop(capture(&mut host, "_")));
+        let (outcome, _) = until_outcome(&material, serial, || render_frame(&mut host));
         assert!(
             matches!(outcome, MaterialOutcome::Promoted { .. }),
             "{outcome}"
@@ -527,19 +558,24 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
     };
     let (root, cook) = cooked("material-early");
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
@@ -550,7 +586,7 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
             material.take_outcomes(),
             vec![MaterialOutcome::Superseded { serial: first }]
         );
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -587,29 +623,34 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
     };
     let (root, cook) = cooked("material-burst");
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
         let material = assets.material();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
-        host.pause().expect("pause");
+        host.world_mut().pause().expect("pause");
         // The first request starts the one compile; each later one replaces the waiting request,
         // which is superseded at once, before it compiles.
         let outstanding = material.request(hook("burst/bands.wgsl", BANDS));
@@ -630,7 +671,7 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
                 .collect::<Vec<_>>(),
             "waiting requests are superseded without compiling"
         );
-        let (outcome, seen) = until_outcome(&material, newest, || drop(capture(&mut host, "_")));
+        let (outcome, seen) = until_outcome(&material, newest, || render_frame(&mut host));
         assert!(
             matches!(outcome, MaterialOutcome::Promoted { .. }),
             "{outcome}"
@@ -673,23 +714,23 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
             render_extent: EXTENT,
             surface: None,
         };
-        let mut host =
-            FrameHost::new_with_capabilities(&old_device, &old_queue, &old_capabilities, config)
-                .await
-                .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(&old_device, &old_queue, &old_capabilities, config)
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
         let stats = assets.stats();
         let material = assets.material();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &old_device, &stats, &mut clock);
-        host.pause().expect("pause");
+        host.world_mut().pause().expect("pause");
         let accepted = material.request(hook("hooks/bands.wgsl", BANDS));
         let (outcome, _) = until_outcome(&material, accepted, || {
-            drop(capture(&mut host, "_"));
+            render_frame(&mut host);
         });
         assert!(
             matches!(outcome, MaterialOutcome::Promoted { .. }),
@@ -715,7 +756,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
         );
         let swaps = stats.lock().expect("stats").swaps.len();
         let (outcome, _) = until_outcome(&material, outstanding, || {
-            drop(capture(&mut host, "_"));
+            render_frame(&mut host);
         });
         assert!(
             matches!(outcome, MaterialOutcome::Retired { .. }),
@@ -725,7 +766,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
         let deadline = Instant::now() + Duration::from_secs(30);
         while stats.lock().expect("stats").swaps.len() == swaps {
             assert!(Instant::now() < deadline, "the set never restaged");
-            drop(capture(&mut host, "_"));
+            render_frame(&mut host);
         }
         assert_eq!(material.accepted().as_deref(), Some("hooks/bands.wgsl"));
         // The accepted hook compiles again for the new device through the one compile owner,
@@ -736,7 +777,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
                 Instant::now() < deadline,
                 "the accepted hook was never restored"
             );
-            drop(capture(&mut host, "_"));
+            render_frame(&mut host);
             std::thread::sleep(Duration::from_millis(2));
         }
         let after = capture(&mut host, "device-after");
@@ -748,7 +789,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
 
         // A reload on the new device then promotes as usual.
         let again = material.request(hook("hooks/green.wgsl", GREEN));
-        let (outcome, _) = until_outcome(&material, again, || drop(capture(&mut host, "_")));
+        let (outcome, _) = until_outcome(&material, again, || render_frame(&mut host));
         assert!(
             matches!(outcome, MaterialOutcome::Promoted { .. }),
             "{outcome}"
@@ -786,19 +827,24 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: 
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root);
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                surface: None,
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared game scene");
         // Nothing is cooked yet: the store has no HEAD, so no set can become resident.
         let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
             .expect("rigid placements");
@@ -806,7 +852,7 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: 
         let material = assets.material();
         let requested = Instant::now();
         let serial = material.request(hook("ready/green.wgsl", GREEN));
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -881,23 +927,28 @@ fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
     };
     let (root, cook) = cooked("material-skip");
     pollster::block_on(async {
-        let (device, queue, capabilities) =
-            gpu(&test_gpu, FrameHost::DEVICE_GENERATION, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: EXTENT,
-                // A presenter, so the scene can be encoded before a drawable and skipped.
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent: EXTENT,
-                }),
-            },
+        let (device, queue, capabilities) = gpu(
+            &test_gpu,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+            path,
         )
-        .await
-        .expect("prepared game scene");
+        .await;
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: EXTENT,
+                    // A presenter, so the scene can be encoded before a drawable and skipped.
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent: EXTENT,
+                    }),
+                },
+            )
+            .await
+            .expect("prepared game scene");
         let drawable = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("skip test drawable"),
             size: wgpu::Extent3d {
@@ -917,7 +968,7 @@ fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
             view: &view,
             extent: EXTENT,
         };
-        let present = |host: &mut FrameHost, clock: &mut Duration| {
+        let present = |host: &mut Host, clock: &mut Duration| {
             *clock += STEP;
             assert!(host.drive(*clock, Some(&output)).expect("frame").submitted);
             settle(host, &device);
@@ -926,7 +977,7 @@ fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
             .expect("rigid placements");
         let stats = assets.stats();
         let material = assets.material();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -938,7 +989,7 @@ fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
         present(&mut host, &mut clock);
         let serial = material.request(hook("skip/green.wgsl", GREEN));
         let submitted = stats.lock().expect("stats").submitted_frames;
-        let skip = |host: &mut FrameHost, clock: &mut Duration| {
+        let skip = |host: &mut Host, clock: &mut Duration| {
             *clock += STEP;
             let frame = host.advance(*clock).expect("advance");
             assert!(frame.encode_scene().expect("encode").skip().dropped_view);

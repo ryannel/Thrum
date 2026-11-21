@@ -4,12 +4,15 @@ use std::{
     io::Write,
     time::{Duration, Instant},
 };
+use thrum_render::runtime::{FrameConfig, FrameSample, SurfaceOutput};
 use thrum_render::{
     capabilities::{DeviceRecipe, OpenedDevice},
     present::SurfaceProfile,
     synthetic::CullMode,
 };
-use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{GameHost, GameScene, GameWorld};
+
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     pollster::block_on(run())
@@ -20,7 +23,7 @@ fn number(name: &str, default: u64) -> Result<u64, Box<dyn std::error::Error>> {
 }
 
 fn complete(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
 ) -> Result<FrameSample, Box<dyn std::error::Error>> {
     loop {
@@ -34,7 +37,7 @@ fn complete(
     }
 }
 
-fn creations(host: &FrameHost) -> serde_json::Value {
+fn creations(host: &Host) -> serde_json::Value {
     use thrum_render::runtime::CreationPhase;
     let report = host.creation_report();
     let phases: Vec<_> = [CreationPhase::Build,CreationPhase::Transition,CreationPhase::Play]
@@ -97,20 +100,20 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         Ok("occlusion") => CullMode::Occlusion,
         _ => CullMode::Direct,
     };
-    let mut host = FrameHost::new_with_setup(
-        &device,
-        &queue,
-        &caps,
-        FrameConfig {
-            render_extent: extent,
-            surface: Some(SurfaceProfile {
-                format: wgpu::TextureFormat::Bgra8Unorm,
-                extent,
-            }),
-        },
-        setup,
-    )
-    .await?;
+    let mut host = setup
+        .prepare(
+            &device,
+            &queue,
+            &caps,
+            FrameConfig {
+                render_extent: extent,
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent,
+                }),
+            },
+        )
+        .await?;
     let cooked = v1_game::attach_cooked_scene(&mut host)?;
     if capture {
         host.enable_submitted_capture(1)?;

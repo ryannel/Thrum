@@ -3,11 +3,12 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
+use thrum_render::runtime::{FrameConfig, SurfaceOutput};
 use thrum_render::{
     capabilities::{DeviceCapabilities, DeviceRecipe, FIRST_DEVICE_GENERATION, OpenedDevice},
     present::SurfaceProfile,
 };
-use v1_game::{FrameConfig, FrameHost, SurfaceOutput};
+use v1_game::{GameHost, GameSetup};
 
 fn main() -> Result<(), String> {
     pollster::block_on(run())
@@ -44,9 +45,13 @@ async fn run() -> Result<(), String> {
         }),
     };
     let mut host = if adapter_less {
-        FrameHost::new(&device, &queue, config).await?
+        GameSetup::default()
+            .prepare_on(&device, &queue, config)
+            .await?
     } else {
-        FrameHost::new_with_capabilities(&device, &queue, &capabilities, config).await?
+        GameSetup::default()
+            .prepare(&device, &queue, &capabilities, config)
+            .await?
     };
     let mode = std::env::var("COOKED_DRAW_MODE").unwrap_or_else(|_| "production".into());
     let names: Vec<String> =
@@ -73,7 +78,7 @@ async fn run() -> Result<(), String> {
         v1_game::attach_cooked_scene_with_probe(&mut host, probe)?
     }
     .ok_or("no cooked content selected")?;
-    host.pause()?;
+    host.world_mut().pause()?;
     let yaw: f32 = std::env::var("COOKED_DRAW_YAW")
         .unwrap_or_else(|_| "0".into())
         .parse()

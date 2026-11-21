@@ -170,8 +170,8 @@
           "lock": "gpu",
           "ask": "Is any loop left under `crates/` or `examples/` that polls the cooked statistics and reads pixels back only to advance staging?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal: await_drawn test 2 passed under gpu lock (render_once, endpoint_readbacks()==0 after waiting; manifest-less store fails with Content). Cooked-stats readback loops in capture, iPhone app and tests now use await_drawn; the sky starter's ContentStatus loops draw with render_once (starter live-reload check: 10 saves passed). Record: .orchestrate/evidence/HOST/M3/",
           "verdict": "",
           "review": ""
         },
@@ -182,8 +182,8 @@
           "lock": "gpu",
           "ask": "List the public items of the game's library that only forward to the engine runtime: are there any? Does the iPhone app or any bench reach the engine through a type of the game's?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal: one pub struct FrameHost; host_gpu 5 and frame_alloc 2 passed under gpu lock; v1-game lib 59 and the converted GPU targets passed. Game holds FrameHost<GameWorld, GameScene> built by GameSetup::prepare*; GameHost is a trait of game controls; iPhone app and benches name thrum_render's FrameHost directly. Record: .orchestrate/evidence/HOST/M3/",
           "verdict": "",
           "review": ""
         },
@@ -193,8 +193,8 @@
           "check": "sh -c 'test ! -e examples/v1-game/src/bin/window && python3 -m unittest discover -s scripts -p test_t2_capture.py'",
           "ask": "Which code path does each of `still`, `fixed` and `realtime` capture take now, and is any device, host or route logic written twice? Is there a native `fixed` run at the claimed commit on record, beside the `still` and `realtime` runs the baseline matrices make?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal: src/bin/window removed; scene capture runs on thrum_app::Offscreen from src/window/capture/scene.rs with settings parsed in main.rs; test_t2_capture 17 OK. Engine capture --case pan still/fixed/realtime complete with the same record set; apple_tile_m1 (38) and apple_tile_m2 (4) native matrices passed byte-exact, including fixed route checkpoints. Record: .orchestrate/evidence/HOST/M3/",
           "verdict": "",
           "review": ""
         },
@@ -203,8 +203,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

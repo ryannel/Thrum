@@ -195,7 +195,7 @@ The Chrome stop checks hold the original 1280 × 720 render backing at the calib
 **Shared seams.** The preset-driven frames rest on one seam in each of two shared files. Root approved both in
 principle (`tmp/g7-boundary/NOTES.md`, "Root verdict on G7 route seams"), and each exact diff goes to root before it
 is pushed:
-- **Native,** `examples/v1-game/src/bin/window/capture.rs`. A missing, unreadable or refused preset, or one that does
+- **Native,** `examples/v1-game/src/window/capture/scene.rs`. A missing, unreadable or refused preset, or one that does
   not pause the world, fails the capture. Without the option, capture output is unchanged.
 - **Chrome,** `scripts/check_v1_browser.mjs`. The `route` case reuses the server, page-state and capture helpers.
   The checked-in presets in `examples/v1-game/params` are its expectation: the web build must ship each one byte for

@@ -114,16 +114,7 @@ pub(crate) fn prove_contributions() {
         };
         host.set_scene_contribution(contribution)
             .expect("prepare contributions");
-        let deadline = Instant::now() + Duration::from_secs(30);
-        let pixels = loop {
-            let pixels = host.capture_pixels().expect("render cooked receivers");
-            let stats = stats.lock().expect("cooked status");
-            assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-            if stats.drawn == Some(fixture.generation()) {
-                break pixels;
-            }
-            assert!(Instant::now() < deadline);
-        };
+        let pixels = settle(&mut host, &stats, fixture.generation());
         #[expect(
             clippy::cast_possible_truncation,
             clippy::cast_sign_loss,

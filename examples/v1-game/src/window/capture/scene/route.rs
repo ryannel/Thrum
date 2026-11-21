@@ -5,21 +5,26 @@
 use std::{fs::File, path::Path, time::Duration};
 
 use thrum_core::ClockConfig;
-use thrum_render::{present::SurfaceProfile, synthetic::CaptureSource};
-use v1_game::{CameraRoute, FrameHost, SurfaceOutput};
+use thrum_render::{present::SurfaceProfile, runtime::CaptureLimits, synthetic::CaptureSource};
 
-use super::motion::{CaptureTarget, completed_sample, write_json_line};
+use super::{
+    Driver, SceneCaptureRequest,
+    motion::{CaptureTarget, completed_sample, write_json_line},
+};
+use crate::{CameraRoute, GameHost};
 
 /// Phase tolerance on the logged presentation alpha.
 const ALPHA_TOLERANCE: f32 = 1e-4;
 
 /// The route file named by `THRUM_CAPTURE_ROUTE`, with its declared extent and overlay.
-pub(super) fn requested() -> Result<Option<(String, [u32; 2], v1_game::RouteOverlay)>, String> {
-    let Some(path) = std::env::var_os("THRUM_CAPTURE_ROUTE") else {
+pub(super) fn requested(
+    request: &SceneCaptureRequest,
+) -> Result<Option<(String, [u32; 2], crate::RouteOverlay)>, String> {
+    let Some(path) = request.route.as_deref() else {
         return Ok(None);
     };
-    let text = std::fs::read_to_string(&path)
-        .map_err(|error| format!("route file {}: {error}", Path::new(&path).display()))?;
+    let text = std::fs::read_to_string(path)
+        .map_err(|error| format!("route file {}: {error}", path.display()))?;
     let (extent, overlay) = CameraRoute::declared(&text)?;
     if extent[0] % 64 != 0 || extent[1] == 0 {
         return Err("route render_extent width must be a nonzero multiple of 64".to_owned());
@@ -27,13 +32,16 @@ pub(super) fn requested() -> Result<Option<(String, [u32; 2], v1_game::RouteOver
     Ok(Some((text, extent, overlay)))
 }
 
-pub(super) fn profile(mut extent: [u32; 2]) -> Result<SurfaceProfile, String> {
-    let format = match std::env::var("THRUM_CAPTURE_SURFACE_FORMAT").as_deref() {
-        Err(_) | Ok("bgra8") => wgpu::TextureFormat::Bgra8Unorm,
-        Ok("bgra8-srgb") => wgpu::TextureFormat::Bgra8UnormSrgb,
+pub(super) fn profile(
+    request: &SceneCaptureRequest,
+    mut extent: [u32; 2],
+) -> Result<SurfaceProfile, String> {
+    let format = match request.surface_format.as_deref() {
+        None | Some("bgra8") => wgpu::TextureFormat::Bgra8Unorm,
+        Some("bgra8-srgb") => wgpu::TextureFormat::Bgra8UnormSrgb,
         _ => return Err("unknown capture surface format".to_owned()),
     };
-    if let Ok(value) = std::env::var("THRUM_CAPTURE_SURFACE_EXTENT") {
+    if let Some(value) = request.surface_extent.as_deref() {
         let (width, height) = value
             .split_once('x')
             .ok_or("surface extent must be WIDTHxHEIGHT")?;
@@ -52,24 +60,26 @@ pub(super) fn profile(mut extent: [u32; 2]) -> Result<SurfaceProfile, String> {
 pub(super) fn record(
     capabilities: &thrum_render::capabilities::DeviceCapabilities,
     queue: &wgpu::Queue,
-    host: &mut FrameHost,
+    driver: &mut Driver,
+    request: &SceneCaptureRequest,
     directory: &Path,
     text: &str,
     cooked_generation: Option<u64>,
 ) -> Result<(), String> {
     let device = capabilities.site();
-    let source = match std::env::var("THRUM_CAPTURE_SOURCE").as_deref() {
-        Ok("sdr") | Err(_) => CaptureSource::Sdr,
-        Ok("scene-linear") => CaptureSource::SceneLinear,
-        Ok("native-output") => CaptureSource::NativeOutput,
-        Ok("native-history") => CaptureSource::NativeHistory,
+    let source = match request.source.as_deref() {
+        Some("sdr") | None => CaptureSource::Sdr,
+        Some("scene-linear") => CaptureSource::SceneLinear,
+        Some("native-output") => CaptureSource::NativeOutput,
+        Some("native-history") => CaptureSource::NativeHistory,
         _ => return Err("unknown route capture source".to_owned()),
     };
-    let camera = host
+    let camera = driver
+        .host()
         .scene_camera()
         .ok_or("the moving route needs THRUM_SCENE=valley")?;
     let tick_hz = ClockConfig::default().tick_hz.get();
-    let route = if std::env::var("THRUM_SCENE").as_deref() == Ok("exit") {
+    let route = if request.scene.as_deref() == Some("exit") {
         CameraRoute::parse_long_capture(text, camera, tick_hz).map_err(|error| error.to_string())
     } else {
         CameraRoute::parse(text, camera, tick_hz)
@@ -81,25 +91,22 @@ pub(super) fn record(
         ));
     }
     let [numerator, denominator] = route.phase;
-    let diagnostic_phase = std::env::var("THRUM_CAPTURE_PHASE")
-        .ok()
-        .map(|value| value.parse::<f64>())
+    let diagnostic_phase = request
+        .phase
+        .as_deref()
+        .map(str::parse::<f64>)
         .transpose()
         .map_err(|error| error.to_string())?;
     if diagnostic_phase.is_some_and(|value| !value.is_finite() || value <= 0.0 || value >= 1.0) {
         return Err("diagnostic capture phase must be between zero and one".to_owned());
     }
     let phi = diagnostic_phase.unwrap_or(f64::from(numerator) / f64::from(denominator));
-    let profile = profile(route.render_extent)?;
-    let target = CaptureTarget::for_surface(device, route.render_extent, profile);
-    let surface = SurfaceOutput {
-        view: &target.view,
-        extent: profile.extent,
-    };
+    let profile = profile(request, route.render_extent)?;
+    let target = CaptureTarget::new(route.render_extent);
     let checkpoints_dir = directory.join("checkpoints");
     std::fs::create_dir(&checkpoints_dir).map_err(|error| error.to_string())?;
     let last_route_tick = route.keys.last().map_or(0, |key| key.tick);
-    let windows = capture_windows(last_route_tick)?;
+    let windows = capture_windows(request.windows.as_deref(), last_route_tick)?;
     let windows_dir = directory.join("windows");
     if !windows.is_empty() {
         std::fs::create_dir(&windows_dir).map_err(|error| error.to_string())?;
@@ -110,9 +117,9 @@ pub(super) fn record(
         &serde_json::json!({
             "target": "native", "backend":format!("{:?}",capabilities.adapter().backend), "adapter":capabilities.adapter().name, "image_label": match source { CaptureSource::Sdr => "native submitted SDR output", CaptureSource::SceneLinear => "native submitted scene-linear RGBA16Float output", _ => "labelled native copy/select RGBA16Float diagnostic" },
             "recipe":format!("{:?}",capabilities.recipe()), "registry_digest":capabilities.registry_digest(), "resident_device_bytes":capabilities.resident_device_bytes(),
-            "unified_memory":capabilities.unified_memory(), "storage_report":host.storage_report(),
-            "reconstruction":format!("{:?}",host.reconstruction()),
-            "display_overlay":std::env::var("THRUM_CAPTURE_DISPLAY_OVERLAY").unwrap_or_else(|_|"off".to_owned()),
+            "unified_memory":capabilities.unified_memory(), "storage_report":driver.host().storage_report(),
+            "reconstruction":format!("{:?}",driver.host().reconstruction()),
+            "display_overlay":request.display_overlay.as_deref().unwrap_or("off"),
             "capture_source": format!("{source:?}"), "draw_probe_enabled":cfg!(feature="draw-probe"), "bytes_per_pixel": source.bytes_per_pixel(), "mode":"fixed",
             "render_extent": route.render_extent, "window": "n/a, offscreen",
             "surface_format":format!("{:?}",profile.format), "surface_extent":profile.extent,
@@ -125,10 +132,11 @@ pub(super) fn record(
     )?;
     let last = route.origin_tick + last_route_tick;
     let mut checkpoints = route.checkpoints.clone().into_iter().peekable();
-    host.resume(Duration::ZERO)?;
+    driver.host_mut().world_mut().resume(Duration::ZERO)?;
     let mut pending = Some(route.clone());
     loop {
-        let tick = host.tick();
+        let host = driver.host_mut();
+        let tick = host.world().tick();
         if tick + 1 == route.origin_tick
             && let Some(route) = pending.take()
         {
@@ -151,9 +159,10 @@ pub(super) fn record(
                 .peek()
                 .is_some_and(|checkpoint| route.origin_tick + checkpoint.tick == tick + 1);
         if capture {
-            host.enable_submitted_capture_from(tick + 1, source)?;
+            host.enable_submitted_capture_from(tick + 1, CaptureLimits::default(), source)?;
         }
-        let frame = host.drive(time, Some(&surface))?;
+        let frame = driver.step_at(time)?;
+        let host = driver.host_mut();
         if !frame.surface_presented
             || frame.dropped_view
             || frame.overload.is_some()
@@ -233,9 +242,9 @@ pub(super) fn record(
             host.recycle_submitted_image(image);
             host.disable_submitted_capture();
             if let Some(name) = checkpoint
-                && std::env::var("THRUM_CAPTURE_PRESENT_CONTROL").as_deref() == Ok("on")
+                && request.present_control.as_deref() == Some("on")
             {
-                let pixels = target.surface_pixels(device, queue)?;
+                let pixels = surface_pixels(driver.output(), device, queue)?;
                 std::fs::write(
                     checkpoints_dir.join(format!("{name}.surface-bgra8")),
                     pixels,
@@ -250,13 +259,12 @@ pub(super) fn record(
     Ok(())
 }
 
-fn capture_windows(last_tick: u64) -> Result<Vec<[u64; 2]>, String> {
-    let Some(value) = std::env::var_os("THRUM_CAPTURE_WINDOWS") else {
+fn capture_windows(value: Option<&str>, last_tick: u64) -> Result<Vec<[u64; 2]>, String> {
+    let Some(value) = value else {
         return Ok(Vec::new());
     };
     let windows: Vec<[u64; 2]> =
-        serde_json::from_str(value.to_str().ok_or("capture windows must be UTF-8")?)
-            .map_err(|error| format!("capture windows: {error}"))?;
+        serde_json::from_str(value).map_err(|error| format!("capture windows: {error}"))?;
     if windows
         .iter()
         .any(|[first, last]| first > last || *last > last_tick)
@@ -292,4 +300,61 @@ fn write_ppm(path: &Path, extent: [u32; 2], bgra: &[u8]) -> Result<(), String> {
         ppm.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
     }
     std::fs::write(path, ppm).map_err(|error| error.to_string())
+}
+
+const SURFACE_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Diagnostic present-control readback, after the ordinary submission.
+fn surface_pixels(
+    texture: &wgpu::Texture,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+) -> Result<Vec<u8>, String> {
+    let width = texture.width();
+    let height = texture.height();
+    let row = (width * 4).div_ceil(256) * 256;
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("fixed-time present control"),
+        size: u64::from(row) * u64::from(height),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    encoder.copy_texture_to_buffer(
+        texture.as_image_copy(),
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(row),
+                rows_per_image: Some(height),
+            },
+        },
+        texture.size(),
+    );
+    let submission = queue.submit([encoder.finish()]);
+    let (send, receive) = std::sync::mpsc::channel();
+    buffer.map_async(wgpu::MapMode::Read, .., move |result| {
+        let _ = send.send(result);
+    });
+    device
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submission),
+            timeout: Some(SURFACE_TIMEOUT),
+        })
+        .map_err(|error| error.to_string())?;
+    receive
+        .recv_timeout(SURFACE_TIMEOUT)
+        .map_err(|error| error.to_string())?
+        .map_err(|error| error.to_string())?;
+    let mapped = buffer
+        .get_mapped_range(..)
+        .map_err(|error| error.to_string())?;
+    let pixels = mapped
+        .chunks_exact(row as usize)
+        .flat_map(|bytes| bytes[..width as usize * 4].iter().copied())
+        .collect();
+    drop(mapped);
+    buffer.unmap();
+    Ok(pixels)
 }

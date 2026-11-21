@@ -83,7 +83,7 @@ pub(super) fn valley(
     metal: &Metal,
     ray_demand: bool,
     record_builds: bool,
-) -> (FrameHost, Stats, Option<RayBuildProbe>) {
+) -> (Host, Stats, Option<RayBuildProbe>) {
     let setup = GameSetup {
         display_overlay: if ray_demand {
             DisplayOverlay::TracedGeometry
@@ -98,14 +98,9 @@ pub(super) fn valley(
     } else {
         metal.caps.clone()
     };
-    let mut game = pollster::block_on(FrameHost::new_with_setup(
-        &metal.device,
-        &metal.queue,
-        &caps,
-        frame_config(),
-        setup,
-    ))
-    .expect("valley host");
+    let mut game =
+        pollster::block_on(setup.prepare(&metal.device, &metal.queue, &caps, frame_config()))
+            .expect("valley host");
     let probe = record_builds.then(|| {
         game.observe_ray_mesh_builds()
             .expect("Metal build timestamps")
@@ -113,12 +108,12 @@ pub(super) fn valley(
     let (camera, assets) =
         v1_game::prepare_cooked_valley(store.to_owned().into()).expect("cooked valley");
     let stats = assets.stats();
-    game.set_scene_contribution(Box::new(assets))
+    game.set_game_contribution(Box::new(assets))
         .expect("attach valley");
     game.set_scene_camera(camera)
         .expect("authored valley camera");
     game.set_display_overlay(DisplayOverlay::Off);
     game.set_time_of_day(0.5).expect("fixed noon");
-    game.pause().expect("frozen authority");
+    game.world_mut().pause().expect("frozen authority");
     (game, stats, probe)
 }

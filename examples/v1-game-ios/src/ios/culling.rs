@@ -3,11 +3,14 @@
 use std::fs;
 
 use serde_json::json;
+use thrum_render::runtime::FrameConfig;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     synthetic::{CullMode, CullingSelection},
 };
-use v1_game::{FrameConfig, FrameHost, GameSetup};
+use v1_game::GameSetup;
+
+use super::Host;
 
 fn selection(value: CullingSelection) -> serde_json::Value {
     json!({
@@ -18,7 +21,7 @@ fn selection(value: CullingSelection) -> serde_json::Value {
 }
 
 pub(super) fn record(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     capabilities: &DeviceCapabilities,
@@ -38,13 +41,7 @@ pub(super) fn record(
         camera_culling: CullMode::Direct,
         ..setup
     };
-    let mut direct = pollster::block_on(FrameHost::new_with_setup(
-        device,
-        queue,
-        capabilities,
-        config,
-        direct_setup,
-    ))?;
+    let mut direct = pollster::block_on(direct_setup.prepare(device, queue, capabilities, config))?;
     // Both ordinary hosts retain the initial committed world. The captured
     // fallback host then becomes the app's resident, presenting host.
     let fallback_pixels = host.capture_pixels()?;
@@ -56,8 +53,8 @@ pub(super) fn record(
     let identity = json!({
         "mode": "still",
         "extent": config.render_extent,
-        "tick": host.tick(),
-        "direct_tick": direct.tick(),
+        "tick": host.world().tick(),
+        "direct_tick": direct.world().tick(),
         "alpha": 1.0,
         "expected_instances": setup.content.entity_count(),
         "setup": format!("{setup:?}"),

@@ -16,7 +16,10 @@ use thrum_asset_gpu::{CookedAssets, CookedStats};
 use thrum_cook::tripwire::{self, Rule};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::{DeviceRecipe, DeviceRestriction, OpenedDevice};
-use v1_game::{FrameConfig, FrameHost};
+use thrum_render::runtime::FrameConfig;
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
 
 const BUDGET: u64 = 8 << 20;
 
@@ -186,7 +189,7 @@ fn ms(duration: Duration) -> f64 {
 
 /// Drive one frame and wait for it; returns (frame latency, render-thread CPU), or `None` when
 /// the engine had nothing new to render.
-fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) -> Option<(f64, f64)> {
+fn frame(host: &mut Host, device: &wgpu::Device, clock: &mut Duration) -> Option<(f64, f64)> {
     *clock += Duration::from_micros(8_333);
     let start = Instant::now();
     if !host.drive(*clock, None).expect("frame").submitted {
@@ -276,14 +279,15 @@ fn run(
         .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("device");
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("game");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("game");
         let mut config = v1_game::cooked::cooked_config(root.join("store"));
         config.upload_budget = BUDGET;
         config.poll_interval = Duration::from_millis(1);
@@ -308,7 +312,7 @@ fn run(
         let attach = Instant::now();
         if scenario.leased {
             let (consumer, _) = v1_game::lent::LentDiagnostic::new(assets.lease());
-            host.set_scene_contribution(Box::new(
+            host.set_game_contribution(Box::new(
                 thrum_render::contribution::SceneContributions::new(vec![
                     Box::new(assets),
                     Box::new(consumer),
@@ -316,7 +320,7 @@ fn run(
             ))
             .expect("attach leased scenario");
         } else {
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach");
         }
         assert_eq!(
@@ -532,7 +536,7 @@ fn contrast(
     store: &Path,
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    host: &mut FrameHost,
+    host: &mut Host,
     clock: &mut Duration,
     report: &mut String,
 ) {

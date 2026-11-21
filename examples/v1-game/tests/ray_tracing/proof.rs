@@ -10,14 +10,19 @@ use std::{
 
 use serde_json::{Value, json};
 use thrum_asset::{AssetStore, Profile};
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MeshPlacement, rows::CookedRows};
+use thrum_asset_gpu::{
+    CookedAssets, CookedConfig, CookedStats, Drawn, MeshPlacement, await_drawn, rows::CookedRows,
+};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
+use thrum_render::runtime::{FrameConfig, FrameHost};
 use thrum_render::{
     capabilities::{DeviceCapabilities, HardwareRequest},
     synthetic::{CullMode, DisplayOverlay, RayBuildProbe, RayStructureInstance},
 };
 use thrum_test_support::{Gpu, Restriction};
-use v1_game::{FrameConfig, FrameHost, GameSetup};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+
+type Host = FrameHost<GameWorld, GameScene>;
 
 mod casters;
 mod contribution_shadows;
@@ -119,7 +124,7 @@ impl Fixture {
         &self,
         metal: &Metal,
         observe: bool,
-    ) -> (FrameHost, Stats, Option<RayBuildProbe>) {
+    ) -> (Host, Stats, Option<RayBuildProbe>) {
         let rows = CookedRows::from_store(
             &AssetStore::new(&self.cook.store),
             ["entity", "stable", "third"].map(str::to_owned).to_vec(),
@@ -132,19 +137,21 @@ impl Fixture {
         } else {
             metal.caps.clone()
         };
-        let mut game = pollster::block_on(FrameHost::new_with_rows(
-            &metal.device,
-            &metal.queue,
-            &caps,
-            frame_config(),
+        let mut game = pollster::block_on(
             GameSetup {
                 field_meshes: true,
                 camera_culling: CullMode::Occlusion,
                 display_overlay: DisplayOverlay::TracedGeometry,
                 ..GameSetup::default()
-            },
-            Some(rows.clone()),
-        ))
+            }
+            .prepare_with_rows(
+                &metal.device,
+                &metal.queue,
+                &caps,
+                frame_config(),
+                Some(rows.clone()),
+            ),
+        )
         .expect("game host");
         let probe = observe.then(|| game.observe_ray_mesh_builds().expect("ray build observer"));
         game.set_display_overlay(DisplayOverlay::Off);
@@ -161,9 +168,9 @@ impl Fixture {
         config.poll_interval = Duration::from_millis(1);
         let cooked = CookedAssets::new(config).expect("cooked contribution");
         let stats = cooked.stats();
-        game.set_scene_contribution(Box::new(cooked))
+        game.set_game_contribution(Box::new(cooked))
             .expect("attach");
-        game.pause().expect("freeze authority");
+        game.world_mut().pause().expect("freeze authority");
         (game, stats, probe)
     }
 }
@@ -224,20 +231,38 @@ fn frame_config() -> FrameConfig {
     }
 }
 
-pub(super) fn settle(game: &mut FrameHost, stats: &Stats, generation: u64) -> Vec<u8> {
-    let deadline = Instant::now() + Duration::from_secs(30);
-    loop {
-        let pixels = game.capture_pixels().expect("settling frame");
-        let stats = stats.lock().expect("stats");
-        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-        if stats.drawn == Some(generation) {
-            return pixels;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "generation {generation} never drew"
-        );
-    }
+/// Submit one frame of the committed endpoint without a readback and wait for it.
+pub(super) fn render_frame<W, V>(host: &mut FrameHost<W, V>)
+where
+    W: thrum_render::runtime::FrameWorld,
+    V: thrum_render::runtime::SceneSource<W::Page>,
+{
+    let submitted = host.render_once().expect("endpoint frame");
+    host.device_capabilities()
+        .site()
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submitted),
+            timeout: Some(Duration::from_secs(10)),
+        })
+        .expect("endpoint frame completes");
+}
+
+/// Draw until `generation` is drawn, then read that frame back. One frame comes first: a
+/// published device reaches the contribution only in a frame, so the drawn generation read
+/// before it may belong to the old device.
+pub(super) fn settle<W, V>(game: &mut FrameHost<W, V>, stats: &Stats, generation: u64) -> Vec<u8>
+where
+    W: thrum_render::runtime::FrameWorld,
+    V: thrum_render::runtime::SceneSource<W::Page>,
+{
+    render_frame(game);
+    await_drawn(game, stats, Drawn::Generation(generation))
+        .unwrap_or_else(|error| panic!("generation {generation} never drew: {error}"));
+    let pixels = game.capture_pixels().expect("settling frame");
+    let stats = stats.lock().expect("stats");
+    assert!(stats.errors.is_empty(), "{:?}", stats.errors);
+    assert_eq!(stats.drawn, Some(generation));
+    pixels
 }
 
 pub(super) struct Ray {
@@ -262,7 +287,7 @@ impl Ray {
     }
 }
 
-pub(super) fn edit_rays(game: &FrameHost) -> [Ray; 4] {
+pub(super) fn edit_rays(game: &Host) -> [Ray; 4] {
     let list = game.ray_structure_instances().expect("scene structure");
     let placement = list
         .iter()
@@ -413,7 +438,7 @@ impl std::fmt::Debug for Snapshot {
 }
 
 impl Snapshot {
-    pub(super) fn capture(game: &mut FrameHost, metal: &Metal, rays: &[Ray]) -> Self {
+    pub(super) fn capture(game: &mut Host, metal: &Metal, rays: &[Ray]) -> Self {
         let pixels = game.capture_pixels().expect("raster readback");
         // The query is ordered after precisely that submission. No scene frame
         // records between the raster readback and this read of its structure.

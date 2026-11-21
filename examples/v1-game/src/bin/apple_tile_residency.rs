@@ -11,11 +11,11 @@ fn main() -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 async fn run() -> Result<(), String> {
+    use thrum_render::runtime::FrameConfig;
     use thrum_render::{
         capabilities::{DeviceCapabilities, DeviceRecipe, OpenedDevice},
         present::SurfaceProfile,
     };
-    use v1_game::{FrameConfig, FrameHost};
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
@@ -50,14 +50,9 @@ async fn run() -> Result<(), String> {
     let portable = capabilities
         .with_recipe_override("portable")
         .map_err(|error| format!("{error:?}"))?;
-    let mut old = FrameHost::new_with_setup(
-        &device,
-        &queue,
-        &portable,
-        config,
-        v1_game::selected_setup()?,
-    )
-    .await?;
+    let mut old = v1_game::selected_setup()?
+        .prepare(&device, &queue, &portable, config)
+        .await?;
     v1_game::attach_cooked_scene(&mut old)?
         .ok_or("the probe needs THRUM_SCENE=valley and its cooked store")?;
     queue.submit([]);
@@ -68,9 +63,9 @@ async fn run() -> Result<(), String> {
     let apple = DeviceCapabilities::capture(&adapter, &device, 2)
         .with_recipe_override("apple-tile")
         .map_err(|error| format!("{error:?}"))?;
-    let mut new =
-        FrameHost::new_with_setup(&device, &queue, &apple, config, v1_game::selected_setup()?)
-            .await?;
+    let mut new = v1_game::selected_setup()?
+        .prepare(&device, &queue, &apple, config)
+        .await?;
     v1_game::attach_cooked_scene(&mut new)?.ok_or("missing cooked contribution")?;
     queue.submit([]);
     device

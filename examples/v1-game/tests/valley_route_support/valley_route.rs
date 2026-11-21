@@ -4,17 +4,18 @@ use std::{
     io::{Read, Write},
     time::Duration,
 };
+use thrum_render::runtime::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 use thrum_render::{
     capabilities::{DeviceRecipe, OpenedDevice},
     present::SurfaceProfile,
     runtime::SubmittedImage,
     synthetic::{CaptureSource, CullMode},
 };
-use v1_game::{
-    CameraRoute, FrameConfig, FrameHost, FrameSample, RouteOverlay, SceneCamera, SurfaceOutput,
-};
+use v1_game::{CameraRoute, GameHost, GameScene, GameWorld, RouteOverlay, SceneCamera};
 
-fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+type Host = FrameHost<GameWorld, GameScene>;
+
+fn complete(host: &mut Host, device: &wgpu::Device) -> FrameSample {
     loop {
         if let Some(sample) = host.poll_completed().expect("poll") {
             return sample;
@@ -28,7 +29,7 @@ fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     }
 }
 
-fn submitted_image(host: &mut FrameHost, device: &wgpu::Device) -> SubmittedImage {
+fn submitted_image(host: &mut Host, device: &wgpu::Device) -> SubmittedImage {
     loop {
         if let Some(image) = host.try_submitted_image().expect("tap") {
             return image;
@@ -53,7 +54,7 @@ pub(crate) fn run(test: &str) {
 // Repeating the same elapsed time distinguishes cross-host differences from
 // variation on one prepared host; receipts expose any changed alpha/exposure.
 fn recapture_failure(
-    hosts: &mut [FrameHost],
+    hosts: &mut [Host],
     device: &wgpu::Device,
     surface: &SurfaceOutput<'_>,
     times: &[Duration],
@@ -123,25 +124,14 @@ fn surface_texture(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::Texture {
     })
 }
 
-fn load_valley(host: &mut FrameHost) {
+fn load_valley(host: &mut Host) {
     let stats = v1_game::attach_cooked_scene(host)
         .expect("attach")
         .expect("cooked valley");
-    host.pause().expect("pause");
-    let deadline = std::time::Instant::now() + Duration::from_secs(60);
-    loop {
-        drop(host.capture_pixels().expect("residency frame"));
-        let stats = stats.lock().expect("stats");
-        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-        if stats.drawn == Some(1) {
-            break;
-        }
-        assert!(
-            std::time::Instant::now() < deadline,
-            "valley residency deadline"
-        );
-    }
-    host.resume(Duration::ZERO).expect("resume");
+    host.world_mut().pause().expect("pause");
+    thrum_asset_gpu::await_drawn(host, &stats, thrum_asset_gpu::Drawn::Generation(1))
+        .unwrap_or_else(|error| panic!("valley residency: {error}"));
+    host.world_mut().resume(Duration::ZERO).expect("resume");
 }
 
 fn parse_route(text: &str, camera: SceneCamera) -> CameraRoute {
@@ -225,7 +215,7 @@ async fn prepare_hosts(
     overlay: RouteOverlay,
     timing: bool,
     exit_arm: Option<&ExitArm>,
-) -> (Vec<CullMode>, Vec<FrameHost>) {
+) -> (Vec<CullMode>, Vec<Host>) {
     let mut modes = vec![CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
     if let Some(arm) = exit_arm {
         modes = vec![arm.mode];
@@ -242,21 +232,21 @@ async fn prepare_hosts(
         );
         setup.camera_culling = mode;
         setup.route_overlay = overlay;
-        let mut host = FrameHost::new_with_setup(
-            &opened.device,
-            &opened.queue,
-            &opened.capabilities,
-            FrameConfig {
-                render_extent: extent,
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-            },
-            setup,
-        )
-        .await
-        .expect("host");
+        let mut host = setup
+            .prepare(
+                &opened.device,
+                &opened.queue,
+                &opened.capabilities,
+                FrameConfig {
+                    render_extent: extent,
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent,
+                    }),
+                },
+            )
+            .await
+            .expect("host");
         assert_eq!(host.camera_culling(), mode, "resolved mode must match");
         load_valley(&mut host);
         hosts.push(host);
@@ -304,8 +294,12 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
             for host in &mut hosts {
                 host.set_camera_route(route.clone()).expect("install route");
                 if !timing {
-                    host.enable_submitted_capture_from(1, capture_source)
-                        .expect("enable T2 tap");
+                    host.enable_submitted_capture_from(
+                        1,
+                        thrum_render::runtime::CaptureLimits::default(),
+                        capture_source,
+                    )
+                    .expect("enable T2 tap");
                 }
             }
         }

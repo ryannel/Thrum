@@ -1,13 +1,17 @@
 //! Capture-off 1080p sizing sweep on the normal exit frame host.
 use std::{io::Write, time::Duration};
 
+use thrum_asset_gpu::{Drawn, await_drawn};
 use thrum_render::{
     capabilities::{DeviceRecipe, OpenedDevice},
     present::SurfaceProfile,
+    runtime::{FrameConfig, FrameSample, SurfaceOutput},
     synthetic::CullMode,
     timing::SceneGpuTimings,
 };
-use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, SurfaceOutput};
+use v1_game::{GameContent, GameHost as _, GameScene, GameWorld};
+
+type FrameHost = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
 
 const EXTENT: [u32; 2] = [1920, 1080];
 const STOPS: [&str; 6] = [
@@ -87,33 +91,24 @@ async fn run() {
     };
     let setup = v1_game::selected_setup().expect("exit setup");
     assert_eq!(setup.content, GameContent::Exit);
-    let mut host = FrameHost::new_with_setup(
-        &device,
-        &queue,
-        &caps,
-        FrameConfig {
-            render_extent: EXTENT,
-            surface: Some(profile),
-        },
-        setup,
-    )
-    .await
-    .expect("exit host");
+    let mut host = setup
+        .prepare(
+            &device,
+            &queue,
+            &caps,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: Some(profile),
+            },
+        )
+        .await
+        .expect("exit host");
     assert_eq!(host.camera_culling(), CullMode::Frustum);
     let stats = v1_game::attach_cooked_scene(&mut host)
         .expect("attach")
         .expect("cooked exit");
-    host.pause().expect("hold");
-    let deadline = std::time::Instant::now() + Duration::from_secs(30);
-    loop {
-        drop(frame(&mut host, &device, &surface));
-        let stats = stats.lock().expect("cook stats");
-        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-        if stats.drawn == Some(1) {
-            break;
-        }
-        assert!(std::time::Instant::now() < deadline, "resources never drew");
-    }
+    host.world_mut().pause().expect("hold");
+    await_drawn(&mut host, &stats, Drawn::Generation(1)).expect("resources drew");
     writeln!(
         output,
         "{}",

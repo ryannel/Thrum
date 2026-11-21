@@ -74,7 +74,7 @@ pub fn apply_cloud_quality(host: &mut Host) -> Result<(), CloudQualityError> {
                 })
             })?
             .name;
-        host.set_quality_knob(&name, value)
+        host.set_game_quality_knob(&name, value)
             .map_err(CloudQualityError::Control)?;
     }
     Ok(())
@@ -281,9 +281,7 @@ fn validate_sprite_launch() -> Result<(), String> {
 /// Unset variables retain the original simulation and camera.
 /// # Errors
 /// Returns an invalid selection, recipe or renderer contribution failure.
-pub fn attach_cooked_scene(
-    host: &mut Host,
-) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
+pub fn attach_cooked_scene(host: &mut Host) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     attach_cooked_scene_with_path(host, thrum_asset_gpu::CookedDrawPath::Auto)
 }
 
@@ -308,7 +306,7 @@ pub(crate) fn attach_content_preview(
     let assets = assets.with_rows(rows).map_err(|error| error.to_string())?;
     let (contribution, record) =
         crate::content_preview::attach(assets, reader, host.reconstruction());
-    host.set_scene_contribution(contribution)?;
+    host.set_game_contribution(contribution)?;
     host.set_scene_camera(camera)?;
     Ok(record)
 }
@@ -419,14 +417,14 @@ fn attach_selected(
                 .slab_draw = !selection.ends_with("-empty");
             effect.with_slab(selection.starts_with("slab"))
         };
-        host.set_scene_contribution(Box::new(
+        host.set_game_contribution(Box::new(
             thrum_render::contribution::SceneContributions::new(vec![
                 Box::new(assets),
                 Box::new(effect),
             ]),
         ))?;
     } else {
-        host.set_scene_contribution(Box::new(assets))?;
+        host.set_game_contribution(Box::new(assets))?;
     }
     let camera = if let (Some(camera), Ok(height)) = (camera, launch_value("THRUM_CAMERA_HEIGHT")) {
         let mut eye = camera.eye();

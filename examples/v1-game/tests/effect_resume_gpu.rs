@@ -5,7 +5,8 @@ use std::time::{Duration, Instant};
 #[cfg(target_os = "macos")]
 use thrum_core::sim::{WorldLifecycle, WorldLifecycleReply};
 #[cfg(target_os = "macos")]
-use v1_game::{FrameConfig, FrameHost, FrameSample, WorldControls, effect::DiagnosticEffect};
+use thrum_render::runtime::{FrameConfig, FrameSample};
+use v1_game::{GameHost, GameSetup, WorldControls, effect::DiagnosticEffect};
 
 #[track_caller]
 #[cfg(target_os = "macos")]
@@ -78,24 +79,25 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
     pollster::block_on(async {
         let (_, device, queue, _) = support::device(&test_gpu, "portable", false);
         let (view, profile) = support::presentation(&device, [96, 54]);
-        let surface = v1_game::SurfaceOutput {
+        let surface = thrum_render::runtime::SurfaceOutput {
             view: &view,
             extent: [96, 54],
         };
         let mut records = Vec::new();
         for lead_ms in [0, 10, 50] {
-            let mut host = FrameHost::new(
-                &device,
-                &queue,
-                FrameConfig {
-                    render_extent: [96, 54],
-                    surface: Some(profile),
-                },
-            )
-            .await
-            .expect("V1 host");
+            let mut host = GameSetup::default()
+                .prepare_on(
+                    &device,
+                    &queue,
+                    FrameConfig {
+                        render_extent: [96, 54],
+                        surface: Some(profile),
+                    },
+                )
+                .await
+                .expect("V1 host");
             let (effect, handle) = DiagnosticEffect::new();
-            host.set_scene_contribution(Box::new(effect))
+            host.set_game_contribution(Box::new(effect))
                 .expect("effect");
             host.set_presentation_lead(Duration::from_millis(lead_ms));
             let report = host
@@ -104,7 +106,7 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             assert!(report.submitted, "initial partial tick: {report:?}");
             let before = complete(|| host.poll_completed().expect("completion"), &device);
             assert_eq!(before.tick, 3);
-            host.pause().expect("pause");
+            host.world_mut().pause().expect("pause");
             for ms in [58, 958, 1058] {
                 let report = host
                     .drive(Duration::from_millis(ms), Some(&surface))
@@ -121,7 +123,7 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
                 );
             }
             let resume = Duration::from_millis(1058);
-            host.resume(resume).expect("resume");
+            host.world_mut().resume(resume).expect("resume");
             for after_ms in [0, 5, 16, 25, 40, 55, 75] {
                 let observation = resume + Duration::from_millis(after_ms);
                 let report = host
@@ -160,18 +162,19 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             }
         }
         for gap_ms in [0, 20] {
-            let mut host = FrameHost::new(
-                &device,
-                &queue,
-                FrameConfig {
-                    render_extent: [96, 54],
-                    surface: Some(profile),
-                },
-            )
-            .await
-            .expect("V1 host");
+            let mut host = GameSetup::default()
+                .prepare_on(
+                    &device,
+                    &queue,
+                    FrameConfig {
+                        render_extent: [96, 54],
+                        surface: Some(profile),
+                    },
+                )
+                .await
+                .expect("V1 host");
             let (effect, handle) = DiagnosticEffect::new();
-            host.set_scene_contribution(Box::new(effect))
+            host.set_game_contribution(Box::new(effect))
                 .expect("effect");
             let origin = Instant::now();
             let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");

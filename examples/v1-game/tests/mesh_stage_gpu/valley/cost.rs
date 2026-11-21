@@ -6,7 +6,8 @@ use glam::{Mat4, Vec3};
 use serde_json::{Value, json};
 use thrum_asset::{AssetStore, MeshProduct, Profile};
 use thrum_asset_gpu::CookedDrawPath::{Indirect, MeshStages};
-use v1_game::SurfaceOutput;
+use thrum_render::runtime::SurfaceOutput;
+use v1_game::GameHost as _;
 
 use super::{Gpu, SunProbe, Valley, Witness, output, read_buffer, store};
 

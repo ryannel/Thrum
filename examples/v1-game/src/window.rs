@@ -18,6 +18,7 @@ use crate::{
 };
 
 mod capture;
+pub use capture::scene::SceneCaptureRequest;
 
 /// Process-edge selection for the labelled native recovery capture fixture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -90,6 +91,19 @@ const KEY_RIGHT: u8 = 32;
 const KEY_UP: u8 = 64;
 const KEY_DOWN: u8 = 128;
 
+/// Capture the game to disk with a frozen or fixed-step world on the engine's offscreen driver:
+/// lighting stills, parameter routes, consecutive ticks, a motion sequence or a moving route,
+/// as `request` selects. `output` must be a new directory.
+/// # Errors
+/// Returns GPU, control, readback or output failure.
+pub fn run_scene_capture(
+    output: &std::path::Path,
+    request: &SceneCaptureRequest,
+    hardware: &[HardwareRequest],
+) -> Result<(), String> {
+    pollster::block_on(capture::scene::run(output, request, hardware))
+}
+
 /// Run the bounded V1 scene in a macOS window and print its frames report.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
@@ -148,6 +162,7 @@ pub fn run_window(
             capture_eye: None,
             capture_cooked: None,
             cloud_capture: false,
+            scene: None,
             hardware,
         })
     };
@@ -169,7 +184,18 @@ struct WindowGame {
     capture_eye: Option<[f32; 3]>,
     capture_cooked: Option<CaptureCooked>,
     cloud_capture: bool,
+    scene: Option<SceneCapture>,
     hardware: Vec<HardwareRequest>,
+}
+
+/// A scene capture's own preparation: its render extent, which may differ from the engine
+/// texture standing in for the surface, and an inline world it steps itself.
+struct SceneCapture {
+    setup: crate::GameSetup,
+    render_extent: [u32; 2],
+    #[cfg(feature = "draw-probe")]
+    omit: Option<usize>,
+    content: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
 }
 
 struct CaptureCooked {
@@ -206,6 +232,7 @@ fn capture_game_with_route_limit(
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
+        scene: None,
         cloud_capture,
         capture_cooked,
         capture_eye: crate::content::launch_value("THRUM_CAPTURE_FIXED_EYE")
@@ -258,6 +285,33 @@ impl Game for WindowGame {
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<GameWorld, GameScene>, String> {
+        if let Some(scene) = &mut self.scene {
+            let mut host = pollster::block_on(scene.setup.prepare(
+                gpu.device,
+                gpu.queue,
+                gpu.capabilities,
+                FrameConfig {
+                    render_extent: scene.render_extent,
+                    surface: Some(gpu.surface),
+                },
+            ))?;
+            #[cfg(feature = "draw-probe")]
+            {
+                scene.content = crate::content::attach_cooked_scene_with_probe(
+                    &mut host,
+                    scene.omit.map(thrum_asset_gpu::draw_probe::Probe::Omit),
+                )?;
+            }
+            #[cfg(not(feature = "draw-probe"))]
+            {
+                scene.content = crate::attach_cooked_scene(&mut host)?;
+            }
+            // The capture steps this inline world on its own clock.
+            return Ok(Prepared {
+                host,
+                origin: Instant::now(),
+            });
+        }
         let render_extent = gpu.surface.extent;
         let setup = crate::selected_setup()?;
         let exit = setup.content == crate::GameContent::Exit;
@@ -324,10 +378,7 @@ impl Game for WindowGame {
             .ok_or("capture route origin underflow")?;
         let (host, controls) = host.into_threaded(origin, world_advanced)?;
         self.world = Some(controls);
-        Ok(Prepared {
-            host,
-            origin,
-        })
+        Ok(Prepared { host, origin })
     }
 
     fn world(&self) -> Option<&dyn WorldLink> {

@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use thrum_core::sim::WorldLifecycle;
 
-use super::super::{FrameConfig, FrameHost};
+use super::super::{FrameConfig, GameHost, GameSetup};
 use super::gpu_support::{draw, retain, transition};
 use thrum_render::present::SurfaceProfile;
 
@@ -40,19 +40,20 @@ fn threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_wo
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
-        let host = FrameHost::new(
-            &device,
-            &queue,
-            FrameConfig {
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent: [640, 360],
-                }),
-                render_extent: [640, 360],
-            },
-        )
-        .await
-        .expect("10k game scene");
+        let host = GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                FrameConfig {
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent: [640, 360],
+                    }),
+                    render_extent: [640, 360],
+                },
+            )
+            .await
+            .expect("10k game scene");
         let origin = Instant::now();
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
         let paused = transition(&mut host, &controls, &device, WorldLifecycle::Pause);

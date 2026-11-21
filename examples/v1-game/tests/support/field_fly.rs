@@ -2,8 +2,9 @@ use std::time::Duration;
 
 mod failure;
 
+use thrum_render::runtime::{FrameConfig, FrameHost};
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
-use v1_game::{FrameConfig, FrameHost, GameContent, GameSetup};
+use v1_game::{GameContent, GameScene, GameSetup, GameWorld};
 
 const TICK_NS: u64 = 16_666_667;
 /// Ticks 1 to 1,930 of the 3,600-tick loop: three snap turns and the first
@@ -78,41 +79,46 @@ fn fly_inner(
     }
     pollster::block_on(async {
         let (device, queue) = gpu.portable(None);
-        let capabilities =
-            DeviceCapabilities::capture(&gpu.adapter, &device, FrameHost::DEVICE_GENERATION);
+        let capabilities = DeviceCapabilities::capture(
+            &gpu.adapter,
+            &device,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+        );
         let mut hosts = Vec::new();
         let modes = std::iter::once(CullMode::Direct).chain(culled.iter().map(|(mode, _)| *mode));
         for camera_culling in modes {
             hosts.push(
-                FrameHost::new_with_setup(
+                GameSetup {
+                    sprite_scale: None,
+                    sprite_rows: None,
+                    cooked_mesh_rows: v1_game::MeshRowSource::Code,
+                    clouds: v1_game::CloudSelection::Off,
+                    cloud_weather: v1_game::clouds::initial_state().parameters(),
+                    reconstruction: thrum_render::synthetic::Reconstruction::Off,
+                    display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
+                    diagnostic_clouds: false,
+                    content: GameContent::Field,
+                    exit_entities: v1_game::ExitEntities::Draw,
+                    camera_culling,
+                    valley_stars: false,
+                    route_overlay: v1_game::RouteOverlay::Off,
+                    field_meshes,
+                    ..GameSetup::default()
+                }
+                .prepare(
                     &device,
                     &queue,
                     &capabilities,
                     FrameConfig::offscreen([640, 360]),
-                    GameSetup {
-                        sprite_scale: None,
-                        sprite_rows: None,
-                        cooked_mesh_rows: v1_game::MeshRowSource::Code,
-                        clouds: v1_game::CloudSelection::Off,
-                        cloud_weather: v1_game::clouds::initial_state().parameters(),
-                        reconstruction: thrum_render::synthetic::Reconstruction::Off,
-                        display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
-                        diagnostic_clouds: false,
-                        content: GameContent::Field,
-                        exit_entities: v1_game::ExitEntities::Draw,
-                        camera_culling,
-                        valley_stars: false,
-                        route_overlay: v1_game::RouteOverlay::Off,
-                        field_meshes,
-                        ..GameSetup::default()
-                    },
                 )
                 .await
                 .expect("prepared field"),
             );
             // The renderer itself, not the setup, must run the asked mode.
             assert_eq!(
-                hosts.last().map(FrameHost::camera_culling),
+                hosts
+                    .last()
+                    .map(FrameHost::<GameWorld, GameScene>::camera_culling),
                 Some(camera_culling)
             );
         }

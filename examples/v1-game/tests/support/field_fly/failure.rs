@@ -14,8 +14,8 @@ pub(super) struct FrameObservation {
     counts: Option<(u32, u32, u32)>,
 }
 
-impl From<&v1_game::FrameSample> for FrameObservation {
-    fn from(sample: &v1_game::FrameSample) -> Self {
+impl From<&thrum_render::runtime::FrameSample> for FrameObservation {
+    fn from(sample: &thrum_render::runtime::FrameSample) -> Self {
         Self {
             tick: sample.tick,
             presentation_alpha: sample.presentation_alpha,

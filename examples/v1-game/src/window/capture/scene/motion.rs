@@ -11,8 +11,10 @@ use std::{
 };
 
 use thrum_core::ClockConfig;
-use thrum_render::present::SurfaceProfile;
-use v1_game::{FrameHost, FrameSample, SurfaceOutput, controls::GameControls};
+use thrum_render::{present::SurfaceProfile, runtime::FrameSample};
+
+use super::{Driver, SceneCaptureRequest};
+use crate::{GameHost, controls::GameControls, host::Runtime};
 
 pub(super) const PROFILE: SurfaceProfile = SurfaceProfile {
     format: wgpu::TextureFormat::Bgra8Unorm,
@@ -20,32 +22,36 @@ pub(super) const PROFILE: SurfaceProfile = SurfaceProfile {
 };
 const TIMEOUT: Duration = Duration::from_secs(10);
 
-pub(super) fn requested_frames() -> Result<Option<NonZeroU32>, String> {
-    match std::env::var("THRUM_CAPTURE_MOTION_FRAMES") {
-        Ok(value) => value.parse().map(Some).map_err(|error| {
-            format!("THRUM_CAPTURE_MOTION_FRAMES needs a positive integer: {error}")
-        }),
-        Err(std::env::VarError::NotPresent) => Ok(None),
-        Err(error) => Err(error.to_string()),
-    }
+pub(super) fn requested_frames(
+    request: &SceneCaptureRequest,
+) -> Result<Option<NonZeroU32>, String> {
+    request
+        .motion_frames
+        .as_deref()
+        .map(|value| {
+            value.parse().map_err(|error| {
+                format!("THRUM_CAPTURE_MOTION_FRAMES needs a positive integer: {error}")
+            })
+        })
+        .transpose()
 }
 
 pub(super) fn record(
-    device: &wgpu::Device,
-    host: &mut FrameHost,
+    driver: &mut Driver,
+    request: &SceneCaptureRequest,
     directory: &Path,
     frames: NonZeroU32,
     cooked_generation: Option<u64>,
 ) -> Result<(), String> {
-    apply_initial_parameters(host)?;
-    let pan = CameraPan::from_env(host.camera_orientation()[1], frames)?;
+    apply_initial_parameters(driver.host_mut(), request.initial_params.as_deref())?;
+    let pan = CameraPan::requested(
+        request.pan_to_degrees.as_deref(),
+        driver.host().camera_orientation()[1],
+        frames,
+    )?;
     let rate = ClockConfig::default().tick_hz;
-    let target = CaptureTarget::new(device, PROFILE.extent);
-    host.enable_submitted_capture(1)?;
-    let surface = SurfaceOutput {
-        view: &target.view,
-        extent: PROFILE.extent,
-    };
+    let target = CaptureTarget::new(PROFILE.extent);
+    driver.host_mut().enable_submitted_capture(1)?;
     let mut log =
         File::create(directory.join("frames.jsonl")).map_err(|error| error.to_string())?;
     write_json_line(
@@ -58,15 +64,20 @@ pub(super) fn record(
     )?;
     let mut pixels = io::stdout().lock();
     let mut time = Duration::ZERO;
-    host.resume(time)?;
+    driver.host_mut().world_mut().resume(time)?;
     for index in 0..frames.get() {
         if let Some(pan) = pan {
-            host.set_camera_yaw(pan.yaw(index))?;
+            driver.host_mut().set_camera_yaw(pan.yaw(index))?;
         }
-        let tick = host.tick();
+        let tick = driver.host().world().tick();
         // Use the existing clock's nanosecond rounding at the next boundary.
-        time += host.next_due_in().ok_or("motion capture clock stopped")?;
-        let frame = host.drive(time, Some(&surface))?;
+        time += driver
+            .host()
+            .world()
+            .next_due_in()
+            .ok_or("motion capture clock stopped")?;
+        let frame = driver.step_at(time)?;
+        let host = driver.host_mut();
         if !frame.surface_presented
             || frame.dropped_view
             || frame.overload.is_some()
@@ -97,7 +108,7 @@ pub(super) fn record(
             }),
         )?;
     }
-    host.disable_submitted_capture();
+    driver.host_mut().disable_submitted_capture();
     pixels.flush().map_err(|error| error.to_string())
 }
 
@@ -109,11 +120,13 @@ struct CameraPan {
 }
 
 impl CameraPan {
-    fn from_env(start: f32, frames: NonZeroU32) -> Result<Option<Self>, String> {
-        let text = match std::env::var("THRUM_CAPTURE_PAN_TO_DEGREES") {
-            Ok(text) => text,
-            Err(std::env::VarError::NotPresent) => return Ok(None),
-            Err(error) => return Err(error.to_string()),
+    fn requested(
+        text: Option<&str>,
+        start: f32,
+        frames: NonZeroU32,
+    ) -> Result<Option<Self>, String> {
+        let Some(text) = text else {
+            return Ok(None);
         };
         let degrees: f32 = text
             .parse()
@@ -143,11 +156,10 @@ impl CameraPan {
     }
 }
 
-fn apply_initial_parameters(host: &mut FrameHost) -> Result<(), String> {
-    let Some(path) = std::env::var_os("THRUM_PARAMS") else {
+fn apply_initial_parameters(host: &mut Runtime, path: Option<&Path>) -> Result<(), String> {
+    let Some(path) = path else {
         return Ok(());
     };
-    let path = Path::new(&path);
     let refused = |error: String| format!("{}: {error}", path.display());
     let text = std::fs::read_to_string(path).map_err(|error| refused(error.to_string()))?;
     let mut controls = GameControls::new().map_err(|error| error.to_string())?;
@@ -180,7 +192,7 @@ fn apply_initial_parameters(host: &mut FrameHost) -> Result<(), String> {
 }
 
 pub(super) fn completed_sample(
-    host: &mut FrameHost,
+    host: &mut Runtime,
     index: u32,
     tick: u64,
 ) -> Result<FrameSample, String> {
@@ -206,105 +218,22 @@ pub(super) fn write_json_line(log: &mut File, value: &serde_json::Value) -> Resu
     log.write_all(b"\n").map_err(|error| error.to_string())
 }
 
-/// An ordinary offscreen presenter target. Readback remains renderer-owned.
+/// The submitted images of an ordinary frame at one render extent. Readback remains
+/// renderer-owned.
 pub(super) struct CaptureTarget {
-    texture: wgpu::Texture,
-    pub(super) view: wgpu::TextureView,
     extent: [u32; 2],
 }
 
 impl CaptureTarget {
-    pub(super) fn new(device: &wgpu::Device, extent: [u32; 2]) -> Self {
-        Self::for_surface(device, extent, SurfaceProfile { extent, ..PROFILE })
-    }
-
-    pub(super) fn for_surface(
-        device: &wgpu::Device,
-        extent: [u32; 2],
-        profile: SurfaceProfile,
-    ) -> Self {
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("fixed-time ordinary presenter output"),
-            size: wgpu::Extent3d {
-                width: profile.extent[0],
-                height: profile.extent[1],
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: profile.format,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
-        });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        Self {
-            texture,
-            view,
-            extent,
-        }
-    }
-
-    /// Diagnostic present-control readback, after the ordinary submission.
-    pub(super) fn surface_pixels(
-        &self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> Result<Vec<u8>, String> {
-        let width = self.texture.width();
-        let height = self.texture.height();
-        let row = (width * 4).div_ceil(256) * 256;
-        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("fixed-time present control"),
-            size: u64::from(row) * u64::from(height),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_texture_to_buffer(
-            self.texture.as_image_copy(),
-            wgpu::TexelCopyBufferInfo {
-                buffer: &buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(row),
-                    rows_per_image: Some(height),
-                },
-            },
-            self.texture.size(),
-        );
-        let submission = queue.submit([encoder.finish()]);
-        let (send, receive) = std::sync::mpsc::channel();
-        buffer.map_async(wgpu::MapMode::Read, .., move |result| {
-            let _ = send.send(result);
-        });
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(TIMEOUT),
-            })
-            .map_err(|error| error.to_string())?;
-        receive
-            .recv_timeout(TIMEOUT)
-            .map_err(|error| error.to_string())?
-            .map_err(|error| error.to_string())?;
-        let mapped = buffer
-            .get_mapped_range(..)
-            .map_err(|error| error.to_string())?;
-        let pixels = mapped
-            .chunks_exact(row as usize)
-            .flat_map(|bytes| bytes[..width as usize * 4].iter().copied())
-            .collect();
-        drop(mapped);
-        buffer.unmap();
-        Ok(pixels)
+    pub(super) fn new(extent: [u32; 2]) -> Self {
+        Self { extent }
     }
 
     /// Fixed-time tools may wait between explicit samples. This collects the
     /// same submitted graph output; it creates no copy encoder or queue submit.
     pub(super) fn write_pixels(
         &self,
-        host: &mut FrameHost,
+        host: &mut Runtime,
         submission: u64,
         output: &mut impl Write,
     ) -> Result<(), String> {
@@ -326,7 +255,7 @@ impl CaptureTarget {
 
     pub(super) fn submitted_image(
         &self,
-        host: &mut FrameHost,
+        host: &mut Runtime,
         submission: u64,
         source: thrum_render::synthetic::CaptureSource,
     ) -> Result<thrum_render::runtime::SubmittedImage, String> {

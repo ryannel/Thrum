@@ -16,7 +16,8 @@ use std::{
 };
 
 use thrum_render::present::SurfaceProfile;
-use v1_game::{FrameHost, SurfaceOutput};
+use thrum_render::runtime::SurfaceOutput;
+use v1_game::{GameHost, GameSetup};
 
 const MEASURED_FRAMES: usize = 600;
 static METAL_TEST_LOCK: Mutex<()> = Mutex::new(());
@@ -81,19 +82,20 @@ fn late_surface_submit_reports_main_thread_allocation_cost() {
         };
         let (device, queue) = test_gpu.portable(None);
         let extent = [640, 360];
-        let mut host = FrameHost::new(
-            &device,
-            &queue,
-            v1_game::FrameConfig {
-                render_extent: extent,
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-            },
-        )
-        .await
-        .expect("prepared V1 scene");
+        let mut host = GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                thrum_render::runtime::FrameConfig {
+                    render_extent: extent,
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent,
+                    }),
+                },
+            )
+            .await
+            .expect("prepared V1 scene");
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("late submission allocation target"),
             size: wgpu::Extent3d {
@@ -182,19 +184,20 @@ fn autonomous_world_and_render_callback_report_warm_allocations() {
         };
         let (device, queue) = test_gpu.portable(None);
         let extent = [640, 360];
-        let host = FrameHost::new(
-            &device,
-            &queue,
-            v1_game::FrameConfig {
-                render_extent: extent,
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-            },
-        )
-        .await
-        .expect("prepared V1 scene");
+        let host = GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                thrum_render::runtime::FrameConfig {
+                    render_extent: extent,
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent,
+                    }),
+                },
+            )
+            .await
+            .expect("prepared V1 scene");
         let world_wakes = Arc::new(AtomicU64::new(0));
         let world_allocations = Arc::new(AtomicU64::new(0));
         let world_bytes = Arc::new(AtomicU64::new(0));

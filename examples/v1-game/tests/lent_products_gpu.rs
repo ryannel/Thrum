@@ -4,14 +4,18 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use thrum_asset::{AssetStore, Ktx2, Profile};
 use thrum_asset_gpu::{
-    COPY_UNIT, CookedAssets, CookedConfig, CookedStats, LeaseRequest, ProductLease, STAGING_CHUNKS,
+    COPY_UNIT, CookedAssets, CookedConfig, CookedStats, Drawn, LeaseRequest, ProductLease,
+    STAGING_CHUNKS, await_drawn,
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
+use thrum_render::runtime::{FrameConfig, FrameHost, SurfaceOutput};
 use thrum_render::{capabilities::DeviceCapabilities, contribution::SceneContributions};
 use v1_game::{
-    FrameConfig, FrameHost,
+    GameHost, GameScene, GameSetup, GameWorld,
     lent::{LentDiagnostic, LentWitness},
 };
+
+type Host = FrameHost<GameWorld, GameScene>;
 
 fn presenting() -> FrameConfig {
     FrameConfig {
@@ -89,14 +93,14 @@ async fn gpu(
     (device, queue, capabilities)
 }
 
-fn finish(host: &mut FrameHost, device: &wgpu::Device) {
+fn finish(host: &mut Host, device: &wgpu::Device) {
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("GPU complete");
     while host.poll_completed().expect("retire").is_some() {}
 }
 
-fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
+fn frame(host: &mut Host, device: &wgpu::Device, clock: &mut Duration) {
     *clock += Duration::from_millis(16);
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("lent test drawable"),
@@ -115,7 +119,7 @@ fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
     host.drive(
         *clock,
-        Some(&v1_game::SurfaceOutput {
+        Some(&SurfaceOutput {
             view: &view,
             extent: [640, 360],
         }),
@@ -126,7 +130,7 @@ fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
 
 fn until(
     lease: &ProductLease,
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     clock: &mut Duration,
     predicate: impl Fn() -> bool,
@@ -241,7 +245,7 @@ fn assert_texels(
 }
 
 fn attach(
-    host: &mut FrameHost,
+    host: &mut Host,
     config: CookedConfig,
     consumer_first: bool,
 ) -> (
@@ -258,7 +262,7 @@ fn attach(
     } else {
         vec![Box::new(assets), Box::new(consumer)]
     };
-    host.set_scene_contribution(Box::new(SceneContributions::new(entries)))
+    host.set_game_contribution(Box::new(SceneContributions::new(entries)))
         .expect("attach");
     (lease, stats, witness)
 }
@@ -361,7 +365,8 @@ fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) 
             configured.source = thrum_asset_gpu::CookedSource::Remote(feed.clone());
         }
         let (device, queue, caps) = gpu(&test_gpu, 1, compressed).await;
-        let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
+        let mut host = GameSetup::default()
+            .prepare(&device, &queue, &caps, presenting())
             .await
             .expect("host");
         let (lease, stats, witness) = attach(&mut host, configured, consumer_first);
@@ -470,10 +475,10 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
             assert_eq!(cooker.cook_all().expect("cook").failed, []);
             pollster::block_on(async {
                 let (device, queue, capabilities) = gpu(&test_gpu, 1, compressed).await;
-                let mut host =
-                    FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
-                        .await
-                        .expect("host");
+                let mut host = GameSetup::default()
+                    .prepare(&device, &queue, &capabilities, presenting())
+                    .await
+                    .expect("host");
                 let (lease, stats, witness) = attach(&mut host, config(&cook), consumer_first);
                 let mut clock = Duration::ZERO;
                 assert!(lease.offered().is_none());
@@ -693,19 +698,15 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
         };
         pollster::block_on(async {
             let (device, queue, caps) = gpu(&test_gpu, 1, false).await;
-            let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
+            let mut host = GameSetup::default()
+                .prepare(&device, &queue, &caps, presenting())
                 .await
                 .expect("host");
-            host.pause().expect("pause");
+            host.world_mut().pause().expect("pause");
             let (lease, stats, witness) = attach(&mut host, configured(), consumer_first);
-            let deadline = Instant::now() + Duration::from_secs(60);
-            let old_pixels = loop {
-                let pixels = host.capture_pixels().expect("first capture");
-                if stats.lock().expect("stats").drawn == Some(1) {
-                    break pixels;
-                }
-                assert!(Instant::now() < deadline, "first load");
-            };
+            await_drawn(&mut host, &stats, Drawn::Generation(1))
+                .unwrap_or_else(|error| panic!("first load: {error}"));
+            let old_pixels = host.capture_pixels().expect("first capture");
             let old_words = read(
                 &device,
                 &queue,
@@ -754,19 +755,15 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
                 assert!(Instant::now() < deadline, "edit never switches");
             }
             assert!(discarded, "switch recording was discarded");
-            let mut fresh = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
+            let mut fresh = GameSetup::default()
+                .prepare(&device, &queue, &caps, presenting())
                 .await
                 .expect("fresh host");
-            fresh.pause().expect("pause reference");
+            fresh.world_mut().pause().expect("pause reference");
             let (_, fresh_stats, fresh_witness) = attach(&mut fresh, configured(), consumer_first);
-            let deadline = Instant::now() + Duration::from_secs(60);
-            let new_pixels = loop {
-                let pixels = fresh.capture_pixels().expect("new reference");
-                if fresh_stats.lock().expect("stats").drawn == Some(2) {
-                    break pixels;
-                }
-                assert!(Instant::now() < deadline, "new reference never loads");
-            };
+            await_drawn(&mut fresh, &fresh_stats, Drawn::Generation(2))
+                .unwrap_or_else(|error| panic!("new reference never loads: {error}"));
+            let new_pixels = fresh.capture_pixels().expect("new reference");
             let new_words = read(
                 &device,
                 &queue,

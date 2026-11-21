@@ -93,8 +93,8 @@ impl From<AwaitDrawnError> for String {
 /// has drawn `wanted`, and return that generation. Each frame is submitted
 /// with [`FrameHost::render_once`] and waited for on the device; nothing is
 /// read back. A loader failure fails the wait, as does [`DRAWN_DEADLINE`]:
-/// any failure while nothing has been drawn and, once a set is drawn, a
-/// failure recorded during this wait. Content already drawn returns without
+/// any failure before the first set ever draws and, after it, a failure
+/// recorded during this wait. Content already drawn returns without
 /// rendering.
 /// # Errors
 /// Returns the first loader failure, the deadline, or a frame or device fault.
@@ -104,14 +104,15 @@ pub fn await_drawn<W: FrameWorld, V: SceneSource<W::Page>>(
     wanted: Drawn,
 ) -> Result<u64, AwaitDrawnError> {
     let deadline = Instant::now() + DRAWN_DEADLINE;
-    // Before anything is drawn every loader failure counts; after, only one recorded during
-    // this wait, since the drawn set survives a failed later generation.
+    // Before any set has ever drawn every loader failure counts; after, only one recorded
+    // during this wait, since the drawn set survives a failed later generation and a device
+    // replacement redraws it.
     let failures = {
         let stats = stats.lock().map_err(|_| AwaitDrawnError::Poisoned)?;
-        if stats.drawn.is_some() {
-            stats.failures
-        } else {
+        if stats.drawn.is_none() && stats.swaps.is_empty() {
             0
+        } else {
+            stats.failures
         }
     };
     loop {

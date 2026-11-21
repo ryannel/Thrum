@@ -48,14 +48,8 @@ pub(crate) fn prove_casters() {
         let stats = cooked.stats();
         host.set_scene_contribution(Box::new(cooked))
             .expect("attach");
-        let deadline = Instant::now() + Duration::from_secs(30);
-        loop {
-            host.capture_pixels().expect("caster frame");
-            if stats.lock().expect("stats").drawn == Some(fixture.generation()) {
-                break;
-            }
-            assert!(Instant::now() < deadline);
-        }
+        await_drawn(&mut host, &stats, Drawn::Generation(fixture.generation()))
+            .unwrap_or_else(|error| panic!("caster frame: {error}"));
         for (look, turned) in [([0.0, 0.0, -1.0], false), ([0.5, 0.0, -1.0], true)] {
             let view = view(look);
             host.continuous_source_mut().0 = view;

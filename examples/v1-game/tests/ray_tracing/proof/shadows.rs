@@ -1,8 +1,9 @@
 //! Compare feature selections at the same prepared valley samples.
 
 use super::{demand::valley_store, *};
+use thrum_render::runtime::SurfaceOutput;
 use thrum_render::synthetic::{CaptureSource, SunShadowMethod};
-use v1_game::{CameraRoute, SurfaceOutput};
+use v1_game::CameraRoute;
 
 const ROUTE: &str = include_str!("../../../routes/moving-v1.json");
 
@@ -14,7 +15,7 @@ fn valley(
     extent: [u32; 2],
     hour: f32,
     route_overlay: v1_game::RouteOverlay,
-) -> (FrameHost, Stats) {
+) -> (Host, Stats) {
     let setup = GameSetup {
         sun_shadow_method: method,
         lamp_shadows: lamps,
@@ -29,22 +30,17 @@ fn valley(
             extent,
         }),
     };
-    let mut host = pollster::block_on(FrameHost::new_with_setup(
-        &metal.device,
-        &metal.queue,
-        &metal.caps,
-        config,
-        setup,
-    ))
-    .expect("valley host");
+    let mut host =
+        pollster::block_on(setup.prepare(&metal.device, &metal.queue, &metal.caps, config))
+            .expect("valley host");
     let (camera, assets) =
         v1_game::prepare_cooked_valley(store.to_owned().into()).expect("cooked valley");
     let stats = assets.stats();
     host.set_scene_camera(camera).expect("authored camera");
     host.set_time_of_day(hour / 24.0).expect("fixed Sun");
-    host.set_scene_contribution(Box::new(assets))
+    host.set_game_contribution(Box::new(assets))
         .expect("prepared valley");
-    host.pause().expect("held scene before route");
+    host.world_mut().pause().expect("held scene before route");
     drop(settle(&mut host, &stats, generation(store)));
     (host, stats)
 }
@@ -69,7 +65,7 @@ fn surface(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
 }
 
 fn frame(
-    host: &mut FrameHost,
+    host: &mut Host,
     metal: &Metal,
     now: Duration,
     surface: &SurfaceOutput<'_>,
@@ -111,8 +107,12 @@ pub(crate) fn prove_sun_out() {
             0.0,
             v1_game::RouteOverlay::Off,
         );
-        host.enable_submitted_capture_from(1, CaptureSource::SceneLinear)
-            .expect("linear T2 tap");
+        host.enable_submitted_capture_from(
+            1,
+            thrum_render::runtime::CaptureLimits::default(),
+            CaptureSource::SceneLinear,
+        )
+        .expect("linear T2 tap");
         let sample = frame(&mut host, &metal, Duration::ZERO, &surface);
         assert_eq!(sample.shadow_selection.sun, method);
         let deadline = Instant::now() + Duration::from_secs(20);
@@ -187,8 +187,10 @@ pub(crate) fn measure_shadows() {
         let route =
             CameraRoute::parse(&input.to_string(), host.scene_camera().expect("camera"), 60)
                 .expect("validated route");
-        host.resume(Duration::ZERO).expect("start route");
-        while host.tick() < route.origin_tick - 1 {
+        host.world_mut()
+            .resume(Duration::ZERO)
+            .expect("start route");
+        while host.world().tick() < route.origin_tick - 1 {
             let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
             host.advance_without_rendering(now)
                 .expect("approach route origin");

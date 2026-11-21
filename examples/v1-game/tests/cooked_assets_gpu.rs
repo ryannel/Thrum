@@ -8,14 +8,18 @@ use std::time::{Duration, Instant};
 
 use thrum_asset::Profile;
 use thrum_asset_gpu::{
-    COPY_UNIT, CookedAssets, CookedConfig, CookedDrawPath, CookedStats, STAGING_CHUNKS,
+    COPY_UNIT, CookedAssets, CookedConfig, CookedDrawPath, CookedStats, Drawn, STAGING_CHUNKS,
+    await_drawn,
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::{
     DeviceCapabilities, DeviceRecipe, DeviceRestriction, OpenedDevice,
 };
 use thrum_render::present::SurfaceProfile;
-use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+use thrum_render::runtime::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+
+type Host = FrameHost<GameWorld, GameScene>;
 
 const EXTENT: [u32; 2] = [640, 360];
 
@@ -75,7 +79,7 @@ fn source_tree(root: &Path, volume_size: u32) -> CookConfig {
 }
 
 fn wait_for(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     stats: &Mutex<CookedStats>,
     generation: u64,
@@ -178,20 +182,21 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(
 
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("prepared game scene");
         let before = host.capture_pixels().expect("game before cooked assets");
         save("before", &before);
 
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats: Arc<Mutex<CookedStats>> = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("cooked assets attach to the game scene");
         let mut clock = Duration::ZERO;
         wait_for(&mut host, &device, &stats, 1, &mut clock);
@@ -316,14 +321,15 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(
         let bc = device
             .features()
             .contains(wgpu::Features::TEXTURE_COMPRESSION_BC);
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("prepared game scene");
         let mut config = placements(cook.store.clone());
         config.volume = None;
         // Straddle the left edge of the view: about half the meshlets are outside it.
@@ -335,7 +341,7 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(
         config.texture_preference = Some(vec![Profile::DesktopBc]);
         let assets = CookedAssets::new(config).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -394,7 +400,7 @@ fn wait_staged(stats: &Mutex<CookedStats>, generation: u64) {
 
 /// Drive every host on the same clock, one submitted frame each, until all reached `generation`.
 fn lockstep(
-    hosts: &mut [(FrameHost, Arc<Mutex<CookedStats>>)],
+    hosts: &mut [(Host, Arc<Mutex<CookedStats>>)],
     device: &wgpu::Device,
     output: &SurfaceOutput<'_>,
     clock: &mut Duration,
@@ -417,7 +423,7 @@ fn lockstep(
     }
 }
 
-fn settle(host: &mut FrameHost, device: &wgpu::Device) {
+fn settle(host: &mut Host, device: &wgpu::Device) {
     while host.pending_frames() > 0 {
         device
             .poll(wgpu::PollType::Wait {
@@ -486,13 +492,14 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads_case(
         };
         let mut hosts = Vec::new();
         for _ in 0..2 {
-            let mut host = FrameHost::new_with_capabilities(&device, &queue, &capabilities, config)
+            let mut host = GameSetup::default()
+                .prepare(&device, &queue, &capabilities, config)
                 .await
                 .expect("prepared game scene");
             let assets =
                 CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
             let stats = assets.stats();
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach");
             assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             hosts.push((host, stats));
@@ -654,7 +661,7 @@ fn presenting() -> FrameConfig {
 
 /// Drive one presented frame to completion; return its report.
 fn presented_frame(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     view: &wgpu::TextureView,
     clock: &mut Duration,
@@ -682,7 +689,7 @@ fn presented_frame(
 
 /// Frames until the next swap, checking every completed frame's timing and the history flag.
 fn until_swap(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     view: &wgpu::TextureView,
     stats: &Mutex<CookedStats>,
@@ -749,13 +756,13 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let view = drawable(&device);
-        let mut host =
-            FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
-                .await
-                .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(&device, &queue, &capabilities, presenting())
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -826,17 +833,13 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
         let (old_device, old_queue, old_capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &old_device,
-            &old_queue,
-            &old_capabilities,
-            presenting(),
-        )
-        .await
-        .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(&old_device, &old_queue, &old_capabilities, presenting())
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -915,21 +918,20 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set_case(
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
         let view = drawable(&device);
-        let mut host =
-            FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
-                .await
-                .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(&device, &queue, &capabilities, presenting())
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         wait_staged(&stats, 1);
+        // Endpoint renders, as captures make them, draw the set; no frame is read back.
+        await_drawn(&mut host, &stats, Drawn::Generation(1))
+            .unwrap_or_else(|error| panic!("captures never drew the set: {error}"));
         let deadline = Instant::now() + Duration::from_secs(30);
-        while stats.lock().expect("stats").drawn != Some(1) {
-            assert!(Instant::now() < deadline, "captures never drew the set");
-            host.capture_pixels().expect("capture");
-        }
         let mut clock = Duration::ZERO;
         timed(
             &presented_frame(&mut host, &device, &view, &mut clock),
@@ -1026,14 +1028,15 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(
 
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("game");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("game");
         host.set_scene_camera(
             v1_game::SceneCamera::perspective(
                 [0.0, 202.0, 4.0],
@@ -1045,7 +1048,7 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(
             .expect("terrain camera"),
         )
         .expect("no route installed");
-        host.pause().expect("freeze authority");
+        host.world_mut().pause().expect("freeze authority");
         host.set_time_of_day(0.5).expect("noon");
 
         let mut config = placements(cook.store.clone());
@@ -1061,18 +1064,13 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(
         let mut capture = |config| {
             let assets = CookedAssets::new(config).expect("rigid placements");
             let stats = assets.stats();
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach");
             assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             wait_staged(&stats, 1);
-            let deadline = Instant::now() + Duration::from_secs(30);
-            loop {
-                let pixels = host.capture_pixels().expect("terrain capture");
-                if stats.lock().expect("stats").drawn == Some(1) {
-                    break pixels;
-                }
-                assert!(Instant::now() < deadline, "generation 1 never drawn");
-            }
+            await_drawn(&mut host, &stats, Drawn::Generation(1))
+                .unwrap_or_else(|error| panic!("generation 1 never drawn: {error}"));
+            host.capture_pixels().expect("terrain capture")
         };
         let lit = capture(config.clone());
         config.meshes.push(roof);
@@ -1201,17 +1199,18 @@ fn a_fetched_generation_draws_like_the_mapped_store_case(
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
             thrum_asset_gpu::CookedSource::Remote(feed.clone()),
         ] {
-            let mut host = FrameHost::new_with_capabilities(
-                &device,
-                &queue,
-                &capabilities,
-                FrameConfig::offscreen([640, 360]),
-            )
-            .await
-            .expect("prepared game scene");
+            let mut host = GameSetup::default()
+                .prepare(
+                    &device,
+                    &queue,
+                    &capabilities,
+                    FrameConfig::offscreen([640, 360]),
+                )
+                .await
+                .expect("prepared game scene");
             let assets = CookedAssets::new(config(source)).expect("rigid placements");
             let stats = assets.stats();
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach");
             assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             let mut clock = Duration::ZERO;
@@ -1275,21 +1274,22 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(
             client.poll().await.expect("fetch").expect("generation 1"),
         );
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("prepared game scene");
         let mut config =
             v1_game::cooked::cooked_config(thrum_asset_gpu::CookedSource::Remote(feed.clone()));
         config.upload_budget = BUDGET;
         config.volume = None;
         let assets = CookedAssets::new(config).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -1370,17 +1370,17 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
             thrum_asset_gpu::CookedSource::Remote(feed.clone()),
         ] {
-            let mut host =
-                FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
-                    .await
-                    .expect("prepare host");
+            let mut host = GameSetup::default()
+                .prepare(&device, &queue, &capabilities, presenting())
+                .await
+                .expect("prepare host");
             let mut config = v1_game::cooked::cooked_config(source);
             config.texture_preference = Some(vec![Profile::Portable]);
             let assets = CookedAssets::new(config).expect("placements");
             let stats = assets.stats();
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach");
-            host.pause().expect("hold world");
+            host.world_mut().pause().expect("hold world");
             let mut clock = Duration::ZERO;
             wait_presented_generation(&mut host, &device, &view, &stats, 1, &mut clock);
             hosts.push((host, stats, clock));
@@ -1530,7 +1530,7 @@ fn bad_saves_keep_pixels_and_recover_on_mapped_and_fetched_hosts() {
 }
 
 fn wait_presented_generation(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     view: &wgpu::TextureView,
     stats: &Mutex<CookedStats>,
@@ -1603,14 +1603,15 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
 
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("game");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("game");
         host.set_scene_camera(
             v1_game::SceneCamera::perspective(
                 [0.0, 203.5, 3.0],
@@ -1622,7 +1623,7 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
             .expect("grid camera"),
         )
         .expect("no route installed");
-        host.pause().expect("freeze authority");
+        host.world_mut().pause().expect("freeze authority");
         host.set_time_of_day(0.4).expect("morning");
 
         let mut capture = |store: PathBuf| {
@@ -1631,18 +1632,13 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(
             config.meshes[0].transform = transform(2.0, glam::Quat::IDENTITY, [0.0, 200.0, 0.0]);
             let assets = CookedAssets::new(config).expect("rigid placements");
             let stats = assets.stats();
-            host.set_scene_contribution(Box::new(assets))
+            host.set_game_contribution(Box::new(assets))
                 .expect("attach");
             assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             wait_staged(&stats, 1);
-            let deadline = Instant::now() + Duration::from_secs(30);
-            loop {
-                let pixels = host.capture_pixels().expect("grid capture");
-                if stats.lock().expect("stats").drawn == Some(1) {
-                    break pixels;
-                }
-                assert!(Instant::now() < deadline, "generation 1 never drawn");
-            }
+            await_drawn(&mut host, &stats, Drawn::Generation(1))
+                .unwrap_or_else(|error| panic!("generation 1 never drawn: {error}"));
+            host.capture_pixels().expect("grid capture")
         };
         let plain_pixels = capture(plain.store.clone());
         let mirrored_pixels = capture(mirrored.store.clone());
@@ -1688,17 +1684,18 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -1762,17 +1759,18 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled_case(
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
         let (device, queue, capabilities) = device_for(gpu, 1, path).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("prepared game scene");
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
@@ -1833,12 +1831,13 @@ fn adapter_less_public_host_selects_direct() {
         .expect("cook");
     pollster::block_on(async {
         let (device, queue, _) = device_for(&gpu, 1, CookedDrawPath::Indirect).await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
+        let mut host = GameSetup::default()
+            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("public host");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("assets");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         let mut clock = Duration::ZERO;
         wait_for(&mut host, &device, &stats, 1, &mut clock);

@@ -10,12 +10,15 @@ use thrum_asset_gpu::{
     rows::{CookedRows, mesh_row},
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality};
+use thrum_render::runtime::{FrameConfig, SurfaceOutput};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     synthetic::{CullMode, SyntheticView},
 };
 use thrum_test_support::{Profile as TestProfile, Restriction, gpu};
-use v1_game::{FrameConfig, FrameHost, GameContent, GameSetup, MeshRowSource, SurfaceOutput};
+use v1_game::{GameContent, GameHost, GameScene, GameSetup, GameWorld, MeshRowSource};
+
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
 
 #[expect(
     dead_code,
@@ -144,7 +147,11 @@ fn exit_scene_uses_cooked_rows_and_matches_the_cpu_frustum() {
     };
     pollster::block_on(async {
         let (device, queue) = gpu.device(TestProfile::Portable, &Restriction::default());
-        let caps = DeviceCapabilities::capture(&gpu.adapter, &device, FrameHost::DEVICE_GENERATION);
+        let caps = DeviceCapabilities::capture(
+            &gpu.adapter,
+            &device,
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+        );
         let scratch = Scratch(
             Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../../tmp")
@@ -160,19 +167,19 @@ fn exit_scene_uses_cooked_rows_and_matches_the_cpu_frustum() {
             view: &view,
             extent: EXTENT,
         };
-        let mut host = FrameHost::new_with_rows(
+        let mut host = GameSetup {
+            content: GameContent::Exit,
+            camera_culling: GameSetup::valley_default_culling(),
+            cooked_mesh_rows: MeshRowSource::Cooked,
+            ..GameSetup::default()
+        }
+        .prepare_with_rows(
             &device,
             &queue,
             &caps,
             FrameConfig {
                 render_extent: EXTENT,
                 surface: Some(profile),
-            },
-            GameSetup {
-                content: GameContent::Exit,
-                camera_culling: GameSetup::valley_default_culling(),
-                cooked_mesh_rows: MeshRowSource::Cooked,
-                ..GameSetup::default()
             },
             Some(rows),
         )
@@ -185,11 +192,11 @@ fn exit_scene_uses_cooked_rows_and_matches_the_cpu_frustum() {
         let rows = host.cooked_rows().expect("prepared cooked rows");
         let assets = assets.with_rows(rows).expect("coupled rows");
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("cooked scene");
         host.set_scene_camera(camera).expect("authored camera");
-        host.pause().expect("hold tick zero");
-        let sample = |host: &mut FrameHost| {
+        host.world_mut().pause().expect("hold tick zero");
+        let sample = |host: &mut Host| {
             host.drive(Duration::ZERO, Some(&surface)).expect("submit");
             loop {
                 device

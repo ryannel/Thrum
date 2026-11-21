@@ -932,6 +932,10 @@ mod tests {
             sprite_scale: None,
             sprite_rows: None,
             cloud_input: None,
+            cloud_sky: None,
+            cooked_rows: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            visual_product: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
             exit_entities: crate::ExitEntities::Draw,

@@ -11,11 +11,14 @@ use thrum_asset_gpu::{CookedAssets, CookedDrawPath, CookedStats, draw_probe::Sha
 #[cfg(target_os = "macos")]
 use thrum_render::{
     present::SurfaceProfile,
-    runtime::{FrameSample, SubmittedImage},
+    runtime::{FrameConfig, FrameHost, FrameSample, SubmittedImage, SurfaceOutput},
     synthetic::CaptureSource,
 };
 #[cfg(target_os = "macos")]
-use v1_game::{CameraRoute, FrameConfig, FrameHost, SurfaceOutput};
+use v1_game::{CameraRoute, GameHost, GameScene, GameWorld};
+
+#[cfg(target_os = "macos")]
+type Host = FrameHost<GameWorld, GameScene>;
 
 #[cfg(target_os = "macos")]
 use super::support::{Gpu, read_buffer};
@@ -48,7 +51,7 @@ fn store() -> PathBuf {
 #[cfg(target_os = "macos")]
 struct Valley<'a> {
     gpu: &'a Gpu,
-    host: FrameHost,
+    host: Host,
     drawable: wgpu::TextureView,
     extent: [u32; 2],
     stats: Arc<Mutex<CookedStats>>,
@@ -103,19 +106,14 @@ impl<'a> Valley<'a> {
         if extent == PROOF_EXTENT {
             setup.display_overlay = thrum_render::synthetic::DisplayOverlay::TemporalInputs;
         }
-        let mut host = pollster::block_on(FrameHost::new_with_setup(
-            &gpu.device,
-            &gpu.queue,
-            &gpu.capabilities,
-            config,
-            setup,
-        ))
-        .expect("production game host");
+        let mut host =
+            pollster::block_on(setup.prepare(&gpu.device, &gpu.queue, &gpu.capabilities, config))
+                .expect("production game host");
         host.set_scene_camera(camera).expect("authored camera");
         host.set_time_of_day(hour / 24.0).expect("Sun");
-        host.set_scene_contribution(Box::new(cooked))
+        host.set_game_contribution(Box::new(cooked))
             .expect("attach valley");
-        host.pause().expect("pause while loading");
+        host.world_mut().pause().expect("pause while loading");
         let mut valley = Self {
             gpu,
             host,
@@ -168,8 +166,11 @@ impl<'a> Valley<'a> {
             self.stats.lock().expect("stats").drawn,
             Some(route.cooked_generation)
         );
-        self.host.resume(Duration::ZERO).expect("start fixed world");
-        while self.host.tick() < route.origin_tick - 1 {
+        self.host
+            .world_mut()
+            .resume(Duration::ZERO)
+            .expect("start fixed world");
+        while self.host.world().tick() < route.origin_tick - 1 {
             let elapsed = Duration::from_secs_f64(self.host.route_step_ms(0.5) / 1000.0);
             self.host
                 .drive(elapsed, None)
@@ -336,7 +337,7 @@ fn valley_cull_equal() {
         let route = valley.install_route(12.0);
         valley
             .host
-            .enable_submitted_capture_from(1, CaptureSource::SceneLinear)
+            .enable_submitted_capture_from(1, thrum_render::runtime::CaptureLimits::default(), CaptureSource::SceneLinear)
             .expect("T2 scene-linear");
         let mut tick = route.origin_tick;
         for route_tick in 0..=route.keys.last().expect("route end").tick {
@@ -540,7 +541,7 @@ fn fixed_stops() {
                 valley.frame(Duration::ZERO, Witness::None);
                 valley
                     .host
-                    .enable_submitted_capture_from(1000 + index as u64, CaptureSource::Sdr)
+                    .enable_submitted_capture_from(1000 + index as u64, thrum_render::runtime::CaptureLimits::default(), CaptureSource::Sdr)
                     .expect("T2 inspection stop tap");
                 let (sample, _) = valley.frame(Duration::ZERO, Witness::None);
                 let mut frame = valley.save_stop(&sample, &format!("{path:?}-{hour}-{label}.rgba"));
@@ -559,7 +560,7 @@ fn fixed_stops() {
                 if stop {
                     valley
                         .host
-                        .enable_submitted_capture_from(tick + 1, CaptureSource::Sdr)
+                        .enable_submitted_capture_from(tick + 1, thrum_render::runtime::CaptureLimits::default(), CaptureSource::Sdr)
                         .expect("T2 fixed stop tap");
                 }
                 let time = Duration::from_secs_f64(valley.host.route_step_ms(0.5) / 1000.0);

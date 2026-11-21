@@ -1,9 +1,11 @@
 use std::{
     path::Path,
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Duration,
 };
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedDrawPath, MeshPlacement};
+use thrum_asset_gpu::{
+    CookedAssets, CookedConfig, CookedDrawPath, Drawn, MeshPlacement, await_drawn,
+};
 use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
@@ -188,17 +190,8 @@ impl Fixture<'_> {
             .pipeline_creation_count()
             .zip(before)
             .map(|(count, before)| count - before);
-        let deadline = Instant::now() + Duration::from_secs(15);
-        loop {
-            host.capture_pixels().expect("frame");
-            let stats = stats.lock().expect("stats");
-            if stats.drawn.is_some() {
-                break;
-            }
-            assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-            assert!(Instant::now() < deadline, "cooked asset never drew");
-            drop(stats);
-            std::thread::sleep(Duration::from_millis(2));
+        if let Err(error) = await_drawn(&mut host, &stats, Drawn::Any) {
+            panic!("cooked asset never drew: {error}");
         }
         host.capture_pixels().expect("resident frame");
         let buffer = output

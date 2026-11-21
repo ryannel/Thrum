@@ -1,32 +1,88 @@
-//! Capture the real game host and its selected content, without claiming live presentation.
+//! Capture the game to disk with a frozen or fixed-step world, on the engine's offscreen
+//! driver: lighting stills, parameter routes, consecutive ticks, a motion sequence or the
+//! moving proof route. None of these claims live presentation.
 
 use std::{
     path::{Path, PathBuf},
-    time::{Duration, Instant},
+    time::Duration,
 };
 
+use thrum_app::offscreen::Offscreen;
 use thrum_render::{
-    capabilities::{DeviceRecipe, HardwareRequest, OpenedDevice},
-    synthetic::DisplayOverlay,
+    capabilities::{FIRST_DEVICE_GENERATION, HardwareRequest},
+    present::SurfaceProfile,
+    synthetic::{DisplayOverlay, OUTPUT_FORMAT},
 };
-use v1_game::{FrameConfig, FrameHost, controls::GameControls};
 
-#[path = "motion.rs"]
+use crate::{
+    GameHost,
+    controls::GameControls,
+    host::Runtime,
+    window::{SceneCapture, WindowGame},
+};
+
 mod motion;
-#[path = "route.rs"]
 mod route;
+
+/// What a scene capture records. The binary reads it from its launch settings, named after
+/// each field, and the library reads no environment.
+#[derive(Clone, Debug, Default)]
+pub struct SceneCaptureRequest {
+    /// `THRUM_SCENE`: the selected content's name, for the record and the exit route.
+    pub scene: Option<String>,
+    /// `THRUM_CAPTURE_MOTION_FRAMES`: record this many consecutive ticks as a motion sequence.
+    pub motion_frames: Option<String>,
+    /// `THRUM_CAPTURE_PAN_TO_DEGREES`: pan the motion sequence's camera to this yaw.
+    pub pan_to_degrees: Option<String>,
+    /// `THRUM_PARAMS`: a parameter file applied before the motion sequence.
+    pub initial_params: Option<PathBuf>,
+    /// `THRUM_CAPTURE_ROUTE`: the moving proof route's file.
+    pub route: Option<PathBuf>,
+    /// `THRUM_CAPTURE_DISPLAY_OVERLAY`: the route's display diagnostic.
+    pub display_overlay: Option<String>,
+    /// `THRUM_CAPTURE_SOURCE`: the route's submitted-image stage.
+    pub source: Option<String>,
+    /// `THRUM_CAPTURE_PHASE`: a diagnostic in-tick phase in place of the route's.
+    pub phase: Option<String>,
+    /// `THRUM_CAPTURE_SURFACE_FORMAT`: the format of the texture standing in for the surface.
+    pub surface_format: Option<String>,
+    /// `THRUM_CAPTURE_SURFACE_EXTENT`: its extent, `WIDTHxHEIGHT`.
+    pub surface_extent: Option<String>,
+    /// `THRUM_CAPTURE_WINDOWS`: routed tick ranges whose every frame is kept, as JSON.
+    pub windows: Option<String>,
+    /// `THRUM_CAPTURE_PRESENT_CONTROL`: `on` keeps each checkpoint's surface texture too.
+    pub present_control: Option<String>,
+    /// `THRUM_CAPTURE_PARAMS`: parameter files, one still each.
+    pub params: Option<Vec<PathBuf>>,
+    /// `THRUM_CAPTURE_ROUTE_ONLY`: take only the parameter stills.
+    pub route_only: bool,
+    /// `THRUM_CAPTURE_LIVE_TICKS`: a consecutive-tick sunset of this many frames.
+    pub live_ticks: Option<String>,
+    /// `THRUM_G3T_OMIT_PLACEMENT`: the draw probe's omitted placement.
+    pub omit_placement: Option<String>,
+    /// `THRUM_G3T_OVERLAY_CONTROL` is set.
+    pub overlay_control: bool,
+}
+
+/// The offscreen driver holding the game prepared for a scene capture.
+type Driver = Offscreen<WindowGame>;
 
 const EXTENT: [u32; 2] = [1280, 720];
 
-pub(super) async fn run(output: PathBuf, hardware: &[HardwareRequest]) -> Result<(), String> {
+pub(in crate::window) async fn run(
+    output: &Path,
+    request: &SceneCaptureRequest,
+    hardware: &[HardwareRequest],
+) -> Result<(), String> {
     if output.exists() {
         return Err("capture output must be a new directory".to_owned());
     }
-    let motion_frames = motion::requested_frames()?;
-    let moving_route = route::requested()?;
-    let mut setup = v1_game::selected_setup()?;
+    let output = output.to_owned();
+    let motion_frames = motion::requested_frames(request)?;
+    let moving_route = route::requested(request)?;
+    let mut setup = crate::selected_setup()?;
     if let Some((_, _, overlay)) = &moving_route {
-        if motion_frames.is_some() || std::env::var_os("THRUM_CAPTURE_PARAMS").is_some() {
+        if motion_frames.is_some() || request.params.is_some() {
             return Err("a moving route capture takes no motion or parameter capture".to_owned());
         }
         if setup.route_overlay != *overlay {
@@ -34,124 +90,108 @@ pub(super) async fn run(output: PathBuf, hardware: &[HardwareRequest]) -> Result
         }
         setup.route_overlay = *overlay;
     }
-    let route_only = std::env::var_os("THRUM_CAPTURE_ROUTE_ONLY").is_some();
-    let params = std::env::var_os("THRUM_CAPTURE_PARAMS");
+    let route_only = request.route_only;
+    let params = request.params.as_deref();
     if route_only && (params.is_none() || motion_frames.is_some()) {
         return Err(
             "route-only capture needs THRUM_CAPTURE_PARAMS and no motion capture".to_owned(),
         );
     }
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let OpenedDevice {
-        device,
-        queue,
-        capabilities,
-        ..
-    } = DeviceRecipe {
-        hardware,
-        ..Default::default()
-    }
-    .open(&instance, None)
-    .await
-    .map_err(|error| error.to_string())?;
-    let mut host = FrameHost::new_with_setup(
-        &device,
-        &queue,
-        &capabilities,
-        FrameConfig {
-            render_extent: match &moving_route {
-                Some((_, extent, _)) => *extent,
-                None => motion_frames.map_or(EXTENT, |_| motion::PROFILE.extent),
-            },
-            surface: match &moving_route {
-                Some((_, extent, _)) => Some(route::profile(*extent)?),
-                None => motion_frames.map(|_| motion::PROFILE),
-            },
-        },
-        setup,
-    )
-    .await?;
     #[cfg(feature = "draw-probe")]
-    let content = {
-        let omit = std::env::var("THRUM_G3T_OMIT_PLACEMENT")
-            .ok()
-            .map(|value| value.parse::<usize>())
-            .transpose()
-            .map_err(|error| error.to_string())?;
-        v1_game::attach_cooked_scene_with_probe(
-            &mut host,
-            omit.map(thrum_asset_gpu::draw_probe::Probe::Omit),
-        )?
-    };
+    let omit = request
+        .omit_placement
+        .as_deref()
+        .map(str::parse::<usize>)
+        .transpose()
+        .map_err(|error| error.to_string())?;
     #[cfg(not(feature = "draw-probe"))]
-    let content = {
-        if std::env::var_os("THRUM_G3T_OMIT_PLACEMENT").is_some()
-            || std::env::var_os("THRUM_G3T_OVERLAY_CONTROL").is_some()
-        {
-            return Err("G3t omission controls require the draw-probe build feature".to_owned());
-        }
-        v1_game::attach_cooked_scene(&mut host)?
+    if request.omit_placement.is_some() || request.overlay_control {
+        return Err("G3t omission controls require the draw-probe build feature".to_owned());
+    }
+    let (render_extent, surface) = match &moving_route {
+        Some((_, extent, _)) => (*extent, route::profile(request, *extent)?),
+        None => match motion_frames {
+            Some(_) => (motion::PROFILE.extent, motion::PROFILE),
+            // A still is an endpoint capture; the engine texture standing in for the surface
+            // takes no part in it.
+            None => (
+                EXTENT,
+                SurfaceProfile {
+                    format: OUTPUT_FORMAT,
+                    extent: EXTENT,
+                },
+            ),
+        },
     };
-    host.pause()?;
-    let deadline = Instant::now() + Duration::from_secs(30);
-    let cooked_generation = if let Some(stats) = &content {
-        loop {
-            {
-                let stats = stats
-                    .lock()
-                    .map_err(|_| "capture content observations poisoned")?;
-                if !stats.errors.is_empty() {
-                    return Err(format!("capture content errors: {:?}", stats.errors));
-                }
-                if let Some(generation) = stats.drawn {
-                    break Some(generation);
-                }
-            }
-            if Instant::now() >= deadline {
-                return Err("capture content did not become resident within 30 seconds".to_owned());
-            }
-            // This explicit readback waits for the encoder; no timing or cadence claim.
-            drop(host.capture_pixels()?);
-            std::thread::sleep(Duration::from_millis(2));
-        }
-    } else {
-        None
+    let instance = super::metal_instance();
+    let (_, device, queue, capabilities) =
+        super::metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
+    let game = WindowGame {
+        demo: GameControls::new().map_err(|error| error.to_string())?,
+        world: None,
+        held_keys: 0,
+        capture_route: None,
+        capture_eye: None,
+        capture_cooked: None,
+        cloud_capture: false,
+        scene: Some(SceneCapture {
+            setup,
+            render_extent,
+            #[cfg(feature = "draw-probe")]
+            omit,
+            content: None,
+        }),
+        hardware: Vec::new(),
     };
+    let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)?;
+    let content = driver
+        .game()
+        .scene
+        .as_ref()
+        .and_then(|scene| scene.content.clone());
+    driver.host_mut().world_mut().pause()?;
+    let cooked_generation = content
+        .map(|stats| {
+            thrum_asset_gpu::await_drawn(driver.host_mut(), &stats, thrum_asset_gpu::Drawn::Any)
+        })
+        .transpose()?;
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
-        let overlay = match std::env::var("THRUM_CAPTURE_DISPLAY_OVERLAY").as_deref() {
-            Err(_) | Ok("off") => DisplayOverlay::Off,
-            Ok("motion") => DisplayOverlay::Motion,
-            Ok("exposure-zones") => DisplayOverlay::ExposureZones,
+        let overlay = match request.display_overlay.as_deref() {
+            None | Some("off") => DisplayOverlay::Off,
+            Some("motion") => DisplayOverlay::Motion,
+            Some("exposure-zones") => DisplayOverlay::ExposureZones,
             _ => return Err("unknown route display overlay".to_owned()),
         };
-        host.set_display_overlay(overlay);
+        driver.host_mut().set_display_overlay(overlay);
         return route::record(
             &capabilities,
             &queue,
-            &mut host,
+            &mut driver,
+            request,
             &output,
             text,
             cooked_generation,
         );
     }
     if let Some(frames) = motion_frames {
-        return motion::record(&device, &mut host, &output, frames, cooked_generation);
+        return motion::record(&mut driver, request, &output, frames, cooked_generation);
     }
+    let host = driver.host_mut();
     let mut manifest = serde_json::json!({
-        "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
+        "scope":"The V1 game on the engine's offscreen driver, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
         "adapter": capabilities.adapter().name,
         "extent":EXTENT,
-        "scene":std::env::var("THRUM_SCENE").unwrap_or_else(|_| "diagnostic".to_owned()),
+        "scene":request.scene.as_deref().unwrap_or("diagnostic"),
         "cloud_shade": if setup.diagnostic_clouds { "diagnostic stand-in, plane 2000 m, XZ drift [160,40] m/s" } else { "off" },
     });
     if !route_only {
-        capture_diagnostics(&mut host, &output, &mut manifest)?;
+        capture_diagnostics(host, request, &output, &mut manifest)?;
     }
     if let Some(params) = params {
-        manifest["route"] = serde_json::Value::Array(route(&mut host, &output, &params)?);
+        manifest["route"] = serde_json::Value::Array(route(host, &output, params)?);
     }
-    manifest["world_tick"] = serde_json::json!(host.tick());
+    manifest["world_tick"] = serde_json::json!(host.world().tick());
     std::fs::write(
         output.join("captures.json"),
         serde_json::to_vec_pretty(&manifest).map_err(|error| error.to_string())?,
@@ -160,7 +200,8 @@ pub(super) async fn run(output: PathBuf, hardware: &[HardwareRequest]) -> Result
 }
 
 fn capture_diagnostics(
-    host: &mut FrameHost,
+    host: &mut Runtime,
+    request: &SceneCaptureRequest,
     output: &Path,
     manifest: &mut serde_json::Value,
 ) -> Result<(), String> {
@@ -219,7 +260,8 @@ fn capture_diagnostics(
     }
     manifest["captures"] = serde_json::Value::Array(records);
     manifest["solar_sequence"] = serde_json::Value::Array(solar_records);
-    manifest["live_sequence"] = serde_json::Value::Array(live_sequence(host, output)?);
+    manifest["live_sequence"] =
+        serde_json::Value::Array(live_sequence(host, request.live_ticks.as_deref(), output)?);
     Ok(())
 }
 
@@ -227,9 +269,12 @@ fn capture_diagnostics(
 /// The time is set once and the world advances one fixed tick per readback.
 /// These endpoint captures do not advance display history. Readback paces
 /// the frames independently of presentation.
-fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::Value>, String> {
-    let Some(ticks) = std::env::var("THRUM_CAPTURE_LIVE_TICKS")
-        .ok()
+fn live_sequence(
+    host: &mut Runtime,
+    ticks: Option<&str>,
+    output: &Path,
+) -> Result<Vec<serde_json::Value>, String> {
+    let Some(ticks) = ticks
         .map(|value| value.parse::<u16>().map_err(|error| error.to_string()))
         .transpose()?
     else {
@@ -241,21 +286,21 @@ fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::
     host.set_camera_yaw(-std::f32::consts::FRAC_PI_2)?;
     host.set_time_of_day(17.7 / 24.0)?;
     let mut now = Duration::from_secs(1);
-    host.resume(now)?;
+    host.world_mut().resume(now)?;
     let mut records = Vec::new();
     for index in 0..ticks {
-        let start = host.tick();
-        while host.tick() == start {
+        let start = host.world().tick();
+        while host.world().tick() == start {
             now += Duration::from_micros(16_667);
             host.advance_without_rendering(now)?;
         }
         let file = format!("{index:04}.ppm");
         save(host, &live.join(&file))?;
         records.push(serde_json::json!({
-            "file":file, "tick":host.tick(), "hours":host.time_of_day() * 24.0,
+            "file":file, "tick":host.world().tick(), "hours":host.time_of_day() * 24.0,
         }));
     }
-    host.pause()?;
+    host.world_mut().pause()?;
     Ok(records)
 }
 
@@ -265,12 +310,11 @@ fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::
 /// the one before. Each must pause the world, because capture never runs it. An
 /// unreadable file, a refused entry or a running-world request fails the capture.
 fn route(
-    host: &mut FrameHost,
+    host: &mut Runtime,
     output: &Path,
-    params: &std::ffi::OsStr,
+    files: &[PathBuf],
 ) -> Result<Vec<serde_json::Value>, String> {
-    let files: Vec<PathBuf> = std::env::split_paths(params).collect();
-    if files.iter().any(|file| file.as_os_str().is_empty()) {
+    if files.is_empty() || files.iter().any(|file| file.as_os_str().is_empty()) {
         return Err("THRUM_CAPTURE_PARAMS needs one or more parameter file paths".to_owned());
     }
     let route = output.join("route");
@@ -278,7 +322,7 @@ fn route(
     let mut records = Vec::new();
     for path in files {
         let refused = |reason: String| format!("capture parameters {}: {reason}", path.display());
-        let text = std::fs::read_to_string(&path).map_err(|error| refused(error.to_string()))?;
+        let text = std::fs::read_to_string(path).map_err(|error| refused(error.to_string()))?;
         let mut controls = GameControls::new().map_err(|error| refused(error.to_string()))?;
         let report = controls
             .model_mut()
@@ -330,7 +374,7 @@ fn route(
     Ok(records)
 }
 
-fn save(host: &mut FrameHost, path: &Path) -> Result<(), String> {
+fn save(host: &mut Runtime, path: &Path) -> Result<(), String> {
     let pixels = host.capture_pixels()?;
     let mut ppm = format!("P6\n{} {}\n255\n", EXTENT[0], EXTENT[1]).into_bytes();
     for pixel in pixels.as_chunks::<4>().0 {

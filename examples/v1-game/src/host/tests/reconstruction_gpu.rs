@@ -1,7 +1,13 @@
 //! Explicit game-path M3 oracle, with independent prepared reference and reset hosts.
 use super::super::*;
 use std::{io::Write, path::Path, time::Duration};
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
+use thrum_render::{
+    capabilities::DeviceCapabilities,
+    present::SurfaceProfile,
+    runtime::{CaptureLimits, FrameSample, SurfaceOutput},
+};
+
+type FrameHost = Runtime;
 
 const EXTENT: [u32; 2] = [640, 360];
 
@@ -190,44 +196,41 @@ async fn host(
         "off" => thrum_render::synthetic::Reconstruction::Off,
         _ => thrum_render::synthetic::Reconstruction::Taau,
     };
-    let mut host = FrameHost::new_with_setup(
-        device,
-        queue,
-        caps,
-        FrameConfig {
-            render_extent: EXTENT,
-            surface: Some(SurfaceProfile {
-                format: wgpu::TextureFormat::Bgra8Unorm,
-                extent: EXTENT,
-            }),
-        },
-        setup,
-    )
-    .await
-    .unwrap();
+    let mut host = setup
+        .prepare(
+            device,
+            queue,
+            caps,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent: EXTENT,
+                }),
+            },
+        )
+        .await
+        .unwrap();
     let stats = crate::attach_cooked_scene(&mut host)
         .unwrap()
         .expect("cooked valley");
-    host.pause().unwrap();
+    host.world_mut().pause().unwrap();
     let early_preset = std::env::var_os("THRUM_RECONSTRUCTION_EARLY_PRESET").is_some();
     if early_preset {
         select_checkpoint(&mut host, preset);
     }
-    let deadline = Instant::now() + Duration::from_secs(60);
-    loop {
-        drop(host.capture_pixels().unwrap());
+    thrum_asset_gpu::await_drawn(&mut host, &stats, thrum_asset_gpu::Drawn::Generation(1))
+        .expect("cooked residency");
+    {
         let stats = stats.lock().unwrap();
         assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-        if stats.drawn == Some(1) {
-            break;
-        }
-        assert!(Instant::now() < deadline, "cooked residency");
     }
     if !early_preset {
         select_checkpoint(&mut host, preset);
     }
     host.enable_submitted_capture_from(
         1,
+        CaptureLimits::default(),
         if mode == "reference" {
             thrum_render::synthetic::CaptureSource::SceneLinear
         } else {
@@ -256,7 +259,7 @@ async fn checkpoint(
     for mode in ["reference", "taau", "off", "broken"] {
         let (mut host, stats) = host(device, queue, caps, mode, &preset).await;
         let identity = (
-            host.tick(),
+            host.world().tick(),
             host.time_of_day().to_bits(),
             host.camera_orientation().map(f32::to_bits),
             host.scene_camera().unwrap().eye().map(f32::to_bits),
@@ -267,7 +270,7 @@ async fn checkpoint(
         let mut first_reference = None;
         for frame in 0..64 {
             if mode == "broken" {
-                host.inner.invalidate_history();
+                host.invalidate_history();
             }
             let (bytes, sample, exposure) = submitted(&mut host, device, surface);
             if mode == "reference" {
@@ -287,7 +290,7 @@ async fn checkpoint(
                 );
             }
             let state = (
-                host.tick(),
+                host.world().tick(),
                 host.time_of_day().to_bits(),
                 host.camera_orientation().map(f32::to_bits),
                 host.scene_camera().unwrap().eye().map(f32::to_bits),
@@ -298,9 +301,9 @@ async fn checkpoint(
             assert!(content.errors.is_empty(), "{:?}", content.errors);
             let metering = exposure[..4].to_vec();
             let celestial = DayCycle::sample(
-                host.tick(),
+                host.world().tick(),
                 sample.presentation_alpha,
-                host.inner.source().day_phase_offset,
+                host.source().day_phase_offset,
             );
             let celestial_state = (
                 celestial.simulation_time_seconds.to_bits(),
@@ -437,7 +440,6 @@ async fn cut(
     reset.set_scene_camera(camera).unwrap();
     // Fault injection stays in this test: bypass only the host's cut invalidation.
     suppressed
-        .inner
         .continuous_source_mut()
         .select_camera(camera)
         .unwrap();

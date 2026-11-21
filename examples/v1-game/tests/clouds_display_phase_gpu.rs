@@ -5,9 +5,12 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant},
 };
-use v1_game::{CloudSelection, FrameConfig, FrameHost, FrameSample, GameSetup};
+use thrum_render::runtime::{FrameConfig, FrameSample};
+use v1_game::{CloudSelection, GameHost, GameScene, GameSetup, GameWorld};
 
-fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
+
+fn complete(host: &mut Host, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
         if let Some(sample) = host.poll_completed().expect("completion") {
@@ -230,21 +233,21 @@ fn submitted_mapping_moves_at_display_time_without_product_writes() {
     pollster::block_on(async {
         let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
-        let surface = v1_game::SurfaceOutput {
+        let surface = thrum_render::runtime::SurfaceOutput {
             view: &view,
             extent: [160, 90],
         };
-        let mut host = FrameHost::new_with_setup(
+        let mut host = GameSetup {
+            clouds: CloudSelection::Shade,
+            ..GameSetup::default()
+        }
+        .prepare(
             &device,
             &queue,
             &caps,
             FrameConfig {
                 render_extent: [160, 90],
                 surface: Some(profile),
-            },
-            GameSetup {
-                clouds: CloudSelection::Shade,
-                ..GameSetup::default()
             },
         )
         .await

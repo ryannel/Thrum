@@ -3,7 +3,9 @@
 
 use std::time::Instant;
 
-use v1_game::{FrameHost, ThreadedFrameHost};
+use v1_game::GameHost;
+
+use super::Host;
 
 pub(super) struct View {
     yaw: f32,
@@ -12,7 +14,7 @@ pub(super) struct View {
 }
 
 impl View {
-    pub(super) fn prepare(host: &mut FrameHost) -> Result<Option<Self>, String> {
+    pub(super) fn prepare(host: &mut Host) -> Result<Option<Self>, String> {
         if std::env::var("THRUM_V1_ROUTE").as_deref() != Ok("1")
             || std::env::var("THRUM_COOKED_DRAW_HELD").as_deref() != Ok("1")
         {
@@ -26,7 +28,7 @@ impl View {
         };
         let yaw = number("THRUM_COOKED_DRAW_YAW", "0")?;
         let solar = number("THRUM_COOKED_DRAW_SOLAR", "12")?;
-        host.pause()?;
+        host.world_mut().pause()?;
         host.set_time_of_day(solar / 24.0)?;
         host.set_camera_yaw(yaw.to_radians())?;
         Ok(Some(Self {
@@ -36,11 +38,7 @@ impl View {
         }))
     }
 
-    pub(super) fn update(
-        &mut self,
-        host: &mut ThreadedFrameHost,
-        start: bool,
-    ) -> Result<(), String> {
+    pub(super) fn update(&mut self, host: &mut Host, start: bool) -> Result<(), String> {
         if start {
             self.pan = Some(Instant::now());
         }

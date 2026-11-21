@@ -1,6 +1,9 @@
 //! Shared helpers read pixels from the actual submitted presentation target.
 
-use super::super::super::{FrameSample, SurfaceOutput, ThreadedFrameHost, WorldControls};
+use super::super::super::WorldControls;
+use thrum_render::runtime::{FrameSample, SurfaceOutput};
+
+type ThreadedFrameHost = super::super::Runtime;
 use std::time::{Duration, Instant};
 use thrum_core::sim::{WorldLifecycle, WorldLifecycleReply};
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice};

@@ -2456,7 +2456,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     fn record_endpoint(
         &mut self,
         readback: bool,
-    ) -> Result<(Option<crate::synthetic::PixelReadback>, wgpu::SubmissionIndex), FrameError> {
+    ) -> Result<
+        (
+            Option<crate::synthetic::PixelReadback>,
+            wgpu::SubmissionIndex,
+        ),
+        FrameError,
+    > {
         if self.native_witness_report().is_some() {
             return Err(FrameError::InvalidState(
                 "native witness uses the submitted-image tap, not endpoint capture",

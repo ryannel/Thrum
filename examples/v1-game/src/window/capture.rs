@@ -2,6 +2,7 @@
 
 mod admission;
 mod native_recovery;
+pub(super) mod scene;
 
 use super::RuntimeCaptureOutput;
 use crate::GameHost;

@@ -18,11 +18,9 @@ use thrum_render::{
     },
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
-    runtime::{DriveReport, FrameError},
+    runtime::{DriveReport, EncodedFrame, FrameConfig, FrameError, SurfaceOutput},
 };
-use v1_game::{
-    EncodedFrame, FrameConfig, FrameHost, SurfaceOutput, ThreadedFrameHost, WorldControls,
-};
+use v1_game::{GameHost, GameScene, GameWorld, WorldControls};
 
 /// Longest qualification hold of a recovery before it proceeds anyway.
 const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
@@ -223,7 +221,7 @@ struct Gpu {
     queue: wgpu::Queue,
     watch: DeviceWatch,
     destroyed: bool,
-    host: ThreadedFrameHost,
+    host: super::Host,
     cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
     cooked_view: Option<super::cooked_view::View>,
     format: wgpu::TextureFormat,
@@ -301,7 +299,7 @@ pub(super) fn start(
 }
 
 impl FrameReply {
-    fn native_witness(&mut self, host: &ThreadedFrameHost) {
+    fn native_witness(&mut self, host: &super::Host) {
         if let Some(native) = host.native_witness_report() {
             let _ = write!(
                 self.cooked,
@@ -363,7 +361,7 @@ impl Owner {
             Job::SampleActor => Reply::Actor(
                 self.gpu
                     .as_ref()
-                    .and_then(|gpu| gpu.host.controlled_position()),
+                    .and_then(|gpu| gpu.host.world().controlled_position()),
             ),
         }
     }
@@ -409,13 +407,7 @@ impl Owner {
             render_extent: extent,
             surface: Some(SurfaceProfile { format, extent }),
         };
-        let mut host = pollster::block_on(FrameHost::new_with_setup(
-            &device,
-            &queue,
-            &capabilities,
-            config,
-            setup,
-        ))?;
+        let mut host = pollster::block_on(setup.prepare(&device, &queue, &capabilities, config))?;
         if self.diagnostics && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
             super::culling::record(&mut host, &device, &queue, &capabilities, config, setup)?;
         }
@@ -977,7 +969,10 @@ impl Gpu {
 
 /// Abandon a recorded frame on a lost device. A healthy skip would flush
 /// staging with an empty submit to the lost queue; this makes no queue call.
-fn abandon(encoded: EncodedFrame<'_>, reply: &mut FrameReply) -> Option<DriveReport> {
+fn abandon(
+    encoded: EncodedFrame<'_, GameWorld, GameScene>,
+    reply: &mut FrameReply,
+) -> Option<DriveReport> {
     reply.status = SurfaceStatus::DeviceLost;
     reply.abandoned = true;
     encoded.abandon_lost_device();
@@ -987,7 +982,7 @@ fn abandon(encoded: EncodedFrame<'_>, reply: &mut FrameReply) -> Option<DriveRep
 /// Background revocation forbids queue work and resets correspondence. A
 /// foreground resize/replacement keeps the existing healthy staging-flush contract.
 fn cancel_revoked(
-    encoded: EncodedFrame<'_>,
+    encoded: EncodedFrame<'_, GameWorld, GameScene>,
     reply: &mut FrameReply,
     background: &AtomicBool,
 ) -> DriveReport {
@@ -1000,7 +995,7 @@ fn cancel_revoked(
 
 /// Skip a recorded frame on a healthy device. The engine flushes its staged
 /// writes with an empty queue submit, which the witness counts.
-fn skip(encoded: EncodedFrame<'_>, reply: &mut FrameReply) -> DriveReport {
+fn skip(encoded: EncodedFrame<'_, GameWorld, GameScene>, reply: &mut FrameReply) -> DriveReport {
     reply.empty_submit = true;
     encoded.skip()
 }

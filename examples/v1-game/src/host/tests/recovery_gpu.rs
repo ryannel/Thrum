@@ -8,7 +8,7 @@ use thrum_render::{
 };
 
 use super::{
-    super::{FrameConfig, FrameHost, ThreadedFrameHost},
+    super::{FrameConfig, GameHost, GameSetup, Runtime as ThreadedFrameHost},
     gpu_support::{draw, retain, transition},
 };
 
@@ -70,12 +70,18 @@ fn surface() -> SurfaceProfile {
     }
 }
 
+fn config() -> FrameConfig {
+    FrameConfig {
+        surface: Some(surface()),
+        render_extent: [640, 360],
+    }
+}
+
 fn controlled_x(host: &mut ThreadedFrameHost) -> f64 {
     // Observe the retained published authority; do not add a production probe.
     let page = host
-        .inner
-        .inner
         .world_mut()
+        .0
         .published_page()
         .expect("world publication");
     let slot = u32::try_from(crate::scene::ENTITY_COUNT - 1).expect("controlled slot");
@@ -100,17 +106,10 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
     };
     pollster::block_on(async {
         let old = Gpu::new(&test_gpu, 1).await;
-        let mut host = FrameHost::new_with_capabilities(
-            &old.device,
-            &old.queue,
-            &old.capabilities,
-            FrameConfig {
-                surface: Some(surface()),
-                render_extent: [640, 360],
-            },
-        )
-        .await
-        .expect("10k game scene");
+        let mut host = GameSetup::default()
+            .prepare(&old.device, &old.queue, &old.capabilities, config())
+            .await
+            .expect("10k game scene");
         let camera = crate::SceneCamera::perspective(
             [0.0, 0.2, 2.0],
             [0.0, 0.1, 0.0],
@@ -180,7 +179,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
         assert!(
             host.drive(
                 origin.elapsed(),
-                Some(&super::super::SurfaceOutput {
+                Some(&thrum_render::runtime::SurfaceOutput {
                     view: &view,
                     extent: [640, 360],
                 }),
@@ -198,7 +197,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
         // No call into the destroyed device is required to install its successor.
         host.publish_device(&mut candidate)
             .expect("replace only GPU resources");
-        assert_eq!(host.inner.camera_orientation(), [orientation[0], 0.13]);
+        assert_eq!(host.camera_orientation(), [orientation[0], 0.13]);
         assert_eq!(host.pending_frames(), 0);
         assert!(host.dropped_reports() >= dropped + u64::try_from(pending).expect("bounded slots"));
         assert_eq!(
@@ -312,17 +311,10 @@ fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
     };
     pollster::block_on(async {
         let old = Gpu::new(&test_gpu, 11).await;
-        let host = FrameHost::new_with_capabilities(
-            &old.device,
-            &old.queue,
-            &old.capabilities,
-            FrameConfig {
-                surface: Some(surface()),
-                render_extent: [640, 360],
-            },
-        )
-        .await
-        .expect("platform generation is not fixed at one");
+        let host = GameSetup::default()
+            .prepare(&old.device, &old.queue, &old.capabilities, config())
+            .await
+            .expect("platform generation is not fixed at one");
         let origin = Instant::now();
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
         let baseline = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
@@ -386,32 +378,24 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
     };
     pollster::block_on(async {
         let old = Gpu::new(&test_gpu, 21).await;
-        let mut host = FrameHost::new_with_setup(
-            &old.device,
-            &old.queue,
-            &old.capabilities,
-            FrameConfig {
-                surface: Some(surface()),
-                render_extent: [640, 360],
-            },
-            crate::GameSetup {
-                sprite_scale: None,
-                sprite_rows: None,
-                cooked_mesh_rows: crate::MeshRowSource::Code,
-                clouds: crate::CloudSelection::Off,
-                cloud_weather: crate::clouds::initial_state().parameters(),
-                display_overlay: DisplayOverlay::Off,
-                reconstruction: thrum_render::synthetic::Reconstruction::Off,
-                diagnostic_clouds: false,
-                content: crate::GameContent::Field,
-                exit_entities: crate::ExitEntities::Draw,
-                camera_culling: thrum_render::synthetic::CullMode::Frustum,
-                valley_stars: false,
-                route_overlay: crate::RouteOverlay::Off,
-                field_meshes: true,
-                ..crate::GameSetup::default()
-            },
-        )
+        let mut host = GameSetup {
+            sprite_scale: None,
+            sprite_rows: None,
+            cooked_mesh_rows: crate::MeshRowSource::Code,
+            clouds: crate::CloudSelection::Off,
+            cloud_weather: crate::clouds::initial_state().parameters(),
+            display_overlay: DisplayOverlay::Off,
+            reconstruction: thrum_render::synthetic::Reconstruction::Off,
+            diagnostic_clouds: false,
+            content: crate::GameContent::Field,
+            exit_entities: crate::ExitEntities::Draw,
+            camera_culling: thrum_render::synthetic::CullMode::Frustum,
+            valley_stars: false,
+            route_overlay: crate::RouteOverlay::Off,
+            field_meshes: true,
+            ..GameSetup::default()
+        }
+        .prepare(&old.device, &old.queue, &old.capabilities, config())
         .await
         .expect("mixed-mesh field");
         // Prepare a moving flythrough sample before handing it to the resident world.
@@ -420,13 +404,14 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
         let tick_time = |tick: u64| Duration::from_nanos((1_000_000_000 * tick).div_ceil(tick_hz));
         for tick in 1..=30 {
             let report = host
-                .inner
                 .advance_without_rendering(tick_time(tick))
                 .expect("advance the fixture");
             assert_eq!(report.tick, tick);
             assert_eq!(report.overload, None);
         }
-        host.pause().expect("pause at the prepared tick");
+        host.world_mut()
+            .pause()
+            .expect("pause at the prepared tick");
         let origin = Instant::now()
             .checked_sub(tick_time(30))
             .expect("flythrough clock origin");

@@ -31,6 +31,7 @@ pub struct Offscreen<G: Game> {
     output: wgpu::Texture,
     view: wgpu::TextureView,
     extent: [u32; 2],
+    format: wgpu::TextureFormat,
     origin: Instant,
     lifecycle: WorldLifecyclePolicy,
 }
@@ -78,7 +79,7 @@ impl<G: Game> Offscreen<G> {
                 self.host
                     .resize_surface([self.extent[0] - 16, self.extent[1]])?;
                 self.host.resize_surface(self.extent)?;
-                self.output = presenter_output(&self.device, self.extent);
+                self.output = presenter_output(&self.device, self.extent, self.format);
                 self.view = self
                     .output
                     .create_view(&wgpu::TextureViewDescriptor::default());
@@ -133,13 +134,13 @@ impl<G: Game> Offscreen<G> {
                 capabilities,
                 queue,
                 Some(SurfaceProfile {
-                    format: OUTPUT_FORMAT,
+                    format: self.format,
                     extent: self.extent,
                 }),
             )
             .await?;
         self.host.publish_device(&mut candidate)?;
-        self.output = presenter_output(capabilities.site(), self.extent);
+        self.output = presenter_output(capabilities.site(), self.extent, self.format);
         self.view = self
             .output
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -152,12 +153,36 @@ impl<G: Game> Offscreen<G> {
     /// # Errors
     /// Returns the game's preparation error or invalid output dimensions.
     pub fn new(
-        mut game: G,
+        game: G,
         device: &wgpu::Device,
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         extent: [u32; 2],
     ) -> Result<Self, String> {
+        Self::with_surface(
+            game,
+            device,
+            capabilities,
+            queue,
+            SurfaceProfile {
+                format: OUTPUT_FORMAT,
+                extent,
+            },
+        )
+    }
+
+    /// As [`Self::new`], with an engine texture of the given format and extent in place of
+    /// the OS surface, such as the format a platform's drawable would have.
+    /// # Errors
+    /// Returns the game's preparation error or invalid output dimensions.
+    pub fn with_surface(
+        mut game: G,
+        device: &wgpu::Device,
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        surface: SurfaceProfile,
+    ) -> Result<Self, String> {
+        let SurfaceProfile { format, extent } = surface;
         if extent.contains(&0) {
             return Err("offscreen output extent must be nonzero".to_owned());
         }
@@ -166,14 +191,11 @@ impl<G: Game> Offscreen<G> {
                 device,
                 queue,
                 capabilities,
-                surface: SurfaceProfile {
-                    format: OUTPUT_FORMAT,
-                    extent,
-                },
+                surface,
             },
             Box::new(|| {}),
         )?;
-        let output = presenter_output(capabilities.site(), extent);
+        let output = presenter_output(capabilities.site(), extent, format);
         let view = output.create_view(&wgpu::TextureViewDescriptor::default());
         Ok(Self {
             device: capabilities.site().clone(),
@@ -182,6 +204,7 @@ impl<G: Game> Offscreen<G> {
             output,
             view,
             extent,
+            format,
             origin: prepared.origin,
             lifecycle: WorldLifecyclePolicy::default(),
         })
@@ -190,6 +213,11 @@ impl<G: Game> Offscreen<G> {
     /// The same monotonic origin supplied to the game's world lane.
     pub fn origin(&self) -> Instant {
         self.origin
+    }
+
+    /// The prepared game.
+    pub fn game(&self) -> &G {
+        &self.game
     }
 
     /// The game's accepted control values, in engine units, for provenance.
@@ -319,6 +347,25 @@ impl<G: Game> Offscreen<G> {
         Ok(report)
     }
 
+    /// Submit at an explicit observation time on the world's clock, through the ordinary
+    /// surface gate, for a capture that steps a fixed clock itself.
+    /// # Errors
+    /// Returns the ordinary world/render failure.
+    pub fn step_at(&mut self, observation: Duration) -> Result<DriveReport, String> {
+        self.host.set_presentation_lead(Duration::ZERO);
+        self.drive(observation)
+    }
+
+    /// The prepared game's frame host, for the game's own operations on it.
+    pub fn host(&self) -> &FrameHost<G::World, G::Scene> {
+        &self.host
+    }
+
+    /// The prepared game's frame host, for the game's own operations on it.
+    pub fn host_mut(&mut self) -> &mut FrameHost<G::World, G::Scene> {
+        &mut self.host
+    }
+
     /// Submission ID associated with the last successful ordinary step.
     pub fn last_submission(&self) -> Option<u64> {
         self.host.last_submission()
@@ -442,6 +489,7 @@ fn wait_for_lifecycle(
 fn presenter_output(
     device: &thrum_render::runtime::DeviceSite,
     [width, height]: [u32; 2],
+    format: wgpu::TextureFormat,
 ) -> wgpu::Texture {
     let _transition = device.transition("headless presenter output");
     device.create_texture(&wgpu::TextureDescriptor {
@@ -454,7 +502,7 @@ fn presenter_output(
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        format: OUTPUT_FORMAT,
+        format,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
         view_formats: &[],
     })

@@ -96,10 +96,27 @@ pub(super) fn wait_drawn(
                 CONTENT_WAIT.as_secs()
             ));
         }
-        // Each explicit render records the contribution's staged uploads.
-        drop(host.capture_pixels().map_err(|error| error.to_string())?);
+        // Each drawn frame records the contribution's staged uploads.
+        draw(host)?;
         std::thread::sleep(Duration::from_millis(2));
     }
+    Ok(())
+}
+
+/// Draw the committed endpoint once and wait for the device to finish it, reading nothing back:
+/// a frame boundary at which staged uploads record and a prepared material installs.
+#[cfg(target_os = "macos")]
+pub(super) fn draw(
+    host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
+) -> Result<(), String> {
+    let submitted = host.render_once().map_err(|error| error.to_string())?;
+    host.device_capabilities()
+        .site()
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submitted),
+            timeout: Some(Duration::from_secs(10)),
+        })
+        .map_err(|error| format!("device wait: {error:?}"))?;
     Ok(())
 }
 
@@ -171,8 +188,8 @@ fn reload(
     };
     reload()?;
     loop {
-        // Each explicit render is a frame boundary at which a prepared reload can draw.
-        drop(host.capture_pixels().map_err(|error| error.to_string())?);
+        // Each drawn frame is a boundary at which a prepared reload can draw.
+        draw(host)?;
         if let Some(first) = report().into_iter().next() {
             let line = first?;
             eprintln!("{name}: {line}");

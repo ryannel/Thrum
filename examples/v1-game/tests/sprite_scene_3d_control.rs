@@ -4,11 +4,12 @@ use std::{fmt::Write as _, path::Path, time::Duration};
 use thrum_asset::AssetStore;
 use thrum_asset_gpu::CookedSource;
 use thrum_cook::{CookConfig, Cooker, Durability, Quality};
+use thrum_render::runtime::FrameConfig;
 use thrum_render::{
     present::SurfaceProfile,
     synthetic::{CullMode, DisplayOverlay, Reconstruction},
 };
-use v1_game::{CloudSelection, FrameConfig, FrameHost, GameContent, GameSetup, MeshRowSource};
+use v1_game::{CloudSelection, GameContent, GameHost, GameSetup, MeshRowSource};
 
 const EXTENT: [u32; 2] = [64, 48];
 const EXIT_MESHES: [&str; 5] = [
@@ -173,10 +174,9 @@ fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                 )
                 .expect("prepared exit mesh rows")
             });
-            let mut host = pollster::block_on(FrameHost::new_with_rows(
-                &device, &queue, &caps, config, setup, rows,
-            ))
-            .expect("prepare the actual V1 variant");
+            let mut host =
+                pollster::block_on(setup.prepare_with_rows(&device, &queue, &caps, config, rows))
+                    .expect("prepare the actual V1 variant");
             if cooked {
                 let (camera, mut assets) =
                     v1_game::prepare_cooked_valley(CookedSource::from(scratch.0.join("store")))
@@ -184,7 +184,7 @@ fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                 if let Some(rows) = host.cooked_rows() {
                     assets = assets.with_rows(rows).expect("couple cooked entity rows");
                 }
-                host.set_scene_contribution(Box::new(assets))
+                host.set_game_contribution(Box::new(assets))
                     .expect("attach cooked placements");
                 host.set_scene_camera(camera)
                     .expect("install valley camera");

@@ -147,6 +147,19 @@ impl Live {
     fn frame(&mut self) -> Result<Vec<u8>, String> {
         let host = self.host.as_mut().ok_or("no host")?;
         let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
+        self.observe();
+        Ok(pixels)
+    }
+
+    /// Draw one frame without reading it back: the same frame boundary as [`Self::frame`].
+    fn draw(&mut self) -> Result<(), String> {
+        capture::draw(self.host.as_mut().ok_or("no host")?)?;
+        self.observe();
+        Ok(())
+    }
+
+    /// Note content generations drawn or kept since the last frame.
+    fn observe(&mut self) {
         // The first draw is the baseline; later generations and refusals are reported.
         if let Some(ContentStatus::Drawn(generation)) = self.game.poll_status()
             && self.drawn != Some(generation)
@@ -159,14 +172,13 @@ impl Live {
         for (generation, error) in self.game.poll_kept() {
             let _ = write!(self.outcome, "; content: kept {generation} ({error})");
         }
-        Ok(pixels)
     }
 
     /// Render until a started game reload reports, then once more so its result is drawn.
     fn settle(&mut self) -> Result<(), String> {
         let deadline = Instant::now() + Duration::from_secs(30);
         while self.awaiting {
-            drop(self.frame()?);
+            self.draw()?;
             if let Some((_, report)) = self.game.reload.as_mut() {
                 for line in report() {
                     let _ = match line {

@@ -1,10 +1,6 @@
 //! Bounded macOS V1 scene on a real surface.
 
 #[cfg(target_os = "macos")]
-#[path = "bin/window/capture.rs"]
-mod capture;
-
-#[cfg(target_os = "macos")]
 fn main() {
     let names = match std::env::var("THRUM_HARDWARE") {
         Ok(names) => names,
@@ -52,7 +48,11 @@ fn main() {
         for request in &mut hardware {
             request.required = true;
         }
-        if let Err(error) = pollster::block_on(capture::run(output.into(), &hardware)) {
+        let request =
+            scene_capture_request().unwrap_or_else(|error| report_capture_failure(&error));
+        if let Err(error) =
+            v1_game::run_scene_capture(std::path::Path::new(&output), &request, &hardware)
+        {
             report_capture_failure(&error);
         }
         return;
@@ -150,4 +150,37 @@ fn report_capture_failure(error: &str) -> ! {
 fn main() {
     eprintln!("v1-game is available on macOS; use v1-game for the offscreen diagnostic");
     std::process::exit(1);
+}
+
+/// The scene capture's launch settings, read here so the library reads no environment.
+#[cfg(target_os = "macos")]
+fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
+    fn text(name: &str) -> Result<Option<String>, String> {
+        match std::env::var(name) {
+            Ok(value) => Ok(Some(value)),
+            Err(std::env::VarError::NotPresent) => Ok(None),
+            Err(error) => Err(format!("{name}: {error}")),
+        }
+    }
+    let path = |name: &str| std::env::var_os(name).map(std::path::PathBuf::from);
+    Ok(v1_game::SceneCaptureRequest {
+        scene: text("THRUM_SCENE")?,
+        motion_frames: text("THRUM_CAPTURE_MOTION_FRAMES")?,
+        pan_to_degrees: text("THRUM_CAPTURE_PAN_TO_DEGREES")?,
+        initial_params: path("THRUM_PARAMS"),
+        route: path("THRUM_CAPTURE_ROUTE"),
+        display_overlay: text("THRUM_CAPTURE_DISPLAY_OVERLAY")?,
+        source: text("THRUM_CAPTURE_SOURCE")?,
+        phase: text("THRUM_CAPTURE_PHASE")?,
+        surface_format: text("THRUM_CAPTURE_SURFACE_FORMAT")?,
+        surface_extent: text("THRUM_CAPTURE_SURFACE_EXTENT")?,
+        windows: text("THRUM_CAPTURE_WINDOWS")?,
+        present_control: text("THRUM_CAPTURE_PRESENT_CONTROL")?,
+        params: std::env::var_os("THRUM_CAPTURE_PARAMS")
+            .map(|value| std::env::split_paths(&value).collect()),
+        route_only: std::env::var_os("THRUM_CAPTURE_ROUTE_ONLY").is_some(),
+        live_ticks: text("THRUM_CAPTURE_LIVE_TICKS")?,
+        omit_placement: text("THRUM_G3T_OMIT_PLACEMENT")?,
+        overlay_control: std::env::var_os("THRUM_G3T_OVERLAY_CONTROL").is_some(),
+    })
 }

@@ -8,7 +8,8 @@ use std::{
 };
 
 use thrum_render::present::SurfaceProfile;
-use v1_game::{FrameHost, SurfaceOutput};
+use thrum_render::runtime::SurfaceOutput;
+use v1_game::GameSetup;
 
 const SIZE: u32 = 640;
 const ROW_BYTES: u32 = SIZE * 4;
@@ -67,23 +68,28 @@ async fn render_surface(
     queue: &wgpu::Queue,
     format: wgpu::TextureFormat,
 ) -> (Vec<u8>, Vec<u8>) {
-    let mut host = FrameHost::new(
-        device,
-        queue,
-        v1_game::FrameConfig {
-            render_extent: [640, 360],
-            surface: Some(SurfaceProfile {
-                format,
-                extent: [SIZE, SIZE],
-            }),
-        },
-    )
-    .await
-    .expect("prepared scene passes");
+    let mut host = GameSetup::default()
+        .prepare_on(
+            device,
+            queue,
+            thrum_render::runtime::FrameConfig {
+                render_extent: [640, 360],
+                surface: Some(SurfaceProfile {
+                    format,
+                    extent: [SIZE, SIZE],
+                }),
+            },
+        )
+        .await
+        .expect("prepared scene passes");
     // Compare the surface with the actual submitted source, including its
     // jitter sample, rather than a separate unjittered endpoint redraw.
-    host.enable_submitted_capture_from(1, thrum_render::synthetic::CaptureSource::Sdr)
-        .expect("submitted source tap");
+    host.enable_submitted_capture_from(
+        1,
+        thrum_render::runtime::CaptureLimits::default(),
+        thrum_render::synthetic::CaptureSource::Sdr,
+    )
+    .expect("submitted source tap");
     // Sample immediately before the second tick, as on the ordinary frame path.
     let advanced = host
         .advance(Duration::from_nanos(33_333_333))
@@ -211,19 +217,20 @@ fn unavailable_surface_drops_only_views_and_resize_reuses_preparation() {
             return;
         };
         let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
-        let mut host = FrameHost::new(
-            &device,
-            &queue,
-            v1_game::FrameConfig {
-                render_extent: [640, 360],
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent: [SIZE, SIZE],
-                }),
-            },
-        )
-        .await
-        .expect("prepared host");
+        let mut host = GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                thrum_render::runtime::FrameConfig {
+                    render_extent: [640, 360],
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent: [SIZE, SIZE],
+                    }),
+                },
+            )
+            .await
+            .expect("prepared host");
         let missed = host
             .drive(Duration::from_nanos(16_666_667), None)
             .expect("committed tick without drawable");

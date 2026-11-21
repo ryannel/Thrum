@@ -193,8 +193,8 @@ impl GameSetup {
         config: FrameConfig,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
     ) -> Result<Runtime, runtime::FrameError> {
-        let setup = self;
         use runtime::FrameError;
+        let setup = self;
 
         if !capabilities.matches(device) {
             return Err(FrameError::InvalidState(
@@ -447,8 +447,7 @@ pub trait GameHost {
     /// # Errors
     /// Returns an engine ownership/binding/upload failure.
     #[cfg(not(target_arch = "wasm32"))]
-    fn publish_environment(&mut self, candidate: &mut PreparedEnvironment)
-    -> Result<bool, String>;
+    fn publish_environment(&mut self, candidate: &mut PreparedEnvironment) -> Result<bool, String>;
     /// Move the inline clock and rules onto the engine's world lane. The frame host then
     /// renders the lane's publications, and the returned controls drive the world.
     /// # Errors
@@ -523,7 +522,7 @@ impl GameHost for Runtime {
         value: u32,
     ) -> Result<(), thrum_render::contribution::QualityError> {
         self.set_quality_knob(name, value)?;
-        if let Some(profile) = &mut self.source_mut().cloud_sky {
+        if let Some(profile) = &mut self.continuous_source_mut().cloud_sky {
             if name.ends_with("cloud refresh exponent") {
                 profile.refresh_stride = 1 << value;
             }
@@ -553,15 +552,12 @@ impl GameHost for Runtime {
         VisualPrepareInputs(self.visual_prepare_inputs())
     }
     #[cfg(not(target_arch = "wasm32"))]
-    fn publish_environment(
-        &mut self,
-        candidate: &mut PreparedEnvironment,
-    ) -> Result<bool, String> {
+    fn publish_environment(&mut self, candidate: &mut PreparedEnvironment) -> Result<bool, String> {
         let published = self
             .publish_visual(&mut candidate.inner)
             .map_err(|error| error.to_string())?;
         if published {
-            self.source_mut().visual_product = candidate.product.take();
+            self.continuous_source_mut().visual_product = candidate.product.take();
         }
         Ok(published)
     }

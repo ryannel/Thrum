@@ -21,14 +21,14 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(&test_gpu, false).await;
-        let mut host =
-            super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
-                .await
-                .expect("prepared scene");
+        let mut host = super::GameSetup::default()
+            .prepare_on(&device, &queue, super::FrameConfig::offscreen([640, 360]))
+            .await
+            .expect("prepared scene");
         let before = host.capture_pixels().expect("initial capture");
         for _ in 0..100 {
-            host.inner
-                .world_mut()
+            host.world_mut()
+                .0
                 .inline_mut()
                 .world
                 .game_mut()
@@ -56,21 +56,21 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(&test_gpu, false).await;
-        let mut host =
-            super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
-                .await
-                .expect("prepared scene");
+        let mut host = super::GameSetup::default()
+            .prepare_on(&device, &queue, super::FrameConfig::offscreen([640, 360]))
+            .await
+            .expect("prepared scene");
         let zero = host
-            .inner
             .world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
             .sim
             .published_page()
             .expect("baseline lease");
-        host.inner
-            .world_mut()
+        host.world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
@@ -78,16 +78,16 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
             .step(&[])
             .expect("first held tick");
         let one = host
-            .inner
             .world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
             .sim
             .published_page()
             .expect("first lease");
-        host.inner
-            .world_mut()
+        host.world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
@@ -95,16 +95,16 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
             .step(&[])
             .expect("second held tick");
         let two = host
-            .inner
             .world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
             .sim
             .published_page()
             .expect("second lease");
-        host.inner
-            .world_mut()
+        host.world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
@@ -112,8 +112,8 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
             .step(&[])
             .expect("third held tick");
         let three = host
-            .inner
             .world_mut()
+            .0
             .inline_mut()
             .world
             .game_mut()
@@ -127,11 +127,11 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         assert!(busy.dropped_view);
         assert!(!busy.submitted);
         assert_eq!(host.dropped_views(), 1);
-        host.pause().expect("inline world pause");
+        host.world_mut().pause().expect("inline world pause");
         drop(zero);
         assert!(
             thrum_core::sim::WorldGame::publication(
-                host.inner.world_mut().inline_mut().world.game_mut()
+                host.world_mut().0.inline_mut().world.game_mut()
             )
             .expect("lease-only publication")
             .is_none(),
@@ -141,8 +141,8 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         assert_eq!((recovered.tick, recovered.completed_ticks), (4, 0));
         assert!(recovered.submitted);
         assert_eq!(
-            host.inner
-                .world_mut()
+            host.world_mut()
+                .0
                 .inline_mut()
                 .world
                 .game_mut()
@@ -168,15 +168,15 @@ fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(&test_gpu, false).await;
-        let mut host =
-            super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
-                .await
-                .expect("prepared scene");
+        let mut host = super::GameSetup::default()
+            .prepare_on(&device, &queue, super::FrameConfig::offscreen([640, 360]))
+            .await
+            .expect("prepared scene");
         let advanced = host
             .advance(Duration::from_nanos(16_666_667))
             .expect("admit tick before presentation");
         drop(advanced);
-        assert_eq!(host.tick(), 1);
+        assert_eq!(host.world().tick(), 1);
         assert_eq!(host.dropped_views(), 1);
         assert_eq!(host.pending_frames(), 0);
         let next = host
@@ -199,19 +199,20 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(&test_gpu, true).await;
         let extent = [640, 360];
-        let mut host = super::FrameHost::new(
-            &device,
-            &queue,
-            super::FrameConfig {
-                render_extent: extent,
-                surface: Some(thrum_render::present::SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-            },
-        )
-        .await
-        .expect("prepared scene");
+        let mut host = super::GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                super::FrameConfig {
+                    render_extent: extent,
+                    surface: Some(thrum_render::present::SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent,
+                    }),
+                },
+            )
+            .await
+            .expect("prepared scene");
         for tick in 1..=64 {
             let encoded = host
                 .advance(Duration::from_nanos(tick * 16_666_667))
@@ -223,7 +224,7 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
             assert!(report.dropped_view && !report.submitted);
             assert_eq!(host.pending_frames(), 0);
         }
-        assert_eq!((host.tick(), host.dropped_views()), (64, 64));
+        assert_eq!((host.world().tick(), host.dropped_views()), (64, 64));
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("late surface test target"),
             size: wgpu::Extent3d {
@@ -244,13 +245,13 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
             .expect("next tick admitted")
             .encode_scene()
             .expect("timestamp labels reusable")
-            .submit(Some(&super::SurfaceOutput {
+            .submit(Some(&thrum_render::runtime::SurfaceOutput {
                 view: &view,
                 extent,
             }))
             .expect("scene and surface submit once");
         assert!(report.submitted && report.surface_presented);
-        assert_eq!(host.tick(), 65);
+        assert_eq!(host.world().tick(), 65);
         let between = host
             .advance(Duration::from_nanos(65 * 16_666_667 + 8_333_333))
             .expect("display callback between world ticks");
@@ -258,7 +259,7 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
         let report = between
             .encode_scene()
             .expect("same committed page has another display sample")
-            .submit(Some(&super::SurfaceOutput {
+            .submit(Some(&thrum_render::runtime::SurfaceOutput {
                 view: &view,
                 extent,
             }))
@@ -280,19 +281,20 @@ fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(&test_gpu, false).await;
         let extent = [640, 360];
-        let mut host = super::FrameHost::new(
-            &device,
-            &queue,
-            super::FrameConfig {
-                render_extent: extent,
-                surface: Some(thrum_render::present::SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-            },
-        )
-        .await
-        .expect("prepared scene");
+        let mut host = super::GameSetup::default()
+            .prepare_on(
+                &device,
+                &queue,
+                super::FrameConfig {
+                    render_extent: extent,
+                    surface: Some(thrum_render::present::SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent,
+                    }),
+                },
+            )
+            .await
+            .expect("prepared scene");
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("fractional capture surface"),
             size: wgpu::Extent3d {
@@ -312,7 +314,7 @@ fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
             .expect("first tick")
             .encode_scene()
             .expect("first view")
-            .submit(Some(&super::SurfaceOutput {
+            .submit(Some(&thrum_render::runtime::SurfaceOutput {
                 view: &view,
                 extent,
             }))
@@ -343,19 +345,19 @@ fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
     pollster::block_on(async {
         let thrum_render::capabilities::OpenedDevice { device, queue, .. } =
             gpu_support::device(&test_gpu, false).await;
-        let mut host =
-            super::FrameHost::new(&device, &queue, super::FrameConfig::offscreen([640, 360]))
-                .await
-                .expect("prepared scene");
+        let mut host = super::GameSetup::default()
+            .prepare_on(&device, &queue, super::FrameConfig::offscreen([640, 360]))
+            .await
+            .expect("prepared scene");
         drop(
             host.advance(Duration::from_nanos(133_333_334))
                 .expect("eight due, four completed"),
         );
-        assert_eq!((host.tick(), host.dropped_views()), (4, 1));
+        assert_eq!((host.world().tick(), host.dropped_views()), (4, 1));
         drop(
             host.advance(Duration::from_nanos(233_333_334))
                 .expect("new work refused but queued ticks complete"),
         );
-        assert_eq!((host.tick(), host.dropped_views()), (8, 2));
+        assert_eq!((host.world().tick(), host.dropped_views()), (8, 2));
     });
 }

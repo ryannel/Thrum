@@ -2,7 +2,8 @@
 pub mod support;
 
 use std::time::Duration;
-use v1_game::{CloudSelection, FrameConfig, FrameHost, GameSetup};
+use thrum_render::runtime::FrameConfig;
+use v1_game::{CloudSelection, GameHost, GameSetup};
 
 fn fill(device: &wgpu::Device, queue: &wgpu::Queue, target: &wgpu::Texture, depth: f32) {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -51,17 +52,17 @@ fn game_receives_gpu_shade_and_keeps_ambient_light() {
     };
     pollster::block_on(async {
         let (_, device, queue, caps) = support::device(&test_gpu, "portable", true);
-        let mut game = FrameHost::new_with_setup(
+        let mut game = GameSetup {
+            clouds: CloudSelection::Shade,
+            ..GameSetup::default()
+        }
+        .prepare(
             &device,
             &queue,
             &caps,
             FrameConfig {
                 render_extent: [320, 180],
                 surface: None,
-            },
-            GameSetup {
-                clouds: CloudSelection::Shade,
-                ..GameSetup::default()
             },
         )
         .await

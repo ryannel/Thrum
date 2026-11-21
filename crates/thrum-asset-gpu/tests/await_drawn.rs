@@ -197,7 +197,7 @@ fn a_loader_failure_ends_the_wait() {
     .expect("HEAD");
     let (mut host, stats) = host(&caps, &queue, &store);
     match await_drawn(&mut host, &stats, Drawn::Any) {
-        Err(AwaitDrawnError::Content(errors)) => assert!(!errors.is_empty()),
+        Err(AwaitDrawnError::Content(errors)) => assert_ne!(errors, Vec::<String>::new()),
         other => panic!("expected a content failure, got {other:?}"),
     }
     assert_eq!(host.endpoint_readbacks(), 0);

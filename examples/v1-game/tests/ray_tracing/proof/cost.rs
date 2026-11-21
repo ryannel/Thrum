@@ -95,7 +95,7 @@ fn resident_delta(metal: &Metal, store: &Path, generation: u64) -> Value {
 }
 
 fn rendered_builds(
-    game: &mut FrameHost,
+    game: &mut Host,
     metal: &Metal,
     stats: &Stats,
     goal: u64,
@@ -105,7 +105,7 @@ fn rendered_builds(
     let mut count = 0;
     let deadline = Instant::now() + Duration::from_secs(45);
     loop {
-        drop(game.capture_pixels().expect("submitted valley frame"));
+        render_frame(game);
         let stats = stats.lock().expect("stats");
         assert!(stats.errors.is_empty(), "{:?}", stats.errors);
         let samples = probe.take_recorded();

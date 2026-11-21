@@ -3,10 +3,13 @@
 
 use std::time::{Duration, Instant};
 
+use thrum_render::runtime::{FrameConfig, FrameSample, SurfaceOutput};
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
-use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
 
-fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
+
+fn await_sample(host: &mut Host, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
         if let Some(sample) = host.poll_completed().expect("GPU progress") {
@@ -40,7 +43,8 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
             return;
         };
         let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
+        let mut host = GameSetup::default()
+            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared game scene");
         let capture_directory =
@@ -134,16 +138,17 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
                 pixels.as_chunks::<4>().0,
                 [640, 360],
             );
-            let mut full = FrameHost::new(
-                &device,
-                &queue,
-                FrameConfig {
-                    render_extent: [1920, 1080],
-                    surface: None,
-                },
-            )
-            .await
-            .expect("prepared full-resolution game scene");
+            let mut full = GameSetup::default()
+                .prepare_on(
+                    &device,
+                    &queue,
+                    FrameConfig {
+                        render_extent: [1920, 1080],
+                        surface: None,
+                    },
+                )
+                .await
+                .expect("prepared full-resolution game scene");
             full.set_time_of_day(0.5).expect("full-resolution noon");
             full.set_camera_pitch(0.35)
                 .expect("full-resolution Sun view");
@@ -220,22 +225,26 @@ fn repeated_display_target_reuses_world_columns_but_advances_interpolation() {
             view: &view,
             extent,
         };
-        let capabilities =
-            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
-        let mut host = FrameHost::new_with_capabilities(
+        let capabilities = DeviceCapabilities::capture(
+            &adapter,
             &device,
-            &queue,
-            &capabilities,
-            FrameConfig {
-                render_extent: extent,
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-            },
-        )
-        .await
-        .expect("prepared V1 scene");
+            thrum_render::capabilities::FIRST_DEVICE_GENERATION,
+        );
+        let mut host = GameSetup::default()
+            .prepare(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig {
+                    render_extent: extent,
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        extent,
+                    }),
+                },
+            )
+            .await
+            .expect("prepared V1 scene");
         let first = host
             .drive(Duration::from_nanos(16_666_667), Some(&output))
             .expect("first tick and display target");
@@ -264,10 +273,11 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
             return;
         };
         let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
-        let host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
+        let host = GameSetup::default()
+            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared scene");
-        let initial = host.controlled_position().expect("seeded player");
+        let initial = host.world().controlled_position().expect("seeded player");
         let origin = Instant::now();
         let (mut render, controls) = host
             .into_threaded(origin, || {})
@@ -292,6 +302,7 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
         };
         assert!(report.tick >= 1, "world advanced while GPU host was idle");
         let moved = render
+            .world()
             .controlled_position()
             .expect("published controlled actor");
         assert!(
@@ -334,15 +345,17 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             return;
         };
         let (device, queue) = test_gpu.portable(None);
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
+        let mut host = GameSetup::default()
+            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared 10k scene");
-        host.enable_projection()
+        host.world_mut()
+            .enable_projection()
             .expect("bounded same-game projection");
         let idle = host.drive(Duration::ZERO, None).expect("idle callback");
         assert_eq!(idle.completed_ticks, 0);
         assert!(!idle.submitted);
-        assert_eq!(host.tick(), 0);
+        assert_eq!(host.world().tick(), 0);
         let first = host
             .drive(Duration::from_nanos(16_666_667), None)
             .expect("first due callback");
@@ -367,9 +380,10 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             ),
             (3, 2, 0, true)
         );
-        assert_eq!(host.tick(), 3);
+        assert_eq!(host.world().tick(), 3);
         let mut projected_ticks = Vec::new();
         while host
+            .world_mut()
             .poll_projection(|projection| {
                 projected_ticks.push((
                     projection.id().expect("queued source").tick,
@@ -418,19 +432,24 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
             .expect("nine due updates are reported as overload");
         assert_eq!(overload.overload, Some(9));
         assert_eq!(overload.queued_ticks, 0);
-        assert_eq!(host.tick(), 3, "overload cannot skip or repeat a tick");
-        assert!(host.next_due_in().is_none());
+        assert_eq!(
+            host.world().tick(),
+            3,
+            "overload cannot skip or repeat a tick"
+        );
+        assert!(host.world().next_due_in().is_none());
 
         let (plain_device, plain_queue) = test_gpu
             .fresh_adapter()
             .portable(Some(wgpu::Features::empty()));
-        let mut plain = FrameHost::new(
-            &plain_device,
-            &plain_queue,
-            FrameConfig::offscreen([640, 360]),
-        )
-        .await
-        .expect("same prepared scene without timestamps");
+        let mut plain = GameSetup::default()
+            .prepare_on(
+                &plain_device,
+                &plain_queue,
+                FrameConfig::offscreen([640, 360]),
+            )
+            .await
+            .expect("same prepared scene without timestamps");
         assert!(
             plain
                 .drive(Duration::from_nanos(16_666_667), None)
@@ -467,10 +486,11 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
             return;
         };
         let (device, queue) = test_gpu.portable(Some(wgpu::Features::empty()));
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
+        let mut host = GameSetup::default()
+            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("prepared game host");
-        let initial = host.controlled_position().expect("seeded player");
+        let initial = host.world().controlled_position().expect("seeded player");
         host.set_controls([1.0, 0.0, 0.0])
             .expect("normalized local control");
         assert_eq!(
@@ -486,7 +506,7 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
                 .completed_ticks,
             1
         );
-        let moving = host.controlled_position().expect("same player");
+        let moving = host.world().controlled_position().expect("same player");
         assert!((moving[0] - initial[0] - 0.2).abs() < 1e-9);
         assert_eq!(moving[1], initial[1]);
         host.set_controls([0.0; 3]).expect("release control");
@@ -496,6 +516,6 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
                 .completed_ticks,
             1
         );
-        assert_eq!(host.controlled_position(), Some(moving));
+        assert_eq!(host.world().controlled_position(), Some(moving));
     });
 }

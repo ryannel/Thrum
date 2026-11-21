@@ -11,6 +11,8 @@ mod ray_tracing {
     use std::time::{Duration, Instant};
     #[cfg(target_os = "macos")]
     use thrum_render::synthetic::mesh_rows::MeshRowStatus;
+    #[cfg(target_os = "macos")]
+    use v1_game::GameHost as _;
 
     thrum_test_support::macos_gpu_test! {
     fn sun_out() {
@@ -195,9 +197,9 @@ mod ray_tracing {
         );
         assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 2);
         report(&after.record("replacement device residency", &stats));
-        game.resume(Duration::from_secs(1))
+        game.world_mut().resume(Duration::from_secs(1))
             .expect("resume the game");
-        let frozen_tick = game.tick();
+        let frozen_tick = game.world().tick();
         for offset in [17, 34, 51] {
             game.advance_without_rendering(Duration::from_millis(1_000 + offset))
                 .expect("play the next tick");
@@ -205,7 +207,7 @@ mod ray_tracing {
             assert!(rebuilt_arena.take_recorded().is_empty());
             assert_eq!(stats.lock().expect("stats").submitted_ray_builds, 2);
         }
-        assert!(game.tick() > frozen_tick);
+        assert!(game.world().tick() > frozen_tick);
     }
     }
 

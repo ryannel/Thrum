@@ -5,7 +5,8 @@ use std::{
 };
 use thrum_fixtures::mixed_field::day_cycle::DayCycle;
 use thrum_render::capabilities::{DeviceRecipe, OpenedDevice};
-use v1_game::{FrameConfig, FrameHost};
+use thrum_render::runtime::FrameConfig;
+use v1_game::GameHost as _;
 
 fn main() -> Result<(), String> {
     let low_sun = match std::env::args().nth(1).as_deref() {
@@ -35,17 +36,17 @@ async fn measure(low_sun: bool) -> Result<(), String> {
         .open(&instance, None)
         .await
         .map_err(|error| error.to_string())?;
-    let mut host = FrameHost::new_with_setup(
-        &device,
-        &queue,
-        &caps,
-        FrameConfig {
-            render_extent: [2560, 1440],
-            surface: None,
-        },
-        v1_game::selected_setup()?,
-    )
-    .await?;
+    let mut host = v1_game::selected_setup()?
+        .prepare(
+            &device,
+            &queue,
+            &caps,
+            FrameConfig {
+                render_extent: [2560, 1440],
+                surface: None,
+            },
+        )
+        .await?;
     let content = v1_game::attach_cooked_scene(&mut host)?;
     let view_angles = if low_sun {
         let elevation = 10.0_f32.to_radians();

@@ -2,12 +2,17 @@
 
 use std::time::{Duration, Instant};
 use thrum_asset::Profile;
-use thrum_asset_gpu::{COPY_UNIT, CookedAssets, FaultProbe, LeaseRequest, STAGING_CHUNKS};
+use thrum_asset_gpu::{
+    COPY_UNIT, CookedAssets, Drawn, FaultProbe, LeaseRequest, STAGING_CHUNKS, await_drawn,
+};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-use v1_game::{FrameConfig, FrameHost};
+use thrum_render::runtime::{FrameConfig, FrameHost};
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
+
+type Host = FrameHost<GameWorld, GameScene>;
 
 fn drive(
-    host: &mut FrameHost,
+    host: &mut Host,
     device: &wgpu::Device,
     clock: &mut Duration,
     predicate: impl Fn() -> bool,
@@ -21,7 +26,15 @@ fn drive(
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("complete");
         while host.poll_completed().expect("retire").is_some() {}
-        host.capture_pixels().expect("progress paused publication");
+        // Render the endpoint without a readback, so a paused publication still progresses.
+        let submitted = host.render_once().expect("progress paused publication");
+        host.device_capabilities()
+            .site()
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submitted),
+                timeout: Some(Duration::from_secs(10)),
+            })
+            .expect("endpoint frame completes");
     }
 }
 
@@ -79,7 +92,8 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         .open_admitted(&gpu.instance, &gpu.adapter)
         .await
         .expect("restricted Metal device");
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::offscreen([640, 360]))
+        let mut host = GameSetup::default()
+            .prepare_on(&device, &queue, FrameConfig::offscreen([640, 360]))
             .await
             .expect("host");
         let mut assets = v1_game::cooked::cooked_config(config.store.clone());
@@ -95,12 +109,11 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         let assets = CookedAssets::new(assets).expect("assets");
         let lease = assets.lease();
         let stats = assets.stats();
-        host.set_scene_contribution(Box::new(assets))
+        host.set_game_contribution(Box::new(assets))
             .expect("attach");
         let mut clock = Duration::ZERO;
-        drive(&mut host, &device, &mut clock, || {
-            stats.lock().expect("stats").drawn == Some(1)
-        });
+        await_drawn(&mut host, &stats, Drawn::Generation(1))
+            .unwrap_or_else(|error| panic!("generation 1: {error}"));
         let old = lease.offered().expect("old");
         fault.fail_next_fill();
         demo::write_cloud_volume(&source.join("density.tvol"), 128, 2).expect("edit");
@@ -116,10 +129,9 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         assert!(stats.lock().expect("stats").errors[0].contains("staging map"));
         demo::write_cloud_volume(&source.join("density.tvol"), 128, 3).expect("good edit");
         assert_eq!(cooker.cook_all().expect("recovery cook").failed, []);
-        drive(&mut host, &device, &mut clock, || {
-            stats.lock().expect("stats").drawn == Some(3)
-        });
-        host.pause().expect("pause comparisons");
+        await_drawn(&mut host, &stats, Drawn::Generation(3))
+            .unwrap_or_else(|error| panic!("generation 3: {error}"));
+        host.world_mut().pause().expect("pause comparisons");
         let previous_pixels = host.capture_pixels().expect("last good pixels");
         let previous_lease = lease.offered().expect("last good lease");
         for generation in 4..=6 {
@@ -182,9 +194,8 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
         }
         demo::write_cloud_volume(&source.join("density.tvol"), 128, 8).expect("fixed extent");
         assert_eq!(cooker.cook_all().expect("fixed cook").failed, []);
-        drive(&mut host, &device, &mut clock, || {
-            stats.lock().expect("stats").drawn == Some(7)
-        });
+        await_drawn(&mut host, &stats, Drawn::Generation(7))
+            .unwrap_or_else(|error| panic!("generation 7: {error}"));
         let stats = stats.lock().expect("stats");
         assert_eq!(stats.failures, 4);
         assert_eq!(

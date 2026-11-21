@@ -266,18 +266,13 @@ fn settled_pixels(
     device_generation: u64,
     asset_generation: u64,
 ) -> Vec<u8> {
-    let deadline = Instant::now() + Duration::from_secs(30);
-    loop {
-        let pixels = host.capture_pixels().expect("capture cooked receiver");
-        let stats = stats.lock().expect("cooked status");
-        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-        if stats.drawn == Some(asset_generation)
-            && stats.drawn_device_generation == Some(device_generation)
-        {
-            return pixels;
-        }
-        assert!(Instant::now() < deadline, "cooked receiver never drew");
-    }
+    let pixels = settle(host, stats, asset_generation);
+    assert_eq!(
+        stats.lock().expect("cooked status").drawn_device_generation,
+        Some(device_generation),
+        "cooked receiver drew on another device"
+    );
+    pixels
 }
 
 fn first_frame(

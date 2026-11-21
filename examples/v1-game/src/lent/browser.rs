@@ -1,7 +1,6 @@
 //! Fetched-feed qualification on the browser's real WebGPU device.
 use super::{LentDiagnostic, LentWitness};
-use crate::GameSetup;
-use thrum_render::runtime::FrameConfig;
+use crate::{GameHost, GameSetup};
 use std::{
     sync::{Arc, Mutex},
     task::Poll,
@@ -9,6 +8,7 @@ use std::{
 };
 use thrum_asset::{BrowserFetch, DevClient, Fetch, Ktx2, RemoteGeneration};
 use thrum_asset_gpu::{CookedAssets, CookedConfig, LeaseRequest, RemoteFeed};
+use thrum_render::runtime::FrameConfig;
 use thrum_render::{
     capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction, OpenedDevice},
     contribution::SceneContributions,
@@ -186,7 +186,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
     let lease = assets.lease();
     let stats = assets.stats();
     let (consumer, witness) = LentDiagnostic::new(lease.clone());
-    host.set_scene_contribution(Box::new(SceneContributions::new(vec![
+    host.set_game_contribution(Box::new(SceneContributions::new(vec![
         Box::new(consumer),
         Box::new(assets),
     ])))?;

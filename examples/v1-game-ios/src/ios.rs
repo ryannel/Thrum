@@ -23,6 +23,9 @@ use crate::{
     lease::Take,
 };
 
+/// The engine's frame host, holding the shared V1 game world and scene.
+type Host = thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameScene>;
+
 mod capture;
 mod cooked_view;
 mod culling;

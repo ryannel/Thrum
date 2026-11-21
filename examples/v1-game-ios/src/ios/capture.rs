@@ -14,7 +14,8 @@ use std::{
 };
 use thrum_app::capture_writer::{ImageWriter, SpoolEncoding};
 use thrum_render::runtime::CaptureLimits;
-use v1_game::ThreadedFrameHost;
+
+use super::Host;
 
 const MAX_IMAGES: usize = 1024;
 const MAX_CALLBACKS: usize = 4096;
@@ -114,7 +115,7 @@ impl Write for Sink {
 }
 
 impl Recorder {
-    pub(super) fn failed(&mut self, host: &mut ThreadedFrameHost, signals: &Signals, error: &str) {
+    pub(super) fn failed(&mut self, host: &mut Host, signals: &Signals, error: &str) {
         drop(self.cancel(host, signals, error));
         host.disable_submitted_capture();
         drop(fs::write(
@@ -125,7 +126,7 @@ impl Recorder {
 
     pub(super) fn before(
         &mut self,
-        host: &mut ThreadedFrameHost,
+        host: &mut Host,
         signals: &Signals,
         lease: &Lease,
         request: &FrameRequest,
@@ -172,7 +173,7 @@ impl Recorder {
                 encoding,
             )?;
             let started = Instant::now();
-            host.enable_submitted_capture(self.next, LIMITS)?;
+            host.enable_submitted_capture_with_limits(self.next, LIMITS)?;
             fs::write(path.join("identity.json"), json!({"session":self.next,"adapter":format!("{:?}",adapter.get_info()),
                 "downlevel":format!("{:?}",adapter.get_downlevel_capabilities()),"backend":"Metal",
                 "surface_extent":request.extent,"surface_epoch":request.epoch,"device_generation":generation,
@@ -212,7 +213,7 @@ impl Recorder {
 
     pub(super) fn after(
         &mut self,
-        host: &mut ThreadedFrameHost,
+        host: &mut Host,
         reply: &FrameReply,
         lease: &Lease,
         signals: &Signals,
@@ -279,7 +280,7 @@ impl Recorder {
 
     pub(super) fn cancel(
         &mut self,
-        host: &mut ThreadedFrameHost,
+        host: &mut Host,
         signals: &Signals,
         reason: &str,
     ) -> Result<(), String> {
@@ -287,7 +288,7 @@ impl Recorder {
     }
     fn finish(
         &mut self,
-        host: &mut ThreadedFrameHost,
+        host: &mut Host,
         signals: &Signals,
         reason: Option<String>,
     ) -> Result<(), String> {

@@ -4,9 +4,12 @@ pub mod support;
 
 use std::time::{Duration, Instant};
 use thrum_render::runtime::FrameError;
-use v1_game::{CloudSelection, FrameConfig, FrameHost, FrameSample, GameSetup};
+use thrum_render::runtime::{FrameConfig, FrameSample};
+use v1_game::{CloudSelection, GameScene, GameSetup, GameWorld};
 
-fn completed(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
+type Host = thrum_render::runtime::FrameHost<GameWorld, GameScene>;
+
+fn completed(host: &mut Host, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
         if let Some(sample) = host.poll_completed().expect("frame completion") {
@@ -53,17 +56,13 @@ fn cloud_attachment_reports_the_device_limit_as_a_gpu_error() {
         surface: None,
     };
     let prepare = |clouds| {
-        pollster::block_on(FrameHost::new_with_rows(
-            &device,
-            &queue,
-            &caps,
-            config,
+        pollster::block_on(
             GameSetup {
                 clouds,
                 ..GameSetup::default()
-            },
-            None,
-        ))
+            }
+            .prepare_with_rows(&device, &queue, &caps, config, None),
+        )
     };
     assert!(prepare(CloudSelection::Off).is_ok());
     match prepare(CloudSelection::Shade) {
@@ -85,7 +84,7 @@ fn selection_is_off_by_default_and_on_uses_only_weather_and_shade() {
     pollster::block_on(async {
         let (_instance, device, queue, caps) = support::device(&test_gpu, "portable", true);
         let (view, profile) = support::presentation(&device, [160, 90]);
-        let surface = v1_game::SurfaceOutput {
+        let surface = thrum_render::runtime::SurfaceOutput {
             view: &view,
             extent: [160, 90],
         };
@@ -94,20 +93,15 @@ fn selection_is_off_by_default_and_on_uses_only_weather_and_shade() {
             surface: Some(profile),
         };
         assert_eq!(GameSetup::default().clouds, CloudSelection::Off);
-        let mut baseline =
-            FrameHost::new_with_setup(&device, &queue, &caps, config, GameSetup::default())
-                .await
-                .expect("default game");
-        let mut off = FrameHost::new_with_setup(
-            &device,
-            &queue,
-            &caps,
-            config,
-            GameSetup {
-                clouds: CloudSelection::Off,
-                ..GameSetup::default()
-            },
-        )
+        let mut baseline = GameSetup::default()
+            .prepare(&device, &queue, &caps, config)
+            .await
+            .expect("default game");
+        let mut off = GameSetup {
+            clouds: CloudSelection::Off,
+            ..GameSetup::default()
+        }
+        .prepare(&device, &queue, &caps, config)
         .await
         .expect("explicitly absent clouds");
         assert_eq!(baseline.storage_report(), off.storage_report());
@@ -115,16 +109,11 @@ fn selection_is_off_by_default_and_on_uses_only_weather_and_shade() {
             baseline.capture_pixels().expect("default pixels"),
             off.capture_pixels().expect("clouds-off pixels")
         );
-        let mut on = FrameHost::new_with_setup(
-            &device,
-            &queue,
-            &caps,
-            config,
-            GameSetup {
-                clouds: CloudSelection::Shade,
-                ..GameSetup::default()
-            },
-        )
+        let mut on = GameSetup {
+            clouds: CloudSelection::Shade,
+            ..GameSetup::default()
+        }
+        .prepare(&device, &queue, &caps, config)
         .await
         .expect("clouds selected");
         on.drive(Duration::ZERO, Some(&surface))

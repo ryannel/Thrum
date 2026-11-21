@@ -33,3 +33,8 @@
 - 2026-11-20 Restored the original Chrome recovery check for a single canvas configure exception. The
   page exposes Restore after the rejected configuration, and a separate acquire test verifies a
   transient loss recovers on the same candidate. Both cases passed in Chrome. [Evidence](../../../.orchestrate/evidence/HOST/M2/README.md#m24-preserve-restore-after-one-configure-exception)
+- 2026-11-21 Built M3. The game, the iPhone app and the benches hold `thrum_render`'s `FrameHost<GameWorld, GameScene>`;
+  the forwarding host is gone and `GameHost` holds the game's own controls. `render_once` draws without a readback
+  and `await_drawn` is the one cooked wait (90 s, typed errors). Scene capture moved from `src/bin/window/` onto the
+  offscreen driver, with settings parsed in the binary. On Mac Metal the item checks passed, engine capture ran
+  still, fixed and realtime, and the APPLE-TILE native matrices matched byte-exact. [Evidence](../../../.orchestrate/evidence/HOST/M3/)
