@@ -72,8 +72,8 @@
     {
       "id": "M2",
       "name": "A scene contribution writes only the hooks it uses",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -89,8 +89,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "agent_loop check on eb74efdc0 (mac-metal): the check passed; 139 stub bodies removed, only stub lines deleted outside the trait and list (LOG 2026-11-21)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -101,18 +101,18 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "agent_loop check on eb74efdc0 (mac-metal, GPU required): contribution::list::tests::every_hook_reaches_a_member_behind_the_list passed; removing the list draw forward fails it naming draw",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
         },
         {
           "id": "M2.4",
           "statement": "The tests that no merge check runs and whose contributions this milestone edited pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check long-tests",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -121,8 +121,16 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "mesh_stage_gpu edited but run in no tier",
+          "item": "M2.4",
+          "planner": "M2.4's named proof, the main-branch check long-tests, cannot run examples/v1-game's mesh_stage_gpu: GATE-TIME listed it not-run (owner MESH-SHADING) after M2.4 was written. The edited contribution's tests pass serially (10 passed). Only a planner can say how M2.4 treats a not-run binary; no DEAD-CODE builder turn can make the statement true.",
+          "repeat": false
         }
       ]
     },
