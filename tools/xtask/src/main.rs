@@ -497,6 +497,8 @@ struct TestTime {
     name: String,
     seconds: f64,
     timed_out: bool,
+    /// Run in the draw-probe pass, a second build of one binary, rather than the workspace pass.
+    probe: bool,
 }
 
 /// The value of `attribute="..."` in one XML start tag, unescaped.
@@ -545,6 +547,7 @@ fn junit_times(xml: &str) -> Vec<TestTime> {
                 .and_then(|time| time.parse().ok())
                 .unwrap_or(0.0),
             timed_out: body.contains("<failure type=\"test timeout\""),
+            probe: false,
         });
     }
     times
@@ -558,6 +561,8 @@ const SLOW_TEST_SECONDS: f64 = 10.0;
 struct CheckRecord {
     steps: Vec<(String, std::time::Duration, bool)>,
     tests: Vec<TestTime>,
+    /// When the check started, before the cargo-nextest version check.
+    started: Option<std::time::Instant>,
 }
 
 impl CheckRecord {
@@ -571,7 +576,8 @@ impl CheckRecord {
     }
 
     /// Runs cargo-nextest with `args` after `cargo nextest run`, then reads its JUnit report.
-    fn nextest(&mut self, junit: &Path, args: &[&str]) -> TaskResult {
+    /// `probe` marks the draw-probe pass, whose tests are counted apart from the workspace's.
+    fn nextest(&mut self, junit: &Path, probe: bool, args: &[&str]) -> TaskResult {
         // A report left by an earlier run must not be read as this one's.
         match std::fs::remove_file(junit) {
             Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
@@ -580,8 +586,24 @@ impl CheckRecord {
         let mut full = vec!["nextest", "run", "--locked", "--offline"];
         full.extend_from_slice(args);
         let ran = cargo(&full);
-        if let Ok(xml) = std::fs::read_to_string(junit) {
-            let times = junit_times(&xml);
+        let xml = match std::fs::read_to_string(junit) {
+            Ok(xml) => xml,
+            // A run that stopped before any test, such as on a build error, writes no report.
+            Err(_) if ran.is_err() => return ran,
+            Err(error) => {
+                return Err(format!(
+                    "cargo-nextest passed but wrote no JUnit report at {} ({error}); \
+                     .config/nextest.toml's [store] dir must be {NEXTEST_STORE}",
+                    junit.display()
+                )
+                .into());
+            }
+        };
+        {
+            let mut times = junit_times(&xml);
+            for test in &mut times {
+                test.probe = probe;
+            }
             let stopped: Vec<&TestTime> = times.iter().filter(|test| test.timed_out).collect();
             if !stopped.is_empty() {
                 let mut out = std::io::stdout().lock();
@@ -604,19 +626,31 @@ impl CheckRecord {
     fn summary(&mut self) -> TaskResult {
         let mut out = std::io::stdout().lock();
         writeln!(out, "\n./dev check step times (wall):")?;
-        let mut total = std::time::Duration::ZERO;
         for (name, elapsed, passed) in &self.steps {
-            total += *elapsed;
             let mark = if *passed { "" } else { "  FAILED" };
             writeln!(out, "  {:>8.1} s  {name}{mark}", elapsed.as_secs_f64())?;
         }
-        writeln!(out, "  {:>8.1} s  total", total.as_secs_f64())?;
+        if let Some(started) = self.started {
+            writeln!(
+                out,
+                "  {:>8.1} s  total, the whole check from its cargo-nextest version check",
+                started.elapsed().as_secs_f64()
+            )?;
+        }
         self.tests.sort_by(|a, b| b.seconds.total_cmp(&a.seconds));
+        let label = |test: &TestTime| {
+            if test.probe {
+                format!("{} (draw-probe pass)", test.name)
+            } else {
+                test.name.clone()
+            }
+        };
         if !self.tests.is_empty() {
             writeln!(out, "ten slowest tests:")?;
             for test in self.tests.iter().take(10) {
-                writeln!(out, "  {:>8.1} s  {}", test.seconds, test.name)?;
+                writeln!(out, "  {:>8.1} s  {}", test.seconds, label(test))?;
             }
+            let workspace = self.tests.iter().filter(|test| !test.probe).count();
             let slow: Vec<&TestTime> = self
                 .tests
                 .iter()
@@ -624,23 +658,25 @@ impl CheckRecord {
                 .collect();
             writeln!(
                 out,
-                "{} of {} tests ran for over {SLOW_TEST_SECONDS} s, the merge tier's bound for one test; \
-                 one over 60 s is stopped unless .config/nextest.toml exempts it by name:",
-                slow.len(),
-                self.tests.len()
+                "{} of the workspace pass's {workspace} tests and {} of the draw-probe pass's {} ran for \
+                 over {SLOW_TEST_SECONDS} s, the merge tier's bound for one test; one over 60 s is stopped \
+                 unless .config/nextest.toml exempts it by name:",
+                slow.iter().filter(|test| !test.probe).count(),
+                slow.iter().filter(|test| test.probe).count(),
+                self.tests.len() - workspace,
             )?;
             for test in slow {
-                writeln!(out, "  {:>8.1} s  {}", test.seconds, test.name)?;
+                writeln!(out, "  {:>8.1} s  {}", test.seconds, label(test))?;
             }
         }
         Ok(())
     }
 }
 
-/// The target directory cargo-nextest writes its store under.
-fn target_dir(root: &Path) -> PathBuf {
-    env::var_os("CARGO_TARGET_DIR").map_or_else(|| root.join("target"), PathBuf::from)
-}
+/// cargo-nextest's store, relative to the workspace root, as `[store] dir` in `.config/nextest.toml`
+/// names it. Named there because cargo-nextest otherwise picks its own place whatever
+/// `CARGO_TARGET_DIR` says, and the check reads its JUnit report from here.
+const NEXTEST_STORE: &str = "target/nextest";
 
 /// The draw-probe pass runs only the cooked-asset tests that assert on the draw probe; the
 /// workspace pass runs every cooked-asset test against the production build.
@@ -654,9 +690,13 @@ const DRAW_PROBE_TESTS: &[&str] = &[
 /// `./dev check`: every step in turn, stopping at the first that fails, then the time of each
 /// step that ran and the slowest tests.
 fn check(root: &Path) -> TaskResult {
+    let started = std::time::Instant::now();
     require_nextest()?;
-    let junit = target_dir(root).join("nextest/default/junit.xml");
-    let mut record = CheckRecord::default();
+    let junit = root.join(NEXTEST_STORE).join("default/junit.xml");
+    let mut record = CheckRecord {
+        started: Some(started),
+        ..CheckRecord::default()
+    };
     let result = check_steps(&mut record, &junit);
     record.summary()?;
     result
@@ -690,7 +730,7 @@ fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
     record.step("Clippy, tests behind a feature", |_| lint_feature_tests())?;
     // Every test binary of the workspace, built once, each test in a process of its own.
     record.step("tests, side by side", |record| {
-        record.nextest(junit, &["--workspace"])
+        record.nextest(junit, false, &["--workspace"])
     })?;
     record.step("doc tests", |_| {
         cargo(&["test", "--locked", "--offline", "--workspace", "--doc"])
@@ -705,6 +745,7 @@ fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
         let before = record.tests.len();
         record.nextest(
             junit,
+            true,
             &[
                 "-p",
                 "v1-game",
@@ -717,6 +758,7 @@ fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
             ],
         )?;
         let ran = record.tests.len() - before;
+        // The report was read, so a count other than the list's is a renamed or removed test.
         if ran != DRAW_PROBE_TESTS.len() {
             return Err(format!(
                 "the draw-probe pass ran {ran} tests where it names {}; a test it names was renamed or removed",
@@ -827,7 +869,19 @@ fn main() -> TaskResult {
 
 #[cfg(test)]
 mod tests {
-    use super::{junit_times, main_tier_list, nextest_version};
+    use super::{NEXTEST_STORE, junit_times, main_tier_list, nextest_version};
+
+    /// The check reads cargo-nextest's report from the store `.config/nextest.toml` names.
+    #[test]
+    fn the_runner_configuration_names_the_store_the_check_reads() {
+        let config = include_str!("../../../.config/nextest.toml");
+        let store = config
+            .split("\n[store]\n")
+            .nth(1)
+            .and_then(|table| table.lines().find(|line| line.starts_with("dir = ")))
+            .expect("a [store] table with a dir in .config/nextest.toml");
+        assert_eq!(store, format!("dir = \"{NEXTEST_STORE}\""));
+    }
 
     #[test]
     fn nextest_version_reads_the_first_line() {
