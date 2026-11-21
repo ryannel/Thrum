@@ -1110,7 +1110,7 @@
         {
           "verdict": "fail",
           "commit": "aa9600b9d55bdce11aadbf9f75b838a683cf60f8",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "review": ".orchestrate/evidence/WATERS/M7-review-3.md",
           "items": {
             "M7.2": "pass",
             "M7.3": "pass",
@@ -1150,6 +1150,51 @@
             "turns": 1
           },
           "at": "2026-11-21T05:18:09Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "2fb75920d7404b29a68b22f88ab175ec4c3dbd69",
+          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "items": {
+            "M7.2": "pass",
+            "M7.3": "pass",
+            "M7.4": "pass",
+            "M7.5": "pass",
+            "M7.6": "pass",
+            "M7.7": "fail",
+            "M7.8": "pass",
+            "M7.9": "pass",
+            "M7.10": "pass",
+            "M7.11": "pass",
+            "M7.12": "pass",
+            "M7.13": "pass",
+            "M7.14": "pass",
+            "M7.15": "pass"
+          },
+          "findings": [
+            {
+              "name": "Gale sea saturates into a uniform foam sheet that whitens toward the horizon",
+              "item": "M7.7",
+              "different": "The earlier M7.7 finding was a straight line at the coarse window's edge where dense cover stopped and the far sea went sparse. That line is gone. This is the steady-state gale look: after about 20 s the whole sea from 2 m is one lace sheet with no open water, and from 40 m the far sea is a uniform white-grey band brighter than the horizon sky, so whitecaps do not thin toward the horizon.",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 186077,
+            "cached": 9567596,
+            "output": 51340,
+            "cost_usd": 4.428271,
+            "turns": 1
+          },
+          "at": "2026-11-21T07:19:57Z"
         }
       ],
       "authorised": {
