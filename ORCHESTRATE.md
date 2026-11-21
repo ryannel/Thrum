@@ -233,8 +233,8 @@ water scene). Until its milestone is Done, `./dev check` runs what it ran before
 - **Exclusive resources:** simulator (the one booted iPhone simulator; an `ios-sim` check takes it)
 - **Shared resources:** gpu: 2, chrome: 1  *(owner, 15 Nov 2026; a Mac GPU run takes `gpu` and a run that starts Chrome takes `chrome`)*
 - **Lock hold limit:** 30 minutes
-- **Main-branch check exact-images:** `python3 scripts/exact_baselines.py verify --full`; every 30m; lock gpu, chrome; timeout 45m  *(owner, 15 Nov 2026; the lead runs `main-check --due` each hour)*
-- **Main-branch check long-tests:** `./dev long-tests`; every 1h; lock gpu; timeout 90m  *(owner, 20 Nov 2026: long tests stay off every merge check)*
+- **Main-branch check exact-images:** `python3 scripts/exact_baselines.py verify --full`; every 4h; lock gpu, chrome; timeout 45m  *(owner, 15 Nov 2026; every 4h from 21 Nov, owner: main-branch checks held the GPU 12.7 h a day and builders waited 6.9 h for it. Accepted risk: a broken exact image is found up to about 4 h after its merge, and bisected. The lead runs `main-check --due` each hour)*
+- **Main-branch check long-tests:** `./dev long-tests`; every 4h; lock gpu; timeout 90m  *(owner, 20 Nov 2026: long tests stay off every merge check; every 4h from 21 Nov, owner, for the same GPU starvation and accepted risk as exact-images)*
 - **Main-branch check cross-target:** `bash scripts/check_cross_target.sh`; every 1h; timeout 15m  *(planner, 20 Nov 2026: the Linux and Windows type-check of the tests runs on main, not in a merge's check)*
 - **Main-branch check workspace-tests:** `./dev check-all`; every 1h; timeout 60m  *(owner, 20 Nov 2026: a merge runs the tests its change touches, and the full workspace runs on main)*
 - **Human decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
