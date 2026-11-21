@@ -1116,35 +1116,28 @@ pub(super) fn prepare_route(
     });
     host.world_mut().pause()?;
     let generation = if let Some(view) = &preparation_output {
-        // The native witness refuses endpoint frames, so its preparation runs ordinary
-        // frames into the virtual surface until the content is drawn.
-        let deadline = Instant::now() + thrum_asset_gpu::DRAWN_DEADLINE;
-        loop {
-            {
-                let stats = stats
-                    .lock()
-                    .map_err(|_| "routed capture content observations poisoned")?;
-                if !stats.errors.is_empty() {
-                    return Err(format!("routed capture content failed: {:?}", stats.errors));
-                }
-                if let Some(generation) = stats.drawn {
-                    break generation;
-                }
-            }
-            if Instant::now() >= deadline {
-                return Err("routed capture content preparation deadline".to_owned());
-            }
-            host.drive(
-                Duration::ZERO,
-                Some(&thrum_render::runtime::SurfaceOutput {
-                    view,
-                    extent: gpu.surface.extent,
-                }),
-            )
-            .map_err(|error| error.to_string())?;
-            drop(host.poll_completed().map_err(|error| error.to_string())?);
-            std::thread::sleep(Duration::from_millis(2));
-        }
+        // The native witness refuses endpoint frames, so its preparation draws ordinary
+        // frames into the virtual surface, under the one content wait.
+        let failures = thrum_asset_gpu::cooked_failure_baseline(&stats)?;
+        thrum_asset_gpu::await_content(
+            thrum_asset_gpu::Drawn::Any,
+            || {
+                host.drive(
+                    Duration::ZERO,
+                    Some(&thrum_render::runtime::SurfaceOutput {
+                        view,
+                        extent: gpu.surface.extent,
+                    }),
+                )
+                .map_err(thrum_asset_gpu::AwaitDrawnError::Frame)?;
+                drop(
+                    host.poll_completed()
+                        .map_err(thrum_asset_gpu::AwaitDrawnError::Frame)?,
+                );
+                Ok(())
+            },
+            || thrum_asset_gpu::cooked_progress(&stats, failures),
+        )?
     } else {
         thrum_asset_gpu::await_drawn(host, &stats, thrum_asset_gpu::Drawn::Any)?
     };

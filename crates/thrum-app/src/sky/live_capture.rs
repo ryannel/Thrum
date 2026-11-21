@@ -78,11 +78,7 @@ fn live(
             surface: None,
         },
     )?;
-    capture::wait_drawn(
-        &mut live.game,
-        &mut host,
-        Instant::now() + capture::CONTENT_WAIT,
-    )?;
+    capture::wait_drawn(&mut live.game, &mut host)?;
     live.host = Some(host);
     live.reload_game();
     live.settle()?;

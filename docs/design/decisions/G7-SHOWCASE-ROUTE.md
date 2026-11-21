@@ -121,7 +121,7 @@ The check compares pictures, not status. It runs in four steps:
 1. **Cook.** Cook one store from a source copy with `thrum-cook cook`.
 2. **Capture native.** Run native capture against that store with `THRUM_SCENE=valley` and the six presets.
    - That setting makes `attach_cooked_scene` require the store.
-   - Capture then refuses, exiting non-zero, unless the cooked content is drawn within 30 s with no loader errors.
+   - Capture then refuses, exiting non-zero, unless the cooked content is drawn within `thrum_asset_gpu::DRAWN_DEADLINE` (90 s) with no loader errors.
    - This is the native fallback guard. The `scene` field in `captures.json` only echoes the environment, so it proves
      nothing.
 3. **Capture Chrome.** Run `check_v1_browser.mjs --case route`, read-only, with explicit `--cook`, `--web-root`,

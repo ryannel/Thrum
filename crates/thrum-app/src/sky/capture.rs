@@ -20,9 +20,9 @@ use super::{ContentStatus, SkyGame};
 #[cfg(target_os = "macos")]
 use crate::Config;
 
-/// Longest wait for the contribution's first drawn generation.
+/// Longest wait for the game's reload to report.
 #[cfg(target_os = "macos")]
-pub(super) const CONTENT_WAIT: Duration = Duration::from_secs(30);
+const RELOAD_WAIT: Duration = Duration::from_secs(30);
 
 #[cfg(target_os = "macos")]
 #[expect(
@@ -68,56 +68,58 @@ fn capture(
             surface: None,
         },
     )?;
-    let deadline = Instant::now() + CONTENT_WAIT;
-    wait_drawn(&mut game, &mut host, deadline)?;
-    reload(config.name, &mut game, &mut host, deadline)?;
+    wait_drawn(&mut game, &mut host)?;
+    reload(config.name, &mut game, &mut host)?;
     let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
     drop(device);
     write_png(path, extent, &pixels)?;
     Ok(extent)
 }
 
-/// Render until the contribution's first generation is drawn, refusing a failure.
+/// Draw frames until the game's content is drawn, through the one content wait
+/// ([`thrum_asset_gpu::await_content`]): its deadline and failure policy, with the
+/// kit's composed [`ContentStatus`] as the probe. A game without content returns at once.
 #[cfg(target_os = "macos")]
 pub(super) fn wait_drawn(
     game: &mut SkyGame,
     host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
-    deadline: Instant,
 ) -> Result<(), String> {
-    while let Some(status) = game.poll_status() {
-        match status {
-            ContentStatus::Drawn(_) => break,
-            ContentStatus::Failed(error) => return Err(format!("content failed: {error}")),
-            ContentStatus::Loading => {}
+    thrum_asset_gpu::await_content(
+        thrum_asset_gpu::Drawn::Any,
+        || thrum_asset_gpu::draw_endpoint(host),
+        || {
+            Ok(match game.poll_status() {
+                // Nothing reports content, so there is nothing to wait for.
+                None => thrum_asset_gpu::Progress::Drawn(0),
+                Some(ContentStatus::Drawn(generation)) => {
+                    thrum_asset_gpu::Progress::Drawn(generation)
+                }
+                Some(ContentStatus::Failed(error)) => {
+                    thrum_asset_gpu::Progress::Failed(vec![error])
+                }
+                Some(ContentStatus::Loading) => thrum_asset_gpu::Progress::Waiting {
+                    staged: None,
+                    drawn: None,
+                },
+            })
+        },
+    )
+    .map(drop)
+    .map_err(|error| match error {
+        thrum_asset_gpu::AwaitDrawnError::Deadline { .. } => {
+            format!("{error}; check the asset store and the cooker's output")
         }
-        if Instant::now() >= deadline {
-            return Err(format!(
-                "content was not drawn within {} s; check the asset store and the cooker's output",
-                CONTENT_WAIT.as_secs()
-            ));
-        }
-        // Each drawn frame records the contribution's staged uploads.
-        draw(host)?;
-        std::thread::sleep(Duration::from_millis(2));
-    }
-    Ok(())
+        error => error.to_string(),
+    })
 }
 
 /// Draw the committed endpoint once and wait for the device to finish it, reading nothing back:
-/// a frame boundary at which staged uploads record and a prepared material installs.
+/// a frame boundary at which a prepared material or reload installs.
 #[cfg(target_os = "macos")]
 pub(super) fn draw(
     host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
 ) -> Result<(), String> {
-    let submitted = host.render_once().map_err(|error| error.to_string())?;
-    host.device_capabilities()
-        .site()
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(Duration::from_secs(10)),
-        })
-        .map_err(|error| format!("device wait: {error:?}"))?;
-    Ok(())
+    thrum_asset_gpu::draw_endpoint(host).map_err(|error| error.to_string())
 }
 
 /// Encode `pixels` and write them to `path`, creating its folder.
@@ -181,8 +183,8 @@ fn reload(
     name: &str,
     game: &mut SkyGame,
     host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
-    deadline: Instant,
 ) -> Result<(), String> {
+    let deadline = Instant::now() + RELOAD_WAIT;
     let Some((reload, report)) = game.reload.as_mut() else {
         return Ok(());
     };
@@ -196,7 +198,10 @@ fn reload(
             return Ok(());
         }
         if Instant::now() >= deadline {
-            return Err("the game's reload did not report within 30 s".to_owned());
+            return Err(format!(
+                "the game's reload did not report within {} s",
+                RELOAD_WAIT.as_secs()
+            ));
         }
         std::thread::sleep(Duration::from_millis(2));
     }

@@ -38,3 +38,8 @@
   and `await_drawn` is the one cooked wait (90 s, typed errors). Scene capture moved from `src/bin/window/` onto the
   offscreen driver, with settings parsed in the binary. On Mac Metal the item checks passed, engine capture ran
   still, fixed and realtime, and the APPLE-TILE native matrices matched byte-exact. [Evidence](../../../.orchestrate/evidence/HOST/M3/)
+- 2026-11-21 Fixed M3's review Must Fix: the sky kit's cooked-content wait had its own 30 s deadline. The one wait is now
+  `thrum_asset_gpu::await_content`, a draw step and a content probe under `DRAWN_DEADLINE` and one failure rule.
+  `await_drawn`, the kit's `ContentStatus` wait and the native-witness route preparation all use it. On Mac Metal the
+  wait tests, the kit's sky tests, the starter's live reload (10 saves) and still capture, and a Metal-witness route
+  capture passed. [Evidence](../../../.orchestrate/evidence/HOST/M3/)

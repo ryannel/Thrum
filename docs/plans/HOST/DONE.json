@@ -170,8 +170,8 @@
           "lock": "gpu",
           "ask": "Is any loop left under `crates/` or `examples/` that polls the cooked statistics and reads pixels back only to advance staging?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "mac-metal: review fix. thrum_asset_gpu::await_content is the one content wait (DRAWN_DEADLINE 90 s, Progress::Failed ends it); await_drawn is it over cooked stats and draw_endpoint. The sky kit's wait_drawn (capture and live capture) and the native-witness route preparation now call it; CONTENT_WAIT is gone. await_drawn 2 + drawn unit 3 + cooked_view_gpu 1 + thrum-app sky:: 12 passed under gpu lock; starter live-reload 10 saves passed; starter still capture drew generation 1; Metal-witness route capture complete. Record: tmp/host-m3-evidence/round2 and .orchestrate/evidence/HOST/M3/",
           "verdict": "fail",
           "review": ".orchestrate/evidence/HOST/M3-review.md"
         },

@@ -24,8 +24,8 @@ use crate::{
 mod motion;
 mod route;
 
-/// What a scene capture records. The binary reads it from its launch settings, named after
-/// each field, and the library reads no environment.
+/// What a scene capture records. The binary reads it from the launch settings named on each
+/// field; content selection still comes from `selected_setup`'s launch settings.
 #[derive(Clone, Debug, Default)]
 pub struct SceneCaptureRequest {
     /// `THRUM_SCENE`: the selected content's name, for the record and the exit route.
