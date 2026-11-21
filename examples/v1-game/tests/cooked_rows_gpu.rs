@@ -970,6 +970,10 @@ fn visual_rebuild_occlusion_candidate_prepared_before_the_commit() {
 
 /// `phase` 0: partial write; 1: ready; 2: discarded switch; 3: a candidate prepared before the
 /// edit, then published after the edit committed.
+#[expect(
+    clippy::print_stderr,
+    reason = "each case names itself as it passes, as the test did before it was split"
+)]
 fn visual_rebuild_preserves_rows(mode: CullMode, phase: u8) {
     let _turn = CASES
         .lock()

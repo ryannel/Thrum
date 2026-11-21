@@ -1,4 +1,8 @@
 //! Metal ambient field conformance.
+#[expect(
+    dead_code,
+    reason = "shared harness includes other independent sea oracles"
+)]
 mod support;
 
 // The full grid at each clock age is one test, so the runner spreads them over the cores. The
