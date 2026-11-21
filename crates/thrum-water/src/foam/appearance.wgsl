@@ -85,7 +85,14 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         stocks = vec4(stocks.x, stocks.y * mix(1.0, porous, churn),
             stocks.z * mix(1.0, porous, churn), stocks.w);
     }
-    return vec4(stocks.x, ranked_cover(stocks, point.xz, footprint), stocks.zw);
+    // Submerged air gathers in clouds of bubbles. Its stock is smooth across a
+    // trail, so tinting by it directly gives a pale band with ruled sides.
+    // Modulating the stock by world-space clouds before the tint lets the
+    // pale water's edge wander in and out across a metre or two.
+    let clouds = 0.62 * foam_noise(point.xz * vec2(0.47, 0.58) + 31.0)
+        + 0.38 * foam_noise(point.xz * vec2(1.31, 1.12) - 17.0);
+    let air = stocks.x * smoothstep(0.06, 0.42, stocks.x * mix(0.30, 1.70, clouds));
+    return vec4(air, ranked_cover(stocks, point.xz, footprint), stocks.zw);
 }
 
 @group(1) @binding(0) var shore_depth: texture_depth_2d;

@@ -12,7 +12,7 @@ use thrum_render::{
 #[cfg(test)]
 mod tests;
 
-const SIDE: u32 = 128;
+const SIDE: u32 = 256;
 const CELLS: u64 = (SIDE * SIDE) as u64;
 const SPACING: [f32; 2] = [0.25, 2.0];
 const MAX_TICKS: u64 = 8;
