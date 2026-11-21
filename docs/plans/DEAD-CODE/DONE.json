@@ -72,10 +72,10 @@
     {
       "id": "M2",
       "name": "A scene contribution writes only the hooks it uses",
-      "status": "in_progress",
-      "failed_reviews": 1,
+      "status": "not_started",
+      "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "diagnoses": 0,
+      "diagnoses": 1,
       "depends_on": [
         "GATE-TIME:M6"
       ],
@@ -87,10 +87,10 @@
           "check": "git grep -q \"trait SceneContribution\" -- crates && git grep -lE \"SceneContribution for\" -- crates examples | xargs perl -0777 -ne 'while (/\\bimpl\\b[^{;]*\\bSceneContribution\\s+for\\b[^{]*(\\{(?:[^{}]++|(?1))*\\})/g) { $body = $1; $impls++; $stubs++ while $body =~ /\\bfn\\s+(?:encode_compute|encode_after_compute|draw|submitted)\\b[^{;]*\\{(?:\\s|\\/\\/[^\\n]*)*\\}/g; $stubs++ while $body =~ /\\bfn\\s+computes\\b[^{;]*\\{(?:\\s|\\/\\/[^\\n]*)*false\\s*\\}/g } END { print $impls + 0, \" impls, \", $stubs + 0, \" bodies equal to a default\\n\"; exit(($stubs || !$impls) ? 1 : 0) }'",
           "ask": "List every `impl SceneContribution` under `crates` and `examples`: does any still write a body equal to a default, for any of the five hooks? Compare with the starting commit: is any body that did work gone, or any hook's behaviour changed?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "agent_loop check on eb74efdc0 (mac-metal): the check passed; 139 stub bodies removed, only stub lines deleted outside the trait and list (LOG 2026-11-21)",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.2",
@@ -99,10 +99,10 @@
           "ask": "Name the test that fails if `SceneContributions` does not forward one hook, and try it: remove one forward in a scratch copy. Does its probe count all eight hooks, the five with defaults among them? Does the ray-tracing replacement still forward all eight itself, with none left to a default? Is there any other wrapper outside tests that holds a contribution and forwards to it?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "pass",
-          "evidence": "agent_loop check on eb74efdc0 (mac-metal, GPU required): contribution::list::tests::every_hook_reaches_a_member_behind_the_list passed; removing the list draw forward fails it naming draw",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.4",
@@ -111,8 +111,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.5",
@@ -131,20 +131,13 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/DEAD-CODE/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
-      "findings": [
-        {
-          "name": "mesh_stage_gpu edited but run in no tier",
-          "item": "M2.4",
-          "planner": "M2.4's named proof, the main-branch check long-tests, cannot run examples/v1-game's mesh_stage_gpu: GATE-TIME listed it not-run (owner MESH-SHADING) after M2.4 was written. The edited contribution's tests pass serially (10 passed). Only a planner can say how M2.4 treats a not-run binary; no DEAD-CODE builder turn can make the statement true.",
-          "repeat": false
-        }
-      ]
+      "diagnosed_for_planner_finding": true
     },
     {
       "id": "M3",

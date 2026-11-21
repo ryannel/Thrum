@@ -100,7 +100,7 @@
       }
     },
     "M2": {
-      "definitions": "3a3a3865e3e8caa307603d65320152cc3072e380f5011f2a47244ed31cc6618b",
+      "definitions": "d2ad151812bc1bb1ef62aa0cc90a0cebb950cd25eeff39fcf14419d0d36a738c",
       "reviews": [
         {
           "verdict": "fail",
@@ -140,40 +140,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Revise the DEAD-CODE module plan only, to resolve the Must Fix in its third design review, .orchestrate/evidence/DEAD-CO",
-        "at": "2026-11-20T12:26:48Z"
-      },
-      "ready_for_review": {
-        "commit": "9c686b329f390e2bc6ab85da468bc2789d73d68b",
-        "checked": "9c686b329f390e2bc6ab85da468bc2789d73d68b",
-        "at": "2026-11-21T01:57:12Z",
-        "reused": [
-          "Test command",
-          "M2.1",
-          "M2.2"
-        ],
-        "host": "claude",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "observed": {
-          "model": "claude-opus-5-5"
-        },
-        "cli": "2.1.319 (Claude Code)",
-        "path": "headless",
-        "usage": {
-          "input": 101445,
-          "cached": 4421402,
-          "output": 23898,
-          "cost_usd": 2.1734,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 101445,
-          "cached": 4421402,
-          "output": 23898,
-          "cost_usd": 2.1734,
-          "turns": 1
-        }
+        "task": "Diagnose DEAD-CODE M2, whose first review failed on a fault in the item, not the build. Read the review at .claude/workt",
+        "at": "2026-11-21T02:29:28Z"
       }
     },
     "M3": {
@@ -204,12 +172,12 @@
       }
     },
     "M6": {
-      "definitions": "f68795898b94f01cf8b9ea1ef32262cc0cac4365f18a6962aff075dbbe3c7699",
+      "definitions": "2f9fd5872ebdf0c4cd7aed146aac234271c3eb98b2d9b936136050e3fe3502d2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the DEAD-CODE module plan only, to resolve the Must Fix in its third design review, .orchestrate/evidence/DEAD-CO",
-        "at": "2026-11-20T12:26:48Z"
+        "task": "Diagnose DEAD-CODE M2, whose first review failed on a fault in the item, not the build. Read the review at .claude/workt",
+        "at": "2026-11-21T02:29:28Z"
       }
     }
   },
@@ -229,11 +197,15 @@
     {
       "task": "Revise the DEAD-CODE module plan only, to resolve the Must Fix in its third design review, .orchestrate/evidence/DEAD-CODE/design-review.md (M1 has no main-tier item, though it changes what the stepped hour guards). Apply the review's three proposed changes or an equivalent that resolves the same finding, and weigh its Suggestions. Don't change other modules' plans; other design reviews are running in this worktree at the same time. Done when the DEAD-CODE plan resolves the Must Fix and is committed on this branch.",
       "at": "2026-11-20T12:26:48Z"
+    },
+    {
+      "task": "Diagnose DEAD-CODE M2, whose first review failed on a fault in the item, not the build. Read the review at .claude/worktrees/dead-code/.orchestrate/evidence/DEAD-CODE/M2-review.md (checkout c21a04911). M2.1, M2.2 and M2.3 pass; only M2.4 fails.\nM2.4 requires the edited contributions' feature-gated tests to pass on main in long-tests. M2 edited SelectionView in examples/v1-game/tests/mesh_stage_gpu/support.rs, and GATE-TIME M6 has since listed that test binary in .config/long-tests.txt as not-run, owner MESH-SHADING: run whole, 4 to 6 of its 10 Metal tests fail (invalid buffer or pipeline, WrongSubmissionIndex); with --test-threads=1 all pass. The reviewer ran it serially on the checkout and all 10 passed (M2-review/mesh_stage_gpu-serial.log). No builder turn can make M2.4 true as written.\nDecide what M2.4 should ask so a builder can prove its intent, and amend M2's items and done-when file to match. One option from the cleanup lead: accept a recorded serial run for any binary the main-tier list marks not-run, naming the owner of the parallel failure. Consider that GATE-TIME M8 (building now) moves tests to side-by-side runs; if that means one process per test, this binary may start passing whole, which would hide rather than fix the shared state between its tests. That fault stays MESH-SHADING's; say whether the not-run line should be retried after M8 and who records that, without editing GATE-TIME's or MESH-SHADING's milestones. You may also take the review's two Suggestions (the M2.1 check catches one of five stub shapes; the evidence cites a pre-rebase commit) if they are cheap.\nDone when M2's items and done-when file are amended and committed, with a short diagnosis note naming what changed and why.",
+      "at": "2026-11-21T02:29:28Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T12:26:48Z"
+    "at": "2026-11-21T02:29:28Z"
   },
   "design_history": [
     {
