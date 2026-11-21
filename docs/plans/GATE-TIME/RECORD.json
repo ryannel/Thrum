@@ -541,6 +541,36 @@
         "by": "plan",
         "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
         "at": "2026-11-21T08:38:18Z"
+      },
+      "ready_for_review": {
+        "commit": "1711a5c436065ae2d00c31cd25d9b588e81fd98e",
+        "checked": "1711a5c436065ae2d00c31cd25d9b588e81fd98e",
+        "at": "2026-11-21T12:04:49Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 226123,
+          "cached": 11527666,
+          "output": 82239,
+          "cost_usd": 5.758681,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 226123,
+          "cached": 11527666,
+          "output": 82239,
+          "cost_usd": 5.758681,
+          "turns": 1
+        }
       }
     },
     "M11": {
