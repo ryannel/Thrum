@@ -1,6 +1,7 @@
 # Gate time: a merge's check takes about five minutes, because it runs the fast tests its change can reach, side by side and each once, and everything else runs on main after the merge
 
-20 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+20 November 2026, revised 21 November for [four changes to how tests are written and built](#measured-again-on-21-november).
+[Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) ·
 [test tiers](../../../ORCHESTRATE.md#test-tiers), the policy this module applies ·
 [what is proved, and how hard](../../../ORCHESTRATE.md#what-is-proved-and-how-hard)
@@ -35,6 +36,15 @@ sounds crazy. Tests are meant to be fast." The lead's task from it: set the merg
 a typical landing, start from a measurement of where a check spends its time, and choose the approach that best
 gets there. Every test left in the merge tier is fast, a slow behaviour test belongs in the main tier with its
 risk written down, and a test that is slow because of how it was written can be made fast.
+
+And on 21 November, of four changes the lead put to the owner to make tests faster: "These all sound really
+reasonable." They are: a merge-tier test proves its behaviour on the smallest world that shows it, and full-size
+runs belong to the main tier; logic is tested without a device, and a GPU test covers only what a GPU alone can
+show, at a small target; the 265 test binaries go towards one a package, to cut link and first-run time; and where
+a builder's session goes is measured before any rule about it changes. The lead's task from it: place each in a
+milestone with items a builder can prove, as a standing rule for new tests where it is a rule, and plan the last
+as "a measurement, not a rule". Guard text for the skills and lint rules are being agreed with the owner apart
+from this plan, and are not planned here.
 
 ## The goal
 
@@ -119,6 +129,35 @@ the whole on average: a quarter of landings select no Rust test, half select som
 back to the whole workspace. It is the planner's estimate, and M7 measures the selection as built before turning
 it on.
 
+<a id="measured-again-on-21-november"></a>
+
+**Measured again on 21 November**, after M8 and M7. The lead's figures come from the last 24 hours of
+`.git/orchestrate/locks.jsonl` and M8's merge-check records. The planner's come from one saved whole-workspace
+check (`.git/orchestrate/checks/c6c57db52a584b5183371f69-97fbad59fed9d769.stderr`, 329.6 s of wall time),
+`cargo metadata` and the open items of every module, at main `6cd8545ef`, and are in
+[the planning record](../../../.orchestrate/evidence/GATE-TIME/planning/test-speed-2026-11-21.md).
+
+- **The time is still in a few tests.** The lead: a merge check runs 1,309 tests that sum to 1,395 s; 897 take
+  under 0.1 s and are 1% of it, and 64 take over 5 s and are 81%. The river model, the water scene and the game
+  hold 74%. The planner's check: 1,312 tests sum to 920 s, and the 18 that ran over ten seconds are 58% of it.
+  Every one of them is M9's or M3's.
+- **GPU tests are half the time, and the slow ones are most of that.** The lead: 221 tests with a GPU in their
+  name hold 53%. The planner's check: 279 tests with `gpu` or `metal` in their name sum to 549 s, the 14 over ten
+  seconds hold 408 s of it, and the other 265 hold 141 s between them.
+- **A binary costs time before any test in it runs.** The check ran 263 test binaries, and 106 of them hold one
+  test. macOS checks each newly linked binary the first time it runs: the lead puts that at 85 to 105 s a check.
+  The planner copied twelve built test binaries of 3 to 12 MB and ran each twice: the first run took 0.26 to
+  0.37 s whatever the size, 3.7 s for the twelve, and the second 0.06 s for the twelve. cargo-nextest's
+  [macOS notes](https://nexte.st/docs/installation/macos/) and
+  [a write-up of Rust builds on the Mac](https://nnethercote.github.io/2025/09/04/faster-rust-builds-on-mac.html)
+  give the cause: XProtect scans each new executable once, on one thread, so the cost follows the number of
+  binaries, and Cargo makes each integration test file a binary.
+- **Most test binaries are free to merge.** The workspace has 277 integration test targets in 25 packages:
+  `thrum-render` 59, the game 33, the cloud model 24, the river model 19. Open items name 29 of them with
+  `--test`. Open items also name 147 binaries that nobody has written yet, in 17 modules.
+- **Not measured: where a builder's session goes.** Builder sessions ran 40 to 210 minutes for each cleanup
+  milestone, and nothing splits that between the model's own time, test runs and waits. M10 measures it.
+
 ## Every test over about a minute
 
 Until this revision [the test tiers](../../../ORCHESTRATE.md#test-tiers) made a long test one that takes over about a
@@ -157,7 +196,7 @@ the route turns out wrong. M8 measures again, and its list of exempt tests is th
 | The game's cooked rows: `visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows`, `edited_rows_equal_fresh_game_in_every_culling_mode`, `supersession_discarded_protected_switch_and_retired_space_reuse` | up to 92 s, 38 s, 25 s | 53 s, 23 s, 15 s | 12, 12 and several cases in turn, each with its own cooked store and host | One case to a test | M9 |
 | The game's cooked assets: `a_newer_publication_supersedes_an_upload_still_being_filled`, `a_publication_larger_than_staging_streams_through_the_bounded_ring`, `a_fetched_generation_draws_like_the_mapped_store` | 22 s, 15 s, 14 s | 4 s, under 4 s, 7 s | The unoptimised encoder; and the binary's 14 tests take turns behind one mutex, 73 s in all | The build. The turns are mechanism 8's | M9 |
 | The game's `frame_alloc`, two tests | 18 s, 21 s | 14 s | Not read. They take turns behind a mutex | The builder finds the cause | M9 |
-| The river model's `no_step_is_taken_beyond_the_budget` | 38 s | 100 s | Six solves of the valley in one test. The solve uses a thread pool | One solve to a test, or a smaller valley; counted as heavy | M9 |
+| The river model's `no_step_is_taken_beyond_the_budget` | 38 s | 100 s | 43 solves of `valley(0.25)` in one test, 36 of them run to within a dozen steps of convergence, to prove a rule about the step budget. The solve uses a thread pool | The smallest world: the rule holds on any grid whose solve takes more than a few steps; counted as heavy | M9 |
 | The river model's other 70 tests | 71 s for all of them, one binary at a time | about 10 s each, 474 s summed | Fourteen processes each start a thread pool | Counted as heavy, in M8. None is slow alone | M8 |
 | The water model's `enclosed_water_has_finite_lags_turning_and_fetch_energy` (`shore_basin`), `waves_arrive_round_land_and_exposure_closes_far_downwind` (`shore_island`) | 34 s, 11 s | 51 s, 20 s | Dense f64 shore solves over millions of cells, already built at `opt-level` 2 | A smaller basin if every assertion holds on it; otherwise a long test beside the shore blend. Risk: a lag, turning or fetch error in enclosed water, which costs `WATERS` alone | M9 |
 | The sea's `forward_fields_and_full_lean_pyramids_match_the_model`, `default_webgpu_limits_and_named_profile_refusals`, `frame_script_and_continuous_wind_change`, `metal_ambient_matches_independent_model` | 22 s, 16 s, 16 s, 17 s | 14 s, 18 s, 17 s, 16 s | Not read. The optimised build helps only the first | The builder finds the cause. These hold GPU state to the CPU query a game reads, so they are the last to move | M9 |
@@ -428,20 +467,91 @@ M3 empty the exempt list of mechanism 5, a test at a time, by the first of these
   their exemption.
 - *One case to a test.* A test that runs several cases in turn becomes one test for each case, with the names
   saying which, so the runner spreads them over the cores. No case is dropped.
-- *Shared setup made once, or a smaller fixture.* Setup that several tests repeat is built once and read by each.
-  A fixture or a run is made smaller only where every assertion still means what it meant: the log gives the old
-  and new size and why. A run whose length is what it tests, such as a soak, is not shortened.
+- *The smallest world.* A test proves its behaviour on the smallest world that shows it: the grid, valley, cooked
+  store, count of entities, ticks or frames it builds to run on. The river model's
+  `no_step_is_taken_beyond_the_budget` is the example: it solves `valley(0.25)` 43 times to prove that no step is
+  taken past a budget, which the smallest grid whose solve takes more than a few steps also proves. A world, a
+  fixture or a run is made smaller only where every assertion still means what it meant: the log gives the old
+  and new size and why. Setup that several tests repeat is built once and read by each. A run whose length or
+  size is what it tests, such as a soak, is not shortened: it is a long test. Where full size shows a fault the
+  small world cannot, the full-size run is a long test as well, and the small test stays because it proves the
+  behaviour itself. That is not the shortened run mechanism 1 refuses, which proves only part of what its long
+  test proves.
+- *Without a device.* Logic that a CPU can decide leaves the GPU test for a test that asks for no device: a
+  selection, a layout, a state machine, a record's bytes, a refusal. The GPU test that stays covers what a device
+  alone can show, at the smallest target and for the fewest frames that show it. Each assertion is still made by
+  one of the two, and the log says what the GPU test still shows. GPU state held to the CPU query a game reads is
+  what a device alone can show, so those tests get a smaller target and keep their comparison.
 - *A long test.* Otherwise the test is marked and listed as mechanisms 1 and 2 say, whole, with its body
   unchanged, and the fault that now reaches main unseen is written beside its line in the main-tier list, where
   the next reader of the list finds it. It runs in release unless it fails there.
 
-Three limits. A test binary keeps its name, because open items of other modules run binaries by name. A test is
+Three limits. M9 and M3 rename no test binary, because open items of other modules run binaries by name;
+[mechanism 10](#one-test-binary-a-package) says which binaries M11 folds. A test is
 not marked as a long test while an open item of another module depends on what it asserts: before marking one,
 search the open items of every module for its binary and read each item that runs it. An item that needs only that
 the binary passes, as `PUDDLES` M5.4 does of the foam scene's, does not hold the test. Where an item does, the
 test keeps its exemption and the log names it for the planner of that module. And the proofs the bar keeps before
 a merge (cooked formats, leases and recovery, transport, determinism, and GPU state held to the CPU query a game
 reads) are the last to move: one is marked as a long test only when the log says what was tried to make it fast.
+
+<a id="two-rules-for-new-tests"></a>
+
+Two of mechanism 9's routes, the smallest world and without a device, are also standing rules for every test
+written or changed from 21 November 2026, in any module, and [the test tiers](../../../ORCHESTRATE.md#test-tiers)
+state them. M9 and M3 apply them to the tests over ten
+seconds that exist. No milestone sweeps the tests under ten seconds: [Not built here](#not-built-here) says why.
+
+<a id="one-test-binary-a-package"></a>
+
+**10. A package's integration tests are one test binary.** M11 builds it. Cargo makes every file in a package's
+`tests/` folder a binary of its own, each linked against the package's whole dependency graph and each checked by
+macOS on its first run. So each test file becomes a module of one test target in its package, named `it` in every
+package, and a file's tests run as `cargo test -p <package> --test it <file>::`. Cargo's own repository and
+rust-analyzer keep their integration tests this way. The files stay where they are wherever Rust's module rules
+allow, because a mass move would collide with every builder.
+
+- *What stays a target of its own.* A file whose binary something names, or that has to run apart:
+  - a binary an open item's check names with `--test`, in any module, until that item's milestone is Done;
+  - a binary the main-tier list names, and any file that holds a long test or a test behind a Cargo feature.
+    `./dev long-tests` runs those through `cargo test`, where the tests of one binary share a process, and
+    folding them would make tests share statics, creation counters and device mutexes they never shared;
+  - a target with `required-features` or `harness = false`, and one built for another target, such as the wasm
+    tests of `thrum-asset`;
+  - a binary a script or a tool runs by name.
+- *What the count becomes.* By the planner's count, about 110 test binaries where a whole run has 263: 248 of the
+  277 integration test targets are named by no open item, and about 20 of those hold a long test or a test behind
+  a feature. M11's record gives the real figure, and what a freshly linked set costs to link and to run for the
+  first time, before and after. If the later timings are not shorter, the builder ends `BLOCKED` with the record.
+- *No test is lost.* A file that no target declares is compiled by nothing, and Rust does not say so. So the
+  repository guards fail a Rust file under a package's `tests/` folder that no test target compiles, with a
+  message that says where to declare it, and M11 compares the names of every test before and after.
+- *Names that move.* A folded test's name gains its file's module, so the groups, heavy counts and exempt names
+  of `.config/nextest.toml` are written again to select the same tests, and a test that starts itself again by
+  name, as the water scene's cooked-island tests do, passes its new name.
+- *A target with no test in it is not a test binary.* A `bin` or `example` target that holds no test sets
+  `test = false`, so the runner does not build and start it.
+- *From M11 on.* A new test file is a module of its package's `it`. A planner's new item runs it as
+  `cargo test -p <package> --test it <file>::`, and a planner who re-plans a module writes the checks of its
+  unstarted milestones the same way. An item approved before M11 keeps its check: its builder adds the file as a
+  target of its own, and the file joins `it` in the first landing that edits it after the item's milestone is
+  Done. So the count goes towards one a package as the open items are built, and no item is changed for it.
+
+**11. Where a builder's session goes is measured before any rule about it changes.** M10 makes a record and
+changes nothing else. For each builder session of track 6's milestones it splits the wall time into the model's
+own time, the commands the builder ran by kind, and waits: for a lock, behind another merge, and in a command
+that only sleeps or polls. The sources exist today. Each session's transcript gives the time of every tool call
+and of its result (`~/.claude/projects/` for a Claude builder, `~/.codex/sessions/` for a Codex one, with the
+session's id in `.git/orchestrate/usage.jsonl`), and the orchestrate script logs the jobs it starts, every lock
+asked for, got and released, and each merge's check (`jobs.jsonl`, `locks.jsonl`, `checks/` and `merge-queue/`
+under `.git/orchestrate`). The record ends with what it shows and proposes no rule: which rule to change, if
+any, is the owner's to decide from it. It is built straight after M2 and ahead of M9, where the lead asked for
+new work to go last: it touches no tracked file but this module's records, it needs none of the later
+milestones, three of which wait for other modules, and the owner asked for it before any rule changes.
+
+M11 is likewise built ahead of M3 and M4, which wait for `WATERS` M7 and `REVIEW-RENDER` M2. It needs neither,
+the binaries their items name stay targets of their own, and every merge pays the first-run cost until it lands.
+It follows M9, whose tests the runner's exempt list still names by binary.
 
 ## Interfaces
 
@@ -451,6 +561,8 @@ reads) are the last to move: one is marked as a long test only when the log says
 | The main-tier list, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary. The docs check fails a test file or target that names a feature the list does not cover | Any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole |
 | The merge selection: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the path rules and declared edges of mechanism 4; `./dev check-all` runs the whole workspace | Every builder. A module that adds a folder outside a package gets the whole workspace on every change there until it adds a path rule. A module that adds a test reading another package's files at run time declares the edge in the same landing |
 | The runner, from M8: a test runs in a process of its own, beside tests of every other binary, with cargo-nextest installed. One that runs over ten seconds is reported, and one that runs over sixty fails the check. The runner's configuration, `.config/nextest.toml`, holds the groups of tests that take turns and the tests counted as heavy | Every module that writes a test. A test relies on no other test of its binary having run and on no static it shares with one. A test that needs a device to itself joins a group, and one that starts a thread pool is counted as heavy, in the same landing |
+| Two rules for a test written or changed from 21 November 2026, which [the test tiers](../../../ORCHESTRATE.md#test-tiers) state: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test only what a device alone can show | Every module that writes a test, and every planner and reviewer |
+| One test binary a package, from M11: a test file under a package's `tests/` folder is a module of the package's `it` target, and runs as `cargo test -p <package> --test it <file>::`. The repository guards fail a file there that no target compiles. A file is a target of its own only while something [mechanism 10](#one-test-binary-a-package) lists holds it | Every module that adds a test file, and every planner who writes a check that runs one |
 
 ## Whose code this is built in
 
@@ -458,7 +570,8 @@ Every file belongs to another module, as with [track 4](../ARCHITECTURE.md#seam-
 water scene and shore tests, `SHOWCASE`'s exit scene test, `CULLING`'s field flythroughs, `CLOUDS`' conformance
 tests, `ATMOSPHERE`'s reference tests, `SCENE-VIEWS`' pool and scene-view tests, `CONTENT-LOOP`'s cooked tests,
 `RIVERS`' and `SEA`'s model and conformance tests, and `REPO-RULES`' check command and repository guards.
-Ownership does not move. The Done items that name these tests keep their text, because
+Ownership does not move. M11 changes how every package's test files are built into binaries, and nothing a test
+asserts. The Done items that name these tests keep their text, because
 [a Done item's check is its record](../../../ORCHESTRATE.md#targets).
 
 One change is to the engine and not to a test: the wait in `FrameHost::capture_pixels` (mechanism 8), in
@@ -482,16 +595,31 @@ landing moves them, whatever your row says. The rows are in build order.
 | M8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file. The wait in `FrameHost::capture_pixels`, in `crates/thrum-render/src/runtime.rs`, and its test under `crates/thrum-render/src/runtime/tests/`: no other line of the engine's source | Nothing | `REVIEW-RENDER` and `HOST` build in `thrum-render`'s runtime too, so the lead starts neither beside this. `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` M5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` M5 narrows the draw-probe pass: that is this milestone now, in the check command only |
 | M7 | The check command in `tools/xtask/src/` (the selection with its path rules and declared edges, `check-all`) and its tests; one settings line in `ORCHESTRATE.md` | Nothing | `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
 | M2 | `crates/thrum-water/tests/query_gpu.rs`, `swash_gpu.rs` and `crates/thrum-water/Cargo.toml`; the four conformance files, `support.rs` and `Cargo.toml` of `crates/thrum-clouds/tests`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`, `examples/v1-game/tests/clouds_display_time_gpu.rs`, and the `[[test]]` tables of `examples/v1-game/Cargo.toml`; `.config/long-tests.txt`; the names of deleted tests in `.config/nextest.toml`; `crates/thrum-render/src/atmosphere/gpu/tests.rs` and `tests/reference*` | `TEST-SUPPORT` M2, which rewrote these test files | `CLOUDS` builds in `thrum-clouds`. No open item names any of these test binaries. `DEAD-TOOLS` M2 edits the `[[bench]]` tables of the same `Cargo.toml`, and its M3 edits `atmosphere/gpu/tests/aerial_ground.rs`, which `atmosphere/gpu/tests.rs` declares |
+| M10 | No tracked file but this module's log and done-when file: the record and its script are this milestone's evidence. It reads, and changes nothing in, the builders' transcripts under `~/.claude/projects/` and `~/.codex/sessions/` and the orchestrate script's logs under `.git/orchestrate` | Nothing | It can run beside any milestone |
 | M9 | The test files that hold a test on the exempt list outside `examples/water`, with the support files those tests use. By the planner's measurement: `lent_products_gpu.rs`, `cooked_rows_gpu.rs`, `cooked_assets_gpu.rs` and `frame_alloc.rs` under `examples/v1-game/tests`; `report.rs` under `crates/thrum-river-model/tests`; `shore_basin.rs` and `shore_island.rs` under `crates/thrum-water-model/tests`; `forward_cache_gpu.rs`, `portable_limits_gpu.rs`, `frames_gpu.rs` and `ambient_gpu.rs` under `crates/thrum-sea/tests`. Also `.config/nextest.toml` and `.config/long-tests.txt` | Nothing | Open items run four of these binaries by name and need them to keep passing: `DEAD-CODE` M5.2 (`cooked_rows_gpu`), `HOST` M3.2 and `REVIEW-RENDER` M5.1 (`frame_alloc`), `TEST-SUPPORT` M4.2 (`cooked_assets_gpu`). `DEAD-CODE` M5 edits `cooked_rows_gpu.rs` and `TEST-SUPPORT` M4 `cooked_assets_gpu.rs`. `TEST-SUPPORT` M3 converts the test files of every crate under `crates/`, so the lead does not run it beside this where it can choose |
+| M11 | The `[[test]]` tables, the `autotests` line and the `test` keys of each workspace package's manifest; one new root file in each package's `tests/` folder; in each test file it folds, the lines that declare or import shared helpers, and a test's own name where the test starts itself again by name; the root file of a folder-style target, where it has to be renamed to stay a module; `.config/nextest.toml` and `.config/long-tests.txt`, for the names that moved; the new guard in the repository guards under `scripts/`, with its suite; the check command in `tools/xtask/src/` only where it names a test binary | Nothing | The widest set in this module. Every module that adds a test adds a file or a `[[test]]` table in these folders and manifests, so the lead starts it when few builders are in test files, and whichever lands second rebases. `TEST-SUPPORT` M3 converts the test files of every crate and M4 edits the cooked tests: the lead does not run either beside this where it can choose. `REVIEW-RENDER` and `HOST` build in the renderer's tests, and `DEAD-CODE` M5 edits `cooked_rows_gpu.rs`. The binaries this module's own open items name stay targets of their own: `foam_scene_gpu` (M3.1), `pool_gpu` (M4.1) and `scene_view_absent_gpu` (M4.4). A changed set of test targets links every worktree's tests again once, so the lead checks free disk first |
 | M3 | `examples/water/tests/foam_scene_gpu.rs`, `wake_scene_gpu.rs` and any other test file of the water scene that holds a test on the exempt list; the child's arguments in `examples/water/tests/support/island.rs`; `.config/long-tests.txt` and `.config/nextest.toml` | `WATERS` M7, whose open items run the foam test for its ten minutes and which is building in these files | `PUDDLES` M5.4 runs the foam scene's binary and M3.2 `stage_gpu`, and each needs only that the binary passes. `stage_gpu`, `inland_floating_gpu` and `bodies_gpu` also start a child through `island.rs`, each with a test that is not ignored, so running ignored tests in the child changes nothing for them |
 | M4 | `examples/mirror/tests/pool_gpu/` and the result parsing of `scripts/check_mirror_browser.mjs`; `crates/thrum-asset-gpu/src/draw/tests.rs`; `crates/thrum-render/tests/scene_view_absent_gpu.rs` and `tests/pre_record_source/` | `REVIEW-RENDER` M2, which is extending `pre_record_source` | `CLOUDS` and `RAY-TRACING` edit `thrum-asset-gpu`'s `draw.rs`, not its tests |
 | M5 | The commands table and test-command text of `CONTRIBUTING.md` | `DEAD-TOOLS` M2, which edits other rows of the same table | `DEAD-TOOLS` M3 edits other text of `CONTRIBUTING.md`. `REPO-RULES` M3, the one rename, waits for this milestone |
 
 ## Not built here
 
-- **One test binary for each water model crate** (W2-01). Nine open items of `WATERS`, `RIVERS` and `PUDDLES`
-  run those binaries by name. Side by side, 257 binaries that take a second or less cost 31 s between them, so
-  there is little left to save.
+- **A sweep of the tests under ten seconds** for the two rules. M9 and M3 take the 18 tests that hold 58% of the
+  time. The 265 GPU-named tests under ten seconds hold 141 s between them, summed over 14 cores, and each is
+  another module's proof to read and rewrite. The rules bind one when it is next changed. This is an assumption
+  in [the plan](PLAN.md).
+- **A check or a lint that enforces the two rules, and guard text in the skills.** They are being agreed with
+  the owner apart from this plan. Until then the test tiers state the rules, the limit on one test catches the
+  worst case, and a reviewer who reads a new test asks them of it.
+- **Changing other modules' open items so their binaries fold at once.** Open items name 176 binaries in 17
+  modules, and changing a check sends its module's design back for review. Mechanism 10 lets each fold after it
+  is built. This is an assumption in [the plan](PLAN.md).
+- **Folding the long tests and the tests behind a Cargo feature.** `./dev long-tests` would first have to run
+  each test in a process of its own.
+- **Exempting the builders' apps from macOS's first-run check.** Listing an app under Developer Tools in System
+  Settings, as cargo-nextest's notes describe, removes the first-run cost for any number of binaries. It turns
+  off an OS security check for everything that app starts, on the owner's Mac, so it is the owner's to choose,
+  and [the plan](PLAN.md) lists it.
 - **The grid-parity and CIEDE2000 gates in `run_v1_showcase.py`** (P1-10). They compare the engine with itself
   across targets, open `SHOWCASE` items are built on them, and the CIEDE2000 bound is `APPLE-PRESENTATION`'s
   recorded choice.
@@ -502,9 +630,11 @@ landing moves them, whatever your row says. The rows are in build order.
 - **A standing guard that finds a new run-time reader of another package's files.** A search by text misses a
   reader that reaches the path through a helper, and the whole run on main catches what it misses. The declared
   edge and M7's one search are what is built.
-- **A faster build.** Building and linting take under a minute and a half on a typical landing. A linker, a
-  shared build cache or fewer test binaries would each save seconds of it.
-- **A shorter main tier.** The long tests take about 26 minutes in release and run hourly. Nobody waits for them.
+- **A faster build.** Building and linting take under a minute and a half on a typical landing. A linker or a
+  shared build cache would each save seconds of it. Fewer test binaries is mechanism 10, for the first-run cost
+  more than for the link.
+- **A shorter main tier.** The long tests take about 26 minutes in release and run every four hours, by the
+  owner's decision of 21 November. Nobody waits for them.
 - **Two changes to the orchestrate script**, which the lead can raise with the skill: the Ready for Review run
   selected by the milestone's own change, and a "was main already broken" run that does not reuse a selected
   pass, so that a failure outside a merge's selection is not blamed on the incoming branch.
@@ -513,7 +643,9 @@ landing moves them, whatever your row says. The rows are in build order.
 
 Change what the engine draws, simulates or sends. Change a long test's body or assertions when marking it, or a
 test behind a feature when listing it. Remove an assertion without naming where it still runs, except the four
-references of mechanism 7. Drop a case when one test becomes several. Rename a test binary. Edit a Done item.
+references of mechanism 7. Drop a case when one test becomes several. Rename a test binary in M9 or M3, or in M11 one that an open item, the
+main-tier list or a script names. Drop a test, or leave one in a file nothing compiles, when files become modules
+of one binary. Change a rule, a setting or a skill on the strength of M10's record. Edit a Done item.
 Change a registered exact baseline, its comparison or its references. Turn a test that ran on this Mac into one
 that skips. Run a failed test again to get a pass. Select fewer tests than the whole workspace where the selection
 cannot be computed. Change how anything but a test is built.
@@ -533,3 +665,9 @@ the reviewer's comparison of what it asserted with what it asserts, case by case
 A deleted duplicate is proved by the reviewer's list of where each of its assertions still runs. A retired
 reference is proved by the test that replaces it, which the reviewer reads. The goal is proved by the wall time of
 the merge checks the script saved, read from the check's own lines: the median is five minutes or less.
+
+One test binary a package is proved by the names of every test before and after, which a reviewer lists again; by
+the count of test targets; by a check that no open item lost the binary it names; by a scratch test file that the
+guard refuses until it is declared; and by the record of what a freshly linked set costs, before and after. The
+record of a builder's session is proved by a reviewer who runs its script on sessions of the reviewer's choice
+and reads a stretch of one transcript beside it.

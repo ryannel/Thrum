@@ -152,16 +152,21 @@ touches, and the full workspace runs on main." So a test runs in the cheapest ti
 before the fault costs more than the test. And once more that day, with the long tests gone and a merge's check
 still over twenty minutes: "A 20min merge check still sounds crazy. Tests are meant to be fast." So a merge's
 check is planned to take about five minutes for a typical landing, and a test in it about ten seconds or less.
-*(both figures are the planner's assumptions until the owner answers)*
+*(both figures are the planner's assumptions until the owner answers)* And on 21 November, of four changes to
+make tests faster: "These all sound really reasonable." Three are rules below: a test uses the smallest world that
+shows its behaviour, logic is tested without a device, and a package's tests are one binary. The fourth is a
+measurement of where a builder's session goes, `GATE-TIME` M10, which changes no rule.
 
 [GATE-TIME](docs/plans/GATE-TIME/DESIGN.md#mechanisms) builds the tiers. Each part below binds from the milestone
 that builds it: the long tests' move (M1), the tests behind a Cargo feature (M6), the side-by-side run and the
-limit on one test (M8), the selection with the whole run on main (M7), and the ten-second bound (M9, and M3 for the
-water scene). Until its milestone is Done, `./dev check` runs what it ran before.
+limit on one test (M8), the selection with the whole run on main (M7), the ten-second bound (M9, and M3 for the
+water scene), and one test binary a package (M11). Until its milestone is Done, `./dev check` runs what it ran
+before. The two rules for how a test is written need nothing built: they bind a test written or changed from
+21 November 2026, and M9 and M3 apply them to the tests over ten seconds that exist.
 
 | Tier | When | What runs | Risk it accepts | How a fault gets back to its cause |
 |---|---|---|---|---|
-| **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach, run side by side. Then the merging milestone's item checks, which test what that milestone changed | A fault that only a long run, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
+| **Merge** | Before every merge | `./dev check`: the build and the lints of the whole workspace, a compile of every test behind a Cargo feature, the repository guards and script suites, and the fast tests of the packages the change can reach, run side by side. Then the merging milestone's item checks, which test what that milestone changed | A fault that only a long run, a full-size world, an exact image or a test outside the selection shows reaches main | The merge is refused, so the cause is the branch |
 | **Main** | On main's tip after merges, by the `Main-branch check` lines under [Rules](#rules), each no more often than its `every` | Exact images; the long tests in a release build and the tests behind a Cargo feature; and every fast test in the workspace | The fault sits on main for up to the check's interval and one run, and later merges build on it. It costs the module that caused it; nothing ships from main | A failure is run again once, then traced through the commits since the last pass to the first that fails. Each step of the trace is one whole run of the check, so the commit is named some hours after its merge, not within the hour. The lead gives that commit's module the fix as its next task, or reverts the commit |
 | **Milestone and release** | Once, when a milestone claims Ready for Review; and at a release point, which is the V1 exit's closing record or anything published | A milestone's captures, inspections, cost records and sittings, and the test command once more on main's tip, which there is the whole workspace's fast tests unless the merge's own pass is reused. At a release point, everything on the one commit: the whole-workspace check, every main-branch check, and the release's own items | A fault only an eye, a device or a quiet machine shows lasts until the milestone that looks, or the release | The review names the item. At a release point the tier that fails names it, as above |
 
@@ -176,6 +181,36 @@ water scene). Until its milestone is Done, `./dev check` runs what it ran before
   the last to move: it is made fast where it can be. Until `GATE-TIME` M9, and M3 for the water scene, a long test is one over
   about a minute, and the tests between ten seconds and that are on `GATE-TIME`'s exempt list.
   *(planner's assumption until the owner answers: the other choice is a higher bound, such as 30 seconds)*
+- **A merge-tier test uses the smallest world that shows its behaviour.** A world is what the test builds to
+  run on: a grid, a valley, a cooked store, a count of entities, ticks or frames. The test proves its behaviour
+  on the smallest one where the behaviour appears and each assertion could fail: a rule about a solver's step
+  budget needs a grid whose solve takes more than a few steps, not the showcase valley solved forty times. A
+  run at full size belongs to the main tier. It is kept only where full size shows a fault the small world
+  cannot, as a long test with that fault written beside it. The small test stays in the merge tier beside it,
+  because it proves the behaviour itself and is not a slice of the long run.
+  *(owner, 21 Nov 2026: "These all sound really reasonable")*
+- **Logic is tested without a device.** What a CPU can decide is tested in a test that asks for no GPU: a
+  selection, a layout, a state machine, a record's bytes, a refusal, arithmetic a model shares with a shader. A
+  GPU test covers only what a device alone can show: that a shader compiles and a pipeline is accepted under the
+  limits it names, that submitted output or GPU state equals what the CPU side states, that a device's
+  lifecycle holds. It draws to the smallest target, for the fewest frames, that show it.
+  *(owner, 21 Nov 2026, with the rule above)*
+- **Who holds those two rules.** Whoever writes or changes a test writes it to them, and a planner writes items
+  to them. A reviewer who reads a new or changed test asks two questions of it, once: what is the smallest
+  world that would show this, and what here needs a device? A test already in the tree is held to them only when
+  it is changed or when the check reports it as slow.
+- **A package's integration tests are one test binary**, from `GATE-TIME` M11. macOS checks every newly linked
+  binary the first time it runs, about a third of a second each, and Cargo makes each file in a `tests/` folder
+  a binary. So a test file is a module of its package's one test target, `it`, and its tests run as
+  `cargo test -p <package> --test it <file>::`. A new test file is declared there, and the repository guards
+  fail a file under `tests/` that no target compiles. A file is a target of its own only while something names
+  its binary or it has to run apart: an open item's check, the main-tier list, a long test or a test behind a
+  Cargo feature in it, a `required-features` or `harness = false` entry, a build for another target, or a
+  script. From M11 a planner's new item runs a file's tests through `it`, and a planner who re-plans a module
+  writes the checks of its unstarted milestones the same way. An item approved before M11 keeps its check: its
+  file is a target of its own, and joins `it` in the first landing that edits it after the item's milestone is
+  Done. *(owner, 21 Nov 2026, approving the lead's proposal of fewer test binaries, from 265 towards one a
+  package)*
 - **The merge tier is targeted.** `./dev check` runs the test binaries of the packages a change can reach: each
   workspace package that holds a changed file, and every package that depends on one, directly or through others,
   by Cargo's own graph. Where a test reads another package's files when it runs, which the graph cannot show, the

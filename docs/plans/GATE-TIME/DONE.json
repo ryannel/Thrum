@@ -393,6 +393,47 @@
       ]
     },
     {
+      "id": "M10",
+      "name": "A record shows where a builder's session goes: the model's own time, each kind of command and each wait",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As checkable as a `cargo build --timings` report: every minute of a session sits in one named part, the parts add up to the session's wall time, and a reader can trace any figure back to the lines it came from.",
+      "items": [
+        {
+          "id": "M10.1",
+          "statement": "The record splits the wall time of every builder session of track 6's milestones, from 20 November 2026 to this milestone's starting commit, into three kinds of part: the model's own time; commands, by what they ran (a build or lint, tests the builder chose, `./dev check`, an item's check, the merge, anything else); and waits (for a lock, behind another merge, and a command that only sleeps or polls). It gives each part for each milestone and for all of them together, and gives the time between one milestone's sessions apart from the sessions themselves. The parts of a session add up to its wall time, and time the sources cannot place is a part of its own.",
+          "ask": "Take two sessions of your choice, one of them the longest. Run the record's script on them: do its figures match the record, and do the parts add up to each session's wall time? Read twenty minutes of one transcript beside the script's output for that span: is each interval in the part you would put it in? Is a wait inside a command counted as the wait and not as the command?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M10.2",
+          "statement": "The record is made by a script kept with it in this milestone's evidence, from sources the record names: each session's transcript, which gives the time of every tool call and its result, and the orchestrate script's own logs of jobs, locks and merge checks. It runs again on a later session with no edit.",
+          "ask": "Run the script on a builder session that ended after the record was made: does it give the same parts with no edit to the script? Does the record say where each source is and which sessions it could not read?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M10.3",
+          "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This milestone changed no setting, plan, skill or check.",
+          "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the milestone's commits change any file but this module's log and done-when file?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M9",
       "name": "Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down",
       "status": "not_started",
@@ -413,8 +454,8 @@
         },
         {
           "id": "M9.2",
-          "statement": "A test made fast asserts what it asserted. Where one test ran several cases in turn, each case is now a test and none is dropped. Where a fixture or a run was made smaller, the log gives the old and new size and why each assertion still means what it meant. No test binary changed its name.",
-          "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there? For each fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
+          "statement": "A test made fast asserts what it asserted. Where one test ran several cases in turn, each case is now a test and none is dropped. Where a world, a fixture or a run was made smaller, the log gives the old and new size and why each assertion still means what it meant. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two, and the log says what the GPU test still shows that only a device can. No test binary changed its name.",
+          "ask": "For each test this milestone changed, compare it with the starting commit: is every case and every assertion still there, in that test or in the device-free test the log names for it? For each world, fixture or run made smaller, does the log's reason hold when you read the assertions? Did the name of any test binary change?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -450,6 +491,95 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M11",
+      "name": "Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As careful as the move to one integration-test binary a crate in a well-kept Rust workspace such as Cargo's own or rust-analyzer's: fewer binaries to link and start, every test still runs once, and anyone can see which files still stand alone and why.",
+      "items": [
+        {
+          "id": "M11.1",
+          "statement": "The record gives, at the starting commit and at the claimed one, how many test binaries a whole run of the check builds and runs, and what a freshly linked set costs before its first test starts: the link, and the first run of each new binary, which macOS checks. Each is timed twice from the same starting state, with the load. Both later timings are shorter than both earlier ones.",
+          "ask": "Were the four timings made the same way and from the same starting state? Is each of the later pair shorter than each of the earlier pair? Does the record's count of binaries match what the runner lists at the claimed commit?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.2",
+          "statement": "Every test a whole run of the check ran at the starting commit still runs, once. The names the runner lists before and after are the same but for the module a test now sits in: none is dropped, and none runs twice.",
+          "ask": "Read the record's list of test names from the starting commit, and list the tests at the claimed commit yourself: does every name of the first map to exactly one name now? Is any name now in two binaries?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.3",
+          "statement": "A package's integration tests are modules of one test target named `it`, and fewer than half the 277 integration test targets of 21 November are left. A test file is a target of its own only while something names its binary or it has to run apart: an open item's check in any module, the main-tier list, a long test or a test behind a Cargo feature in the file, a `required-features` or `harness = false` entry, a build for another target such as wasm, or a script or tool that runs it by name. The record lists each one left with what holds it. A target that holds no test is not built as a test binary.",
+          "check": "cargo metadata --no-deps --format-version 1 --offline | python3 -c 'import json,sys; t=[x[\"name\"] for p in json.load(sys.stdin)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]]; sys.exit(0 if \"it\" in t and len(t)<139 else 1)'",
+          "ask": "Take ten test targets other than `it`, of your choice, from `cargo metadata`: does something the statement lists hold each, as the record says? Is any package's test file outside `it` with nothing holding it? Does a `bin` or `example` target with no test in it still build a test binary?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.4",
+          "statement": "No open item lost the binary its check names: every name an open item of any module passes to `--test`, whose test file exists in the tree, is still a test target.",
+          "check": "python3 -c 'import json,glob,re,subprocess,sys; t={x[\"name\"] for p in json.loads(subprocess.run([\"cargo\",\"metadata\",\"--no-deps\",\"--format-version\",\"1\",\"--offline\"],capture_output=True,text=True,check=True).stdout)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]}; n={m for f in glob.glob(\"docs/plans/*/DONE.json\") for s in json.load(open(f))[\"milestones\"] if s.get(\"status\")!=\"done\" for i in s[\"items\"] for m in re.findall(r\"--test[ =]([A-Za-z0-9_-]+)\",i.get(\"check\",\"\"))}; f=lambda m:[g for d in (\"crates\",\"examples\") for g in glob.glob(d+\"/*/tests/\"+m+\".rs\")+glob.glob(d+\"/*/tests/\"+m+\"/*.rs\")]; lost=sorted(m for m in n if m not in t and f(m)); print(lost); sys.exit(1 if lost or not n else 0)'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M11.5",
+          "statement": "A Rust file under a package's `tests/` folder that no test target compiles fails `./dev check-docs`, with a message that names the file and says where to declare it. A helper that only a declared file reaches passes.",
+          "ask": "In a scratch copy, add a test file to a package's `tests/` folder and do not declare it: does `./dev check-docs` fail and name the file? Declare it in the package's `it` target: does it pass? Read the guard's own tests: do they cover a file left out, a file declared, and a helper module that only a declared file reaches?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.6",
+          "statement": "The groups of tests that take turns, the tests counted as heavy and any exempt name in `.config/nextest.toml` select the tests they selected at the starting commit, under their new names.",
+          "ask": "For each override in `.config/nextest.toml`, list the tests its filter matches at the claimed commit and compare with the record's list from the starting commit: are they the same tests? Does any filter now match no test?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.7",
+          "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests`, on main at the claimed commit, and that run ran every test its last run before this milestone started ran.",
+          "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
+          "ask": "Compare the test names in the log of the main-branch run that covers this commit with those of its last run before the starting commit: is any test missing, or ignored where it ran?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
         }
       ]
     },
@@ -500,8 +630,8 @@
         },
         {
           "id": "M3.4",
-          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. None of them is a test that an open item of another module depends on.",
-          "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
+          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. None of them is a test that an open item of another module depends on.",
+          "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, in that test or in the device-free test the log names for it, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -606,8 +736,8 @@
         },
         {
           "id": "M5.2",
-          "statement": "`CONTRIBUTING.md` says what `./dev check` runs, how it selects, that tests run side by side and what that asks of a test, that a test takes about ten seconds or less or is a long test, what `./dev check-all` and `./dev long-tests` run on main after the merge, how to run one test or one long test by hand, and how to read the times the check prints.",
-          "ask": "Does `CONTRIBUTING.md` name the three commands and say each of those things? Follow its line for running one long test by hand: does it run that test?",
+          "statement": "`CONTRIBUTING.md` says what `./dev check` runs, how it selects, that tests run side by side and what that asks of a test, that a test takes about ten seconds or less or is a long test, that a test proves its behaviour on the smallest world that shows it and tests logic without a device, that a package's test files are modules of one test binary and how to add one, what `./dev check-all` and `./dev long-tests` run on main after the merge, how to run one test, one file's tests or one long test by hand, and how to read the times the check prints.",
+          "ask": "Does `CONTRIBUTING.md` name the three commands and say each of those things? Follow its lines for running one file's tests and one long test by hand: does each run what it says?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

@@ -2309,7 +2309,7 @@ every merge pays it.
 
 | Module | Takes from the review | Owns | Builds inside |
 |---|---|---|---|
-| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, the merge selection with `./dev check-all` and the main-branch check `workspace-tests`, and how the check runs tests: side by side through cargo-nextest, with its configuration `.config/nextest.toml` and the limit on one test | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards; one wait in `APPLE-TILE`'s frame host, by [ruling 12](#seam-rulings-for-track-6) |
+| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, the merge selection with `./dev check-all` and the main-branch check `workspace-tests`, and how the check runs tests: side by side through cargo-nextest, with its configuration `.config/nextest.toml` and the limit on one test; the two rules for how a merge-tier test is written, one test binary a package, and the record of where a builder's session goes, by [ruling 13](#seam-rulings-for-track-6) | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards; one wait in `APPLE-TILE`'s frame host, by [ruling 12](#seam-rulings-for-track-6); from M11 the test manifest and test files of every package |
 | `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rules `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
 | `DEAD-CODE` | Sections 3 and 4, and the water settings that are parsed twice | `thrum_render::binding`, and the five defaults of `SceneContribution` ([design](DEAD-CODE/DESIGN.md)) | `thrum-core`, `thrum-sea`, `thrum-water`, `thrum-render`, `thrum-rain-model`, the water scene, the game's host |
 | `TEST-SUPPORT` M5, M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support`, and the rules `test-readback` and `test-deadline` ([design](TEST-SUPPORT/DESIGN.md#the-kit)) | Every crate's tests |
@@ -2330,7 +2330,7 @@ check never starts. The same holds after `GATE-TIME` M7.
 | Wave | `GATE-TIME` | `DEAD-TOOLS` | `DEAD-CODE` | `TEST-SUPPORT` | Files they share |
 |---|---|---|---|---|---|
 | 1, at once | M1: six tests marked, `./dev long-tests`, the main-tier list, one settings line. M6: tests behind a Cargo feature compiled at every merge and run on main. M8: tests run side by side, the test build a measurement picks, step times and the limit on one test. M7: the merge selection, `./dev check-all`, one settings line | M5: five new files under `docs/provenance`. M6: four frozen rules. M1: `scripts/`, the script-suite step, three designs, ledger rows | M1, once `GATE-TIME` M1 is Done: `thrum-core`'s simulation, `thrum-sea`, two files of `thrum-water` | M5, once M2 is Done: the kit's functions and two frozen rules | `tools/xtask/src/main.rs`: `GATE-TIME` M1, M6, M8 and M7 and `DEAD-TOOLS` M1 edit different arms of it and one help text, which M1 puts on a line for each command. The rule files `scripts/shape_matchers.py`, `shape_rules.py` and `test_shape_rules.py`: `DEAD-TOOLS` M6 and `TEST-SUPPORT` M5 each add rules. `scripts/repo_check.py`: `GATE-TIME` M1 and M6. Whichever lands second rebases |
-| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere. M9: the test files that hold a test over ten seconds, in the game and the river, water-model and sea crates | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` M6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M3, after `GATE-TIME` M2 and M6 and `DEAD-CODE` M2: test files of every crate and kit scene | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` M3 is the widest set: its design says what it runs beside |
+| 2 | M2, after `TEST-SUPPORT` M2: test files of `thrum-water`, `thrum-clouds`, the game and the atmosphere. M10: a record of where a builder's session goes, with no tracked file. M9: the test files that hold a test over ten seconds, in the game and the river, water-model and sea crates. M11: the test manifest and test files of every package, folded into one test binary a package | M2: benches and the `baseline-inventory` command. M3: `docs/evidence`, the evidence store, five documents | M2, after `GATE-TIME` M6: `contribution.rs` and every implementation. M3: `thrum-core`'s runtime, three small deletions | M3, after `GATE-TIME` M2 and M6 and `DEAD-CODE` M2: test files of every crate and kit scene | `GATE-TIME` M2 and `DEAD-TOOLS` M2 both edit `examples/v1-game/Cargo.toml`, in different tables. `DEAD-TOOLS` M3 edits a test module that `GATE-TIME` M2's `atmosphere/gpu/tests.rs` declares. `TEST-SUPPORT` M3 is the widest set: its design says what it runs beside. `GATE-TIME` M11 edits the manifests and test files of every package, so the lead does not run it beside `TEST-SUPPORT` M3 or M4 where it can choose, and whichever lands second rebases |
 | 3, each after another module's milestone | M3, after `WATERS` M7: the foam test and the water scene's other slow tests. M4, after `REVIEW-RENDER` M2. M5, after `DEAD-TOOLS` M2: the closing record and the contributor guide | M4, after `TEST-SUPPORT` M2: the cost scripts | M4, after `WATERS` M7. M5, after `HOST` M3. M6, after `REVIEW-RENDER` M3 and `GATE-TIME` M6 | M4, after `REVIEW-RENDER` M2 | `GATE-TIME` M8 and `DEAD-CODE` M5 both edit the root `Cargo.toml`, in different tables. `GATE-TIME` M8 edits the check's test step and `DEAD-TOOLS` M2 another arm of the same file. `GATE-TIME` M9 and `TEST-SUPPORT` M3 both edit test files under `crates/`: the lead does not run them side by side where it can choose |
 
 Three files are everyone's: `.config/shape-baseline.json`, which each landing that lowers a rule's count
@@ -2435,6 +2435,21 @@ land while any of them is held.
     frame timing changes. `APPLE-TILE` keeps the frame host and, once landed, the test; its log records the
     hand-over. Any other engine fault the runner exposes goes to its owner as a proposal.
 
+13. **How a test is written, and one test binary a package** (`GATE-TIME` M10, M9, M3 and M11; every module that
+    writes a test). By the owner's approval of 21 November, "These all sound really reasonable", kept in
+    [the test tiers](../../ORCHESTRATE.md#test-tiers): a merge-tier test uses the smallest world that shows its
+    behaviour, and logic is tested without a device. Both bind a test written or changed from that day. M9 and
+    M3 apply them to the tests over ten seconds that exist, and no module's faster tests are swept. From M11 a
+    package's integration tests are modules of one test target, `it`. M11 folds the test files that nothing
+    holds, in every package: an open item's check that names the binary, the main-tier list, a long test or a
+    test behind a Cargo feature in the file, a `required-features` or `harness = false` entry, a build for
+    another target or a script keeps a file a target of its own. It changes no assertion and no open item. An
+    item approved before M11 keeps its check, and its builder adds the file as a target of its own; a planner's
+    new item, and the unstarted items of a module that is re-planned, run a file's tests as
+    `cargo test -p <package> --test it <file>::`. The repository guards fail a test file that no target
+    compiles. Each owning module keeps its tests. M10 measures where a builder's session goes and changes no
+    rule: what follows from its record is the owner's to decide.
+
 <a id="not-planned-in-track-6"></a>
 
 ### Not planned in track 6
@@ -2452,7 +2467,10 @@ Each of these needs a design of its own, or a decision, before it is planned.
 - **Eleven cost scripts and the browser scripts**, each with its own harness (P1-05, P1-04, P2-02, P2-08).
 - **Three Mac window proofs** threaded through the production render owner (S1-08).
 - **The state-delta and state-ack codecs** (N1-01, L4-01) stay, because `SESSION`'s design says keep.
-- **One test binary for each water model crate** (W2-01): nine open items run those binaries by name.
+- **A sweep of the tests under ten seconds** for the two rules of [ruling 13](#seam-rulings-for-track-6), and
+  **changing open items so that the binaries they name fold at once**: each is an assumption in
+  [GATE-TIME's plan](GATE-TIME/PLAN.md). One test binary for each water model crate (W2-01) is now `GATE-TIME`
+  M11's, less the binaries that open items name.
 - **Selecting a merge's tests more finely than by package** (L1-12): `GATE-TIME` M7 selects by package, and
   nothing says which test binary of a package a source file reaches without a coverage map.
 - **From the hardening pass, not applied**: moving `scripts/open_check_names.py` ahead of `REPO-RULES` M3, and
@@ -2475,6 +2493,8 @@ Each of these needs a design of its own, or a decision, before it is planned.
 | **The main-tier list**, `.config/long-tests.txt`: each long-test binary with its package and build, and each package with tests behind a Cargo feature, with those features, whole or by test binary | `GATE-TIME:M1` and `M6` → any module that adds a long test, or a test behind a Cargo feature in a package the list does not cover whole | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
 | **The merge selection**: `./dev check` runs the tests of the packages a change can reach, by Cargo's graph and the declared edges; `./dev check-all` and the main-branch check `workspace-tests` run the whole workspace | `GATE-TIME:M7` → every builder, and any module with a test that reads another package's files at run time | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
 | **The runner**: `./dev check` runs each test in a process of its own, side by side through cargo-nextest; `.config/nextest.toml` holds the groups of tests that take turns and the tests counted as heavy; a test that runs for over sixty seconds fails the check | `GATE-TIME:M8` → every module that writes a test | [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
+| **Two rules for a merge-tier test**, written or changed from 21 November 2026: it uses the smallest world that shows its behaviour, and it tests logic without a device, leaving a GPU test what a device alone can show | `GATE-TIME` → every module that writes a test, and every planner and reviewer | [the test tiers](../../ORCHESTRATE.md#test-tiers), [GATE-TIME](GATE-TIME/DESIGN.md#mechanisms) |
+| **One test binary a package**: a test file under a package's `tests/` folder is a module of the package's `it` target and runs as `cargo test -p <package> --test it <file>::`; the repository guards fail a file there that no target compiles; a file is a target of its own only while an open item, the main-tier list, a Cargo feature, a long test or a script holds it | `GATE-TIME:M11` → every module that adds a test file, and every planner who writes a check that runs one | [GATE-TIME](GATE-TIME/DESIGN.md#one-test-binary-a-package), [the test tiers](../../ORCHESTRATE.md#test-tiers) |
 | **Frozen rules**: `evidence-path`, `script-caller`, `bench-runner`, `shader-text-edit`, `test-readback` and `test-deadline`, each a count that can only fall | `DEAD-TOOLS:M6` and `TEST-SUPPORT:M5` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms), [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 | **Provenance record**: what a module copied or translated, from where and under what licence, tracked at `docs/provenance/<MODULE>.md` | `DEAD-TOOLS:M5` → `SEA`, `WATERS`, `CLOUDS`, `PUDDLES`, `RIVERS` and any module that copies a file | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
 | **Where evidence goes**: run records in the working folder, test data in fixtures, held by the rule `evidence-path`; the evidence manifest under `.config/` | `DEAD-TOOLS:M3` and `M4` → every builder and planner | [DEAD-TOOLS](DEAD-TOOLS/DESIGN.md#mechanisms) |
@@ -3085,3 +3105,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `FrameHost::capture_pixels`, in `APPLE-TILE`'s frame host, which failed when another thread's poll took its
   readback's completion and stopped M8's merge. Seam ruling 12 and track 6's table say so, and `APPLE-TILE`'s
   log records the hand-over. No module's dependency changed.
+- 2026-11-21 `GATE-TIME` revised for four changes the owner approved that day, "These all sound really
+  reasonable": the smallest world, logic without a device, fewer test binaries, and a measurement of where a
+  builder's session goes. All four are `GATE-TIME`'s. Two are rules in the project settings' test tiers and
+  routes of M9 and M3; M10 (the measurement) and M11 (one test binary a package) are new. Seam ruling 13 and two
+  interfaces were added. `TEST-SUPPORT`'s plan did not change, and no module's dependency or open item changed.

@@ -16,12 +16,15 @@ another module's: change nothing those tests assert about the engine. The milest
 - Assumption: a test that runs for over a minute in a merge's check is stopped and fails that check. The other choice reports it and fails nothing, which is how the gale reached 21 minutes unnoticed.
 - Assumption: the exit scene's stepped hour and the foam's ten-minute moored run leave `./dev check` as the gale does, whole, and run on main after merges, with no short run of either kept. The other choice keeps a short run of each in every merge's check.
 - Assumption: the three field flythroughs and the shore-blend solve also run on main and not in a merge's check. The other choice keeps any of them in every merge's check.
-- Assumption: the long tests and the whole workspace each run on main at most once an hour, so a fault one of them catches is named with its commit some hours after the merge. The other choice is a shorter interval, which takes more of the machine from builders, or a longer one.
+- Assumption: the whole workspace's tests run on main at most once an hour, so a fault they catch is named with its commit some hours after the merge. The other choice is another interval, as you chose every four hours for the long tests and exact images on 21 November.
 - Assumption: a milestone's Ready for Review still runs the whole workspace's tests, so a missed edge on main holds every module's Ready for Review until its commit is fixed or reverted. The other choice selects that run by the milestone's own change, which needs a change to the orchestrate script.
-- Assumption: the tests behind a Cargo feature run on main once an hour with the long tests, and every merge compiles them. The other choice runs them only in the item checks that name them.
+- Assumption: the tests behind a Cargo feature run on main with the long tests, and every merge compiles them. The other choice runs them only in the item checks that name them.
 - Assumption: a release point is the V1 exit's closing record or anything published, and there every tier runs on the one commit; `SHOWCASE`'s next re-plan adds the long tests to its closing milestone. The other choice names other release points, or asks less of one.
 - Assumption: the atmosphere's Monte Carlo reference is deleted, about 2,200 lines, and stays in Git history; the night checks and the twilight guard stay in the check. The other choice keeps it as an ignored diagnostic.
 - Assumption: three more tests that hold GPU output to a reference are replaced by short tests of the behaviour, about 1,400 lines: the mirror pool's rounding-allowance proof, the cooked cloud march's f64 reference and the scene-view shader hashes frozen at a 16 November commit. The other choice keeps any of the three as it is.
+- Assumption: the 21 November rules, the smallest world and no device for logic, bind tests written or changed from now on, and M9 and M3 apply them to the tests over ten seconds. The other choice also sweeps the 1,290 faster tests, most of them other modules', for at most 141 s summed over 14 cores.
+- Assumption: M11 takes test binaries from 263 to about 110, and the rest fold as open items are built. The other choice rewrites the 176 binary names in 17 modules' open items now, with a design review for each module.
+- Assumption: macOS's check of each new binary stays on. The other choice is yours alone: listing the builders' apps under Developer Tools in System Settings removes that cost, and turns off an OS security check for whatever they start.
 
 ## M1 A merge's check no longer runs the ten-minute gale, the stepped hour, the field flythroughs or the shore-blend solve, and they pass on main after each merge: done
 [review](../../../.orchestrate/evidence/GATE-TIME/M1-review.md)
@@ -29,28 +32,11 @@ another module's: change nothing those tests assert about the engine. The milest
 ## M6 A change that breaks a test behind a Cargo feature fails its merge's check, and those tests run on main after each merge: done
 [review](../../../.orchestrate/evidence/GATE-TIME/M6-review.md)
 
-## M8 A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it
+## M8 A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M8-review.md)
 
-Measure first: M8.1's record decides what is switched on. The planner's own runs, scripts and logs are in
-[the breakdown](../../../.orchestrate/evidence/GATE-TIME/planning/merge-check-breakdown.md): start from them, and
-time properly. `cargo-nextest` 0.9.150 is installed. `./dev` sets `THRUM_REQUIRE_GPU=1` and `CARGO_INCREMENTAL=0`
-for `check`, and clears `RUSTC_WRAPPER`. The four cooked-asset tests that assert on the draw probe are the fetched
-edit, the publication larger than staging, the newer publication that supersedes, and the adapter-less host. Time
-the runs while other builders work and record the load.
-
-M8.9 is the one change to the engine, in `APPLE-TILE`'s frame host, and what is left: the rest is on
-`build/gate-time`, as [the handoff](../../../.orchestrate/evidence/GATE-TIME/M8-handoff.md) says. A second thread
-that only polls passes on the old code, so start the test from
-[the planner's probe](../../../.orchestrate/evidence/GATE-TIME/planning/capture-race-probe.md).
-
-## M7 A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge
-
-Measure first: M7.1's record comes before the selection is switched on, and if it shows that a selected run is
-not shorter than the whole on average, end `BLOCKED` with the record, because the owner decided this expecting a
-saving. The design links the planner's replay. The script runs `./dev check` with no argument in three places: a builder's worktree, a merge after its
-rebase onto `origin/main` (sometimes several branches rebased together on a detached checkout), and its own
-checkout of main's tip, where a pass on the same files is reused. The guard the declared edge serves is in
-`crates/thrum-render/src/runtime/tests/creation_sites.rs`.
+## M7 A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge: done
+[review](../../../.orchestrate/evidence/GATE-TIME/M7-review.md)
 
 ## M2 Nothing in a merge's check is built and run twice, and the atmosphere's Monte Carlo reference no longer runs in it
 
@@ -63,11 +49,24 @@ cheapest to keep under the first name; the main-tier list follows. In the atmosp
 `gpu_transport_reference_reports_every_prescribed_row`. Where a test you delete is on the runner's exempt list,
 take its name off.
 
+## M10 A record shows where a builder's session goes: the model's own time, each kind of command and each wait
+
+Measure, and change nothing else: [mechanism 11](DESIGN.md#mechanisms) says what the record splits and where its
+sources are. Much of a session is inside commands, so say what each command was waiting for.
+
 ## M9 Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down
 
 The runner's exempt list is the work: every name on it that M9 owns. The design's table gives the planner's
 measurement of each and the route it expects, and M8's record gives the times on the build the check now uses.
-Measure each test alone before and after.
+Measure each test alone before and after. Mechanism 9 has two new routes, the smallest world and without a
+device; its example is the river model's `no_step_is_taken_beyond_the_budget`.
+
+## M11 Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time
+
+Measure first: if M11.1's later timings are not shorter, end `BLOCKED` with the record. Each test file declares
+`mod support;` for itself, which resolves elsewhere once the file is a module, and the rule `path-attribute`
+refuses `#[path]`. The water scene's `with_cooked_island` starts a test again with `--exact <name>`. Before
+folding a file, search `scripts/` and `tools/xtask` for its binary as well as the open items M11.4 reads.
 
 ## M3 The water scene's slow tests leave a merge's check or are made fast: the foam's ten-minute moored run passes on main after each merge, and the check still runs the wind sweep
 
