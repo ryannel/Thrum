@@ -142,7 +142,7 @@
     {
       "id": "M3",
       "name": "The engine's public API holds no simulation query, capture, device opener, serialiser or shader copy that only its own tests reach",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -154,8 +154,8 @@
           "check": "sh -c '! git grep -qE \"RuntimeDelta|WorldDelta|restore_through|visit_if_indexed|visit_with_changes|change_ticks3_at|matches_capture\" -- crates examples && git grep -q \"fn write_read2_indexed\" -- crates && cargo test --locked --offline -p thrum-core -p thrum-sim2d -p thrum-network'",
           "ask": "Read the test that carries the refused-row property now: does it index the written column, run the chunked visit, and fail if the active bit were left stale? Were the capture, restore and undo assertions that used a delta kept, on a full capture? Is any expected digest or state edited?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record. Mutation run on the branch: disabling the chunked visit's active-bit update fails refusing_visit_refreshes_the_written_rows_active_bit (LOG.md, 2026-11-21 M3 entry).",
           "verdict": "",
           "review": ""
         },
@@ -164,8 +164,8 @@
           "statement": "`thrum-render` has one public way to open a device, the device recipe: the three openers that only called each other are gone.",
           "check": "sh -c '! git grep -qE \"fn open_generation(_with_feature_mask|_from)?\\(\" -- crates examples && git grep -q \"fn open_planned_generation\" -- crates'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record.",
           "verdict": "",
           "review": ""
         },
@@ -175,8 +175,8 @@
           "check": "sh -c '! git grep -q \"fn to_bytes\" -- crates/thrum-rain-model && cargo test --locked --offline -p thrum-rain-model --test tree'",
           "ask": "Is the value comparison as strict as the byte comparison was, negative zero in the ground included?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal), including the_same_bed_gives_the_same_tree; the unit test negative_zero_differs_from_zero_as_its_bytes_do passes in thrum-rain-model's lib tests.",
           "verdict": "",
           "review": ""
         },
@@ -186,8 +186,8 @@
           "check": "sh -c 'test -z \"$(git ls-files \":(glob)crates/**/synthetic_aerial_shadowed.wgsl\")\" && git ls-files \":(glob)crates/**/*aerial_camera_shadowed.wgsl\" | grep -q . && cargo test --locked --offline -p thrum-render --lib atmosphere::model'",
           "ask": "Does `git diff` from the starting commit show any change to a shader file that a pipeline is built from?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "Item check passed in agent_loop check on branch commit 1ec0ce4fb (mac-metal); the script's run on the merged tip is the proof of record.",
           "verdict": "",
           "review": ""
         },
@@ -196,8 +196,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

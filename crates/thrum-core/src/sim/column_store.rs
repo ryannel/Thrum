@@ -68,11 +68,6 @@ impl<T> TypedStore<T> {
         self.values[slot].as_ref()
     }
 
-    #[cfg(test)]
-    pub(super) fn get_mut(&mut self, slot: usize) -> Option<&mut T> {
-        self.values[slot].as_mut()
-    }
-
     /// Reevaluate an indexed value after direct mutable access, before any
     /// active-presence query can observe the store. Ordinary columns do no work.
     pub(super) fn refresh_active(&mut self, slot: usize) {
@@ -278,9 +273,9 @@ mod tests {
         assert_eq!(store.insert(0, 0), Some(1));
         assert_eq!(store.insert(64, 3), Some(0));
         assert_eq!(store.active_presence(), Some(&[0, 1, 2][..]));
-        *store.get_mut(0).expect("present inactive value") = 5;
+        *store.values[0].as_mut().expect("present inactive value") = 5;
         store.refresh_active(0);
-        *store.get_mut(64).expect("present active value") = 0;
+        *store.values[64].as_mut().expect("present active value") = 0;
         store.refresh_active(64);
         let erased: &dyn StorageColumn = &store;
         assert_eq!(erased.active_presence(), Some(&[1, 0, 2][..]));
@@ -334,7 +329,7 @@ mod tests {
     fn ordinary_store_has_no_index_and_an_index_never_selects_absent_values() {
         let mut ordinary = TypedStore::new(1);
         ordinary.insert(0, 3_u32);
-        *ordinary.get_mut(0).expect("ordinary value") = 4;
+        *ordinary.values[0].as_mut().expect("ordinary value") = 4;
         ordinary.refresh_active(0);
         assert_eq!(ordinary.get(0), Some(&4));
         assert_eq!(ordinary.active_presence(), None);
