@@ -109,12 +109,12 @@
       }
     },
     "M3": {
-      "definitions": "0a9c50e8a84c5526c5c019771877231894477a3d20cef248a7b9038f1fed4a4b",
+      "definitions": "fe10d69d6107260693663e2c39ae33e74f3606dc761201cd639283e68ad2a0c0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
-        "at": "2026-11-20T22:57:57Z"
+        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
+        "at": "2026-11-21T08:38:18Z"
       }
     },
     "M4": {
@@ -127,12 +127,12 @@
       }
     },
     "M5": {
-      "definitions": "f2eb6fbe3f309eece00020cc35ac4935aafd2c956e9219a757a7c2c509b99af6",
+      "definitions": "ba8b1e9698ef366f1b4dd6fb5c88d1cfb75a3cb1c631b64c0eabf124f26034c8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
-        "at": "2026-11-20T22:57:57Z"
+        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
+        "at": "2026-11-21T08:38:18Z"
       }
     },
     "M6": {
@@ -454,12 +454,30 @@
       }
     },
     "M9": {
-      "definitions": "0bd826c6985682fa5da94dff23d924310278f45af371091804229a893a24f5e8",
+      "definitions": "e2d98ffa30b6602705591264b4a54ad5eb720f9a366d1a43f83ae5f50716d51d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
-        "at": "2026-11-20T22:57:57Z"
+        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
+        "at": "2026-11-21T08:38:18Z"
+      }
+    },
+    "M10": {
+      "definitions": "244f57ee9c13063ceb692605c9b463e0d1a85c4f94b8e3b463b3a718ec0c0158",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
+        "at": "2026-11-21T08:38:18Z"
+      }
+    },
+    "M11": {
+      "definitions": "e0017e093c26635de33437495cbf61a781aaebeec38dff70caf3f183c376867f",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
+        "at": "2026-11-21T08:38:18Z"
       }
     }
   },
@@ -487,11 +505,15 @@
     {
       "task": "GATE-TIME M8 needs something no plan provides yet. The builder wrote: the render runtime's owner makes `FrameHost::capture_pixels` keep polling until its readback arrives or `GPU_WAIT` runs out; then this branch merges as it is. The builder's handoff, .orchestrate/evidence/GATE-TIME/M8-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/gate-time at 1750e054ab2b, which isn't merged; read it with `git show`. If the plan already provides it, change no file and end with `KEEP GATE-TIME M8: builder: <where the plan provides it>`, and the script lifts the block.\nLead's decision on ownership: give the fix to GATE-TIME M8 itself rather than a new milestone in the render runtime's owner. Add `FrameHost::capture_pixels` (crates/thrum-render/src/runtime.rs) to M8's file row, with an item whose check shows a capture succeeds while a second thread polls the same device (the cooked loader at crates/thrum-asset-gpu/src/staging.rs:309 is the real-world case). Reason: it is about ten lines with no pixel or frame-timing change, no builder is live in thrum-render (REVIEW-RENDER and HOST are stopped, WATERS M7 works in foam), and starting a held module for it costs more. Record the hand-over in the render runtime owner's log so its design stays the authority. Keep the item's check fast enough for the merge tier; the race itself predates M8, which only widened it by running tests side by side.\nDone when M8's items and done-when file are amended and committed, with a short note naming what changed and why.",
       "at": "2026-11-21T04:10:58Z"
+    },
+    {
+      "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in the plans of GATE-TIME or TEST-SUPPORT, whichever owns each, as new or amended milestones with items a builder can prove. GATE-TIME is building M2 now; don't change M2 or any milestone that has started, and put new work after what is already planned unless you judge an earlier place clearly better and say why.\nMeasured basis (last 24 h, .git/orchestrate locks.jsonl and GATE-TIME M8's merge-check records): a merge check runs 1,309 tests summing 1,395 s; 897 take under 0.1 s (1% of the time) and 64 take over 5 s (81%). River model, water scene and the showcase game hold 74%; 221 GPU-named tests hold 53%. There are 265 test binaries, and macOS checks each freshly linked one on first run, 85 to 105 s per check.\n1. Small worlds: a merge-tier test proves its behaviour on the smallest world that shows it; full-size runs belong to the main tier. GATE-TIME M9 already covers existing tests; make this a standing rule for new tests too (where the rule lives is your call; the guardrail skill text and lint rules are being agreed with the owner separately, so don't plan those). Example M9's builder can use: thrum-river-model's `no_step_is_taken_beyond_the_budget` (36 s) solves valley(0.25) to convergence about 40 times to prove a step-budget rule.\n2. CPU first: logic is tested without a device; a GPU test covers only what a GPU alone can show, at a small target.\n3. Fewer test binaries: from 265 towards one per package, to cut link and first-run time.\n4. Measure where builder time goes before any rule change: builder sessions ran 40 to 210 minutes per cleanup milestone, not yet split between thinking, test runs and lock waits. Plan a measurement, not a rule.\nAlready done, don't plan: exact-images and long-tests on main now run every 4h (ORCHESTRATE.md, 6cd8545ef).\nKeep the owner's bar: merge checks of a few minutes, tests fast and targeted, accepted risk written in the tier table. Done when the plans are amended and committed, with a short note saying where each change went and why.",
+      "at": "2026-11-21T08:38:18Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-21T04:10:58Z"
+    "at": "2026-11-21T08:38:18Z"
   },
   "design_history": [
     {
