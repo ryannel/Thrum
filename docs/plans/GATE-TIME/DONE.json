@@ -426,8 +426,8 @@
           "statement": "The record ends with what it shows, and proposes no rule: the largest parts overall, how the shortest and the longest sessions differ, and the most that a faster check, shorter waits or less of the model's own time could each take off a session. This milestone changed no setting, plan, skill or check.",
           "ask": "Does each closing statement follow from the record's tables? Does the record propose a rule, or did the milestone's commits change any file but this module's log and done-when file?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md#what-it-shows (second fix round: the savings sentences state what their median, mean and largest are of)",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/M10-review.md"
         }
