@@ -395,7 +395,7 @@
     {
       "id": "M10",
       "name": "A record shows where a builder's session goes: the model's own time, each kind of command and each wait",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
