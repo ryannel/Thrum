@@ -1,8 +1,16 @@
 //! Metal ambient field conformance.
 mod support;
+
+// The full grid at each clock age is one test, so the runner spreads them over the cores. The
+// frame script this test also ran is `frames_gpu`'s test, which ran the same function.
 #[test]
-fn metal_ambient_matches_independent_model() {
-    support::ambient(false, "ambient");
+fn metal_ambient_matches_independent_model_early() {
+    support::conformance(false, support::Age::Early, "ambient");
+}
+
+#[test]
+fn metal_ambient_matches_independent_model_a_day_in() {
+    support::conformance(false, support::Age::Day, "ambient");
 }
 
 #[test]

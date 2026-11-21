@@ -3,32 +3,80 @@ mod support;
 use std::f64::consts::FRAC_PI_4;
 use support::shore::{bed, config};
 use thrum_water_model::{
-    Body, BodyKind, Lag, Map, Profile, ShoreTransform, Source, SurfProfile, shelter,
+    Body, BodyKind, Lag, Map, Profile, ShoreConfig, ShoreTransform, Source, SurfProfile, shelter,
 };
 
-fn ground(x: f64, z: f64) -> f64 {
-    let r = x.hypot(z);
-    if r < 700.0 {
-        -20.0 * (1.0 - (r / 700.0).powi(2))
-    } else {
-        (0.06 * (r - 700.0)).min(6.0)
+/// A round lake 20 m deep at its centre in a ring of land, on 8 m cells, with the lake's width
+/// as its declared fetch.
+struct Lake {
+    radius: f64,
+    cells: usize,
+    origin: f64,
+}
+
+impl Lake {
+    /// The lake the fetch energy is held to: 700 m across a 221-cell square. Its 2 m isobath,
+    /// where the upwind energy is read, lies four and a half cells from the shore, which the
+    /// energy's 5% bound needs.
+    const FULL: Self = Self {
+        radius: 700.0,
+        cells: 221,
+        origin: -880.0,
+    };
+    /// Half the size on the same cells and depth: a quarter of the cells, and each lag and
+    /// exposure behaviour the full lake shows.
+    const HALF: Self = Self {
+        radius: 350.0,
+        cells: 111,
+        origin: -440.0,
+    };
+
+    fn ground(&self, x: f64, z: f64) -> f64 {
+        let r = x.hypot(z);
+        if r < self.radius {
+            -20.0 * (1.0 - (r / self.radius).powi(2))
+        } else {
+            (0.06 * 700.0 / self.radius * (r - self.radius)).min(6.0)
+        }
+    }
+
+    /// Cells from the centre to the edge of the square the deep-water turning is read over:
+    /// 480 m for the full lake, scaled with it.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "a whole count of 8 m cells"
+    )]
+    fn deep_cells(&self) -> i32 {
+        (60.0 * self.radius / 700.0) as i32
+    }
+
+    fn prepare(&self) -> (thrum_water_model::Bed, ShoreConfig) {
+        let b = bed([self.origin; 2], 8.0, [self.cells, self.cells], |x, z| {
+            self.ground(x, z)
+        });
+        let mut c = config();
+        c.seed = Some([0.0; 2]);
+        c.fetch = 2.0 * self.radius;
+        (b, c)
     }
 }
 
+/// Lags are finite in enclosed water at every stage and absent where no edge source reaches,
+/// deep water does not turn, waves turn towards the shore, and exposure follows the analytic
+/// circle. The half lake shows each of these.
 #[test]
-fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
-    let b = bed([-880.0; 2], 8.0, [221, 221], ground);
-    let mut c = config();
-    c.seed = Some([0.0; 2]);
+fn enclosed_water_has_finite_lags_turning_and_exposure() {
+    let lake = Lake::HALF;
+    let (b, c) = lake.prepare();
     let mut edge = c;
     edge.source = Source::EdgeOnly;
     let absent = Lag::solve(&b, edge, 40.0, [1.0, 0.0], 0.0).unwrap();
     for (i, value) in absent.values().iter().enumerate() {
         let p = [
-            -880.0 + (i % 221) as f64 * 8.0,
-            -880.0 + (i / 221) as f64 * 8.0,
+            lake.origin + (i % lake.cells) as f64 * 8.0,
+            lake.origin + (i / lake.cells) as f64 * 8.0,
         ];
-        if ground(p[0], p[1]) < 0.0 {
+        if lake.ground(p[0], p[1]) < 0.0 {
             assert!(value.is_infinite());
         }
     }
@@ -36,10 +84,10 @@ fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
     for direction in 0..8 {
         for rung in 0..6 {
             for &stage in transform.stages() {
-                for z in 0..221 {
-                    for x in 0..221 {
-                        let p = [-880.0 + f64::from(x) * 8.0, -880.0 + f64::from(z) * 8.0];
-                        if ground(p[0], p[1]) < 0.0 {
+                for z in 0..lake.cells {
+                    for x in 0..lake.cells {
+                        let p = [lake.origin + x as f64 * 8.0, lake.origin + z as f64 * 8.0];
+                        if lake.ground(p[0], p[1]) < 0.0 {
                             assert!(
                                 transform
                                     .sample(direction, 20.0 * 2.0_f64.powi(rung), stage, p)
@@ -54,10 +102,10 @@ fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
     }
     let mut turn = 0.0_f64;
     let mut stretch = 0.0_f64;
-    for z in -60..=60 {
-        for x in -60..=60 {
+    for z in -lake.deep_cells()..=lake.deep_cells() {
+        for x in -lake.deep_cells()..=lake.deep_cells() {
             let p = [f64::from(x) * 8.0, f64::from(z) * 8.0];
-            if -ground(p[0], p[1]) <= 10.0 {
+            if -lake.ground(p[0], p[1]) <= 10.0 {
                 continue;
             }
             let g = gradient(&transform, 20.0, p);
@@ -67,7 +115,7 @@ fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
     }
     eprintln!("lake deep-water turn {turn:.2} deg, wavelength error {stretch:.5}");
     assert!(turn < 15.0 && stretch < 0.03);
-    let r = 700.0 * 0.9_f64.sqrt();
+    let r = lake.radius * 0.9_f64.sqrt();
     for az in [30.0_f64, 60.0, 90.0] {
         let a = az.to_radians();
         let p = [r * a.cos(), r * a.sin()];
@@ -82,7 +130,7 @@ fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
                 let ray = FRAC_PI_4 * (f64::from(s) / 16.0 - 0.5);
                 let dot = p[0] * ray.cos() + p[1] * ray.sin();
                 let length =
-                    dot + (dot * dot + 700.0_f64.powi(2) - p[0].powi(2) - p[1].powi(2)).sqrt();
+                    dot + (dot * dot + lake.radius.powi(2) - p[0].powi(2) - p[1].powi(2)).sqrt();
                 (length / c.fetch).min(1.0)
             })
             .sum::<f64>()
@@ -93,6 +141,18 @@ fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
     // With a declared fetch shorter than the available upwind water, the energy is whole.
     // With the width as fetch this point is just under one, as its sector fans out.
     assert!(transform.exposure(0, 0.0, [r, 0.0]) > 0.9);
+}
+
+/// A lake with nonzero long-wave gain is not flat, and its wave energy at the upwind 2 m
+/// isobath, its centre and the downwind 2 m isobath follows the fetch share of the analytic
+/// circle. The surface reads only the lowest stage, and the transform prepares each stage
+/// apart, so the full lake is prepared at that one stage.
+#[test]
+fn enclosed_water_has_its_fetch_energy() {
+    let lake = Lake::FULL;
+    let (b, mut c) = lake.prepare();
+    c.stage.max = c.stage.min;
+    let r = lake.radius * 0.9_f64.sqrt();
     let forcing = thrum_sea_model::Forcing {
         wind_speed: 10.0,
         wind_direction: 0.0,
@@ -166,13 +226,13 @@ fn enclosed_water_has_finite_lags_turning_and_fetch_energy() {
             .map(|s| {
                 let a = FRAC_PI_4 * (f64::from(s) / 16.0 - 0.5);
                 let dot = p[0] * a.cos() + p[1] * a.sin();
-                ((dot + (dot * dot + 700.0_f64.powi(2) - p[0].powi(2) - p[1].powi(2)).sqrt())
+                ((dot + (dot * dot + lake.radius.powi(2) - p[0].powi(2) - p[1].powi(2)).sqrt())
                     / c.fetch)
                     .min(1.0)
             })
             .sum::<f64>()
             / 17.0;
-        let depth = -ground(p[0], p[1]);
+        let depth = -lake.ground(p[0], p[1]);
         let k0 = std::f64::consts::TAU / 40.0;
         let expected =
             0.5 * (0.5 * gains[0] * thrum_water_model::shoaling(k0, depth)).powi(2) * share;

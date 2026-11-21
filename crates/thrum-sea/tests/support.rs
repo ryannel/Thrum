@@ -349,24 +349,42 @@ pub(super) fn check_cascades(h: &mut Harness, out: &Output, s: &Spectrum, time: 
         );
     }
 }
-pub(super) fn ambient(portable: bool, name: &str) {
-    frame_script(portable);
+/// The two clock ages the full-grid conformance is held at: 19 s, and a day later, where a
+/// binary32 seconds clock fails the bound.
+#[derive(Clone, Copy)]
+pub(super) enum Age {
+    Early,
+    Day,
+}
+
+/// Full-grid conformance of the ambient field at one clock age, each age a test of its own.
+/// The frame script, which ran before both ages in one test, is [`frame_script`], a test of
+/// its own too.
+pub(super) fn conformance(portable: bool, age: Age, name: &str) {
     let Some(mut h) = Harness::new(portable) else {
         return;
     };
     let s = spectrum(20.0);
     let p = points();
-    for time in [19.0 + 0.375 / 60.0, 86400.0 + 0.375 / 60.0] {
-        let out = h
-            .frame(&s, time, &p, true)
-            .expect("valid Metal qualification fixture");
-        check_long(&mut h, &out, &s, time, &p, true);
-        check_cascades(&mut h, &out, &s, time, 1024);
-        if time > 86400.0 {
-            naive_seconds_ablation(&mut h, &s, time);
-        }
+    let time = match age {
+        Age::Early => 19.0 + 0.375 / 60.0,
+        Age::Day => 86400.0 + 0.375 / 60.0,
+    };
+    let out = h
+        .frame(&s, time, &p, true)
+        .expect("valid Metal qualification fixture");
+    check_long(&mut h, &out, &s, time, &p, true);
+    check_cascades(&mut h, &out, &s, time, 1024);
+    if time > 86400.0 {
+        naive_seconds_ablation(&mut h, &s, time);
     }
-    h.save(name);
+    h.save(&format!(
+        "{name}-{}",
+        match age {
+            Age::Early => "early",
+            Age::Day => "day",
+        }
+    ));
 }
 
 #[expect(
@@ -404,8 +422,8 @@ fn naive_seconds_ablation(h: &mut Harness, s: &Spectrum, time: f64) {
     );
 }
 
-fn frame_script(portable: bool) {
-    // Also keeps this target's full-grid conformance under the same device limits.
+/// The frame lifecycle script and a continuous wind change on a replaced device.
+pub(super) fn frame_script(portable: bool) {
     let Some(mut h) = Harness::new(portable) else {
         return;
     };

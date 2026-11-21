@@ -2,9 +2,26 @@
 use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction};
 
 mod support;
+
+// The frame script, the full grid at each clock age and the refusals under default WebGPU
+// limits are each one test, so the runner spreads them over the cores.
+#[test]
+fn default_webgpu_limits_frame_script() {
+    support::frame_script(true);
+}
+
+#[test]
+fn default_webgpu_limits_match_the_model_early() {
+    support::conformance(true, support::Age::Early, "portable");
+}
+
+#[test]
+fn default_webgpu_limits_match_the_model_a_day_in() {
+    support::conformance(true, support::Age::Day, "portable");
+}
+
 #[test]
 fn default_webgpu_limits_and_named_profile_refusals() {
-    support::ambient(true, "portable");
     let Some(h) = support::Harness::new(true) else {
         return;
     };

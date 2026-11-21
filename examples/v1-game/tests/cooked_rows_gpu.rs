@@ -13,6 +13,10 @@ use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
 use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
 
 const EXTENT: [u32; 2] = [320, 180];
+/// Under `cargo test` every case of this file shares one process, and a dozen game hosts at once
+/// exhaust the device, so the cases this file splits by mode take turns here. `./dev check` runs
+/// each test in a process of its own, where nothing else takes this lock.
+static CASES: Mutex<()> = Mutex::new(());
 type Stats = Arc<Mutex<CookedStats>>;
 type Host = FrameHost<GameWorld, GameScene>;
 
@@ -372,7 +376,10 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
         let first = generation(&cook);
         let mut old = settle(&mut live, &stats, first);
         let updates = live.cooked_rows().expect("rows").updates();
-        let uploading = edit(&cook, &mut cooker, 512, 1.8);
+        // Every edit here is half the grid it was (512 and 256 cells became 256 and 128): the
+        // superseded upload still spans five bounded slices, the protected and reused rows two,
+        // and each frame draws a quarter of the triangles, which the entities repeat.
+        let uploading = edit(&cook, &mut cooker, 256, 1.8);
         staged(&stats, uploading);
         // First capture takes the mailbox; the second records only the first bounded slice.
         for _ in 0..2 {
@@ -406,7 +413,7 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
                 .any(|s| s.generation == uploading)
         );
         old = new;
-        let protected = edit(&cook, &mut cooker, 256, 0.8);
+        let protected = edit(&cook, &mut cooker, 128, 0.8);
         staged(&stats, protected);
         let (mut fresh, fresh_stats) = host(
             &cook,
@@ -453,7 +460,7 @@ fn supersession_discarded_protected_switch_and_retired_space_reuse() {
         only_old_or_new(&mut live, &stats, behind, &middle, &newest);
         old = newest;
         let high_water = updates.report().high_water;
-        for (size, amplitude) in [(256, 0.9), (4, 0.1), (256, 0.7), (4, 0.05)] {
+        for (size, amplitude) in [(128, 0.9), (4, 0.1), (128, 0.7), (4, 0.05)] {
             let next = edit(&cook, &mut cooker, size, amplitude);
             let prepared = rows(&cook, &device).selection(Vec::new());
             let mesh = &prepared.meshes[0];
@@ -720,8 +727,42 @@ fn conversion_preserves_product_geometry_and_named_admission() {
     ));
 }
 
+// Each culling mode, with and without a texture placement on the edited mesh, is one test, so
+// the runner spreads them over the cores.
 #[test]
-fn edited_rows_equal_fresh_game_in_every_culling_mode() {
+fn edited_rows_equal_fresh_game_direct_without_placement() {
+    edited_rows_equal_fresh_game(CullMode::Direct, false);
+}
+
+#[test]
+fn edited_rows_equal_fresh_game_direct_with_placement() {
+    edited_rows_equal_fresh_game(CullMode::Direct, true);
+}
+
+#[test]
+fn edited_rows_equal_fresh_game_frustum_without_placement() {
+    edited_rows_equal_fresh_game(CullMode::Frustum, false);
+}
+
+#[test]
+fn edited_rows_equal_fresh_game_frustum_with_placement() {
+    edited_rows_equal_fresh_game(CullMode::Frustum, true);
+}
+
+#[test]
+fn edited_rows_equal_fresh_game_occlusion_without_placement() {
+    edited_rows_equal_fresh_game(CullMode::Occlusion, false);
+}
+
+#[test]
+fn edited_rows_equal_fresh_game_occlusion_with_placement() {
+    edited_rows_equal_fresh_game(CullMode::Occlusion, true);
+}
+
+fn edited_rows_equal_fresh_game(mode: CullMode, coupled: bool) {
+    let _turn = CASES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gate) = thrum_test_support::gpu("cooked rows", Some(wgpu::Backend::Metal)) else {
         return;
     };
@@ -731,102 +772,97 @@ fn edited_rows_equal_fresh_game_in_every_culling_mode() {
             &thrum_test_support::Restriction::default(),
         );
         let caps = DeviceCapabilities::capture(&gate.adapter, &device, 1);
-        for mode in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
-            for coupled in [false, true] {
-                let root = Scratch::new(&format!("{mode:?}-{coupled}"));
-                let cook = config(root.path());
-                let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-                cooker.cook_all().expect("first cook");
-                let first = AssetStore::new(&cook.store)
-                    .read_head()
-                    .expect("HEAD")
-                    .expect("first")
-                    .generation;
-                let (mut live, stats) =
-                    host(&cook, &device, &queue, &caps, mode, coupled, None).await;
-                let mut old = settle(&mut live, &stats, first);
-                let updates = live.cooked_rows().expect("rows").updates();
-                let mut clock = Duration::ZERO;
-                for (size, amplitude) in [(256, 1.4), (4, 0.07)] {
-                    demo::write_grid_gltf(&cook.source.join("meshes"), "terrain", size, amplitude)
-                        .expect("edit");
-                    cooker.cook_all().expect("recook");
-                    let generation = AssetStore::new(&cook.store)
-                        .read_head()
-                        .expect("HEAD")
-                        .expect("edit")
-                        .generation;
-                    let (mut fresh, fresh_stats) =
-                        host(&cook, &device, &queue, &caps, mode, coupled, None).await;
-                    let new = settle(&mut fresh, &fresh_stats, generation);
-                    let pipelines = live.pipeline_creation_count();
-                    assert_ne!(old, new, "fixture must visibly change {mode:?}");
-                    let deadline = Instant::now() + Duration::from_secs(90);
-                    let mut discarded_switch = false;
-                    let mut row_only_frames = 0;
-                    loop {
-                        let ready = updates.status(generation)
-                            == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready);
-                        if ready && !discarded_switch {
-                            clock += Duration::from_millis(16);
-                            let before = stats.lock().expect("stats").drawn;
-                            live.advance(clock)
-                                .expect("advance")
-                                .encode_scene()
-                                .expect("switch recording")
-                                .skip();
-                            assert_eq!(
-                                stats.lock().expect("stats").drawn,
-                                before,
-                                "discard committed a switch"
-                            );
-                            assert_eq!(
-                                updates.status(generation),
-                                Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready)
-                            );
-                            discarded_switch = true;
-                        }
-                        let image = live.capture_pixels().expect("edit frame");
-                        assert!(
-                            updates.report().max_write_bytes
-                                <= thrum_render::synthetic::mesh_rows::ROW_WRITE_BYTES
-                        );
-                        assert!(
-                            image == old || image == new,
-                            "mixed or non-fresh frame {mode:?}, coupled {coupled}, size {size}"
-                        );
-                        let observed = stats.lock().expect("stats");
-                        if observed.last_frame_copy_bytes == 0
-                            && updates.report().last_write_bytes != 0
-                            && updates.status(generation)
-                                == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Writing)
-                        {
-                            row_only_frames += 1;
-                        }
-                        assert!(observed.errors.is_empty(), "{:?}", observed.errors);
-                        if observed.drawn == Some(generation) {
-                            assert_eq!(image, new);
-                            break;
-                        }
-                        assert!(Instant::now() < deadline, "edit timed out");
-                        drop(observed);
-                        std::thread::yield_now();
-                    }
-                    assert!(discarded_switch, "the switch frame must be discarded once");
-                    if coupled && size == 256 {
-                        assert!(
-                            row_only_frames >= 2,
-                            "the row must still be writing for several frames after the placement's last copy"
-                        );
-                    }
+        let root = Scratch::new(&format!("{mode:?}-{coupled}"));
+        let cook = config(root.path());
+        let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+        cooker.cook_all().expect("first cook");
+        let first = AssetStore::new(&cook.store)
+            .read_head()
+            .expect("HEAD")
+            .expect("first")
+            .generation;
+        let (mut live, stats) = host(&cook, &device, &queue, &caps, mode, coupled, None).await;
+        let mut old = settle(&mut live, &stats, first);
+        let updates = live.cooked_rows().expect("rows").updates();
+        let mut clock = Duration::ZERO;
+        for (size, amplitude) in [(256, 1.4), (4, 0.07)] {
+            demo::write_grid_gltf(&cook.source.join("meshes"), "terrain", size, amplitude)
+                .expect("edit");
+            cooker.cook_all().expect("recook");
+            let generation = AssetStore::new(&cook.store)
+                .read_head()
+                .expect("HEAD")
+                .expect("edit")
+                .generation;
+            let (mut fresh, fresh_stats) =
+                host(&cook, &device, &queue, &caps, mode, coupled, None).await;
+            let new = settle(&mut fresh, &fresh_stats, generation);
+            let pipelines = live.pipeline_creation_count();
+            assert_ne!(old, new, "fixture must visibly change {mode:?}");
+            let deadline = Instant::now() + Duration::from_secs(90);
+            let mut discarded_switch = false;
+            let mut row_only_frames = 0;
+            loop {
+                let ready = updates.status(generation)
+                    == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready);
+                if ready && !discarded_switch {
+                    clock += Duration::from_millis(16);
+                    let before = stats.lock().expect("stats").drawn;
+                    live.advance(clock)
+                        .expect("advance")
+                        .encode_scene()
+                        .expect("switch recording")
+                        .skip();
                     assert_eq!(
-                        live.pipeline_creation_count(),
-                        pipelines,
-                        "edit created a pipeline"
+                        stats.lock().expect("stats").drawn,
+                        before,
+                        "discard committed a switch"
                     );
-                    old = new;
+                    assert_eq!(
+                        updates.status(generation),
+                        Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready)
+                    );
+                    discarded_switch = true;
                 }
+                let image = live.capture_pixels().expect("edit frame");
+                assert!(
+                    updates.report().max_write_bytes
+                        <= thrum_render::synthetic::mesh_rows::ROW_WRITE_BYTES
+                );
+                assert!(
+                    image == old || image == new,
+                    "mixed or non-fresh frame {mode:?}, coupled {coupled}, size {size}"
+                );
+                let observed = stats.lock().expect("stats");
+                if observed.last_frame_copy_bytes == 0
+                    && updates.report().last_write_bytes != 0
+                    && updates.status(generation)
+                        == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Writing)
+                {
+                    row_only_frames += 1;
+                }
+                assert!(observed.errors.is_empty(), "{:?}", observed.errors);
+                if observed.drawn == Some(generation) {
+                    assert_eq!(image, new);
+                    break;
+                }
+                assert!(Instant::now() < deadline, "edit timed out");
+                drop(observed);
+                std::thread::yield_now();
             }
+            assert!(discarded_switch, "the switch frame must be discarded once");
+            if coupled && size == 256 {
+                assert!(
+                    row_only_frames >= 2,
+                    "the row must still be writing for several frames after the placement's last copy"
+                );
+            }
+            assert_eq!(
+                live.pipeline_creation_count(),
+                pipelines,
+                "edit created a pipeline"
+            );
+            old = new;
         }
     });
 }
@@ -870,8 +906,74 @@ async fn environment_reference(
     fresh.capture_pixels().expect("fresh environment frame")
 }
 
+// A visual rebuild preserves a writing, ready, discarded or newly committed row: each culling
+// mode and each stage is one test, so the runner spreads them over the cores.
 #[test]
-fn visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows() {
+fn visual_rebuild_direct_partial_write() {
+    visual_rebuild_preserves_rows(CullMode::Direct, 0);
+}
+
+#[test]
+fn visual_rebuild_direct_ready_row() {
+    visual_rebuild_preserves_rows(CullMode::Direct, 1);
+}
+
+#[test]
+fn visual_rebuild_direct_discarded_switch() {
+    visual_rebuild_preserves_rows(CullMode::Direct, 2);
+}
+
+#[test]
+fn visual_rebuild_direct_candidate_prepared_before_the_commit() {
+    visual_rebuild_preserves_rows(CullMode::Direct, 3);
+}
+
+#[test]
+fn visual_rebuild_frustum_partial_write() {
+    visual_rebuild_preserves_rows(CullMode::Frustum, 0);
+}
+
+#[test]
+fn visual_rebuild_frustum_ready_row() {
+    visual_rebuild_preserves_rows(CullMode::Frustum, 1);
+}
+
+#[test]
+fn visual_rebuild_frustum_discarded_switch() {
+    visual_rebuild_preserves_rows(CullMode::Frustum, 2);
+}
+
+#[test]
+fn visual_rebuild_frustum_candidate_prepared_before_the_commit() {
+    visual_rebuild_preserves_rows(CullMode::Frustum, 3);
+}
+
+#[test]
+fn visual_rebuild_occlusion_partial_write() {
+    visual_rebuild_preserves_rows(CullMode::Occlusion, 0);
+}
+
+#[test]
+fn visual_rebuild_occlusion_ready_row() {
+    visual_rebuild_preserves_rows(CullMode::Occlusion, 1);
+}
+
+#[test]
+fn visual_rebuild_occlusion_discarded_switch() {
+    visual_rebuild_preserves_rows(CullMode::Occlusion, 2);
+}
+
+#[test]
+fn visual_rebuild_occlusion_candidate_prepared_before_the_commit() {
+    visual_rebuild_preserves_rows(CullMode::Occlusion, 3);
+}
+
+/// `phase` 0: partial write; 1: ready; 2: discarded switch; 3: a candidate prepared before the
+/// edit, then published after the edit committed.
+fn visual_rebuild_preserves_rows(mode: CullMode, phase: u8) {
+    let _turn = CASES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(gpu) = thrum_test_support::gpu("row visual rebuilds", Some(wgpu::Backend::Metal))
     else {
         return;
@@ -882,113 +984,101 @@ fn visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows() {
     );
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     pollster::block_on(async {
-        for mode in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
-            // 0: partial write; 1: ready; 2: discarded switch; 3: a candidate
-            // prepared before the edit, then published after the edit committed.
-            for phase in 0..4 {
-                let root = Scratch::new(&format!("visual-{mode:?}-{phase}"));
-                let cook = config(root.path());
-                let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-                cooker.cook_all().expect("initial cook");
-                let product = environment(if phase == 0 || phase == 2 { 2 } else { 1 });
-                let old = Box::pin(environment_reference(
-                    &cook, &device, &queue, &caps, mode, product,
-                ))
-                .await;
-                let (mut live, stats) = host(&cook, &device, &queue, &caps, mode, true, None).await;
-                settle(&mut live, &stats, generation(&cook));
-                let updates = live.cooked_rows().expect("rows").updates();
-                let mut candidate = if phase == 3 {
-                    Some(
-                        live.environment_prepare_inputs()
-                            .prepare(product)
-                            .await
-                            .expect("early candidate"),
-                    )
-                } else {
-                    None
-                };
-                let next = edit(&cook, &mut cooker, 256, 1.4);
-                staged(&stats, next);
-                let deadline = Instant::now() + Duration::from_secs(90);
-                loop {
-                    let status = updates.status(next);
-                    let reached = match phase {
-                        0 => {
-                            status
-                                == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Writing)
-                                && updates.report().last_write_bytes != 0
-                        }
-                        1 | 2 => {
-                            status == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready)
-                        }
-                        _ => {
-                            status
-                                == Some(
-                                    thrum_render::synthetic::mesh_rows::MeshRowStatus::Committed,
-                                )
-                        }
-                    };
-                    if reached {
-                        break;
-                    }
-                    render_frame(&mut live);
-                    assert!(
-                        Instant::now() < deadline,
-                        "rebuild stage {phase} never reached"
-                    );
+        let root = Scratch::new(&format!("visual-{mode:?}-{phase}"));
+        let cook = config(root.path());
+        let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+        cooker.cook_all().expect("initial cook");
+        let product = environment(if phase == 0 || phase == 2 { 2 } else { 1 });
+        let old = Box::pin(environment_reference(
+            &cook, &device, &queue, &caps, mode, product,
+        ))
+        .await;
+        let (mut live, stats) = host(&cook, &device, &queue, &caps, mode, true, None).await;
+        settle(&mut live, &stats, generation(&cook));
+        let updates = live.cooked_rows().expect("rows").updates();
+        let mut candidate = if phase == 3 {
+            Some(
+                live.environment_prepare_inputs()
+                    .prepare(product)
+                    .await
+                    .expect("early candidate"),
+            )
+        } else {
+            None
+        };
+        // 128 cells, 1.2 MB of rows, still more than one bounded slice, so the partial-write
+        // stage is reached; it was 256 cells, at four times each frame's triangles.
+        let next = edit(&cook, &mut cooker, 128, 1.4);
+        staged(&stats, next);
+        let deadline = Instant::now() + Duration::from_secs(90);
+        loop {
+            let status = updates.status(next);
+            let reached = match phase {
+                0 => {
+                    status == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Writing)
+                        && updates.report().last_write_bytes != 0
                 }
-                if phase == 2 {
-                    live.advance(Duration::from_millis(16))
-                        .expect("advance")
-                        .encode_scene()
-                        .expect("discard switch")
-                        .skip();
-                }
-                let before_status = updates.status(next);
-                let before_bytes = updates.report().submitted_bytes;
-                let mut candidate = match candidate.take() {
-                    Some(candidate) => candidate,
-                    None => live
-                        .environment_prepare_inputs()
-                        .prepare(product)
-                        .await
-                        .expect("candidate"),
-                };
-                assert!(live.publish_environment(&mut candidate).expect("publish"));
-                assert_eq!(
-                    updates.status(next),
-                    before_status,
-                    "preparation belongs to the retained arena"
-                );
-                assert_eq!(
-                    updates.report().submitted_bytes,
-                    before_bytes,
-                    "rebuild must not rewrite row geometry"
-                );
-                let new = Box::pin(environment_reference(
-                    &cook, &device, &queue, &caps, mode, product,
-                ))
-                .await;
-                assert_ne!(old, new, "fixture must expose changed geometry");
-                only_old_or_new(&mut live, &stats, next, &old, &new);
-                assert_eq!(live.capture_pixels().expect("following frame"), new);
-                assert_eq!(live.capture_pixels().expect("persistent frame"), new);
-
-                // The inherited allocator and retirement state must also support
-                // the next replacement after the rebuilt scene has published.
-                let shrink = edit(&cook, &mut cooker, 4, 0.07);
-                let smaller = Box::pin(environment_reference(
-                    &cook, &device, &queue, &caps, mode, product,
-                ))
-                .await;
-                only_old_or_new(&mut live, &stats, shrink, &new, &smaller);
-                assert_eq!(live.capture_pixels().expect("shrunk frame"), smaller);
-                eprintln!(
-                    "visual row rebuild: {mode:?}, phase={phase}, exact old/new and subsequent shrink passed"
-                );
+                1 | 2 => status == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Ready),
+                _ => status == Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Committed),
+            };
+            if reached {
+                break;
             }
+            render_frame(&mut live);
+            assert!(
+                Instant::now() < deadline,
+                "rebuild stage {phase} never reached"
+            );
         }
+        if phase == 2 {
+            live.advance(Duration::from_millis(16))
+                .expect("advance")
+                .encode_scene()
+                .expect("discard switch")
+                .skip();
+        }
+        let before_status = updates.status(next);
+        let before_bytes = updates.report().submitted_bytes;
+        let mut candidate = match candidate.take() {
+            Some(candidate) => candidate,
+            None => live
+                .environment_prepare_inputs()
+                .prepare(product)
+                .await
+                .expect("candidate"),
+        };
+        assert!(live.publish_environment(&mut candidate).expect("publish"));
+        assert_eq!(
+            updates.status(next),
+            before_status,
+            "preparation belongs to the retained arena"
+        );
+        assert_eq!(
+            updates.report().submitted_bytes,
+            before_bytes,
+            "rebuild must not rewrite row geometry"
+        );
+        let new = Box::pin(environment_reference(
+            &cook, &device, &queue, &caps, mode, product,
+        ))
+        .await;
+        assert_ne!(old, new, "fixture must expose changed geometry");
+        only_old_or_new(&mut live, &stats, next, &old, &new);
+        assert_eq!(live.capture_pixels().expect("following frame"), new);
+        assert_eq!(live.capture_pixels().expect("persistent frame"), new);
+
+        // The inherited allocator and retirement state must also support
+        // the next replacement after the rebuilt scene has published.
+        let shrink = edit(&cook, &mut cooker, 4, 0.07);
+        let smaller = Box::pin(environment_reference(
+            &cook, &device, &queue, &caps, mode, product,
+        ))
+        .await;
+        only_old_or_new(&mut live, &stats, shrink, &new, &smaller);
+        assert_eq!(live.capture_pixels().expect("shrunk frame"), smaller);
+        eprintln!(
+            "visual row rebuild: {mode:?}, phase={phase}, exact old/new and subsequent shrink passed"
+        );
     });
 }
 

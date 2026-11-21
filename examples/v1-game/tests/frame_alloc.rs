@@ -19,7 +19,10 @@ use thrum_render::present::SurfaceProfile;
 use thrum_render::runtime::SurfaceOutput;
 use v1_game::{GameHost, GameSetup};
 
-const MEASURED_FRAMES: usize = 600;
+// Two seconds of warm frames at 60 Hz, as its sibling reports 100 render callbacks. It was 600,
+// and each frame waits for the device, so beside other GPU tests the run took over ten seconds;
+// the per-frame assertion and the reported medians and maxima are the same over 120.
+const MEASURED_FRAMES: usize = 120;
 static METAL_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 thread_local! {

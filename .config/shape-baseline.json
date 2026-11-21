@@ -85,7 +85,7 @@
     "limit-exempt": {
       "version": 1,
       "files": {
-        ".config/nextest.toml": 12
+        ".config/nextest.toml": 4
       }
     },
     "main-tier": {

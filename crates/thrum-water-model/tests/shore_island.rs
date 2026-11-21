@@ -24,7 +24,11 @@ fn expected(p: [f64; 2]) -> f64 {
 
 #[test]
 fn waves_arrive_round_land_and_exposure_closes_far_downwind() {
-    let b = bed([-500.0; 2], 4.0, [251, 251], ground);
+    // 1,000 m along the wind, which the far-downwind point at 480 m needs, and 600 m across it,
+    // for 60% of the cells of the 1,000 m square this replaced. The island is 160 m across at
+    // the shore, and an exposure ray that leaves the strip cannot come back to it, so every
+    // exposure is the square's; the worst arrival angle, 59.175 degrees, is the square's too.
+    let b = bed([-500.0, -300.0], 4.0, [251, 151], ground);
     let mut c = config();
     c.stage.max = 0.0;
     let transform = ShoreTransform::prepare(b, c).unwrap();

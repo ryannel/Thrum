@@ -35,6 +35,10 @@ cooked-assets = { max-threads = 1 }
 frame-alloc = { max-threads = 1 }
 foam-scene = { max-threads = 1 }
 water-interaction = { max-threads = 1 }
+# Not a device mutex: the game's cooked-row and lent-product cases each draw a game host through
+# edited cooked content and wait on the device every frame, so beyond two at once they only queue
+# there and each runs past ten seconds (GATE-TIME M9).
+game-cooked-content = { max-threads = 2 }
 
 [[profile.default.overrides]]
 # Full scene targets, some fixtures keeping two devices alive.
@@ -45,6 +49,10 @@ test-group = 'cooked-assets'
 # Counts the main thread's allocations over 600 frames of a Metal host.
 filter = 'package(v1-game) & binary(=frame_alloc)'
 test-group = 'frame-alloc'
+
+[[profile.default.overrides]]
+filter = 'package(v1-game) & (binary(=cooked_rows_gpu) | binary(=lent_products_gpu))'
+test-group = 'game-cooked-content'
 
 [[profile.default.overrides]]
 filter = 'package(water-scene) & binary(=foam_scene_gpu)'
@@ -69,20 +77,7 @@ threads-required = 4
 # GATE-TIME M8 measured it, under the milestone that makes it fast or moves it to the main tier.
 # It is still reported as slow, but not stopped at sixty seconds. No other module adds a name.
 # Times alone are M8's record. M2 has no test here: the cloud conformance tests take about 5 s.
-
-[[profile.default.overrides]]
-# GATE-TIME M9.
-filter = '''
-    (binary_id(=thrum-river-model::report) & test(=no_step_is_taken_beyond_the_budget))
-  | (binary_id(=thrum-water-model::shore_basin) & test(=enclosed_water_has_finite_lags_turning_and_fetch_energy))
-  | (binary_id(=v1-game::cooked_rows_gpu) & test(=visual_rebuilds_preserve_writing_ready_discarded_and_newly_committed_rows))
-  | (binary_id(=thrum-sea::frames_gpu) & test(=frame_script_and_continuous_wind_change))
-  | (binary_id(=thrum-sea::portable_limits_gpu) & test(=default_webgpu_limits_and_named_profile_refusals))
-  | (binary_id(=thrum-sea::ambient_gpu) & test(=metal_ambient_matches_independent_model))
-  | (binary_id(=thrum-sea::forward_cache_gpu) & test(=forward_fields_and_full_lean_pyramids_match_the_model))
-  | (binary_id(=thrum-water-model::shore_island) & test(=waves_arrive_round_land_and_exposure_closes_far_downwind))
-'''
-slow-timeout = { period = "10s" }
+# GATE-TIME M9 made its eight fast and took them off.
 
 [[profile.default.overrides]]
 # GATE-TIME M3.

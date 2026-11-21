@@ -17,6 +17,11 @@ use v1_game::{
 
 type Host = FrameHost<GameWorld, GameScene>;
 
+/// Under `cargo test` every case of this file shares one process, and a dozen game hosts at once
+/// exhaust the device, so the cases this file splits by format take turns here. `./dev check`
+/// runs each test in a process of its own, where nothing else takes this lock.
+static CASES: Mutex<()> = Mutex::new(());
+
 fn presenting() -> FrameConfig {
     FrameConfig {
         surface: Some(thrum_render::present::SurfaceProfile {
@@ -323,18 +328,52 @@ impl thrum_asset::Fetch for StoreFetch {
     }
 }
 
+// Overlapping edits reuse the ready publication: each texture format, source and attach order
+// is one test, so the runner spreads them over the cores.
 #[test]
-fn overlapping_edits_reuse_the_ready_publication() {
-    for compressed in [false, true] {
-        for remote in [false, true] {
-            for consumer_first in [false, true] {
-                overlapping_edits_case(compressed, remote, consumer_first);
-            }
-        }
-    }
+fn overlapping_edits_reuse_the_ready_publication_uncompressed_native_assets_first() {
+    overlapping_edits_case(false, false, false);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_uncompressed_native_consumer_first() {
+    overlapping_edits_case(false, false, true);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_uncompressed_remote_assets_first() {
+    overlapping_edits_case(false, true, false);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_uncompressed_remote_consumer_first() {
+    overlapping_edits_case(false, true, true);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_compressed_native_assets_first() {
+    overlapping_edits_case(true, false, false);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_compressed_native_consumer_first() {
+    overlapping_edits_case(true, false, true);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_compressed_remote_assets_first() {
+    overlapping_edits_case(true, true, false);
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication_compressed_remote_consumer_first() {
+    overlapping_edits_case(true, true, true);
 }
 
 fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) {
+    let _turn = CASES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(test_gpu) =
         thrum_test_support::gpu("overlapping_edits_case", Some(wgpu::Backend::Metal))
     else {
@@ -455,201 +494,221 @@ fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) 
     std::fs::remove_dir_all(root).expect("cleanup");
 }
 
+// Leased texels through commit, edit, capture, discard and recovery: each texture format and
+// attach order is one test, so the runner spreads them over the cores.
 #[test]
-fn leased_texels_commit_edit_capture_discard_and_recovery() {
+fn leased_texels_commit_edit_capture_discard_and_recovery_uncompressed_assets_first() {
+    leased_texels_case(false, false);
+}
+
+#[test]
+fn leased_texels_commit_edit_capture_discard_and_recovery_uncompressed_consumer_first() {
+    leased_texels_case(false, true);
+}
+
+#[test]
+fn leased_texels_commit_edit_capture_discard_and_recovery_compressed_assets_first() {
+    leased_texels_case(true, false);
+}
+
+#[test]
+fn leased_texels_commit_edit_capture_discard_and_recovery_compressed_consumer_first() {
+    leased_texels_case(true, true);
+}
+
+fn leased_texels_case(compressed: bool, consumer_first: bool) {
+    let _turn = CASES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let Some(test_gpu) = thrum_test_support::gpu(
         "leased_texels_commit_edit_capture_discard_and_recovery",
         Some(wgpu::Backend::Metal),
     ) else {
         return;
     };
-    for compressed in [false, true] {
-        for consumer_first in [false, true] {
-            let root = std::env::temp_dir().join(format!(
-                "thrum-lent-{}-{compressed}-{consumer_first}",
-                std::process::id()
-            ));
-            std::fs::remove_dir_all(&root).ok();
-            let cook = fixture(&root);
-            let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-            assert_eq!(cooker.cook_all().expect("cook").failed, []);
-            pollster::block_on(async {
-                let (device, queue, capabilities) = gpu(&test_gpu, 1, compressed).await;
-                let mut host = GameSetup::default()
-                    .prepare(&device, &queue, &capabilities, presenting())
-                    .await
-                    .expect("host");
-                let (lease, stats, witness) = attach(&mut host, config(&cook), consumer_first);
-                let mut clock = Duration::ZERO;
-                assert!(lease.offered().is_none());
-                until(&lease, &mut host, &device, &mut clock, || {
-                    lease.offered().is_some()
-                });
-                assert_eq!(
-                    stats.lock().expect("stats").drawn,
-                    None,
-                    "last-copy frame still shows old set"
-                );
-                clock += Duration::from_millis(16);
-                host.advance(clock)
-                    .expect("advance")
-                    .encode_scene()
-                    .expect("encode switch")
-                    .skip();
-                assert_eq!(
-                    stats.lock().expect("stats").drawn,
-                    None,
-                    "discard commits nothing"
-                );
-                host.capture_pixels().expect("capture switch");
-                assert_eq!(stats.lock().expect("stats").drawn, Some(1));
-                assert!(
-                    witness
-                        .lock()
-                        .expect("witness")
-                        .invalidations
-                        .iter()
-                        .all(|n| *n == 0)
-                );
-                frame(&mut host, &device, &mut clock);
-                assert!(
-                    witness
-                        .lock()
-                        .expect("witness")
-                        .changed
-                        .iter()
-                        .all(|changed| *changed)
-                );
-                assert_texels(&cook, &device, &queue, &witness, compressed);
-                frame(&mut host, &device, &mut clock);
-                assert!(
-                    witness
-                        .lock()
-                        .expect("witness")
-                        .changed
-                        .iter()
-                        .all(|changed| !changed)
-                );
-                let old = lease.offered().expect("old");
-                let pipelines = host.pipeline_creation_count();
-                let bind_groups = witness.lock().expect("witness").bind_groups_created;
-                demo::write_cloud_volume(&cook.source.join("cloud0.tvol"), 128, 98).expect("edit");
-                assert_eq!(cooker.cook_all().expect("recook").failed, []);
-                until(&lease, &mut host, &device, &mut clock, || {
-                    lease.offered().is_some_and(|set| set.generation == 2)
-                });
-                clock += Duration::from_millis(16);
-                host.advance(clock)
-                    .expect("advance")
-                    .encode_scene()
-                    .expect("edited switch")
-                    .skip();
-                assert_eq!(stats.lock().expect("stats").drawn, Some(1));
-                host.capture_pixels().expect("edited capture");
-                frame(&mut host, &device, &mut clock);
-                assert_eq!(
-                    witness.lock().expect("witness").changed,
-                    [
-                        true, false, false, false, false, false, false, false, false, false, false,
-                        false, false
-                    ]
-                );
-                let edited = lease.offered().expect("edited");
-                assert_edit_upload(&cook, &edited.products[0], &stats.lock().expect("stats"));
-                assert_eq!(
-                    witness.lock().expect("witness").bind_groups_created,
-                    bind_groups + u64::from(edited.products[0].texture.mip_level_count())
-                );
-                assert_eq!(
-                    host.pipeline_creation_count(),
-                    pipelines,
-                    "an edit creates no pipeline"
-                );
-                for (a, b) in old.products.iter().zip(&edited.products).skip(1) {
-                    assert_eq!(a.hash, b.hash);
-                    assert_eq!(a.serial, b.serial);
-                    assert_eq!(a.texture, b.texture);
-                    assert_eq!(a.view, b.view);
-                }
-                assert_ne!(old.products[0].hash, edited.products[0].hash);
-                assert_texels(&cook, &device, &queue, &witness, compressed);
-                frame(&mut host, &device, &mut clock);
-                assert!(
-                    witness
-                        .lock()
-                        .expect("witness")
-                        .changed
-                        .iter()
-                        .all(|changed| !changed)
-                );
-                // No rendered frame between these publications: the staging ring cannot
-                // hold all twelve volumes, so generation 3 is superseded while uploading.
-                for (generation, seed) in [(3, 77), (4, 88)] {
-                    for index in 0..12 {
-                        demo::write_cloud_volume(
-                            &cook.source.join(format!("cloud{index}.tvol")),
-                            128,
-                            seed + index,
-                        )
-                        .expect("superseding edit");
-                    }
-                    assert_eq!(cooker.cook_all().expect("superseding cook").failed, []);
-                    let deadline = Instant::now() + Duration::from_secs(30);
-                    while stats.lock().expect("stats").staged != Some(generation) {
-                        assert!(
-                            Instant::now() < deadline,
-                            "loader never posts newer generation"
-                        );
-                        std::thread::park_timeout(Duration::from_millis(1));
-                    }
-                }
-                until(&lease, &mut host, &device, &mut clock, || {
-                    stats.lock().expect("stats").drawn == Some(4)
-                });
-                assert!(
-                    !stats
-                        .lock()
-                        .expect("stats")
-                        .swaps
-                        .iter()
-                        .any(|swap| swap.generation == 3)
-                );
-                {
-                    let stats = stats.lock().expect("stats");
-                    assert_eq!(stats.swaps.len(), 3);
-                    assert!(stats.swaps[1].uploaded_bytes < stats.swaps[0].uploaded_bytes / 10);
-                    assert!(stats.max_frame_copy_bytes <= COPY_UNIT);
-                    assert!(stats.staging_peak_bytes <= COPY_UNIT * STAGING_CHUNKS);
-                }
-                let (new_device, new_queue, new_capabilities) =
-                    gpu(&test_gpu.fresh_adapter(), 2, compressed).await;
-                let mut candidate = host
-                    .device_prepare_inputs()
-                    .expect("inputs")
-                    .prepare(&new_capabilities, &new_queue, presenting().surface)
-                    .await
-                    .expect("replacement");
-                device.destroy();
-                host.publish_device(&mut candidate).expect("publish device");
-                assert!(lease.offered().is_none());
-                assert!(witness.lock().expect("witness").offered.is_none());
-                until(&lease, &mut host, &new_device, &mut clock, || {
-                    stats.lock().expect("stats").drawn_device_generation == Some(2)
-                });
-                frame(&mut host, &new_device, &mut clock);
-                assert!(
-                    lease
-                        .offered()
-                        .expect("restaged")
-                        .products
-                        .iter()
-                        .all(|product| product.device_generation == 2)
-                );
-                assert_texels(&cook, &new_device, &new_queue, &witness, compressed);
-            });
-            std::fs::remove_dir_all(root).expect("cleanup");
+    let root = std::env::temp_dir().join(format!(
+        "thrum-lent-{}-{compressed}-{consumer_first}",
+        std::process::id()
+    ));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = fixture(&root);
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    assert_eq!(cooker.cook_all().expect("cook").failed, []);
+    pollster::block_on(async {
+        let (device, queue, capabilities) = gpu(&test_gpu, 1, compressed).await;
+        let mut host = GameSetup::default()
+            .prepare(&device, &queue, &capabilities, presenting())
+            .await
+            .expect("host");
+        let (lease, stats, witness) = attach(&mut host, config(&cook), consumer_first);
+        let mut clock = Duration::ZERO;
+        assert!(lease.offered().is_none());
+        until(&lease, &mut host, &device, &mut clock, || {
+            lease.offered().is_some()
+        });
+        assert_eq!(
+            stats.lock().expect("stats").drawn,
+            None,
+            "last-copy frame still shows old set"
+        );
+        clock += Duration::from_millis(16);
+        host.advance(clock)
+            .expect("advance")
+            .encode_scene()
+            .expect("encode switch")
+            .skip();
+        assert_eq!(
+            stats.lock().expect("stats").drawn,
+            None,
+            "discard commits nothing"
+        );
+        host.capture_pixels().expect("capture switch");
+        assert_eq!(stats.lock().expect("stats").drawn, Some(1));
+        assert!(
+            witness
+                .lock()
+                .expect("witness")
+                .invalidations
+                .iter()
+                .all(|n| *n == 0)
+        );
+        frame(&mut host, &device, &mut clock);
+        assert!(
+            witness
+                .lock()
+                .expect("witness")
+                .changed
+                .iter()
+                .all(|changed| *changed)
+        );
+        assert_texels(&cook, &device, &queue, &witness, compressed);
+        frame(&mut host, &device, &mut clock);
+        assert!(
+            witness
+                .lock()
+                .expect("witness")
+                .changed
+                .iter()
+                .all(|changed| !changed)
+        );
+        let old = lease.offered().expect("old");
+        let pipelines = host.pipeline_creation_count();
+        let bind_groups = witness.lock().expect("witness").bind_groups_created;
+        demo::write_cloud_volume(&cook.source.join("cloud0.tvol"), 128, 98).expect("edit");
+        assert_eq!(cooker.cook_all().expect("recook").failed, []);
+        until(&lease, &mut host, &device, &mut clock, || {
+            lease.offered().is_some_and(|set| set.generation == 2)
+        });
+        clock += Duration::from_millis(16);
+        host.advance(clock)
+            .expect("advance")
+            .encode_scene()
+            .expect("edited switch")
+            .skip();
+        assert_eq!(stats.lock().expect("stats").drawn, Some(1));
+        host.capture_pixels().expect("edited capture");
+        frame(&mut host, &device, &mut clock);
+        assert_eq!(
+            witness.lock().expect("witness").changed,
+            [
+                true, false, false, false, false, false, false, false, false, false, false, false,
+                false
+            ]
+        );
+        let edited = lease.offered().expect("edited");
+        assert_edit_upload(&cook, &edited.products[0], &stats.lock().expect("stats"));
+        assert_eq!(
+            witness.lock().expect("witness").bind_groups_created,
+            bind_groups + u64::from(edited.products[0].texture.mip_level_count())
+        );
+        assert_eq!(
+            host.pipeline_creation_count(),
+            pipelines,
+            "an edit creates no pipeline"
+        );
+        for (a, b) in old.products.iter().zip(&edited.products).skip(1) {
+            assert_eq!(a.hash, b.hash);
+            assert_eq!(a.serial, b.serial);
+            assert_eq!(a.texture, b.texture);
+            assert_eq!(a.view, b.view);
         }
-    }
+        assert_ne!(old.products[0].hash, edited.products[0].hash);
+        assert_texels(&cook, &device, &queue, &witness, compressed);
+        frame(&mut host, &device, &mut clock);
+        assert!(
+            witness
+                .lock()
+                .expect("witness")
+                .changed
+                .iter()
+                .all(|changed| !changed)
+        );
+        // No rendered frame between these publications: the staging ring cannot
+        // hold all twelve volumes, so generation 3 is superseded while uploading.
+        for (generation, seed) in [(3, 77), (4, 88)] {
+            for index in 0..12 {
+                demo::write_cloud_volume(
+                    &cook.source.join(format!("cloud{index}.tvol")),
+                    128,
+                    seed + index,
+                )
+                .expect("superseding edit");
+            }
+            assert_eq!(cooker.cook_all().expect("superseding cook").failed, []);
+            let deadline = Instant::now() + Duration::from_secs(30);
+            while stats.lock().expect("stats").staged != Some(generation) {
+                assert!(
+                    Instant::now() < deadline,
+                    "loader never posts newer generation"
+                );
+                std::thread::park_timeout(Duration::from_millis(1));
+            }
+        }
+        until(&lease, &mut host, &device, &mut clock, || {
+            stats.lock().expect("stats").drawn == Some(4)
+        });
+        assert!(
+            !stats
+                .lock()
+                .expect("stats")
+                .swaps
+                .iter()
+                .any(|swap| swap.generation == 3)
+        );
+        {
+            let stats = stats.lock().expect("stats");
+            assert_eq!(stats.swaps.len(), 3);
+            assert!(stats.swaps[1].uploaded_bytes < stats.swaps[0].uploaded_bytes / 10);
+            assert!(stats.max_frame_copy_bytes <= COPY_UNIT);
+            assert!(stats.staging_peak_bytes <= COPY_UNIT * STAGING_CHUNKS);
+        }
+        let (new_device, new_queue, new_capabilities) =
+            gpu(&test_gpu.fresh_adapter(), 2, compressed).await;
+        let mut candidate = host
+            .device_prepare_inputs()
+            .expect("inputs")
+            .prepare(&new_capabilities, &new_queue, presenting().surface)
+            .await
+            .expect("replacement");
+        device.destroy();
+        host.publish_device(&mut candidate).expect("publish device");
+        assert!(lease.offered().is_none());
+        assert!(witness.lock().expect("witness").offered.is_none());
+        until(&lease, &mut host, &new_device, &mut clock, || {
+            stats.lock().expect("stats").drawn_device_generation == Some(2)
+        });
+        frame(&mut host, &new_device, &mut clock);
+        assert!(
+            lease
+                .offered()
+                .expect("restaged")
+                .products
+                .iter()
+                .all(|product| product.device_generation == 2)
+        );
+        assert_texels(&cook, &new_device, &new_queue, &witness, compressed);
+    });
+    std::fs::remove_dir_all(root).expect("cleanup");
 }
 
 #[test]

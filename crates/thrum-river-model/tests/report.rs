@@ -38,9 +38,13 @@ fn a_solve_that_runs_out_of_steps_is_refused_by_name_and_writes_nothing() {
 /// longer than the whole budget, never steps past it. A solve either reaches its tolerances
 /// inside the budget or is refused at exactly the budget, and one that converges on its last
 /// allowed step still succeeds.
+///
+/// The rule is the stepping loop's, whatever the grid, so the test solves the valley at 1 m
+/// cells: 672 cells that converge in about 2,400 steps, which is still past every fixed budget
+/// below, against 10,752 cells and about 8,000 steps at 0.25 m.
 #[test]
 fn no_step_is_taken_beyond_the_budget() {
-    let (grid, declaration) = valley::valley(0.25);
+    let (grid, declaration) = valley::valley(1.0);
     let run = |step_budget, check_every| {
         let profile = Profile {
             step_budget,
