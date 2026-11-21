@@ -408,6 +408,15 @@ what brings a merge's check from twenty minutes to a few, and M8 builds it.
   from the check's own output, and M7 and M5 make their records from it.
 - *The draw-probe pass runs four tests.* It is a second build of one game binary with a feature on, and it ran
   all 14 cooked-asset tests again, 70 s. It runs only the tests that assert on the probe (mechanism 6).
+- *A capture waits for its own readback.* Tests side by side load the machine, and the first fault the load
+  found is in the engine, older than M8. `FrameHost::capture_pixels` waited for its submission, looked once for
+  its readback and failed with `capture readback incomplete` when another thread's poll of the same device had
+  taken the readback's completion and not yet delivered it. The cooked loader polls that way, and
+  `lent_products_gpu` failed so in one merge check. After its submission completes, `capture_pixels` keeps
+  polling until its own readback arrives, whichever thread delivers it, and fails only when `GPU_WAIT` has
+  passed. No pixel a capture returns changes, and nothing a frame records. M8 builds it, with a test that fails
+  on the code before it: a second thread that only polls does not, and
+  [the planner's probe](../../../.orchestrate/evidence/GATE-TIME/planning/capture-race-probe.md) shows what does.
 - *Steps that share nothing may run at once.* The Python guards and script suites, about a minute, read the tree
   and build nothing the Rust steps use. M8 may run them beside the build if its timing shows a gain, with each
   step's output printed whole.
@@ -452,6 +461,13 @@ tests, `ATMOSPHERE`'s reference tests, `SCENE-VIEWS`' pool and scene-view tests,
 Ownership does not move. The Done items that name these tests keep their text, because
 [a Done item's check is its record](../../../ORCHESTRATE.md#targets).
 
+One change is to the engine and not to a test: the wait in `FrameHost::capture_pixels` (mechanism 8), in
+`APPLE-TILE`'s frame host. The lead gave it to M8 on 21 November, because it is about ten lines that change
+nothing drawn or timed, no builder was at work in `thrum-render`'s runtime, and starting a finished module for it
+would cost more. `APPLE-TILE`'s log records the hand-over, its design stays the authority for the frame host, and
+the test belongs to it once landed. Any other engine fault a milestone here finds is still a proposal to its
+owner.
+
 ## Files each milestone touches
 
 The lead confirms these against the builders at work before it starts a milestone. A milestone touches nothing
@@ -463,7 +479,7 @@ landing moves them, whatever your row says. The rows are in build order.
 |---|---|---|---|
 | M1 | `examples/water/tests/floating_gpu.rs`; `examples/v1-game/tests/exit_scene.rs`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`; `crates/thrum-water-model/tests/shore_blend.rs`; the new command and the help text in `tools/xtask/src/main.rs` and its line in `dev`; the new `.config/long-tests.txt`; the listed-binary check in `scripts/repo_check.py` with its suite; the one settings line in `ORCHESTRATE.md` | Nothing. It merges first in wave 1 | No open item runs any of these tests. `DEAD-TOOLS` M1 and M2 edit other arms of `tools/xtask/src/main.rs` and the same help text. `scripts/repo_check.py` is imported by a pinned comparison file: it keeps its name and what that file uses. The check keeps a checkout and a release build of its own, so the lead checks free disk first: builders stall below about 16 GiB |
 | M6 | The lint step and the long-test command in `tools/xtask/src/main.rs`; `.config/long-tests.txt`; the feature check in `scripts/repo_check.py`, which already tells a test file from production code, with its suite; the timeout of the settings line | Nothing | `DEAD-CODE` M2 and M6 and `TEST-SUPPORT` M3 wait for it. `DEAD-TOOLS` M1 edits the script-suite step of the same `main.rs` |
-| M8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file | Nothing | `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` M5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` M5 narrows the draw-probe pass: that is this milestone now, in the check command only |
+| M8 | The check command in `tools/xtask/src/` (how it runs tests and the draw-probe pass, the step times, the cargo-nextest version it asks for) and its tests; the new `.config/nextest.toml`; the `[profile]` tables of the root `Cargo.toml`; the install step of `.github/workflows/ci.yml`; the line of `CONTRIBUTING.md` that says what `./dev check` needs installed. Where a test fails only because it now has a process to itself, that test file. The wait in `FrameHost::capture_pixels`, in `crates/thrum-render/src/runtime.rs`, and its test under `crates/thrum-render/src/runtime/tests/`: no other line of the engine's source | Nothing | `REVIEW-RENDER` and `HOST` build in `thrum-render`'s runtime too, so the lead starts neither beside this. `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`, and other rows of `CONTRIBUTING.md`. `DEAD-CODE` M5 edits the workspace list of the root `Cargo.toml`, a different table. A changed test profile rebuilds the test artifacts of every worktree once, so the lead checks free disk first. `TEST-SUPPORT`'s design says `GATE-TIME` M5 narrows the draw-probe pass: that is this milestone now, in the check command only |
 | M7 | The check command in `tools/xtask/src/` (the selection with its path rules and declared edges, `check-all`) and its tests; one settings line in `ORCHESTRATE.md` | Nothing | `DEAD-TOOLS` M2 edits the `baseline-inventory` command and the help text of the same `main.rs`. The main-branch check keeps a fourth checkout with a debug build of the whole workspace, 8 to 16 GiB in the checkouts that hold one today, so the lead checks free disk first |
 | M2 | `crates/thrum-water/tests/query_gpu.rs`, `swash_gpu.rs` and `crates/thrum-water/Cargo.toml`; the four conformance files, `support.rs` and `Cargo.toml` of `crates/thrum-clouds/tests`; `examples/v1-game/tests/support/field_gpu.rs` and `field_occlusion_gpu.rs`, `examples/v1-game/tests/clouds_display_time_gpu.rs`, and the `[[test]]` tables of `examples/v1-game/Cargo.toml`; `.config/long-tests.txt`; the names of deleted tests in `.config/nextest.toml`; `crates/thrum-render/src/atmosphere/gpu/tests.rs` and `tests/reference*` | `TEST-SUPPORT` M2, which rewrote these test files | `CLOUDS` builds in `thrum-clouds`. No open item names any of these test binaries. `DEAD-TOOLS` M2 edits the `[[bench]]` tables of the same `Cargo.toml`, and its M3 edits `atmosphere/gpu/tests/aerial_ground.rs`, which `atmosphere/gpu/tests.rs` declares |
 | M9 | The test files that hold a test on the exempt list outside `examples/water`, with the support files those tests use. By the planner's measurement: `lent_products_gpu.rs`, `cooked_rows_gpu.rs`, `cooked_assets_gpu.rs` and `frame_alloc.rs` under `examples/v1-game/tests`; `report.rs` under `crates/thrum-river-model/tests`; `shore_basin.rs` and `shore_island.rs` under `crates/thrum-water-model/tests`; `forward_cache_gpu.rs`, `portable_limits_gpu.rs`, `frames_gpu.rs` and `ambient_gpu.rs` under `crates/thrum-sea/tests`. Also `.config/nextest.toml` and `.config/long-tests.txt` | Nothing | Open items run four of these binaries by name and need them to keep passing: `DEAD-CODE` M5.2 (`cooked_rows_gpu`), `HOST` M3.2 and `REVIEW-RENDER` M5.1 (`frame_alloc`), `TEST-SUPPORT` M4.2 (`cooked_assets_gpu`). `DEAD-CODE` M5 edits `cooked_rows_gpu.rs` and `TEST-SUPPORT` M4 `cooked_assets_gpu.rs`. `TEST-SUPPORT` M3 converts the test files of every crate under `crates/`, so the lead does not run it beside this where it can choose |
@@ -509,7 +525,8 @@ unchanged body, which a reviewer reads, and by the main-branch check `long-tests
 a feature is proved by a scratch fault that fails the merge check, by a scratch gated test file that the list
 covers or the docs check refuses, and by the same main-branch check. The runner is proved by its record: the
 timings of each arrangement with the load, the test names and results before and after, and five whole runs in a
-row that pass. The limit is proved by a scratch test that sleeps past it. The selection is proved by its own
+row that pass. The capture's wait is proved by its test, which fails on the code before the change. The limit
+is proved by a scratch test that sleeps past it. The selection is proved by its own
 tests, which a reviewer reads, by scratch changes whose selection the reviewer predicts from the rules and the
 declared edge, and by the record of what it saves, made before it is switched on. A test made fast is proved by
 the reviewer's comparison of what it asserted with what it asserts, case by case, and by its time in the record.

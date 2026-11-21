@@ -205,6 +205,18 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+        },
+        {
+          "id": "M8.9",
+          "statement": "`FrameHost::capture_pixels` returns its pixels when another thread's poll of the same device takes the readback's completion and delivers it late, as the cooked loader's poll can. After its submission completes it keeps polling until its own readback arrives, and fails only when `GPU_WAIT` has passed. The test `gpu_capture_pixels_waits_for_a_readback_another_thread_delivers`, among `thrum-render`'s library tests, captures while other threads poll the host's device. It fails on the code before the change in each of ten runs and passes in each of ten after it, well inside the ten seconds a merge-tier test may take. The wait and its test are the only change this milestone makes under `crates/`.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --lib gpu_capture_pixels_waits_for_a_readback_another_thread_delivers",
+          "ask": "Does the record show the test failing with `capture readback incomplete` on the code before the change in each of ten runs, and passing in each of ten after it, with its time? Read the test: do its other threads poll the same device the host captures on? Is the wait in `capture_pixels`, with its test, the only change the milestone makes under `crates/`, and can it change a pixel a capture returns or anything a frame records?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "findings": [

@@ -466,3 +466,12 @@
   [The module list](../ARCHITECTURE.md#ruling-on-relocated-references) rules on it: only the registry's
   reference paths and `BASELINE` in `scripts/apple_tile_m1.py` follow the files. No item, comparison or
   sampling of this module changed.
+
+- 2026-11-21 Hand-over, by the lead's decision: `GATE-TIME` M8 builds one fix in this module's frame host, as its
+  item M8.9. `FrameHost::capture_pixels` (`crates/thrum-render/src/runtime.rs`) waits for its submission, looks
+  once for its readback and fails with `capture readback incomplete` when another thread's poll of the same
+  device, such as the cooked loader's in `thrum-asset-gpu`'s staging, has taken the map callback and not yet
+  delivered it. M8.9 makes it keep polling until its own readback arrives or `GPU_WAIT` has passed, with a test
+  in `runtime/tests`. No pixel or frame timing changes, and `begin_capture` and `try_finish_capture` are as
+  they were. This design stays the authority for the frame host, and the test is this module's once landed.
+  Why and what was measured: [GATE-TIME's log](../GATE-TIME/LOG.md).

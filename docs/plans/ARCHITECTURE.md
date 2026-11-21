@@ -2309,7 +2309,7 @@ every merge pays it.
 
 | Module | Takes from the review | Owns | Builds inside |
 |---|---|---|---|
-| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, the merge selection with `./dev check-all` and the main-branch check `workspace-tests`, and how the check runs tests: side by side through cargo-nextest, with its configuration `.config/nextest.toml` and the limit on one test | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards |
+| `GATE-TIME` | Section 1, and the reference tests the 17 November bar may retire | The tiers as built ([design](GATE-TIME/DESIGN.md)), under [the test tiers](../../ORCHESTRATE.md#test-tiers): the main-tier list with `./dev long-tests` and the main-branch check `long-tests`, the merge selection with `./dev check-all` and the main-branch check `workspace-tests`, and how the check runs tests: side by side through cargo-nextest, with its configuration `.config/nextest.toml` and the limit on one test | Tests of `WATERS`, `SHOWCASE`, `CULLING`, `CLOUDS`, `ATMOSPHERE`, `SCENE-VIEWS` and `CONTENT-LOOP`; `REPO-RULES`' check command and repository guards; one wait in `APPLE-TILE`'s frame host, by [ruling 12](#seam-rulings-for-track-6) |
 | `DEAD-TOOLS` | Section 2, and the code half of section 6: fixtures and record writers that use `docs/evidence` | The rules `evidence-path`, `script-caller`, `bench-runner` and `shader-text-edit`, where the evidence manifest is kept, and where a provenance record is tracked ([design](DEAD-TOOLS/DESIGN.md)) | `scripts/`, `tools/xtask`, benches of `thrum-render` and the game, `docs/evidence`, `docs/provenance`, `REPO-RULES`' evidence store |
 | `DEAD-CODE` | Sections 3 and 4, and the water settings that are parsed twice | `thrum_render::binding`, and the five defaults of `SceneContribution` ([design](DEAD-CODE/DESIGN.md)) | `thrum-core`, `thrum-sea`, `thrum-water`, `thrum-render`, `thrum-rain-model`, the water scene, the game's host |
 | `TEST-SUPPORT` M5, M3 and M4 | Section 5, the test kit | The kit in `thrum-test-support`, and the rules `test-readback` and `test-deadline` ([design](TEST-SUPPORT/DESIGN.md#the-kit)) | Every crate's tests |
@@ -2428,7 +2428,12 @@ land while any of them is held.
     starts a thread pool is counted there as heavy, in the landing that adds it. A test that runs for over sixty
     seconds fails the check, and a failed test is not run again. Test builds may be optimised where M8's
     measurement shows a gain; nothing but a test is built differently. No module but `GATE-TIME` adds a name to
-    the list of tests exempt from the limit.
+    the list of tests exempt from the limit. Tests side by side found one race in the engine, older than M8:
+    `FrameHost::capture_pixels` failed when another thread's poll of the same device took its readback's
+    completion. By the lead's decision of 21 November M8 fixes it in `APPLE-TILE`'s frame host, as its item
+    M8.9: the capture keeps polling until its own readback arrives or `GPU_WAIT` has passed, and no pixel or
+    frame timing changes. `APPLE-TILE` keeps the frame host and, once landed, the test; its log records the
+    hand-over. Any other engine fault the runner exposes goes to its owner as a proposal.
 
 <a id="not-planned-in-track-6"></a>
 
@@ -3076,3 +3081,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   (tests side by side through cargo-nextest, a measured test build, a limit on one test) and M9 (tests over ten
   seconds made fast or moved to the main tier). Seam ruling 2 changed, ruling 12 and one interface were added,
   and the test tiers in the project settings say the same. No other module's dependency changed.
+- 2026-11-21 `GATE-TIME` M8 gained one fix in the engine, by the lead's decision: the wait in
+  `FrameHost::capture_pixels`, in `APPLE-TILE`'s frame host, which failed when another thread's poll took its
+  readback's completion and stopped M8's merge. Seam ruling 12 and track 6's table say so, and `APPLE-TILE`'s
+  log records the hand-over. No module's dependency changed.

@@ -38,6 +38,11 @@ for `check`, and clears `RUSTC_WRAPPER`. The four cooked-asset tests that assert
 edit, the publication larger than staging, the newer publication that supersedes, and the adapter-less host. Time
 the runs while other builders work and record the load.
 
+M8.9 is the one change to the engine, in `APPLE-TILE`'s frame host, and what is left: the rest is on
+`build/gate-time`, as [the handoff](../../../.orchestrate/evidence/GATE-TIME/M8-handoff.md) says. A second thread
+that only polls passes on the old code, so start the test from
+[the planner's probe](../../../.orchestrate/evidence/GATE-TIME/planning/capture-race-probe.md).
+
 ## M7 A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge
 
 Measure first: M7.1's record comes before the selection is switched on, and if it shows that a selected run is
