@@ -156,7 +156,7 @@
     {
       "id": "M3",
       "name": "The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -172,7 +172,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal: review fix. thrum_asset_gpu::await_content is the one content wait (DRAWN_DEADLINE 90 s, Progress::Failed ends it); await_drawn is it over cooked stats and draw_endpoint. The sky kit's wait_drawn (capture and live capture) and the native-witness route preparation now call it; CONTENT_WAIT is gone. await_drawn 2 + drawn unit 3 + cooked_view_gpu 1 + thrum-app sky:: 12 passed under gpu lock; starter live-reload 10 saves passed; starter still capture drew generation 1; Metal-witness route capture complete. Record: tmp/host-m3-evidence/round2 and .orchestrate/evidence/HOST/M3/",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/M3-review.md"
         },
         {
@@ -207,13 +207,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": ".orchestrate/evidence/HOST/M3-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "sky kit keeps a second cooked-content wait with its own deadline",
-          "item": "M3.1",
-          "repeat": false
         }
       ]
     },
