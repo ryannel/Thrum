@@ -308,8 +308,8 @@
         },
         {
           "id": "M3.4",
-          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`. That command runs no long test and no test behind a Cargo feature, which M3.6 covers.",
-          "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
+          "statement": "This milestone stops no test running on this Mac. Every test that reported `ok` in `cargo test --workspace` at the starting commit `4592e88cb` reports `ok` in the same command on the finished tree with `THRUM_REQUIRE_GPU=1`, under its name or a mapped one, and none is skipped. A test missing from the later run that a commit of another module took out is not this milestone's loss: the record names that commit for each. That command runs no long test and no test behind a Cargo feature, which M3.6 covers.",
+          "ask": "Compare the two recorded runs' results, test by test, not their lists. For each test that reported `ok` before and does not after, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/TEST-SUPPORT/M3/comparison.log (before.stdout/stderr, after.stdout/stderr)",
@@ -318,9 +318,9 @@
         },
         {
           "id": "M3.6",
-          "statement": "The long tests and the tests behind a Cargo feature that this milestone converted pass on main with its commit in, in the main-branch check `long-tests`, and none stopped running: every test that check reported `ok` in its last run before this milestone started reports `ok` in the run that covers it.",
+          "statement": "This milestone stops no long test and no test behind a Cargo feature running. The main-branch check `long-tests` passes on main with the milestone's commits in, and every test it reported `ok` in its last run without them, at `0870118d6`, reports `ok` in the run that covers them, under its name or a mapped one. A test missing from the covering run that a commit of another module took out is not this milestone's loss: the record names that commit for each.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
-          "ask": "Compare the saved log of the main-branch run that covers this commit with the last run before the milestone started, test by test: is any test that ran before missing, ignored or skipped now?",
+          "ask": "Compare the saved log of the main-branch run that covers this milestone's last commit with the run at `0870118d6`, test by test. For each test that reported `ok` before and is missing, ignored or skipped now, under its name or a mapped one: which commit took it out of the run, does that commit's diff remove it, and is the commit another module's? Is any test out of the run with no such commit?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

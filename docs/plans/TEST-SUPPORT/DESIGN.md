@@ -4,7 +4,8 @@
 and on 20 November, when [the kit](#the-kit) and M3 and M4 were added from the cleanup review, and again that day
 after the kit's design review and the hardening pass, when M5 was added ahead of them. Revised once more that day
 after M2's third failed review: [other platforms](#other-platforms) is new, and M2's items changed with it. Nothing
-M1 is held to changed. Revised 21 November, when [writing a test](#writing-a-test) and M6 were added.
+M1 is held to changed. Revised 21 November, when [writing a test](#writing-a-test) and M6 were added, and again
+that day after M3's first review: [Proof](#proof) says how a test another module removed counts.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../../.orchestrate/evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T6 ·
@@ -279,7 +280,16 @@ The kit is proved as adoption was: by its rules' counts, by the tests' results f
 after with a GPU required, and by a reviewer reading that no assertion, bound or device changed in a converted
 test. The kit's own functions have tests in the support package. `cargo test --workspace` does not run a long
 test or a test behind a Cargo feature, so for those the proof is the main-branch check `long-tests`: its run
-that covers M3's commit, compared test by test with its last run before M3 started.
+that covers M3's commits, compared test by test with its last run on a commit that held none of them.
+
+Both comparisons span other modules' commits, and the cleanup deletes tests on purpose: `GATE-TIME` M2 and
+`DEAD-CODE` M5 did between M3's two `long-tests` runs. So M3 is held to its own commits. A test that passed in
+the earlier run and is missing from the later one counts against M3 unless a commit of another module took it
+out of the run, by deleting it, renaming it or taking it off what the command runs. M3's record names that commit
+for each such test, and a reviewer confirms from its diff that it removes the test and that it is another
+module's. Whether the removal was right is a question for the review of the milestone that made it, so M3's
+review does not ask it again, and M3 never restores such a test. A test that is missing with no such commit to
+name is M3's loss.
 
 The small target is proved by the kit's own test, which draws to it and reads it back, and which a reviewer
 reads. The block and the entries are proved by a check that the two rows are gone, the five links and anchors

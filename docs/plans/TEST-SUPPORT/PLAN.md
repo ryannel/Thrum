@@ -38,8 +38,13 @@ so an entry names no rule.
 
 ## M3 A GPU test reads back, opens its device and waits through the test kit, not through code copied into its file
 
-This is the conversion. Record the results of `cargo test --workspace` before you start, as M2 did, and note
-which run of the main-branch check `long-tests` was the last before you started: M3.6 compares against it.
+This is the conversion. Its first build merged as `3a4b8874c` and `cc8decdf4` from the starting commit
+`4592e88cb`, so both earlier runs are fixed and already saved in `.orchestrate/evidence/TEST-SUPPORT/M3/`: record
+no new ones. `before.stdout` and `before.stderr` are `cargo test --workspace` at `4592e88cb`, for M3.4, and
+`long-tests-baseline.*` is the `long-tests` run at `0870118d6`, for M3.6. Other modules have removed tests
+since: `GATE-TIME` M2 in `dbe1cac8d`, after the `long-tests` run, and `DEAD-CODE` M5 in `ac62118e4`, after
+both. [Proof](DESIGN.md#proof) says how those count, and the first review's lists of what went missing are in
+`.orchestrate/evidence/TEST-SUPPORT/M3-review/outcome-comparison.json`. Restore none of them.
 `examples/water/tests/floating_gpu.rs` and `foam_scene_gpu.rs` hold long tests, and the renderer's
 `runtime/tests/device.rs` and `tests/ray_instances_seam.rs` hold tests behind `creation-counters`; `./dev check`
 compiles those and runs neither kind. `REVIEW-RENDER` M5.1 and `HOST` M3.2 run `frame_alloc`, which is the game's
