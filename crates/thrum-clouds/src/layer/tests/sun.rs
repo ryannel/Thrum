@@ -1,5 +1,7 @@
 //! Cumulative Sun paths must preserve plateaux, slab slopes and Beer bounds.
 
+use thrum_render::binding;
+
 #[test]
 fn cumulative_depth_stays_monotone_without_ringing_or_negative_extinction() {
     let Some(thrum_test_support::Opened { device, queue, .. }) = thrum_test_support::open(
@@ -36,7 +38,7 @@ fn cumulative_depth_stays_monotone_without_ringing_or_negative_extinction() {
     });
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: None,
-        entries: &[super::super::light::storage_entry(0, false)],
+        entries: &[binding::storage(0, wgpu::ShaderStages::COMPUTE, false, 0)],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,

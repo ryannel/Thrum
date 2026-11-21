@@ -3,6 +3,7 @@ use super::{
     declaration,
 };
 use crate::noise::{DETAIL_SIZE, Noise};
+use thrum_render::binding;
 
 fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
     if profile.extent.contains(&0)
@@ -57,33 +58,29 @@ impl Layer {
                 view_formats: &[],
             })
         });
-        let uniform_entry = wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(size_of::<Uniform>() as u64),
-            },
-            count: None,
-        };
-        let texture_entry = |binding, storage| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT,
-            ty: if storage {
-                wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::WriteOnly,
-                    format: wgpu::TextureFormat::Rgba16Float,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                }
+        let uniform_entry = binding::uniform(
+            0,
+            wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT,
+            size_of::<Uniform>() as u64,
+        );
+        let texture_entry = |binding, storage| {
+            let visibility = wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT;
+            if storage {
+                binding::storage_texture(
+                    binding,
+                    visibility,
+                    wgpu::StorageTextureAccess::WriteOnly,
+                    wgpu::TextureFormat::Rgba16Float,
+                    wgpu::TextureViewDimension::D2,
+                )
             } else {
-                wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2Array,
-                    multisampled: false,
-                }
-            },
-            count: None,
+                binding::texture(
+                    binding,
+                    visibility,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureViewDimension::D2Array,
+                )
+            }
         };
         let trace_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(TRACE),
@@ -96,21 +93,26 @@ impl Layer {
                 texture_entry(5, false),
                 texture_entry(6, false),
                 texture_entry(7, false),
-                super::light::storage_entry(9, true),
-                super::light::storage_entry(10, true),
-                Noise::sampled(11),
-                Noise::sampled(12),
-                Noise::filtering(13),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 8,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(96),
-                    },
-                    count: None,
-                },
+                binding::storage(9, wgpu::ShaderStages::COMPUTE, true, 0),
+                binding::storage(10, wgpu::ShaderStages::COMPUTE, true, 0),
+                binding::texture(
+                    11,
+                    wgpu::ShaderStages::COMPUTE,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D3,
+                ),
+                binding::texture(
+                    12,
+                    wgpu::ShaderStages::COMPUTE,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D3,
+                ),
+                binding::sampler(
+                    13,
+                    wgpu::ShaderStages::COMPUTE,
+                    wgpu::SamplerBindingType::Filtering,
+                ),
+                binding::uniform(8, wgpu::ShaderStages::COMPUTE, 96),
             ],
         });
         let views: Vec<_> = weather.textures()[..2]

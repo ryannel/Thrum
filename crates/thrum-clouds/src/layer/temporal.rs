@@ -1,4 +1,5 @@
 use super::{COMPOSE, Layer, SceneSurface, Uniform};
+use thrum_render::binding;
 use thrum_render::contribution::{EffectState, HistoryBinding};
 
 pub(super) const PASS: &str = "cloud resolve";
@@ -35,34 +36,27 @@ impl Temporal {
                 })
             })
         });
-        let mut entries = vec![wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(size_of::<Uniform>() as u64),
-            },
-            count: None,
-        }];
+        let mut entries = vec![binding::uniform(
+            0,
+            wgpu::ShaderStages::COMPUTE,
+            size_of::<Uniform>() as u64,
+        )];
         for binding in 1..=6 {
-            entries.push(wgpu::BindGroupLayoutEntry {
-                binding,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                count: None,
-                ty: if binding >= 5 {
-                    wgpu::BindingType::StorageTexture {
-                        access: wgpu::StorageTextureAccess::WriteOnly,
-                        format: wgpu::TextureFormat::Rgba16Float,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                    }
-                } else {
-                    wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    }
-                },
+            entries.push(if binding >= 5 {
+                binding::storage_texture(
+                    binding,
+                    wgpu::ShaderStages::COMPUTE,
+                    wgpu::StorageTextureAccess::WriteOnly,
+                    wgpu::TextureFormat::Rgba16Float,
+                    wgpu::TextureViewDimension::D2,
+                )
+            } else {
+                binding::texture(
+                    binding,
+                    wgpu::ShaderStages::COMPUTE,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureViewDimension::D2,
+                )
             });
         }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

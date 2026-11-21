@@ -1,5 +1,6 @@
 //! Test-only stage observer; never selected in a shipping build.
 use super::Layer;
+use thrum_render::binding;
 
 pub(crate) struct Probe {
     pipeline: wgpu::ComputePipeline,
@@ -17,7 +18,7 @@ impl Probe {
         });
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: None,
-            entries: &[super::light::storage_entry(0, false)],
+            entries: &[binding::storage(0, wgpu::ShaderStages::COMPUTE, false, 0)],
         });
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,

@@ -1,6 +1,7 @@
 //! Preparation-time droplet tables and frame-local cloud-free hemisphere light.
 use crate::{Error, WeatherMap};
 use thrum_cloud_model::{Phase, PhaseTable};
+use thrum_render::binding;
 use thrum_render::{atmosphere::EnvironmentProducts, contribution::SceneSurface};
 
 pub(super) const PASS: &str = "cloud hemisphere light";
@@ -50,7 +51,7 @@ impl Lighting {
             .device
             .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some(PASS),
-                entries: &[storage_entry(0, false)],
+                entries: &[binding::storage(0, wgpu::ShaderStages::COMPUTE, false, 0)],
             });
         let group = surface
             .device
@@ -156,18 +157,5 @@ impl Lighting {
         pass.set_bind_group(0, environment.group(side), &[]);
         pass.set_bind_group(1, &self.group, &[]);
         pass.dispatch_workgroups(2, 1, 1);
-    }
-}
-
-pub(super) fn storage_entry(binding: u32, read_only: bool) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::COMPUTE,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Storage { read_only },
-            has_dynamic_offset: false,
-            min_binding_size: None,
-        },
-        count: None,
     }
 }
