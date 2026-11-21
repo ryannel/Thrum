@@ -1114,38 +1114,38 @@
         "at": "2026-11-18T04:32:39Z"
       },
       "ready_for_review": {
-        "commit": "ce5a54574a2fecc8629509f8251545f4e07a4379",
-        "checked": "ce5a54574a2fecc8629509f8251545f4e07a4379",
-        "at": "2026-11-20T16:28:17Z",
+        "commit": "a9289f439508e00f7b87d396483e687de62a51b8",
+        "checked": "a9289f439508e00f7b87d396483e687de62a51b8",
+        "at": "2026-11-21T04:51:45Z",
         "reused": [
           "Test command",
           "M7.3",
           "M7.5",
           "M7.6",
           "M7.13",
-          "M7.14",
           "M7.15"
         ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
+        "host": "claude",
+        "model": "claude-opus-5-5",
         "effort": "medium",
         "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
+          "model": "claude-opus-5-5"
         },
-        "cli": "codex-cli 0.169.1",
+        "cli": "2.1.319 (Claude Code)",
         "path": "headless",
         "usage": {
-          "input": 546366,
-          "cached": 83908992,
-          "output": 103049,
-          "turns": 2
+          "input": 163850,
+          "cached": 11284442,
+          "output": 55421,
+          "cost_usd": 4.675324,
+          "turns": 1
         },
         "session_usage": {
-          "input": 1053320,
-          "cached": 169579776,
-          "output": 244524,
-          "turns": 3
+          "input": 163850,
+          "cached": 11284442,
+          "output": 55421,
+          "cost_usd": 4.675324,
+          "turns": 1
         }
       }
     },
