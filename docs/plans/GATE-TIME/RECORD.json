@@ -109,12 +109,12 @@
       }
     },
     "M3": {
-      "definitions": "fe10d69d6107260693663e2c39ae33e74f3606dc761201cd639283e68ad2a0c0",
+      "definitions": "0816a3eab76b00ae3d766496d640a8eb5e33bb6c322d74fb8a59eb9c13f7eb56",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
-        "at": "2026-11-21T08:38:18Z"
+        "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
+        "at": "2026-11-21T09:09:42Z"
       }
     },
     "M4": {
@@ -454,12 +454,12 @@
       }
     },
     "M9": {
-      "definitions": "e2d98ffa30b6602705591264b4a54ad5eb720f9a366d1a43f83ae5f50716d51d",
+      "definitions": "432d0047179081b647c38d7a9b8189dced4fbdfc1a84cb63e33d1a04d515992c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
-        "at": "2026-11-21T08:38:18Z"
+        "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
+        "at": "2026-11-21T09:09:42Z"
       }
     },
     "M10": {
@@ -478,6 +478,24 @@
         "by": "plan",
         "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in t",
         "at": "2026-11-21T08:38:18Z"
+      }
+    },
+    "M12": {
+      "definitions": "1f4a271ebfefa3b766d91215ab5ae19ab137b49130754c21fffb4bec512c911d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
+        "at": "2026-11-21T09:09:42Z"
+      }
+    },
+    "M13": {
+      "definitions": "333250e6b14e8ec1e4575469fa4deb1600c893d3dafe776bb02d1ed38ae2978c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
+        "at": "2026-11-21T09:09:42Z"
       }
     }
   },
@@ -509,11 +527,15 @@
     {
       "task": "The owner approved four test-speed changes for planning on 21 Nov (\"These all sound really reasonable\"). Place them in the plans of GATE-TIME or TEST-SUPPORT, whichever owns each, as new or amended milestones with items a builder can prove. GATE-TIME is building M2 now; don't change M2 or any milestone that has started, and put new work after what is already planned unless you judge an earlier place clearly better and say why.\nMeasured basis (last 24 h, .git/orchestrate locks.jsonl and GATE-TIME M8's merge-check records): a merge check runs 1,309 tests summing 1,395 s; 897 take under 0.1 s (1% of the time) and 64 take over 5 s (81%). River model, water scene and the showcase game hold 74%; 221 GPU-named tests hold 53%. There are 265 test binaries, and macOS checks each freshly linked one on first run, 85 to 105 s per check.\n1. Small worlds: a merge-tier test proves its behaviour on the smallest world that shows it; full-size runs belong to the main tier. GATE-TIME M9 already covers existing tests; make this a standing rule for new tests too (where the rule lives is your call; the guardrail skill text and lint rules are being agreed with the owner separately, so don't plan those). Example M9's builder can use: thrum-river-model's `no_step_is_taken_beyond_the_budget` (36 s) solves valley(0.25) to convergence about 40 times to prove a step-budget rule.\n2. CPU first: logic is tested without a device; a GPU test covers only what a GPU alone can show, at a small target.\n3. Fewer test binaries: from 265 towards one per package, to cut link and first-run time.\n4. Measure where builder time goes before any rule change: builder sessions ran 40 to 210 minutes per cleanup milestone, not yet split between thinking, test runs and lock waits. Plan a measurement, not a rule.\nAlready done, don't plan: exact-images and long-tests on main now run every 4h (ORCHESTRATE.md, 6cd8545ef).\nKeep the owner's bar: merge checks of a few minutes, tests fast and targeted, accepted risk written in the tier table. Done when the plans are amended and committed, with a short note saying where each change went and why.",
       "at": "2026-11-21T08:38:18Z"
+    },
+    {
+      "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small worlds, CPU first, few binaries, long runs off the merge path) hold without anyone remembering them. What must hold every time goes in the merge check, because Codex and Claude builders both pass through it; no Claude hooks, since Codex builders never run them. Place the work in GATE-TIME and/or TEST-SUPPORT as milestones with provable items; a planner step just before you placed four related test-speed changes (read its commit and notes first, and build on them rather than duplicating). Don't change any milestone that has started.\nMerge-check rules, beside the ratchet rules in scripts/shape_rules.py:\n1. A test over the limit is stopped and fails. .config/nextest.toml has it at 60 s (slow at 10 s, stopped after 6 periods); it drops to 10 s once GATE-TIME M9 lands.\n2. The tests exempt from that limit (the override filter in .config/nextest.toml, eight today) can only shrink.\n3. The main-tier list .config/long-tests.txt (11 entries today) can only shrink unless a plan says otherwise. shape_rules.py never grants an increase over Git history, so state how a plan raises the count (for example the rule's version).\n4. The number of test binaries can only go down (265 in GATE-TIME M8's runs). This depends on the fewer-binaries change: freeze the count first, then consolidate.\nNot a gate: the check's report already prints step times and slowest tests; add summed test time and GPU-test seconds. A gate on total time would fail good work (load averages of 19 to 23 during checks).\nAlso settle: the hourly `workspace-tests` main-branch check (`./dev check-all`, ORCHESTRATE.md) takes no `lock gpu` yet runs the 221 GPU tests, so it contends with builders unqueued. Decide whether it takes the lock or its GPU tests move elsewhere, unless the previous step already did.\nEngineering skill (.agents/skills/thrum-engineering/SKILL.md): one short block on writing a test that replaces the \"Unit tests\" and \"GPU tests\" rows rather than adding to them, with pattern entries the new rules' messages link to: prove a behaviour on the smallest world that shows it; test logic on the CPU and open a device only for what a GPU alone can show, at the test kit's small target; step simulated time, never wait on the clock; add to an existing test binary; a full-size or long run is a main-tier test and needs a plan's say. The owner keeps always-loaded text short: the block stays about that size and AGENTS.md gets nothing. \"The test kit's small target\" doesn't exist yet; it belongs with TEST-SUPPORT M3 or M4 (not started).\nORCHESTRATE.md \"What is proved, and how hard\": each done-when item says whether its check is a guard that stays (and so meets the limits) or a record that runs once and whose tools are deleted at close; a plan that adds a GPU test or a main-tier test says what only that test can show; a reviewer reruns the tests a change touches, not the whole check, and questions any new test over about a second. No lint can tell a GPU test should have been a CPU test; that stays with the reviewer line.\nThe owner accepted the 10 s limit and that a new long test needs a plan decision. Done when the plans, and any ORCHESTRATE.md text that is the planner's to write, are amended and committed with a short note saying where each part went.",
+      "at": "2026-11-21T09:09:42Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-21T08:38:18Z"
+    "at": "2026-11-21T09:09:42Z"
   },
   "design_history": [
     {

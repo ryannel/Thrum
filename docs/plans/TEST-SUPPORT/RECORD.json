@@ -417,6 +417,15 @@
         "checked": "242721497ff931683f0ebf262b1891c597b885ac",
         "at": "2026-11-20T20:59:56Z"
       }
+    },
+    "M6": {
+      "definitions": "cf9ec6787eb03e91d4e2faac5c58e64dd5463602fda5b8f54bf52775bbbd738d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small wo",
+        "at": "2026-11-21T09:09:42Z"
+      }
     }
   },
   "briefs": [
@@ -443,11 +452,15 @@
     {
       "task": "Diagnose TEST-SUPPORT M2, which has failed review three times. Read the three reviews in .claude/worktrees/test-support/.orchestrate/evidence/TEST-SUPPORT/ (M2-review-1.md, the second review in git history, and the current M2-review.md at review commit 3913f94). Each round found new non-macOS breakage because M2.2's check (\"a compile for a target that is not macOS\") is narrower than its quality bar (cargo test --workspace on Linux or Windows does not fail for want of an adapter or hide CPU tests). The third reviewer left a working cross-target type-check script with C shims for astcenc-sys (M2-review/cross-target-check.sh).\nDecide what M2.2 should ask so a builder can prove the bar itself, and amend M2's items and done-when file to match. Settle where that cross-target type-check runs afterwards. The owner's rule is no long checks in any merge check: tests are tiered with the accepted risk written down, and GATE-TIME owns the tiers and the main-branch long-tests list. If the check belongs in the main tier, say so in TEST-SUPPORT's plan and note the consumer change GATE-TIME's list needs, without editing GATE-TIME's milestones that are building now (GATE-TIME M1 is in progress). Keep the two current findings (thrum-asset-gpu draw/tests.rs needing serde_json on non-Apple targets; water-scene's 11 test targets importing macOS-only thrum-app items) in scope for M2, unless you judge water-scene's should move to a later milestone, and say why.\nDone when M2's items and done-when file are amended and committed, with a short diagnosis note naming what changed and why.",
       "at": "2026-11-20T17:37:30Z"
+    },
+    {
+      "task": "The owner approved a test guardrail set for planning on 21 Nov (\"Yes, plan it\"). Purpose: the fast-test habits (small worlds, CPU first, few binaries, long runs off the merge path) hold without anyone remembering them. What must hold every time goes in the merge check, because Codex and Claude builders both pass through it; no Claude hooks, since Codex builders never run them. Place the work in GATE-TIME and/or TEST-SUPPORT as milestones with provable items; a planner step just before you placed four related test-speed changes (read its commit and notes first, and build on them rather than duplicating). Don't change any milestone that has started.\nMerge-check rules, beside the ratchet rules in scripts/shape_rules.py:\n1. A test over the limit is stopped and fails. .config/nextest.toml has it at 60 s (slow at 10 s, stopped after 6 periods); it drops to 10 s once GATE-TIME M9 lands.\n2. The tests exempt from that limit (the override filter in .config/nextest.toml, eight today) can only shrink.\n3. The main-tier list .config/long-tests.txt (11 entries today) can only shrink unless a plan says otherwise. shape_rules.py never grants an increase over Git history, so state how a plan raises the count (for example the rule's version).\n4. The number of test binaries can only go down (265 in GATE-TIME M8's runs). This depends on the fewer-binaries change: freeze the count first, then consolidate.\nNot a gate: the check's report already prints step times and slowest tests; add summed test time and GPU-test seconds. A gate on total time would fail good work (load averages of 19 to 23 during checks).\nAlso settle: the hourly `workspace-tests` main-branch check (`./dev check-all`, ORCHESTRATE.md) takes no `lock gpu` yet runs the 221 GPU tests, so it contends with builders unqueued. Decide whether it takes the lock or its GPU tests move elsewhere, unless the previous step already did.\nEngineering skill (.agents/skills/thrum-engineering/SKILL.md): one short block on writing a test that replaces the \"Unit tests\" and \"GPU tests\" rows rather than adding to them, with pattern entries the new rules' messages link to: prove a behaviour on the smallest world that shows it; test logic on the CPU and open a device only for what a GPU alone can show, at the test kit's small target; step simulated time, never wait on the clock; add to an existing test binary; a full-size or long run is a main-tier test and needs a plan's say. The owner keeps always-loaded text short: the block stays about that size and AGENTS.md gets nothing. \"The test kit's small target\" doesn't exist yet; it belongs with TEST-SUPPORT M3 or M4 (not started).\nORCHESTRATE.md \"What is proved, and how hard\": each done-when item says whether its check is a guard that stays (and so meets the limits) or a record that runs once and whose tools are deleted at close; a plan that adds a GPU test or a main-tier test says what only that test can show; a reviewer reruns the tests a change touches, not the whole check, and questions any new test over about a second. No lint can tell a GPU test should have been a CPU test; that stays with the reviewer line.\nThe owner accepted the 10 s limit and that a new long test needs a plan decision. Done when the plans, and any ORCHESTRATE.md text that is the planner's to write, are amended and committed with a short note saying where each part went.",
+      "at": "2026-11-21T09:09:42Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T17:37:30Z"
+    "at": "2026-11-21T09:09:42Z"
   },
   "design_history": [
     {
