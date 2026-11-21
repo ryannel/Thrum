@@ -223,7 +223,7 @@
     {
       "id": "M7",
       "name": "A merge's check runs only the tests of the packages its change can reach, and the whole workspace's tests run on main after each merge",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -234,8 +234,8 @@
           "statement": "Before the selection is switched on, the record gives what it saves. For each landing on main over at least the week before the starting commit it gives the packages the selection as built picks, and the share of the whole workspace's summed test time their tests hold, from the times the check printed at that commit. It gives the mean share, the share of landings that run the whole workspace, and one timed pair on this Mac with the load recorded: `./dev check` for a change to one package nothing depends on, against the whole-workspace run.",
           "ask": "Does the record replay real landings through the selection as built, with test times the check itself printed at the starting commit? What is the mean share of test time a landing selects, and what share of landings run the whole workspace? Does the log show the record was made before the selection was switched on?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "tmp/gate-time-m7/record.md (gate-time worktree; the permission guard refused the evidence folder), .orchestrate/evidence/GATE-TIME/M7/replay.json, whole-start.*, pair/",
           "verdict": "",
           "review": ""
         },
@@ -245,8 +245,8 @@
           "check": "sh -c 'out=$(cargo test --locked --offline -p xtask selection 2>&1) && echo \"$out\" | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"'",
           "ask": "Read the selection's tests: do they cover a file of a package nothing depends on, a file of a package others depend on, an edge that is only a dev dependency, and an uncommitted file? In a scratch branch that changes one source file of `thrum-rain-model`, which test binaries does `./dev check` run, and does it still lint the whole workspace? In one that changes `thrum-core`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "cargo test -p xtask selection: 10 passed; .orchestrate/evidence/GATE-TIME/M7/scratch/rain-model.txt, core.txt, pair/2-selected-check.stdout",
           "verdict": "",
           "review": ""
         },
@@ -255,8 +255,8 @@
           "statement": "Where the selection cannot be sure, `./dev check` runs the whole workspace's tests and says why. That is so for a change to the root manifest, the lockfile, the toolchain file, the lint configuration, `./dev` itself, `tools/xtask` or the test runner's own configuration; for a changed path the design gives no rule; and for a checkout with no merge base, with no difference from the main branch, or with a dependency graph the check cannot read. Markdown, `docs/` outside `docs/evidence`, the plans, `.agents/`, `.github/`, `scripts/` and the data under `.config/` that only the guards read select no Rust test.",
           "ask": "Read the path rules and their tests: is every rule of the design there, and does a path with no rule select everything? In scratch branches, change only `Cargo.lock`; only `rust-toolchain.toml`; add a file in a new top-level folder; and check out main's tip with nothing changed: does each run the whole workspace and say why? Does a branch that changes only a Markdown file and a script run no Rust test binary, and still run the guards and script suites?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M7/scratch/lockfile-only.txt, toolchain-only.txt, new-top-level-folder.txt, unchanged-main-tip.txt, markdown-and-script.txt",
           "verdict": "",
           "review": ""
         },
@@ -265,8 +265,8 @@
           "statement": "A test that reads another package's files when it runs is selected when those files change. A declared edge, kept and tested with the path rules, names a path and the package whose own test binaries a change under it selects as well. `crates/thrum-asset-gpu/src/` selects `thrum-render`, whose guard on where cooked pipelines are created scans that folder. No test code reads a tracked file outside its own package except through a dependency of its package, a declared edge, or a path that selects the whole workspace.",
           "ask": "In a scratch branch that changes only one file under `crates/thrum-asset-gpu/src/`, does `./dev check` run `every_cooked_pipeline_goes_through_the_seam_and_escapes_nothing`, and say that a declared edge selected `thrum-render`? Does it leave out the packages that depend on `thrum-render` and not on `thrum-asset-gpu`? Search test code for a reader outside its own package: `CARGO_MANIFEST_DIR` joined with a path that climbs out of the package, and `include_str!`, `include_bytes!` or `#[path]` that does. Is each one a dependency of the reader's package, a declared edge, a path that selects everything, or scratch under `tmp/`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M7/scratch/asset-gpu-src.txt, asset-gpu-edge-run.txt, asset-gpu-test-only.txt; readers.py; record section on the search",
           "verdict": "",
           "review": ""
         },
@@ -275,8 +275,8 @@
           "statement": "A selected test binary is the binary the whole-workspace run executes: the check builds the workspace's test binaries once, with the workspace's features, and the selection decides only which of them run.",
           "ask": "For two packages, compare the test binary a selected run executes with the one `./dev check-all` executes on the same commit: is it the same file? Does a selected run compile any crate that a whole-workspace run on the same commit had already built?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M7/binaries.txt",
           "verdict": "",
           "review": ""
         },
@@ -286,8 +286,8 @@
           "check": "sh -c './dev help | grep -q check-all && grep -q \"Main-branch check workspace-tests:\" ORCHESTRATE.md'",
           "ask": "Compare the steps of `./dev check-all` with the steps of `./dev check` at the starting commit: is any step or test binary missing? Is the settings line the design's, word for word but for the timeout?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "./dev help lists check-all; ORCHESTRATE.md Main-branch check workspace-tests, timeout 60m",
           "verdict": "",
           "review": ""
         },
@@ -296,8 +296,8 @@
           "statement": "The whole workspace's tests pass in the main-branch check `workspace-tests`, on main at the claimed commit.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check workspace-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check workspace-tests, after the merge",
           "verdict": "",
           "review": ""
         },
@@ -306,8 +306,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
