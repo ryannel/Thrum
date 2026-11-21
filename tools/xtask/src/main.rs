@@ -544,7 +544,7 @@ fn junit_times(xml: &str) -> Vec<TestTime> {
             seconds: xml_attribute(&tag, "time")
                 .and_then(|time| time.parse().ok())
                 .unwrap_or(0.0),
-            timed_out: body.contains("timed out"),
+            timed_out: body.contains("<failure type=\"test timeout\""),
         });
     }
     times
@@ -731,7 +731,7 @@ fn check_steps(record: &mut CheckRecord, junit: &Path) -> TaskResult {
 /// `./dev help`, one command to a line so that edits to different commands merge cleanly.
 const HELP: &[&str] = &[
     "Thrum contributor commands:",
-    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy",
+    "  check                  Exact-baseline reference guard (CPU pins and refreshes), repository guards, fmt, Clippy, game Wasm Clippy, Rust tests side by side through cargo-nextest (including Mac Metal; one over 60 s fails), then each step's time and the slowest tests",
     "  Exact images are verified on main by the main-branch check exact-images; python3 scripts/exact_baselines.py verify asks it",
     "  Refresh: commit regenerated references, verify --full under gpu, update pins and refresh (anchor/module/milestone), commit and merge together. Comparison edits and added/redefined baselines need pins and refreshes; retirement moves id/owner to retired with a ruling refresh. guard prints pins from HEAD.",
     "  long-tests             The main tier from .config/long-tests.txt (long tests, and tests behind a Cargo feature), a GPU required; the main-branch check long-tests runs it",
@@ -847,7 +847,9 @@ mod tests {
         let xml = r#"<testsuites><testsuite name="game::cooked">
 <testcase name="fast" classname="game::cooked" time="1.5"></testcase>
 <testcase name="a &amp; b" classname="game::cooked" time="61.000">
-<failure type="test failure">test timed out</failure></testcase>
+<failure type="test timeout"/><system-out>test timed out</system-out></testcase>
+<testcase name="fails" classname="game::cooked" time="2.0">
+<failure type="test failure"/><system-out>waited until it timed out</system-out></testcase>
 <testcase name="slow" classname="model::report" time="12.25"/>
 </testsuite></testsuites>"#;
         let times = junit_times(xml);
@@ -860,6 +862,7 @@ mod tests {
             [
                 ("game::cooked fast", 1.5, false),
                 ("game::cooked a & b", 61.0, true),
+                ("game::cooked fails", 2.0, false),
                 ("model::report slow", 12.25, false)
             ]
         );
