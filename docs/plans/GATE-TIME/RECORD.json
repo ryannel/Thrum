@@ -258,7 +258,7 @@
       }
     },
     "M8": {
-      "definitions": "55ba9745440d50b5d587887a8cea691290d026fc8ba6ff6d33a95d884e52d08e",
+      "definitions": "f463bc41f34cec2e3e9057f84d730bdffee35e46e8d58ce000d10831c0b70ade",
       "reviews": [
         {
           "verdict": "fail",
@@ -310,40 +310,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. T",
-        "at": "2026-11-20T22:57:57Z"
-      },
-      "ready_for_review": {
-        "commit": "53c64f8f4a498b00f59f3131c709e20b64ebc8d5",
-        "checked": "53c64f8f4a498b00f59f3131c709e20b64ebc8d5",
-        "at": "2026-11-21T02:39:07Z",
-        "reused": [
-          "Test command"
-        ],
-        "host": "claude",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "observed": {
-          "model": "claude-opus-5-5"
-        },
-        "cli": "2.1.319 (Claude Code)",
-        "path": "headless",
-        "usage": {
-          "input": 232328,
-          "cached": 20424028,
-          "output": 24773,
-          "incomplete_turns": 1,
-          "turns": 2,
-          "cost_usd": 7.520946
-        },
-        "session_usage": {
-          "input": 232328,
-          "cached": 20424028,
-          "output": 24773,
-          "incomplete_turns": 1,
-          "turns": 2,
-          "cost_usd": 7.520946
-        }
+        "task": "GATE-TIME M8 needs something no plan provides yet. The builder wrote: the render runtime's owner makes `FrameHost::captu",
+        "at": "2026-11-21T04:10:58Z"
       }
     },
     "M9": {
@@ -376,11 +344,15 @@
     {
       "task": "Revise the GATE-TIME module plan for a new owner requirement. After GATE-TIME M1, a merge's check takes 21-24 minutes. The owner, 20 Nov: \"A 20min merge check still sounds crazy. Tests are meant to be fast.\" The design today projects the merge check at roughly 9 minutes of selected tests plus about 5 of lints once M7 lands. That is still far from fast.\nSet the merge check's goal at a few minutes for a typical landing (about 5 minutes wall clock, the assumption to write down for the owner, who may change it), and plan how GATE-TIME reaches it. Start from measurement, not estimates: where a merge's check spends its time today, split into compile and link, lints, test run per binary, waits on the GPU or other locks, and anything run twice. The merge-check logs and timings under .git/orchestrate and the latest ./dev check output are the sources. Then choose the approach that best gets there. Every test that remains in the merge tier should be fast. A slow behaviour test belongs in the main tier, with its risk written down. Test speed itself is in scope: a test that is slow because of how it was written can be made fast. Keep the owner's rules: no long tests in any merge check, test tiers with written accepted risk, and the main tier runs on main after merges.\nGATE-TIME M6 is building now and M1 is done. Don't change either. Amend the not-started milestones (M7, M2, M3, M4, M5) or add new ones, and keep DEAD-CODE and TEST-SUPPORT dependencies valid; if a consumer changes, update its reference and say so. Done when GATE-TIME's design and milestones name the merge-check time goal, are grounded in the measured breakdown, and are committed.",
       "at": "2026-11-20T22:57:57Z"
+    },
+    {
+      "task": "GATE-TIME M8 needs something no plan provides yet. The builder wrote: the render runtime's owner makes `FrameHost::capture_pixels` keep polling until its readback arrives or `GPU_WAIT` runs out; then this branch merges as it is. The builder's handoff, .orchestrate/evidence/GATE-TIME/M8-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/gate-time at 1750e054ab2b, which isn't merged; read it with `git show`. If the plan already provides it, change no file and end with `KEEP GATE-TIME M8: builder: <where the plan provides it>`, and the script lifts the block.\nLead's decision on ownership: give the fix to GATE-TIME M8 itself rather than a new milestone in the render runtime's owner. Add `FrameHost::capture_pixels` (crates/thrum-render/src/runtime.rs) to M8's file row, with an item whose check shows a capture succeeds while a second thread polls the same device (the cooked loader at crates/thrum-asset-gpu/src/staging.rs:309 is the real-world case). Reason: it is about ten lines with no pixel or frame-timing change, no builder is live in thrum-render (REVIEW-RENDER and HOST are stopped, WATERS M7 works in foam), and starting a held module for it costs more. Record the hand-over in the render runtime owner's log so its design stays the authority. Keep the item's check fast enough for the merge tier; the race itself predates M8, which only widened it by running tests side by side.\nDone when M8's items and done-when file are amended and committed, with a short note naming what changed and why.",
+      "at": "2026-11-21T04:10:58Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-20T22:57:57Z"
+    "at": "2026-11-21T04:10:58Z"
   },
   "design_history": [
     {

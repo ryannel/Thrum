@@ -119,7 +119,7 @@
     {
       "id": "M8",
       "name": "A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -130,10 +130,10 @@
           "statement": "Before anything is switched on, the record times the whole workspace's tests on one commit three ways: as `./dev check` ran them, one binary after another; side by side through cargo-nextest; and side by side on test builds with dependencies optimised fully and workspace crates lightly. Each way is run twice, alternating, each from the same starting state with its build counted, and each run has its wall time, the load average and what else was running. The record also gives the time alone of every test that takes over ten seconds on the build that is then switched on.",
           "ask": "Does the record hold two runs of each of the three arrangements on one commit, alternated and not grouped, each with its load and with its build counted? Does it give the time alone of every test over ten seconds on the build now in use? Does the log show the record was made before the runner was switched on?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.1; runs/ A1 C1 A2 B2 C2 B3 at 48286bcae, alone.junit.xml at c6a5fdc48)",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.2",
@@ -141,20 +141,20 @@
           "check": "sh -c 'test -f .config/nextest.toml && grep -q nextest CONTRIBUTING.md && grep -q nextest .github/workflows/ci.yml'",
           "ask": "Read the check command and the record. Is each arrangement that is on one that won both ways? Do test builds keep debug assertions and overflow checks, and is anything that is not a test built differently from the starting commit? Are the doc tests still run? Is a failed test ever run again? With cargo-nextest taken off the path, does `./dev check` stop at once and give the command that installs it?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.2; probes/no-nextest.log, probes/old-nextest.log)",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.3",
           "statement": "Every test that ran and passed in `./dev check` at the starting commit runs and passes in it now on this Mac, and none is skipped; a test the check ran twice may now run once. The whole workspace's tests pass side by side five runs in a row, made while other builders work, with `THRUM_REQUIRE_GPU=1`. The record holds the test names and results before and after, the five runs with their load, and each test that takes turns in a group or is counted as heavy, with what failed or slowed without it.",
           "ask": "Compare the two recorded lists test by test, not their totals: does every test that reported ok before report ok after? Does any of the five runs hold a failure, a second attempt or a `thrum-gpu-skip:` line? For each of the five files the design names as holding a device mutex: do its tests take turns in a group, or does the record show five whole runs passing without one and say why nothing those tests measure can be moved by another test? What stops fourteen river-model tests starting fourteen thread pools, and does the record show its effect?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.3; runs/check1-5.log and .tests.tsv against runs/A1.tests.tsv)",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.4",
@@ -163,8 +163,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.5",
@@ -173,38 +173,38 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.6",
           "statement": "`./dev check` runs each cooked-asset test once against the production build, in the workspace pass, and its draw-probe pass runs only the tests that assert on the draw probe.",
           "ask": "Which tests of the cooked-assets binary read the draw probe? Does the probe pass run each of them and no other test of that binary, and does the workspace pass still run all of them?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GATE-TIME/M8/record.md (M8.6; runs/check5.log draw-probe step)",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.7",
           "statement": "The long tests and the tests behind a Cargo feature pass in the main-branch check `long-tests` on main at the claimed commit: a changed test build broke none of them.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check long-tests",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/GATE-TIME/M8-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.9",
@@ -234,17 +234,7 @@
           "item": "M8.4",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "the render runtime's owner makes `FrameHost::capture_pixels` keep polling until its readback arrives or `GPU_WAIT` runs out; then this branch merges as it is.",
-        "work": {
-          "commit": "1750e054ab2b2b33ba68745b6d439eb3b880d94d",
-          "branch": "build/gate-time",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/GATE-TIME/M8-handoff.md"
-      }
+      ]
     },
     {
       "id": "M7",
