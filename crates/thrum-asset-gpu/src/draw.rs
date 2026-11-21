@@ -1,5 +1,6 @@
 //! Generation-bound pipelines and per-set bind groups for drawing cooked products in the scene.
 
+use thrum_render::binding;
 use thrum_render::contribution::{
     ContributionFrame, SceneShadowSurface, SceneSurface, SecondaryShadowCascade, ShadowBounds,
 };
@@ -192,48 +193,6 @@ struct IndirectMesh {
     draws: wgpu::Buffer,
 }
 
-fn texture_entry(
-    binding: u32,
-    dimension: wgpu::TextureViewDimension,
-) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Texture {
-            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-            view_dimension: dimension,
-            multisampled: false,
-        },
-        count: None,
-    }
-}
-
-fn storage_entry(binding: u32, read_only: bool) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::COMPUTE,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Storage { read_only },
-            has_dynamic_offset: false,
-            min_binding_size: None,
-        },
-        count: None,
-    }
-}
-
-fn uniform_entry(binding: u32, visibility: wgpu::ShaderStages) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
-            has_dynamic_offset: false,
-            min_binding_size: None,
-        },
-        count: None,
-    }
-}
-
 /// One 1×1 texel used for the normal, ORM and emissive classes the cooked material leaves unset.
 fn default_texel(device: &wgpu::Device, queue: &wgpu::Queue, texel: [u8; 4]) -> wgpu::TextureView {
     let texture = device.create_texture(&wgpu::TextureDescriptor {
@@ -328,14 +287,18 @@ impl Pipelines {
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
-                texture_entry(8, wgpu::TextureViewDimension::D3),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 9,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                uniform_entry(10, wgpu::ShaderStages::VERTEX_FRAGMENT),
+                binding::texture(
+                    8,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D3,
+                ),
+                binding::sampler(
+                    9,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::SamplerBindingType::Filtering,
+                ),
+                binding::uniform(10, wgpu::ShaderStages::VERTEX_FRAGMENT, 0),
             ],
         });
         let volume_pipeline_layout =
@@ -392,11 +355,11 @@ impl Pipelines {
             let cull_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("cooked meshlet cull"),
                 entries: &[
-                    uniform_entry(0, wgpu::ShaderStages::COMPUTE),
-                    storage_entry(1, true),
-                    storage_entry(2, true),
-                    storage_entry(3, false),
-                    storage_entry(4, false),
+                    binding::uniform(0, wgpu::ShaderStages::COMPUTE, 0),
+                    binding::storage(1, wgpu::ShaderStages::COMPUTE, true, 0),
+                    binding::storage(2, wgpu::ShaderStages::COMPUTE, true, 0),
+                    binding::storage(3, wgpu::ShaderStages::COMPUTE, false, 0),
+                    binding::storage(4, wgpu::ShaderStages::COMPUTE, false, 0),
                 ],
             });
             let cull_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {

@@ -1,12 +1,11 @@
 //! One independent meshlet argument stream per prepared secondary view.
 
+use thrum_render::binding;
 use thrum_render::contribution::{
     SceneSurface, SecondaryShadowCascade, SecondaryView, SecondaryViewFrame, SecondaryViewRecord,
 };
 
-use super::{
-    Bound, CULL_BYTES, DRAW_ARGS_BYTES, MeshPipelines, Pipelines, storage_entry, uniform_entry,
-};
+use super::{Bound, CULL_BYTES, DRAW_ARGS_BYTES, MeshPipelines, Pipelines};
 use crate::{CookedDrawPath, load::ResidentSet};
 
 pub(super) struct SecondaryCull {
@@ -33,11 +32,11 @@ impl SecondaryCull {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked secondary cull"),
             entries: &[
-                uniform_entry(0, wgpu::ShaderStages::COMPUTE),
-                storage_entry(1, true),
-                storage_entry(2, true),
-                storage_entry(3, false),
-                uniform_entry(5, wgpu::ShaderStages::COMPUTE),
+                binding::uniform(0, wgpu::ShaderStages::COMPUTE, 0),
+                binding::storage(1, wgpu::ShaderStages::COMPUTE, true, 0),
+                binding::storage(2, wgpu::ShaderStages::COMPUTE, true, 0),
+                binding::storage(3, wgpu::ShaderStages::COMPUTE, false, 0),
+                binding::uniform(5, wgpu::ShaderStages::COMPUTE, 0),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

@@ -1,5 +1,6 @@
 //! The opted-in forward mesh pipeline and the limits on each mesh's storage and draw.
 
+use thrum_render::binding;
 use thrum_render::contribution::{SceneShadowSurface, SceneSurface};
 use thrum_render::runtime::DeviceSite;
 
@@ -138,23 +139,13 @@ pub(crate) struct Layout {
 
 impl Layout {
     fn new(surface: &SceneSurface<'_>, config: &crate::CookedConfig) -> Self {
-        let stream_entries: [_; 7] = std::array::from_fn(|i| wgpu::BindGroupLayoutEntry {
-            binding: u32::try_from(i).expect("mesh group binding fits u32"),
-            visibility: match i {
-                0 => STAGES,
-                1 => wgpu::ShaderStages::TASK,
-                _ => wgpu::ShaderStages::MESH,
-            },
-            ty: wgpu::BindingType::Buffer {
-                ty: if i == 0 {
-                    wgpu::BufferBindingType::Uniform
-                } else {
-                    wgpu::BufferBindingType::Storage { read_only: true }
-                },
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
+        let stream_entries: [_; 7] = std::array::from_fn(|i| {
+            let binding = u32::try_from(i).expect("mesh group binding fits u32");
+            match i {
+                0 => binding::uniform(binding, STAGES, 0),
+                1 => binding::storage(binding, wgpu::ShaderStages::TASK, true, 0),
+                _ => binding::storage(binding, wgpu::ShaderStages::MESH, true, 0),
+            }
         });
         // wgpu 30 Metal misindexes buffers in groups shared by vertex,
         // fragment, compute and mesh stages. Bind the same authoritative view
@@ -408,16 +399,12 @@ fn rejection_layout(
 ) {
     let mut entries = defaults.to_vec();
     let mut make = |binding, witness: &std::sync::Arc<std::sync::Mutex<Option<wgpu::Buffer>>>| {
-        entries.push(wgpu::BindGroupLayoutEntry {
+        entries.push(binding::storage(
             binding,
-            visibility: wgpu::ShaderStages::TASK,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Storage { read_only: false },
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(CULL_WITNESS_BYTES),
-            },
-            count: None,
-        });
+            wgpu::ShaderStages::TASK,
+            false,
+            CULL_WITNESS_BYTES,
+        ));
         let buffer = surface.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cooked object-stage rejection witness"),
             size: CULL_WITNESS_BYTES,
