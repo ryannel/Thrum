@@ -216,7 +216,7 @@
         {
           "verdict": "fail",
           "commit": "d115db4998851b6e361797fb41d17b8db036aebd",
-          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review-1.md",
           "items": {
             "M3.1": "fail",
             "M3.2": "pass",
@@ -247,6 +247,42 @@
             "turns": 1
           },
           "at": "2026-11-21T01:04:01Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "ffab2fc7a1359d20eaced5753a927564ff14b8d5",
+          "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md",
+          "items": {
+            "M3.1": "fail",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "maturity ledger points at three deleted RAY-TRACING and SESSION records through ../evidence paths",
+              "item": "M3.1",
+              "different": "The four SIM-2D pointers named last time are fixed. These are three other ledger entries (RAY_TRACING_M2 evidence, SESSION M2 deterministic_session evidence), written as paths relative to docs/design (../evidence/...), which neither the earlier review's search nor the fix's git grep for docs/evidence/... strings could match.",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 98284,
+            "cached": 2789040,
+            "output": 25607,
+            "cost_usd": 1.8559,
+            "turns": 1
+          },
+          "at": "2026-11-21T02:03:31Z"
         }
       ],
       "authorised": {

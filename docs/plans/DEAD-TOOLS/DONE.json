@@ -154,8 +154,8 @@
     {
       "id": "M3",
       "name": "The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "quality_bar": "As clean as a prune in a well-kept repository such as ripgrep's or wgpu's: everything left is run or read by something, what was removed is found in history from the document that described it, and no document points at a file that is gone.",
@@ -166,8 +166,8 @@
           "check": "sh -c 'test \"$(git ls-files docs/evidence | wc -l)\" -le 33 && ./dev check-docs'",
           "ask": "List the deleted files whose working copy differs from the bytes at the starting commit, with `git show` against the working folder: is each one's committed content there under a second name? Pick ten other deleted files across modules: does each working copy match the bytes Git held? For five files still tracked under `docs/evidence`, what reads each?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m31-the-373-unread-records and #fix-round-after-the-first-review-must-fix-1, deleted-records.json and deleted.txt beside it",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
         },
@@ -218,8 +218,9 @@
       ],
       "findings": [
         {
-          "name": "maturity ledger points at four deleted SIM-2D records",
+          "name": "maturity ledger points at three deleted RAY-TRACING and SESSION records through ../evidence paths",
           "item": "M3.1",
+          "different": "The four SIM-2D pointers named last time are fixed. These are three other ledger entries (RAY_TRACING_M2 evidence, SESSION M2 deterministic_session evidence), written as paths relative to docs/design (../evidence/...), which neither the earlier review's search nor the fix's git grep for docs/evidence/... strings could match.",
           "repeat": false
         }
       ]
