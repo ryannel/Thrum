@@ -23,7 +23,8 @@ use thrum_render::capabilities::{
 mod light_graph;
 #[cfg(feature = "render")]
 pub use light_graph::BeforeLightSplit;
-#[cfg(feature = "render")]
+// The record check reflects WGSL through naga, which wgpu exposes only on native targets.
+#[cfg(all(feature = "render", not(target_arch = "wasm32")))]
 pub mod records;
 
 /// Gate result retaining the instance and admitted adapter.
