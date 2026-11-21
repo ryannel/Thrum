@@ -1,4 +1,5 @@
 //! Filterable forward fields. The CPU/query buffers remain independent oracle products.
+use thrum_render::binding;
 use thrum_render::{
     contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass},
     graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
@@ -53,26 +54,16 @@ impl Filtered {
             label: Some("sea filtered fields"),
             source: wgpu::ShaderSource::Wgsl(SHADER.into()),
         });
-        let storage = |binding| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::StorageTexture {
-                access: wgpu::StorageTextureAccess::WriteOnly,
-                format: FORMAT,
-                view_dimension: wgpu::TextureViewDimension::D2Array,
-            },
-            count: None,
+        let storage = |binding| {
+            binding::storage_texture(
+                binding,
+                wgpu::ShaderStages::COMPUTE,
+                wgpu::StorageTextureAccess::WriteOnly,
+                FORMAT,
+                wgpu::TextureViewDimension::D2Array,
+            )
         };
-        let buffer = |binding| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Storage { read_only: true },
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        };
+        let buffer = |binding| binding::storage(binding, wgpu::ShaderStages::COMPUTE, true, 0);
         let pack_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("sea filtered pack"),
             entries: &[buffer(0), buffer(1), storage(2), storage(3)],
@@ -80,16 +71,12 @@ impl Filtered {
         let reduce_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("sea filtered reduce"),
             entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2Array,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
+                binding::texture(
+                    4,
+                    wgpu::ShaderStages::COMPUTE,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureViewDimension::D2Array,
+                ),
                 storage(5),
             ],
         });

@@ -2,6 +2,7 @@ use crate::AmbientError;
 use crate::{Ambient, CacheLevel, LEVELS, Profile, TRANSFORM_SIZE, spec};
 use spec::BufferKey;
 use std::collections::BTreeMap;
+use thrum_render::binding;
 use thrum_render::runtime::DeviceSite;
 
 pub(super) struct PreparedPass {
@@ -120,11 +121,11 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
             let bindings: Vec<_> = pass.bindings.iter().filter(|b| b.group == group).collect();
             let entries: Vec<_> = bindings
                 .iter()
-                .map(|b| wgpu::BindGroupLayoutEntry {
-                    binding: b.slot,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: if b.access == thrum_render::graph::AccessKind::UniformRead {
+                .map(|b| {
+                    binding::buffer(
+                        b.slot,
+                        wgpu::ShaderStages::COMPUTE,
+                        if b.access == thrum_render::graph::AccessKind::UniformRead {
                             wgpu::BufferBindingType::Uniform
                         } else {
                             // WGSL declares bindings 4..8 read_write, even in entries which only read.
@@ -132,10 +133,8 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
                                 read_only: b.slot < 4 || b.buffer == BufferKey::Twiddles,
                             }
                         },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
+                        0,
+                    )
                 })
                 .collect();
             let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
