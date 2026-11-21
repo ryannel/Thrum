@@ -166,8 +166,8 @@
           "check": "sh -c 'test \"$(git ls-files docs/evidence | wc -l)\" -le 33 && ./dev check-docs'",
           "ask": "List the deleted files whose working copy differs from the bytes at the starting commit, with `git show` against the working folder: is each one's committed content there under a second name? Pick ten other deleted files across modules: does each working copy match the bytes Git held? For five files still tracked under `docs/evidence`, what reads each?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M3/NOTES.md#m31-the-373-unread-records and #fix-round-after-the-first-review-must-fix-1, deleted-records.json and deleted.txt beside it",
           "verdict": "fail",
           "review": ".orchestrate/evidence/DEAD-TOOLS/M3-review.md"
         },

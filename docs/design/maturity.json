@@ -30,7 +30,7 @@
     "platform_cost_baselines": {
       "mac-metal": "Residency and budgeted upload measured in the fixture. Paired timing and default promotion are M3."
     },
-    "evidence": "docs/evidence/MESH-SHADING/M1.md"
+    "evidence": ".orchestrate/evidence/MESH-SHADING/M1.md"
   },
   "mesh_shading_m2": {
     "scope": "Opt-in cooked terrain and prop forward and Sun map mesh stages on Apple tile",
@@ -40,7 +40,7 @@
     "platform_cost_baselines": {
       "mac-metal": "Paired timed-pass spans, frame CPU, per-pass times, geometry counts and resident cooked draw resources at 720p and 1080p under load. Performance qualification remains open."
     },
-    "evidence": "docs/evidence/MESH-SHADING/M2.md"
+    "evidence": ".orchestrate/evidence/MESH-SHADING/M2.md"
   },
   "sim2d_m1": {
     "scope": "SIM-2D M1 at aa8dd9cb, registered headless reference crowd",
@@ -57,7 +57,7 @@
       "chrome-webgpu": "Two full-trace release runs, 2k/5k/10k, isolated browser clock and shared-host load recorded",
       "ios-sim": "Function on the Mac processor"
     },
-    "evidence": "docs/evidence/SIM-2D/M1.md"
+    "evidence": ".orchestrate/evidence/SIM-2D/M1.md"
   },
   "session_m4": {
     "scope": "Local predicted controller over the confirmed reference crowd",
@@ -190,10 +190,10 @@
       "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate. M4 world-time display identities and due times are numerically qualified on the Mac through initial and resumed spans, partial-tick pause, overload, queued work, rewind, delayed polls and realtime capture origin changes. Stopped host time is excluded; effects receive no host time. Historical raw-host-time counterexamples are superseded by the reviewed timing model. Window target equality, consumer prediction quality, Chrome phase behavior and physical display cadence are not claimed.",
       "evidence": [
         "docs/EFFECTS.md",
-        "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-        "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-        "docs/evidence/EFFECT-GRAPH/M4-resume/README.md",
-        "docs/evidence/EFFECT-GRAPH/M4-handoff.md"
+        ".orchestrate/evidence/EFFECT-GRAPH/M3-proof.md",
+        ".orchestrate/evidence/EFFECT-GRAPH/M4-proof.md",
+        ".orchestrate/evidence/EFFECT-GRAPH/M4-resume/README.md",
+        ".orchestrate/evidence/EFFECT-GRAPH/M4-handoff.md"
       ]
     },
     "G0_boundary": {
@@ -2071,7 +2071,7 @@
       "id": "W1",
       "sim2d": {
         "implementation": "Portable profile number, fixed-width state encoding, digest, keyed 64-bit Philox draws, exact top-24-bit fraction conversion and rule-package guard implemented; registered runtime preflight validates opted-in staged profile resources as well as components before commit. Existing runtime and history remain authoritative.",
-        "correctness": "Crowd and Mixed retained timelines, profile vectors, local/wire input and corrected replay exercised on mac-metal, Chrome Wasm and ios-sim. Mac-hosted profile checks cover development and release builds for native, Wasm and ARM64 iPhone simulator. Negative fixtures reject prohibited classes, including target-specific and release-only calls. Native public-API tests refuse nested non-finite authority resources atomically and recover with finite input. Native tests match both Philox words to published known answers and verify the public fraction conversion. Evidence: docs/evidence/SIM-2D/M3-random-draw.md, docs/evidence/SIM-2D/M3-target-guard.md and docs/evidence/SIM-2D/M3-resource-repair.md.",
+        "correctness": "Crowd and Mixed retained timelines, profile vectors, local/wire input and corrected replay exercised on mac-metal, Chrome Wasm and ios-sim. Mac-hosted profile checks cover development and release builds for native, Wasm and ARM64 iPhone simulator. Negative fixtures reject prohibited classes, including target-specific and release-only calls. Native public-API tests refuse nested non-finite authority resources atomically and recover with finite input. Native tests match both Philox words to published known answers and verify the public fraction conversion. Evidence: .orchestrate/evidence/SIM-2D/M3-random-draw.md, .orchestrate/evidence/SIM-2D/M3-target-guard.md and .orchestrate/evidence/SIM-2D/M3-resource-repair.md.",
         "visual": "Not claimed; this module draws nothing.",
         "device": "ARM64 M3 Max native, Chrome Wasm and iPhone 18 Pro simulator function. Physical iPhone, x86 processor, Android and browsers other than Chrome not run. Simulator speed is not claimed.",
         "performance": "M1 and M2 retain shared-host cost baselines, not qualified hardware budgets; no M3 speed claim."
@@ -2270,7 +2270,7 @@
       "id": "P3",
       "sim2d": {
         "implementation": "Reusable circle index, oversize bodies, circle/box/capsule overlaps and nearest-k implemented; rigid-body physics, navigation and non-circle bodies are not built.",
-        "correctness": "M2 brute-force oracle, hand-worked predicates and domain refusal tests; M3 preserves Crowd and Mixed retained timelines on all three named targets. Evidence: docs/evidence/SIM-2D/M3-random-draw.md.",
+        "correctness": "M2 brute-force oracle, hand-worked predicates and domain refusal tests; M3 preserves Crowd and Mixed retained timelines on all three named targets. Evidence: .orchestrate/evidence/SIM-2D/M3-random-draw.md.",
         "visual": "Not claimed; no rendering in the query module.",
         "device": "ARM64 M3 Max native, Chrome Wasm and iPhone 18 Pro simulator function. Physical iPhone, x86 processor, Android and browsers other than Chrome not run. Simulator speed is not claimed.",
         "performance": "M2 retains measured warmed allocations and two shared-host release cost runs per Mac/Chrome target; baseline figures only, no M3 speed claim."
