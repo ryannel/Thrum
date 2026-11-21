@@ -9,23 +9,24 @@ use std::sync::atomic::AtomicBool;
 const POLLERS: usize = 16;
 /// How long each poller's own map callback takes.
 const SLOW_CALLBACK: Duration = Duration::from_micros(500);
-/// On the code before the fix, two to eleven of 300 captures failed, in every run.
+/// On the code before the fix, one to thirteen of 300 captures failed, in every run.
 const CAPTURES: usize = 300;
 
-/// Maps a small buffer of its own with a slow callback and polls until it has run, until told to
-/// stop. A mapping that waits on no submission is ready at once, so it is collected first.
+/// Maps a small buffer of its own for writing (nothing is read) with a slow callback and polls
+/// until it has run, until told to stop. A mapping that waits on no submission is ready at once,
+/// so it is collected first.
 fn slow_poller(device: wgpu::Device, stop: Arc<AtomicBool>) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("capture race poller"),
             size: 16,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::MAP_WRITE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
         while !stop.load(Ordering::Relaxed) {
             let done = Arc::new(AtomicBool::new(false));
             let flag = Arc::clone(&done);
-            buffer.slice(..).map_async(wgpu::MapMode::Read, move |_| {
+            buffer.slice(..).map_async(wgpu::MapMode::Write, move |_| {
                 std::thread::sleep(SLOW_CALLBACK);
                 flag.store(true, Ordering::Release);
             });
