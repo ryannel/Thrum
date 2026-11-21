@@ -1,6 +1,7 @@
 use super::{Hull, Report, Whitewater, Witness};
 use crate::column::{COMPONENT_LIMIT, Component};
 use bytemuck::{Pod, Zeroable};
+use thrum_render::binding;
 use thrum_render::{
     contribution::{
         ContributionFrame, EffectAccess, EffectCadence, EffectGraph, EffectPass, EffectTime,
@@ -90,23 +91,6 @@ fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages
     })
 }
 
-fn layout(
-    binding: u32,
-    visibility: wgpu::ShaderStages,
-    ty: wgpu::BufferBindingType,
-) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty,
-            has_dynamic_offset: false,
-            min_binding_size: None,
-        },
-        count: None,
-    }
-}
-
 impl Foam {
     pub(crate) fn source() -> String {
         let [fine, coarse] = SPACING;
@@ -119,16 +103,8 @@ impl Foam {
 
     pub(crate) fn sample_layout() -> [wgpu::BindGroupLayoutEntry; 2] {
         [
-            layout(
-                9,
-                wgpu::ShaderStages::FRAGMENT,
-                wgpu::BufferBindingType::Storage { read_only: true },
-            ),
-            layout(
-                10,
-                wgpu::ShaderStages::FRAGMENT,
-                wgpu::BufferBindingType::Uniform,
-            ),
+            binding::storage(9, wgpu::ShaderStages::FRAGMENT, true, 0),
+            binding::uniform(10, wgpu::ShaderStages::FRAGMENT, 0),
         ]
     }
 
@@ -175,23 +151,16 @@ impl Foam {
         );
         let mut entries: Vec<_> = field_layout
             .iter()
-            .map(|entry| wgpu::BindGroupLayoutEntry {
-                visibility: Stages::COMPUTE,
-                ..*entry
+            .map(|&entry| {
+                let mut entry = entry;
+                entry.visibility = Stages::COMPUTE;
+                entry
             })
             .collect();
         entries.extend([
-            layout(
-                9,
-                Stages::COMPUTE,
-                wgpu::BufferBindingType::Storage { read_only: false },
-            ),
-            layout(10, Stages::COMPUTE, wgpu::BufferBindingType::Uniform),
-            layout(
-                11,
-                Stages::COMPUTE,
-                wgpu::BufferBindingType::Storage { read_only: false },
-            ),
+            binding::storage(9, Stages::COMPUTE, false, 0),
+            binding::uniform(10, Stages::COMPUTE, 0),
+            binding::storage(11, Stages::COMPUTE, false, 0),
         ]);
         let group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),

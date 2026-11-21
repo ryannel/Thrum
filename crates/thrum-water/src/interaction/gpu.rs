@@ -5,6 +5,7 @@ use super::{
     static_dent,
 };
 use bytemuck::{Pod, Zeroable};
+use thrum_render::binding;
 use thrum_render::{
     contribution::{
         ContributionFrame, EffectAccess, EffectCadence, EffectGraph, EffectPass, EffectTime,
@@ -152,16 +153,8 @@ impl Interaction {
             wgpu::BufferBindingType::Storage { read_only: true },
             wgpu::BufferBindingType::Uniform,
         ];
-        [0_u32, 1].map(|index| wgpu::BindGroupLayoutEntry {
-            binding: first + index,
-            visibility,
-            ty: wgpu::BindingType::Buffer {
-                ty: layout[index as usize],
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        })
+        [0_u32, 1]
+            .map(|index| binding::buffer(first + index, visibility, layout[index as usize], 0))
     }
 
     pub(crate) fn sample_entries(&self, first: u32) -> [wgpu::BindGroupEntry<'_>; 2] {

@@ -12,6 +12,7 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
+use thrum_render::binding;
 use thrum_render::contribution::{
     EffectAccess, EffectCadence, EffectGraph, EffectPass, EffectTime,
 };
@@ -128,34 +129,16 @@ impl Readback {
             ),
         });
         let visibility = wgpu::ShaderStages::COMPUTE;
-        let bind = |binding, ty| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility,
-            ty,
-            count: None,
-        };
-        let bind_buffer = |binding, ty| {
-            bind(
-                binding,
-                wgpu::BindingType::Buffer {
-                    ty,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-            )
-        };
         let mut layout = vec![
-            bind_buffer(0, wgpu::BufferBindingType::Uniform),
-            bind_buffer(1, wgpu::BufferBindingType::Storage { read_only: true }),
-            bind_buffer(2, wgpu::BufferBindingType::Storage { read_only: true }),
-            bind_buffer(3, wgpu::BufferBindingType::Storage { read_only: false }),
-            bind(
+            binding::uniform(0, visibility, 0),
+            binding::storage(1, visibility, true, 0),
+            binding::storage(2, visibility, true, 0),
+            binding::storage(3, visibility, false, 0),
+            binding::texture(
                 4,
-                wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2Array,
-                    multisampled: false,
-                },
+                visibility,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D2Array,
             ),
         ];
         if wake.is_some() {

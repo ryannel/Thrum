@@ -1,6 +1,7 @@
 //! Prepared map products and the shared camera-independent WGSL sampler.
 use crate::WaterError;
 use bytemuck::{Pod, Zeroable};
+use thrum_render::binding;
 use thrum_render::contribution::EffectTime;
 use thrum_water_model::{BodyKind, Map};
 use wgpu::util::DeviceExt;
@@ -103,26 +104,13 @@ pub fn declarations_at(group: u32) -> String {
 /// Map entries within the water resource group.
 pub fn bindings(visibility: wgpu::ShaderStages) -> [wgpu::BindGroupLayoutEntry; 2] {
     [
-        wgpu::BindGroupLayoutEntry {
-            binding: 5,
+        binding::texture(
+            5,
             visibility,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                view_dimension: wgpu::TextureViewDimension::D2Array,
-                multisampled: false,
-            },
-            count: None,
-        },
-        wgpu::BindGroupLayoutEntry {
-            binding: 6,
-            visibility,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(size_of::<MapRecord>() as u64),
-            },
-            count: None,
-        },
+            wgpu::TextureSampleType::Float { filterable: false },
+            wgpu::TextureViewDimension::D2Array,
+        ),
+        binding::uniform(6, visibility, size_of::<MapRecord>() as u64),
     ]
 }
 

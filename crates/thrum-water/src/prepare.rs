@@ -7,6 +7,7 @@ use super::{
     records::Parameters,
 };
 use std::ops::Range;
+use thrum_render::binding;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     contribution::{AfterOpaqueKind, AfterOpaquePass, EffectCadence, EffectGraph, SceneSurface},
@@ -193,25 +194,20 @@ pub(super) fn new(
         mapped_at_creation: false,
     });
     let mut entries: Vec<_> = (0..5)
-        .map(|binding| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: if binding == 0 {
-                wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                }
+        .map(|binding| {
+            let visibility = wgpu::ShaderStages::VERTEX_FRAGMENT;
+            if binding == 0 {
+                binding::uniform(binding, visibility, 0)
             } else if binding <= 2 {
-                wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2Array,
-                    multisampled: false,
-                }
+                binding::texture(
+                    binding,
+                    visibility,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D2Array,
+                )
             } else {
-                wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
-            },
-            count: None,
+                binding::sampler(binding, visibility, wgpu::SamplerBindingType::Filtering)
+            }
         })
         .collect();
     if mapped {
@@ -284,16 +280,12 @@ pub(super) fn new(
     });
     if let (Some(foam), Some(fallback)) = (&foam, &fallback) {
         entries.extend(Foam::sample_layout());
-        entries.push(wgpu::BindGroupLayoutEntry {
-            binding: 12,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        });
+        entries.push(binding::texture(
+            12,
+            wgpu::ShaderStages::FRAGMENT,
+            wgpu::TextureSampleType::Float { filterable: true },
+            wgpu::TextureViewDimension::D2,
+        ));
         bindings.extend(foam.sample_entries());
         bindings.push(pattern_entry(fallback));
     }
