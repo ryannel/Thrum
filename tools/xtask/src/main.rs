@@ -8,7 +8,13 @@ use std::{
     process::Command,
 };
 
+mod nextest;
 mod selection;
+
+use nextest::{
+    Rerun, SLOW_TEST_SECONDS, TestTime, junit_times, passes_after_reruns, rerun_filter,
+    rerun_lines, reruns, run_nextest, strip_filters,
+};
 
 type TaskResult = Result<(), Box<dyn Error>>;
 
@@ -493,167 +499,6 @@ fn nextest_version(text: &str) -> Option<(u64, u64, u64)> {
     ))
 }
 
-/// One test's result from cargo-nextest's JUnit report.
-struct TestTime {
-    /// `<package>::<binary> <test>`, as cargo-nextest names it.
-    name: String,
-    seconds: f64,
-    timed_out: bool,
-    /// Failed in any way, a stop by the limit included.
-    failed: bool,
-    /// Run in the draw-probe pass, a second build of one binary, rather than the workspace pass.
-    probe: bool,
-}
-
-/// The value of `attribute="..."` in one XML start tag, unescaped.
-fn xml_attribute(tag: &str, attribute: &str) -> Option<String> {
-    let start = tag.find(&format!(" {attribute}=\""))? + attribute.len() + 3;
-    let value = &tag[start..start + tag[start..].find('"')?];
-    let mut text = String::with_capacity(value.len());
-    let mut rest = value;
-    while let Some(at) = rest.find('&') {
-        text.push_str(&rest[..at]);
-        rest = &rest[at..];
-        let entity = [
-            ("&lt;", '<'),
-            ("&gt;", '>'),
-            ("&quot;", '"'),
-            ("&apos;", '\''),
-            ("&amp;", '&'),
-        ]
-        .into_iter()
-        .find(|(entity, _)| rest.starts_with(entity));
-        let (skip, character) = entity.map_or((1, '&'), |(entity, c)| (entity.len(), c));
-        text.push(character);
-        rest = &rest[skip..];
-    }
-    text.push_str(rest);
-    Some(text)
-}
-
-/// Every test case of a cargo-nextest JUnit report. A case whose failure says it timed out was
-/// stopped by the slow-test limit of `.config/nextest.toml`.
-fn junit_times(xml: &str) -> Vec<TestTime> {
-    let mut times = Vec::new();
-    for case in xml.split("<testcase ").skip(1) {
-        // The leading space lets the first attribute match like the others.
-        let tag = format!(" {}", &case[..case.find('>').unwrap_or(case.len())]);
-        let body = &case[..case.find("</testcase>").unwrap_or(case.len())];
-        let (Some(name), Some(class)) = (
-            xml_attribute(&tag, "name"),
-            xml_attribute(&tag, "classname"),
-        ) else {
-            continue;
-        };
-        times.push(TestTime {
-            name: format!("{class} {name}"),
-            seconds: xml_attribute(&tag, "time")
-                .and_then(|time| time.parse().ok())
-                .unwrap_or(0.0),
-            timed_out: body.contains("<failure type=\"test timeout\""),
-            failed: body.contains("<failure") || body.contains("<error"),
-            probe: false,
-        });
-    }
-    times
-}
-
-/// Above this a test is reported as slow; ten seconds is the merge tier's bound for one test, and
-/// `.config/nextest.toml` stops a test that is not exempt at the same time.
-const SLOW_TEST_SECONDS: f64 = 10.0;
-
-/// A test the limit stopped side by side, and its second run alone (GATE-TIME mechanism 13).
-struct Rerun {
-    name: String,
-    side_by_side: f64,
-    /// Its time alone, or None when the second run reported nothing for it.
-    alone: Option<f64>,
-    passed: bool,
-    probe: bool,
-}
-
-/// The filter that selects exactly the tests in `stopped`, each by its binary and its whole name.
-fn rerun_filter(stopped: &[&TestTime]) -> String {
-    stopped
-        .iter()
-        .map(|test| {
-            let (binary, name) = test.name.split_once(' ').unwrap_or((&test.name, ""));
-            format!("(binary_id(={binary}) & test(={name}))")
-        })
-        .collect::<Vec<_>>()
-        .join(" | ")
-}
-
-/// Each stopped test's second run, from the second run's report: it passes only when the report
-/// has it passed within the limit.
-fn reruns(stopped: &[&TestTime], alone: &[TestTime]) -> Vec<Rerun> {
-    stopped
-        .iter()
-        .map(|test| {
-            let again = alone.iter().find(|other| other.name == test.name);
-            Rerun {
-                name: test.name.clone(),
-                side_by_side: test.seconds,
-                alone: again.map(|again| again.seconds),
-                passed: again
-                    .is_some_and(|again| !again.failed && again.seconds <= SLOW_TEST_SECONDS),
-                probe: test.probe,
-            }
-        })
-        .collect()
-}
-
-/// Whether a pass of cargo-nextest that exited with a failure passes after its second runs: only
-/// when every test that failed was stopped by the limit and every one of them passed alone. A test
-/// that fails any other way, or a failure with no failed test such as a build error, still fails.
-fn passes_after_reruns(times: &[TestTime], reruns: &[Rerun]) -> bool {
-    let stopped = times.iter().filter(|test| test.timed_out).count();
-    stopped > 0
-        && stopped == times.iter().filter(|test| test.failed).count()
-        && reruns.len() == stopped
-        && reruns.iter().all(|rerun| rerun.passed)
-}
-
-/// `args` without any `-E <filter>`, for a second run that selects its own tests.
-fn strip_filters<'a>(args: &[&'a str]) -> Vec<&'a str> {
-    let mut kept = Vec::new();
-    let mut rest = args.iter();
-    while let Some(&arg) = rest.next() {
-        if arg == "-E" {
-            rest.next();
-        } else if arg != "--no-tests=pass" {
-            kept.push(arg);
-        }
-    }
-    kept
-}
-
-/// Runs `cargo nextest run` with `args` and reads the JUnit report it writes. The report is None
-/// when the run failed before writing one, such as on a build error; a pass with no report fails.
-fn run_nextest(
-    junit: &Path,
-    args: &[&str],
-) -> Result<(TaskResult, Option<String>), Box<dyn Error>> {
-    // A report left by an earlier run must not be read as this one's.
-    match std::fs::remove_file(junit) {
-        Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
-        _ => {}
-    }
-    let mut full = vec!["nextest", "run", "--locked", "--offline"];
-    full.extend_from_slice(args);
-    let ran = cargo(&full);
-    match std::fs::read_to_string(junit) {
-        Ok(xml) => Ok((ran, Some(xml))),
-        Err(_) if ran.is_err() => Ok((ran, None)),
-        Err(error) => Err(format!(
-            "cargo-nextest passed but wrote no JUnit report at {} ({error}); \
-             .config/nextest.toml's [store] dir must be {NEXTEST_STORE}",
-            junit.display()
-        )
-        .into()),
-    }
-}
-
 /// What `./dev check` has done so far: each step's wall time, and each test's time.
 #[derive(Default)]
 struct CheckRecord {
@@ -800,38 +645,6 @@ impl CheckRecord {
         }
         Ok(())
     }
-}
-
-/// The closing lines on the tests the limit stopped side by side: each with its time there and its
-/// time alone on its second run. A test that failed any other way was not run again.
-fn rerun_lines(reruns: &[Rerun]) -> Vec<String> {
-    if reruns.is_empty() {
-        return vec![format!(
-            "no test was stopped at {SLOW_TEST_SECONDS} s side by side, so none was run again alone"
-        )];
-    }
-    let mut lines = vec![format!(
-        "{} test(s) stopped at {SLOW_TEST_SECONDS} s side by side and run again alone, after the others; \
-         each fails the check unless it passed alone within {SLOW_TEST_SECONDS} s:",
-        reruns.len()
-    )];
-    for rerun in reruns {
-        let alone = rerun.alone.map_or_else(
-            || "no result".to_owned(),
-            |seconds| format!("{seconds:.1} s"),
-        );
-        let verdict = if rerun.passed { "passed" } else { "FAILED" };
-        let pass = if rerun.probe {
-            " (draw-probe pass)"
-        } else {
-            ""
-        };
-        lines.push(format!(
-            "  {:>6.1} s side by side, {alone} alone, {verdict}  {}{pass}",
-            rerun.side_by_side, rerun.name
-        ));
-    }
-    lines
 }
 
 /// Whether a test counts as a GPU test in the closing lines: its binary or its name says `gpu` or
