@@ -72,7 +72,7 @@
     {
       "id": "M2",
       "name": "A scene contribution writes only the hooks it uses",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -87,8 +87,8 @@
           "check": "sh -c 'git grep -q \"trait SceneContribution\" -- crates && test \"$(git grep -hA1 -E \"fn computes\\(&self.*\\) -> bool \\{\" -- crates examples | grep -cE \"^ *false *$\")\" -le 1'",
           "ask": "List every `impl SceneContribution` under `crates` and `examples`: does any still write a body equal to a default, for any of the five hooks? Compare with the starting commit: is any body that did work gone, or any hook's behaviour changed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop check on eb74efdc0 (mac-metal): the check passed; 139 stub bodies removed, only stub lines deleted outside the trait and list (LOG 2026-11-21)",
           "verdict": "",
           "review": ""
         },
@@ -99,8 +99,8 @@
           "ask": "Name the test that fails if `SceneContributions` does not forward one hook, and try it: remove one forward in a scratch copy. Does its probe count all eight hooks, the five with defaults among them? Does the ray-tracing replacement still forward all eight itself, with none left to a default? Is there any other wrapper outside tests that holds a contribution and forwards to it?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "agent_loop check on eb74efdc0 (mac-metal, GPU required): contribution::list::tests::every_hook_reaches_a_member_behind_the_list passed; removing the list draw forward fails it naming draw",
           "verdict": "",
           "review": ""
         },
@@ -109,8 +109,8 @@
           "statement": "The tests that no merge check runs and whose contributions this milestone edited pass on main with its commit in, in the main-branch check `long-tests`: the tests behind a Cargo feature, and the long tests that render through an edited contribution, the ten-minute gale and the field flythroughs among them.",
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests",
           "verdict": "",
           "review": ""
         },
@@ -119,8 +119,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
