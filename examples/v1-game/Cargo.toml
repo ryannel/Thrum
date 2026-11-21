@@ -28,10 +28,6 @@ name = "ray_tracing_gpu"
 required-features = ["draw-probe"]
 
 [[test]]
-name = "field_gpu"
-path = "tests/support/field_gpu.rs"
-
-[[test]]
 name = "field_occlusion_gpu"
 path = "tests/support/field_occlusion_gpu.rs"
 

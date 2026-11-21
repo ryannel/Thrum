@@ -45,7 +45,7 @@ fn data() -> (Profile, Vec<Type>) {
     clippy::too_many_lines,
     reason = "one conformance fixture checks weather and sun products through replacement"
 )]
-pub(super) fn conformance(test: &str, portable: bool, sun_checks: bool) {
+pub(super) fn conformance(test: &str, portable: bool) {
     let Some(gpu) = thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)) else {
         return;
     };
@@ -248,11 +248,9 @@ pub(super) fn conformance(test: &str, portable: bool, sun_checks: bool) {
                 && largest[5] <= 3.5e-6,
             "measured weather conformance: {largest:?}"
         );
-        if sun_checks {
-            sun::run(
-                &device, &queue, &site, &field, &mut map, &mut state, portable,
-            );
-        }
+        sun::run(
+            &device, &queue, &site, &field, &mut map, &mut state, portable,
+        );
     });
 }
 

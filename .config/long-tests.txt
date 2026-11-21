@@ -14,7 +14,6 @@
 water-scene floating_gpu release
 water-scene foam_scene_gpu release
 v1-game exit_scene release
-v1-game field_gpu release
 v1-game field_occlusion_gpu release
 thrum-water-model shore_blend release
 

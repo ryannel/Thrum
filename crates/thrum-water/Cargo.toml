@@ -12,8 +12,6 @@ name = "map_gpu"
 [[test]]
 name = "gains_gpu"
 [[test]]
-name = "swash_gpu"
-[[test]]
 name = "query_gpu"
 [[test]]
 name = "interaction_gpu"

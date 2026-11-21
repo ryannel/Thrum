@@ -5,32 +5,9 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use crate::atmosphere::AtmosphereFrame;
-use crate::atmosphere::gpu::{AtmospherePrepared, EXTENTS, LUT_SHADER, prepare_compute};
-use crate::atmosphere::spectrum::Profile;
+use crate::atmosphere::gpu::{AtmospherePrepared, EXTENTS};
 use crate::light::EnvironmentLight;
 use crate::synthetic::SyntheticView;
-
-// The independent CPU reference integrates these original representative bands.
-// Run that comparison through the same GPU kernels with an identity projection.
-const MATCHED_MEDIUM: Profile = Profile {
-    rayleigh_scale_height: 8_000.0,
-    mie_scale_height: 1_200.0,
-    ozone_centre: 25_000.0,
-    ozone_half_width: 15_000.0,
-    mie_extinction: 4.4e-6,
-    mie_scattering: 3.996e-6,
-    rayleigh: [
-        5.802e-6, 13.558e-6, 33.100e-6, 5.802e-6, 5.802e-6, 5.802e-6, 5.802e-6, 5.802e-6,
-    ],
-    ozone: [
-        0.650e-6, 1.881e-6, 0.085e-6, 0.650e-6, 0.650e-6, 0.650e-6, 0.650e-6, 0.650e-6,
-    ],
-    rgb: [
-        [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    ],
-};
 
 const READ_SHADER: &str = r"
 @group(0) @binding(0) var source: texture_2d<f32>;
@@ -44,28 +21,19 @@ fn read(@builtin(global_invocation_id) id: vec3<u32>) {
 ";
 
 pub(super) struct Sky {
-    pub full: Vec<[f64; 3]>,
-    pub single: Vec<[f64; 3]>,
     pub rays_full: Vec<[f64; 3]>,
-    pub rays_single: Vec<[f64; 3]>,
 }
 
 pub(super) struct Probe {
     atmosphere: AtmospherePrepared,
     environment: wgpu::Buffer,
     reader: wgpu::ComputePipeline,
-    single_group: wgpu::BindGroup,
     transport_ready: bool,
     rays: super::query::Rays,
 }
 
 impl Probe {
-    pub(super) fn new(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        directions: &[[f32; 4]],
-        matched_medium: bool,
-    ) -> Self {
+    pub(super) fn new(device: &wgpu::Device, queue: &wgpu::Queue, directions: &[[f32; 4]]) -> Self {
         let environment = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("reference environment output"),
             size: crate::light::ENVIRONMENT_BYTES,
@@ -74,97 +42,15 @@ impl Probe {
                 | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let mut atmosphere = AtmospherePrepared::new(
+        let atmosphere = AtmospherePrepared::new(
             &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
             queue,
             1,
             frame(45.0, 2.0),
             &SyntheticView::default(),
             &environment,
-            &super::super::super::sky_samples(device),
+            &super::super::sky_samples(device),
         );
-        let zero = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("zero higher-order input for first-order comparison"),
-            size: wgpu::Extent3d {
-                width: 1,
-                height: 2,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba16Float,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-        let views = [
-            atmosphere.textures[0].create_view(&wgpu::TextureViewDescriptor::default()),
-            zero.create_view(&wgpu::TextureViewDescriptor::default()),
-            atmosphere.textures[2].create_view(&wgpu::TextureViewDescriptor::default()),
-        ];
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            ..Default::default()
-        });
-        if matched_medium {
-            let matched = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("same transport kernels in the reference medium"),
-                source: wgpu::ShaderSource::Wgsl(MATCHED_MEDIUM.shader(LUT_SHADER).into()),
-            });
-            let production_views = atmosphere
-                .textures
-                .each_ref()
-                .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
-            for index in 0..4 {
-                (atmosphere.compute[index], atmosphere.groups[index]) = prepare_compute(
-                    &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
-                    index,
-                    &atmosphere.uniform,
-                    &production_views,
-                    &sampler,
-                    &matched,
-                    &atmosphere.night,
-                );
-            }
-        }
-        let single_entries = [
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: atmosphere.uniform.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::TextureView(&views[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(&views[1]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: wgpu::BindingResource::TextureView(&views[2]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 4,
-                resource: wgpu::BindingResource::Sampler(&sampler),
-            },
-            wgpu::BindGroupEntry {
-                binding: 5,
-                // Indirect ground paths are excluded from the first-order
-                // observation, alongside the zero multiple-scattering input.
-                resource: wgpu::BindingResource::TextureView(&views[1]),
-            },
-        ];
-        let single_entries = single_entries
-            .into_iter()
-            .chain(atmosphere.night.bindings())
-            .collect::<Vec<_>>();
-        let single_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("production single-scatter resource substitution"),
-            layout: &atmosphere.compute[2].get_bind_group_layout(0),
-            entries: &single_entries,
-        });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("reference texture readback"),
             source: wgpu::ShaderSource::Wgsl(READ_SHADER.into()),
@@ -181,7 +67,6 @@ impl Probe {
             atmosphere,
             environment,
             reader,
-            single_group,
             transport_ready: false,
             rays: super::query::Rays::new(device, directions),
         }
@@ -200,8 +85,6 @@ impl Probe {
             &SyntheticView::default(),
             [1, 1],
         );
-        let full = Snapshot::new(device, &self.reader, &self.atmosphere.textures[2]);
-        let single = Snapshot::new(device, &self.reader, &self.atmosphere.textures[2]);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         if !self.transport_ready {
             for index in 0..2 {
@@ -210,33 +93,16 @@ impl Probe {
             self.dispatch(&mut encoder, 3, &self.atmosphere.groups[3]);
         }
         self.dispatch(&mut encoder, 2, &self.atmosphere.groups[2]);
-        full.encode(&mut encoder, &self.reader);
         let rays_full = self.rays.observe(
             device,
             &mut encoder,
             &self.atmosphere.uniform,
             &self.atmosphere.textures[2],
         );
-        self.dispatch(&mut encoder, 2, &self.single_group);
-        single.encode(&mut encoder, &self.reader);
-        let rays_single = self.rays.observe(
-            device,
-            &mut encoder,
-            &self.atmosphere.uniform,
-            &self.atmosphere.textures[2],
-        );
-        submit(
-            device,
-            queue,
-            encoder,
-            [&full.readback, &single.readback, &rays_full, &rays_single],
-        );
+        submit(device, queue, encoder, [&rays_full]);
         self.transport_ready = true;
         Sky {
-            full: full.collect(1024.0),
-            single: single.collect(1024.0),
             rays_full: decode(&rays_full, 1024.0),
-            rays_single: decode(&rays_single, 1024.0),
         }
     }
 

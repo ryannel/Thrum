@@ -79,7 +79,7 @@ fn night_profile_survives_sky_sampling_and_the_incident_reduction() {
             let (sin, cos) = degrees.to_radians().sin_cos();
             [cos, sin, 0.0, 0.0]
         });
-        let mut probe = Probe::new(&device, &queue, &directions, false);
+        let mut probe = Probe::new(&device, &queue, &directions);
         for reference in REFERENCE {
             // Toggle on an existing allocation. Keep the same solar input
             // and require that even its unexposed LUT values are unchanged.

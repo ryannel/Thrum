@@ -4,7 +4,7 @@ pub(in crate::atmosphere) mod diffuse;
 mod ground;
 mod mapping;
 mod multiple_interpolation;
-mod reference;
+mod sky_probe;
 mod transmittance;
 
 async fn device(

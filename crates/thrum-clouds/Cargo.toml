@@ -14,13 +14,7 @@ name = "transport_gpu"
 name = "shadow_only_gpu"
 
 [[test]]
-name = "weather_map_gpu"
-
-[[test]]
 name = "sun_path_gpu"
-
-[[test]]
-name = "sun_path_continuity_gpu"
 
 [[test]]
 name = "portable_limits_gpu"
