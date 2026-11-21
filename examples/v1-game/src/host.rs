@@ -3,15 +3,12 @@
 use crate::{
     camera::{CameraRoute, SceneCamera},
     environment::DayCycle,
-    projection::{GameProjection, ProjectionGap},
     scene::{GameContent, RouteOverlay},
 };
 use runtime::FrameConfig;
 use std::time::Duration;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
-#[cfg(not(target_arch = "wasm32"))]
-use thrum_content_runtime::EnvironmentProduct;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     runtime,
@@ -440,14 +437,6 @@ pub trait GameHost {
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)>;
     /// Prepared cloud resource payload bytes, excluding driver overhead.
     fn cloud_resource_bytes(&self) -> Vec<(String, u64)>;
-    /// Detached inputs for preparing a cooked game environment off the render owner.
-    #[cfg(not(target_arch = "wasm32"))]
-    fn environment_prepare_inputs(&self) -> VisualPrepareInputs;
-    /// Install a host-bound environment after old GPU packets retire.
-    /// # Errors
-    /// Returns an engine ownership/binding/upload failure.
-    #[cfg(not(target_arch = "wasm32"))]
-    fn publish_environment(&mut self, candidate: &mut PreparedEnvironment) -> Result<bool, String>;
     /// Move the inline clock and rules onto the engine's world lane. The frame host then
     /// renders the lane's publications, and the returned controls drive the world.
     /// # Errors
@@ -548,20 +537,6 @@ impl GameHost for Runtime {
             .map_or_else(Vec::new, thrum_clouds::WeatherInput::resource_bytes)
     }
     #[cfg(not(target_arch = "wasm32"))]
-    fn environment_prepare_inputs(&self) -> VisualPrepareInputs {
-        VisualPrepareInputs(self.visual_prepare_inputs())
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    fn publish_environment(&mut self, candidate: &mut PreparedEnvironment) -> Result<bool, String> {
-        let published = self
-            .publish_visual(&mut candidate.inner)
-            .map_err(|error| error.to_string())?;
-        if published {
-            self.continuous_source_mut().visual_product = candidate.product.take();
-        }
-        Ok(published)
-    }
-    #[cfg(not(target_arch = "wasm32"))]
     fn into_threaded(
         mut self,
         origin: Instant,
@@ -606,63 +581,6 @@ impl GameWorld {
     #[must_use]
     pub fn controlled_position(&self) -> Option<[f64; 3]> {
         self.0.controlled_position()
-    }
-    /// Enable the game's optional detached projection outbox.
-    /// # Errors
-    /// Returns a world publication failure.
-    pub fn enable_projection(&mut self) -> Result<(), String> {
-        self.0.enable_projection()
-    }
-    /// Consume game projection output in committed order.
-    /// # Errors
-    /// Reports an explicit overwritten-tick gap requiring a baseline.
-    pub fn poll_projection(
-        &mut self,
-        consume: impl FnOnce(&GameProjection),
-    ) -> Result<Option<bool>, ProjectionGap> {
-        self.0.poll_projection(consume)
-    }
-    /// Reserved bytes in the game's detached projection outbox.
-    #[must_use]
-    pub fn projection_reserved_bytes(&self) -> usize {
-        self.0.projection_reserved_bytes()
-    }
-    /// Replace projection deltas with a fresh game baseline.
-    /// # Errors
-    /// Returns a disabled-output or publication failure.
-    pub fn reset_projection_baseline(&mut self) -> Result<(), String> {
-        self.0.reset_projection_baseline()
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-/// Prepared game product paired with engine-owned replacement resources.
-pub struct PreparedEnvironment {
-    product: Option<EnvironmentProduct>,
-    inner: runtime::PreparedVisual,
-}
-#[cfg(not(target_arch = "wasm32"))]
-/// Detached engine preparation inputs for a cooked game environment.
-pub struct VisualPrepareInputs(runtime::VisualPrepareInputs);
-#[cfg(not(target_arch = "wasm32"))]
-impl VisualPrepareInputs {
-    /// Prepare the cooked photometric view without borrowing the active game.
-    /// # Errors
-    /// Returns a GPU preparation failure.
-    pub async fn prepare(self, product: EnvironmentProduct) -> Result<PreparedEnvironment, String> {
-        let revision = Some(*product.revision().as_bytes());
-        let lighting = thrum_render::synthetic::FrameLighting::Photometric(
-            scene_source::photometric(&product),
-        );
-        let inner = self
-            .0
-            .prepare(lighting, 1.0, revision)
-            .await
-            .map_err(|error| error.to_string())?;
-        Ok(PreparedEnvironment {
-            product: Some(product),
-            inner,
-        })
     }
 }
 

@@ -39,7 +39,7 @@ side effect of a fix.
 | `crates/thrum-sea-model`, `thrum-cloud-model` | CPU models in `f64`, with no graphics dependency: what a game queries headless, and a diagnostic for the GPU paths |
 | `crates/thrum-sea` | The GPU sea, on the scene effect graph |
 | `crates/thrum-app` | Platform shells: the native macOS window and render thread, the browser WebGPU shell, the sky kit |
-| `crates/thrum-controls`, `thrum-network`, `thrum-content-runtime` | Demo controls, network codecs, small checked runtime products |
+| `crates/thrum-controls`, `thrum-network` | Demo controls, network codecs |
 | `examples/v1-game` | The V1 test game, which uses the engine only through public APIs. Its iOS shell is `examples/v1-game-ios` |
 | `examples/starter`, `stones`, `lighthouse` | Small kit scenes that teach the public API |
 | `tools/xtask`, `dev`, `scripts/` | `./dev` commands (xtask) and the Python check and capture tools they call |

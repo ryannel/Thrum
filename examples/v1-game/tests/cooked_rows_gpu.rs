@@ -7,7 +7,8 @@ use thrum_asset_gpu::{
     CookedAssets, CookedConfig, CookedStats, Drawn, MeshPlacement, await_drawn, rows::CookedRows,
 };
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
-use thrum_render::runtime::{FrameConfig, FrameHost};
+use thrum_render::runtime::{FrameConfig, FrameHost, PreparedVisual, VisualPrepareInputs};
+use thrum_render::synthetic::{FrameLighting, PhotometricEnvironment};
 use thrum_render::synthetic::mesh_rows::{MeshRowError, MeshRowGeometry};
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
 use v1_game::{GameHost, GameScene, GameSetup, GameWorld};
@@ -867,20 +868,40 @@ fn edited_rows_equal_fresh_game(mode: CullMode, coupled: bool) {
     });
 }
 
-fn environment(revision: u8) -> thrum_content_runtime::EnvironmentProduct {
+/// A cooked photometric environment and the revision it is published under.
+#[derive(Clone, Copy)]
+struct Environment {
+    revision: [u8; 32],
+    lighting: PhotometricEnvironment,
+}
+
+fn environment(revision: u8) -> Environment {
     let (x, y) = if revision.is_multiple_of(2) {
         (0.6, 0.8)
     } else {
         (0.0, 1.0)
     };
-    let values = thrum_content_runtime::EnvironmentValues::from_numbers([
-        x, y, 0.0, 100_000.0, 1.0, 1.0, 1.0, 0.00465, 100.0, 100.0, 100.0, 1.0, 1.0, 1.0,
-    ])
-    .expect("environment");
-    thrum_content_runtime::EnvironmentProduct::new(
-        thrum_content_runtime::EnvironmentProductRevision::from_bytes([revision; 32]),
-        values,
-    )
+    Environment {
+        revision: [revision; 32],
+        lighting: PhotometricEnvironment {
+            toward_sun: [x, y, 0.0],
+            sun_lux: 100_000.0,
+            sun_colour: [1.0, 1.0, 1.0],
+            ambient_lux: [100.0, 100.0, 100.0],
+            background_radiance: [1.0, 1.0, 1.0],
+        },
+    }
+}
+
+async fn prepare_environment(inputs: VisualPrepareInputs, product: Environment) -> PreparedVisual {
+    inputs
+        .prepare(
+            FrameLighting::Photometric(product.lighting),
+            1.0,
+            Some(product.revision),
+        )
+        .await
+        .expect("prepare environment")
 }
 
 async fn environment_reference(
@@ -889,20 +910,12 @@ async fn environment_reference(
     queue: &wgpu::Queue,
     caps: &DeviceCapabilities,
     mode: CullMode,
-    product: thrum_content_runtime::EnvironmentProduct,
+    product: Environment,
 ) -> Vec<u8> {
     let (mut fresh, stats) = host(cook, device, queue, caps, mode, true, None).await;
     settle(&mut fresh, &stats, generation(cook));
-    let mut candidate = fresh
-        .environment_prepare_inputs()
-        .prepare(product)
-        .await
-        .expect("fresh environment");
-    assert!(
-        fresh
-            .publish_environment(&mut candidate)
-            .expect("fresh publish")
-    );
+    let mut candidate = prepare_environment(fresh.visual_prepare_inputs(), product).await;
+    assert!(fresh.publish_visual(&mut candidate).expect("fresh publish"));
     fresh.capture_pixels().expect("fresh environment frame")
 }
 
@@ -1001,12 +1014,7 @@ fn visual_rebuild_preserves_rows(mode: CullMode, phase: u8) {
         settle(&mut live, &stats, generation(&cook));
         let updates = live.cooked_rows().expect("rows").updates();
         let mut candidate = if phase == 3 {
-            Some(
-                live.environment_prepare_inputs()
-                    .prepare(product)
-                    .await
-                    .expect("early candidate"),
-            )
+            Some(prepare_environment(live.visual_prepare_inputs(), product).await)
         } else {
             None
         };
@@ -1045,13 +1053,9 @@ fn visual_rebuild_preserves_rows(mode: CullMode, phase: u8) {
         let before_bytes = updates.report().submitted_bytes;
         let mut candidate = match candidate.take() {
             Some(candidate) => candidate,
-            None => live
-                .environment_prepare_inputs()
-                .prepare(product)
-                .await
-                .expect("candidate"),
+            None => prepare_environment(live.visual_prepare_inputs(), product).await,
         };
-        assert!(live.publish_environment(&mut candidate).expect("publish"));
+        assert!(live.publish_visual(&mut candidate).expect("publish"));
         assert_eq!(
             updates.status(next),
             before_status,

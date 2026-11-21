@@ -30,6 +30,34 @@ fn reconstruction_fixture_replaces_the_prop_on_authoritative_tick_sixty() {
 }
 
 #[test]
+fn a_recovered_page_is_republished_at_the_latest_tick() {
+    use thrum_core::sim::WorldGame;
+    let mut driver = WorldDriver::new(
+        crate::scene::GameContent::Grid,
+        crate::scene::RouteOverlay::Off,
+    )
+    .expect("fixture world");
+    // Lease every page the ring offers, so a step finds no free page and skips publication.
+    let mut held = vec![driver.published_page().expect("tick zero")];
+    let skipped = loop {
+        let step = driver.world.game_mut().step().expect("step");
+        if step.skipped_publication {
+            break driver.world.game().sim.tick();
+        }
+        held.push(driver.published_page().expect("held page"));
+        assert!(held.len() < 64, "the page ring never filled");
+    };
+    assert!(!driver.has_current_page());
+    let rules = driver.world.game_mut();
+    assert_eq!(rules.recover_publication().expect("busy recovery"), None);
+    drop(held);
+    assert_eq!(rules.recover_publication().expect("recovery"), Some(0));
+    assert!(driver.has_current_page());
+    let page = driver.published_page().expect("republished page");
+    assert_eq!(page.id().tick, skipped);
+}
+
+#[test]
 fn threaded_control_equality_preserves_inline_signed_zero_admission() {
     let positive_zero = [0.0_f32; 3];
     let negative_zero = [-0.0_f32, 0.0, 0.0];

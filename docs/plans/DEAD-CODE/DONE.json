@@ -231,7 +231,7 @@
     {
       "id": "M5",
       "name": "The game's unread state projection and the content crate with no producer are gone",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -247,8 +247,8 @@
           "ask": "After a recovered page, is the page still republished, and does a test show it? Does the maturity ledger still describe a projection outbox as present?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M5/M5.1-check.log",
           "verdict": "",
           "review": ""
         },
@@ -259,8 +259,8 @@
           "ask": "Does the cooked-rows test assert what it asserted at the starting commit, on the same environment numbers?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-CODE/M5/M5.2-check.log",
           "verdict": "",
           "review": ""
         },
@@ -269,8 +269,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

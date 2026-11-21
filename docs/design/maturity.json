@@ -214,7 +214,7 @@
       ]
     },
     "G1_publication": {
-      "implementation": "complete_one_simulation_owned_page_ring_and_optional_ordered_game_projection_outbox",
+      "implementation": "complete_one_simulation_owned_page_ring",
       "functional_validation": "full_dev_check_scoped_zero_allocation_tests_slot_reuse_and_backpressure_tests_real_metal_host_and_retired_pixel_tests_independent_cross_module_review_no_findings",
       "experienced_quality": "synthetic_scene_diagnostic_only_no_v1_visual_acceptance",
       "platform_performance": {
@@ -224,8 +224,8 @@
         "ios": "not_measured_simulator_compile_only",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Apple M3 Max release 10k/1.5k: incremental tick plus page Divan median 76.16 us; isolated slot extraction 71.58 us; four-page reserved payload/owner bytes 10001488; optional warmed outbox 4073984 bytes. Two 600-frame window runs tick CPU p50/p95 104.625/193.167 and 103.666/129.833 us; scene GPU p50/p95 0.375/1.977 and 0.374/2.420 ms. Wide tails and dropped optional views remain unqualified.",
-      "scope": "One immutable complete slot page per tick, dirty sets, ordered structural events, generation-checked render extraction, last-applied-scene retirement and opt-in bounded projection outbox with explicit baseline recovery. Fixed game schema remains in core until G2. No real transport, generic restore/replay, long history or physical-iPhone run.",
+      "diagnostic_measurement": "Apple M3 Max release 10k/1.5k: incremental tick plus page Divan median 76.16 us; isolated slot extraction 71.58 us; four-page reserved payload/owner bytes 10001488. Two 600-frame window runs tick CPU p50/p95 104.625/193.167 and 103.666/129.833 us; scene GPU p50/p95 0.375/1.977 and 0.374/2.420 ms. Wide tails and dropped optional views remain unqualified.",
+      "scope": "One immutable complete slot page per tick, dirty sets, ordered structural events, generation-checked render extraction, last-applied-scene retirement and republication of a recovered page. The opt-in projection outbox had no reader and was removed in DEAD-CODE M5. Fixed game schema remains in core until G2. No real transport, generic restore/replay, long history or physical-iPhone run.",
       "evidence": [
         "../../.orchestrate/evidence/integration/G1-PUBLICATION-2026-11-04.md"
       ]

@@ -63,9 +63,6 @@ wasm-bindgen = "=0.2.129"
 wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-thrum-content-runtime = { path = "../../crates/thrum-content-runtime" }
-
 [dev-dependencies]
 thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }

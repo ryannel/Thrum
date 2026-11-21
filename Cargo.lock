@@ -3185,10 +3185,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "thrum-content-runtime"
-version = "0.1.0"
-
-[[package]]
 name = "thrum-controls"
 version = "0.1.0"
 dependencies = [
@@ -3622,7 +3618,6 @@ dependencies = [
  "thrum-asset-gpu",
  "thrum-cloud-model",
  "thrum-clouds",
- "thrum-content-runtime",
  "thrum-controls",
  "thrum-cook",
  "thrum-core",

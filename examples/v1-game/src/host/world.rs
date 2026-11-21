@@ -1,4 +1,4 @@
-//! The game's single authoritative clock, rules and optional projection output.
+//! The game's single authoritative clock and rules.
 
 use std::time::Duration;
 
@@ -9,7 +9,6 @@ use thrum_core::{
 };
 
 use crate::{
-    projection::{GameProjection, ProjectionGap, ProjectionOutbox},
     scene::{self, GameContent},
     simulation::{PublishedPage, SimError, Simulation},
 };
@@ -44,6 +43,7 @@ impl WorldPort {
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
     fn inline(&self) -> &WorldDriver {
         match self {
             Self::Inline(driver) => driver,
@@ -54,6 +54,7 @@ impl WorldPort {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn inline_mut(&mut self) -> &mut WorldDriver {
         match self {
             Self::Inline(driver) => driver,
@@ -222,25 +223,6 @@ impl WorldPort {
     pub(super) fn exit_mover_position(&self) -> Option<[f64; 3]> {
         self.inline().exit_mover_position()
     }
-
-    pub(super) fn enable_projection(&mut self) -> Result<(), String> {
-        self.inline_mut().enable_projection()
-    }
-
-    pub(super) fn poll_projection(
-        &mut self,
-        consume: impl FnOnce(&GameProjection),
-    ) -> Result<Option<bool>, ProjectionGap> {
-        self.inline_mut().poll_projection(consume)
-    }
-
-    pub(super) fn projection_reserved_bytes(&self) -> usize {
-        self.inline().projection_reserved_bytes()
-    }
-
-    pub(super) fn reset_projection_baseline(&mut self) -> Result<(), String> {
-        self.inline_mut().reset_projection_baseline()
-    }
 }
 
 /// The game's authoritative world: its clock and rules, stepped inline on the
@@ -305,7 +287,6 @@ pub(super) struct GameRules {
     entity_count: usize,
     route_overlay: scene::RouteOverlay,
     pub(super) sim: Simulation,
-    projections: Option<ProjectionOutbox>,
     desired_axes: [f32; 3],
     admitted_axes: [f32; 3],
     input_sequence: u64,
@@ -354,7 +335,6 @@ impl WorldDriver {
             route_overlay,
             sim,
             entity_count,
-            projections: None,
             desired_axes: [0.0; 3],
             admitted_axes: [0.0; 3],
             input_sequence: 1,
@@ -441,54 +421,6 @@ impl WorldDriver {
         sim.get(handle).ok().map(|entity| entity.position.0)
     }
 
-    pub(super) fn enable_projection(&mut self) -> Result<(), String> {
-        let game = self.world.game_mut();
-        if game.projections.is_none() {
-            let page = game
-                .sim
-                .published_page()
-                .map_err(|error| format!("world page: {error:?}"))?;
-            let mut outbox = ProjectionOutbox::new(game.entity_count);
-            outbox.reset_full(&page);
-            game.projections = Some(outbox);
-        }
-        Ok(())
-    }
-
-    pub(super) fn poll_projection(
-        &mut self,
-        consume: impl FnOnce(&GameProjection),
-    ) -> Result<Option<bool>, ProjectionGap> {
-        let game = self.world.game_mut();
-        let timeline = game.sim.timeline();
-        game.projections
-            .as_mut()
-            .map(|outbox| outbox.poll(timeline, consume))
-            .transpose()
-    }
-
-    pub(super) fn projection_reserved_bytes(&self) -> usize {
-        self.world
-            .game()
-            .projections
-            .as_ref()
-            .map_or(0, ProjectionOutbox::reserved_bytes)
-    }
-
-    pub(super) fn reset_projection_baseline(&mut self) -> Result<(), String> {
-        let game = self.world.game_mut();
-        let outbox = game
-            .projections
-            .as_mut()
-            .ok_or("projection output is disabled")?;
-        let page = game
-            .sim
-            .published_page()
-            .map_err(|error| format!("world page: {error:?}"))?;
-        outbox.reset_full(&page);
-        Ok(())
-    }
-
     pub(super) fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
         self.world
             .advance_inline(now)
@@ -502,11 +434,7 @@ impl GameRules {
             return Ok(None);
         }
         match self.sim.published_page() {
-            Ok(page) => Ok(Some(
-                self.projections
-                    .as_mut()
-                    .map_or(0, |outbox| outbox.capture(&page)),
-            )),
+            Ok(_) => Ok(Some(0)),
             Err(SimError::PublicationBusy) => Ok(None),
             Err(error) => Err(error),
         }
@@ -620,25 +548,9 @@ impl WorldGame for GameRules {
                 operation: "simulation step",
                 source,
             })?;
-        let skipped_publication = !self.sim.has_current_page();
-        let projected_changes = if skipped_publication {
-            0
-        } else {
-            let page = self
-                .sim
-                .published_page()
-                .map_err(|source| GameWorldError::Simulation {
-                    operation: "world page",
-                    source,
-                })?;
-            // capture owns baseline handling as well as ordinary deltas.
-            self.projections
-                .as_mut()
-                .map_or(0, |outbox| outbox.capture(&page))
-        };
         Ok(WorldStep {
-            projected_changes,
-            skipped_publication,
+            projected_changes: 0,
+            skipped_publication: !self.sim.has_current_page(),
         })
     }
 
@@ -668,12 +580,6 @@ impl WorldGame for GameRules {
                 source,
             }),
         }
-    }
-
-    fn projection_lost_ticks(&self) -> u64 {
-        self.projections
-            .as_ref()
-            .map_or(0, ProjectionOutbox::lost_ticks)
     }
 }
 

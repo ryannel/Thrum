@@ -11,10 +11,6 @@ use crate::{
     scene::{self, GameContent},
     simulation::PublishedPage,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use thrum_content_runtime::EnvironmentProduct;
-#[cfg(not(target_arch = "wasm32"))]
-use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
     atmosphere::AtmosphereFrame,
@@ -42,18 +38,6 @@ fn atmosphere_lighting(
     .with_simulation_time(sun.simulation_time_seconds)
     .expect("the sampled game clock is finite");
     FrameLighting::Atmosphere(frame)
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-pub(super) fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironment {
-    let values = product.values();
-    PhotometricEnvironment {
-        toward_sun: values.toward_sun(),
-        sun_lux: values.sun_lux(),
-        sun_colour: values.sun_colour(),
-        ambient_lux: values.ambient_lux(),
-        background_radiance: values.background_radiance(),
-    }
 }
 
 /// `(tick + 1 + φ)·P` in milliseconds at the game's 60 Hz clock.
@@ -331,8 +315,6 @@ pub struct GameScene {
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(super) visual_product: Option<EnvironmentProduct>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
     exit_entities: crate::ExitEntities,
@@ -434,8 +416,6 @@ impl GameScene {
             cloud_input: None,
             cloud_sky: None,
             cooked_rows: None,
-            #[cfg(not(target_arch = "wasm32"))]
-            visual_product: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
             valley_stars: setup.content != GameContent::Field && setup.valley_stars,
@@ -934,8 +914,6 @@ mod tests {
             cloud_input: None,
             cloud_sky: None,
             cooked_rows: None,
-            #[cfg(not(target_arch = "wasm32"))]
-            visual_product: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
             exit_entities: crate::ExitEntities::Draw,
