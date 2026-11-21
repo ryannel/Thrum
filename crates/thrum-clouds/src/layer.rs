@@ -8,7 +8,7 @@ use thrum_render::{
         AfterOpaqueKind, AfterOpaquePass, ContributionFrame, EffectAccess, EffectCadence,
         EffectGraph, EffectStep, HistoryBinding, SceneSurface,
     },
-    graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
+    graph::{AccessKind, ResourceDescriptor, ResourceScope},
 };
 
 #[cfg(test)]
@@ -112,16 +112,7 @@ impl Layer {
         let first = graph.resources.len();
         for (i, texture) in self.textures.iter().enumerate() {
             graph.resources.push((
-                ResourceDescriptor::Texture {
-                    dimension: TextureKind::D2,
-                    width: texture.width(),
-                    height: texture.height(),
-                    layers: 1,
-                    mips: 1,
-                    samples: 1,
-                    format: texture.format(),
-                    usage: texture.usage(),
-                },
+                ResourceDescriptor::of_texture(texture),
                 ResourceScope::Persistent {
                     owner: 100 + i as u64,
                     epoch,
@@ -227,16 +218,7 @@ impl Layer {
         let history = graph.resources.len();
         for (i, texture) in self.temporal.textures[0].iter().enumerate() {
             graph.resources.push((
-                ResourceDescriptor::Texture {
-                    dimension: TextureKind::D2,
-                    width: texture.width(),
-                    height: texture.height(),
-                    layers: 1,
-                    mips: 1,
-                    samples: 1,
-                    format: texture.format(),
-                    usage: texture.usage(),
-                },
+                ResourceDescriptor::of_texture(texture),
                 ResourceScope::History {
                     owner: 103 + i as u64,
                     epoch,
