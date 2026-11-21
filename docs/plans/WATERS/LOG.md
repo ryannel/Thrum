@@ -533,3 +533,10 @@
   Captures show open turquoise between stern foam and a receding sheet leaving broken lace over the sand.
   A bounded wave inverse cut the direct film pass's measured cost. The 1440p record retains the remaining
   tripwires under shared load. [Target evidence](../../../.orchestrate/evidence/WATERS/M7/REVISION.md).
+
+- 2026-11-21 Fixed M7.8's squared turquoise halo around the moving craft. A Metal readback showed the bow of the
+  trailed craft at the 32 m fine window's front edge, where 2 m coarse cells drew the box. The foam windows are
+  now 256 cells, so the fine level spans 64 m and holds the craft in the chase and 40 m views. The aerated tint
+  is also broken by world-space bubble clouds. Verified on Metal: the foam suites pass and captures at both speeds
+  and headings show no straight-edged tint. Not verified: the whitewater step's cost rises with the four-fold
+  cell count, which the M7.12 record retakes. [Target evidence](../../../.orchestrate/evidence/WATERS/M7/HALO.md).

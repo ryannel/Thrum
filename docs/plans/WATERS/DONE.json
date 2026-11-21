@@ -959,8 +959,8 @@
           "statement": "The craft's trail is white where the hull meets the water and behind the stern, with pale turquoise water under and beside the foam; it turns to lace as it ages, widens, thins, and is gone in about a minute. At rest there is none.",
           "inspect": "A `realtime` sequence from a chase view and from 40 m above, of the craft at 6 m/s and 12 m/s on a calm sea and then stopping: the hull's waterline, the stern, and the trail over the minute after the craft passes.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/M7/HALO.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/M7-review.md"
         },
