@@ -235,20 +235,12 @@ impl CasterCulling {
                 ResourceScope::Imported { initialized: false },
             )?;
             accesses.extend([
-                Access {
-                    view: None,
-                    resource: visible.clone(),
-                    range: 0..self.visible_bytes(),
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
-                Access {
-                    view: None,
-                    resource: args.clone(),
-                    range: 0..self.args_bytes(),
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
+                Access::new(
+                    visible.clone(),
+                    0..self.visible_bytes(),
+                    AccessKind::StorageWrite,
+                ),
+                Access::new(args.clone(), 0..self.args_bytes(), AccessKind::StorageWrite),
             ]);
             lists.push((visible, args));
         }
@@ -258,20 +250,12 @@ impl CasterCulling {
     /// One Sun pass's reads of its list (storage) and records (indirect).
     pub(crate) fn list_reads(&self, (visible, args): &(ResourceId, ResourceId)) -> [Access; 2] {
         [
-            Access {
-                view: None,
-                resource: visible.clone(),
-                range: 0..self.visible_bytes(),
-                kind: AccessKind::StorageRead,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: args.clone(),
-                range: 0..self.args_bytes(),
-                kind: AccessKind::IndirectRead,
-                store: true,
-            },
+            Access::new(
+                visible.clone(),
+                0..self.visible_bytes(),
+                AccessKind::StorageRead,
+            ),
+            Access::new(args.clone(), 0..self.args_bytes(), AccessKind::IndirectRead),
         ]
     }
 

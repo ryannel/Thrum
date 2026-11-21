@@ -619,12 +619,12 @@ impl VisibilityPrepared {
             .is_some()
             .then(|| self.history_ids(graph))
             .transpose()?;
-        reads.extend(history.iter().map(|history| Access {
-            view: None,
-            resource: history.committed.clone(),
-            range: 0..bits_bytes(self.capacity),
-            kind: AccessKind::StorageRead,
-            store: true,
+        reads.extend(history.iter().map(|history| {
+            Access::new(
+                history.committed.clone(),
+                0..bits_bytes(self.capacity),
+                AccessKind::StorageRead,
+            )
         }));
         let _name = if history.is_some() {
             PREPASS_LIST_PASS
@@ -710,47 +710,29 @@ impl VisibilityPrepared {
                 scope: PassScope::View(1),
                 pipeline: Some(self.pyramid_key()),
                 accesses: vec![
-                    Access {
-                        view: None,
-                        resource: depth.clone(),
-                        range: 0..1,
-                        kind: AccessKind::SampledRead,
-                        store: true,
-                    },
-                    Access {
-                        view: None,
-                        resource: texture.clone(),
-                        range: 0..u64::from(mips),
-                        kind: AccessKind::StorageWrite,
-                        store: true,
-                    },
+                    Access::new(depth.clone(), 0..1, AccessKind::SampledRead),
+                    Access::new(
+                        texture.clone(),
+                        0..u64::from(mips),
+                        AccessKind::StorageWrite,
+                    ),
                 ],
                 external_side_effect: false,
             },
         );
         reads.extend([
-            Access {
-                view: None,
-                resource: texture,
-                range: 0..u64::from(mips),
-                kind: AccessKind::SampledRead,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: history.committed.clone(),
-                range: 0..bits_bytes(self.capacity),
-                kind: AccessKind::StorageRead,
-                store: true,
-            },
+            Access::new(texture, 0..u64::from(mips), AccessKind::SampledRead),
+            Access::new(
+                history.committed.clone(),
+                0..bits_bytes(self.capacity),
+                AccessKind::StorageRead,
+            ),
             // The dispatched words and the cleared tail define every word.
-            Access {
-                view: None,
-                resource: history.next.clone(),
-                range: 0..bits_bytes(self.capacity),
-                kind: AccessKind::StorageWrite,
-                store: true,
-            },
+            Access::new(
+                history.next.clone(),
+                0..bits_bytes(self.capacity),
+                AccessKind::StorageWrite,
+            ),
         ]);
         let (visible, args) = self.outputs(graph, &mut reads)?;
         graph.declare(
@@ -792,20 +774,8 @@ impl VisibilityPrepared {
             ResourceScope::Imported { initialized: false },
         )?;
         reads.extend([
-            Access {
-                view: None,
-                resource: visible.clone(),
-                range: 0..visible_bytes,
-                kind: AccessKind::StorageWrite,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: args.clone(),
-                range: 0..self.args_bytes(),
-                kind: AccessKind::StorageWrite,
-                store: true,
-            },
+            Access::new(visible.clone(), 0..visible_bytes, AccessKind::StorageWrite),
+            Access::new(args.clone(), 0..self.args_bytes(), AccessKind::StorageWrite),
         ]);
         Ok((visible, args))
     }

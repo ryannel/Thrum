@@ -354,34 +354,14 @@ impl SdrToneStage {
                 scope: PassScope::View(1),
                 pipeline: Some(self.key),
                 accesses: [
-                    Access {
-                        view: None,
-                        resource: input.motion.clone(),
-                        range: 0..1,
-                        kind: AccessKind::SampledRead,
-                        store: true,
-                    },
-                    Access {
-                        view: None,
-                        resource: input.colour.clone(),
-                        range: 0..1,
-                        kind: AccessKind::SampledRead,
-                        store: true,
-                    },
-                    Access {
-                        view: None,
-                        resource: input.exposure.clone(),
-                        range: 0..exposure::SAMPLE_BYTES,
-                        kind: AccessKind::UniformRead,
-                        store: true,
-                    },
-                    Access {
-                        view: None,
-                        resource: output.clone(),
-                        range: 0..1,
-                        kind: AccessKind::AttachmentClear,
-                        store: true,
-                    },
+                    Access::new(input.motion.clone(), 0..1, AccessKind::SampledRead),
+                    Access::new(input.colour.clone(), 0..1, AccessKind::SampledRead),
+                    Access::new(
+                        input.exposure.clone(),
+                        0..exposure::SAMPLE_BYTES,
+                        AccessKind::UniformRead,
+                    ),
+                    Access::new(output.clone(), 0..1, AccessKind::AttachmentClear),
                 ]
                 .into_iter()
                 .chain(

@@ -529,16 +529,7 @@ fn sprite_inputs(graph: &mut FrameGraph, sprites: &SpritePass) -> Result<Vec<Acc
     }
     for (sheet, _) in &sprites.sheets {
         let id = graph.resource(
-            ResourceDescriptor::Texture {
-                dimension: TextureKind::D2,
-                width: sheet.width(),
-                height: sheet.height(),
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: sheet.format(),
-                usage: sheet.usage(),
-            },
+            ResourceDescriptor::of_texture(sheet),
             ResourceScope::Imported { initialized: true },
         )?;
         accesses.push(Access::new(id, 0..1, AccessKind::SampledRead));
@@ -607,10 +598,7 @@ fn attachment(
 }
 
 fn store(id: &ResourceId) -> Access {
-    Access {
-        store: true,
-        ..Access::new(id.clone(), 0..1, AccessKind::AttachmentClear)
-    }
+    Access::new(id.clone(), 0..1, AccessKind::AttachmentClear)
 }
 
 fn body(pipeline: Option<PipelineKey>, accesses: Vec<Access>) -> PassBody {

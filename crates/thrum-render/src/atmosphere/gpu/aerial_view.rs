@@ -199,16 +199,7 @@ impl SecondaryAerial {
         ));
         for texture in self.textures() {
             let id = graph.resource(
-                ResourceDescriptor::Texture {
-                    dimension: crate::graph::TextureKind::D2,
-                    width: texture.width(),
-                    height: texture.height(),
-                    layers: texture.depth_or_array_layers(),
-                    mips: 1,
-                    samples: 1,
-                    format: texture.format(),
-                    usage: texture.usage(),
-                },
+                ResourceDescriptor::of_texture(texture),
                 ResourceScope::Imported { initialized: true },
             )?;
             let layers = u64::from(texture.depth_or_array_layers());

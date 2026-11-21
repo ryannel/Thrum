@@ -85,23 +85,19 @@ impl super::SyntheticTargetInputs {
                 PassBody {
                     scope: PassScope::View(1),
                     pipeline: None,
-                    accesses: vec![Access {
-                        view: None,
-                        resource: products.clone(),
-                        range: 0..CONTRIBUTION_TOKEN_BYTES,
-                        kind: AccessKind::CopyWrite,
-                        store: true,
-                    }],
+                    accesses: vec![Access::new(
+                        products.clone(),
+                        0..CONTRIBUTION_TOKEN_BYTES,
+                        AccessKind::CopyWrite,
+                    )],
                     external_side_effect: false,
                 },
             );
-            accesses.push(Access {
-                view: None,
-                resource: products.clone(),
-                range: 0..CONTRIBUTION_TOKEN_BYTES,
-                kind: AccessKind::StorageRead,
-                store: true,
-            });
+            accesses.push(Access::new(
+                products.clone(),
+                0..CONTRIBUTION_TOKEN_BYTES,
+                AccessKind::StorageRead,
+            ));
             Some(products)
         } else {
             None
@@ -112,21 +108,17 @@ impl super::SyntheticTargetInputs {
                 graph,
                 wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
             )?;
-            let mut compute = vec![Access {
-                view: None,
-                resource: draws.clone(),
-                range: 0..CONTRIBUTION_TOKEN_BYTES,
-                kind: AccessKind::StorageWrite,
-                store: true,
-            }];
+            let mut compute = vec![Access::new(
+                draws.clone(),
+                0..CONTRIBUTION_TOKEN_BYTES,
+                AccessKind::StorageWrite,
+            )];
             if let Some(products) = products {
-                compute.push(Access {
-                    view: None,
-                    resource: products,
-                    range: 0..CONTRIBUTION_TOKEN_BYTES,
-                    kind: AccessKind::StorageRead,
-                    store: true,
-                });
+                compute.push(Access::new(
+                    products,
+                    0..CONTRIBUTION_TOKEN_BYTES,
+                    AccessKind::StorageRead,
+                ));
             }
             prepared_keys.insert(self.contribution_key());
             graph.declare(
@@ -138,13 +130,11 @@ impl super::SyntheticTargetInputs {
                     external_side_effect: false,
                 },
             );
-            accesses.push(Access {
-                view: None,
-                resource: draws,
-                range: 0..CONTRIBUTION_TOKEN_BYTES,
-                kind: AccessKind::IndirectRead,
-                store: true,
-            });
+            accesses.push(Access::new(
+                draws,
+                0..CONTRIBUTION_TOKEN_BYTES,
+                AccessKind::IndirectRead,
+            ));
         }
         let resources = self.effect_graph.append(graph, self.key, prepared_keys)?;
         accesses.extend_from_slice(&resources.opaque_reads);

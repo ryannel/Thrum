@@ -49,16 +49,7 @@ impl AtmospherePrepared {
         let resources = Charts::try_from_fn(|chart| {
             let texture = self.textures.get(chart);
             graph.resource(
-                ResourceDescriptor::Texture {
-                    dimension: crate::graph::TextureKind::D2,
-                    width: texture.width(),
-                    height: texture.height(),
-                    layers: 1,
-                    mips: 1,
-                    samples: 1,
-                    format: texture.format(),
-                    usage: texture.usage(),
-                },
+                ResourceDescriptor::of_texture(texture),
                 ResourceScope::Persistent {
                     owner: LUT_OWNER_BASE + chart.owner_offset(),
                     epoch: self.epoch,

@@ -65,6 +65,21 @@ pub enum ResourceDescriptor {
 }
 
 impl ResourceDescriptor {
+    /// Declare the graph resource that mirrors `texture`: always a 2D texture, with the texture's own extent,
+    /// layers, mips, samples, format and usage. A cube or a volume is declared by hand.
+    pub fn of_texture(texture: &wgpu::Texture) -> Self {
+        Self::Texture {
+            dimension: TextureKind::D2,
+            width: texture.width(),
+            height: texture.height(),
+            layers: texture.depth_or_array_layers(),
+            mips: texture.mip_level_count(),
+            samples: texture.sample_count(),
+            format: texture.format(),
+            usage: texture.usage(),
+        }
+    }
+
     fn units(&self) -> u64 {
         match self {
             Self::AccelerationStructure => 1,
@@ -1827,13 +1842,7 @@ mod tests {
                 name: name.into(),
                 scope: PassScope::View(1),
                 pipeline: None,
-                accesses: vec![Access {
-                    view: None,
-                    resource: buffer.clone(),
-                    range: 0..16,
-                    kind,
-                    store: true,
-                }],
+                accesses: vec![Access::new(buffer.clone(), 0..16, kind)],
                 external_side_effect: name != "producer",
                 timing: TimingCategory::Effects,
             });
@@ -1869,13 +1878,7 @@ mod tests {
                 name: name.into(),
                 scope: PassScope::View(1),
                 pipeline: None,
-                accesses: vec![Access {
-                    view: None,
-                    resource: buffer.clone(),
-                    range: 0..16,
-                    kind,
-                    store: true,
-                }],
+                accesses: vec![Access::new(buffer.clone(), 0..16, kind)],
                 external_side_effect,
                 timing: TimingCategory::Effects,
             });
@@ -1915,13 +1918,7 @@ mod tests {
             name: name.into(),
             scope: PassScope::View(1),
             pipeline: None,
-            accesses: vec![Access {
-                view: None,
-                resource: resource.clone(),
-                range: 0..16,
-                kind: AccessKind::CopyWrite,
-                store: true,
-            }],
+            accesses: vec![Access::new(resource.clone(), 0..16, AccessKind::CopyWrite)],
             external_side_effect: false,
             timing: TimingCategory::Effects,
         };
@@ -1929,13 +1926,7 @@ mod tests {
             name: name.into(),
             scope: PassScope::View(1),
             pipeline: None,
-            accesses: vec![Access {
-                view: None,
-                resource: resource.clone(),
-                range: 0..16,
-                kind: AccessKind::CopyRead,
-                store: true,
-            }],
+            accesses: vec![Access::new(resource.clone(), 0..16, AccessKind::CopyRead)],
             external_side_effect: true,
             timing: TimingCategory::Effects,
         };
@@ -1982,20 +1973,8 @@ mod tests {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![
-                    Access {
-                        view: None,
-                        resource: read.clone(),
-                        range: 0..16,
-                        kind: AccessKind::CopyRead,
-                        store: true,
-                    },
-                    Access {
-                        view: None,
-                        resource: write.clone(),
-                        range: 0..16,
-                        kind: AccessKind::CopyWrite,
-                        store: true,
-                    },
+                    Access::new(read.clone(), 0..16, AccessKind::CopyRead),
+                    Access::new(write.clone(), 0..16, AccessKind::CopyWrite),
                 ],
                 external_side_effect: read == &b,
                 timing: TimingCategory::Effects,
@@ -2111,13 +2090,7 @@ mod tests {
             name: "consume prior transform".into(),
             scope: PassScope::View(1),
             pipeline: None,
-            accesses: vec![Access {
-                view: None,
-                resource: prior.clone(),
-                range: 0..80,
-                kind: AccessKind::StorageRead,
-                store: true,
-            }],
+            accesses: vec![Access::new(prior.clone(), 0..80, AccessKind::StorageRead)],
             external_side_effect: false,
             timing: TimingCategory::Effects,
         });
@@ -2125,13 +2098,7 @@ mod tests {
             name: "publish next transform".into(),
             scope: PassScope::View(1),
             pipeline: None,
-            accesses: vec![Access {
-                view: None,
-                resource: next.clone(),
-                range: 0..80,
-                kind: AccessKind::StorageWrite,
-                store: true,
-            }],
+            accesses: vec![Access::new(next.clone(), 0..80, AccessKind::StorageWrite)],
             external_side_effect: false,
             timing: TimingCategory::Effects,
         });
@@ -2254,13 +2221,7 @@ mod tests {
                 name: name.into(),
                 scope: PassScope::View(1),
                 pipeline: None,
-                accesses: vec![Access {
-                    view: None,
-                    resource: buffer.clone(),
-                    range: 0..16,
-                    kind,
-                    store: true,
-                }],
+                accesses: vec![Access::new(buffer.clone(), 0..16, kind)],
                 external_side_effect,
                 timing: TimingCategory::Effects,
             });

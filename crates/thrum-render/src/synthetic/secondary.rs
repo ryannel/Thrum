@@ -565,19 +565,7 @@ impl SecondaryPrepared {
     ) -> Result<(Resources, Vec<Access>), RenderError> {
         let imported = ResourceScope::Imported { initialized: true };
         let texture = |graph: &mut FrameGraph, texture: &wgpu::Texture| {
-            graph.resource(
-                ResourceDescriptor::Texture {
-                    dimension: crate::graph::TextureKind::D2,
-                    width: texture.width(),
-                    height: texture.height(),
-                    layers: 1,
-                    mips: 1,
-                    samples: 1,
-                    format: texture.format(),
-                    usage: texture.usage(),
-                },
-                imported,
-            )
+            graph.resource(ResourceDescriptor::of_texture(texture), imported)
         };
         let colour = texture(graph, &self.handle.colour)?;
         let depth = texture(graph, &self.handle.depth)?;

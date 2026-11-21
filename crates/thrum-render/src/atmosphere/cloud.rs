@@ -259,16 +259,7 @@ impl CloudPrepared {
     ) -> Result<(), crate::graph::GraphError> {
         use crate::graph::{Access, AccessKind, ResourceDescriptor, ResourceScope};
         let texture = graph.resource(
-            ResourceDescriptor::Texture {
-                dimension: crate::graph::TextureKind::D2,
-                width: self.texture.width(),
-                height: self.texture.height(),
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: self.texture.format(),
-                usage: self.texture.usage(),
-            },
+            ResourceDescriptor::of_texture(&self.texture),
             ResourceScope::Imported { initialized: true },
         )?;
         let uniform = graph.resource(
@@ -279,20 +270,8 @@ impl CloudPrepared {
             ResourceScope::Imported { initialized: true },
         )?;
         accesses.extend([
-            Access {
-                view: None,
-                resource: texture,
-                range: 0..1,
-                kind: AccessKind::SampledRead,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: uniform,
-                range: 0..self.uniform.size(),
-                kind: AccessKind::UniformRead,
-                store: true,
-            },
+            Access::new(texture, 0..1, AccessKind::SampledRead),
+            Access::new(uniform, 0..self.uniform.size(), AccessKind::UniformRead),
         ]);
         Ok(())
     }

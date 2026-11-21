@@ -117,21 +117,9 @@ impl PreparedSynthetic {
         )?;
         let mut accesses: Vec<Access> = lists
             .iter()
-            .map(|args| Access {
-                view: None,
-                resource: args.clone(),
-                range: 0..args_bytes,
-                kind: AccessKind::CopyRead,
-                store: true,
-            })
+            .map(|args| Access::new(args.clone(), 0..args_bytes, AccessKind::CopyRead))
             .collect();
-        accesses.push(Access {
-            view: None,
-            resource: destination,
-            range: 0..bytes,
-            kind: AccessKind::CopyWrite,
-            store: true,
-        });
+        accesses.push(Access::new(destination, 0..bytes, AccessKind::CopyWrite));
         graph.declare(
             PassKey::CullingStats,
             PassBody {

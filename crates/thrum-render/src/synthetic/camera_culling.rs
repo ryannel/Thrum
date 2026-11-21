@@ -274,27 +274,17 @@ impl super::SyntheticTargetInputs {
             ResourceScope::Imported { initialized: true },
         )?;
         let reads = vec![
-            Access {
-                view: None,
-                resource: view,
-                range: 0..VIEW_BYTES as u64,
-                kind: AccessKind::UniformRead,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: instance.clone(),
-                range: 0..self.instance_bytes,
-                kind: AccessKind::StorageRead,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: serials,
-                range: 0..history_gpu::SERIAL_BYTES,
-                kind: AccessKind::UniformRead,
-                store: true,
-            },
+            Access::new(view, 0..VIEW_BYTES as u64, AccessKind::UniformRead),
+            Access::new(
+                instance.clone(),
+                0..self.instance_bytes,
+                AccessKind::StorageRead,
+            ),
+            Access::new(
+                serials,
+                0..history_gpu::SERIAL_BYTES,
+                AccessKind::UniformRead,
+            ),
         ];
         let mut list_inputs = reads.clone();
         list_inputs.extend_from_slice(route);
@@ -324,13 +314,11 @@ impl super::SyntheticTargetInputs {
         let mut prepass = reads.clone();
         prepass.extend(list_reads(prepared, &first));
         prepass.extend_from_slice(mesh);
-        prepass.push(Access {
-            view: None,
-            resource: depth.clone(),
-            range: 0..1,
-            kind: AccessKind::AttachmentClear,
-            store: true,
-        });
+        prepass.push(Access::new(
+            depth.clone(),
+            0..1,
+            AccessKind::AttachmentClear,
+        ));
         graph.declare(
             PassKey::DepthPrepass,
             PassBody {
@@ -493,20 +481,16 @@ impl PreparedSynthetic {
 
 fn list_reads(prepared: &VisibilityPrepared, ids: &VisibilityIds) -> [Access; 2] {
     [
-        Access {
-            view: None,
-            resource: ids.visible.clone(),
-            range: 0..prepared.visible_bytes(),
-            kind: AccessKind::StorageRead,
-            store: true,
-        },
-        Access {
-            view: None,
-            resource: ids.args.clone(),
-            range: 0..prepared.args_bytes(),
-            kind: AccessKind::IndirectRead,
-            store: true,
-        },
+        Access::new(
+            ids.visible.clone(),
+            0..prepared.visible_bytes(),
+            AccessKind::StorageRead,
+        ),
+        Access::new(
+            ids.args.clone(),
+            0..prepared.args_bytes(),
+            AccessKind::IndirectRead,
+        ),
     ]
 }
 

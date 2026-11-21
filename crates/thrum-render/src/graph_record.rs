@@ -179,13 +179,7 @@ mod tests {
                 name: name.to_owned(),
                 scope: PassScope::Shared,
                 pipeline: None,
-                accesses: vec![Access {
-                    view: None,
-                    resource,
-                    range: 0..8,
-                    kind,
-                    store: true,
-                }],
+                accesses: vec![Access::new(resource, 0..8, kind)],
                 external_side_effect: output,
                 timing: TimingCategory::Effects,
             });

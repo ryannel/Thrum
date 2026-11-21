@@ -1068,13 +1068,7 @@ impl super::SyntheticTargetInputs {
                     scope: PassScope::View(1),
                     pipeline: Some(self.cluster_key()),
                     accesses: vec![
-                        Access {
-                            view: None,
-                            resource: bounds,
-                            range: 0..bounds_bytes,
-                            kind: AccessKind::StorageRead,
-                            store: true,
-                        },
+                        Access::new(bounds, 0..bounds_bytes, AccessKind::StorageRead),
                         Access::new(
                             resources[1].clone(),
                             0..self.cluster_head_bytes,

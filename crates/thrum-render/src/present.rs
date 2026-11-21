@@ -457,20 +457,8 @@ pub(crate) fn surface_pass(
         scope: PassScope::View(1),
         pipeline: Some(pipeline_key(generation)),
         accesses: vec![
-            Access {
-                view: None,
-                resource: source.clone(),
-                range: 0..1,
-                kind: AccessKind::SampledRead,
-                store: true,
-            },
-            Access {
-                view: None,
-                resource: surface.clone(),
-                range: 0..1,
-                kind: AccessKind::AttachmentClear,
-                store: true,
-            },
+            Access::new(source.clone(), 0..1, AccessKind::SampledRead),
+            Access::new(surface.clone(), 0..1, AccessKind::AttachmentClear),
         ],
         external_side_effect: true,
     };

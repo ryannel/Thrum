@@ -98,13 +98,7 @@ pub(super) fn append_graph(
         },
         ResourceScope::Transient,
     )?;
-    let read = |resource, range, kind| Access {
-        view: None,
-        resource,
-        range,
-        kind,
-        store: true,
-    };
+    let read = |resource, range, kind| Access::new(resource, range, kind);
     graph.declare(
         PassKey::AirShadow,
         PassBody {

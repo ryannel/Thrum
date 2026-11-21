@@ -159,30 +159,24 @@ impl super::SyntheticTargetInputs {
                 },
                 ResourceScope::Transient,
             )?;
-            let mut accesses = vec![Access {
-                view: None,
-                resource: output.clone(),
-                range: 0..1,
-                kind: AccessKind::AttachmentClear,
-                store: true,
-            }];
+            let mut accesses = vec![Access::new(
+                output.clone(),
+                0..1,
+                AccessKind::AttachmentClear,
+            )];
             if !witness {
-                accesses.push(Access {
-                    view: None,
-                    resource: exposure.clone(),
-                    range: 0..super::exposure::SAMPLE_BYTES,
-                    kind: AccessKind::UniformRead,
-                    store: true,
-                });
+                accesses.push(Access::new(
+                    exposure.clone(),
+                    0..super::exposure::SAMPLE_BYTES,
+                    AccessKind::UniformRead,
+                ));
             }
             if witness {
-                accesses.extend(inputs.iter().map(|id| Access {
-                    view: None,
-                    resource: (*id).clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                }));
+                accesses.extend(
+                    inputs
+                        .iter()
+                        .map(|id| Access::new((*id).clone(), 0..1, AccessKind::SampledRead)),
+                );
             }
             let pass = graph.declare(
                 if witness {

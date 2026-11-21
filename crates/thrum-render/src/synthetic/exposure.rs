@@ -218,13 +218,7 @@ impl ExposureResolve {
                 },
                 ResourceScope::Imported { initialized: true },
             )?;
-            accesses.push(Access {
-                view: None,
-                resource,
-                range: 0..bytes,
-                kind: AccessKind::UniformRead,
-                store: true,
-            });
+            accesses.push(Access::new(resource, 0..bytes, AccessKind::UniformRead));
         }
         for (resource, bytes) in [
             (directional, DIRECTIONAL_BYTES),
@@ -245,13 +239,11 @@ impl ExposureResolve {
                 initialized: false,
             },
         )?;
-        accesses.push(Access {
-            view: None,
-            resource: sample.clone(),
-            range: 0..SAMPLE_BYTES,
-            kind: AccessKind::StorageWrite,
-            store: true,
-        });
+        accesses.push(Access::new(
+            sample.clone(),
+            0..SAMPLE_BYTES,
+            AccessKind::StorageWrite,
+        ));
         graph.declare(
             PassKey::Exposure,
             PassBody {
