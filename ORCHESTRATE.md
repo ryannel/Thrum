@@ -90,7 +90,7 @@ Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on
   for a paused sitting, and `CULLING` M3 and `SCENE-VIEWS` M3 each stopped on it)*
 
 - **A Done item's check is its record.** Nothing runs a Done milestone's item checks again: the script compares
-  only what the item asks for, and `./dev check` never reads a done-when file. So later work may move, rename,
+  only what the item asks for, and `./dev check` runs no item's check. So later work may move, rename,
   merge or delete a file, a test target or a script that only Done items name, and it leaves the Done item's
   text as it was. Nobody edits a Done item to follow a move, because a changed item un-Dones its milestone.
   Three things still bind: a name an open item's check uses, a registered exact baseline with its comparison
@@ -140,6 +140,22 @@ Three rules for how a planner words an item *(planner, 20 Nov 2026, from the cle
   "this milestone's evidence", in the working folder. A file that a later check reads is test data, and the
   item says so. A provenance record is neither: it is tracked under `docs/provenance`.
 
+Three rules for the tests a plan adds *(owner, 21 Nov 2026: "Yes, plan it"; they bind an item written or
+re-planned from that day)*:
+
+- **A check is a guard or a record, and the item says which.** A guard is a test or a rule that stays in the tree
+  and runs in `./dev check` from then on, so it meets [the test tiers](#test-tiers)' limits like any other test. A
+  record runs once, to show the milestone: a capture, a measurement, a before and after. Its script and data are
+  the milestone's evidence where they can run from there. What has to be tracked for the script's own run is
+  deleted by the module's last milestone, which carries an item for it. The item's statement closes with
+  `Guard:` or `Record:` and what it is.
+- **A plan that adds a GPU test or a main-tier test says what only that test can show**: what a device alone
+  shows, or what full size or a long run shows that the smallest world cannot. An item that cannot say so asks
+  for a CPU test on a small world. A main-tier test is added only by such an item.
+- **A reviewer reruns the tests a change touches, not the whole check**, which the merge already ran, and puts
+  [the two questions](#test-tiers) to any new test that takes over about a second. No lint can tell that a GPU
+  test should have been a CPU test, so that judgement is the reviewer's.
+
 A milestone that was In Progress or Ready for Review on 17 November 2026 keeps the items it was approved with.
 
 ## Test tiers
@@ -152,15 +168,19 @@ touches, and the full workspace runs on main." So a test runs in the cheapest ti
 before the fault costs more than the test. And once more that day, with the long tests gone and a merge's check
 still over twenty minutes: "A 20min merge check still sounds crazy. Tests are meant to be fast." So a merge's
 check is planned to take about five minutes for a typical landing, and a test in it about ten seconds or less.
-*(both figures are the planner's assumptions until the owner answers)* And on 21 November, of four changes to
+*(five minutes is the planner's assumption until the owner answers; the owner accepted ten seconds on
+21 November)* And on 21 November, of four changes to
 make tests faster: "These all sound really reasonable." Three are rules below: a test uses the smallest world that
 shows its behaviour, logic is tested without a device, and a package's tests are one binary. The fourth is a
-measurement of where a builder's session goes, `GATE-TIME` M10, which changes no rule.
+measurement of where a builder's session goes, `GATE-TIME` M10, which changes no rule. And later that day, of
+guard rules so that those habits hold without anyone remembering them: "Yes, plan it." What must hold every time
+is in the merge check, under [What keeps the merge tier fast](#what-keeps-the-merge-tier-fast).
 
 [GATE-TIME](docs/plans/GATE-TIME/DESIGN.md#mechanisms) builds the tiers. Each part below binds from the milestone
 that builds it: the long tests' move (M1), the tests behind a Cargo feature (M6), the side-by-side run and the
-limit on one test (M8), the selection with the whole run on main (M7), the ten-second bound (M9, and M3 for the
-water scene), and one test binary a package (M11). Until its milestone is Done, `./dev check` runs what it ran
+limit on one test (M8), the selection with the whole run on main (M7), the guard rules (M12), the ten-second
+bound (M9, and M3 for the water scene), the stop at ten seconds (M13), and one test binary a package (M11).
+Until its milestone is Done, `./dev check` runs what it ran
 before. The two rules for how a test is written need nothing built: they bind a test written or changed from
 21 November 2026, and M9 and M3 apply them to the tests over ten seconds that exist.
 
@@ -180,7 +200,7 @@ before. The two rules for how a test is written need nothing built: they bind a 
   catches a kind of fault nothing else catches, in any tier. A proof of a fault that is silent and costly is
   the last to move: it is made fast where it can be. Until `GATE-TIME` M9, and M3 for the water scene, a long test is one over
   about a minute, and the tests between ten seconds and that are on `GATE-TIME`'s exempt list.
-  *(planner's assumption until the owner answers: the other choice is a higher bound, such as 30 seconds)*
+  *(owner, 21 Nov 2026: accepted the ten-second limit, and that a new long test needs a plan's decision)*
 - **A merge-tier test uses the smallest world that shows its behaviour.** A world is what the test builds to
   run on: a grid, a valley, a cooked store, a count of entities, ticks or frames. The test proves its behaviour
   on the smallest one where the behaviour appears and each assertion could fail: a rule about a solver's step
@@ -198,7 +218,8 @@ before. The two rules for how a test is written need nothing built: they bind a 
 - **Who holds those two rules.** Whoever writes or changes a test writes it to them, and a planner writes items
   to them. A reviewer who reads a new or changed test asks two questions of it, once: what is the smallest
   world that would show this, and what here needs a device? A test already in the tree is held to them only when
-  it is changed or when the check reports it as slow.
+  it is changed or when the check reports it as slow. From `TEST-SUPPORT` M6 the engineering skill says how to
+  write a test to them, in one block, and the test kit has the small target a GPU test draws to.
 - **A package's integration tests are one test binary**, from `GATE-TIME` M11. macOS checks every newly linked
   binary the first time it runs, about a third of a second each, and Cargo makes each file in a `tests/` folder
   a binary. So a test file is a module of its package's one test target, `it`, and its tests run as
@@ -209,8 +230,8 @@ before. The two rules for how a test is written need nothing built: they bind a 
   script. From M11 a planner's new item runs a file's tests through `it`, and a planner who re-plans a module
   writes the checks of its unstarted milestones the same way. An item approved before M11 keeps its check: its
   file is a target of its own, and joins `it` in the first landing that edits it after the item's milestone is
-  Done. *(owner, 21 Nov 2026, approving the lead's proposal of fewer test binaries, from 265 towards one a
-  package)*
+  Done. Until M11 a new test goes in a test file that exists. *(owner, 21 Nov 2026, approving the lead's
+  proposal of fewer test binaries, from 265 towards one a package)*
 - **The merge tier is targeted.** `./dev check` runs the test binaries of the packages a change can reach: each
   workspace package that holds a changed file, and every package that depends on one, directly or through others,
   by Cargo's own graph. Where a test reads another package's files when it runs, which the graph cannot show, the
@@ -247,17 +268,33 @@ before. The two rules for how a test is written need nothing built: they bind a 
   fails it. A feature that no tier names is a fault in the list, not a way to keep a test out of a tier.
   *(planner's assumption until the owner answers: the other choice runs these only in the item checks that name
   them)*
-- **What keeps the merge tier fast.** From `GATE-TIME` M8, `./dev check` runs tests side by side and ends with the time of each of
-  its steps and its ten slowest tests. It reports a test that runs for over ten seconds, and stops and fails one
-  that runs for over sixty: six times the bound, because the check runs beside builders. A test is exempt only
-  by name, on a list that `GATE-TIME` empties and no other module adds to. The docs check fails when a test
-  marked `long:` sits in a binary the main-tier list does not name. *(planner's assumption until the owner
-  answers: the other choice reports a slow test and fails nothing)*
+- <a id="what-keeps-the-merge-tier-fast"></a>**What keeps the merge tier fast.** `./dev check` runs tests side by side and ends with the time of each of
+  its steps and its ten slowest tests, and from `GATE-TIME` M12 with the summed time of its tests and of its GPU
+  tests. Those are reports: nothing fails on how long a check takes, because checks run beside builders. Four
+  rules do fail a merge, beside the other counts that only fall. *(owner, 21 Nov 2026: "Yes, plan it")*
+  - *The limit on one test.* A test that runs for over ten seconds is reported, and one that runs for over sixty
+    is stopped and fails. From `GATE-TIME` M13 the stop is at ten seconds, and a test it stops is run once more,
+    alone: it fails unless it then passes within ten. *(the owner accepted ten seconds; the second run is the
+    planner's assumption until the owner answers, because load alone takes a short test past ten)*
+  - *The exempt list only shrinks*, from M12. A test is exempt from the limit only by its exact name in
+    `.config/nextest.toml`. `GATE-TIME` empties the list, and no landing adds a name or loosens the limit.
+  - *A main-tier test is added only by a plan*, from M12. The entries of the main-tier list and the tests marked
+    `long:` are counted, and the count only falls. The one exception is a landing that a done-when item asks
+    for, [as above](#what-is-proved-and-how-hard): it raises the rule's version, which starts the count again.
+    A builder with no such item makes the test fast, or writes the proposal for a planner in its module's log.
+  - *No new test binary unless a plan names it*, from M12. A plan names an integration test target when a
+    done-when item's check runs it with `--test`, open or Done, or the main-tier list names it. The targets no
+    plan names are listed in `.config/unplanned-test-binaries.txt`, which only shrinks, and a target that is
+    neither named nor listed fails. So a new test goes in a test file that exists, and a planner who wants a
+    new binary names it in an item's check. A planner does not drop the last check that names a binary which
+    exists: the next merge in any module would fail on it.
+
+  The docs check also fails when a test marked `long:` sits in a binary the main-tier list does not name.
 - **A test runs in a process of its own, beside others**, from `GATE-TIME` M8. It relies on no other test of its binary having run and
   on no static shared with one, so a mutex in a test file does not make tests take turns. A test that needs a
   device to itself joins a group in `.config/nextest.toml`, and one that starts a thread pool is counted there as
-  heavy, in the landing that adds it. A failed test is not run again. `./dev check` needs cargo-nextest
-  installed, and says so where it is missing.
+  heavy, in the landing that adds it. A failed test is not run again, but for the one second run of a test the
+  limit stopped. `./dev check` needs cargo-nextest installed, and says so where it is missing.
 - **A change is tested where it is made.** A builder runs the tests of what it touched while it works, and
   `./dev check` once, to merge. A milestone that changes what a long test or a test behind a feature guards
   carries an item whose check is `python3 "$ORCHESTRATE_SCRIPT" main-check long-tests`, so it is not Done until
@@ -271,7 +308,7 @@ before. The two rules for how a test is written need nothing built: they bind a 
 - **Main-branch check exact-images:** `python3 scripts/exact_baselines.py verify --full`; every 4h; lock gpu, chrome; timeout 45m  *(owner, 15 Nov 2026; every 4h from 21 Nov, owner: main-branch checks held the GPU 12.7 h a day and builders waited 6.9 h for it. Accepted risk: a broken exact image is found up to about 4 h after its merge, and bisected. The lead runs `main-check --due` each hour)*
 - **Main-branch check long-tests:** `./dev long-tests`; every 4h; lock gpu; timeout 90m  *(owner, 20 Nov 2026: long tests stay off every merge check; every 4h from 21 Nov, owner, for the same GPU starvation and accepted risk as exact-images)*
 - **Main-branch check cross-target:** `bash scripts/check_cross_target.sh`; every 1h; timeout 15m  *(planner, 20 Nov 2026: the Linux and Windows type-check of the tests runs on main, not in a merge's check)*
-- **Main-branch check workspace-tests:** `./dev check-all`; every 1h; timeout 60m  *(owner, 20 Nov 2026: a merge runs the tests its change touches, and the full workspace runs on main)*
+- **Main-branch check workspace-tests:** `./dev check-all`; every 1h; timeout 60m  *(owner, 20 Nov 2026: a merge runs the tests its change touches, and the full workspace runs on main. Planner, 21 Nov 2026: it takes no GPU slot, like a merge's check, whose load it is once an hour; held for the whole command, a slot would be kept through the build and the CPU tests, and builders would wait for it)*
 - **Human decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
   actions. Gate order within the V1 exit is the agents' call.
 - **Licences and paths not to touch:** no GPL or share-alike code or data (restrictive-licence code may inform ideas

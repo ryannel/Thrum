@@ -1,8 +1,7 @@
 # GATE-TIME plan
 
-A merge's check takes about five minutes: it runs the fast tests its change can reach, side by side and each once,
-and everything else runs on main after the merge. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the
-criteria · [log](LOG.md) · [module list](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) ·
+A merge's check takes about five minutes: it runs the fast tests its change can reach, side by side, and
+everything else runs on main after the merge. [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md#track-6-the-cleanup-of-20-november) ·
 [test tiers](../../../ORCHESTRATE.md#test-tiers)
 
 Read [the goal](DESIGN.md#the-goal), [Mechanisms](DESIGN.md#mechanisms) and
@@ -11,20 +10,18 @@ another module's: change nothing those tests assert about the engine. The milest
 
 ## Open for the human
 
-- Assumption: a merge's check should take about five minutes for a typical landing, meaning the median of real merges on this Mac while builders work. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure: ten minutes is met by running tests side by side alone, and two would need a faster build as well.
-- Assumption: a test in a merge's check takes about ten seconds or less. A slower one is made fast, or runs on main after merges with its risk written down; about 30 tests are over ten seconds today. The other choice is a higher bound, such as 30 seconds, which keeps the wake scene's three tests and the shore basin in every merge's check.
-- Assumption: a test that runs for over a minute in a merge's check is stopped and fails that check. The other choice reports it and fails nothing, which is how the gale reached 21 minutes unnoticed.
-- Assumption: the exit scene's stepped hour and the foam's ten-minute moored run leave `./dev check` as the gale does, whole, and run on main after merges, with no short run of either kept. The other choice keeps a short run of each in every merge's check.
-- Assumption: the three field flythroughs and the shore-blend solve also run on main and not in a merge's check. The other choice keeps any of them in every merge's check.
-- Assumption: the whole workspace's tests run on main at most once an hour, so a fault they catch is named with its commit some hours after the merge. The other choice is another interval, as you chose every four hours for the long tests and exact images on 21 November.
-- Assumption: a milestone's Ready for Review still runs the whole workspace's tests, so a missed edge on main holds every module's Ready for Review until its commit is fixed or reverted. The other choice selects that run by the milestone's own change, which needs a change to the orchestrate script.
+- Assumption: a merge's check takes about five minutes for a typical landing: the median of real merges on this Mac while builders work. You said "Tests are meant to be fast" and gave no figure. The other choice is another figure.
+- Assumption: a test stopped at ten seconds is run once more, alone, and fails the check only if it is over ten seconds again. Load took a test of under ten seconds past it in 8 of the last 18 whole checks, 22 tests in one. The other choice fails at the first stop.
+- Assumption: "the number of test binaries can only go down" counts the binaries no plan names, 43 of 275 today, because approved open items name 147 not yet written; M11 takes the whole number from 263 to about 110. The other choice rewrites the 176 binary names in 17 modules' open items now, and freezes the whole number.
+- Assumption: the stepped hour, the foam's ten-minute moored run, the three field flythroughs and the shore-blend solve run whole on main after merges, like the gale. The other choice keeps a short run of any in every merge's check.
+- Assumption: the whole workspace's tests run on main at most once an hour, with no `gpu` lock, which would hold a GPU slot through the build. The other choice is every four hours under the lock, like the long tests and exact images.
+- Assumption: a milestone's Ready for Review still runs the whole workspace's tests, so a missed edge on main holds every module's until it is fixed or reverted. The other choice selects that run by the milestone's own change, a change to the orchestrate script.
 - Assumption: the tests behind a Cargo feature run on main with the long tests, and every merge compiles them. The other choice runs them only in the item checks that name them.
-- Assumption: a release point is the V1 exit's closing record or anything published, and there every tier runs on the one commit; `SHOWCASE`'s next re-plan adds the long tests to its closing milestone. The other choice names other release points, or asks less of one.
-- Assumption: the atmosphere's Monte Carlo reference is deleted, about 2,200 lines, and stays in Git history; the night checks and the twilight guard stay in the check. The other choice keeps it as an ignored diagnostic.
-- Assumption: three more tests that hold GPU output to a reference are replaced by short tests of the behaviour, about 1,400 lines: the mirror pool's rounding-allowance proof, the cooked cloud march's f64 reference and the scene-view shader hashes frozen at a 16 November commit. The other choice keeps any of the three as it is.
-- Assumption: the 21 November rules, the smallest world and no device for logic, bind tests written or changed from now on, and M9 and M3 apply them to the tests over ten seconds. The other choice also sweeps the 1,290 faster tests, most of them other modules', for at most 141 s summed over 14 cores.
-- Assumption: M11 takes test binaries from 263 to about 110, and the rest fold as open items are built. The other choice rewrites the 176 binary names in 17 modules' open items now, with a design review for each module.
-- Assumption: macOS's check of each new binary stays on. The other choice is yours alone: listing the builders' apps under Developer Tools in System Settings removes that cost, and turns off an OS security check for whatever they start.
+- Assumption: a release point is the V1 exit's closing record or anything published, and every tier runs there on one commit; `SHOWCASE`'s next re-plan adds the long tests to its closing milestone. The other choice names other release points.
+- Assumption: the atmosphere's Monte Carlo reference is deleted, about 2,200 lines; the night checks and the twilight guard stay in the check. The other choice keeps it as an ignored diagnostic.
+- Assumption: three more tests that hold GPU output to a reference are replaced by short tests of the behaviour, about 1,400 lines: the mirror pool's rounding-allowance proof, the cooked cloud march's f64 reference and the scene-view shader hashes. The other choice keeps any of the three.
+- Assumption: the smallest world and no device for logic bind tests written or changed from 21 November, and M9 and M3 apply them to the tests over ten seconds. The other choice also sweeps the 1,290 faster tests, for at most 141 s summed.
+- Assumption: macOS's check of each new binary stays on. The other choice is yours alone: listing the builders' apps under Developer Tools in System Settings removes that cost, and an OS security check with it.
 
 ## M1 A merge's check no longer runs the ten-minute gale, the stepped hour, the field flythroughs or the shore-blend solve, and they pass on main after each merge: done
 [review](../../../.orchestrate/evidence/GATE-TIME/M1-review.md)
@@ -54,12 +51,24 @@ take its name off.
 Measure, and change nothing else: [mechanism 11](DESIGN.md#mechanisms) says what the record splits and where its
 sources are. Much of a session is inside commands, so say what each command was waiting for.
 
+## M12 A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share
+
+In the rule engine `script-caller` already reads every done-when item's check, and `scripts/repo_check.py`
+parses the main-tier list. Change no test and neither list.
+
 ## M9 Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down
 
-The runner's exempt list is the work: every name on it that M9 owns. The design's table gives the planner's
-measurement of each and the route it expects, and M8's record gives the times on the build the check now uses.
-Measure each test alone before and after. Mechanism 9 has two new routes, the smallest world and without a
-device; its example is the river model's `no_step_is_taken_beyond_the_budget`.
+The work is every name on the runner's exempt list that M9 owns, and five of the game's tests that are off it
+and over ten seconds in every check, which [the design](DESIGN.md#every-test-over-about-ten-seconds) names. Its
+table gives the planner's measurement of each test and the route it expects, and M8's record the times on the
+build the check now uses. Measure each alone before and after. Mechanism 9's example of the smallest world is
+the river model's `no_step_is_taken_beyond_the_budget`.
+
+## M13 A test over ten seconds in a merge's check is stopped, and fails the check unless it passes within ten seconds alone
+
+Until M3 the foam scene's `beach_births` test is expected to be run again. If a test outside the water scene is
+stopped in every run and a group or a heavy count does not cure it, end `BLOCKED` with the record: making a test
+fast is M9's work.
 
 ## M11 Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time
 

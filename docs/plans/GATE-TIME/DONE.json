@@ -434,6 +434,63 @@
       ]
     },
     {
+      "id": "M12",
+      "name": "A merge's check refuses a new test-limit exemption, main-tier test or test binary that no plan asked for, and reports the tests' summed time and the GPU tests' share",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "TEST-SUPPORT:M6"
+      ],
+      "quality_bar": "As firm and as plain as a lint in a well-kept Rust workspace such as Clippy's own: the check refuses the one thing it names, says what to do instead in the same message, and never fails a landing that added nothing.",
+      "items": [
+        {
+          "id": "M12.1",
+          "statement": "The rule `limit-exempt` counts the tests that `.config/nextest.toml` exempts from the limit on one test, and the count can only fall: a landing that adds a name fails `./dev check` and `./dev check-docs`. An override that changes the limit names its tests one by one, exactly. One that names anything wider fails outright, and so does a default limit later than the test tiers' sixty seconds. The message says to make the test fast and links to the pattern entry `the-smallest-world`, which names the rule. Guard: the rule and its fixtures.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py'",
+          "ask": "Read the rule's fixtures: do they cover a name added, a name removed, an override that exempts a whole binary, and a default limit raised? In a scratch copy, add a test's name to an exempt override, then raise the default limit: does `./dev check-docs` fail each time, with a message whose link lands on an entry that exists?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M12.2",
+          "statement": "The rule `main-tier` counts the entries of the main-tier list and the tests marked `long:`, and the count can only fall, except in a landing that a done-when item asks for: that landing raises the rule's version, which starts its count again. Any other landing that adds an entry or a long test fails, with a message that says to make the test fast, links to the pattern entry `a-main-tier-test`, which names the rule, and says that a builder with no such item writes the proposal in its module's log for a planner. Guard: the rule and its fixtures.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule main-tier && python3 scripts/test_shape_rules.py'",
+          "ask": "In a scratch copy, mark a test `long:` in a binary the list already names, then add a line to the list: does `./dev check-docs` fail each time with that message? Raise the rule's version and record the counts again: does it pass, and does one more added test then fail?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M12.3",
+          "statement": "A plan names an integration test target when a done-when item's check runs it with `--test`, in any module, open or Done, or when the main-tier list names it. The targets no plan names are listed, by package and name, in `.config/unplanned-test-binaries.txt`. A target that is neither named nor listed fails `./dev check` and `./dev check-docs`, but for a package's one target `it`, with a message that names it, says to add the test to a test file that exists, and links to the pattern entry `an-existing-test-binary`, which names the rule. The rule `test-binary` counts the list's lines, and the count can only fall; a line whose target no longer exists fails until it is removed. Guard: the rule and its fixtures.",
+          "check": "sh -c 'test -s .config/unplanned-test-binaries.txt && python3 scripts/shape_rules.py check --rule test-binary && python3 scripts/test_shape_rules.py'",
+          "ask": "In a scratch copy, add a test file to a package whose test files Cargo finds, and a `[[test]]` entry to one that lists them: does `./dev check-docs` fail each time and name the target? Give an open done-when item a check that runs one of them with `--test`: does it pass? Add the other's name to the list: does that fail too? Does a helper module that a test file declares, or a file under `tests/` that is a module of another target, count as a target? Is every line of the list a target that exists and that no plan names?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M12.4",
+          "statement": "`./dev check` and `./dev check-all` end, pass or fail, with the summed time of every test the run ran and the summed time of its GPU tests, counted by name: a test whose binary or name says `gpu` or `metal`. The line says how it counts. Nothing fails on either figure, on a step's time or on the whole check's.",
+          "ask": "Take a whole check the script saved after this landed, under `.git/orchestrate/checks`, and add up its own test lines: all of them, and those named `gpu` or `metal`. Do the two closing figures match? Does any path through the check command fail on a time other than the limit on one test?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M9",
       "name": "Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down",
       "status": "not_started",
@@ -444,8 +501,8 @@
       "items": [
         {
           "id": "M9.1",
-          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, run alone on this Mac in the build the check uses. The record gives the time alone, before and now, of every test this milestone took off the runner's exempt list, and the ten slowest tests now. The list names only tests of the water scene, which M3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
-          "ask": "Read the record and the exempt list. Is every test the list held at the starting commit, outside the water scene, now under about ten seconds alone, or a long test, or named in the log for its module's planner with what was tried? Run three of the tests made fast, alone: do their times match the record? Does the list name a test that does not exist?",
+          "statement": "Outside the water scene's package, no test that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every test this milestone took off the runner's exempt list and for every other test that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median, and the ten slowest tests now. The list names only tests of the water scene, which M3 removes, and any test the design leaves to its own module's planner, which the log names with what was tried. It names no test that no longer exists.",
+          "ask": "Read the record and the exempt list. Is every test the list held at the starting commit, and every other test the saved checks showed over ten seconds, outside the water scene, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run three of the tests made fast, alone: do their times match the record? Does the list name a test that does not exist?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -464,7 +521,7 @@
         },
         {
           "id": "M9.3",
-          "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
+          "statement": "A test that could not be made fast is a long test: marked `#[ignore]` with a reason that starts `long:`, its body unchanged, in a binary the main-tier list names, with the fault that now reaches main unseen written beside that line. This item asks for each of them, so from M12 the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on. Where one is a proof of a cooked format, a lease or recovery, transport, determinism, or GPU state held to the CPU query a game reads, the log says what was tried to make it fast.",
           "ask": "For each test marked in this milestone: is its body as it was, is its binary listed, and does the list say what fault now reaches main unseen? Search the open items of every module for its binary: does any item that runs it depend on what this test asserts? For a marked test of a kind the statement names, does the log say what was tried, and would you have tried something else first?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -486,6 +543,38 @@
           "id": "M9.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M13",
+      "name": "A test over ten seconds in a merge's check is stopped, and fails the check unless it passes within ten seconds alone",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "quality_bar": "As trustworthy as the time limit in the CI of a well-kept Rust workspace such as wgpu's: a slow test fails every time, a fast test on a busy machine does not, and the check says which was which.",
+      "items": [
+        {
+          "id": "M13.1",
+          "statement": "`./dev check` and `./dev check-all` stop a test at ten seconds, where they stopped it at sixty. A test the limit stopped is run once more by the same check, alone, after the others, under the same limit: it fails the check unless it passes within ten seconds, and the closing lines name each test run again with its time alone. A test that fails any other way is not run again, and a test on the exempt list is reported and not stopped, as before. The rule `limit-exempt` fails a default limit later than ten seconds. Guard: the check command's tests and the rule.",
+          "check": "python3 -c 'import sys,tomllib; s=tomllib.load(open(\".config/nextest.toml\",\"rb\"))[\"profile\"][\"default\"][\"slow-timeout\"]; sys.exit(0 if s[\"period\"].endswith(\"s\") and float(s[\"period\"][:-1])*s.get(\"terminate-after\",999)<=10 else 1)' && python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py",
+          "ask": "In a scratch copy, add three tests to one package: one that sleeps twelve seconds every time, one that sleeps twelve seconds only the first time it runs, and one that fails an assertion at once. Run `./dev check`: is the first stopped twice and the check failed in its name, the second stopped once, passed alone and named in the closing lines with its time, and the third failed with no second run?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.2",
+          "statement": "With the stop at ten seconds, three whole runs of the check pass at one commit, beside builders. The record gives the load and, for each run, every test stopped and run again, with both times. No test outside the water scene's package is run again in all three.",
+          "ask": "Does the record give the commit, the load, and each run's stopped tests with both times? Is any test outside the water scene's package run again in all three?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -620,8 +709,8 @@
         },
         {
           "id": "M3.3",
-          "statement": "No test of the water scene that `./dev check` runs takes over about ten seconds, run alone on this Mac in the build the check uses. The record gives the time alone, before and now, of every water-scene test the runner's exempt list held. The list is empty but for any test the design leaves to its own module's planner, which the log names with what was tried.",
-          "ask": "Read the record and the exempt list. Is every water-scene test the list held at the starting commit now under about ten seconds alone, or a long test, or named in the log for its module's planner with what was tried? Run two of them alone: do their times match the record? Is anything else left on the list?",
+          "statement": "No test of the water scene that `./dev check` runs takes over about ten seconds, alone or in the check: run alone on this Mac in the build the check uses, and at its median in three whole runs of the check beside builders. The record gives both, before and now, for every water-scene test the runner's exempt list held and for every other one that the whole-workspace checks saved in the day before the starting commit show over ten seconds at their median. The list is empty but for any test the design leaves to its own module's planner, which the log names with what was tried.",
+          "ask": "Read the record and the exempt list. Is every water-scene test the list held at the starting commit, and every other one the saved checks showed over ten seconds, now under about ten seconds alone and in the record's three runs, or a long test, or named in the log for its module's planner with what was tried? Run two of them alone: do their times match the record? Is anything else left on the list?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -630,7 +719,7 @@
         },
         {
           "id": "M3.4",
-          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. None of them is a test that an open item of another module depends on.",
+          "statement": "Each water-scene test made fast asserts what it asserted, with no case dropped and no test binary renamed. Where logic left a GPU test for a test that asks for no device, each assertion is still made by one of the two. Each one marked as a long test has its body unchanged, sits in a binary the main-tier list names, and has the fault that now reaches main unseen written beside that line. This item and M3.1 ask for each of them, so the landing that marks one raises the version of the rule `main-tier`. None of them is a test that an open item of another module depends on.",
           "ask": "For each water-scene test this milestone changed or marked, compare it with the starting commit: is every case and assertion still there, in that test or in the device-free test the log names for it, or the body unchanged? Does the list say what fault each marked test leaves unguarded before a merge? Search the open items of every module for each marked test's binary: does any item that runs it depend on what the test asserts?",
           "target": "mac-metal",
           "builder_result": "open",
