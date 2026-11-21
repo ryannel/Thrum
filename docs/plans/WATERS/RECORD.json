@@ -1065,7 +1065,7 @@
         {
           "verdict": "fail",
           "commit": "712a58c49a83a8e00e36f7a6d261c62261c24587",
-          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "review": ".orchestrate/evidence/WATERS/M7-review-2.md",
           "items": {
             "M7.2": "pass",
             "M7.3": "pass",
@@ -1106,6 +1106,50 @@
             "turns": 1
           },
           "at": "2026-11-20T16:40:04Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "aa9600b9d55bdce11aadbf9f75b838a683cf60f8",
+          "review": ".orchestrate/evidence/WATERS/M7-review.md",
+          "items": {
+            "M7.2": "pass",
+            "M7.3": "pass",
+            "M7.4": "pass",
+            "M7.5": "pass",
+            "M7.6": "pass",
+            "M7.7": "fail",
+            "M7.8": "pass",
+            "M7.9": "pass",
+            "M7.10": "pass",
+            "M7.11": "pass",
+            "M7.12": "pass",
+            "M7.13": "pass",
+            "M7.14": "pass",
+            "M7.15": "pass"
+          },
+          "findings": [
+            {
+              "name": "Gale whitecaps end in a straight line at the coarse foam window's edge",
+              "item": "M7.7",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 178466,
+            "cached": 8320942,
+            "output": 39296,
+            "cost_usd": 3.877196,
+            "turns": 1
+          },
+          "at": "2026-11-21T05:18:09Z"
         }
       ],
       "authorised": {

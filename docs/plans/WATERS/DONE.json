@@ -879,8 +879,8 @@
     {
       "id": "M7",
       "name": "Whitecaps form as the wind rises, the craft leaves a foam trail that drifts, spreads and fades, and foam forms where the sea dies on the beach",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -949,9 +949,9 @@
           "statement": "In a gale, whitecaps form on breaking crests with a bright core and a feathered edge, stay behind the crest as streaks, and fade. A fresh breeze shows fewer and a glassy sea none. No stamp, grid or repeated shape shows from 2 m or from 40 m, and whitecaps thin toward the horizon with no line where the foam's windows end.",
           "inspect": "`fixed` stills and a `realtime` sequence at each wind, from 2 m and 40 m: single caps, the water behind a breaking crest, two places a pattern length apart, and the far sea.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/M7/REVISION.md",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/M7-review.md"
         },
         {
@@ -961,7 +961,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/M7/HALO.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/M7-review.md"
         },
         {
@@ -1044,9 +1044,8 @@
       ],
       "findings": [
         {
-          "name": "Squared turquoise halo around the moving craft",
-          "item": "M7.8",
-          "different": "The earlier M7.8 finding was a solid white powered trail hiding the aerated water; that is fixed. This is a new box-shaped, straight-edged turquoise tint around the hull and ahead of the bow, absent with foam off.",
+          "name": "Gale whitecaps end in a straight line at the coarse foam window's edge",
+          "item": "M7.7",
           "repeat": false
         }
       ]
