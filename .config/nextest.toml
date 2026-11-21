@@ -7,6 +7,11 @@
 # `./dev check` names the same version and stops before any step when an older one is installed.
 nextest-version = { required = "0.9.150" }
 
+[store]
+# Relative to the workspace root, and the same whatever `CARGO_TARGET_DIR` says: `./dev check` reads
+# the JUnit report from here (`NEXTEST_STORE` in `tools/xtask`, held equal by its test).
+dir = "target/nextest"
+
 [profile.default]
 # Every test runs and reports, and a failed test is never run again: a retry would hide a test
 # that fails one time in ten.
