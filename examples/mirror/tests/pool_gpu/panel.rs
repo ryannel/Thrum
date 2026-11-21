@@ -80,13 +80,7 @@ impl SceneContribution for PanelDraw {
     fn draw_secondary(&self, _: usize, pass: &mut wgpu::RenderPass<'_>) {
         self.record(pass, self.view.as_ref());
     }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 fn make_pipeline(

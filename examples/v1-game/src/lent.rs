@@ -214,9 +214,6 @@ impl SceneContribution for LentDiagnostic {
         !self.recorded.is_empty()
     }
 
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-
     fn encode_compute(&mut self, pass: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {
         let Some(set) = self.lease.offered() else {
             return;

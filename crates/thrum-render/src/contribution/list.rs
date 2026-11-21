@@ -381,3 +381,139 @@ impl SceneContribution for SceneContributions {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! The list stands in front of its members, so a hook it leaves to the trait's default
+    //! never reaches them. A probe behind it sees each of the eight hooks arrive.
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    type Seen = Arc<Mutex<Vec<&'static str>>>;
+
+    struct Probe(Seen);
+
+    impl Probe {
+        fn saw(&self, hook: &'static str) {
+            self.0.lock().expect("probe record").push(hook);
+        }
+    }
+
+    impl SceneContribution for Probe {
+        fn passes(&self) -> ContributionPasses {
+            self.saw("passes");
+            ContributionPasses {
+                upload: true,
+                compute: true,
+            }
+        }
+        fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), String> {
+            self.saw("rebuild");
+            Ok(())
+        }
+        fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
+            self.saw("encode_upload");
+        }
+        fn computes(&self, _: &ContributionFrame) -> bool {
+            self.saw("computes");
+            true
+        }
+        fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {
+            self.saw("encode_compute");
+        }
+        fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {
+            self.saw("encode_after_compute");
+        }
+        fn draw(&self, _: &mut wgpu::RenderPass<'_>) {
+            self.saw("draw");
+        }
+        fn submitted(&mut self, _: bool) {
+            self.saw("submitted");
+        }
+    }
+
+    /// Run `call` on the list and require that it reached the probe's `hook`.
+    fn reaches<T>(seen: &Seen, hook: &'static str, call: impl FnOnce() -> T) -> T {
+        seen.lock().expect("probe record").clear();
+        let result = call();
+        assert!(
+            seen.lock().expect("probe record").contains(&hook),
+            "SceneContributions did not forward `{hook}` to its member"
+        );
+        result
+    }
+
+    #[test]
+    fn every_hook_reaches_a_member_behind_the_list() {
+        let Some(test_gpu) =
+            thrum_test_support::gpu("every_hook_reaches_a_member_behind_the_list", None)
+        else {
+            return;
+        };
+        pollster::block_on(async {
+            let (device, queue) =
+                crate::test_device::portable(&test_gpu, Some(wgpu::Features::empty())).await;
+            let scene = crate::synthetic::SyntheticScene::grid(1).expect("scene");
+            let prepared = crate::synthetic::PreparedSynthetic::prepare(&device, &queue, 1, &scene)
+                .await
+                .expect("prepared");
+            let seen = Seen::default();
+            let mut list = SceneContributions::new(vec![Box::new(Probe(seen.clone()))]);
+            let frame = prepared.contribution_frame();
+
+            let passes = reaches(&seen, "passes", || list.passes());
+            assert!(passes.upload && passes.compute);
+            reaches(&seen, "rebuild", || {
+                list.rebuild(&prepared.scene_surface(&queue))
+            })
+            .expect("rebuild");
+
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            reaches(&seen, "encode_upload", || {
+                list.encode_upload(&mut encoder, &frame);
+            });
+            // The five hooks with defaults: a missing forward here falls silently to the default.
+            assert!(reaches(&seen, "computes", || list.computes(&frame)));
+            {
+                let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+                reaches(&seen, "encode_compute", || {
+                    list.encode_compute(&mut pass, &frame);
+                });
+            }
+            reaches(&seen, "encode_after_compute", || {
+                list.encode_after_compute(&mut encoder);
+            });
+            let target = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("list probe target"),
+                size: wgpu::Extent3d {
+                    width: 4,
+                    height: 4,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            });
+            let view = target.create_view(&wgpu::TextureViewDescriptor::default());
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("list probe draw"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: wgpu::Operations::default(),
+                    })],
+                    ..wgpu::RenderPassDescriptor::default()
+                });
+                reaches(&seen, "draw", || list.draw(&mut pass));
+            }
+            queue.submit([encoder.finish()]);
+            reaches(&seen, "submitted", || list.submitted(true));
+        });
+    }
+}

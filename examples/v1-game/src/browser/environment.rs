@@ -30,13 +30,6 @@ impl SceneContribution for EnvironmentContribution {
         Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 #[wasm_bindgen]

@@ -154,14 +154,7 @@ impl SceneContribution for Air {
         pass.set_bind_group(3, output, &[]);
         pass.dispatch_workgroups(1, 1, 1);
     }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 pub(super) async fn read(

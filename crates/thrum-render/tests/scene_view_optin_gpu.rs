@@ -67,13 +67,6 @@ impl SceneContribution for MainOnly {
     ) {
         panic!("main-only contribution received view Sun draw");
     }
-
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 #[test]

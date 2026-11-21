@@ -186,12 +186,6 @@ impl SceneContribution for Effect {
             gpu.queue.write_buffer(&gpu.params, 0, &bytes);
         }
     }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
     fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
         index != 1 || self.step != EffectStep::Keep
     }

@@ -411,12 +411,6 @@ impl SceneContribution for Shade {
             }
         }
     }
-    fn computes(&self, _frame: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
     fn after_opaque_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
         index != 2 || !frame.time.capture
     }

@@ -702,11 +702,6 @@ impl SceneContribution for DiagnosticEffect {
             witness.state.produced(index);
         }
     }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
         if self.slab.is_some() || !self.opaque_visual {
             return;

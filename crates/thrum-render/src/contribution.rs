@@ -379,6 +379,16 @@ pub struct SpriteContributionSurface<'a> {
 }
 
 /// An engine module drawing into the prepared scene. See the module documentation.
+///
+/// [`Self::passes`], [`Self::rebuild`] and [`Self::encode_upload`] are required. The other hooks
+/// have default bodies that do nothing, so an implementation writes only the hooks it uses. Two
+/// rules follow from those defaults:
+///
+/// - A wrapper that stands in front of other contributions, such as [`SceneContributions`], must
+///   forward every hook, the defaulted ones included: a hook it leaves to its default never
+///   reaches the contributions behind it, and nothing at compile time says so.
+/// - [`Self::encode_compute`] is called only in a frame where [`Self::computes`] returned true,
+///   and [`Self::submitted`] is where the work [`Self::encode_upload`] staged is committed.
 pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// Legacy drawing stages this contribution needs. Pure upload/simulate
     /// contributions declare an empty list and implement [Self::rebuild_2d].
@@ -547,17 +557,22 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// Whether [`Self::encode_compute`] records any dispatch this frame (asked after
     /// [`Self::encode_upload`]). When false the timed pass is not begun, so the frame reports no
     /// contribution time instead of an empty pass some backends leave without timestamps.
-    fn computes(&self, frame: &ContributionFrame) -> bool;
+    /// The default records no dispatch.
+    fn computes(&self, _frame: &ContributionFrame) -> bool {
+        false
+    }
 
-    /// Record work in the timed `contribution compute` pass, after this frame's upload.
-    fn encode_compute(&mut self, pass: &mut wgpu::ComputePass<'_>, frame: &ContributionFrame);
+    /// Record work in the timed `contribution compute` pass, after this frame's upload. Called
+    /// only when [`Self::computes`] returned true this frame. The default records nothing.
+    fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
 
     /// Record copies that must follow this frame's compute (for example a counter readback);
-    /// still before forward and still tentative.
-    fn encode_after_compute(&mut self, encoder: &mut wgpu::CommandEncoder);
+    /// still before forward and still tentative. The default records nothing.
+    fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
 
-    /// Draw at the end of the forward pass. Groups 0, 1 and 3 are the scene's.
-    fn draw(&self, pass: &mut wgpu::RenderPass<'_>);
+    /// Draw at the end of the forward pass. Groups 0, 1 and 3 are the scene's. The default
+    /// draws nothing.
+    fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
 
     /// Bounds of the opaque casters selected by this frame's upload recording.
     /// The selection must stay fixed through both cascade draws and forward.
@@ -570,7 +585,9 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
 
     /// The encoder holding this frame's recording was submitted: commit it. `history_advanced`
     /// is false for a capture, which renders without making itself the scene's previous frame.
-    fn submitted(&mut self, history_advanced: bool);
+    /// This is where a contribution commits what [`Self::encode_upload`] staged; the default
+    /// has nothing to commit.
+    fn submitted(&mut self, _history_advanced: bool) {}
 }
 
 /// Receives opaque placements for the current scene structure.

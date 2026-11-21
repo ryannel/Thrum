@@ -651,23 +651,12 @@ impl SceneContribution for Veil {
         _: &crate::contribution::ContributionFrame,
     ) {
     }
-    fn computes(&self, _: &crate::contribution::ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(
-        &mut self,
-        _: &mut wgpu::ComputePass<'_>,
-        _: &crate::contribution::ContributionFrame,
-    ) {
-    }
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
         if let Some(pipeline) = &self.pipeline {
             pass.set_pipeline(pipeline);
             pass.draw(0..3, 0..1);
         }
     }
-    fn submitted(&mut self, _: bool) {}
 }
 
 /// Three frames of `scene` with a final readback each, with the veil drawn at

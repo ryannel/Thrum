@@ -298,14 +298,6 @@ impl SceneContribution for Pool {
             pass.draw(0..6, 0..1);
         }
     }
-
-    fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
-    fn computes(&self, _frame: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _history_advanced: bool) {}
 }
 
 impl Prepared {

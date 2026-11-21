@@ -422,10 +422,6 @@ impl SceneContribution for Water {
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
     }
-    fn computes(&self, _frame: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
         self.prepared.as_ref().is_some_and(|p| {
             if index < p.ambient_passes {
@@ -473,8 +469,6 @@ impl SceneContribution for Water {
             query.copy(encoder);
         }
     }
-    fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
     fn draw_after_opaque(
         &self,
         index: usize,

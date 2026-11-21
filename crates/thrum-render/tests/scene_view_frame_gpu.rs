@@ -96,18 +96,11 @@ impl SceneContribution for Tag {
         Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
     fn draw_after_opaque(&self, _: usize, pass: &mut wgpu::RenderPass<'_>, _: &ContributionFrame) {
         self.draws.fetch_add(1, Ordering::Relaxed);
         pass.set_pipeline(self.pipeline.as_ref().expect("tag pipeline"));
         pass.draw(0..3, 0..1);
     }
-    fn submitted(&mut self, _: bool) {}
 }
 fn surface(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::TextureView {
     device

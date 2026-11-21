@@ -598,18 +598,6 @@ impl crate::contribution::SceneContribution for Compiling {
         _: &crate::contribution::ContributionFrame,
     ) {
     }
-    fn computes(&self, _: &crate::contribution::ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(
-        &mut self,
-        _: &mut wgpu::ComputePass<'_>,
-        _: &crate::contribution::ContributionFrame,
-    ) {
-    }
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 fn join(compiles: &Compiles) -> Vec<wgpu::ComputePipeline> {

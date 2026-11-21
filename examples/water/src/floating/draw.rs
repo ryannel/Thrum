@@ -172,12 +172,6 @@ impl SceneContribution for Draw {
             .write_buffer(&prepared.instances, 0, bytemuck::cast_slice(&inputs));
     }
 
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
         let Some(prepared) = &self.prepared else {
             return;

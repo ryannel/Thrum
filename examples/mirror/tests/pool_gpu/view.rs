@@ -300,13 +300,6 @@ impl SceneContribution for Probe {
         pass.set_bind_group(2, group, &[]);
         pass.dispatch_workgroups(SIDE / 8, SIDE / 8, 1);
     }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 struct Fixture<'a> {

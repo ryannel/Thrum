@@ -134,12 +134,6 @@ impl SceneContribution for MainObserver {
         Ok(())
     }
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
     fn encode_after_opaque(
         &mut self,
         _: usize,
@@ -151,7 +145,6 @@ impl SceneContribution for MainObserver {
         pass.set_bind_group(2, group, &[]);
         pass.dispatch_workgroups(self.extent[0].div_ceil(8), self.extent[1].div_ceil(8), 1);
     }
-    fn submitted(&mut self, _: bool) {}
 }
 
 pub(crate) const SIDE: u32 = 64;
@@ -605,13 +598,6 @@ impl SceneContribution for Observer {
         pass.set_bind_group(2, &self.prepared[index], &[]);
         pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
     }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
-    fn submitted(&mut self, _: bool) {}
 }
 
 fn observer_graph(outputs: &[wgpu::Buffer]) -> EffectGraph {
@@ -1028,11 +1014,6 @@ impl SceneContribution for AirProbe {
                 .expect("air ask");
         }
     }
-    fn computes(&self, _: &ContributionFrame) -> bool {
-        false
-    }
-    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
-    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
         pass.set_pipeline(&self.render[0]);
         pass.draw(0..3, 0..1);
@@ -1055,7 +1036,6 @@ impl SceneContribution for AirProbe {
         pass.set_bind_group(2, group, &[]);
         pass.dispatch_workgroups(AIR_EXTENT[0] / 8, AIR_EXTENT[1] / 8, 1);
     }
-    fn submitted(&mut self, _: bool) {}
 }
 
 pub(crate) fn air_output(
