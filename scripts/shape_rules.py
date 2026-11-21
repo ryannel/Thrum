@@ -305,21 +305,21 @@ def check(root, rule=None, zero=None, tighten=False):
     # What a rule refuses outright, whatever the counts: a site it cannot count, or one outside its list.
     refused = [f"{relative}:{line}: {name}: {why}; {guidance(name)}"
                for relative, line, name, why in sites["refused"] if rule in (None, name)]
-    if refused:
-        return sorted(set(refused))
     path = root / BASELINE
     if not path.exists() and not tighten:
-        return [f"{BASELINE}: missing; initialise with shape_rules.py tighten"]
+        return sorted(set(refused)) + [f"{BASELINE}: missing; initialise with shape_rules.py tighten"]
     errors, note = history_errors(root, current, sites)
     if note:
         print(note)
+    # Refusals are reported beside every count error, and tighten records nothing while any stands.
     if tighten:
+        errors += refused
         if not errors:
             save_baseline(path, current)
-        return errors
+        return sorted(set(errors))
     expected = json.loads(path.read_text())
     if expected.get("schema") != 1 or expected.get("rules", {}).keys() != RULES.keys():
-        return errors + [f"{BASELINE}: rule registry/schema mismatch; run shape_rules.py tighten"]
+        return sorted(set(errors + refused)) + [f"{BASELINE}: rule registry/schema mismatch; run shape_rules.py tighten"]
     # A file the history check already refused is named once, by the lines it added.
     named = {(error.split(":", 1)[0], error.split(": ", 2)[1]) for error in errors if "above historical file count" in error}
     for name in ([rule] if rule else RULES):
@@ -334,7 +334,7 @@ def check(root, rule=None, zero=None, tighten=False):
                     errors.append(f"{relative}:{line}: {name}: {guidance(name)}")
     # Check the reviewed baseline too, so stale or inflated allowances are refused.
     extra, _ = history_errors(root, expected, sites)
-    return sorted(set(errors + extra))
+    return sorted(set(errors + extra + refused))
 
 
 def main():

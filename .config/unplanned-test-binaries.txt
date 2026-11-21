@@ -1,6 +1,7 @@
 # The integration test targets no plan names, by package and target: GATE-TIME mechanism 12, the rule
 # `test-binary` in scripts/shape_matchers.py. A plan names a target when a done-when item's check, open or
-# Done, runs it with `--test`, or when .config/long-tests.txt names it. Every other target is listed here, so
+# Done, runs it with `--test` in a command that selects its package (`-p`, `--manifest-path`, a `cd` into
+# it, or the workspace root), or when .config/long-tests.txt names it. Every other target is listed here, so
 # `./dev check` and `./dev check-docs` fail a new test target that is neither named nor listed: add the test to
 # a test file that exists instead. A package's one target `it` needs neither.
 #
@@ -9,6 +10,8 @@
 # `python3 scripts/shape_rules.py tighten`.
 #
 # <package> <test target>
+# v1-game cooked_texture_quality: GAME-SPLIT M3.2 runs `-p thrum-asset-gpu --test cooked_texture_quality`,
+# the target that package gains when the file moves; that landing removes this line.
 thrum-asset dev_server_browser
 thrum-asset dev_server_wasm
 thrum-cloud-model ground_support
@@ -40,11 +43,13 @@ thrum-render ray_support
 thrum-render scene_view_admission
 thrum-render support
 thrum-render upload_gpu
+thrum-render visibility
 thrum-sea upload_cost
 thrum-sea-model forward
 thrum-sea-model transition_into
 thrum-sim2d allocations
 v1-game clouds_weather_gpu
+v1-game cooked_texture_quality
 v1-game sprite_launch
 v1-game sprite_scene_3d_control
 v1-game support

@@ -525,8 +525,20 @@ slow-timeout = { period = "10s" }
             self.write(".config/nextest.toml", self.NEXTEST.replace(
                 'slow-timeout = { period = "10s", terminate-after = 6 }', f"slow-timeout = {default}"))
             errors = self.refused("limit-exempt")
-            self.assertIn(".config/nextest.toml:2: limit-exempt: the default limit on one test is later", errors)
+            self.assertIn(".config/nextest.toml:2: limit-exempt: the default limit on one test is missing, later", errors)
         self.write(".config/nextest.toml", self.NEXTEST.replace("terminate-after = 6", "terminate-after = 3"))
+        self.passes("limit-exempt")
+        # A deleted default is cargo-nextest's own, which stops no test.
+        self.write(".config/nextest.toml", self.NEXTEST.replace(
+            'slow-timeout = { period = "10s", terminate-after = 6 }\n', ""))
+        self.assertIn(".config/nextest.toml:1: limit-exempt: the default limit on one test is missing",
+                      self.refused("limit-exempt"))
+        # A default written as a sub-table is read, and refused at its own header.
+        table = '[profile.default.slow-timeout]\nperiod = "30s"\nterminate-after = {after}\n'
+        config = self.NEXTEST.replace('slow-timeout = { period = "10s", terminate-after = 6 }\n', "")
+        self.write(".config/nextest.toml", config + "\n" + table.format(after=4))
+        self.assertIn(".config/nextest.toml:14: limit-exempt: the default limit", self.refused("limit-exempt"))
+        self.write(".config/nextest.toml", config + "\n" + table.format(after=2))
         self.passes("limit-exempt")
 
     LONG = '#[test]\n#[ignore = "long: `./dev long-tests` runs it on main"]\nfn {name}() {{}}\n'
@@ -617,6 +629,41 @@ slow-timeout = { period = "10s" }
         self.assertIn(f"{self.UNPLANNED}:", errors)
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertTrue(shapes.check(self.root, tighten=True), "tighten cannot grant the new line")
+
+    def test_test_binary_names_a_target_only_in_the_packages_a_check_selects(self):
+        self.write("crates/other/Cargo.toml", '[package]\nname = "other"\n')
+        self.write("crates/engine/tests/visibility.rs", "")
+        self.write("crates/other/tests/visibility.rs", "")
+        # A check that runs another package's target of the same name does not name this one.
+        self.plan_check("cargo test -p other --test visibility")
+        errors = self.refused("test-binary")
+        self.assertIn("test target engine visibility", errors)
+        self.assertNotIn("test target other visibility", errors)
+        named = lambda check: sorted(shape_matchers.checked_targets(
+            check, {"engine", "other"}, {"crates/engine": "engine", "crates/other": "other"}))
+        both = [("engine", "visibility"), ("other", "visibility")]
+        self.assertEqual(named("cargo test --package=engine --test=visibility"), [("engine", "visibility")])
+        self.assertEqual(named("sh -c 'cargo nextest run -p other -p engine --test visibility'"), both)
+        self.assertEqual(named("cargo test --workspace --test visibility"), both)
+        self.assertEqual(named("cargo test --test visibility"), both)
+        self.assertEqual(named("cd crates/other && cargo test --test visibility"), [("other", "visibility")])
+        self.assertEqual(named("cargo test --manifest-path crates/engine/Cargo.toml --test visibility"),
+                         [("engine", "visibility")])
+        self.assertEqual(named("cargo test -p other --test a && cargo test -p engine --test b"),
+                         [("engine", "b"), ("other", "a")])
+        self.plan_check("cargo test -p other --test visibility && cargo test -p engine --test visibility")
+        self.committed()
+        self.passes("test-binary")
+
+    def test_a_refusal_does_not_hide_another_rules_errors(self):
+        self.write(".config/nextest.toml", self.NEXTEST)
+        self.committed()
+        self.write(".config/nextest.toml", self.NEXTEST.replace("terminate-after = 6", "terminate-after = 9"))
+        self.write("crates/engine/src/lib.rs", "pub fn load() -> Result<(), String> { todo!() }")
+        with contextlib.redirect_stdout(io.StringIO()):
+            errors = "\n".join(shapes.check(self.root))
+        self.assertIn("limit-exempt: the default limit", errors)
+        self.assertIn("string-errors", errors)
 
     def test_test_binary_refuses_a_line_whose_target_is_gone(self):
         self.write("crates/engine/tests/scene.rs", "")

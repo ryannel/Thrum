@@ -28,7 +28,8 @@ RULES = {
     "limit-exempt": (1, "the-smallest-world", "make the test fast, on the smallest world that shows its behaviour; no landing adds a test to the overrides of .config/nextest.toml that exempt it from the limit on one test, and an override that changes the limit names its tests one by one, as (binary_id(=<package>::<binary>) & test(=<test>))"),
     # Raise the version only in a landing that a done-when item asks for: a new version starts its count again.
     "main-tier": (1, "a-main-tier-test", "make the test fast; an entry in .config/long-tests.txt or a test marked #[ignore = \"long: ...\"] needs a done-when item that asks for it, and that item's landing raises this rule's version in scripts/shape_matchers.py; a builder with no such item writes the proposal, with the fault it would catch, in its module's LOG.md for a planner"),
-    "test-binary": (1, "an-existing-test-binary", "add the test to a test file that exists, or to the unit tests of the module it tests; a new test target needs a done-when item whose check runs it with --test, and .config/unplanned-test-binaries.txt only shrinks"),
+    # Version 2: a check names a target only in the packages its command selects.
+    "test-binary": (2, "an-existing-test-binary", "add the test to a test file that exists, or to the unit tests of the module it tests; a new test target needs a done-when item whose check runs it with --test, and .config/unplanned-test-binaries.txt only shrinks"),
 }
 # Built in two parts so this file does not name the folder it matches.
 EVIDENCE_FOLDER = "docs/" + "evidence/"
@@ -551,6 +552,20 @@ def seconds(duration):
     return sum(float(value) * scale[unit] for value, unit in DURATION.findall(duration))
 
 
+def default_limit_line(text):
+    """The line of the default profile's `slow-timeout`, as a key or a sub-table, else of the profile's header."""
+    table = re.search(r'(?m)^[ \t]*\[\s*profile\.default\.slow-timeout\s*\]', text)
+    if table:
+        return line_of(text, table.start())
+    header = re.search(r'(?m)^[ \t]*\[\s*profile\.default\s*\][ \t]*$', text)
+    if not header:
+        return 1
+    following = re.search(r'(?m)^[ \t]*\[', text[header.end():])
+    body = text[header.end():header.end() + following.start()] if following else text[header.end():]
+    key = re.search(r'(?m)^[ \t]*slow-timeout\s*=', body)
+    return line_of(text, header.end() + key.start()) if key else line_of(text, header.start())
+
+
 def limit_exempt(root, paths):
     """The tests exempt from the limit on one test, and the overrides that cannot be counted.
 
@@ -566,18 +581,16 @@ def limit_exempt(root, paths):
         return [], [(NEXTEST, 1, f"cannot read the runner's configuration: {error}")]
     profile = config.get("profile", {}).get("default", {})
     sites, refused = [], []
+    # A missing default is cargo-nextest's own, a 60 s period that stops no test, so it is refused too.
     timeout = profile.get("slow-timeout")
     if isinstance(timeout, str):
         timeout = {"period": timeout}
-    if timeout is not None:
-        period = seconds(timeout.get("period")) if isinstance(timeout, dict) else None
-        after = timeout.get("terminate-after") if isinstance(timeout, dict) else None
-        match = re.search(r'(?m)^[ \t]*slow-timeout\s*=', text)
-        line = line_of(text, match.start()) if match else 1
-        if period is None or not isinstance(after, int) or period * after > TEST_LIMIT_SECONDS:
-            refused.append((NEXTEST, line, f"the default limit on one test is later than the test tiers' "
-                            f"{TEST_LIMIT_SECONDS} s, or never stops a test: keep slow-timeout's period times "
-                            f"terminate-after at {TEST_LIMIT_SECONDS} s or less"))
+    period = seconds(timeout.get("period")) if isinstance(timeout, dict) else None
+    after = timeout.get("terminate-after") if isinstance(timeout, dict) else None
+    if period is None or not isinstance(after, int) or period * after > TEST_LIMIT_SECONDS:
+        refused.append((NEXTEST, default_limit_line(text), f"the default limit on one test is missing, later than "
+                        f"the test tiers' {TEST_LIMIT_SECONDS} s, or never stops a test: give [profile.default] a "
+                        f"slow-timeout whose period times terminate-after is {TEST_LIMIT_SECONDS} s or less"))
     # The n-th table header in the text is the n-th override, so each site has its own line.
     headers = [match.start() for match in re.finditer(r'(?m)^[ \t]*\[\[\s*profile\.default\.overrides\s*\]\]', text)]
     for index, override in enumerate(profile.get("overrides", [])):
@@ -672,6 +685,47 @@ def test_targets(root, paths, manifests):
     return targets
 
 
+SHELL_SEPARATOR = re.compile(r'&&|\|\||[;|\n]')
+
+
+def checked_targets(check, packages, folders):
+    """(package, target) pairs a done-when check runs with `--test`.
+
+    A command names a target only in the packages it selects: each `-p`/`--package`, the package of a
+    `--manifest-path`, or else the package of the folder an earlier `cd` in the check entered, or else, for
+    `--workspace` or a command run in the workspace root, every package.
+    """
+    named, folder = set(), None
+    for segment in SHELL_SEPARATOR.split(check):
+        tokens = [token.strip("\"'()") for token in segment.split()]
+        tokens = [token for token in tokens if token]
+        if len(tokens) >= 2 and tokens[0] == "cd":
+            folder = tokens[1].rstrip("/")
+            continue
+        targets = [match.group(1) for match in TEST_FLAG.finditer(" ".join(tokens))]
+        if not targets:
+            continue
+        selected = set()
+        for index, token in enumerate(tokens):
+            value = None
+            if token in ("-p", "--package") and index + 1 < len(tokens):
+                value = tokens[index + 1]
+            elif token.startswith("--package="):
+                value = token.split("=", 1)[1]
+            elif token.startswith("-p") and len(token) > 2 and not token.startswith("--"):
+                value = token[2:]
+            elif token == "--manifest-path" and index + 1 < len(tokens):
+                selected.add(folders.get(str(Path(tokens[index + 1]).parent), ""))
+            elif token.startswith("--manifest-path="):
+                selected.add(folders.get(str(Path(token.split("=", 1)[1]).parent), ""))
+            if value:
+                selected.add(value.split("@", 1)[0])
+        if not selected or "--workspace" in tokens or "--all" in tokens:
+            selected |= {folders[folder]} if folder in folders and "--workspace" not in tokens else packages
+        named |= {(package, target) for package in selected for target in targets}
+    return named
+
+
 def test_binary(root, paths, manifests):
     """The lines of the list of test targets no plan names, and the targets refused outright.
 
@@ -679,9 +733,12 @@ def test_binary(root, paths, manifests):
     done-when item's check, open or Done, runs it with `--test`, or when the main-tier list names it. A
     package's one target `it` needs neither a name nor a line.
     """
+    packages = {manifest["package"]["name"] for manifest in manifests.values() if manifest.get("package", {}).get("name")}
+    folders = {folder.as_posix(): manifest["package"]["name"] for folder, manifest in manifests.items()
+               if manifest.get("package", {}).get("name")}
     planned = set()
     for check in done_when_checks(root):
-        planned.update(TEST_FLAG.findall(check))
+        planned |= checked_targets(check, packages, folders)
     in_main_tier = main_tier_binaries(main_tier_lines(root, paths))
     targets = test_targets(root, paths, manifests)
     existing = {(package, name) for package, name, *_ in targets}
@@ -702,7 +759,7 @@ def test_binary(root, paths, manifests):
                 refused.append((UNPLANNED_TESTS, number, f"{fields[0]} has no test target {fields[1]}: remove the line"))
             listed.add(key)
     for package, name, source, where, line in targets:
-        if name == "it" or name in planned or (package, name) in in_main_tier or (package, name) in listed:
+        if name == "it" or (package, name) in planned or (package, name) in in_main_tier or (package, name) in listed:
             continue
         refused.append((where, line, f"test target {package} {name} ({source}) is named by no plan and not listed in "
                         f"{UNPLANNED_TESTS}"))

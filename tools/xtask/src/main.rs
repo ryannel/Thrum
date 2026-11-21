@@ -699,8 +699,8 @@ fn summed_times(tests: &[TestTime]) -> [String; 2] {
     };
     [
         format!(
-            "tests' summed time: {all:.1} s over the {} tests this run ran, each test's own time added up \
-             (a report, never a gate)",
+            "tests' summed time: {all:.1} s over the {} tests cargo-nextest ran in this check, each \
+             test's own time added up; doc tests are not counted (a report, never a gate)",
             tests.len()
         ),
         format!(
@@ -1016,7 +1016,7 @@ mod tests {
         ];
         let [all, gpu] = summed_times(&tests);
         assert!(
-            all.starts_with("tests' summed time: 12.0 s over the 5 tests"),
+            all.starts_with("tests' summed time: 12.0 s over the 5 tests cargo-nextest ran"),
             "{all}"
         );
         assert!(
@@ -1029,7 +1029,7 @@ mod tests {
         );
         let [none, none_gpu] = summed_times(&[]);
         assert!(
-            none.starts_with("tests' summed time: 0.0 s over the 0 tests"),
+            none.starts_with("tests' summed time: 0.0 s over the 0 tests cargo-nextest ran"),
             "{none}"
         );
         assert!(none_gpu.contains("0%"), "{none_gpu}");

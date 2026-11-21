@@ -226,8 +226,8 @@ because the test must run apart, such as behind a Cargo feature or with `harness
 it says so.
 
 Rule: `test-binary` fails a test target that no plan names and `.config/unplanned-test-binaries.txt` does not list.
-A plan names one when a done-when item's check runs it with `--test`, or the main-tier list names it. The list only
-shrinks, and a line whose target is gone fails until it is removed.
+A plan names one when a done-when item's check runs it with `--test` in a command that selects its package, or
+the main-tier list names it. The list only shrinks, and a line whose target is gone fails until it is removed.
 
 <a id="a-main-tier-test"></a>
 

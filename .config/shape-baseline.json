@@ -175,9 +175,9 @@
       }
     },
     "test-binary": {
-      "version": 1,
+      "version": 2,
       "files": {
-        ".config/unplanned-test-binaries.txt": 43
+        ".config/unplanned-test-binaries.txt": 45
       }
     },
     "test-crate-edges": {
