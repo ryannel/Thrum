@@ -31,6 +31,36 @@
         "by": "plan",
         "task": "Revise the DEAD-CODE module plan only, to resolve the Must Fix in its third design review, .orchestrate/evidence/DEAD-CO",
         "at": "2026-11-20T12:26:48Z"
+      },
+      "ready_for_review": {
+        "commit": "ccc1990916c6be621f3676959e1d34797083d1c1",
+        "checked": "ccc1990916c6be621f3676959e1d34797083d1c1",
+        "at": "2026-11-21T00:25:20Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 137836,
+          "cached": 7817126,
+          "output": 1009,
+          "incomplete_turns": 1,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 137836,
+          "cached": 7817126,
+          "output": 1009,
+          "incomplete_turns": 1,
+          "turns": 1
+        }
       }
     },
     "M2": {
