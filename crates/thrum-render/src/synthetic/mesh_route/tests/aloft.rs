@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use super::{EXTENT, Gpu, OffscreenTarget, place};
 use crate::capabilities::DeviceCapabilities;
