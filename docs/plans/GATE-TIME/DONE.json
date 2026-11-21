@@ -586,7 +586,7 @@
     {
       "id": "M11",
       "name": "Each package's integration tests build into one test binary, and a merge's check spends less time linking them and running each for the first time",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -597,8 +597,8 @@
           "statement": "The record gives, at the starting commit and at the claimed one, how many test binaries a whole run of the check builds and runs, and what a freshly linked set costs before its first test starts: the link, and the first run of each new binary, which macOS checks. Each is timed twice from the same starting state, with the load. Both later timings are shorter than both earlier ones.",
           "ask": "Were the four timings made the same way and from the same starting state? Is each of the later pair shorter than each of the earlier pair? Does the record's count of binaries match what the runner lists at the claimed commit?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/record.md#m111-binaries-and-what-a-freshly-linked-set-costs",
           "verdict": "",
           "review": ""
         },
@@ -607,8 +607,8 @@
           "statement": "Every test a whole run of the check ran at the starting commit still runs, once. The names the runner lists before and after are the same but for the module a test now sits in: none is dropped, and none runs twice.",
           "ask": "Read the record's list of test names from the starting commit, and list the tests at the claimed commit yourself: does every name of the first map to exactly one name now? Is any name now in two binaries?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/M11.2-name-map.txt",
           "verdict": "",
           "review": ""
         },
@@ -618,8 +618,8 @@
           "check": "cargo metadata --no-deps --format-version 1 --offline | python3 -c 'import json,sys; t=[x[\"name\"] for p in json.load(sys.stdin)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]]; sys.exit(0 if \"it\" in t and len(t)<139 else 1)'",
           "ask": "Take ten test targets other than `it`, of your choice, from `cargo metadata`: does something the statement lists hold each, as the record says? Is any package's test file outside `it` with nothing holding it? Does a `bin` or `example` target with no test in it still build a test binary?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/held-targets.md",
           "verdict": "",
           "review": ""
         },
@@ -628,16 +628,16 @@
           "statement": "No open item lost the binary its check names: every name an open item of any module passes to `--test`, whose test file exists in the tree, is still a test target.",
           "check": "python3 -c 'import json,glob,re,subprocess,sys; t={x[\"name\"] for p in json.loads(subprocess.run([\"cargo\",\"metadata\",\"--no-deps\",\"--format-version\",\"1\",\"--offline\"],capture_output=True,text=True,check=True).stdout)[\"packages\"] for x in p[\"targets\"] if \"test\" in x[\"kind\"]}; n={m for f in glob.glob(\"docs/plans/*/DONE.json\") for s in json.load(open(f))[\"milestones\"] if s.get(\"status\")!=\"done\" for i in s[\"items\"] for m in re.findall(r\"--test[ =]([A-Za-z0-9_-]+)\",i.get(\"check\",\"\"))}; f=lambda m:[g for d in (\"crates\",\"examples\") for g in glob.glob(d+\"/*/tests/\"+m+\".rs\")+glob.glob(d+\"/*/tests/\"+m+\"/*.rs\")]; lost=sorted(m for m in n if m not in t and f(m)); print(lost); sys.exit(1 if lost or not n else 0)'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/record.md#m114-open-items-keep-their-binaries"
         },
         {
           "id": "M11.5",
           "statement": "A Rust file under a package's `tests/` folder that no test target compiles fails `./dev check-docs`, with a message that names the file and says where to declare it. A helper that only a declared file reaches passes.",
           "ask": "In a scratch copy, add a test file to a package's `tests/` folder and do not declare it: does `./dev check-docs` fail and name the file? Declare it in the package's `it` target: does it pass? Read the guard's own tests: do they cover a file left out, a file declared, and a helper module that only a declared file reaches?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/M11.5-guard-probe.txt",
           "verdict": "",
           "review": ""
         },
@@ -646,8 +646,8 @@
           "statement": "The groups of tests that take turns, the tests counted as heavy and any exempt name in `.config/nextest.toml` select the tests they selected at the starting commit, under their new names.",
           "ask": "For each override in `.config/nextest.toml`, list the tests its filter matches at the claimed commit and compare with the record's list from the starting commit: are they the same tests? Does any filter now match no test?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M11/M11.6-overrides.txt",
           "verdict": "",
           "review": ""
         },
@@ -657,8 +657,8 @@
           "check": "python3 \"$ORCHESTRATE_SCRIPT\" main-check long-tests",
           "ask": "Compare the test names in the log of the main-branch run that covers this commit with those of its last run before the starting commit: is any test missing, or ignored where it ran?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check long-tests",
           "verdict": "",
           "review": ""
         },
@@ -667,8 +667,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     },
