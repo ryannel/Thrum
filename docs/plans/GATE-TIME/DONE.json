@@ -395,7 +395,7 @@
     {
       "id": "M10",
       "name": "A record shows where a builder's session goes: the model's own time, each kind of command and each wait",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -428,16 +428,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GATE-TIME/M10/record.md#what-it-shows (second fix round: the savings sentences state what their median, mean and largest are of)",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GATE-TIME/M10-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The closing statements on savings call the median of each session's saving the most that could come off the median session, which the tables contradict",
-          "item": "M10.3",
-          "different": "The earlier finding was a figure no table held (a per-call check time); that sentence is gone. This one is a correct table figure, the median of per-session savings, described in the prose as an upper bound for the median session.",
-          "repeat": false
         }
       ]
     },
