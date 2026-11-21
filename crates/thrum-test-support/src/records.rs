@@ -45,8 +45,15 @@ pub fn member<T, F: Kind>(name: &'static str, offset: usize, _: fn(&T) -> &F) ->
 /// The [`RecordLayout`] of a `#[repr(C)]` Rust struct, named as its WGSL struct, listing every member in WGSL
 /// order. A member the WGSL names otherwise takes `as "name"`.
 ///
-/// ```ignore
-/// thrum_test_support::record!(Material as "MaterialRecord", base_rgba as "base", flags)
+/// ```
+/// #[repr(C)]
+/// struct Material {
+///     base_rgba: [f32; 4],
+///     flags: u32,
+/// }
+/// let layout = thrum_test_support::record!(Material as "MaterialRecord", base_rgba as "base", flags);
+/// assert_eq!((layout.name, layout.size), ("MaterialRecord", 20));
+/// assert_eq!((layout.members[1].name, layout.members[1].offset), ("flags", 16));
 /// ```
 #[macro_export]
 macro_rules! record {

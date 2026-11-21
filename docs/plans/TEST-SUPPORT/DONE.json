@@ -343,7 +343,7 @@
     {
       "id": "M4",
       "name": "Each crate's WGSL records are held to its Rust structs by one shared check, and the proving ground's cooked tests build their game through one fixture",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -359,8 +359,8 @@
           "ask": "How many walks of a parsed shader's bound structs are there under `crates/` outside the kit, the renderer's own test included? Do the sea's and the asset crate's records now get the size and scalar-kind checks, and did any record fail them? If one did, is the record untouched and named in the log with its owner? Are the view record's literal offsets and the cloud and weather shaders' naga validation still asserted? Would a member moved in one crate's WGSL fail that crate's test?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M4/: README.md (M4.1), m41-check.log, m41-mutation.log",
           "verdict": "",
           "review": ""
         },
@@ -371,8 +371,8 @@
           "ask": "Compare five cases from each of the two files with the starting commit: same assertions, same draw path, same generation, same execution assertion? Does the fixture hold a lock, a static device or anything else that makes tests take turns that did not before? Does the log give the two binaries' run time before and after, with the load?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M4/: README.md (M4.2); before-/after-cooked_*_gpu.* with *.load and before-load.txt; after-draw-probe.log",
           "verdict": "",
           "review": ""
         },
@@ -381,8 +381,8 @@
           "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
           "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/TEST-SUPPORT/M4/: before.*, after.*, comparison.log, README.md (M4.3)",
           "verdict": "",
           "review": ""
         },
@@ -391,8 +391,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

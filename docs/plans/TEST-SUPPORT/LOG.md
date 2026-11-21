@@ -1,5 +1,13 @@
 # TEST-SUPPORT log
 
+- 2026-11-21 Built M4: the kit's `records` module holds the renderer's, sea's, asset crate's, water's and clouds' WGSL
+  records to their Rust structs in member name, offset, size and scalar kind; the renderer's walk and the sea's own
+  layout type are gone. Every record passed the stricter check, so none was left on its old comparison. The
+  proving ground's cooked tests build store, cook, device and host through `tests/support/cooked.rs`, adding no lock
+  or shared device (9.40 to 9.65 s and 1.34 to 1.43 s at load 8 to 9). Verified on Metal: a required-GPU
+  `cargo test --workspace` at `b986e6893` passes with every earlier `ok` and no skip line.
+  [Evidence](../../../.orchestrate/evidence/TEST-SUPPORT/M4/README.md).
+
 - 2026-11-21 Fixed M3's review findings: four frame waits again give each poll what is left of one deadline, the
   last local frame waits in the runtime tests and the two-cascade PPM writer use the kit, and the cook bench and water
   query wrappers are gone. Verified on Metal: a required-GPU `cargo test --workspace` at `2a83415dc` passes with no
