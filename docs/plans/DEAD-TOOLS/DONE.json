@@ -220,7 +220,7 @@
     {
       "id": "M4",
       "name": "No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -235,8 +235,8 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule evidence-path --zero crates examples scripts tools && python3 scripts/test_shape_rules.py'",
           "ask": "Is every exemption written in the rule with its reason, and is the evidence store's restore code the only one? Compare each moved record's Git blob with the starting commit.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (rule at zero; moved blobs in M4/blobs.txt)",
           "verdict": "",
           "review": ""
         },
@@ -245,8 +245,8 @@
           "statement": "Every command an open item's check runs through a changed script runs as it did and compares with the same prior record: the cost checks of the water, cloud, river, rain and scene-view scripts, the 2D conformance check, the session and ray-tracing proofs and the content tripwire.",
           "ask": "List each script the milestone changed and the open items whose checks run it. For each, does the command still parse its arguments, read the same prior record bytes, and print and exit as before? Did any command's output shape change?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (script-by-script table; before/after outputs in M4/before and M4/after)",
           "verdict": "",
           "review": ""
         },
@@ -256,8 +256,8 @@
           "check": "sh -c '! git grep -qE \"TimingInterleave|THRUM_CULLING_TIMING_PAIR\" -- crates examples scripts && git grep -q valley_route -- examples'",
           "ask": "Do `culling_cost.py` and `render2d.py` still drive the route test's timing mode, and does its exact comparison still run in `./dev check`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/DEAD-TOOLS/M4/NOTES.md (route exact, exit-arm and timing runs in M4/after)",
           "verdict": "",
           "review": ""
         },
@@ -266,8 +266,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
