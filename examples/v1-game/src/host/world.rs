@@ -54,17 +54,6 @@ impl WorldPort {
         }
     }
 
-    #[cfg(test)]
-    pub(super) fn inline_mut(&mut self) -> &mut WorldDriver {
-        match self {
-            Self::Inline(driver) => driver,
-            #[cfg(not(target_arch = "wasm32"))]
-            Self::Threaded(_) | Self::Starting => {
-                unreachable!("the threaded host does not expose inline world methods")
-            }
-        }
-    }
-
     pub(super) fn tick(&self) -> u64 {
         match self {
             Self::Inline(driver) => driver.tick(),

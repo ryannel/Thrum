@@ -167,7 +167,7 @@
         "examples/v1-game/src/camera/route.rs": 3,
         "examples/v1-game/src/content.rs": 3,
         "examples/v1-game/src/effect/qualification.rs": 2,
-        "examples/v1-game/src/host.rs": 7,
+        "examples/v1-game/src/host.rs": 4,
         "examples/v1-game/src/host/scene_source.rs": 1,
         "examples/v1-game/src/host/world_thread.rs": 1,
         "examples/v1-game/src/scene.rs": 1,

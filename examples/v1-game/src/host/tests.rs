@@ -9,6 +9,21 @@ mod reconstruction_gpu;
 #[cfg(not(target_arch = "wasm32"))]
 mod recovery_gpu;
 
+use super::{WorldDriver, WorldPort};
+
+impl WorldPort {
+    /// The inline driver, which only tests reach into.
+    fn inline_mut(&mut self) -> &mut WorldDriver {
+        match self {
+            Self::Inline(driver) => driver,
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(_) | Self::Starting => {
+                unreachable!("the threaded host does not expose inline world methods")
+            }
+        }
+    }
+}
+
 #[test]
 #[cfg(not(target_arch = "wasm32"))]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
