@@ -218,7 +218,7 @@
     {
       "id": "M6",
       "name": "A GPU test draws to the test kit's one small target, and the engineering skill says in one short block how to write a test",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -233,8 +233,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4 (mac-metal, THRUM_REQUIRE_GPU=1): 2 target tests pass; size-32 and no-draw mutations each fail both (LOG.md, 2026-11-21)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md"
         },
         {
           "id": "M6.2",
@@ -244,8 +244,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4: rows gone, five links, 1,695 words, ./dev check-docs pass; AGENTS.md and CLAUDE.md untouched",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md"
         },
         {
           "id": "M6.3",
@@ -255,8 +255,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "agent_loop check on 59047a2e4: five anchors in references/patterns.md, ./dev check-docs pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/TEST-SUPPORT/M6-review.md"
         }
       ]
     },
