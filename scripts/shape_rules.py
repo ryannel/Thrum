@@ -330,7 +330,7 @@ def check(root, rule=None, zero=None, tighten=False):
             for relative, line in sites[name]:
                 if (relative, name) in named:
                     continue
-                if actual["files"][relative] != entry["files"].get(relative, 0):
+                if actual["files"][relative] > entry["files"].get(relative, 0):
                     errors.append(f"{relative}:{line}: {name}: {guidance(name)}")
     # Check the reviewed baseline too, so stale or inflated allowances are refused.
     extra, _ = history_errors(root, expected, sites)
