@@ -451,8 +451,8 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py'",
           "ask": "Read the rule's fixtures: do they cover a name added, a name removed, an override that exempts a whole binary, and a default limit raised? In a scratch copy, add a test's name to an exempt override, then raise the default limit: does `./dev check-docs` fail each time, with a message whose link lands on an entry that exists?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (exempt-name-added, exempt-whole-binary, default-limit-raised)",
           "verdict": "",
           "review": ""
         },
@@ -462,8 +462,8 @@
           "check": "sh -c 'python3 scripts/shape_rules.py check --rule main-tier && python3 scripts/test_shape_rules.py'",
           "ask": "In a scratch copy, mark a test `long:` in a binary the list already names, then add a line to the list: does `./dev check-docs` fail each time with that message? Raise the rule's version and record the counts again: does it pass, and does one more added test then fail?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (long-test-in-listed-binary, main-tier-line-added); .orchestrate/evidence/GATE-TIME/M12/scratch-version-raise.log",
           "verdict": "",
           "review": ""
         },
@@ -473,8 +473,8 @@
           "check": "sh -c 'test -s .config/unplanned-test-binaries.txt && python3 scripts/shape_rules.py check --rule test-binary && python3 scripts/test_shape_rules.py'",
           "ask": "In a scratch copy, add a test file to a package whose test files Cargo finds, and a `[[test]]` entry to one that lists them: does `./dev check-docs` fail each time and name the target? Give an open done-when item a check that runs one of them with `--test`: does it pass? Add the other's name to the list: does that fail too? Does a helper module that a test file declares, or a file under `tests/` that is a module of another target, count as a target? Is every line of the list a target that exists and that no plan names?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M12/record.md; .orchestrate/evidence/GATE-TIME/M12/scratch-trials.log (new-test-file-autotests, new-test-table-listed, new-file-named-by-open-item, new-table-added-to-list, listed-target-gone, helper-module-and-module-file)",
           "verdict": "",
           "review": ""
         },
@@ -483,8 +483,8 @@
           "statement": "`./dev check` and `./dev check-all` end, pass or fail, with the summed time of every test the run ran and the summed time of its GPU tests, counted by name: a test whose binary or name says `gpu` or `metal`. The line says how it counts. Nothing fails on either figure, on a step's time or on the whole check's.",
           "ask": "Take a whole check the script saved after this landed, under `.git/orchestrate/checks`, and add up its own test lines: all of them, and those named `gpu` or `metal`. Do the two closing figures match? Does any path through the check command fail on a time other than the limit on one test?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M12/summed-times-check.txt (a whole saved check at 775b0e678: 1329 test lines sum to 941.6 s, 284 gpu/metal-named to 541.0 s, matching its closing lines)",
           "verdict": "",
           "review": ""
         }
