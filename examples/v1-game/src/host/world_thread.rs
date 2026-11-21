@@ -12,12 +12,12 @@ use thrum_core::{
 
 use crate::simulation::{PublishedPage, SimError};
 
-use super::world::{GameWorld, WorldAdvance, WorldDriver};
+use super::world::{GameRules, WorldAdvance, WorldDriver};
 
 /// Validated local controls for the resident world. Discrete game actions use
 /// the simulation's admitted-input path instead of this latest-state mailbox.
 #[derive(Clone)]
-pub struct WorldControls(WorldLaneControls<ClockedWorld<GameWorld>>);
+pub struct WorldControls(WorldLaneControls<ClockedWorld<GameRules>>);
 
 impl WorldControls {
     /// Request a native world transition without waiting for its completion.
@@ -53,7 +53,7 @@ impl WorldControls {
 }
 
 /// The world lane and the controlled actor its published pages are read for.
-pub(crate) struct WorldClient(WorldLane<ClockedWorld<GameWorld>>, StableId);
+pub(crate) struct WorldClient(WorldLane<ClockedWorld<GameRules>>, StableId);
 
 impl WorldClient {
     pub(super) fn start(

@@ -9,10 +9,12 @@ use thrum_app::{Config, Edits, Game, Gpu, KeyCode, KeyResponse, Prepared, WorldL
 use thrum_controls::Controls;
 use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
 
+use thrum_render::runtime::FrameConfig;
+
 use crate::{
-    FrameConfig, FrameHost, WorldControls,
+    GameHost, WorldControls,
     controls::{ControlEdits, GameControls},
-    host::{self, GameScene, Runtime, WorldPort},
+    host::{self, GameScene, GameWorld, Runtime},
 };
 
 mod capture;
@@ -241,7 +243,7 @@ impl WindowGame {
 }
 
 impl Game for WindowGame {
-    type World = WorldPort;
+    type World = GameWorld;
     type Scene = GameScene;
     type Edits = ControlEdits;
     /// Committed solar time after a render job.
@@ -255,11 +257,11 @@ impl Game for WindowGame {
         &mut self,
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
-    ) -> Result<Prepared<WorldPort, GameScene>, String> {
+    ) -> Result<Prepared<GameWorld, GameScene>, String> {
         let render_extent = gpu.surface.extent;
         let setup = crate::selected_setup()?;
         let exit = setup.content == crate::GameContent::Exit;
-        let mut host = pollster::block_on(FrameHost::new_with_setup(
+        let mut host = pollster::block_on(setup.prepare(
             gpu.device,
             gpu.queue,
             gpu.capabilities,
@@ -267,7 +269,6 @@ impl Game for WindowGame {
                 render_extent,
                 surface: Some(gpu.surface),
             },
-            setup,
         ))?;
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let preview = self
@@ -324,7 +325,7 @@ impl Game for WindowGame {
         let (host, controls) = host.into_threaded(origin, world_advanced)?;
         self.world = Some(controls);
         Ok(Prepared {
-            host: host.into_runtime(),
+            host,
             origin,
         })
     }

@@ -44,12 +44,9 @@ pub use content::attach_cooked_scene_with_probe;
 pub use content::{CloudQualityError, apply_cloud_quality, attach_cooked_scene, selected_setup};
 #[doc(hidden)]
 pub use host::field_in_view_share;
-pub use host::{
-    AdvancedFrame, DriveReport, EncodedFrame, ExitEntities, FrameConfig, FrameHost, FrameSample,
-    GameSetup, MeshRowSource, SurfaceOutput,
-};
+pub use host::{ExitEntities, GameHost, GameScene, GameSetup, GameWorld, MeshRowSource};
 #[cfg(not(target_arch = "wasm32"))]
-pub use host::{ThreadedFrameHost, WorldControls};
+pub use host::{PreparedEnvironment, VisualPrepareInputs, WorldControls};
 pub use projection::{GameProjection, ProjectionGap};
 pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]

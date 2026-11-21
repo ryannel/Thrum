@@ -2,7 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::FrameHost;
+use crate::{GameHost, host::Runtime as Host};
 use thrum_asset_gpu::CookedStats;
 
 // This cold launch boundary owns environment interpretation; world construction
@@ -45,7 +45,7 @@ fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
 /// Apply optional launch quality settings through the prepared cloud controls.
 /// # Errors
 /// Refuses unsupported values or a scene without the requested cloud capability.
-pub fn apply_cloud_quality(host: &mut FrameHost) -> Result<(), CloudQualityError> {
+pub fn apply_cloud_quality(host: &mut Host) -> Result<(), CloudQualityError> {
     for (variable, suffix) in [
         ("THRUM_CLOUD_REFRESH_STRIDE", "cloud refresh exponent"),
         ("THRUM_CLOUD_LIGHT_SAMPLES", "cloud local light samples"),
@@ -282,13 +282,13 @@ fn validate_sprite_launch() -> Result<(), String> {
 /// # Errors
 /// Returns an invalid selection, recipe or renderer contribution failure.
 pub fn attach_cooked_scene(
-    host: &mut FrameHost,
+    host: &mut Host,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     attach_cooked_scene_with_path(host, thrum_asset_gpu::CookedDrawPath::Auto)
 }
 
 pub(crate) fn attach_cooked_scene_with_path(
-    host: &mut FrameHost,
+    host: &mut Host,
     path: thrum_asset_gpu::CookedDrawPath,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     attach_selected(host, path, Ok)
@@ -296,7 +296,7 @@ pub(crate) fn attach_cooked_scene_with_path(
 
 #[cfg(target_os = "macos")]
 pub(crate) fn attach_content_preview(
-    host: &mut FrameHost,
+    host: &mut Host,
 ) -> Result<crate::content_preview::PreviewRecord, String> {
     let store = launch_value("THRUM_ASSET_STORE").map_err(|error| error.to_string())?;
     let rows = host
@@ -318,7 +318,7 @@ pub(crate) fn attach_content_preview(
 /// Refuses invalid content, incomplete reference arguments or a renderer failure.
 #[cfg(feature = "draw-probe")]
 pub fn attach_cooked_scene_with_probe(
-    host: &mut FrameHost,
+    host: &mut Host,
     probe: Option<thrum_asset_gpu::draw_probe::Probe>,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     attach_selected(
@@ -334,7 +334,7 @@ pub fn attach_cooked_scene_with_probe(
 }
 
 fn attach_selected(
-    host: &mut FrameHost,
+    host: &mut Host,
     path: thrum_asset_gpu::CookedDrawPath,
     configure: impl FnOnce(
         thrum_asset_gpu::CookedAssets,

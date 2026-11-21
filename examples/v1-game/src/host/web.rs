@@ -9,15 +9,15 @@ use std::time::Duration;
 use thrum_render::synthetic::{CullingSelection, DisplayOverlay};
 
 use super::{
-    GameScene, GameSetup, Runtime, WorldPort, camera_pitch_edit, camera_yaw_edit, day_phase_edit,
+    GameScene, GameSetup, GameWorld, Runtime, camera_pitch_edit, camera_yaw_edit, day_phase_edit,
 };
 use crate::SceneCamera;
 
 /// The engine's browser shell over the V1 world and scene.
-pub(crate) type Shell = thrum_app::web::WebShell<WorldPort, GameScene>;
+pub(crate) type Shell = thrum_app::web::WebShell<GameWorld, GameScene>;
 
 /// The first device's generation; replacements count up from it.
-pub(crate) const DEVICE_GENERATION: u64 = super::FrameHost::DEVICE_GENERATION;
+pub(crate) const DEVICE_GENERATION: u64 = thrum_render::capabilities::FIRST_DEVICE_GENERATION;
 
 pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> {
     shell.host().source().cloud_input.as_ref()
@@ -32,12 +32,12 @@ pub(crate) fn set_capture_eye(shell: &mut Shell, eye: [f32; 3]) -> Result<(), St
     set_scene_camera(shell, camera.at(eye)?)
 }
 
-impl thrum_app::web::WebWorld for WorldPort {
+impl thrum_app::web::WebWorld for GameWorld {
     fn pause(&mut self) -> Result<(), String> {
-        WorldPort::pause(self)
+        GameWorld::pause(self)
     }
     fn resume(&mut self, now: Duration) -> Result<(), String> {
-        WorldPort::resume(self, now)
+        GameWorld::resume(self, now)
     }
 }
 
@@ -48,15 +48,9 @@ pub(crate) async fn prepare(
     gpu: thrum_app::web::WebGpu,
     setup: GameSetup,
 ) -> Result<Runtime, String> {
-    let host = super::FrameHost::new_with_setup(
-        &gpu.device,
-        &gpu.queue,
-        &gpu.capabilities,
-        gpu.frame_config,
-        setup,
-    )
-    .await?;
-    Ok(host.inner)
+    setup
+        .prepare(&gpu.device, &gpu.queue, &gpu.capabilities, gpu.frame_config)
+        .await
 }
 
 /// Committed solar time: midnight is zero, noon is one half.
@@ -116,7 +110,7 @@ pub(crate) fn set_display_overlay(shell: &mut Shell, overlay: DisplayOverlay) {
 /// Refuses invalid controls.
 pub(crate) fn set_controls(shell: &mut Shell, axes: [f32; 3]) -> Result<(), String> {
     shell.host().source().route_guard()?;
-    shell.world_mut().set_controls(axes)
+    shell.world_mut().0.set_controls(axes)
 }
 
 /// Position of the game fixture's controlled actor.
@@ -125,7 +119,7 @@ pub(crate) fn controlled_position(shell: &Shell) -> Option<[f64; 3]> {
 }
 
 pub(crate) fn exit_mover_position(shell: &Shell) -> Option<[f64; 3]> {
-    shell.host().world().exit_mover_position()
+    shell.host().world().0.exit_mover_position()
 }
 
 /// Latest committed authority tick.

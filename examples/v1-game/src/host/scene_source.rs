@@ -323,10 +323,16 @@ fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
     overlay == scene::RouteOverlay::MirrorOmit
 }
 
-pub(crate) struct GameScene {
+/// The game's scene: its content, camera, solar day and display choices, which
+/// the engine's frame host samples for each frame.
+pub struct GameScene {
     sprite_scale: Option<u16>,
     sprite_rows: Option<u32>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
+    pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
+    pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) visual_product: Option<EnvironmentProduct>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
     exit_entities: crate::ExitEntities,
@@ -426,6 +432,10 @@ impl GameScene {
             sprite_scale: setup.sprite_scale,
             sprite_rows: setup.sprite_rows,
             cloud_input: None,
+            cloud_sky: None,
+            cooked_rows: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            visual_product: None,
             content: setup.content,
             exit_entities: setup.exit_entities,
             valley_stars: setup.content != GameContent::Field && setup.valley_stars,
@@ -560,55 +570,6 @@ impl GameScene {
         })
         .to_vec();
         Ok(scene)
-    }
-}
-
-impl super::FrameHost {
-    /// Current presentation camera pitch and yaw, in radians.
-    #[must_use]
-    pub fn camera_orientation(&self) -> [f32; 2] {
-        let source = self.inner.source();
-        [source.camera_pitch, source.camera_yaw]
-    }
-
-    /// Select a checked authored camera and reset presentation history.
-    /// # Errors
-    /// Refuses while a moving route is installed.
-    pub fn set_scene_camera(&mut self, camera: SceneCamera) -> Result<(), String> {
-        self.inner.source_mut().select_camera(camera)?;
-        self.inner.invalidate_history();
-        Ok(())
-    }
-
-    /// Install a moving camera route when the committed tick is `origin_tick − 1`.
-    /// From then on the authored camera follows the route and camera, time and
-    /// control edits are refused. History resets so both targets align at the origin.
-    /// # Errors
-    /// See the route's installation refusals.
-    pub fn set_camera_route(&mut self, route: CameraRoute) -> Result<(), String> {
-        let tick = self.inner.world().tick();
-        self.inner.source_mut().install_route(route, tick)?;
-        self.inner.invalidate_history();
-        Ok(())
-    }
-
-    /// The authored scene camera, when content selected one.
-    #[must_use]
-    pub fn scene_camera(&self) -> Option<SceneCamera> {
-        self.inner.source().authored_camera()
-    }
-
-    /// The installed route's pose and history epoch for `tick` presented at `alpha`.
-    #[must_use]
-    pub fn route_pose(&self, tick: u64, alpha: f32) -> Option<crate::RoutePose> {
-        self.inner.source().route_pose(tick, alpha)
-    }
-
-    /// World time, in milliseconds from the clock origin, of the next tick boundary
-    /// plus `phi` of a period: `(tick + 1 + φ)·P` for the committed tick.
-    #[must_use]
-    pub fn route_step_ms(&self, phi: f64) -> f64 {
-        route_step_ms(self.inner.world().tick(), phi)
     }
 }
 

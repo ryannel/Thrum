@@ -4,6 +4,7 @@ mod admission;
 mod native_recovery;
 
 use super::RuntimeCaptureOutput;
+use crate::GameHost;
 
 fn shadow_selection(selection: thrum_render::synthetic::ShadowSelection) -> Value {
     json!({
@@ -1064,7 +1065,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
 }
 
 pub(super) fn prepare_route(
-    host: &mut crate::FrameHost,
+    host: &mut crate::host::Runtime,
     content: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
     text: &str,
     render_extent: [u32; 2],
@@ -1112,62 +1113,69 @@ pub(super) fn prepare_route(
             })
             .create_view(&wgpu::TextureViewDescriptor::default())
     });
-    host.pause()?;
-    let deadline = Instant::now() + Duration::from_secs(30);
-    loop {
-        {
-            let stats = stats
-                .lock()
-                .map_err(|_| "routed capture content observations poisoned")?;
-            if !stats.errors.is_empty() {
-                return Err(format!("routed capture content failed: {:?}", stats.errors));
-            }
-            if let Some(generation) = stats.drawn {
-                if generation != route.cooked_generation {
-                    return Err("routed capture generation mismatch".to_owned());
+    host.world_mut().pause()?;
+    let generation = if let Some(view) = &preparation_output {
+        // The native witness refuses endpoint frames, so its preparation runs ordinary
+        // frames into the virtual surface until the content is drawn.
+        let deadline = Instant::now() + thrum_asset_gpu::DRAWN_DEADLINE;
+        loop {
+            {
+                let stats = stats
+                    .lock()
+                    .map_err(|_| "routed capture content observations poisoned")?;
+                if !stats.errors.is_empty() {
+                    return Err(format!("routed capture content failed: {:?}", stats.errors));
                 }
-                #[cfg(feature = "draw-probe")]
-                if let Some(output) = report_folder {
-                    let report = json!({
-                        "generation": generation,
-                        "recipe": format!("{:?}", stats.recipe),
-                        "requested_path": format!("{:?}", stats.requested_draw_path),
-                        "resolved_path": format!("{:?}", stats.draw_path),
-                        "fallback": stats.draw_fallback,
-                        "mesh_stage_draws": stats.mesh_stage_draws,
-                        "indexed_indirect_draws": stats.indexed_indirect_draws,
-                        "mesh_stage_exclusions": stats.mesh_stage_exclusions,
-                    });
-                    std::fs::write(output.join("cooked-path.json"), report.to_string())
-                        .map_err(|error| error.to_string())?;
+                if let Some(generation) = stats.drawn {
+                    break generation;
                 }
-                break;
             }
-        }
-        if Instant::now() >= deadline {
-            return Err("routed capture content preparation deadline".to_owned());
-        }
-        if let Some(view) = &preparation_output {
+            if Instant::now() >= deadline {
+                return Err("routed capture content preparation deadline".to_owned());
+            }
             host.drive(
                 Duration::ZERO,
-                Some(&crate::SurfaceOutput {
+                Some(&thrum_render::runtime::SurfaceOutput {
                     view,
                     extent: gpu.surface.extent,
                 }),
-            )?;
-            drop(host.poll_completed()?);
-        } else {
-            drop(host.capture_pixels()?);
+            )
+            .map_err(|error| error.to_string())?;
+            drop(host.poll_completed().map_err(|error| error.to_string())?);
+            std::thread::sleep(Duration::from_millis(2));
         }
-        std::thread::sleep(Duration::from_millis(2));
+    } else {
+        thrum_asset_gpu::await_drawn(host, &stats, thrum_asset_gpu::Drawn::Any)?
+    };
+    if generation != route.cooked_generation {
+        return Err("routed capture generation mismatch".to_owned());
     }
-    host.resume(Duration::ZERO)?;
+    #[cfg(feature = "draw-probe")]
+    if let Some(output) = report_folder {
+        let stats = stats
+            .lock()
+            .map_err(|_| "routed capture content observations poisoned")?;
+        let report = json!({
+            "generation": generation,
+            "recipe": format!("{:?}", stats.recipe),
+            "requested_path": format!("{:?}", stats.requested_draw_path),
+            "resolved_path": format!("{:?}", stats.draw_path),
+            "fallback": stats.draw_fallback,
+            "mesh_stage_draws": stats.mesh_stage_draws,
+            "indexed_indirect_draws": stats.indexed_indirect_draws,
+            "mesh_stage_exclusions": stats.mesh_stage_exclusions,
+        });
+        std::fs::write(output.join("cooked-path.json"), report.to_string())
+            .map_err(|error| error.to_string())?;
+    }
+    host.world_mut().resume(Duration::ZERO)?;
     let mut elapsed = Duration::ZERO;
-    while host.tick() < route.origin_tick - 1 {
+    while host.world().tick() < route.origin_tick - 1 {
         elapsed = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
-        host.drive(elapsed, None)?;
+        host.drive(elapsed, None)
+            .map_err(|error| error.to_string())?;
     }
-    host.pause()?;
+    host.world_mut().pause()?;
     host.set_camera_route(route)?;
     Ok(elapsed)
 }

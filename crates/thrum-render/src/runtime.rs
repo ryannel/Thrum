@@ -240,6 +240,14 @@ impl std::fmt::Display for FrameError {
 }
 impl std::error::Error for FrameError {}
 
+/// For a caller whose errors are still strings, such as a game shell or a capture tool,
+/// so it can use `?` on frame host calls.
+impl From<FrameError> for String {
+    fn from(error: FrameError) -> Self {
+        error.to_string()
+    }
+}
+
 /// Why the surface pass could not be encoded for a frame.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SurfaceFault {

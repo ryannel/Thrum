@@ -28,8 +28,9 @@ use thrum_render::capabilities::{DeviceProfile, DeviceRecipe, DeviceRestriction,
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
+use thrum_render::runtime::FrameSample;
+
 use crate::{
-    FrameSample,
     controls::{ControlEdits, GameControls},
     host::web::{self as game, Shell},
 };

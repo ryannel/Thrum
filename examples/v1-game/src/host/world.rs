@@ -243,31 +243,36 @@ impl WorldPort {
     }
 }
 
-impl thrum_render::runtime::FrameWorld for WorldPort {
+/// The game's authoritative world: its clock and rules, stepped inline on the
+/// render owner or running on the engine's world lane.
+pub struct GameWorld(pub(crate) WorldPort);
+
+impl thrum_render::runtime::FrameWorld for GameWorld {
     type Page = PublishedPage;
 
     fn source(&self) -> thrum_render::extract::SourceTick {
         thrum_render::extract::SourceTick {
-            epoch: self.epoch(),
-            tick: self.tick(),
-            timeline: self.timeline(),
+            epoch: self.0.epoch(),
+            tick: self.0.tick(),
+            timeline: self.0.timeline(),
         }
     }
 
     fn has_current_page(&self) -> bool {
-        Self::has_current_page(self)
+        self.0.has_current_page()
     }
 
     fn is_threaded(&self) -> bool {
-        Self::is_threaded(self)
+        self.0.is_threaded()
     }
 
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        Self::advance(self, now)
+        self.0.advance(now)
     }
 
     fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
         let page = self
+            .0
             .published_page()
             .map_err(|error| format!("world page: {error:?}"))?;
         Ok(WorldPublication {
@@ -278,25 +283,25 @@ impl thrum_render::runtime::FrameWorld for WorldPort {
     }
 
     fn presentation_alpha_at(&self, lead: Duration) -> f32 {
-        Self::presentation_alpha_at(self, lead)
+        self.0.presentation_alpha_at(lead)
     }
     fn display_phase_at(&self, lead: Duration) -> f32 {
-        Self::display_phase_at(self, lead)
+        self.0.display_phase_at(lead)
     }
     fn is_interpolating(&self) -> bool {
-        Self::is_interpolating(self)
+        self.0.is_interpolating()
     }
     fn tick_due_time(&self) -> Option<Duration> {
-        Self::tick_due_time(self)
+        self.0.tick_due_time()
     }
 }
 
 /// The game body stays here; scheduling and the fixed clock belong to core.
 pub(crate) struct WorldDriver {
-    pub(super) world: ClockedWorld<GameWorld>,
+    pub(super) world: ClockedWorld<GameRules>,
 }
 
-pub(super) struct GameWorld {
+pub(super) struct GameRules {
     entity_count: usize,
     route_overlay: scene::RouteOverlay,
     pub(super) sim: Simulation,
@@ -345,7 +350,7 @@ impl WorldDriver {
         sim: Simulation,
         entity_count: usize,
     ) -> Result<Self, String> {
-        let game = GameWorld {
+        let game = GameRules {
             route_overlay,
             sim,
             entity_count,
@@ -491,7 +496,7 @@ impl WorldDriver {
     }
 }
 
-impl GameWorld {
+impl GameRules {
     fn recover_page(&mut self) -> Result<Option<usize>, SimError> {
         if self.sim.has_current_page() {
             return Ok(None);
@@ -542,13 +547,13 @@ impl std::error::Error for GameWorldError {
     }
 }
 
-impl GameWorld {
+impl GameRules {
     fn controlled_id(&self) -> thrum_core::StableId {
         thrum_core::StableId((self.entity_count - 1) as u128)
     }
 }
 
-impl WorldGame for GameWorld {
+impl WorldGame for GameRules {
     type Control = [f32; 3];
     type Page = PublishedPage;
     type Error = GameWorldError;

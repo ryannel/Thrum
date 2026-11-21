@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy, WorldTask};
 
-use super::{GameWorld, WorldDriver};
+use super::{GameRules, WorldDriver};
 use thrum_core::sim::ClockedWorld;
 
 #[test]
@@ -34,7 +34,7 @@ fn threaded_control_equality_preserves_inline_signed_zero_admission() {
     let positive_zero = [0.0_f32; 3];
     let negative_zero = [-0.0_f32, 0.0, 0.0];
     assert!(
-        !<ClockedWorld<GameWorld> as WorldTask>::same_control(positive_zero, negative_zero),
+        !<ClockedWorld<GameRules> as WorldTask>::same_control(positive_zero, negative_zero),
         "resident mailbox must admit the same bitwise control change as inline world"
     );
 
