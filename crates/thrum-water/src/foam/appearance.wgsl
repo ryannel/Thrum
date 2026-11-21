@@ -49,9 +49,13 @@ fn ranked_cover(stocks: vec4<f32>, point: vec2<f32>, footprint: f32) -> f32 {
     let streak = smoothstep(0.22, 0.72, foam_noise(streak_coords * vec2(0.78, 3.60)));
     let broken = mix(0.16 + 0.84 * streak, 1.0, smoothstep(0.04, 0.22, stocks.y));
     let feather = sqrt(cover) * min(1.0, 1.55 * lace + 0.22 * cover) * broken;
-    let core = smoothstep(0.19, 0.59, stocks.y);
-    let near = max(feather, core);
-    return mix(near, max(cover, core), smoothstep(0.16, 1.0, footprint)) * smoothstep(0.008, 0.028, cover);
+    // A cap's body is churned water, not a flat sheet: its density varies.
+    let churned = mix(0.72, 1.0, foam_noise(point * vec2(1.9, 2.3) + 11.0));
+    let core = smoothstep(0.30, 0.90, stocks.y);
+    let near = max(feather, core) * mix(1.0, churned, smoothstep(0.35, 0.85, cover));
+    let filtered = max(cover, core) * mix(mix(1.0, churned, smoothstep(0.35, 0.85, cover)), 1.0,
+        smoothstep(0.5, 4.0, footprint));
+    return mix(near, filtered, smoothstep(0.16, 1.0, footprint)) * smoothstep(0.008, 0.028, cover);
 }
 
 fn gaussian_lower_tail(x: f32) -> f32 {

@@ -108,10 +108,11 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             let compression = d.x * d.z - d.y * d.y;
             let wind = foam_settings.time_wind.zw;
             let crest = smoothstep(-0.08, 0.30, wave.height / max(water.scatter.w, 0.001));
-            // The onset lies well short of the fold, so a gale's held cover
-            // keeps open water between caps and their streaks.
-            let whitecap = 2.6 * pow(smoothstep(5.0, 18.0, length(wind)), 0.80) * crest *
-                pow(max(0.0, 0.76 - compression), 1.18);
+            // Only the most compressed crests break, and they whiten fast, so a
+            // gale holds bright caps on open water: about 15% steady cover in
+            // the fine level, near the whitecap fractions measured at sea.
+            let whitecap = pow(smoothstep(5.0, 18.0, length(wind)), 1.30) * crest *
+                3.2 * smoothstep(0.54, 0.26, compression);
             let hull = hull_births(point, row.row.water.yz, spacing);
             let wake_break = 0.6 * max(0.0, length(wake.yz) - 0.46) *
                 (1.0 - hull.z) * smoothstep(0.08, 0.30, abs(wake.w));
@@ -134,7 +135,7 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
             }
             let max_shift = select(0.999, 2.0, level == 0u && dt > 0.024);
             let shift = clamp(drift * dt / spacing, vec2(-max_shift), vec2(max_shift));
-            let diffusion = min(0.24, (0.016 + 0.14 * stocks.x + 0.06 * stocks.y) * dt / (spacing * spacing));
+            let diffusion = min(0.24, (0.016 + 0.14 * stocks.x + 0.30 * stocks.y) * dt / (spacing * spacing));
             movement = vec4(shift, diffusion, shore);
         }
     }
