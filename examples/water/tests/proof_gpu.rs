@@ -9,15 +9,20 @@ use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource,
 use water_scene::island::Wind;
 use water_scene::settings::{Floating, Settings};
 
+/// The scene settings, parsed from this process's environment as the window parses its own.
+fn settings() -> Settings {
+    Settings::from_variables(|name| std::env::var(name).ok())
+}
+
 fn island_wind() -> Option<Wind> {
-    match Settings::from_env() {
+    match settings() {
         Settings::Island { wind, .. } => Some(wind),
         _ => None,
     }
 }
 
 fn floating() -> Option<Floating> {
-    match Settings::from_env() {
+    match settings() {
         Settings::Floating(floating) => Some(floating),
         _ => None,
     }
@@ -30,7 +35,7 @@ fn wake_route() -> bool {
 
 /// Transported whitewater, on the beach or on the wake route.
 fn whitewater() -> bool {
-    match Settings::from_env() {
+    match settings() {
         Settings::Island { foam, .. } => foam,
         Settings::Floating(floating) => floating.wake.is_some_and(|wake| wake.whitewater),
         Settings::OpenSea => false,
@@ -38,7 +43,7 @@ fn whitewater() -> bool {
 }
 
 fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedReport) {
-    match Settings::from_env() {
+    match settings() {
         Settings::Floating(floating) => {
             let scene = floating_game(floating, water, water, whitewater());
             (scene.game, scene.report)

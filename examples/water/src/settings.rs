@@ -1,8 +1,9 @@
 //! The one parse of the settings that choose the water scene.
 //!
-//! The window reads them from `THRUM_WATER_*` environment variables, the page from its query, and the
-//! proof tests through [`Settings::from_env`], so a proof builds the scene a person opens. The proof
-//! harness's own variables, which say where a proof writes and what it records, are not read here.
+//! The window passes its `THRUM_WATER_*` environment variables to [`Settings::from_variables`], the page
+//! its query to [`Settings::from_query`], and the proof tests their environment the same way, so a proof
+//! builds the scene a person opens. The library reads no environment itself. The proof harness's own
+//! variables, which say where a proof writes and what it records, are not parsed here.
 use crate::floating::{WakeDemo, WakeView, WhitewaterDemo};
 use crate::island::Wind;
 
@@ -82,21 +83,10 @@ impl Wake {
 }
 
 impl Settings {
-    /// Read the settings where this build runs: the page's query on the web, the environment otherwise.
-    pub fn read() -> Self {
-        #[cfg(target_arch = "wasm32")]
-        {
-            Self::from_query(&page_query().unwrap_or_default())
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            Self::from_env()
-        }
-    }
-
-    /// Read the settings from the `THRUM_WATER_*` environment variables.
-    pub fn from_env() -> Self {
-        Self::parse(|(_, variable)| std::env::var(variable).ok())
+    /// Parse the settings from `THRUM_WATER_*` variables, given a lookup of a variable's value by name,
+    /// such as the process environment.
+    pub fn from_variables(variable: impl Fn(&str) -> Option<String>) -> Self {
+        Self::parse(|(_, name)| variable(name))
     }
 
     /// Read the settings from a page query such as `?wake=calm&view=overhead`.
@@ -147,14 +137,6 @@ impl Settings {
             None => Self::OpenSea,
         }
     }
-}
-
-#[cfg(target_arch = "wasm32")]
-fn page_query() -> Option<String> {
-    let location = js_sys::Reflect::get(&js_sys::global(), &"location".into()).ok()?;
-    js_sys::Reflect::get(&location, &"search".into())
-        .ok()?
-        .as_string()
 }
 
 #[cfg(test)]
