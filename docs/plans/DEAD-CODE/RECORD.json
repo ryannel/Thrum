@@ -367,6 +367,38 @@
         "by": "plan",
         "task": "Second revision of the cleanup programme (GATE-TIME, DEAD-TOOLS, DEAD-CODE and TEST-SUPPORT M3-M4). It goes in one pass ",
         "at": "2026-11-20T12:18:24Z"
+      },
+      "ready_for_review": {
+        "commit": "d22b9d2035cb2665df345e2c458a2c20f49be676",
+        "checked": "d22b9d2035cb2665df345e2c458a2c20f49be676",
+        "at": "2026-11-21T19:33:45Z",
+        "reused": [
+          "Test command",
+          "M5.1",
+          "M5.2"
+        ],
+        "host": "claude",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-opus-5-5"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 125653,
+          "cached": 6054385,
+          "output": 27597,
+          "cost_usd": 2.767561,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 125653,
+          "cached": 6054385,
+          "output": 27597,
+          "cost_usd": 2.767561,
+          "turns": 1
+        }
       }
     },
     "M6": {
