@@ -493,7 +493,7 @@
     {
       "id": "M9",
       "name": "Every test in a merge's check takes about ten seconds or less, outside the water scene: each slower one was made fast, or runs on main after merges with its risk written down",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -549,16 +549,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_access",
-        "what": "approve reclaiming at least 5 GiB of disk, for example `cargo clean` in the idle `dead-code` worktree, and then this branch can merge and the three whole runs for M9.1 can be taken.",
-        "work": {
-          "commit": "7100f30241f2f2d82ef0b24503b68eaa4653c62f",
-          "branch": "build/gate-time",
-          "pushed": false
-        }
-      }
+      ]
     },
     {
       "id": "M13",
