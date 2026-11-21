@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-15 of 36 modules done · 19 in progress · 2 to come
+16 of 36 modules done · 18 in progress · 2 to come
 
 ### Needs you now
 
@@ -312,11 +312,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk (HOST M3): Not Started · [plan](HOST/PLAN.md)
 - The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges (RAY-TRACING M3): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/M3-review.md)
 - A merge's check runs its tests side by side and takes minutes where it took twenty: it says where its time went, and a test that runs over a minute fails it (GATE-TIME M8): In Progress · [plan](GATE-TIME/PLAN.md) · [latest review](../../.orchestrate/evidence/GATE-TIME/M8-review.md)
-- No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms (DEAD-TOOLS M4): Ready for Review · [plan](DEAD-TOOLS/PLAN.md)
 - A scene contribution writes only the hooks it uses (DEAD-CODE M2): Ready for Review · [plan](DEAD-CODE/PLAN.md) · [latest review](../../.orchestrate/evidence/DEAD-CODE/M2-review.md)
 
 ### Recently done
 
+- No script, bench or test reads or writes under `docs/evidence`, and the culling route test carries no tool nothing arms (DEAD-TOOLS M4), 21 Nov · [review](../../.orchestrate/evidence/DEAD-TOOLS/M4-review.md)
 - The records nobody reads are out of the tree, the test data the check reads is in fixtures, and one manifest lists what left (DEAD-TOOLS M3), 21 Nov · [review](../../.orchestrate/evidence/DEAD-TOOLS/M3-review.md)
 - The simulation no longer writes a change history every tick, and the sea no longer builds a buffer ladder every frame, for readers that do not exist (DEAD-CODE M1), 21 Nov · [review](../../.orchestrate/evidence/DEAD-CODE/M1-review.md)
 - Benches and a command that nothing runs are gone: nine benches, and `./dev baseline-inventory` with the two benches only it ran (DEAD-TOOLS M2), 20 Nov · [review](../../.orchestrate/evidence/DEAD-TOOLS/M2-review.md)
@@ -429,7 +429,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | M5 of 7 · Not Started |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
-| 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, TEST-SUPPORT:M4, GAME-SPLIT:M3, GATE-TIME:M5, DEAD-TOOLS:M4, DEAD-CODE:M6 |
+| 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, REVIEW-RENDER:M5, HOST:M5, TEST-SUPPORT:M4, GAME-SPLIT:M3, GATE-TIME:M5, DEAD-CODE:M6 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | Done 18 Nov |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests; GATE-TIME M2 and M6, DEAD-CODE M2 and REVIEW-RENDER M2 for adopting the test kit | Waiting: On Dependency, GATE-TIME:M2, DEAD-CODE:M2 |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | M3 of 5 · Not Started |
@@ -438,5 +438,5 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING M3 and CONTENT-LOOP M2 to start; ATMOSPHERE M5, APPLE-PRESENTATION M3 and SHOWCASE M5 for shadows; EFFECT-GRAPH M3 and APPLE-PRESENTATION M2 for soft shadows; SHOWCASE M8 to close | M3 of 6 · In Progress |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP M2 and COOKED-DRAW M1 to start; SHOWCASE M8 to close | Waiting: On Dependency, SHOWCASE:M8 |
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT M2 for the runs that happen twice; WATERS M7 for the water scene's slow tests; REVIEW-RENDER M2 for the reference tests; DEAD-TOOLS M2 for the contributor guide | M8 of 9 · In Progress |
-| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | M4 of 6 · Ready for Review |
+| 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT M2 for its last milestone | Done 21 Nov |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME M1 to start; GATE-TIME M6 for the contribution's defaults; WATERS M7 for the water scene's settings; HOST M3 for the game's projection; REVIEW-RENDER M3 and GATE-TIME M6 for the two helpers | M2 of 6 · Ready for Review |
