@@ -566,8 +566,8 @@
           "check": "python3 -c 'import sys,tomllib; s=tomllib.load(open(\".config/nextest.toml\",\"rb\"))[\"profile\"][\"default\"][\"slow-timeout\"]; sys.exit(0 if s[\"period\"].endswith(\"s\") and float(s[\"period\"][:-1])*s.get(\"terminate-after\",999)<=10 else 1)' && python3 scripts/shape_rules.py check --rule limit-exempt && python3 scripts/test_shape_rules.py",
           "ask": "In a scratch copy, add three tests to one package: one that sleeps twelve seconds every time, one that sleeps twelve seconds only the first time it runs, and one that fails an assertion at once. Run `./dev check`: is the first stopped twice and the check failed in its name, the second stopped once, passed alone and named in the closing lines with its time, and the third failed with no second run?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M13/m13.1-trial.log; .orchestrate/evidence/GATE-TIME/M13/record.md#m131-the-three-test-trial",
           "verdict": "",
           "review": ""
         },
@@ -576,8 +576,8 @@
           "statement": "With the stop at ten seconds, three whole runs of the check pass at one commit, beside builders. The record gives the load and, for each run, every test stopped and run again, with both times. No test outside the water scene's package is run again in all three.",
           "ask": "Does the record give the commit, the load, and each run's stopped tests with both times? Is any test outside the water scene's package run again in all three?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/M13/record.md#m132-three-whole-runs-beside-builders; .orchestrate/evidence/GATE-TIME/M13/m13.2-run1.log, m13.2-run2.log, m13.2-run3.log",
           "verdict": "",
           "review": ""
         }
