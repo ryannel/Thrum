@@ -271,8 +271,7 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
     let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
     let mut exit_arm = ExitArm::from_env();
     assert!(
-        exit_arm.is_none()
-            || (!timing && std::env::var("THRUM_SCENE").as_deref() == Ok("exit"))
+        exit_arm.is_none() || (!timing && std::env::var("THRUM_SCENE").as_deref() == Ok("exit"))
     );
     let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
         CaptureSource::SceneLinear
@@ -363,13 +362,7 @@ async fn prove(gpu: &thrum_test_support::Gpu) {
             } else {
                 format!("{:?}", modes[index])
             };
-            record_sample(
-                &mut log,
-                tick,
-                &mode,
-                capture_identity.as_ref(),
-                &sample,
-            );
+            record_sample(&mut log, tick, &mode, capture_identity.as_ref(), &sample);
         }
         if tick >= route.origin_tick && !timing {
             assert_eq!(
