@@ -1,5 +1,6 @@
 //! Late slab using the public renderer seam, with submission-owned correspondence.
 use super::EffectControls;
+use thrum_render::binding;
 use thrum_render::contribution::{AfterOpaquePass, ContributionFrame, SceneSurface};
 
 pub(super) struct Slab {
@@ -75,16 +76,7 @@ impl Slab {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let mut entries = vec![wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(32),
-            },
-            count: None,
-        }];
+        let mut entries = vec![binding::uniform(0, wgpu::ShaderStages::VERTEX_FRAGMENT, 32)];
         for (i, dimension) in [
             wgpu::TextureViewDimension::D2,
             wgpu::TextureViewDimension::D3,
@@ -94,16 +86,12 @@ impl Slab {
         .into_iter()
         .enumerate()
         {
-            entries.push(wgpu::BindGroupLayoutEntry {
-                binding: u32::try_from(i + 1).map_err(|e| e.to_string())?,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Uint,
-                    view_dimension: dimension,
-                    multisampled: false,
-                },
-                count: None,
-            });
+            entries.push(binding::texture(
+                u32::try_from(i + 1).map_err(|e| e.to_string())?,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Uint,
+                dimension,
+            ));
         }
         let own = surface
             .device

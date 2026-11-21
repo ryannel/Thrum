@@ -1,6 +1,7 @@
 //! Opt-in valley reader that displays a lent texture and a slice of a lent volume.
 
 use std::sync::{Arc, Mutex};
+use thrum_render::binding;
 
 use thrum_asset_gpu::{CookedAssets, CookedStats, LeaseRequest, ProductLease};
 use thrum_render::{
@@ -117,14 +118,23 @@ impl SceneContribution for PreviewReader {
         let binding_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("lent content preview"),
             entries: &[
-                texture_binding(0, wgpu::TextureViewDimension::D2),
-                texture_binding(1, wgpu::TextureViewDimension::D3),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
+                binding::texture(
+                    0,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D2,
+                ),
+                binding::texture(
+                    1,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D3,
+                ),
+                binding::sampler(
+                    2,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::SamplerBindingType::Filtering,
+                ),
             ],
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -237,21 +247,5 @@ impl SceneContribution for PreviewReader {
         if let Ok(mut submitted) = self.submitted.lock() {
             *submitted = self.recorded;
         }
-    }
-}
-
-fn texture_binding(
-    binding: u32,
-    view_dimension: wgpu::TextureViewDimension,
-) -> wgpu::BindGroupLayoutEntry {
-    wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Texture {
-            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-            view_dimension,
-            multisampled: false,
-        },
-        count: None,
     }
 }

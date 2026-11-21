@@ -7,6 +7,7 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
+use thrum_render::binding;
 use thrum_render::contribution::{
     AfterOpaqueKind as K, AfterOpaquePass, ContributionFrame, ContributionPasses, EffectAccess,
     EffectCadence as C, EffectGraph, EffectState, EffectStep, HistoryBinding as H,
@@ -248,36 +249,27 @@ fn layout(
 ) -> wgpu::BindGroupLayout {
     let mut entries = entries
         .iter()
-        .map(|&(binding, storage)| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility,
-            count: None,
-            ty: if storage {
-                wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::WriteOnly,
-                    format: wgpu::TextureFormat::R32Uint,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                }
+        .map(|&(binding, storage)| {
+            if storage {
+                binding::storage_texture(
+                    binding,
+                    visibility,
+                    wgpu::StorageTextureAccess::WriteOnly,
+                    wgpu::TextureFormat::R32Uint,
+                    wgpu::TextureViewDimension::D2,
+                )
             } else {
-                wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Uint,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                }
-            },
+                binding::texture(
+                    binding,
+                    visibility,
+                    wgpu::TextureSampleType::Uint,
+                    wgpu::TextureViewDimension::D2,
+                )
+            }
         })
         .collect::<Vec<_>>();
     if let Some(binding) = uniform {
-        entries.push(wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility,
-            count: None,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new(16),
-            },
-        });
+        entries.push(binding::uniform(binding, visibility, 16));
     }
     surface
         .device

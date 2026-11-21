@@ -4,6 +4,7 @@ use std::sync::{
     atomic::{AtomicU32, Ordering},
 };
 use thrum_app::sky::Camera;
+use thrum_render::binding;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     contribution::{
@@ -311,37 +312,23 @@ impl Prepared {
             .environment_products()
             .ok_or("mirror needs the scene atmosphere")?;
         let device = surface.device;
-        let uniform = |binding| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                min_binding_size: None,
-                has_dynamic_offset: false,
-            },
-            count: None,
-        };
+        let uniform = |binding| binding::uniform(binding, wgpu::ShaderStages::VERTEX_FRAGMENT, 0);
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
             entries: &[
                 uniform(0),
                 uniform(1),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
+                binding::texture(
+                    2,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D2,
+                ),
+                binding::sampler(
+                    3,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::SamplerBindingType::Filtering,
+                ),
             ],
         });
         let params = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

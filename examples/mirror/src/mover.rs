@@ -1,3 +1,4 @@
+use thrum_render::binding;
 use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SecondarySceneSurface,
 };
@@ -22,16 +23,7 @@ impl SceneContribution for Mover {
         let device = surface.device;
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("moving beacon"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
+            entries: &[binding::uniform(0, wgpu::ShaderStages::VERTEX, 0)],
         });
         let marker = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("moving beacon"),
