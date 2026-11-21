@@ -349,7 +349,42 @@
     },
     "M3": {
       "definitions": "8915fdde60368215b5e5d5d4cfd0a13259828b2f41ffc1faa114227a7bab9137",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7c7e29bb1e0ce23ced65305846d5f34416a7cdb1",
+          "review": ".orchestrate/evidence/HOST/M3-review.md",
+          "items": {
+            "M3.1": "fail",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "sky kit keeps a second cooked-content wait with its own deadline",
+              "item": "M3.1",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 226088,
+            "cached": 16285695,
+            "output": 55237,
+            "cost_usd": 6.169679,
+            "turns": 1
+          },
+          "at": "2026-11-21T06:19:05Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan the cleanup that the 20 November review found. The owner's request that day was: \"We want to do a code cleanup and ",

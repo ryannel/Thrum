@@ -156,8 +156,8 @@
     {
       "id": "M3",
       "name": "The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -170,10 +170,10 @@
           "lock": "gpu",
           "ask": "Is any loop left under `crates/` or `examples/` that polls the cooked statistics and reads pixels back only to advance staging?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "mac-metal: await_drawn test 2 passed under gpu lock (render_once, endpoint_readbacks()==0 after waiting; manifest-less store fails with Content). Cooked-stats readback loops in capture, iPhone app and tests now use await_drawn; the sky starter's ContentStatus loops draw with render_once (starter live-reload check: 10 saves passed). Record: .orchestrate/evidence/HOST/M3/",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/HOST/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -184,8 +184,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal: one pub struct FrameHost; host_gpu 5 and frame_alloc 2 passed under gpu lock; v1-game lib 59 and the converted GPU targets passed. Game holds FrameHost<GameWorld, GameScene> built by GameSetup::prepare*; GameHost is a trait of game controls; iPhone app and benches name thrum_render's FrameHost directly. Record: .orchestrate/evidence/HOST/M3/",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -195,8 +195,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "mac-metal: src/bin/window removed; scene capture runs on thrum_app::Offscreen from src/window/capture/scene.rs with settings parsed in main.rs; test_t2_capture 17 OK. Engine capture --case pan still/fixed/realtime complete with the same record set; apple_tile_m1 (38) and apple_tile_m2 (4) native matrices passed byte-exact, including fixed route checkpoints. Record: .orchestrate/evidence/HOST/M3/",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -205,8 +205,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/HOST/M3-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "sky kit keeps a second cooked-content wait with its own deadline",
+          "item": "M3.1",
+          "repeat": false
         }
       ]
     },
